@@ -6,10 +6,10 @@
 
 import * as THREE from '../vendor/three.module.js';
 import GUI from '../vendor/lil-gui.esm.js';
-import { generateSphereMesh, relax } from './grid.js?v=99008b91';
-import { generateDungeon, BLOCKED, PATH, ROOM } from './dungeon.js?v=99008b91';
-import { mulberry32, randomSeed } from './rng.js?v=99008b91';
-import { sub3, add3, scale3, dot3, cross3, norm3, len3 } from './vec3.js?v=99008b91';
+import { generateSphereMesh, relax } from './grid.js?v=846a8373';
+import { generateDungeon, BLOCKED, PATH, ROOM } from './dungeon.js?v=846a8373';
+import { mulberry32, randomSeed } from './rng.js?v=846a8373';
+import { sub3, add3, scale3, dot3, cross3, norm3, len3 } from './vec3.js?v=846a8373';
 
 export function initMazeTab(root) {
   let active = false;
@@ -20,9 +20,10 @@ export function initMazeTab(root) {
     rooms: 6,
     roomRadius: 2,
     extraCorridors: 2,
-    wallHeight: 0.1,
+    wallHeight: 0.03,
     relaxIters: 80,
-    view: 'pov', // pov | third
+    view: 'third', // pov | third
+    speed: 1.1, // cells per second, wanderer pace
   };
 
   // --- scene ---------------------------------------------------------------
@@ -66,13 +67,22 @@ export function initMazeTab(root) {
   let heartSprite = null, playerMesh = null, markerMesh = null;
   let playerSize = 0.06; // set per-generation in buildActors
 
+  // The walker WANDERS on its own: it glides cell-to-cell continuously and
+  // picks each next exit itself. `heading` is the STEERING INTENT (what A/D
+  // rotate) — it biases the choice but doesn't command it. `travelDir` is
+  // where the walker is actually going; the camera and cone follow that.
   const player = {
     cur: 0, prev: -1,
-    heading: [1, 0, 0], // unit tangent at cur
+    next: -1,           // cell being glided toward
+    prog: 0,            // 0..1 along cur -> next
+    pos: [1, 0, 0],     // interpolated position on the sphere
+    travelDir: [0, 1, 0],
+    heading: [1, 0, 0], // steering intent, unit tangent
     moves: 0,
     visited: new Set(),
     won: false,
   };
+  let whim = mulberry32(1); // the walker's own randomness, reseeded per maze
 
   const camGoal = { pos: new THREE.Vector3(), quat: new THREE.Quaternion() };
   const tmpObj = new THREE.Object3D();
@@ -261,13 +271,12 @@ export function initMazeTab(root) {
     const s = cellSide * 1.9;
     heartSprite.scale.set(s, s, s);
 
-    const c = graph.centers[player.cur];
-    const n = graph.normals[player.cur];
-    const p = add3(c, scale3(n, playerSize * 0.22));
+    const n = norm3(player.pos);
+    const p = add3(player.pos, scale3(n, playerSize * 0.22));
     playerMesh.position.set(p[0], p[1], p[2]);
     markerMesh.position.set(p[0], p[1], p[2]);
-    // cone points along heading
-    const h = player.heading;
+    // cone points where it is actually going
+    const h = player.travelDir;
     tmpObj.position.copy(playerMesh.position);
     tmpObj.up.set(n[0], n[1], n[2]);
     tmpObj.lookAt(p[0] + h[0], p[1] + h[1], p[2] + h[2]);
@@ -276,10 +285,11 @@ export function initMazeTab(root) {
   }
 
   // --- trench / third-person camera ----------------------------------------
+  // follows the interpolated position and the ACTUAL travel direction
   function updateCameraGoal() {
-    const c = graph.centers[player.cur];
-    const n = graph.normals[player.cur];
-    const h = player.heading;
+    const c = player.pos;
+    const n = norm3(c);
+    const h = player.travelDir;
     let eye, look;
     if (params.view === 'third') {
       // behind and above: over the wall tops, walker in frame, maze readable
@@ -316,78 +326,91 @@ export function initMazeTab(root) {
     return graph.adj[ci].filter((nb) => dungeon.tags[nb] !== BLOCKED);
   }
 
-  // signed angle of exit dir vs heading around the outward normal:
-  // positive = left (CCW seen from outside the sphere).
-  function exitAngle(dir) {
-    const n = graph.normals[player.cur];
-    const h = player.heading;
-    return Math.atan2(dot3(cross3(h, dir), n), dot3(h, dir));
-  }
-
-  function tryMove(targetAngle, tolerance, keepHeading = false) {
-    if (player.won) return;
+  // --- the wanderer: exit choice = steering bias + its own whims -----------
+  // Scored, not commanded: alignment with the steering intent dominates when
+  // the player is actively steering, but unvisited-cell curiosity, a
+  // backtrack penalty, and noise keep the walker willful.
+  function chooseNext() {
     const exits = openNeighbors(player.cur);
-    let best = -1, bestOff = Infinity;
+    if (exits.length === 0) return -1;
+    let best = exits[0], bestScore = -Infinity;
     for (const e of exits) {
       const dir = tangentDirTo(player.cur, e);
-      let off = Math.abs(exitAngle(dir) - targetAngle);
-      if (off > Math.PI) off = 2 * Math.PI - off;
-      if (off < bestOff) { bestOff = off; best = e; }
+      let score = 2.2 * dot3(player.heading, dir);   // steering bias
+      if (!player.visited.has(e)) score += 1.1;      // curiosity
+      if (e === player.prev && exits.length > 1) score -= 2.4; // no dithering
+      score += (whim() - 0.5) * 1.6;                 // its own will
+      if (score > bestScore) { bestScore = score; best = e; }
     }
-    if (best === -1 || bestOff > tolerance) return; // bump into a wall
-    commitMove(best, keepHeading);
+    return best;
   }
 
-  function commitMove(target, keepHeading = false) {
+  function arriveAt(cell) {
     player.prev = player.cur;
-    player.cur = target;
+    player.cur = cell;
     player.moves++;
-    player.visited.add(target);
-    // tank controls: stepping back (keepHeading) keeps facing the same way;
-    // walking forward aligns the heading with the direction of travel
-    if (!keepHeading) player.heading = tangentDirTo(player.prev, player.cur);
-    // re-project heading into the NEW cell's tangent plane
-    const n = graph.normals[player.cur];
-    player.heading = norm3(sub3(player.heading, scale3(n, dot3(player.heading, n))));
-
+    player.visited.add(cell);
     paintCell(player.prev, floorColorOf(player.prev));
-    placeActors();
-    updateCameraGoal();
     updateHud();
 
-    if (player.cur === dungeon.heart && !player.won) {
+    if (cell === dungeon.heart && !player.won) {
       player.won = true;
-      msgEl.innerHTML = `💗 you reached the heart<br>${player.moves} moves · ` +
+      msgEl.innerHTML = `💗 the wanderer found the heart<br>${player.moves} moves · ` +
         `${dungeon.distToHeart[dungeon.spawn]} was the shortest<br>` +
         `<span style="color:#8a93ad">regenerate (panel) for a new maze</span>`;
       msgEl.classList.remove('hidden');
     }
   }
 
-  const FWD = 0, BACK = Math.PI;
-  const T_MOVE = THREE.MathUtils.degToRad(70);
-  const T_BACK = THREE.MathUtils.degToRad(80);
-  const TURN = Math.PI / 4; // 45° per press
+  // called once per frame: glide, and pick a new exit on each cell arrival
+  function advanceMotion(dt) {
+    if (player.won || player.next === -1) return;
+    player.prog += params.speed * dt;
+    while (player.prog >= 1 && !player.won) {
+      arriveAt(player.next);
+      // steering intent drifts toward actual travel so stale input fades
+      const td = tangentDirTo(player.prev, player.cur);
+      player.heading = norm3(add3(scale3(player.heading, 0.65), scale3(td, 0.35)));
+      player.next = chooseNext();
+      if (player.next === -1) { player.prog = 0; break; }
+      player.prog -= 1;
+    }
+    // interpolate along the chord, then push back onto the sphere
+    const a = graph.centers[player.cur];
+    const b = graph.centers[player.next === -1 ? player.cur : player.next];
+    const t = Math.min(player.prog, 1);
+    const p = [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t, a[2] + (b[2] - a[2]) * t];
+    player.pos = norm3(p); // radius 1
+    const n = player.pos;
+    const d = sub3(b, player.pos);
+    const flat = sub3(d, scale3(n, dot3(d, n)));
+    const l = Math.hypot(flat[0], flat[1], flat[2]);
+    if (l > 1e-9) player.travelDir = scale3(flat, 1 / l);
+    // keep the steering intent in the local tangent plane as we move
+    player.heading = norm3(sub3(player.heading, scale3(n, dot3(player.heading, n))));
+  }
 
-  // tank rotation: spin the heading around the outward normal, in place.
-  // positive = left (CCW seen from outside — matches exitAngle's convention).
+  const TURN = Math.PI / 5; // 36° per press — a nudge, not a command
   function rotate(theta) {
-    const n = graph.normals[player.cur];
+    const n = norm3(player.pos);
     const h = player.heading;
     const c = Math.cos(theta), s = Math.sin(theta);
     const nxh = cross3(n, h);
     player.heading = norm3(add3(scale3(h, c), scale3(nxh, s)));
-    placeActors();
-    updateCameraGoal();
+  }
+
+  function nudgeSpeed(factor) {
+    params.speed = Math.min(4, Math.max(0.2, params.speed * factor));
+    speedCtrl.updateDisplay();
   }
 
   function onKey(ev) {
     if (!active) return;
     const k = ev.key.toLowerCase();
-    if (k === 'arrowup' || k === 'w') { tryMove(FWD, T_MOVE); ev.preventDefault(); }
+    if (k === 'arrowup' || k === 'w') { nudgeSpeed(1.3); ev.preventDefault(); }
     else if (k === 'arrowleft' || k === 'a') { rotate(TURN); ev.preventDefault(); }
     else if (k === 'arrowright' || k === 'd') { rotate(-TURN); ev.preventDefault(); }
-    else if (k === 'arrowdown' || k === 's') { tryMove(BACK, T_BACK, true); ev.preventDefault(); }
+    else if (k === 'arrowdown' || k === 's') { nudgeSpeed(1 / 1.3); ev.preventDefault(); }
     else if (k === 'h') pulseHint();
     else if (k === 'v') toggleView();
   }
@@ -396,13 +419,12 @@ export function initMazeTab(root) {
   function toggleView() {
     params.view = params.view === 'pov' ? 'third' : 'pov';
     viewCtrl.updateDisplay();
-    updateCameraGoal();
   }
 
-  root.querySelector('#pad-up').addEventListener('click', () => tryMove(FWD, T_MOVE));
+  root.querySelector('#pad-up').addEventListener('click', () => nudgeSpeed(1.3));
   root.querySelector('#pad-left').addEventListener('click', () => rotate(TURN));
   root.querySelector('#pad-right').addEventListener('click', () => rotate(-TURN));
-  root.querySelector('#pad-down').addEventListener('click', () => tryMove(BACK, T_BACK, true));
+  root.querySelector('#pad-down').addEventListener('click', () => nudgeSpeed(1 / 1.3));
   root.querySelector('#pad-hint').addEventListener('click', () => pulseHint());
   root.querySelector('#pad-view').addEventListener('click', () => toggleView());
 
@@ -449,13 +471,18 @@ export function initMazeTab(root) {
     player.moves = 0;
     player.won = false;
     player.visited = new Set([dungeon.spawn]);
+    player.pos = graph.centers[dungeon.spawn].slice();
+    whim = mulberry32((params.seed ^ 0x51eef) >>> 0);
     const exits = openNeighbors(player.cur);
-    // start facing the way to the heart so the first view reads
+    // start aimed the way to the heart so the opening shot reads
     let e0 = exits[0];
     for (const e of exits) {
       if (dungeon.distToHeart[e] === dungeon.distToHeart[player.cur] - 1) { e0 = e; break; }
     }
     player.heading = tangentDirTo(player.cur, e0);
+    player.travelDir = player.heading.slice();
+    player.next = e0;
+    player.prog = 0;
 
     buildGeometry();
     buildActors();
@@ -476,8 +503,8 @@ export function initMazeTab(root) {
 
   // --- dashboard -----------------------------------------------------------
   const gui = new GUI({ title: 'sphere dungeon', container: root });
-  const viewCtrl = gui.add(params, 'view', ['pov', 'third'])
-    .name('camera (V)').onChange(updateCameraGoal);
+  const viewCtrl = gui.add(params, 'view', ['pov', 'third']).name('camera (V)');
+  const speedCtrl = gui.add(params, 'speed', 0.2, 4, 0.1).name('wander speed');
   const seedCtrl = gui.add(params, 'seed', 0, 99999, 1).onFinishChange(regenerate);
   gui.add(params, 'points', 150, 1200, 10).name('sample points').onFinishChange(regenerate);
   gui.add(params, 'rooms', 2, 12, 1).onFinishChange(regenerate);
@@ -494,10 +521,18 @@ export function initMazeTab(root) {
   // --- render loop: PoV + minimap inset ------------------------------------
   const mapBg = new THREE.Color(0x080a10);
   let t = 0;
+  let lastFrame = performance.now();
   function animate() {
     requestAnimationFrame(animate);
     if (!active || !mesh) return;
-    t += 0.016;
+    const now = performance.now();
+    const dt = Math.min((now - lastFrame) / 1000, 0.1); // clamp tab-switch gaps
+    lastFrame = now;
+    t += dt;
+
+    advanceMotion(dt);
+    placeActors();
+    updateCameraGoal();
 
     camera.position.lerp(camGoal.pos, 0.14);
     camera.quaternion.slerp(camGoal.quat, 0.14);
@@ -520,10 +555,10 @@ export function initMazeTab(root) {
     playerMesh.visible = params.view === 'third' || params.wallHeight >= 0.05;
     renderer.render(scene, camera);
 
-    // inset: the sphere as a minimap, player-centred, heading up
+    // inset: the sphere as a minimap, player-centred, travel-direction up
     const m = Math.min(260, Math.floor(Math.min(w, h) * 0.34));
-    const n = graph.normals[player.cur];
-    const hd = player.heading;
+    const n = norm3(player.pos);
+    const hd = player.travelDir;
     mapCamera.position.set(n[0] * 2.75, n[1] * 2.75, n[2] * 2.75);
     mapCamera.up.set(hd[0], hd[1], hd[2]);
     mapCamera.lookAt(0, 0, 0);
@@ -550,14 +585,34 @@ export function initMazeTab(root) {
 
   regenerate();
 
+  // ?walk=N teleports the wanderer N hops along the shortest route (demo)
   const walkN = parseInt(urlParams.get('walk') || '0', 10);
   for (let i = 0; i < walkN && !player.won; i++) {
     const d = dungeon.distToHeart;
     const next = openNeighbors(player.cur).find((nb) => d[nb] === d[player.cur] - 1);
     if (next === undefined) break;
-    commitMove(next);
+    arriveAt(next);
   }
-  if (walkN > 0) snapCamera();
+  if (walkN > 0) {
+    player.pos = graph.centers[player.cur].slice();
+    const td = player.prev >= 0 ? tangentDirTo(player.prev, player.cur)
+      : player.travelDir;
+    player.travelDir = td;
+    player.heading = td.slice();
+    player.next = player.won ? -1 : chooseNext();
+    player.prog = 0;
+    snapCamera();
+  }
+
+  // ?tick=N synchronously simulates N seconds of wandering (demo/debug —
+  // headless virtual time doesn't advance performance.now, so real motion
+  // can't be screenshot-verified without this)
+  const tickN = parseFloat(urlParams.get('tick') || '0');
+  if (tickN > 0) {
+    for (let s = 0; s < tickN; s += 0.05) advanceMotion(0.05);
+    placeActors();
+    snapCamera();
+  }
 
   resize();
   animate();
