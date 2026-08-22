@@ -6,10 +6,10 @@
 
 import * as THREE from '../vendor/three.module.js';
 import GUI from '../vendor/lil-gui.esm.js';
-import { generateSphereMesh, relax } from './grid.js?v=0e1ff229';
-import { generateDungeon, BLOCKED, PATH, ROOM } from './dungeon.js?v=0e1ff229';
-import { mulberry32, randomSeed } from './rng.js?v=0e1ff229';
-import { sub3, add3, scale3, dot3, cross3, norm3, len3 } from './vec3.js?v=0e1ff229';
+import { generateSphereMesh, relax } from './grid.js?v=13616cd6';
+import { generateDungeon, BLOCKED, PATH, ROOM } from './dungeon.js?v=13616cd6';
+import { mulberry32, randomSeed } from './rng.js?v=13616cd6';
+import { sub3, add3, scale3, dot3, cross3, norm3, len3 } from './vec3.js?v=13616cd6';
 
 export function initMazeTab(root) {
   let active = false;
@@ -63,6 +63,7 @@ export function initMazeTab(root) {
   let edgeGeo = null, edgeMesh = null;
   let floorOffsets = null; // cell -> [start,count] into floor color attr (verts)
   let heartSprite = null, playerMesh = null, markerMesh = null;
+  let playerSize = 0.06; // set per-generation in buildActors
 
   const player = {
     cur: 0, prev: -1,
@@ -232,8 +233,13 @@ export function initMazeTab(root) {
     }));
     scene.add(heartSprite);
 
+    // walker size follows the SMALLER of cell width and wall height: the
+    // camera eye sits at 0.62×wallHeight, so at low walls a cell-sized cone
+    // would tower over the lens and blot out the view ahead. 0.75×wallHeight
+    // keeps the cone tip (elevation+height = 0.72×size) under the eye line.
+    playerSize = Math.min(cellSide, params.wallHeight * 0.75);
     playerMesh = new THREE.Mesh(
-      new THREE.ConeGeometry(cellSide * 0.18, cellSide * 0.5, 10),
+      new THREE.ConeGeometry(playerSize * 0.18, playerSize * 0.5, 10),
       new THREE.MeshLambertMaterial({ color: 0x54e0c8 }),
     );
     scene.add(playerMesh);
@@ -256,7 +262,7 @@ export function initMazeTab(root) {
 
     const c = graph.centers[player.cur];
     const n = graph.normals[player.cur];
-    const p = add3(c, scale3(n, cellSide * 0.22));
+    const p = add3(c, scale3(n, playerSize * 0.22));
     playerMesh.position.set(p[0], p[1], p[2]);
     markerMesh.position.set(p[0], p[1], p[2]);
     // cone points along heading
@@ -488,6 +494,9 @@ export function initMazeTab(root) {
     renderer.setScissor(0, 0, w, h);
     scene.background = mainBg;
     markerMesh.visible = false;
+    // below knee-height walls the camera rides so low that even the scaled
+    // cone squats mid-frame — first-person goes clean, minimap keeps the cone
+    playerMesh.visible = params.wallHeight >= 0.05;
     renderer.render(scene, camera);
 
     // inset: the sphere as a minimap, player-centred, heading up
@@ -503,17 +512,23 @@ export function initMazeTab(root) {
     renderer.setScissor(14, 14, m, m);
     scene.background = mapBg;
     markerMesh.visible = true;
+    playerMesh.visible = true;
     renderer.clearDepth();
     renderer.render(scene, mapCamera);
 
     renderer.setScissorTest(false);
   }
 
+  // debug/demo overrides: ?wall=0.03 forces a wall height,
+  // ?walk=N auto-walks N hops along the shortest route to the heart
+  // (handy for screenshotting specific configurations)
+  const urlParams = new URLSearchParams(location.search);
+  const wallOverride = parseFloat(urlParams.get('wall') || '');
+  if (Number.isFinite(wallOverride)) params.wallHeight = wallOverride;
+
   regenerate();
 
-  // debug/demo: ?walk=N auto-walks N hops along the shortest route to the
-  // heart (also handy for screenshotting from inside a corridor)
-  const walkN = parseInt(new URLSearchParams(location.search).get('walk') || '0', 10);
+  const walkN = parseInt(urlParams.get('walk') || '0', 10);
   for (let i = 0; i < walkN && !player.won; i++) {
     const d = dungeon.distToHeart;
     const next = openNeighbors(player.cur).find((nb) => d[nb] === d[player.cur] - 1);
