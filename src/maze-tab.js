@@ -6,10 +6,10 @@
 
 import * as THREE from '../vendor/three.module.js';
 import GUI from '../vendor/lil-gui.esm.js';
-import { generateSphereMesh, relax } from './grid.js?v=94b9616f';
-import { generateDungeon, BLOCKED, PATH, ROOM } from './dungeon.js?v=94b9616f';
-import { mulberry32, randomSeed } from './rng.js?v=94b9616f';
-import { sub3, add3, scale3, dot3, cross3, norm3, len3 } from './vec3.js?v=94b9616f';
+import { generateSphereMesh, relax } from './grid.js?v=0e1ff229';
+import { generateDungeon, BLOCKED, PATH, ROOM } from './dungeon.js?v=0e1ff229';
+import { mulberry32, randomSeed } from './rng.js?v=0e1ff229';
+import { sub3, add3, scale3, dot3, cross3, norm3, len3 } from './vec3.js?v=0e1ff229';
 
 export function initMazeTab(root) {
   let active = false;
@@ -74,6 +74,11 @@ export function initMazeTab(root) {
 
   const camGoal = { pos: new THREE.Vector3(), quat: new THREE.Quaternion() };
   const tmpObj = new THREE.Object3D();
+  // lookAt convention trap: a plain Object3D faces +Z at the target, but a
+  // camera renders down -Z (three.js special-cases isCamera in lookAt).
+  // The camera goal quaternion MUST come from a camera instance, or the view
+  // ends up rotated 180° — staring backward along the heading.
+  const tmpCam = new THREE.PerspectiveCamera();
 
   // --- colors --------------------------------------------------------------
   const COL = {
@@ -274,10 +279,10 @@ export function initMazeTab(root) {
     const eye = add3(add3(c, scale3(n, params.wallHeight * 0.62)), scale3(h, -cellSide * 0.5));
     const look = add3(add3(c, scale3(n, params.wallHeight * 0.28)), scale3(h, cellSide * 2.4));
     camGoal.pos.set(eye[0], eye[1], eye[2]);
-    tmpObj.position.copy(camGoal.pos);
-    tmpObj.up.set(n[0], n[1], n[2]);
-    tmpObj.lookAt(look[0], look[1], look[2]);
-    camGoal.quat.copy(tmpObj.quaternion);
+    tmpCam.position.copy(camGoal.pos);
+    tmpCam.up.set(n[0], n[1], n[2]);
+    tmpCam.lookAt(look[0], look[1], look[2]);
+    camGoal.quat.copy(tmpCam.quaternion);
   }
 
   function snapCamera() {
