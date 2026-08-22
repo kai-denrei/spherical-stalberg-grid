@@ -26,8 +26,8 @@ html, body {
 
 #tabbar {
   position: fixed;
-  top: 10px;
-  left: 12px;
+  top: max(10px, env(safe-area-inset-top));
+  left: max(12px, env(safe-area-inset-left));
   z-index: 20;
   display: flex;
   gap: 6px;
@@ -41,6 +41,7 @@ html, body {
   font: 12px ui-monospace, Menlo, monospace;
   padding: 5px 14px;
   cursor: pointer;
+  touch-action: manipulation;
 }
 
 #tabbar button.active {
@@ -75,7 +76,7 @@ html, body {
 /* --- maze HUD --- */
 #dpad {
   position: absolute;
-  bottom: 26px;
+  bottom: max(26px, env(safe-area-inset-bottom));
   left: 50%;
   transform: translateX(-50%);
   z-index: 6;
@@ -84,6 +85,8 @@ html, body {
   align-items: center;
   gap: 4px;
   user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
 }
 
 #dpad .dpad-row {
@@ -94,17 +97,43 @@ html, body {
 #dpad button {
   width: 46px;
   height: 40px;
-  background: rgba(27, 33, 48, 0.82);
-  color: #aab8dd;
-  border: 1px solid #2a3350;
+  background: rgba(35, 43, 64, 0.92);
+  color: #cdd7f0;
+  border: 1px solid #4a5a8a;
   border-radius: 8px;
   font-size: 16px;
   cursor: pointer;
+  touch-action: manipulation;
 }
 
 #dpad button:active {
   background: #2d3a5e;
   color: #fff;
+}
+
+/* touch devices: 44pt+ hit targets (Apple HIG), roomier gaps */
+@media (pointer: coarse) {
+  #dpad button {
+    width: 58px;
+    height: 50px;
+    font-size: 20px;
+  }
+  #dpad {
+    gap: 6px;
+  }
+  #dpad .dpad-row {
+    gap: 6px;
+  }
+  #hint, #maze-hint {
+    display: none; /* collides with the cb badge on narrow screens; hints are in button titles */
+  }
+}
+
+/* narrow screens: keep the centered column but shift right of the minimap */
+@media (max-width: 520px) {
+  #dpad {
+    left: 58%;
+  }
 }
 
 #maze-msg {

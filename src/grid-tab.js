@@ -6,8 +6,8 @@ import { OrbitControls } from '../vendor/OrbitControls.js';
 import GUI from '../vendor/lil-gui.esm.js';
 import {
   generateSphereMesh, relaxStep, squarenessError, quadErrors, valences,
-} from './grid.js?v=13616cd6';
-import { mulberry32, randomSeed } from './rng.js?v=13616cd6';
+} from './grid.js?v=99008b91';
+import { mulberry32, randomSeed } from './rng.js?v=99008b91';
 
 export function initGridTab(root) {
   let active = true;
@@ -306,6 +306,9 @@ export function initGridTab(root) {
   gDisp.add(params, 'defects').name('defect markers').onChange(applyVisibility);
   gDisp.add(params, 'colorMode', ['cells', 'squareness', 'plain'])
     .name('face color').onChange(refreshColors);
+
+  // phones: start with the panel folded so the sphere isn't buried
+  if (matchMedia('(pointer: coarse), (max-width: 700px)').matches) gui.close();
 
   // --- loop ----------------------------------------------------------------
   function doRelax(iters) {

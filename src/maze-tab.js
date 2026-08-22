@@ -6,10 +6,10 @@
 
 import * as THREE from '../vendor/three.module.js';
 import GUI from '../vendor/lil-gui.esm.js';
-import { generateSphereMesh, relax } from './grid.js?v=13616cd6';
-import { generateDungeon, BLOCKED, PATH, ROOM } from './dungeon.js?v=13616cd6';
-import { mulberry32, randomSeed } from './rng.js?v=13616cd6';
-import { sub3, add3, scale3, dot3, cross3, norm3, len3 } from './vec3.js?v=13616cd6';
+import { generateSphereMesh, relax } from './grid.js?v=99008b91';
+import { generateDungeon, BLOCKED, PATH, ROOM } from './dungeon.js?v=99008b91';
+import { mulberry32, randomSeed } from './rng.js?v=99008b91';
+import { sub3, add3, scale3, dot3, cross3, norm3, len3 } from './vec3.js?v=99008b91';
 
 export function initMazeTab(root) {
   let active = false;
@@ -22,6 +22,7 @@ export function initMazeTab(root) {
     extraCorridors: 2,
     wallHeight: 0.1,
     relaxIters: 80,
+    view: 'pov', // pov | third
   };
 
   // --- scene ---------------------------------------------------------------
@@ -274,16 +275,22 @@ export function initMazeTab(root) {
     playerMesh.rotateX(Math.PI / 2); // cone +Y -> forward
   }
 
-  // --- trench camera -------------------------------------------------------
+  // --- trench / third-person camera ----------------------------------------
   function updateCameraGoal() {
     const c = graph.centers[player.cur];
     const n = graph.normals[player.cur];
     const h = player.heading;
-    // eye level with the wall tops, slightly behind the walker, tilted at the
-    // corridor floor ahead — the "trench" framing
-    // down IN the corridor slot, below the wall tops, staring along its throat
-    const eye = add3(add3(c, scale3(n, params.wallHeight * 0.62)), scale3(h, -cellSide * 0.5));
-    const look = add3(add3(c, scale3(n, params.wallHeight * 0.28)), scale3(h, cellSide * 2.4));
+    let eye, look;
+    if (params.view === 'third') {
+      // behind and above: over the wall tops, walker in frame, maze readable
+      eye = add3(add3(c, scale3(n, params.wallHeight * 2.6 + cellSide * 1.1)),
+        scale3(h, -cellSide * 1.8));
+      look = add3(add3(c, scale3(n, params.wallHeight * 0.4)), scale3(h, cellSide * 1.4));
+    } else {
+      // pov: down IN the corridor slot, below the wall tops, along its throat
+      eye = add3(add3(c, scale3(n, params.wallHeight * 0.62)), scale3(h, -cellSide * 0.5));
+      look = add3(add3(c, scale3(n, params.wallHeight * 0.28)), scale3(h, cellSide * 2.4));
+    }
     camGoal.pos.set(eye[0], eye[1], eye[2]);
     tmpCam.position.copy(camGoal.pos);
     tmpCam.up.set(n[0], n[1], n[2]);
@@ -382,14 +389,22 @@ export function initMazeTab(root) {
     else if (k === 'arrowright' || k === 'd') { rotate(-TURN); ev.preventDefault(); }
     else if (k === 'arrowdown' || k === 's') { tryMove(BACK, T_BACK, true); ev.preventDefault(); }
     else if (k === 'h') pulseHint();
+    else if (k === 'v') toggleView();
   }
   addEventListener('keydown', onKey);
+
+  function toggleView() {
+    params.view = params.view === 'pov' ? 'third' : 'pov';
+    viewCtrl.updateDisplay();
+    updateCameraGoal();
+  }
 
   root.querySelector('#pad-up').addEventListener('click', () => tryMove(FWD, T_MOVE));
   root.querySelector('#pad-left').addEventListener('click', () => rotate(TURN));
   root.querySelector('#pad-right').addEventListener('click', () => rotate(-TURN));
   root.querySelector('#pad-down').addEventListener('click', () => tryMove(BACK, T_BACK, true));
   root.querySelector('#pad-hint').addEventListener('click', () => pulseHint());
+  root.querySelector('#pad-view').addEventListener('click', () => toggleView());
 
   // ☆ flash the neighbouring cell that is one hop closer to the heart
   let hintTimer = null;
@@ -461,6 +476,8 @@ export function initMazeTab(root) {
 
   // --- dashboard -----------------------------------------------------------
   const gui = new GUI({ title: 'sphere dungeon', container: root });
+  const viewCtrl = gui.add(params, 'view', ['pov', 'third'])
+    .name('camera (V)').onChange(updateCameraGoal);
   const seedCtrl = gui.add(params, 'seed', 0, 99999, 1).onFinishChange(regenerate);
   gui.add(params, 'points', 150, 1200, 10).name('sample points').onFinishChange(regenerate);
   gui.add(params, 'rooms', 2, 12, 1).onFinishChange(regenerate);
@@ -470,6 +487,9 @@ export function initMazeTab(root) {
   gui.add(params, 'relaxIters', 0, 200, 10).name('relax iters').onFinishChange(regenerate);
   gui.add(params, 'randomize').name('🎲 random seed');
   gui.add(params, 'regenerate').name('↻ regenerate');
+
+  // phones: start with the panel folded so the maze isn't buried
+  if (matchMedia('(pointer: coarse), (max-width: 700px)').matches) gui.close();
 
   // --- render loop: PoV + minimap inset ------------------------------------
   const mapBg = new THREE.Color(0x080a10);
@@ -494,9 +514,10 @@ export function initMazeTab(root) {
     renderer.setScissor(0, 0, w, h);
     scene.background = mainBg;
     markerMesh.visible = false;
-    // below knee-height walls the camera rides so low that even the scaled
-    // cone squats mid-frame — first-person goes clean, minimap keeps the cone
-    playerMesh.visible = params.wallHeight >= 0.05;
+    // below knee-height walls the PoV camera rides so low that even the scaled
+    // cone squats mid-frame — first-person goes clean, minimap keeps the cone.
+    // In third person the walker IS the subject: always visible.
+    playerMesh.visible = params.view === 'third' || params.wallHeight >= 0.05;
     renderer.render(scene, camera);
 
     // inset: the sphere as a minimap, player-centred, heading up
@@ -525,6 +546,7 @@ export function initMazeTab(root) {
   const urlParams = new URLSearchParams(location.search);
   const wallOverride = parseFloat(urlParams.get('wall') || '');
   if (Number.isFinite(wallOverride)) params.wallHeight = wallOverride;
+  if (urlParams.get('view') === 'third') { params.view = 'third'; viewCtrl.updateDisplay(); }
 
   regenerate();
 
