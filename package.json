@@ -1,0 +1,10 @@
+{
+  "name": "spherical-stalberg-grid",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "node test/smoke.mjs",
+    "serve": "python3 -m http.server 8144",
+    "bust": "./scripts/bust.sh"
+  }
+}

@@ -1,0 +1,39 @@
+html, body {
+  margin: 0;
+  height: 100%;
+  overflow: hidden;
+  background: #10131a;
+  font-family: ui-monospace, "SF Mono", Menlo, monospace;
+}
+
+#app {
+  position: fixed;
+  inset: 0;
+}
+
+#app canvas {
+  display: block;
+}
+
+#stats {
+  position: fixed;
+  top: 12px;
+  left: 14px;
+  color: #9aa7bd;
+  font-size: 12px;
+  line-height: 1.7;
+  white-space: pre;
+  pointer-events: none;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8);
+  z-index: 5;
+}
+
+#hint {
+  position: fixed;
+  bottom: 12px;
+  left: 14px;
+  color: #55607a;
+  font-size: 11px;
+  pointer-events: none;
+  z-index: 5;
+}
