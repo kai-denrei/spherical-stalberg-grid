@@ -6,10 +6,10 @@
 
 import * as THREE from '../vendor/three.module.js';
 import GUI from '../vendor/lil-gui.esm.js';
-import { generateSphereMesh, relax } from './grid.js?v=354e4d92';
-import { generateDungeon, BLOCKED, PATH, ROOM } from './dungeon.js?v=354e4d92';
-import { mulberry32, randomSeed } from './rng.js?v=354e4d92';
-import { sub3, add3, scale3, dot3, cross3, norm3, len3 } from './vec3.js?v=354e4d92';
+import { generateSphereMesh, relax } from './grid.js?v=94b9616f';
+import { generateDungeon, BLOCKED, PATH, ROOM } from './dungeon.js?v=94b9616f';
+import { mulberry32, randomSeed } from './rng.js?v=94b9616f';
+import { sub3, add3, scale3, dot3, cross3, norm3, len3 } from './vec3.js?v=94b9616f';
 
 export function initMazeTab(root) {
   let active = false;
@@ -306,26 +306,28 @@ export function initMazeTab(root) {
     return Math.atan2(dot3(cross3(h, dir), n), dot3(h, dir));
   }
 
-  function tryMove(targetAngle, tolerance) {
+  function tryMove(targetAngle, tolerance, keepHeading = false) {
     if (player.won) return;
     const exits = openNeighbors(player.cur);
-    let best = -1, bestOff = Infinity, bestDir = null;
+    let best = -1, bestOff = Infinity;
     for (const e of exits) {
       const dir = tangentDirTo(player.cur, e);
       let off = Math.abs(exitAngle(dir) - targetAngle);
       if (off > Math.PI) off = 2 * Math.PI - off;
-      if (off < bestOff) { bestOff = off; best = e; bestDir = dir; }
+      if (off < bestOff) { bestOff = off; best = e; }
     }
     if (best === -1 || bestOff > tolerance) return; // bump into a wall
-    commitMove(best);
+    commitMove(best, keepHeading);
   }
 
-  function commitMove(target) {
+  function commitMove(target, keepHeading = false) {
     player.prev = player.cur;
     player.cur = target;
     player.moves++;
     player.visited.add(target);
-    player.heading = tangentDirTo(player.prev, player.cur);
+    // tank controls: stepping back (keepHeading) keeps facing the same way;
+    // walking forward aligns the heading with the direction of travel
+    if (!keepHeading) player.heading = tangentDirTo(player.prev, player.cur);
     // re-project heading into the NEW cell's tangent plane
     const n = graph.normals[player.cur];
     player.heading = norm3(sub3(player.heading, scale3(n, dot3(player.heading, n))));
@@ -344,25 +346,38 @@ export function initMazeTab(root) {
     }
   }
 
-  const FWD = 0, LEFT = Math.PI / 2, RIGHT = -Math.PI / 2, BACK = Math.PI;
+  const FWD = 0, BACK = Math.PI;
   const T_MOVE = THREE.MathUtils.degToRad(70);
-  const T_BACK = THREE.MathUtils.degToRad(110);
+  const T_BACK = THREE.MathUtils.degToRad(80);
+  const TURN = Math.PI / 4; // 45° per press
+
+  // tank rotation: spin the heading around the outward normal, in place.
+  // positive = left (CCW seen from outside — matches exitAngle's convention).
+  function rotate(theta) {
+    const n = graph.normals[player.cur];
+    const h = player.heading;
+    const c = Math.cos(theta), s = Math.sin(theta);
+    const nxh = cross3(n, h);
+    player.heading = norm3(add3(scale3(h, c), scale3(nxh, s)));
+    placeActors();
+    updateCameraGoal();
+  }
 
   function onKey(ev) {
     if (!active) return;
     const k = ev.key.toLowerCase();
     if (k === 'arrowup' || k === 'w') { tryMove(FWD, T_MOVE); ev.preventDefault(); }
-    else if (k === 'arrowleft' || k === 'a') { tryMove(LEFT, T_MOVE); ev.preventDefault(); }
-    else if (k === 'arrowright' || k === 'd') { tryMove(RIGHT, T_MOVE); ev.preventDefault(); }
-    else if (k === 'arrowdown' || k === 's') { tryMove(BACK, T_BACK); ev.preventDefault(); }
+    else if (k === 'arrowleft' || k === 'a') { rotate(TURN); ev.preventDefault(); }
+    else if (k === 'arrowright' || k === 'd') { rotate(-TURN); ev.preventDefault(); }
+    else if (k === 'arrowdown' || k === 's') { tryMove(BACK, T_BACK, true); ev.preventDefault(); }
     else if (k === 'h') pulseHint();
   }
   addEventListener('keydown', onKey);
 
   root.querySelector('#pad-up').addEventListener('click', () => tryMove(FWD, T_MOVE));
-  root.querySelector('#pad-left').addEventListener('click', () => tryMove(LEFT, T_MOVE));
-  root.querySelector('#pad-right').addEventListener('click', () => tryMove(RIGHT, T_MOVE));
-  root.querySelector('#pad-down').addEventListener('click', () => tryMove(BACK, T_BACK));
+  root.querySelector('#pad-left').addEventListener('click', () => rotate(TURN));
+  root.querySelector('#pad-right').addEventListener('click', () => rotate(-TURN));
+  root.querySelector('#pad-down').addEventListener('click', () => tryMove(BACK, T_BACK, true));
   root.querySelector('#pad-hint').addEventListener('click', () => pulseHint());
 
   // ☆ flash the neighbouring cell that is one hop closer to the heart
