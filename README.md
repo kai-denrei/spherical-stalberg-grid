@@ -45,9 +45,27 @@ npm test             # node test/smoke.mjs — pipeline invariants
   magenta v6+)
 - relaxation reduces squareness error; vertices stay on the sphere
 
-## Dashboard
+## Dashboard (grid tab)
 
 seed / sample count / blue-noise k / merge bias · live relaxation
 (pull rate, cell size, iters per frame) · face color modes: random
 cells, squareness heatmap, plain · toggles for faces, wireframe,
 defect markers.
+
+## Maze tab (`/#maze`)
+
+Second PoC: rooms-and-hallways carved over the grid's **cell graph**,
+method ported from HokorobiTawaa — *we don't draw hallways, we find
+them*. Cells connect only across a full shared edge; every cell starts
+'blocked' (elevated wall); room seeds are farthest-point-sampled and
+connected by BFS corridors; spawn and heart are the double-BFS diameter
+endpoints of the open subgraph (`src/dungeon.js`, Node-tested in
+`test/maze.mjs`).
+
+- **Trench PoV** — the camera rides in the corridor slot below the wall
+  tops, staring down the throat of the maze.
+- **Minimap** — the whole sphere in a bottom-left inset, player-centred,
+  heading-up, with breadcrumbs.
+- A **half-dotted heart** pulses at the graph-farthest cell; walk to it
+  with arrows/WASD or the on-screen D-pad. ☆ pulses the next cell of
+  the shortest route. `?walk=N` auto-walks N hops (demo/debug).

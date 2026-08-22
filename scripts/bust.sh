@@ -107,3 +107,6 @@ while IFS= read -r f; do
     [[ -z "$QUIET" ]] && echo "  ✓ module imports bumped in $f"
   fi
 done < <(find ./src -type f -name '*.js')
+
+# exit cleanly: the per-file "[[ -z $QUIET ]] && echo" pattern leaves $?=1 under --quiet
+true

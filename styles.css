@@ -6,18 +6,52 @@ html, body {
   font-family: ui-monospace, "SF Mono", Menlo, monospace;
 }
 
-#app {
+.tab {
   position: fixed;
   inset: 0;
 }
 
-#app canvas {
+.tab-hidden {
+  display: none;
+}
+
+#app, #maze-app {
+  position: absolute;
+  inset: 0;
+}
+
+#app canvas, #maze-app canvas {
   display: block;
 }
 
-#stats {
+#tabbar {
   position: fixed;
-  top: 12px;
+  top: 10px;
+  left: 12px;
+  z-index: 20;
+  display: flex;
+  gap: 6px;
+}
+
+#tabbar button {
+  background: #1b2130;
+  color: #7f8db0;
+  border: 1px solid #2a3350;
+  border-radius: 6px;
+  font: 12px ui-monospace, Menlo, monospace;
+  padding: 5px 14px;
+  cursor: pointer;
+}
+
+#tabbar button.active {
+  background: #2d3a5e;
+  color: #dbe4ff;
+  border-color: #4a5a8a;
+}
+
+#stats, #maze-stats {
+  position: absolute;
+  top: 46px;
   left: 14px;
   color: #9aa7bd;
   font-size: 12px;
@@ -28,12 +62,76 @@ html, body {
   z-index: 5;
 }
 
-#hint {
-  position: fixed;
+#hint, #maze-hint {
+  position: absolute;
   bottom: 12px;
-  left: 14px;
+  right: 14px;
   color: #55607a;
   font-size: 11px;
   pointer-events: none;
   z-index: 5;
+}
+
+/* --- maze HUD --- */
+#dpad {
+  position: absolute;
+  bottom: 26px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 6;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  user-select: none;
+}
+
+#dpad .dpad-row {
+  display: flex;
+  gap: 4px;
+}
+
+#dpad button {
+  width: 46px;
+  height: 40px;
+  background: rgba(27, 33, 48, 0.82);
+  color: #aab8dd;
+  border: 1px solid #2a3350;
+  border-radius: 8px;
+  font-size: 16px;
+  cursor: pointer;
+}
+
+#dpad button:active {
+  background: #2d3a5e;
+  color: #fff;
+}
+
+#maze-msg {
+  position: absolute;
+  top: 38%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 8;
+  color: #ffd7e4;
+  background: rgba(16, 19, 26, 0.85);
+  border: 1px solid #6a3350;
+  border-radius: 12px;
+  padding: 18px 28px;
+  font-size: 16px;
+  text-align: center;
+  line-height: 1.8;
+  pointer-events: none;
+}
+
+#maze-msg.hidden {
+  display: none;
+}
+
+/* lil-gui inside a tab wrapper */
+.tab .lil-gui.root {
+  position: absolute;
+  top: 0;
+  right: 0;
+  z-index: 10;
 }
