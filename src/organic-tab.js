@@ -1,8 +1,8 @@
-// maze-tab.js — dungeon PoC on the sphere grid. All tiles start elevated
-// (walls); rooms + hallways are carved over the cell graph (dungeon.js).
-// Two views: the "trench" PoV riding the walker at wall-top height, and the
-// whole sphere as a minimap (bottom-left inset). A half-dotted heart sits at
-// the graph-farthest cell; the D-pad / arrow keys walk the graph to reach it.
+// organic-tab.js — the maze inhabited by a Braille organic creature. The
+// walker is a dot-cloud unit from ~/Dev/Braille fun-shapes (half-dotted >
+// organic): amoeba, bacteriophage, or jellyfish, animated with the Wave×Jelly
+// treatment. Simple gameplay on top of the wanderer: static orbs sit on
+// random open cells; gliding over one absorbs it and the creature grows.
 
 import * as THREE from '../vendor/three.module.js';
 import GUI from '../vendor/lil-gui.esm.js';
@@ -10,8 +10,9 @@ import { generateSphereMesh, relax } from './grid.js?v=afb5e495';
 import { generateDungeon, BLOCKED, PATH, ROOM } from './dungeon.js?v=afb5e495';
 import { mulberry32, randomSeed } from './rng.js?v=afb5e495';
 import { sub3, add3, scale3, dot3, cross3, norm3, len3 } from './vec3.js?v=afb5e495';
+import { CREATURES, waveJelly } from './creatures.js?v=afb5e495';
 
-export function initMazeTab(root) {
+export function initOrganicTab(root) {
   let active = false;
 
   const params = {
@@ -24,10 +25,12 @@ export function initMazeTab(root) {
     relaxIters: 80,
     view: 'third', // pov | third
     speed: 1.1, // cells per second, wanderer pace
+    creature: 'amoeba', // amoeba | phage | jellyfish
+    orbs: 12,
   };
 
   // --- scene ---------------------------------------------------------------
-  const container = root.querySelector('#maze-app');
+  const container = root.querySelector('#o-app');
   const renderer = new THREE.WebGLRenderer({ antialias: true });
   renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
   container.appendChild(renderer.domElement);
@@ -66,6 +69,45 @@ export function initMazeTab(root) {
   let floorOffsets = null; // cell -> [start,count] into floor color attr (verts)
   let heartSprite = null, playerMesh = null, markerMesh = null;
   let playerSize = 0.06; // set per-generation in buildActors
+
+  // creature dot-cloud + gameplay state
+  let creatureBase = null;   // unit-radius [x,y,z,(hi)] points from creatures.js
+  let creatureGeo = null;
+  let creaturePos = null;    // Float32Array scratch for waveJelly
+  let baseUnitScale = 0.04;  // creature world radius at birth
+  let unitScale = 0.04;      // current radius; grows on absorb
+  let absorbed = 0;
+  const orbMeshes = new Map(); // open-cell index -> orb mesh
+
+  function clearOrbs() {
+    for (const orb of orbMeshes.values()) {
+      scene.remove(orb);
+      orb.geometry.dispose();
+    }
+    orbMeshes.clear();
+  }
+
+  // static food: small spheres on random open cells (never spawn or heart)
+  function spawnOrbs() {
+    clearOrbs();
+    const rng = mulberry32((params.seed ^ 0x0b0b5) >>> 0);
+    const open = [];
+    for (let i = 0; i < dungeon.tags.length; i++) {
+      if (dungeon.tags[i] !== BLOCKED && i !== dungeon.spawn && i !== dungeon.heart) open.push(i);
+    }
+    const mat = new THREE.MeshLambertMaterial({ color: 0xffb84d, emissive: 0x4d2f00 });
+    for (let k = 0; k < params.orbs && open.length > 0; k++) {
+      const ci = open.splice(Math.floor(rng() * open.length), 1)[0];
+      const r = cellSide * 0.16;
+      const orb = new THREE.Mesh(new THREE.SphereGeometry(r, 12, 10), mat);
+      const c = graph.centers[ci];
+      const n = graph.normals[ci];
+      const p = add3(c, scale3(n, r * 1.1));
+      orb.position.set(p[0], p[1], p[2]);
+      scene.add(orb);
+      orbMeshes.set(ci, orb);
+    }
+  }
 
   // The walker WANDERS on its own: it glides cell-to-cell continuously and
   // picks each next exit itself. `heading` is the STEERING INTENT (what A/D
@@ -244,15 +286,27 @@ export function initMazeTab(root) {
     }));
     scene.add(heartSprite);
 
-    // walker size follows the SMALLER of cell width and wall height: the
-    // camera eye sits at 0.62×wallHeight, so at low walls a cell-sized cone
-    // would tower over the lens and blot out the view ahead. 0.75×wallHeight
-    // keeps the cone tip (elevation+height = 0.72×size) under the eye line.
     playerSize = Math.min(cellSide, params.wallHeight * 0.75);
-    playerMesh = new THREE.Mesh(
-      new THREE.ConeGeometry(playerSize * 0.18, playerSize * 0.5, 10),
-      new THREE.MeshLambertMaterial({ color: 0x54e0c8 }),
-    );
+
+    // the creature: a Braille dot-cloud under Wave×Jelly, body dots teal,
+    // highlight dots (nucleus / leg tips / bell rim) warm
+    creatureBase = CREATURES[params.creature]();
+    creaturePos = new Float32Array(creatureBase.length * 3);
+    waveJelly(creatureBase, 0, creaturePos);
+    const cols = new Float32Array(creatureBase.length * 3);
+    const cBody = new THREE.Color(0x54e0c8);
+    const cHi = new THREE.Color(0xffd77a);
+    for (let i = 0; i < creatureBase.length; i++) {
+      const c = creatureBase[i][3] === 1 ? cHi : cBody;
+      cols[i * 3] = c.r; cols[i * 3 + 1] = c.g; cols[i * 3 + 2] = c.b;
+    }
+    creatureGeo = new THREE.BufferGeometry();
+    creatureGeo.setAttribute('position', new THREE.BufferAttribute(creaturePos, 3));
+    creatureGeo.setAttribute('color', new THREE.Float32BufferAttribute(cols, 3));
+    playerMesh = new THREE.Points(creatureGeo, new THREE.PointsMaterial({
+      size: 2.2, sizeAttenuation: false, vertexColors: true,
+      transparent: true, opacity: 0.95,
+    }));
     scene.add(playerMesh);
 
     // fat marker so the player reads on the minimap
@@ -272,16 +326,18 @@ export function initMazeTab(root) {
     heartSprite.scale.set(s, s, s);
 
     const n = norm3(player.pos);
-    const p = add3(player.pos, scale3(n, playerSize * 0.22));
+    // creature floats with its belly just above the floor
+    const p = add3(player.pos, scale3(n, unitScale * 0.85));
     playerMesh.position.set(p[0], p[1], p[2]);
+    playerMesh.scale.setScalar(unitScale);
     markerMesh.position.set(p[0], p[1], p[2]);
-    // cone points where it is actually going
+    // upright on the surface (local +Y along the normal), facing travel
     const h = player.travelDir;
     tmpObj.position.copy(playerMesh.position);
     tmpObj.up.set(n[0], n[1], n[2]);
     tmpObj.lookAt(p[0] + h[0], p[1] + h[1], p[2] + h[2]);
     playerMesh.quaternion.copy(tmpObj.quaternion);
-    playerMesh.rotateX(Math.PI / 2); // cone +Y -> forward
+    // no extra rotation: lookAt with up=n already leaves body +Y ≈ normal
   }
 
   // --- trench / third-person camera ----------------------------------------
@@ -292,10 +348,11 @@ export function initMazeTab(root) {
     const h = player.travelDir;
     let eye, look;
     if (params.view === 'third') {
-      // behind and above: over the wall tops, walker in frame, maze readable
-      eye = add3(add3(c, scale3(n, params.wallHeight * 2.6 + cellSide * 1.1)),
-        scale3(h, -cellSide * 1.8));
-      look = add3(add3(c, scale3(n, params.wallHeight * 0.4)), scale3(h, cellSide * 1.4));
+      // behind and above; pulls back as the creature grows so it stays framed
+      eye = add3(add3(c, scale3(n, params.wallHeight * 2.6 + cellSide * 1.1 + unitScale * 1.8)),
+        scale3(h, -(cellSide * 1.8 + unitScale * 1.6)));
+      look = add3(add3(c, scale3(n, params.wallHeight * 0.4 + unitScale * 0.5)),
+        scale3(h, cellSide * 1.4));
     } else {
       // pov: down IN the corridor slot, below the wall tops, along its throat
       eye = add3(add3(c, scale3(n, params.wallHeight * 0.62)), scale3(h, -cellSide * 0.5));
@@ -351,12 +408,22 @@ export function initMazeTab(root) {
     player.moves++;
     player.visited.add(cell);
     paintCell(player.prev, floorColorOf(player.prev));
+
+    // absorb: orb on this cell feeds the creature
+    const orb = orbMeshes.get(cell);
+    if (orb) {
+      scene.remove(orb);
+      orb.geometry.dispose();
+      orbMeshes.delete(cell);
+      absorbed++;
+      unitScale *= 1.13;
+    }
     updateHud();
 
     if (cell === dungeon.heart && !player.won) {
       player.won = true;
-      msgEl.innerHTML = `💗 the wanderer found the heart<br>${player.moves} moves · ` +
-        `${dungeon.distToHeart[dungeon.spawn]} was the shortest<br>` +
+      msgEl.innerHTML = `💗 the creature found the heart<br>` +
+        `${player.moves} moves · ${absorbed}/${params.orbs} orbs absorbed<br>` +
         `<span style="color:#8a93ad">regenerate (panel) for a new maze</span>`;
       msgEl.classList.remove('hidden');
     }
@@ -421,12 +488,12 @@ export function initMazeTab(root) {
     viewCtrl.updateDisplay();
   }
 
-  root.querySelector('#pad-up').addEventListener('click', () => nudgeSpeed(1.3));
-  root.querySelector('#pad-left').addEventListener('click', () => rotate(TURN));
-  root.querySelector('#pad-right').addEventListener('click', () => rotate(-TURN));
-  root.querySelector('#pad-down').addEventListener('click', () => nudgeSpeed(1 / 1.3));
-  root.querySelector('#pad-hint').addEventListener('click', () => pulseHint());
-  root.querySelector('#pad-view').addEventListener('click', () => toggleView());
+  root.querySelector('#o-pad-up').addEventListener('click', () => nudgeSpeed(1.3));
+  root.querySelector('#o-pad-left').addEventListener('click', () => rotate(TURN));
+  root.querySelector('#o-pad-right').addEventListener('click', () => rotate(-TURN));
+  root.querySelector('#o-pad-down').addEventListener('click', () => nudgeSpeed(1 / 1.3));
+  root.querySelector('#o-pad-hint').addEventListener('click', () => pulseHint());
+  root.querySelector('#o-pad-view').addEventListener('click', () => toggleView());
 
   // ☆ flash the neighbouring cell that is one hop closer to the heart
   let hintTimer = null;
@@ -444,12 +511,12 @@ export function initMazeTab(root) {
   }
 
   // --- HUD -----------------------------------------------------------------
-  const statsEl = root.querySelector('#maze-stats');
-  const msgEl = root.querySelector('#maze-msg');
+  const statsEl = root.querySelector('#o-stats');
+  const msgEl = root.querySelector('#o-msg');
   function updateHud() {
     statsEl.textContent =
       `hops to heart ${dungeon.distToHeart[player.cur]}   moves ${player.moves}\n` +
-      `open cells ${floorOffsets.size}   walls ${dungeon.tags.length - floorOffsets.size}`;
+      `orbs absorbed ${absorbed}/${params.orbs}   size ×${(unitScale / baseUnitScale).toFixed(2)}`;
   }
 
   // --- generation ----------------------------------------------------------
@@ -484,14 +551,20 @@ export function initMazeTab(root) {
     player.next = e0;
     player.prog = 0;
 
+    absorbed = 0;
+    baseUnitScale = cellSide * 0.5;
+    unitScale = baseUnitScale;
+
     buildGeometry();
     buildActors();
+    spawnOrbs();
     placeActors();
     snapCamera();
     msgEl.classList.add('hidden');
     updateHud();
-    console.log(`maze in ${(performance.now() - t0).toFixed(0)}ms — ` +
-      `${floorOffsets.size} open cells, spawn→heart ${dungeon.distToHeart[dungeon.spawn]} hops`);
+    console.log(`organic maze in ${(performance.now() - t0).toFixed(0)}ms — ` +
+      `${floorOffsets.size} open cells, ${orbMeshes.size} orbs, ` +
+      `spawn→heart ${dungeon.distToHeart[dungeon.spawn]} hops`);
   }
 
   params.regenerate = regenerate;
@@ -502,9 +575,11 @@ export function initMazeTab(root) {
   };
 
   // --- dashboard -----------------------------------------------------------
-  const gui = new GUI({ title: 'sphere dungeon', container: root });
+  const gui = new GUI({ title: 'organic dungeon', container: root });
+  gui.add(params, 'creature', Object.keys(CREATURES)).onChange(regenerate);
   const viewCtrl = gui.add(params, 'view', ['pov', 'third']).name('camera (V)');
   const speedCtrl = gui.add(params, 'speed', 0.2, 4, 0.1).name('wander speed');
+  gui.add(params, 'orbs', 0, 40, 1).onFinishChange(regenerate);
   const seedCtrl = gui.add(params, 'seed', 0, 99999, 1).onFinishChange(regenerate);
   gui.add(params, 'points', 150, 1200, 10).name('sample points').onFinishChange(regenerate);
   gui.add(params, 'rooms', 2, 12, 1).onFinishChange(regenerate);
@@ -531,6 +606,10 @@ export function initMazeTab(root) {
     t += dt;
 
     advanceMotion(dt);
+    // Wave×Jelly: re-pose the dot cloud every frame (local space; the object
+    // transform carries it to the surface)
+    waveJelly(creatureBase, t, creaturePos);
+    creatureGeo.getAttribute('position').needsUpdate = true;
     placeActors();
     updateCameraGoal();
 
@@ -549,10 +628,8 @@ export function initMazeTab(root) {
     renderer.setScissor(0, 0, w, h);
     scene.background = mainBg;
     markerMesh.visible = false;
-    // below knee-height walls the PoV camera rides so low that even the scaled
-    // cone squats mid-frame — first-person goes clean, minimap keeps the cone.
-    // In third person the walker IS the subject: always visible.
-    playerMesh.visible = params.view === 'third' || params.wallHeight >= 0.05;
+    // in PoV the camera sits inside the creature — hide it there
+    playerMesh.visible = params.view === 'third';
     renderer.render(scene, camera);
 
     // inset: the sphere as a minimap, player-centred, travel-direction up

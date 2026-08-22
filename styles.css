@@ -15,12 +15,12 @@ html, body {
   display: none;
 }
 
-#app, #maze-app {
+#app, #maze-app, #o-app {
   position: absolute;
   inset: 0;
 }
 
-#app canvas, #maze-app canvas {
+#app canvas, #maze-app canvas, #o-app canvas {
   display: block;
 }
 
@@ -50,7 +50,7 @@ html, body {
   border-color: #4a5a8a;
 }
 
-#stats, #maze-stats {
+#stats, #maze-stats, #o-stats {
   position: absolute;
   top: 46px;
   left: 14px;
@@ -63,7 +63,7 @@ html, body {
   z-index: 5;
 }
 
-#hint, #maze-hint {
+#hint, #maze-hint, #o-hint {
   position: absolute;
   bottom: 12px;
   right: 14px;
@@ -74,7 +74,7 @@ html, body {
 }
 
 /* --- maze HUD --- */
-#dpad {
+#dpad, .dpad {
   position: absolute;
   bottom: max(26px, env(safe-area-inset-bottom));
   left: 50%;
@@ -89,12 +89,12 @@ html, body {
   -webkit-touch-callout: none;
 }
 
-#dpad .dpad-row {
+.dpad .dpad-row {
   display: flex;
   gap: 4px;
 }
 
-#dpad button {
+.dpad button {
   width: 46px;
   height: 40px;
   background: rgba(35, 43, 64, 0.92);
@@ -106,37 +106,37 @@ html, body {
   touch-action: manipulation;
 }
 
-#dpad button:active {
+.dpad button:active {
   background: #2d3a5e;
   color: #fff;
 }
 
 /* touch devices: 44pt+ hit targets (Apple HIG), roomier gaps */
 @media (pointer: coarse) {
-  #dpad button {
+  .dpad button {
     width: 58px;
     height: 50px;
     font-size: 20px;
   }
-  #dpad {
+  .dpad {
     gap: 6px;
   }
-  #dpad .dpad-row {
+  .dpad .dpad-row {
     gap: 6px;
   }
-  #hint, #maze-hint {
+  #hint, #maze-hint, #o-hint {
     display: none; /* collides with the cb badge on narrow screens; hints are in button titles */
   }
 }
 
 /* narrow screens: keep the centered column but shift right of the minimap */
 @media (max-width: 520px) {
-  #dpad {
+  .dpad {
     left: 58%;
   }
 }
 
-#maze-msg {
+#maze-msg, #o-msg {
   position: absolute;
   top: 38%;
   left: 50%;
@@ -153,7 +153,7 @@ html, body {
   pointer-events: none;
 }
 
-#maze-msg.hidden {
+#maze-msg.hidden, #o-msg.hidden {
   display: none;
 }
 

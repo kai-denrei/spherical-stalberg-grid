@@ -5,23 +5,24 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>spherical stålberg grid</title>
   <meta name="theme-color" content="#10131a">
-  <link rel="manifest" href="./manifest.webmanifest?v=846a8373">
-  <link rel="apple-touch-icon" href="./icons/apple-touch-icon.png?v=846a8373">
+  <link rel="manifest" href="./manifest.webmanifest?v=afb5e495">
+  <link rel="apple-touch-icon" href="./icons/apple-touch-icon.png?v=afb5e495">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="SphereGrid">
-  <link rel="stylesheet" href="./styles.css?v=846a8373">
+  <link rel="stylesheet" href="./styles.css?v=afb5e495">
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
-  <meta name="cb" content="846a8373">
-  <link rel="icon" type="image/svg+xml" href="./cb-shapes/04.svg?v=846a8373">
-  <script src="./cb-badge.js?v=846a8373" defer></script>
+  <meta name="cb" content="afb5e495">
+  <link rel="icon" type="image/svg+xml" href="./cb-shapes/47.svg?v=afb5e495">
+  <script src="./cb-badge.js?v=afb5e495" defer></script>
 </head>
 <body>
   <nav id="tabbar">
     <button data-tab="grid" class="active">grid</button>
     <button data-tab="maze">maze</button>
+    <button data-tab="organic">organic</button>
   </nav>
 
   <div id="tab-grid" class="tab">
@@ -34,7 +35,7 @@
     <div id="maze-app"></div>
     <div id="maze-stats"></div>
     <div id="maze-msg" class="hidden"></div>
-    <div id="dpad">
+    <div id="dpad" class="dpad">
       <button id="pad-up" title="faster (↑ / W)">▲</button>
       <div class="dpad-row">
         <button id="pad-left" title="steer left (← / A)">⟲</button>
@@ -49,6 +50,25 @@
     <div id="maze-hint">the wanderer walks itself · A/D steer it · W/S pace · ☆ pulses the way</div>
   </div>
 
-  <script type="module" src="./src/main.js?v=846a8373"></script>
+  <div id="tab-organic" class="tab tab-hidden">
+    <div id="o-app"></div>
+    <div id="o-stats"></div>
+    <div id="o-msg" class="hidden"></div>
+    <div class="dpad">
+      <button id="o-pad-up" title="faster (↑ / W)">▲</button>
+      <div class="dpad-row">
+        <button id="o-pad-left" title="steer left (← / A)">⟲</button>
+        <button id="o-pad-hint" title="pulse the way to the heart">☆</button>
+        <button id="o-pad-right" title="steer right (→ / D)">⟳</button>
+      </div>
+      <div class="dpad-row">
+        <button id="o-pad-down" title="slower (↓ / S)">▼</button>
+        <button id="o-pad-view" title="toggle PoV / third person (V)">👁</button>
+      </div>
+    </div>
+    <div id="o-hint">absorb the orbs, grow, find the heart · A/D steer · W/S pace</div>
+  </div>
+
+  <script type="module" src="./src/main.js?v=afb5e495"></script>
 </body>
 </html>
