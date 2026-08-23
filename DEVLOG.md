@@ -6,6 +6,29 @@ Demo links assume `npm run serve` (port 8144) or the
 
 ---
 
+## `dabbb84` — The tank gets an identity: neon lines, a visible magazine, lasers
+
+Three reads on one unit. **Look**: thin white/blue neon edge lines on
+the slabs — `EdgesGeometry` line segments added as *children of the
+meshes they outline*, so they inherit every part transform for free
+(turret lines sweep with the turret; no per-frame sync code). This
+exposed a latent test bug: the roster's world-radius check only applied
+`matrixWorld` to meshes and points, so line children read untransformed
+local coords and "escaped" the unit sphere — the check now transforms
+`isLine` too. **Diegetic ammo**: the 3×3 dot rack on the turret roof IS
+the shell counter — `updateHud` tints index `< ammo` neon white, the
+rest faded grey. Allies never dim (infinite ammo — the rack telling the
+truth is the whole point of diegetic UI). **Secondary weapon**: twin
+toed-in mini-guns fire weak infinite laser bursts, alternating at ~7/s.
+Bolt origin and direction come from the gun groups' world transforms
+(the toe-in convergence falls out for free — same-source rule, third
+use). The lasers are deliberately toothless where it matters: 0.4
+damage, no wall carving, no spawn-point damage, and no on-hit
+reactions, because a constant graze would otherwise keep barbed/knot
+permanently accelerated. Shells remain the decision; lasers chew fodder
+while you drive. Bolts share one geometry+material — at 7 spawns/s,
+per-bolt allocation and dispose would thrash for nothing.
+
 ## `843e79e` — Announce sprites, the weight of a kill, and a focus bug
 
 The announce card grew its missing centerpiece: a live spinning model of
