@@ -6,6 +6,23 @@ Demo links assume `npm run serve` (port 8144) or the
 
 ---
 
+## `dfa08b6` — The Heart: possession, return fire, and carried rewards
+
+Sixth tab. Three mechanics worth noting. **Commandeering is a swap, not
+a teleport**: the player possesses the nearest ally by exchanging full
+kinematic state (position, cell, glide segment, heading), and the
+abandoned body rejoins the patrol — so the ally count is conserved and
+death becomes a command-transfer rather than an end (your tank dies →
+command jumps to the nearest ally, defeat only when none remain).
+**Enemies acquire targets symmetrically** — nearest of player, allies,
+or the Heart itself within range — which makes the Heart's ♥10 a real
+clock and turns ally positioning into the defense. **The regen reward
+must be carried**: picking it up sets a flag, healing happens only
+within 2 hops of the pole, so the risk/reward loop (rewards spawn at
+≥55% of max distance) has a return leg. Also: the win/lose modals
+across all tabs became CRT hologram cards (scanlines, sweep, flicker —
+the HokorobiTawaa announce recipe) with a clickable regenerate.
+
 ## `98ca514` — Tidying pass: bullet, auto-forward, and an honest state of the code
 
 The Braille Bullet (case, ogive, driving band) replaces the sphere
