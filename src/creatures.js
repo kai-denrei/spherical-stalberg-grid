@@ -164,6 +164,23 @@ export function spherePts(n = 170) {
   return pts;
 }
 
+// dotted torus — the braille-lab half-dotted static torus. The ring lies
+// in the X-Y plane so an upright "portal" falls out of aligning local +Y
+// with the surface normal. Golden-angle winding spreads the dots evenly;
+// every 12th is hi, matching the sphere's sparkle convention.
+export function torusPts(n = 220, R = 0.72, r = 0.28) {
+  const pts = [];
+  const GA = Math.PI * (3 - Math.sqrt(5));
+  for (let i = 0; i < n; i++) {
+    const u = (i / n) * 2 * Math.PI;   // around the ring
+    const v = i * GA;                   // around the tube
+    const w = R + r * Math.cos(v);
+    const p = [w * Math.cos(u), w * Math.sin(u), r * Math.sin(v)];
+    pts.push(i % 12 === 0 ? [p[0], p[1], p[2], 1] : p);
+  }
+  return fitUnit(pts);
+}
+
 // heart — the Braille implicit-surface heart (fun-shapes #heart): sample a
 // fib lattice of directions, ray-march the heart implicit to its surface
 function heartF(x, y, z) {

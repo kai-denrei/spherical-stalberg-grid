@@ -272,20 +272,43 @@ html, body {
   text-shadow: 0 0 8px currentColor;
 }
 
-/* --- opening briefing (heart tab): labeled elements inside #h-msg ------- */
-.intro-grid {
+/* --- briefing & glossaries (heart tab): one card per element ------------ */
+.gcards {
   display: grid;
-  grid-template-columns: max-content 1fr;
-  gap: 4px 14px;
-  margin: 10px 0 12px;
+  grid-template-columns: repeat(auto-fit, minmax(235px, 1fr));
+  gap: 6px;
+  width: min(620px, 80vw);
+  margin: 10px auto 12px;
   text-align: left;
-  font-size: 13px;
+}
+.gcard {
+  display: grid;
+  grid-template-columns: 30px 1fr;
+  grid-template-rows: auto auto;
+  column-gap: 9px;
+  padding: 6px 10px;
+  background: rgba(18, 38, 42, 0.6);
+  border: 1px solid rgba(53, 255, 208, 0.22);
+  border-radius: 8px;
+}
+.gcard .gicon {
+  grid-row: 1 / span 2;
+  align-self: center;
+  text-align: center;
+  font-size: 19px;
+  text-shadow: 0 0 9px currentColor;
+}
+.gcard .gname {
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  text-shadow: 0 0 6px currentColor;
+}
+.gcard .gdesc {
+  font-size: 11.5px;
+  color: #c7d4dc;
   line-height: 1.45;
 }
-.intro-grid > span:nth-child(odd) {
-  white-space: nowrap;
-  text-shadow: 0 0 8px currentColor;
-}
+.msg-glenemy, .msg-glfriend, .msg-back,
 .msg-next, .msg-begin {
   display: inline-block;
   margin-top: 12px;
@@ -301,7 +324,10 @@ html, body {
   position: relative;
   z-index: 1;
 }
+.msg-glenemy:hover, .msg-glfriend:hover, .msg-back:hover,
 .msg-next:hover, .msg-begin:hover { background: rgba(53, 255, 208, 0.22); color: #fff; }
+.msg-glenemy, .msg-glfriend { margin-top: 4px; padding: 5px 13px; font-size: 12px; }
+.msg-back { margin-top: 8px; }
 @keyframes wave-pop {
   from { opacity: 0; transform: translateX(-50%) scale(0.85); }
   to   { opacity: 1; transform: translateX(-50%) scale(1); }

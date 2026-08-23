@@ -15,7 +15,7 @@
 // tick(t) (idle animation) }.
 
 import * as THREE from '../vendor/three.module.js';
-import { CREATURES, waveJelly, spherePts, bulletPts, heartPts } from './creatures.js?v=86382780';
+import { CREATURES, waveJelly, spherePts, bulletPts, heartPts, torusPts } from './creatures.js?v=2bff9a49';
 
 function normalizeToUnit(group) {
   group.updateMatrixWorld(true);
@@ -398,6 +398,48 @@ export function makeDebris(obj, outwardN) {
     return life < LIFE;
   };
   return mesh;
+}
+
+// portal — the braille-lab half-dotted STATIC torus: an upright dotted
+// ring under the twinkle treatment (per-dot brightness shimmer; no
+// re-posing — the ring itself never moves, only its light does).
+// userData.setDim(f) scales all brightness — the game dims a portal as
+// it takes damage. Ring lies in local X-Y: align +Y to the surface
+// normal and it stands like a gate.
+export function makePortalCloud(cols, phase = 0) {
+  const base = torusPts(220);
+  const pos = new Float32Array(base.length * 3);
+  const col = new Float32Array(base.length * 3);
+  const baseCol = new Float32Array(base.length * 3);
+  const cBody = new THREE.Color(cols.body);
+  const cHi = new THREE.Color(cols.hi);
+  for (let i = 0; i < base.length; i++) {
+    const c = base[i][3] === 1 ? cHi : cBody;
+    baseCol[i * 3] = c.r; baseCol[i * 3 + 1] = c.g; baseCol[i * 3 + 2] = c.b;
+    pos[i * 3] = base[i][0]; pos[i * 3 + 1] = base[i][1]; pos[i * 3 + 2] = base[i][2];
+  }
+  col.set(baseCol);
+  const geo = new THREE.BufferGeometry();
+  geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+  geo.setAttribute('color', new THREE.BufferAttribute(col, 3));
+  const pts = new THREE.Points(geo, new THREE.PointsMaterial({
+    size: 2.2, sizeAttenuation: false, vertexColors: true,
+    transparent: true, opacity: 0.95,
+  }));
+  const hshf = (i) => { const s = Math.sin(i * 127.1 + 0.7) * 43758.5453; return s - Math.floor(s); };
+  let dim = 1;
+  pts.userData.tick = (t) => {
+    const attr = geo.getAttribute('color');
+    for (let i = 0; i < base.length; i++) {
+      const b = dim * (0.45 + 0.55 * (0.5 + 0.5 * Math.sin(t * 3.2 + phase + hshf(i) * 6.283)));
+      attr.setXYZ(i, baseCol[i * 3] * b, baseCol[i * 3 + 1] * b, baseCol[i * 3 + 2] * b);
+    }
+    attr.needsUpdate = true;
+  };
+  pts.userData.setDim = (f) => { dim = f; };
+  pts.userData.kind = 'portal';
+  pts.userData.sizeScale = 1;
+  return pts;
 }
 
 // dot burst — the cloud-unit counterpart of makeDebris: a puff of tinted

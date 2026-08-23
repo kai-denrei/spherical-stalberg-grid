@@ -15,14 +15,14 @@
 
 import * as THREE from '../vendor/three.module.js';
 import GUI from '../vendor/lil-gui.esm.js';
-import { generateSphereMesh, relax } from './grid.js?v=86382780';
-import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=86382780';
-import { mulberry32, randomSeed } from './rng.js?v=86382780';
-import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3 } from './vec3.js?v=86382780';
-import { CREATURES, waveJelly } from './creatures.js?v=86382780';
-import { UNITS, UNIT_NAMES, buildUnit, makeOrbCloud, makeBulletCloud, makeDebris, makeDotBurst, makeHeartCloud } from './units.js?v=86382780';
-import { LOOKS, LOOK_NAMES } from './looks.js?v=86382780';
-import { makeCellIndex } from './cellindex.js?v=86382780';
+import { generateSphereMesh, relax } from './grid.js?v=2bff9a49';
+import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=2bff9a49';
+import { mulberry32, randomSeed } from './rng.js?v=2bff9a49';
+import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3 } from './vec3.js?v=2bff9a49';
+import { CREATURES, waveJelly } from './creatures.js?v=2bff9a49';
+import { UNITS, UNIT_NAMES, buildUnit, makeOrbCloud, makeBulletCloud, makeDebris, makeDotBurst, makePortalCloud, makeHeartCloud } from './units.js?v=2bff9a49';
+import { LOOKS, LOOK_NAMES } from './looks.js?v=2bff9a49';
+import { makeCellIndex } from './cellindex.js?v=2bff9a49';
 
 export function initHeartTab(root) {
   let active = false;
@@ -877,6 +877,10 @@ export function initHeartTab(root) {
           if (w) {
             const toWall = norm3(sub3(w, player.pos));
             const into = Math.max(0, dot3(step, toWall));
+            // a mostly head-on hit THUDS like running something over;
+            // the bumpLeft gate keeps grinding along a wall from
+            // re-triggering every frame
+            if (into > 0.55 * len3(step) && bumpLeft <= 0) bumpLeft = BUMP_LEN * 0.8;
             const slid = sub3(step, scale3(toWall, into));
             cand = norm3(add3(player.pos, slid));
             if (freeBlocked(cand)) cand = null;
@@ -1103,31 +1107,76 @@ export function initHeartTab(root) {
   // --- HUD -----------------------------------------------------------------
   const statsEl = root.querySelector('#h-stats');
   const msgEl = root.querySelector('#h-msg');
-  // the modal's regenerate button (event delegation survives innerHTML swaps)
+  // the modal's buttons (event delegation survives innerHTML swaps)
   msgEl.addEventListener('click', (ev) => {
     const cl = ev.target.classList;
     if (!cl) return;
     if (cl.contains('msg-regen')) regenerate(); // retry the CURRENT round
     else if (cl.contains('msg-next')) { round++; params.seed++; startRound(); }
     else if (cl.contains('msg-begin')) { paused = false; msgEl.classList.add('hidden'); }
+    else if (cl.contains('msg-glenemy')) showEnemyGlossary();
+    else if (cl.contains('msg-glfriend')) showFriendGlossary();
+    else if (cl.contains('msg-back')) showBriefing();
   });
 
-  // opening briefing: label the pieces, state the ONE win condition.
-  // The sim stays frozen until the player begins.
+  // one element = one little card: icon · name · what it does
+  const glossCard = (color, icon, name, desc) =>
+    `<div class="gcard"><div class="gicon" style="color:${color}">${icon}</div>` +
+    `<div class="gname" style="color:${color}">${name}</div>` +
+    `<div class="gdesc">${desc}</div></div>`;
+
+  // opening briefing: the pieces as cards, the ONE win condition, and two
+  // clickable glossaries. The sim stays frozen until the player begins.
   function showBriefing() {
     paused = true;
     msgEl.innerHTML = `<div class="msg-head">transmission · briefing</div>` +
-      `<div class="intro-grid">` +
-      `<span style="color:#ff6a88">💗 the heart</span><span>at the pole — its fall is the only defeat</span>` +
-      `<span style="color:#9fdcff">▣ your tank</span><span>hold W drive · double-tap W = cruise · A/D steer · SPACE shell · hold SHIFT lasers · C commandeer · ESC pause</span>` +
-      `<span style="color:#9fdcff">✚ allies</span><span>patrol the pole, infinite ammo</span>` +
-      `<span style="color:#ffb000">▮▮▮ bullet triads</span><span>drive over = +3 shells · shells also blast walls open</span>` +
-      `<span style="color:#66ff88">soft creatures</span><span>fodder — RAM them, it's free</span>` +
-      `<span style="color:#ff5340">spiked reds</span><span>armored — ramming hurts YOU · shells only</span>` +
-      `<span style="color:#ffffff">◉ spawn points</span><span>the enemy sources · 3 shells each · found ones pulse on the minimap</span>` +
+      `<div class="gcards">` +
+      glossCard('#ff6a88', '💗', 'the heart', 'at the pole — its fall is the only defeat') +
+      glossCard('#9fdcff', '▣', 'your tank', 'hold W drive · double-tap W cruise · A/D steer · SPACE shell · SHIFT lasers · ESC pause') +
+      glossCard('#9fdcff', '✚', 'allies', 'patrol the pole · infinite ammo · C commandeers') +
+      glossCard('#ffb000', '▮▮▮', 'bullet triads', 'drive over = +3 shells · shells also blast walls open') +
+      glossCard('#66ff88', '☘', 'fodder', 'soft creatures — RAM them, it’s free') +
+      glossCard('#ff5340', '✴', 'spiked reds', 'armored — ramming hurts YOU · shells only') +
+      glossCard('#ffffff', '◎', 'portals', 'the enemy sources · 3 shells each · dim as they die') +
       `</div>` +
-      `<b>WIN = DESTROY EVERY SPAWN POINT.</b> reaching the heart wins nothing — it's home.<br>` +
-      `<button class="msg-begin">▶ begin round 1</button>`;
+      `<b>WIN = DESTROY EVERY PORTAL.</b> reaching the heart wins nothing — it's home.<br>` +
+      `<button class="msg-glenemy">☠ enemy glossary</button> ` +
+      `<button class="msg-glfriend">✚ friendlies &amp; pickups</button><br>` +
+      `<button class="msg-begin">▶ begin round ${round}</button>`;
+    msgEl.classList.remove('hidden');
+  }
+
+  const ENEMY_GLYPHS = { phage: '✜', amoeba: '⬤', jellyfish: '☂', corona: '❋', barbed: '✴', knot: '∞' };
+  function showEnemyGlossary() {
+    paused = true;
+    const cards = INTROS.map((iv) => {
+      const spec = ENEMY_SPEC[iv.type];
+      const tint = '#' + CREATURE_TINTS[iv.type].toString(16).padStart(6, '0');
+      const ram = spec.rammable
+        ? '<span style="color:#66ff88">▼ rammable</span>'
+        : '<span style="color:#ff5340">✖ do not ram</span>';
+      return glossCard(tint, ENEMY_GLYPHS[iv.type], iv.label.toLowerCase(),
+        `${iv.role} · ${spec.hp} hp · arrives wave ${iv.wave} · ${ram}`);
+    }).join('');
+    msgEl.innerHTML = `<div class="msg-head">glossary · hostiles</div>` +
+      `<div class="gcards">${cards}` +
+      glossCard('#ffffff', '◎', 'portal', 'where they pour from · 3 shells to destroy · dims with each hit · pulses on the minimap once found') +
+      `</div><button class="msg-back">← back to briefing</button>`;
+    msgEl.classList.remove('hidden');
+  }
+
+  function showFriendGlossary() {
+    paused = true;
+    msgEl.innerHTML = `<div class="msg-head">glossary · friendlies &amp; pickups</div>` +
+      `<div class="gcards">` +
+      glossCard('#ff6a88', '💗', 'the heart', `${HEART_MAX} hp · enemy contact drains it · regen charges heal it`) +
+      glossCard('#9fdcff', '✚', 'ally tank', 'patrols the pole · infinite shells · 2 hp · solid — no driving through · C swaps you in') +
+      glossCard('#ffb000', '▮▮▮', 'bullet triad', '+3 shells on touch (rack caps at 9)') +
+      glossCard('#ffb000', '◍', 'ammo sphere', 'far-field reward · +3 shells') +
+      glossCard('#9ff8ff', '◍', 'power sphere', 'far-field reward · +8% speed, permanent') +
+      glossCard('#ffffff', '◍', 'health sphere', 'far-field reward · +1 your hp') +
+      glossCard('#ff2df0', '◍', 'regen charge', 'CARRY it back near the heart: +4 heart hp') +
+      `</div><button class="msg-back">← back to briefing</button>`;
     msgEl.classList.remove('hidden');
   }
   function updateHud() {
@@ -1429,13 +1478,18 @@ export function initHeartTab(root) {
       if (s > bs) { bs = s; best = ci; }
     }
     if (best === -1) best = dungeon.spawn;
-    const obj = makeOrbCloud('scatter', { body: CREATURE_TINTS[type], hi: 0xffffff }, whim() * 6.283);
-    const r = cellSide * 0.55;
+    // the source is a PORTAL: the braille-lab half-dotted static torus,
+    // standing upright like a gate (local +Y = surface normal, ring in the
+    // local X-Y plane), twinkling in the enemy's tint
+    const obj = makePortalCloud({ body: CREATURE_TINTS[type], hi: 0xffffff }, whim() * 6.283);
+    const r = cellSide * 0.7;
     obj.scale.setScalar(r);
     obj.userData.sizeScale = r;
     const c = graph.centers[best];
     const n = graph.normals[best];
-    obj.position.set(c[0] + n[0] * r, c[1] + n[1] * r, c[2] + n[2] * r);
+    obj.position.set(c[0] + n[0] * r * 0.9, c[1] + n[1] * r * 0.9, c[2] + n[2] * r * 0.9);
+    tmpN.set(n[0], n[1], n[2]);
+    obj.quaternion.setFromUnitVectors(Y_AXIS, tmpN);
     scene.add(obj);
     // minimap beacon in the spawn's tint — dark until the player FINDS the
     // source (comes close or lands a shell), then it pulses on the map.
@@ -1805,9 +1859,11 @@ export function initHeartTab(root) {
               disposeObj(sp.mapMarker);
               sp.mapMarker = null;
             } else {
-              // wounded: shrink a step so damage reads
+              // wounded: the portal shrinks a step AND its light dims —
+              // a dying gate fades before it falls
               const s = sp.obj.userData.sizeScale * (0.65 + 0.35 * (sp.hp / 3));
               sp.obj.scale.setScalar(s);
+              if (sp.obj.userData.setDim) sp.obj.userData.setDim(0.2 + 0.8 * (sp.hp / 3));
             }
             updateHud();
             break;
