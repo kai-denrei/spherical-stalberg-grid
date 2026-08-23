@@ -6,6 +6,24 @@ Demo links assume `npm run serve` (port 8144) or the
 
 ---
 
+## `5dab5a0` — Chrome learns when it isn't wanted
+
+The iPhone screenshot showed the failure plainly: mid-battle, the
+build-token badge and a horizontal tab row sat on top of the HUD, and
+the row itself ran past the screen edge — the TD tab literally
+unreachable on the device the game now targets. Two structural fixes.
+The tab bar stops pretending a phone is a desktop: under the ☰ it's
+now a vertical mode menu — column layout, full-width labels, nothing
+clipped — and picking a mode closes it, because selection is the
+dismissal. And visibility became a STATE, not a toggle the player must
+manage: a `body.playing` class, driven per-frame by whichever game tab
+is live (`active && !paused && !won`), hides everything non-essential
+including the ☰ itself. The chrome returns exactly when the player is
+idle — briefing, ESC pause, win/lose — which are precisely the moments
+mode-switching makes sense. Leaving a game tab clears the class, so
+the doc tabs never inherit a chrome-less screen. The design rule
+underneath: don't ask players to close UI; know when they're playing.
+
 ## `cdf195d` — TD M2: the maze you buy
 
 Towers are in, and the design's core bet with them: a placed tower is
