@@ -15,14 +15,14 @@
 
 import * as THREE from '../vendor/three.module.js';
 import GUI from '../vendor/lil-gui.esm.js';
-import { generateSphereMesh, relax } from './grid.js?v=bb5beab8';
-import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=bb5beab8';
-import { mulberry32, randomSeed } from './rng.js?v=bb5beab8';
-import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3 } from './vec3.js?v=bb5beab8';
-import { CREATURES, waveJelly } from './creatures.js?v=bb5beab8';
-import { UNITS, UNIT_NAMES, buildUnit, makeOrbCloud, makeBulletCloud, makeDebris, makeDotBurst, makeHeartCloud } from './units.js?v=bb5beab8';
-import { LOOKS, LOOK_NAMES } from './looks.js?v=bb5beab8';
-import { makeCellIndex } from './cellindex.js?v=bb5beab8';
+import { generateSphereMesh, relax } from './grid.js?v=cfef3ba9';
+import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=cfef3ba9';
+import { mulberry32, randomSeed } from './rng.js?v=cfef3ba9';
+import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3 } from './vec3.js?v=cfef3ba9';
+import { CREATURES, waveJelly } from './creatures.js?v=cfef3ba9';
+import { UNITS, UNIT_NAMES, buildUnit, makeOrbCloud, makeBulletCloud, makeDebris, makeDotBurst, makeHeartCloud } from './units.js?v=cfef3ba9';
+import { LOOKS, LOOK_NAMES } from './looks.js?v=cfef3ba9';
+import { makeCellIndex } from './cellindex.js?v=cfef3ba9';
 
 export function initHeartTab(root) {
   let active = false;
@@ -43,10 +43,12 @@ export function initHeartTab(root) {
     speed: 1.1, // cells per second, wanderer pace
     autoResume: 3, // seconds idle before auto-wander resumes
     creature: 'tank', // any roster unit; the tank has the sweeping turret
-    orbs: 10,
-    orbRespawn: 8, // seconds between respawns (0 = off)
-    waveSize: 2,
-    waveEvery: 18, // seconds
+    // balance (operator pass): heavier early waves, but a richer field —
+    // more triads on the ground and a longer breath between waves
+    orbs: 14,
+    orbRespawn: 6, // seconds between respawns (0 = off)
+    waveSize: 3,
+    waveEvery: 26, // seconds
     friendlies: 4,
     rewards: 6,
   };
@@ -361,7 +363,7 @@ export function initHeartTab(root) {
   unitBlocker = (cand) => spawnPoints.some((s) => s.alive && dist3(cand, graph.centers[s.ci]) < cellSide * 0.6);
 
   // held-key state: steering and pace are continuous while held, not nudges
-  const keys = { left: false, right: false, fast: false, slow: false };
+  const keys = { left: false, right: false, fast: false, slow: false, laser: false };
   let steerHold = 99; // seconds since the user last steered
   const steeringActive = () => steerHold < 1.2;
   // manual override: ANY WASD press disables auto-wander entirely; it
@@ -933,7 +935,8 @@ export function initHeartTab(root) {
     }
     const k = ev.key.toLowerCase();
     const m = { arrowleft: 'left', a: 'left', arrowright: 'right', d: 'right',
-      arrowup: 'fast', w: 'fast', arrowdown: 'slow', s: 'slow' }[k];
+      arrowup: 'fast', w: 'fast', arrowdown: 'slow', s: 'slow',
+      shift: 'laser' }[k];
     if (m) { keys[m] = down; ev.preventDefault(); return; }
     if (down && (k === ' ' || k === 'spacebar')) { fire(); ev.preventDefault(); return; }
     if (down && k === 'h') pulseHint();
@@ -942,7 +945,7 @@ export function initHeartTab(root) {
   }
   addEventListener('keydown', (ev) => onKeyEvent(ev, true));
   addEventListener('keyup', (ev) => onKeyEvent(ev, false));
-  addEventListener('blur', () => { keys.left = keys.right = keys.fast = keys.slow = false; });
+  addEventListener('blur', () => { keys.left = keys.right = keys.fast = keys.slow = keys.laser = false; });
 
   function toggleView() {
     params.view = params.view === 'pov' ? 'third' : 'pov';
@@ -958,6 +961,7 @@ export function initHeartTab(root) {
     }
   }
   holdButton('#h-pad-up', 'fast');
+  holdButton('#h-pad-laser', 'laser');
   holdButton('#h-pad-left', 'left');
   holdButton('#h-pad-right', 'right');
   holdButton('#h-pad-down', 'slow');
@@ -996,7 +1000,8 @@ export function initHeartTab(root) {
       `shells ${'●'.repeat(ammo).padEnd(AMMO_MAX, '·')} (${ammo})   wave ${wave} · hostiles ${alive} · spawn points ${spAlive}/${spawnPoints.length}` +
       (carryingRegen ? '   ⬤ CARRYING REGEN' : '') + `\n` +
       (manualActive() ? 'MANUAL — release keys to hand back control' : 'auto-wander') +
-      '   ·   RAM the small ones · shells for the red · shells breach walls · hunt the spawn points';
+      `   ·   laser ${laserOverheat ? '🔥 COOLING' : 'SHIFT/⚡'}` +
+      '   ·   RAM the small ones · shells for the red · hunt the spawn points';
     // diegetic shell rack: the 3×3 turret dots ARE the ammo counter —
     // neon white loaded, faded grey spent (allies stay full: infinite ammo)
     const dots = playerMesh && playerMesh.userData.ammoDots;
@@ -1433,18 +1438,31 @@ export function initHeartTab(root) {
     return false;
   }
 
-  // --- twin mini-lasers: weak, infinite, always on -------------------------
-  // Bolt origin/direction derive from the gun groups' WORLD transforms
-  // (toe-in included) — the same-source rule, third use. No wall carving,
-  // no spawn-point damage, no on-hit reactions: shells stay the answer to
-  // everything that matters; the lasers chew fodder while you drive.
+  // --- twin mini-lasers: hold-to-fire, they overheat -----------------------
+  // Trigger: hold Shift (or the ⚡ pad button). Sustained fire builds heat;
+  // at the cap the guns lock out until fully cooled — the gun tubes glow
+  // from cyan to red as the diegetic gauge. Bolt origin/direction derive
+  // from the gun groups' WORLD transforms (toe-in included) — same-source
+  // rule, third use. No wall carving, no spawn-point damage, no on-hit
+  // reactions: shells stay the answer to everything that matters.
   const laserShots = []; // { pos, dir, dist, mesh }
   let laserClock = 0, laserSide = 0;
-  const LASER_RATE = 0.14;  // s between bursts (guns alternate)
-  const LASER_DMG = 0.4;    // fodder: 3 grazes; corona: 5 — weak on purpose
+  let laserHeat = 0, laserOverheat = false;
+  const LASER_RATE = 0.14;    // s between bursts (guns alternate)
+  const LASER_DMG = 0.4;      // fodder: 3 grazes; corona: 5 — weak on purpose
+  const LASER_MAX_HEAT = 2.4; // s of continuous fire before lockout
+  const LASER_COOL = 1.4;     // heat shed per second (lockout ≈ 1.7 s)
+  // thin bright core + a wider additive halo child (soft glow without a
+  // bloom chain — additive over the dark board reads as light)
   const laserGeo = new THREE.BoxGeometry(1, 1, 1); // shared; scaled per bolt
-  const laserMat = new THREE.MeshBasicMaterial({ color: 0x9ff8ff, transparent: true, opacity: 0.9 });
+  const laserMat = new THREE.MeshBasicMaterial({ color: 0xeafdff, transparent: true, opacity: 0.95 });
+  const laserHaloMat = new THREE.MeshBasicMaterial({
+    color: 0x4fd8ff, transparent: true, opacity: 0.4,
+    blending: THREE.AdditiveBlending, depthWrite: false,
+  });
   const Z_AXIS = new THREE.Vector3(0, 0, 1);
+  const gunColCool = new THREE.Color(0x7df9ff);
+  const gunColHot = new THREE.Color(0xff5340);
 
   function killLaser(i) {
     scene.remove(laserShots[i].mesh); // geometry/material are shared — keep
@@ -1453,7 +1471,24 @@ export function initHeartTab(root) {
 
   function updateLasers(dt, tNow) {
     const guns = playerMesh && playerMesh.userData.laserGuns;
-    if (guns && !player.won) {
+    const wantFire = keys.laser && guns && !player.won;
+    // heat: build while firing, shed otherwise; overheat locks the trigger
+    // until the tubes are fully cold (no feathering the cap)
+    if (laserOverheat) {
+      laserHeat = Math.max(0, laserHeat - LASER_COOL * dt);
+      if (laserHeat === 0) laserOverheat = false;
+    } else if (wantFire) {
+      laserHeat += dt;
+      if (laserHeat >= LASER_MAX_HEAT) { laserHeat = LASER_MAX_HEAT; laserOverheat = true; }
+    } else {
+      laserHeat = Math.max(0, laserHeat - LASER_COOL * dt);
+    }
+    // diegetic gauge: both tubes share one material per tank
+    if (guns) {
+      const tube = guns[0].children[0];
+      tube.material.color.lerpColors(gunColCool, gunColHot, laserHeat / LASER_MAX_HEAT);
+    }
+    if (wantFire && !laserOverheat) {
       laserClock += dt;
       if (laserClock >= LASER_RATE) {
         laserClock = 0;
@@ -1466,10 +1501,15 @@ export function initHeartTab(root) {
         const d = [tmpV.x, tmpV.y, tmpV.z];
         const dir = norm3(sub3(d, scale3(n, dot3(d, n))));
         const mesh = new THREE.Mesh(laserGeo, laserMat);
-        mesh.scale.set(cellSide * 0.045, cellSide * 0.045, cellSide * 0.42);
+        mesh.scale.set(cellSide * 0.02, cellSide * 0.02, cellSide * 0.46);
+        const halo = new THREE.Mesh(laserGeo, laserHaloMat);
+        halo.scale.set(4.5, 4.5, 1.12); // relative to the thin core
+        mesh.add(halo);
         scene.add(mesh);
         laserShots.push({ pos, dir, dist: 0, mesh });
       }
+    } else {
+      laserClock = LASER_RATE; // first bolt leaves the instant you squeeze
     }
     const v = 5.2 * cellSide;
     const maxDist = 2.6 * cellSide;
@@ -2102,6 +2142,9 @@ export function initHeartTab(root) {
 
   // ?found=1 marks every spawn point discovered (minimap beacon check)
   if (urlParams.get('found') === '1') for (const sp of spawnPoints) sp.found = true;
+
+  // ?laser=1 holds the laser trigger down (headless visual check)
+  if (urlParams.get('laser') === '1') keys.laser = true;
 
   // ?blast=N breaches the N wall cells nearest the player — exercises the
   // carve + debris + rebuild path without needing a live shot

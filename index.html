@@ -5,18 +5,18 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>spherical stålberg grid</title>
   <meta name="theme-color" content="#10131a">
-  <link rel="manifest" href="./manifest.webmanifest?v=bb5beab8">
-  <link rel="apple-touch-icon" href="./icons/apple-touch-icon.png?v=bb5beab8">
+  <link rel="manifest" href="./manifest.webmanifest?v=cfef3ba9">
+  <link rel="apple-touch-icon" href="./icons/apple-touch-icon.png?v=cfef3ba9">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="SphereGrid">
-  <link rel="stylesheet" href="./styles.css?v=bb5beab8">
+  <link rel="stylesheet" href="./styles.css?v=cfef3ba9">
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
-  <meta name="cb" content="bb5beab8">
-  <link rel="icon" type="image/svg+xml" href="./cb-shapes/59.svg?v=bb5beab8">
-  <script src="./cb-badge.js?v=bb5beab8" defer></script>
+  <meta name="cb" content="cfef3ba9">
+  <link rel="icon" type="image/svg+xml" href="./cb-shapes/15.svg?v=cfef3ba9">
+  <script src="./cb-badge.js?v=cfef3ba9" defer></script>
 </head>
 <body>
   <nav id="tabbar">
@@ -98,7 +98,10 @@
     <div id="h-wave" class="hidden"></div>
     <div id="h-msg" class="hidden"></div>
     <div class="dpad">
-      <button id="h-pad-up" title="boost (↑ / W)">▲</button>
+      <div class="dpad-row">
+        <button id="h-pad-up" title="boost (↑ / W)">▲</button>
+        <button id="h-pad-laser" title="hold: lasers (Shift) — they overheat">⚡</button>
+      </div>
       <div class="dpad-row">
         <button id="h-pad-left" title="hold: steer left (← / A)">⟲</button>
         <button id="h-pad-fire" title="FIRE (Space) — time the turret sweep">✦</button>
@@ -110,7 +113,7 @@
         <button id="h-pad-view" title="toggle PoV / third person (V)">👁</button>
       </div>
     </div>
-    <div id="h-hint">defend the heart · RAM the small ones · shells breach walls · hunt the spawn points</div>
+    <div id="h-hint">defend the heart · RAM the small ones · hold SHIFT/⚡ for lasers · hunt the spawn points</div>
   </div>
 
   <div id="tab-how" class="tab tab-hidden">
@@ -119,6 +122,6 @@
     </div>
   </div>
 
-  <script type="module" src="./src/main.js?v=bb5beab8"></script>
+  <script type="module" src="./src/main.js?v=cfef3ba9"></script>
 </body>
 </html>
