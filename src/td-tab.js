@@ -19,20 +19,21 @@
 
 import * as THREE from '../vendor/three.module.js';
 import GUI from '../vendor/lil-gui.esm.js';
-import { generateSphereMesh, relax } from './grid.js?v=a184e9b0';
-import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=a184e9b0';
-import { mulberry32, randomSeed } from './rng.js?v=a184e9b0';
-import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3 } from './vec3.js?v=a184e9b0';
-import { CREATURES, waveJelly } from './creatures.js?v=a184e9b0';
-import { UNITS, UNIT_NAMES, buildUnit, makeOrbCloud, makeBulletCloud, makeDebris, makeDotBurst, makePortalCloud, makeHeartCloud, makeTowerUnit } from './units.js?v=a184e9b0';
-import { LOOKS, LOOK_NAMES } from './looks.js?v=a184e9b0';
-import { makeCellIndex } from './cellindex.js?v=a184e9b0';
-import { CREATURE_TINTS, ENEMY_SPEC, INTROS } from './enemyspec.js?v=a184e9b0';
-import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval } from './towers.js?v=a184e9b0';
-import { makeEconomy, sellRefund } from './economy.js?v=a184e9b0';
+import { generateSphereMesh, relax } from './grid.js?v=72259660';
+import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=72259660';
+import { mulberry32, randomSeed } from './rng.js?v=72259660';
+import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3 } from './vec3.js?v=72259660';
+import { CREATURES, waveJelly } from './creatures.js?v=72259660';
+import { UNITS, UNIT_NAMES, buildUnit, makeOrbCloud, makeBulletCloud, makeDebris, makeDotBurst, makePortalCloud, makeHeartCloud, makeTowerUnit } from './units.js?v=72259660';
+import { LOOKS, LOOK_NAMES } from './looks.js?v=72259660';
+import { makeCellIndex } from './cellindex.js?v=72259660';
+import { CREATURE_TINTS, ENEMY_SPEC, INTROS } from './enemyspec.js?v=72259660';
+import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval } from './towers.js?v=72259660';
+import { makeEconomy, sellRefund } from './economy.js?v=72259660';
 
 export function initTdTab(root) {
   let active = false;
+  let wasPlaying = false; // drives body.playing (mobile hides ALL chrome)
 
   const params = {
     seed: 7,
@@ -2704,6 +2705,13 @@ export function initTdTab(root) {
   function animate() {
     requestAnimationFrame(animate);
     if (!active || !mesh) return;
+    // active play = no modal up: briefing, pause, and win/lose all count
+    // as idle, which is when the mobile chrome (menu button) may return
+    const playing = !paused && !player.won;
+    if (playing !== wasPlaying) {
+      wasPlaying = playing;
+      document.body.classList.toggle('playing', playing);
+    }
     const now = performance.now();
     const dt = Math.min((now - lastFrame) / 1000, 0.1); // clamp tab-switch gaps
     lastFrame = now;
@@ -2978,6 +2986,10 @@ export function initTdTab(root) {
     setActive(on) {
       active = on;
       if (on) { resize(); snapCamera(); }
+      else if (wasPlaying) {
+        wasPlaying = false;
+        document.body.classList.remove('playing');
+      }
     },
   };
 }

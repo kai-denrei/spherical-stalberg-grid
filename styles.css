@@ -700,6 +700,34 @@ html, body {
   body:not(.chrome-open) .tab .lil-gui.root {
     display: none !important;
   }
+  /* the ☰ menu is a VERTICAL game-mode selector — a horizontal row
+     never fit a phone (TD sat off-screen) */
+  #tabbar {
+    top: max(54px, calc(env(safe-area-inset-top) + 46px));
+    left: max(10px, env(safe-area-inset-left));
+    flex-direction: column;
+    width: max-content;
+    background: rgba(10, 16, 26, 0.94);
+    border: 1px solid #2a3350;
+    border-radius: 12px;
+    padding: 8px;
+    z-index: 60;
+  }
+  #tabbar button {
+    text-align: left;
+    padding: 11px 18px;
+    font-size: 14px;
+  }
+  /* the badge shares the top edge with ☰ — shove it right of the button */
+  body.chrome-open #cb-badge { left: 60px !important; }
+  /* ACTIVE PLAY hides everything non-essential, the ☰ included — it
+     comes back at the briefing, on pause (ESC), and on win/lose */
+  body.playing #chrome-toggle,
+  body.playing #tabbar,
+  body.playing #cb-badge,
+  body.playing .tab .lil-gui.root {
+    display: none !important;
+  }
   /* the hint line fights the thumb clusters for the bottom edge, and the
      briefing already teaches everything it says */
   #h-hint, #td-hint { display: none !important; }
