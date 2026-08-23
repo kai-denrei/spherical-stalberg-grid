@@ -6,6 +6,28 @@ Demo links assume `npm run serve` (port 8144) or the
 
 ---
 
+## `f9238df` — The radial comes home
+
+Two build-mode refinements from the operator. First, mode purity: in
+build mode the driving controls — steer zones, rocker, both triggers,
+SWAP/CAM — disappear entirely (a `.build` class on the tab root),
+leaving the board and the BUILD/MAP pair. Planning and fighting are
+different instruments; they now look it. Second, the tower shop
+became HokorobiTawaa's radial menu instead of a list: circular options
+ring the tapped cell at HK's exact sizing formula, key + cost on each
+button with the tower's tint on the border, your credit (or the
+refusal reason) in a non-interactive center chip, upgrade/sell as a
+three-option ring on standing towers. The event delegation classes
+survived the re-skin, so none of the buy/upgrade/sell logic moved.
+
+The headless check earned its keep again: the first screenshot showed
+the ring pinned to the top-left corner, clipped. Cause: anchoring
+measured the *canvas* rect, and when a URL hook opens the shop before
+the first `resize()`, the canvas is still at its default 300×150 —
+the clamp then pinned everything to the corner. Real taps would never
+have hit it, which is exactly why it would have shipped: measure the
+container, which is laid out from init, not the canvas, which isn't.
+
 ## `5dab5a0` — Chrome learns when it isn't wanted
 
 The iPhone screenshot showed the failure plainly: mid-battle, the
