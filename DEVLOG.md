@@ -6,6 +6,32 @@ Demo links assume `npm run serve` (port 8144) or the
 
 ---
 
+## `cdf195d` — TD M2: the maze you buy
+
+Towers are in, and the design's core bet with them: a placed tower is
+SOLID and blocks **pathing** — on an open battlefield the towers ARE
+the walls, so building is maze-shaping, HK's buildable-band translated
+to the sphere. The guard that makes it fair: every placement is
+simulated first (add the cell, BFS from the Heart, check every live
+portal still reaches) and refused with a reason if it would dam the
+flow entirely. blastWall proved per-event BFS affordable months of
+commits ago; placement reuses the pattern.
+
+Interaction is tap-first on the build camera: a press that travels
+>8 px is an orbit, otherwise it raycasts the floor into the cellindex
+oracle and opens the shop — eight towers, affordability locks, hover
+previews a dotted Braille range ring; tapping a standing tower offers
+HK's exact upgrade/sell economics. Firing runs through towers.js: pure
+targeting with the chord metric injected, per-kind delivery (fans,
+homing re-steer, mortar splash, slow-field tethers with a new
+slowUntil debuff, hitscan beams as additive light). And the economy
+breathes end-to-end: every kill from any weapon pays bounty × streak,
+rams pay the premium, a Heart breach kills the streak, and round-clear
+liquidates towers at 100% into the next round's purse. The headless
+proof was pleasingly indirect: force-place three towers, simulate ten
+seconds, and read the HUD — ×1.80 streak multiplier means sixteen
+enemies died to autonomous fire and paid for themselves.
+
 ## `a795ef0` — TD M1: two cameras, one identity
 
 The TD tab exists. It is knowingly the sixth cp+sed sibling — the spec
