@@ -6,6 +6,22 @@ Demo links assume `npm run serve` (port 8144) or the
 
 ---
 
+## `5d2eb5a` — The Heart becomes tower defense (and the walls become cover)
+
+Terrain flipped inside-out: instead of carving corridors from solid,
+the field opens everything and re-blocks ~20% as random-walk clumps —
+the same tags, the same collision oracle, the opposite reading. Walls
+are now COVER, and black wall-tops make their silhouettes the terrain
+language. Enemies became creature waves from three destructible spawn
+points (one per Braille species, 3 hits each), seeking the Heart by
+walking the distance field downhill with a 15% wobble so streams braid
+instead of queueing. Allies got infinite ammo and a 1.4s fire loop —
+the player's job shifts from gunner to ECONOMY: range out for pickups,
+carry regen home, and decide when to push a spawn point. Compute note
+for the skeptical: a wave of 12 clouds ≈ 7k CPU-reposed points/frame —
+fine; the cap to watch is ~40 concurrent creatures before the
+mesh-conversion (or shader-pose) lever gets pulled.
+
 ## `dfa08b6` — The Heart: possession, return fire, and carried rewards
 
 Sixth tab. Three mechanics worth noting. **Commandeering is a swap, not
