@@ -6,14 +6,14 @@
 
 import * as THREE from '../vendor/three.module.js';
 import GUI from '../vendor/lil-gui.esm.js';
-import { generateSphereMesh, relax } from './grid.js?v=0a0e8dff';
-import { generateDungeon, BLOCKED, PATH, ROOM } from './dungeon.js?v=0a0e8dff';
-import { mulberry32, randomSeed } from './rng.js?v=0a0e8dff';
-import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3 } from './vec3.js?v=0a0e8dff';
-import { CREATURES, waveJelly } from './creatures.js?v=0a0e8dff';
-import { UNITS, UNIT_NAMES, buildUnit, makeOrbCloud, makeDebris, ORB_FX } from './units.js?v=0a0e8dff';
-import { LOOKS, LOOK_NAMES } from './looks.js?v=0a0e8dff';
-import { makeCellIndex } from './cellindex.js?v=0a0e8dff';
+import { generateSphereMesh, relax } from './grid.js?v=c0dbf273';
+import { generateDungeon, BLOCKED, PATH, ROOM } from './dungeon.js?v=c0dbf273';
+import { mulberry32, randomSeed } from './rng.js?v=c0dbf273';
+import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3 } from './vec3.js?v=c0dbf273';
+import { CREATURES, waveJelly } from './creatures.js?v=c0dbf273';
+import { UNITS, UNIT_NAMES, buildUnit, makeOrbCloud, makeDebris, ORB_FX } from './units.js?v=c0dbf273';
+import { LOOKS, LOOK_NAMES } from './looks.js?v=c0dbf273';
+import { makeCellIndex } from './cellindex.js?v=c0dbf273';
 
 export function initOrganicTab(root) {
   let active = false;
@@ -623,10 +623,11 @@ export function initOrganicTab(root) {
 
     if (cell === dungeon.heart && !player.won) {
       player.won = true;
-      msgEl.innerHTML = `💗 the creature found the heart<br>` +
+      msgEl.innerHTML = `<div class="msg-head">transmission · sector log</div>` +
+        `💗 the creature found the heart<br>` +
         `${player.moves} moves · ${absorbed} orbs absorbed · ` +
         `size ×${(unitScale / baseUnitScale).toFixed(2)}<br>` +
-        `<span style="color:#8a93ad">regenerate (panel) for a new maze</span>`;
+        `<button class="msg-regen">⟲ regenerate</button>`;
       msgEl.classList.remove('hidden');
     }
   }
@@ -830,6 +831,10 @@ export function initOrganicTab(root) {
   // --- HUD -----------------------------------------------------------------
   const statsEl = root.querySelector('#o-stats');
   const msgEl = root.querySelector('#o-msg');
+  // the modal's regenerate button (event delegation survives innerHTML swaps)
+  msgEl.addEventListener('click', (ev) => {
+    if (ev.target.classList && ev.target.classList.contains('msg-regen')) regenerate();
+  });
   function updateHud() {
     statsEl.textContent =
       `hops to heart ${dungeon.distToHeart[player.cur]}   moves ${player.moves}\n` +
