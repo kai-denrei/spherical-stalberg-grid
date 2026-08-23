@@ -1,21 +1,23 @@
-// heart-tab.js — defend the Heart. It sits at the north pole of a far
-// more open board, guarded by friendly tanks on patrol. The player can
-// commandeer any friendly at any moment (C / ⇄ — a possession swap, both
-// bodies keep fighting). Enemies SHOOT BACK — at you, at your allies, and
-// at the Heart itself. Exploring far from the pole is rewarded: ammo
-// caches, permanent speed, and heart-regen charges that must be CARRIED
-// home. Lose the Heart, lose the sector.
+// heart-tab.js — defend the Heart. An OPEN battlefield (~80% walkable;
+// walls are scattered obstacle clumps to maneuver around and shelter
+// behind, not corridors) with the Heart at the north pole. Waves of
+// creatures — amoebas, phages, jellyfish — pour from three SPAWN POINTS
+// (one per type, far from the pole; 3 hits to destroy) and beeline for
+// the Heart. Allies have infinite ammo and hold the line; the player
+// helps, or ranges out for pickups: shells, speed, health, and regen
+// charges that must be carried home. C / ⇄ commandeers any ally.
+// Win: destroy all spawn points and mop up. Lose: the Heart falls.
 
 import * as THREE from '../vendor/three.module.js';
 import GUI from '../vendor/lil-gui.esm.js';
-import { generateSphereMesh, relax } from './grid.js?v=c0dbf273';
-import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=c0dbf273';
-import { mulberry32, randomSeed } from './rng.js?v=c0dbf273';
-import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3 } from './vec3.js?v=c0dbf273';
-import { CREATURES, waveJelly } from './creatures.js?v=c0dbf273';
-import { UNITS, UNIT_NAMES, buildUnit, makeOrbCloud, makeBulletCloud, makeDebris, ORB_FX } from './units.js?v=c0dbf273';
-import { LOOKS, LOOK_NAMES } from './looks.js?v=c0dbf273';
-import { makeCellIndex } from './cellindex.js?v=c0dbf273';
+import { generateSphereMesh, relax } from './grid.js?v=2a26021c';
+import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=2a26021c';
+import { mulberry32, randomSeed } from './rng.js?v=2a26021c';
+import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3 } from './vec3.js?v=2a26021c';
+import { CREATURES, waveJelly } from './creatures.js?v=2a26021c';
+import { UNITS, UNIT_NAMES, buildUnit, makeOrbCloud, makeBulletCloud, makeDebris, ORB_FX } from './units.js?v=2a26021c';
+import { LOOKS, LOOK_NAMES } from './looks.js?v=2a26021c';
+import { makeCellIndex } from './cellindex.js?v=2a26021c';
 
 export function initHeartTab(root) {
   let active = false;
@@ -23,23 +25,25 @@ export function initHeartTab(root) {
   const params = {
     seed: 7,
     points: 4000,
-    rooms: 12,
+    rooms: 12,          // unused by the open-field terrain, kept for the carve call
     roomRadius: 3,
     extraCorridors: 4,
     corridorWidth: 3,
+    obstacles: 0.2,     // fraction of the sphere left as wall clumps
     wallHeight: 0.03,
     relaxIters: 80,
     view: 'third', // pov | third
     look: 'tronColors', // visual identity, see looks.js
-    wallTops: 'dim', // auto | bright | dim | black — wall-top wires & fill
+    wallTops: 'black', // obstacles read as voids; silhouettes matter here
     speed: 1.1, // cells per second, wanderer pace
     autoResume: 3, // seconds idle before auto-wander resumes
     creature: 'tank', // any roster unit; the tank has the sweeping turret
     orbs: 10,
     orbRespawn: 8, // seconds between respawns (0 = off)
-    enemies: 6,
-    friendlies: 3,
-    rewards: 5,
+    waveSize: 2,
+    waveEvery: 18, // seconds
+    friendlies: 4,
+    rewards: 6,
   };
 
   // creature-specific locomotion: a speed profile over time (multiplies the
@@ -143,7 +147,15 @@ export function initHeartTab(root) {
   const projectiles = [];  // { pos, dir, dist, mesh }
   const debris = [];       // scatter effects, tick(dt) -> alive
   const friendlies = [];   // ally tanks: { cur, prev, next, prog, pos, dir, obj, alive, hp }
-  const hostileShots = []; // enemy fire: { pos, dir, dist, mesh }
+  const allyShots = [];    // infinite-ammo covering fire: { pos, dir, dist, mesh }
+  const spawnPoints = [];  // { type, ci, hp, obj, alive } — one per creature type
+  let wave = 0;
+  let waveClock = 0;
+  const CREATURE_TINTS = {
+    amoeba: 0x66ff88,
+    phage: 0xffb84d,
+    jellyfish: 0xff5fd0,
+  };
   const rewardMeshes = new Map(); // cell -> { obj, type } far-field rewards
   let heartHP = 10;
   const HEART_MAX = 10;
@@ -863,12 +875,13 @@ export function initHeartTab(root) {
   function updateHud() {
     const alive = enemies.filter((e) => e.alive).length;
     const allies = friendlies.filter((f) => f.alive).length;
+    const spAlive = spawnPoints.filter((s) => s.alive).length;
     statsEl.textContent =
       `HEART ${'♥'.repeat(Math.max(0, heartHP)).padEnd(HEART_MAX, '·')}   you ♥${playerHP}   allies ${allies}\n` +
-      `shells ${'●'.repeat(ammo).padEnd(AMMO_MAX, '·')} (${ammo})   enemies ${alive}/${enemies.length}` +
-      (carryingRegen ? '   ⬤ CARRYING REGEN — bring it home' : '') + `\n` +
+      `shells ${'●'.repeat(ammo).padEnd(AMMO_MAX, '·')} (${ammo})   wave ${wave} · hostiles ${alive} · spawn points ${spAlive}/3` +
+      (carryingRegen ? '   ⬤ CARRYING REGEN' : '') + `\n` +
       (manualActive() ? 'MANUAL — release keys to hand back control' : 'auto-wander') +
-      '   ·   C/⇄ commandeer · SPACE/✦ fire · far out = rewards';
+      '   ·   C/⇄ commandeer · SPACE/✦ fire · kill the spawn points (3 hits)';
   }
 
   // --- generation ----------------------------------------------------------
@@ -885,18 +898,48 @@ export function initHeartTab(root) {
     });
     graph = dungeon.graph;
     cellSide = mesh.defaultSide;
-    // the Heart lives at the NORTH POLE: re-pick it as the open cell
-    // closest to +Y, re-derive distances and a far spawn from there
+    // OPEN BATTLEFIELD: discard the corridor carve. Everything is open,
+    // then ~`obstacles` of the sphere is re-blocked as small clumps —
+    // cover to maneuver around, not halls. Pockets sealed off by clumps
+    // are turned into wall too (connectivity by construction).
     {
+      const C = dungeon.tags.length;
+      dungeon.tags.fill(PATH);
+      const orng = mulberry32((params.seed ^ 0xba771e) >>> 0);
+      const targetBlocked = Math.floor(C * params.obstacles);
+      let blocked = 0;
+      let guard = 0;
+      while (blocked < targetBlocked && guard++ < C) {
+        const seedCell = Math.floor(orng() * C);
+        // clump: the seed plus a random walk of 2–6 neighbours
+        const clump = [seedCell];
+        let cur = seedCell;
+        const len = 2 + Math.floor(orng() * 5);
+        for (let s = 0; s < len; s++) {
+          const nbs = graph.adj[cur];
+          cur = nbs[Math.floor(orng() * nbs.length)];
+          clump.push(cur);
+        }
+        for (const ci of clump) {
+          if (dungeon.tags[ci] !== BLOCKED) { dungeon.tags[ci] = BLOCKED; blocked++; }
+        }
+      }
+      // Heart at the pole: highest +Y OPEN cell; carve its plaza open
       let best = -1, by = -Infinity;
-      for (let i = 0; i < dungeon.tags.length; i++) {
+      for (let i = 0; i < C; i++) {
         if (dungeon.tags[i] === BLOCKED) continue;
         if (graph.normals[i][1] > by) { by = graph.normals[i][1]; best = i; }
       }
       dungeon.heart = best;
+      for (const nb of graph.adj[best]) dungeon.tags[nb] = PATH;
+      // seal unreachable pockets (become obstacles too)
+      const reach = bfsDist(graph.adj, [best], (i) => dungeon.tags[i] !== BLOCKED);
+      for (let i = 0; i < C; i++) {
+        if (dungeon.tags[i] !== BLOCKED && reach[i] === -1) dungeon.tags[i] = BLOCKED;
+      }
       dungeon.distToHeart = bfsDist(graph.adj, [best], (i) => dungeon.tags[i] !== BLOCKED);
       let sp = -1, bd = -1;
-      for (let i = 0; i < dungeon.tags.length; i++) {
+      for (let i = 0; i < C; i++) {
         if (dungeon.tags[i] !== BLOCKED && dungeon.distToHeart[i] > bd) {
           bd = dungeon.distToHeart[i]; sp = i;
         }
@@ -936,10 +979,10 @@ export function initHeartTab(root) {
     carryingRegen = false;
     speedBonus = 1;
     for (let i = projectiles.length - 1; i >= 0; i--) killProjectile(i);
-    for (let i = hostileShots.length - 1; i >= 0; i--) {
-      scene.remove(hostileShots[i].mesh);
-      hostileShots[i].mesh.geometry.dispose();
-      hostileShots.splice(i, 1);
+    for (let i = allyShots.length - 1; i >= 0; i--) {
+      scene.remove(allyShots[i].mesh);
+      allyShots[i].mesh.geometry.dispose();
+      allyShots.splice(i, 1);
     }
     orbRng = mulberry32((params.seed ^ 0x0b0b5) >>> 0);
     respawnClock = 0;
@@ -993,7 +1036,10 @@ export function initHeartTab(root) {
 
   // --- enemies: easy AI, they only wander ----------------------------------
   function clearEnemies() {
-    for (const e of enemies) scene.remove(e.obj);
+    for (const e of enemies) {
+      scene.remove(e.obj);
+      if (e.obj.geometry) e.obj.geometry.dispose();
+    }
     enemies.length = 0;
   }
 
@@ -1014,28 +1060,72 @@ export function initHeartTab(root) {
   }
 
   function spawnEnemies() {
+    // heart-tab meaning: clear the creature roster and place the three
+    // SPAWN POINTS — far from the pole, spread apart, 3 hits each
     clearEnemies();
-    const d = bfsDistFromSpawn();
-    const candidates = [];
+    for (const sp of spawnPoints) scene.remove(sp.obj);
+    spawnPoints.length = 0;
+    wave = 0;
+    waveClock = params.waveEvery * 0.6; // first wave arrives sooner
+    let maxD = 0;
     for (let i = 0; i < dungeon.tags.length; i++) {
-      if (dungeon.tags[i] !== BLOCKED && d[i] >= 6 && i !== dungeon.heart) candidates.push(i);
+      if (dungeon.tags[i] !== BLOCKED) maxD = Math.max(maxD, dungeon.distToHeart[i]);
     }
-    for (let k = 0; k < params.enemies && candidates.length > 0; k++) {
-      const ci = candidates.splice(Math.floor(whim() * candidates.length), 1)[0];
-      const obj = buildUnit('tank', { walker: look().enemy || 0xd94f4f, walkerHi: look().enemyHi || 0xffd77a });
-      obj.scale.setScalar((obj.userData.baseScale ?? 1) * cellSide * 0.55);
+    const far = [];
+    for (let i = 0; i < dungeon.tags.length; i++) {
+      if (dungeon.tags[i] !== BLOCKED && dungeon.distToHeart[i] >= maxD * 0.55) far.push(i);
+    }
+    const types = Object.keys(CREATURE_TINTS);
+    const chosen = [];
+    for (const type of types) {
+      // greedy spread: farthest from already-chosen points
+      let best = -1, bs = -1;
+      for (const ci of far) {
+        let s = dungeon.distToHeart[ci];
+        for (const c of chosen) s += Math.min(20, hopEstimate(ci, c));
+        if (s > bs) { bs = s; best = ci; }
+      }
+      chosen.push(best);
+      const obj = makeOrbCloud('scatter', { body: CREATURE_TINTS[type], hi: 0xffffff }, whim() * 6.283);
+      const r = cellSide * 0.55;
+      obj.scale.setScalar(r);
+      obj.userData.sizeScale = r;
+      const c = graph.centers[best];
+      const n = graph.normals[best];
+      obj.position.set(c[0] + n[0] * r, c[1] + n[1] * r, c[2] + n[2] * r);
       scene.add(obj);
-      const exits = openNeighbors(ci);
-      enemies.push({
-        cur: ci, prev: -1,
-        next: exits.length ? exits[Math.floor(whim() * exits.length)] : ci,
-        prog: 0, pos: graph.centers[ci].slice(), dir: [0, 1, 0],
-        obj, alive: true,
-      });
+      spawnPoints.push({ type, ci: best, hp: 3, obj, alive: true });
     }
   }
 
-  const ENEMY_SPEED = 0.45; // cells per second — easy mode
+  // cheap hop estimate for spreading spawn points (chord distance in cells)
+  function hopEstimate(a, b) {
+    return dist3(graph.centers[a], graph.centers[b]) / cellSide;
+  }
+
+  function spawnWave() {
+    wave++;
+    const count = params.waveSize + Math.floor(wave / 3);
+    for (const sp of spawnPoints) {
+      if (!sp.alive) continue;
+      for (let k = 0; k < count; k++) {
+        const obj = buildUnit(sp.type, { walker: CREATURE_TINTS[sp.type], walkerHi: 0xffffff });
+        obj.scale.setScalar(cellSide * 0.45);
+        scene.add(obj);
+        const exits = openNeighbors(sp.ci);
+        enemies.push({
+          type: sp.type,
+          cur: sp.ci, prev: -1,
+          next: exits.length ? exits[Math.floor(whim() * exits.length)] : sp.ci,
+          prog: whim() * 0.4, pos: graph.centers[sp.ci].slice(), dir: [0, 1, 0],
+          obj, alive: true, phase: whim() * 6.283,
+        });
+      }
+    }
+    updateHud();
+  }
+
+  const ENEMY_SPEED = 0.5; // cells per second toward the Heart
   function updateEnemies(dt, tNow) {
     for (const e of enemies) {
       if (!e.alive) continue;
@@ -1044,8 +1134,12 @@ export function initHeartTab(root) {
         e.prog -= 1;
         e.prev = e.cur;
         e.cur = e.next;
-        const exits = openNeighbors(e.cur).filter((c) => c !== e.prev);
-        e.next = exits.length ? exits[Math.floor(whim() * exits.length)] : e.prev;
+        // heart-seeking: prefer strictly-descending distToHeart, with a
+        // little wobble so streams braid instead of forming a single file
+        const exits = openNeighbors(e.cur);
+        const down = exits.filter((c) => dungeon.distToHeart[c] < dungeon.distToHeart[e.cur]);
+        const pool = (down.length && whim() > 0.15) ? down : exits;
+        e.next = pool.length ? pool[Math.floor(whim() * pool.length)] : e.cur;
       }
       const a = graph.centers[e.cur];
       const b = graph.centers[e.next];
@@ -1056,15 +1150,48 @@ export function initHeartTab(root) {
       const flat = sub3(raw, scale3(n, dot3(raw, n)));
       const l = Math.hypot(flat[0], flat[1], flat[2]);
       if (l > 1e-9) e.dir = scale3(flat, 1 / l);
-      const s = cellSide * 0.55;
-      const lift = s * (e.obj.userData.lift ?? 0.05);
-      e.obj.position.set(e.pos[0] + n[0] * lift, e.pos[1] + n[1] * lift, e.pos[2] + n[2] * lift);
+      const s = cellSide * 0.45;
+      e.obj.position.set(e.pos[0] + n[0] * s * 0.85, e.pos[1] + n[1] * s * 0.85, e.pos[2] + n[2] * s * 0.85);
       tmpObj.position.copy(e.obj.position);
       tmpObj.up.set(n[0], n[1], n[2]);
       tmpObj.lookAt(e.obj.position.x + e.dir[0], e.obj.position.y + e.dir[1], e.obj.position.z + e.dir[2]);
       e.obj.quaternion.copy(tmpObj.quaternion);
-      if (e.obj.userData.tick) e.obj.userData.tick(tNow + e.cur); // desync sweeps
+      if (e.obj.userData.tick) e.obj.userData.tick(tNow + e.phase);
+
+      // contact damage: the Heart, the player, or an ally — then it dies
+      if (dist3(e.pos, graph.centers[dungeon.heart]) < cellSide * 0.75) {
+        killCreature(e);
+        heartHit();
+        continue;
+      }
+      if (dist3(e.pos, player.pos) < cellSide * 0.42) {
+        killCreature(e);
+        playerHit();
+        continue;
+      }
+      for (const fr of friendlies) {
+        if (!fr.alive) continue;
+        if (dist3(e.pos, fr.pos) < cellSide * 0.42) {
+          killCreature(e);
+          fr.hp--;
+          if (fr.hp <= 0) {
+            fr.alive = false;
+            const fx = makeDebris(fr.obj, norm3(fr.pos));
+            scene.add(fx);
+            debris.push(fx);
+            scene.remove(fr.obj);
+          }
+          break;
+        }
+      }
     }
+  }
+
+  function killCreature(e) {
+    e.alive = false;
+    scene.remove(e.obj);
+    e.obj.geometry.dispose();
+    updateHud();
   }
 
   // --- firing: the shot leaves along the turret's CURRENT sweep ------------
@@ -1114,31 +1241,38 @@ export function initHeartTab(root) {
       p.mesh.quaternion.setFromUnitVectors(Y_AXIS, tmpV);
       p.mesh.rotateY(p.dist * 60);
 
-      // enemy contact
+      // creature contact: one shell, one kill
       let hit = false;
       for (const e of enemies) {
         if (!e.alive) continue;
         if (dist3(p.pos, e.pos) < cellSide * 0.45) {
-          e.alive = false;
-          // the tank comes apart: its own polygons scatter and fade
-          const fx = makeDebris(e.obj, norm3(e.pos));
-          scene.add(fx);
-          debris.push(fx);
-          scene.remove(e.obj);
+          killCreature(e);
           hit = true;
-          updateHud();
-          if (enemies.every((en) => !en.alive)) {
-            player.won = true;
-            msgEl.innerHTML = `<div class="msg-head">transmission · combat log</div>` +
-              `✦ the heart is safe<br>` +
-              `${enemies.length} tanks destroyed · ${absorbed} orbs eaten · ${player.moves} moves<br>` +
-              `<button class="msg-regen">⟲ new sector</button>`;
-            msgEl.classList.remove('hidden');
-          }
           break;
         }
       }
-      if (hit) { killProjectile(i); continue; }
+      // spawn points soak 3 hits
+      if (!hit) {
+        for (const sp of spawnPoints) {
+          if (!sp.alive) continue;
+          if (dist3(p.pos, graph.centers[sp.ci]) < cellSide * 0.6) {
+            sp.hp--;
+            hit = true;
+            if (sp.hp <= 0) {
+              sp.alive = false;
+              scene.remove(sp.obj);
+              sp.obj.geometry.dispose();
+            } else {
+              // wounded: shrink a step so damage reads
+              const s = sp.obj.userData.sizeScale * (0.65 + 0.35 * (sp.hp / 3));
+              sp.obj.scale.setScalar(s);
+            }
+            updateHud();
+            break;
+          }
+        }
+      }
+      if (hit) { killProjectile(i); checkVictory(); continue; }
 
       // wall impact: nearest cell is a wall -> fizzle
       let bestCi = -1, bd = Infinity;
@@ -1256,6 +1390,7 @@ export function initHeartTab(root) {
   const REWARD_TYPES = [
     { type: 'ammo', body: 0xffb000, fx: 'twinkle' },   // +3 shells
     { type: 'power', body: 0x9ff8ff, fx: 'scatter' },  // permanent +8% speed
+    { type: 'health', body: 0xffffff, fx: 'wave' },    // you +1
     { type: 'regen', body: 0xff2df0, fx: 'breathe' },  // carry home: heart +4
   ];
 
@@ -1300,6 +1435,7 @@ export function initHeartTab(root) {
       rewardMeshes.delete(player.cur);
       if (r.type === 'ammo') ammo = Math.min(AMMO_MAX, ammo + 3);
       else if (r.type === 'power') speedBonus *= 1.08;
+      else if (r.type === 'health') playerHP = Math.min(PLAYER_MAX, playerHP + 1);
       else if (r.type === 'regen') carryingRegen = true;
       updateHud();
     }
@@ -1349,41 +1485,39 @@ export function initHeartTab(root) {
     if (heartHP <= 0) loseGame('the heart is lost');
   }
 
-  const ENEMY_FIRE_RANGE = 3.4; // in cells
-  function updateEnemyFire(dt) {
-    const range = ENEMY_FIRE_RANGE * cellSide;
-    for (const e of enemies) {
-      if (!e.alive) continue;
-      e.fireClock = (e.fireClock ?? whim() * 3) + dt;
-      if (e.fireClock < 2.8) continue;
-      // nearest target in range: player, allies, or the Heart itself
-      const targets = [{ pos: player.pos, kind: 'player' }];
-      for (const f of friendlies) if (f.alive) targets.push({ pos: f.pos, kind: 'friendly', ref: f });
-      targets.push({ pos: graph.centers[dungeon.heart], kind: 'heart' });
+  // --- ally covering fire: infinite ammo, holds the line ------------------
+  const ALLY_FIRE_RANGE = 3.0; // cells
+  function updateAllyFire(dt) {
+    const range = ALLY_FIRE_RANGE * cellSide;
+    for (const f of friendlies) {
+      if (!f.alive) continue;
+      f.fireClock = (f.fireClock ?? whim() * 1.4) + dt;
+      if (f.fireClock < 1.4) continue;
       let best = null, bd = Infinity;
-      for (const tg of targets) {
-        const d = dist3(e.pos, tg.pos);
-        if (d < bd) { bd = d; best = tg; }
+      for (const e of enemies) {
+        if (!e.alive) continue;
+        const d = dist3(f.pos, e.pos);
+        if (d < bd) { bd = d; best = e; }
       }
       if (!best || bd > range) continue;
-      e.fireClock = 0;
-      const n = norm3(e.pos);
-      const raw = sub3(best.pos, e.pos);
+      f.fireClock = 0;
+      const n = norm3(f.pos);
+      const raw = sub3(best.pos, f.pos);
       const flat = sub3(raw, scale3(n, dot3(raw, n)));
       const l = Math.hypot(flat[0], flat[1], flat[2]);
       if (l < 1e-9) continue;
-      const mesh = makeBulletCloud({ body: look().enemy || 0xd94f4f, hi: 0xffffff });
-      mesh.scale.setScalar(cellSide * 0.14);
+      const mesh = makeBulletCloud({ body: look().walkerHi, hi: 0xffffff });
+      mesh.scale.setScalar(cellSide * 0.13);
       scene.add(mesh);
-      hostileShots.push({ pos: e.pos.slice(), dir: scale3(flat, 1 / l), dist: 0, mesh });
+      allyShots.push({ pos: f.pos.slice(), dir: scale3(flat, 1 / l), dist: 0, mesh });
     }
   }
 
-  function updateHostileShots(dt) {
-    const v = 2.6 * cellSide;
-    const maxDist = 7 * cellSide;
-    for (let i = hostileShots.length - 1; i >= 0; i--) {
-      const p = hostileShots[i];
+  function updateAllyShots(dt) {
+    const v = 3.0 * cellSide;
+    const maxDist = 4.5 * cellSide;
+    for (let i = allyShots.length - 1; i >= 0; i--) {
+      const p = allyShots[i];
       p.pos = norm3(add3(p.pos, scale3(p.dir, v * dt)));
       const n = p.pos;
       p.dir = norm3(sub3(p.dir, scale3(n, dot3(p.dir, n))));
@@ -1393,29 +1527,14 @@ export function initHeartTab(root) {
       tmpV.set(p.dir[0], p.dir[1], p.dir[2]);
       p.mesh.quaternion.setFromUnitVectors(Y_AXIS, tmpV);
       p.mesh.rotateY(p.dist * 60);
-
       let dead = false;
-      if (dist3(p.pos, player.pos) < cellSide * 0.4) { playerHit(); dead = true; }
-      if (!dead) {
-        for (const f of friendlies) {
-          if (!f.alive) continue;
-          if (dist3(p.pos, f.pos) < cellSide * 0.4) {
-            f.hp--;
-            if (f.hp <= 0) {
-              f.alive = false;
-              const fx = makeDebris(f.obj, norm3(f.pos));
-              scene.add(fx);
-              debris.push(fx);
-              scene.remove(f.obj);
-            }
-            dead = true;
-            break;
-          }
+      for (const e of enemies) {
+        if (!e.alive) continue;
+        if (dist3(p.pos, e.pos) < cellSide * 0.4) {
+          killCreature(e);
+          dead = true;
+          break;
         }
-      }
-      if (!dead && dist3(p.pos, graph.centers[dungeon.heart]) < cellSide * 0.7) {
-        heartHit();
-        dead = true;
       }
       if (!dead) {
         const ci = cellIndex(p.pos);
@@ -1424,8 +1543,20 @@ export function initHeartTab(root) {
       if (dead) {
         scene.remove(p.mesh);
         p.mesh.geometry.dispose();
-        hostileShots.splice(i, 1);
+        allyShots.splice(i, 1);
       }
+    }
+  }
+
+  function checkVictory() {
+    if (player.won) return;
+    if (spawnPoints.every((s) => !s.alive) && enemies.every((e) => !e.alive)) {
+      player.won = true;
+      msgEl.innerHTML = `<div class="msg-head">transmission · combat log</div>` +
+        `✦ the heart is safe<br>` +
+        `${wave} waves repelled · heart ${heartHP}/${HEART_MAX} · ${player.moves} moves<br>` +
+        `<button class="msg-regen">⟲ new sector</button>`;
+      msgEl.classList.remove('hidden');
     }
   }
 
@@ -1438,7 +1569,9 @@ export function initHeartTab(root) {
   const viewCtrl = gui.add(params, 'view', ['pov', 'third']).name('camera (V)');
   const speedCtrl = gui.add(params, 'speed', 0.2, 4, 0.1).name('wander speed');
   gui.add(params, 'autoResume', 1, 10, 0.5).name('auto resume (s)');
-  gui.add(params, 'enemies', 1, 12, 1).onFinishChange(regenerate);
+  gui.add(params, 'waveSize', 1, 6, 1).name('wave size').onFinishChange(regenerate);
+  gui.add(params, 'waveEvery', 6, 40, 1).name('wave every (s)');
+  gui.add(params, 'obstacles', 0.05, 0.4, 0.05).onFinishChange(regenerate);
   gui.add(params, 'friendlies', 0, 8, 1).onFinishChange(regenerate);
   gui.add(params, 'rewards', 0, 12, 1).onFinishChange(regenerate);
   gui.add(params, 'orbs', 0, 40, 1).onFinishChange(regenerate);
@@ -1478,12 +1611,20 @@ export function initHeartTab(root) {
         debris.splice(i, 1);
       }
     }
+    if (!player.won) {
+      waveClock += dt;
+      if (waveClock >= params.waveEvery && spawnPoints.some((s) => s.alive)) {
+        waveClock = 0;
+        spawnWave();
+      }
+    }
     updateEnemies(dt, t);
     updateFriendlies(dt, t);
-    updateEnemyFire(dt);
-    updateHostileShots(dt);
+    updateAllyFire(dt);
+    updateAllyShots(dt);
     checkRewards();
     updateProjectiles(dt);
+    for (const sp of spawnPoints) if (sp.alive) sp.obj.userData.tick(t);
     updateHud();
     placeActors();
 

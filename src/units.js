@@ -15,7 +15,7 @@
 // tick(t) (idle animation) }.
 
 import * as THREE from '../vendor/three.module.js';
-import { CREATURES, waveJelly, spherePts, bulletPts } from './creatures.js?v=c0dbf273';
+import { CREATURES, waveJelly, spherePts, bulletPts } from './creatures.js?v=2a26021c';
 
 function normalizeToUnit(group) {
   group.updateMatrixWorld(true);
