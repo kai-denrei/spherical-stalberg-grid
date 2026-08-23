@@ -117,6 +117,42 @@ export function jellyfishPts() {
   return fitUnit(pts);
 }
 
+// bullet — an upright shell: cylindrical case, ogive nose, driving band,
+// flat base (Braille fun-shapes, verbatim). +Y is the flight axis.
+export function bulletPts() {
+  const pts = [], R = 0.42, yBase = -0.95, ySh = 0.12, yTip = 0.95;
+  for (let iy = 0; iy <= 14; iy++) {
+    const y = yBase + (ySh - yBase) * iy / 14;
+    for (let a = 0; a < 22; a++) {
+      const ang = a / 22 * 2 * Math.PI;
+      pts.push([R * Math.cos(ang), y, R * Math.sin(ang)]); // case wall
+    }
+  }
+  for (let iy = 1; iy <= 14; iy++) {
+    const f = iy / 14, y = ySh + (yTip - ySh) * f, r = R * (1 - Math.pow(f, 1.8));
+    const n = Math.max(3, Math.round(22 * r / R));
+    for (let a = 0; a < n; a++) {
+      const ang = a / n * 2 * Math.PI;
+      pts.push([r * Math.cos(ang), y, r * Math.sin(ang)]); // ogive nose
+    }
+  }
+  pts.push([0, yTip, 0, 1]); // tip pops
+  for (const yb of [-0.74, -0.67]) {
+    for (let a = 0; a < 26; a++) {
+      const ang = a / 26 * 2 * Math.PI;
+      pts.push([(R + 0.055) * Math.cos(ang), yb, (R + 0.055) * Math.sin(ang)]); // driving band
+    }
+  }
+  for (let ir = 0; ir <= 6; ir++) {
+    const rr = R * ir / 6, n = Math.max(1, Math.round(22 * ir / 6));
+    for (let a = 0; a < n; a++) {
+      const ang = a / n * 2 * Math.PI;
+      pts.push([rr * Math.cos(ang), yBase, rr * Math.sin(ang)]); // base disc
+    }
+  }
+  return fitUnit(pts);
+}
+
 // dotted sphere — the Braille half-dotted primitive; every 12th dot marked
 // hi so treatments and tints have a sparkle layer to work with
 export function spherePts(n = 170) {

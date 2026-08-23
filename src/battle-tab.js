@@ -8,14 +8,14 @@
 
 import * as THREE from '../vendor/three.module.js';
 import GUI from '../vendor/lil-gui.esm.js';
-import { generateSphereMesh, relax } from './grid.js?v=ea3d1875';
-import { generateDungeon, BLOCKED, PATH, ROOM } from './dungeon.js?v=ea3d1875';
-import { mulberry32, randomSeed } from './rng.js?v=ea3d1875';
-import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3 } from './vec3.js?v=ea3d1875';
-import { CREATURES, waveJelly } from './creatures.js?v=ea3d1875';
-import { UNITS, UNIT_NAMES, buildUnit, makeOrbCloud, makeDebris, ORB_FX } from './units.js?v=ea3d1875';
-import { LOOKS, LOOK_NAMES } from './looks.js?v=ea3d1875';
-import { makeCellIndex } from './cellindex.js?v=ea3d1875';
+import { generateSphereMesh, relax } from './grid.js?v=0a0e8dff';
+import { generateDungeon, BLOCKED, PATH, ROOM } from './dungeon.js?v=0a0e8dff';
+import { mulberry32, randomSeed } from './rng.js?v=0a0e8dff';
+import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3 } from './vec3.js?v=0a0e8dff';
+import { CREATURES, waveJelly } from './creatures.js?v=0a0e8dff';
+import { UNITS, UNIT_NAMES, buildUnit, makeOrbCloud, makeBulletCloud, makeDebris, ORB_FX } from './units.js?v=0a0e8dff';
+import { LOOKS, LOOK_NAMES } from './looks.js?v=0a0e8dff';
+import { makeCellIndex } from './cellindex.js?v=0a0e8dff';
 
 export function initBattleTab(root) {
   let active = false;
@@ -133,7 +133,6 @@ export function initBattleTab(root) {
   const orbMeshes = new Map(); // open-cell index -> orb mesh
   let orbRng = mulberry32(1);  // reseeded per maze
   let respawnClock = 0;
-  const orbMat = new THREE.MeshLambertMaterial({ color: 0xffb84d, emissive: 0x4d2f00 }); // retinted per look
 
   // --- battle state --------------------------------------------------------
   const AMMO_MAX = 9;
@@ -146,6 +145,7 @@ export function initBattleTab(root) {
   const reach = { dir: null, amt: 0 };
   const tmpV = new THREE.Vector3();
   const tmpQ = new THREE.Quaternion();
+  const Y_AXIS = new THREE.Vector3(0, 1, 0);
 
   function clearOrbs() {
     for (const orb of orbMeshes.values()) {
@@ -242,7 +242,6 @@ export function initBattleTab(root) {
   // manual override: ANY WASD press disables auto-wander entirely; it
   // resumes only after params.autoResume seconds without input
   let manualClock = 99;
-  let prevSlow = false;
   const manualActive = () => manualClock < params.autoResume;
 
   const camGoal = { pos: new THREE.Vector3(), quat: new THREE.Quaternion() };
@@ -662,7 +661,9 @@ export function initBattleTab(root) {
     // keep semantics (current cell, visited, absorption) in sync.
     if (manual) {
       player.freeMode = true;
-      const drive = keys.fast ? 1 : keys.slow ? -0.55 : 0;
+      // mobile-first: manual ALWAYS rolls forward — the player's attention
+      // goes to steering and aiming, not throttle. S reverses, W boosts.
+      const drive = keys.slow ? -0.55 : keys.fast ? 1.45 : 1;
       if (drive !== 0) {
         const v = params.speed * cellSide * 1.6 * drive;
         const cand = norm3(add3(player.pos, scale3(player.heading, v * dt)));
@@ -687,7 +688,6 @@ export function initBattleTab(root) {
       checkAbsorb();
       return;
     }
-    prevSlow = keys.slow;
 
     // AUTO resumes from wherever free movement left off: the nearest open
     // cell becomes home, and the first glide eases out from the actual
@@ -933,10 +933,9 @@ export function initBattleTab(root) {
     sun.intensity = L.sun[1];
     fill.color.setHex(L.fill[0]);
     fill.intensity = L.fill[1];
-    orbMat.color.setHex(L.orb.color);
-    orbMat.emissive.setHex(L.orb.emissive);
     buildGeometry();
     buildActors();
+    spawnOrbs(); // orbs bake look colors at spawn
     spawnEnemies();
     placeActors();
   }
@@ -1035,10 +1034,9 @@ export function initBattleTab(root) {
     } else {
       dir = player.smoothDir.slice(); // turretless units fire straight ahead
     }
-    // fired shells are tiny spinning dotted spheres too
-    const mesh = makeOrbCloud('spin', { body: look().walkerHi, hi: 0xffffff }, whim() * 6.283);
-    mesh.scale.setScalar(cellSide * 0.11);
-    mesh.userData.sizeScale = cellSide * 0.11;
+    // the Braille bullet, nose along the flight direction
+    const mesh = makeBulletCloud({ body: look().walkerHi, hi: 0xffffff });
+    mesh.scale.setScalar(cellSide * 0.16);
     scene.add(mesh);
     projectiles.push({ pos: player.pos.slice(), dir, dist: 0, mesh });
     updateHud();
@@ -1061,7 +1059,10 @@ export function initBattleTab(root) {
       p.dist += v * dt;
       const lift = 1 + params.wallHeight * 0.5;
       p.mesh.position.set(p.pos[0] * lift, p.pos[1] * lift, p.pos[2] * lift);
-      p.mesh.userData.tick(p.dist * 40);
+      // nose along flight, rifling spin about the flight axis
+      tmpV.set(p.dir[0], p.dir[1], p.dir[2]);
+      p.mesh.quaternion.setFromUnitVectors(Y_AXIS, tmpV);
+      p.mesh.rotateY(p.dist * 60);
 
       // enemy contact
       let hit = false;

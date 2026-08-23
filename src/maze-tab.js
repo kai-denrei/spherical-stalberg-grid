@@ -6,13 +6,13 @@
 
 import * as THREE from '../vendor/three.module.js';
 import GUI from '../vendor/lil-gui.esm.js';
-import { generateSphereMesh, relax } from './grid.js?v=ea3d1875';
-import { generateDungeon, BLOCKED, PATH, ROOM } from './dungeon.js?v=ea3d1875';
-import { mulberry32, randomSeed } from './rng.js?v=ea3d1875';
-import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3 } from './vec3.js?v=ea3d1875';
-import { LOOKS, LOOK_NAMES } from './looks.js?v=ea3d1875';
-import { makeCellIndex } from './cellindex.js?v=ea3d1875';
-import { UNIT_NAMES, buildUnit } from './units.js?v=ea3d1875';
+import { generateSphereMesh, relax } from './grid.js?v=0a0e8dff';
+import { generateDungeon, BLOCKED, PATH, ROOM } from './dungeon.js?v=0a0e8dff';
+import { mulberry32, randomSeed } from './rng.js?v=0a0e8dff';
+import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3 } from './vec3.js?v=0a0e8dff';
+import { LOOKS, LOOK_NAMES } from './looks.js?v=0a0e8dff';
+import { makeCellIndex } from './cellindex.js?v=0a0e8dff';
+import { UNIT_NAMES, buildUnit } from './units.js?v=0a0e8dff';
 
 export function initMazeTab(root) {
   let active = false;
@@ -115,7 +115,6 @@ export function initMazeTab(root) {
   // manual override: ANY WASD press disables auto-wander entirely; it
   // resumes only after params.autoResume seconds without input
   let manualClock = 99;
-  let prevSlow = false;
   const manualActive = () => manualClock < params.autoResume;
 
   const camGoal = { pos: new THREE.Vector3(), quat: new THREE.Quaternion() };
@@ -506,7 +505,9 @@ export function initMazeTab(root) {
     // keep semantics (current cell, visited, absorption) in sync.
     if (manual) {
       player.freeMode = true;
-      const drive = keys.fast ? 1 : keys.slow ? -0.55 : 0;
+      // mobile-first: manual ALWAYS rolls forward — the player's attention
+      // goes to steering and aiming, not throttle. S reverses, W boosts.
+      const drive = keys.slow ? -0.55 : keys.fast ? 1.45 : 1;
       if (drive !== 0) {
         const v = params.speed * cellSide * 1.6 * drive;
         const cand = norm3(add3(player.pos, scale3(player.heading, v * dt)));
@@ -523,7 +524,6 @@ export function initMazeTab(root) {
       // (maze: nothing else runs while free)
       return;
     }
-    prevSlow = keys.slow;
 
     // AUTO resumes from wherever free movement left off: the nearest open
     // cell becomes home, and the first glide eases out from the actual

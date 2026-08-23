@@ -15,7 +15,7 @@
 // tick(t) (idle animation) }.
 
 import * as THREE from '../vendor/three.module.js';
-import { CREATURES, waveJelly, spherePts } from './creatures.js?v=ea3d1875';
+import { CREATURES, waveJelly, spherePts, bulletPts } from './creatures.js?v=0a0e8dff';
 
 function normalizeToUnit(group) {
   group.updateMatrixWorld(true);
@@ -265,6 +265,31 @@ export function makeDebris(obj, outwardN) {
     return life < LIFE;
   };
   return mesh;
+}
+
+// bullet projectile — the Braille shell as a static dot-cloud. Animation is
+// pure object transform: orient +Y along the flight dir, spin about that
+// axis for rifling. Zero per-point CPU work per frame.
+export function makeBulletCloud(cols) {
+  const base = bulletPts();
+  const pos = new Float32Array(base.length * 3);
+  const col = new Float32Array(base.length * 3);
+  const cBody = new THREE.Color(cols.body);
+  const cHi = new THREE.Color(cols.hi);
+  for (let i = 0; i < base.length; i++) {
+    pos[i * 3] = base[i][0]; pos[i * 3 + 1] = base[i][1]; pos[i * 3 + 2] = base[i][2];
+    const c = base[i][3] === 1 ? cHi : cBody;
+    col[i * 3] = c.r; col[i * 3 + 1] = c.g; col[i * 3 + 2] = c.b;
+  }
+  const geo = new THREE.BufferGeometry();
+  geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+  geo.setAttribute('color', new THREE.BufferAttribute(col, 3));
+  const pts = new THREE.Points(geo, new THREE.PointsMaterial({
+    size: 2, sizeAttenuation: false, vertexColors: true,
+    transparent: true, opacity: 0.95,
+  }));
+  pts.userData.kind = 'bullet';
+  return pts;
 }
 
 export const UNITS = {
