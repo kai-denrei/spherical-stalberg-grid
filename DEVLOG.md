@@ -6,6 +6,29 @@ Demo links assume `npm run serve` (port 8144) or the
 
 ---
 
+## `2ce7793` — touch-action does not inherit
+
+The double-tap zoom "fix" from two commits back never worked where it
+mattered, and the reason is worth engraving: **`touch-action` is not
+an inherited property.** Setting it on `html, body` styles exactly two
+elements; the WebGL canvases — where every gameplay double-tap
+actually lands — never got it, so iOS kept zooming. The working fix is
+the universal selector: `* { touch-action: manipulation }`. The one
+place that must NOT be manipulation — OrbitControls' canvas on the
+grid tab — is safe automatically, because three.js sets inline
+`touch-action: none` there, and inline beats stylesheet.
+
+Layered on top: `maximum-scale=1, user-scalable=no` in the viewport
+meta (honored in standalone/PWA mode and on Android; Safari
+browser-mode ignores it for accessibility — which is exactly why the
+CSS does the real work), the full Safari gesture pipeline prevented
+(`gesturestart/change/end`), and long-press callout + text selection
+off across the play surface, re-enabled on `.mdview` so the in-app
+docs stay copyable. The general lesson: when a CSS "fix" for a
+browser behavior doesn't take, check inheritance before doubling the
+workarounds — half the touch/scroll properties (`touch-action`,
+`overscroll-behavior`) are per-element.
+
 ## `ccc9d20` — Controls learn to whisper
 
 Second controls pass from the operator, and a philosophy shift: the
