@@ -6,8 +6,8 @@ import { OrbitControls } from '../vendor/OrbitControls.js';
 import GUI from '../vendor/lil-gui.esm.js';
 import {
   generateSphereMesh, relaxStep, squarenessError, quadErrors, valences,
-} from './grid.js?v=86d5a084';
-import { mulberry32, randomSeed } from './rng.js?v=86d5a084';
+} from './grid.js?v=ea3d1875';
+import { mulberry32, randomSeed } from './rng.js?v=ea3d1875';
 
 export function initGridTab(root) {
   let active = true;
@@ -15,7 +15,7 @@ export function initGridTab(root) {
   const params = {
     // generation
     seed: 42,
-    points: 600,
+    points: 4000,
     candidates: 12,
     quadBias: 1.0,
     // relaxation

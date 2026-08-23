@@ -8,21 +8,21 @@
 
 import * as THREE from '../vendor/three.module.js';
 import GUI from '../vendor/lil-gui.esm.js';
-import { generateSphereMesh, relax } from './grid.js?v=86d5a084';
-import { generateDungeon, BLOCKED, PATH, ROOM } from './dungeon.js?v=86d5a084';
-import { mulberry32, randomSeed } from './rng.js?v=86d5a084';
-import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3 } from './vec3.js?v=86d5a084';
-import { CREATURES, waveJelly } from './creatures.js?v=86d5a084';
-import { UNITS, UNIT_NAMES, buildUnit, makeOrbCloud, makeDebris, ORB_FX } from './units.js?v=86d5a084';
-import { LOOKS, LOOK_NAMES } from './looks.js?v=86d5a084';
-import { makeCellIndex } from './cellindex.js?v=86d5a084';
+import { generateSphereMesh, relax } from './grid.js?v=ea3d1875';
+import { generateDungeon, BLOCKED, PATH, ROOM } from './dungeon.js?v=ea3d1875';
+import { mulberry32, randomSeed } from './rng.js?v=ea3d1875';
+import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3 } from './vec3.js?v=ea3d1875';
+import { CREATURES, waveJelly } from './creatures.js?v=ea3d1875';
+import { UNITS, UNIT_NAMES, buildUnit, makeOrbCloud, makeDebris, ORB_FX } from './units.js?v=ea3d1875';
+import { LOOKS, LOOK_NAMES } from './looks.js?v=ea3d1875';
+import { makeCellIndex } from './cellindex.js?v=ea3d1875';
 
 export function initBattleTab(root) {
   let active = false;
 
   const params = {
     seed: 7,
-    points: 400,
+    points: 4000,
     rooms: 6,
     roomRadius: 2,
     extraCorridors: 2,
@@ -30,8 +30,8 @@ export function initBattleTab(root) {
     wallHeight: 0.03,
     relaxIters: 80,
     view: 'third', // pov | third
-    look: 'solid', // visual identity, see looks.js
-    wallTops: 'auto', // auto | bright | dim | black — wall-top wires & fill
+    look: 'tronColors', // visual identity, see looks.js
+    wallTops: 'dim', // auto | bright | dim | black — wall-top wires & fill
     speed: 1.1, // cells per second, wanderer pace
     autoResume: 3, // seconds idle before auto-wander resumes
     creature: 'tank', // any roster unit; the tank has the sweeping turret
