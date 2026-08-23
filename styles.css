@@ -246,54 +246,73 @@ html, body {
 }
 .tc-util button:active { background: rgba(90, 140, 230, 0.5); color: #fff; }
 
-/* --- TD shop / upgrade panel (build mode, tap a cell) -------------------- */
+/* --- TD shop: RADIAL menu around the tapped cell (HokorobiTawaa) --------- */
 #td-shop {
   position: absolute;
-  bottom: calc(max(12px, env(safe-area-inset-bottom)) + 148px);
-  left: 50%;
-  transform: translateX(-50%);
   z-index: 9;
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  gap: 6px;
-  max-width: min(560px, 92vw);
-  padding: 10px 12px;
-  background: rgba(10, 20, 24, 0.88);
-  border: 1px solid rgba(53, 255, 208, 0.35);
-  border-radius: 12px;
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
+  width: 0;
+  height: 0;
 }
 #td-shop.hidden { display: none; }
-#td-shop .shop-head {
-  flex-basis: 100%;
+#td-shop .radial-center {
+  position: absolute;
+  left: 0;
+  top: 0;
+  transform: translate(-50%, -50%);
+  width: 62px;
+  height: 62px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   text-align: center;
-  font-size: 11px;
-  letter-spacing: 0.24em;
-  text-transform: uppercase;
+  font: 11px ui-monospace, Menlo, monospace;
+  letter-spacing: 0.06em;
   color: #7fe8d0;
+  background: rgba(8, 18, 22, 0.9);
+  border: 1px solid rgba(53, 255, 208, 0.4);
+  pointer-events: none;
+  line-height: 1.35;
 }
-#td-shop button {
-  padding: 8px 11px;
-  font: 12px ui-monospace, Menlo, monospace;
-  background: rgba(30, 44, 58, 0.6);
+#td-shop .radial-item {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  font: 10px ui-monospace, Menlo, monospace;
+  line-height: 1.3;
+  text-align: center;
+  background: rgba(22, 34, 48, 0.88);
   color: #cfe2ee;
-  border: 1px solid rgba(120, 150, 210, 0.4);
-  border-radius: 9px;
+  border: 1px solid rgba(120, 150, 210, 0.45);
   cursor: pointer;
   touch-action: manipulation;
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
 }
-#td-shop button:disabled { opacity: 0.35; cursor: default; }
-#td-shop button:not(:disabled):hover { background: rgba(60, 90, 120, 0.7); color: #fff; }
-#td-shop .shop-sell { border-color: rgba(255, 170, 90, 0.5); color: #ffd9a8; }
-#td-shop .shop-max { align-self: center; font-size: 11px; color: #7fe8d0; letter-spacing: 0.12em; }
+#td-shop .radial-item:disabled { opacity: 0.32; cursor: default; }
+#td-shop .radial-item:not(:disabled):hover,
+#td-shop .radial-item:not(:disabled):active { background: rgba(60, 100, 130, 0.85); color: #fff; }
+#td-shop .shop-sell { border-color: rgba(255, 170, 90, 0.55); color: #ffd9a8; }
+#td-shop .shop-close { width: 44px; height: 44px; font-size: 15px; }
 #td-shop .shop-note {
-  flex-basis: 100%;
-  text-align: center;
+  position: absolute;
+  left: 0;
+  transform: translateX(-50%);
+  white-space: nowrap;
   font-size: 11px;
   color: #ff8f80;
-  min-height: 13px;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.9);
+}
+
+/* build mode is the planning instrument: driving controls step aside */
+#tab-td.build .tzone,
+#tab-td.build .tzone-mid,
+#tab-td.build .tfire,
+#tab-td.build #td-pad-hint,
+#tab-td.build #td-pad-view {
+  display: none !important;
 }
 
 /* touch devices: 44pt+ hit targets (Apple HIG), roomier gaps */

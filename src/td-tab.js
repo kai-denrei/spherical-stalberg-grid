@@ -19,17 +19,17 @@
 
 import * as THREE from '../vendor/three.module.js';
 import GUI from '../vendor/lil-gui.esm.js';
-import { generateSphereMesh, relax } from './grid.js?v=72259660';
-import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=72259660';
-import { mulberry32, randomSeed } from './rng.js?v=72259660';
-import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3 } from './vec3.js?v=72259660';
-import { CREATURES, waveJelly } from './creatures.js?v=72259660';
-import { UNITS, UNIT_NAMES, buildUnit, makeOrbCloud, makeBulletCloud, makeDebris, makeDotBurst, makePortalCloud, makeHeartCloud, makeTowerUnit } from './units.js?v=72259660';
-import { LOOKS, LOOK_NAMES } from './looks.js?v=72259660';
-import { makeCellIndex } from './cellindex.js?v=72259660';
-import { CREATURE_TINTS, ENEMY_SPEC, INTROS } from './enemyspec.js?v=72259660';
-import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval } from './towers.js?v=72259660';
-import { makeEconomy, sellRefund } from './economy.js?v=72259660';
+import { generateSphereMesh, relax } from './grid.js?v=7bb4fe5a';
+import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=7bb4fe5a';
+import { mulberry32, randomSeed } from './rng.js?v=7bb4fe5a';
+import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3 } from './vec3.js?v=7bb4fe5a';
+import { CREATURES, waveJelly } from './creatures.js?v=7bb4fe5a';
+import { UNITS, UNIT_NAMES, buildUnit, makeOrbCloud, makeBulletCloud, makeDebris, makeDotBurst, makePortalCloud, makeHeartCloud, makeTowerUnit } from './units.js?v=7bb4fe5a';
+import { LOOKS, LOOK_NAMES } from './looks.js?v=7bb4fe5a';
+import { makeCellIndex } from './cellindex.js?v=7bb4fe5a';
+import { CREATURE_TINTS, ENEMY_SPEC, INTROS } from './enemyspec.js?v=7bb4fe5a';
+import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval } from './towers.js?v=7bb4fe5a';
+import { makeEconomy, sellRefund } from './economy.js?v=7bb4fe5a';
 
 export function initTdTab(root) {
   let active = false;
@@ -752,7 +752,14 @@ export function initTdTab(root) {
   const buildFrozen = () => buildMode && !anyHostiles();
   function toggleBuild() {
     buildMode = !buildMode;
+    syncBuildUi();
     updateHud();
+  }
+  // build mode is a different INSTRUMENT: the driving controls vanish
+  // (zones, triggers, SWAP/CAM) leaving only BUILD/MAP and the board
+  function syncBuildUi() {
+    root.classList.toggle('build', buildMode);
+    if (!buildMode) closeShop();
   }
   function toggleMap() {
     mapMode = mapMode === 'player' ? 'heart' : 'player';
@@ -1143,7 +1150,7 @@ export function initTdTab(root) {
     if (buildMode && tapStart
       && Math.hypot(ev.clientX - tapStart[0], ev.clientY - tapStart[1]) <= 8) {
       const ci = cellAtScreen(ev.clientX, ev.clientY);
-      if (ci !== -1) openShop(ci);
+      if (ci !== -1) openShop(ci, ev.clientX, ev.clientY);
     }
     buildDragX = null;
     tapStart = null;
@@ -2566,41 +2573,66 @@ export function initTdTab(root) {
   shopEl.className = 'hidden';
   root.appendChild(shopEl);
   let shopCi = -1;
+  let shopPos = null; // screen anchor, remembered across refreshes
   function closeShop() {
     shopEl.classList.add('hidden');
     shopCi = -1;
+    shopPos = null;
     if (rangeRingTtl === 0) hideRangeRing();
   }
   function flashShopNote(text) {
     const note = shopEl.querySelector('.shop-note');
     if (note) note.textContent = text;
   }
-  function openShop(ci) {
+  // RADIAL menu, HokorobiTawaa-style: options ring the tapped cell.
+  // R follows HK's sizing (max(66, min(104, 0.3·viewport-min))); the
+  // anchor clamps so the ring never leaves the screen.
+  function openShop(ci, sx, sy) {
     shopCi = ci;
+    if (sx == null && shopPos) [sx, sy] = shopPos;
+    // measure the CONTAINER, not the canvas: hooks can open the shop
+    // before the first resize(), when the canvas still has default size
+    const rect = container.getBoundingClientRect();
+    const R = Math.max(66, Math.min(104, Math.min(rect.width, rect.height) * 0.3));
+    const cx = Math.min(Math.max(sx ?? rect.width / 2, R + 44), rect.width - R - 44);
+    const cy = Math.min(Math.max(sy ?? rect.height / 2, R + 44), rect.height - R - 44);
+    shopPos = [cx, cy];
+    shopEl.style.left = cx + 'px';
+    shopEl.style.top = cy + 'px';
     const existing = towerByCell.get(ci);
+    let center, items;
     if (existing) {
       const cost = upgradeCost(existing.def, existing.tier);
-      shopEl.innerHTML =
-        `<div class="shop-head">${existing.def.label} · tier ${existing.tier}</div>` +
-        (cost !== null
-          ? `<button class="shop-up" ${eco.canAfford(cost) ? '' : 'disabled'}>upgrade ${cost}c</button>`
-          : `<span class="shop-max">MAX TIER</span>`) +
-        `<button class="shop-sell">sell +${sellRefund(existing.spent)}c</button>` +
-        `<button class="shop-close">close</button>` +
-        `<div class="shop-note"></div>`;
+      center = `<div class="radial-center">${existing.def.key}<br>tier ${existing.tier}</div>`;
+      items = [
+        cost !== null
+          ? { cls: 'shop-up', txt: `upgrade<br>${cost}c`, dis: !eco.canAfford(cost) }
+          : { cls: 'shop-up', txt: 'MAX', dis: true },
+        { cls: 'shop-sell', txt: `sell<br>+${sellRefund(existing.spent)}c` },
+        { cls: 'shop-close', txt: '×' },
+      ];
       showRangeRing(ci, effectiveStats(existing.def, existing.tier).range, existing.def.color, 0);
     } else {
       const err = placeError(ci);
-      shopEl.innerHTML =
-        `<div class="shop-head">build · ${eco.credit}c</div>` +
-        TOWERS.map((def) =>
-          `<button class="shop-buy" data-key="${def.key}" ` +
-          `${(!err && eco.canAfford(def.cost)) ? '' : 'disabled'} ` +
-          `style="border-color:#${def.color.toString(16).padStart(6, '0')}66">` +
-          `${def.label} ${def.cost}c</button>`).join('') +
-        `<button class="shop-close">close</button>` +
-        `<div class="shop-note">${err ? err : ''}</div>`;
+      center = `<div class="radial-center">${err ? 'blocked' : eco.credit + 'c'}</div>`;
+      items = TOWERS.map((def) => ({
+        cls: 'shop-buy',
+        key: def.key,
+        txt: `${def.key}<br>${def.cost}c`,
+        dis: !!err || !eco.canAfford(def.cost),
+        bc: '#' + def.color.toString(16).padStart(6, '0'),
+      }));
+      items.push({ cls: 'shop-close', txt: '×' });
     }
+    const n = items.length;
+    shopEl.innerHTML = center + items.map((it, i) => {
+      const a = -Math.PI / 2 + (i * 2 * Math.PI) / n;
+      const x = (R * Math.cos(a)).toFixed(0);
+      const y = (R * Math.sin(a)).toFixed(0);
+      return `<button class="radial-item ${it.cls}"` +
+        `${it.key ? ` data-key="${it.key}"` : ''}${it.dis ? ' disabled' : ''} ` +
+        `style="left:${x}px;top:${y}px;${it.bc ? `border-color:${it.bc}aa;` : ''}">${it.txt}</button>`;
+    }).join('') + `<div class="shop-note" style="top:${R + 44}px"></div>`;
     shopEl.classList.remove('hidden');
   }
   shopEl.addEventListener('click', (ev) => {
@@ -2921,7 +2953,7 @@ export function initTdTab(root) {
   if (urlParams.get('laser') === '1') keys.laser = true;
 
   // ?mode=build / ?map=heart jump straight into the TD viewpoints
-  if (urlParams.get('mode') === 'build') { buildMode = true; snapCamera(); }
+  if (urlParams.get('mode') === 'build') { buildMode = true; syncBuildUi(); snapCamera(); }
   if (urlParams.get('map') === 'heart') mapMode = 'heart';
 
   // ?credit=N pads the purse; ?tower=key@ci,key@ci force-places towers
@@ -2936,6 +2968,10 @@ export function initTdTab(root) {
       if (TOWER_BY_KEY[key] && Number.isFinite(ci)) placeTower(key, ci);
     }
   }
+
+  // ?shop=ci opens the radial on that cell, screen-centered (headless check)
+  const shopN = parseInt(urlParams.get('shop') || '-1', 10);
+  if (shopN >= 0) openShop(shopN);
 
   // ?recoil=1 freezes a mid-recoil pose (turret back, hull rocked) so the
   // kick can be screenshot; the sim pauses to hold it
@@ -2975,7 +3011,7 @@ export function initTdTab(root) {
 
   // opening briefing on a clean load; any debug hook means headless/demo,
   // where a frozen sim would break the verification flow
-  const debugging = ['walk', 'tick', 'wave', 'blast', 'laser', 'found', 'recoil', 'mode', 'map', 'tower', 'credit']
+  const debugging = ['walk', 'tick', 'wave', 'blast', 'laser', 'found', 'recoil', 'mode', 'map', 'tower', 'credit', 'shop']
     .some((k) => urlParams.get(k));
   if (!debugging) showBriefing();
 
