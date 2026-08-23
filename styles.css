@@ -164,3 +164,94 @@ html, body {
   right: 0;
   z-index: 10;
 }
+
+/* --- dev log overlay (click the cache-bust badge) --- */
+#devlog-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  background: rgba(8, 10, 16, 0.78);
+  backdrop-filter: blur(3px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+
+#devlog-overlay.hidden {
+  display: none;
+}
+
+#devlog-panel {
+  position: relative;
+  width: min(72ch, 100%);
+  max-height: min(86vh, 100%);
+  overflow-y: auto;
+  background: #141824;
+  border: 1px solid #2a3350;
+  border-radius: 12px;
+  padding: 28px 34px 36px;
+  color: #c3cde2;
+  font: 14px/1.65 ui-monospace, "SF Mono", Menlo, monospace;
+  overscroll-behavior: contain;
+}
+
+#devlog-close {
+  position: sticky;
+  top: 0;
+  float: right;
+  margin: -12px -18px 0 0;
+  width: 34px;
+  height: 34px;
+  background: #1b2130;
+  color: #8a96b8;
+  border: 1px solid #2a3350;
+  border-radius: 8px;
+  font-size: 18px;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+
+#devlog-close:hover {
+  color: #fff;
+  background: #2d3a5e;
+}
+
+#devlog-content h1 {
+  font-size: 20px;
+  color: #e8edf8;
+  margin: 0 0 4px;
+}
+
+#devlog-content h2 {
+  font-size: 15px;
+  color: #dbe4ff;
+  margin: 26px 0 6px;
+  line-height: 1.45;
+}
+
+#devlog-content p {
+  margin: 10px 0;
+}
+
+#devlog-content hr {
+  border: none;
+  border-top: 1px solid #2a3350;
+  margin: 22px 0;
+}
+
+#devlog-content code {
+  background: #1d2434;
+  border-radius: 4px;
+  padding: 1px 5px;
+  color: #9fd6c8;
+  font-size: 13px;
+}
+
+#devlog-content strong {
+  color: #e8edf8;
+}
+
+#devlog-content a {
+  color: #7fb2ff;
+}
