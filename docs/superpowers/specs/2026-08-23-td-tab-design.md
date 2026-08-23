@@ -174,12 +174,29 @@ phase lands green before the next starts.
 - Waves are player-called with an idle auto-call at 60 s.
 - Towers convert to capital between rounds (100% auto-sell).
 
-## 9. Open questions for the operator
+## 9. Operator rulings (2026-08-23, answers received)
 
-- Aura enemy (HK Jelly Fish boosts neighbors ×1.4): import as a new
-  mechanic for our jellyfish in TD, or keep jellyfish plain fodder?
-- HK's 5 camera presets (overhead/trench/tactical/action/bastion):
-  worth porting as number keys later, or is build+pov/third enough?
-- Lives model: HK has 15 lives separate from the base; we propose
-  reusing heart HP (10) as the leak counter — one health pool, no
-  second number. Confirm?
+- **Aura: IMPORT.** TD jellyfish gains HK's aura (×1.4 speed to
+  neighbors within range) — a support enemy you prioritize.
+- **Heart HP is the one pool.** No separate lives counter.
+- **Tanks are NOT invincible, and allies become PURCHASABLE UNITS.**
+  This upgrades the economy design: ally tanks join the shop —
+  mobile units bought with credits alongside static towers (cost TBD
+  in M5, ballpark 150◆; they keep patrol AI + 2 hp; the player's own
+  tank keeps its heart-tab mortality rules). The build palette
+  therefore has two families: TOWERS (cell-locked) and UNITS (mobile).
+- **Camera presets: yes, but the identity is the pair** — top-down
+  build view and third-person in-the-fray are THE differentiation and
+  get built first-class in M1; HK's other presets can arrive later as
+  number keys without touching the core pair.
+
+## 10. Mobile-first control baseline (prerequisite, shipped in heart)
+
+Before TD work, the heart tab's mobile layer was rebuilt (operator
+direction, 2026-08-23) and TD inherits it: two-handed hold — left
+thumb steers left + drive rocker (▲ hold forward / double-tap cruise,
+▼ reverse), right thumb steers right + two triggers (✦ shell,
+⚡ laser); modals are height-capped and scrollable (iPhone briefing
+was clipped); HUD compacted (shells row deleted — the turret rack is
+the counter, ✦n kept for PoV). TD's build-mode button joins the
+utility cluster (B / 🔨).

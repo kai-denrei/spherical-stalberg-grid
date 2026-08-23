@@ -116,8 +116,68 @@ html, body {
   color: #fff;
 }
 
+/* --- heart tab: two-handed touch clusters (thumbs own the corners) ------ */
+.tcluster {
+  position: absolute;
+  bottom: max(16px, env(safe-area-inset-bottom));
+  z-index: 6;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+.tc-left { left: max(16px, env(safe-area-inset-left)); }
+.tc-right { right: max(16px, env(safe-area-inset-right)); }
+.tc-col { display: flex; flex-direction: column; gap: 8px; }
+.tcluster button, .tc-util button {
+  background: rgba(30, 40, 60, 0.42);
+  color: #d5e2f5;
+  border: 1px solid rgba(120, 150, 210, 0.35);
+  border-radius: 16px;
+  font-size: 22px;
+  cursor: pointer;
+  touch-action: manipulation;
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  -webkit-user-select: none;
+  user-select: none;
+}
+.tcluster .tc-big { width: 62px; height: 56px; }
+.tcluster .tc-corner {
+  width: 74px;
+  height: 66px;
+  font-size: 26px;
+  border-radius: 20px;
+}
+.tcluster button:active {
+  background: rgba(90, 140, 230, 0.5);
+  color: #fff;
+}
+/* the triggers read as triggers */
+#h-pad-fire { color: #aefce8; border-color: rgba(53, 255, 208, 0.45); }
+#h-pad-laser { color: #9ff8ff; border-color: rgba(125, 249, 255, 0.4); }
+/* utility pair: small, centered, out of the thumbs' way */
+.tc-util {
+  position: absolute;
+  bottom: max(16px, env(safe-area-inset-bottom));
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 6;
+  display: flex;
+  gap: 8px;
+}
+.tc-util button {
+  width: 44px;
+  height: 38px;
+  font-size: 15px;
+  border-radius: 12px;
+  opacity: 0.8;
+}
+
 /* touch devices: 44pt+ hit targets (Apple HIG), roomier gaps */
 @media (pointer: coarse) {
+  .tcluster .tc-big { width: 72px; height: 62px; }
+  .tcluster .tc-corner { width: 88px; height: 76px; }
   .dpad button {
     width: 58px;
     height: 50px;
@@ -143,12 +203,18 @@ html, body {
 
 #maze-msg, #o-msg, #b-msg, #h-msg {
   position: absolute;
-  top: 34%;
+  top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
   z-index: 8;
   min-width: 300px;
   max-width: 88vw;
+  /* tall content (briefing/glossaries) must fit ANY phone and scroll —
+     100dvh tracks iOS's real viewport, unlike 100vh */
+  max-height: min(86vh, calc(100dvh - 28px));
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
   padding: 14px 26px 18px;
   color: #aefce8;
   background: linear-gradient(180deg, rgba(4, 22, 24, 0.92), rgba(2, 11, 13, 0.92));
@@ -512,6 +578,9 @@ html, body {
   body:not(.chrome-open) .tab .lil-gui.root {
     display: none !important;
   }
+  /* the hint line fights the thumb clusters for the bottom edge, and the
+     briefing already teaches everything it says */
+  #h-hint { display: none !important; }
   /* minimap top-right: bottom corners belong to thumbs */
   .minimap {
     left: auto;

@@ -15,14 +15,14 @@
 
 import * as THREE from '../vendor/three.module.js';
 import GUI from '../vendor/lil-gui.esm.js';
-import { generateSphereMesh, relax } from './grid.js?v=89017e22';
-import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=89017e22';
-import { mulberry32, randomSeed } from './rng.js?v=89017e22';
-import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3 } from './vec3.js?v=89017e22';
-import { CREATURES, waveJelly } from './creatures.js?v=89017e22';
-import { UNITS, UNIT_NAMES, buildUnit, makeOrbCloud, makeBulletCloud, makeDebris, makeDotBurst, makePortalCloud, makeHeartCloud } from './units.js?v=89017e22';
-import { LOOKS, LOOK_NAMES } from './looks.js?v=89017e22';
-import { makeCellIndex } from './cellindex.js?v=89017e22';
+import { generateSphereMesh, relax } from './grid.js?v=3a9a683c';
+import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=3a9a683c';
+import { mulberry32, randomSeed } from './rng.js?v=3a9a683c';
+import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3 } from './vec3.js?v=3a9a683c';
+import { CREATURES, waveJelly } from './creatures.js?v=3a9a683c';
+import { UNITS, UNIT_NAMES, buildUnit, makeOrbCloud, makeBulletCloud, makeDebris, makeDotBurst, makePortalCloud, makeHeartCloud } from './units.js?v=3a9a683c';
+import { LOOKS, LOOK_NAMES } from './looks.js?v=3a9a683c';
+import { makeCellIndex } from './cellindex.js?v=3a9a683c';
 
 export function initHeartTab(root) {
   let active = false;
@@ -1247,15 +1247,18 @@ export function initHeartTab(root) {
     const alive = enemies.filter((e) => e.alive).length;
     const allies = friendlies.filter((f) => f.alive).length;
     const spAlive = spawnPoints.filter((s) => s.alive).length;
+    // compact HUD: the shells row is GONE — the turret rack is the ammo
+    // counter (a small ✦n remains for PoV, where the turret isn't visible).
+    // Alerts only appear when they're true; the how-to lives in the briefing.
+    const alerts = (carryingRegen ? ' · ⬤ REGEN' : '')
+      + (cannonHeat > 0 ? ' · cannon HOT' : '')
+      + (laserOverheat ? ' · laser COOLING' : '');
     statsEl.textContent =
-      `HEART ${'♥'.repeat(Math.max(0, heartHP)).padEnd(HEART_MAX, '·')}   you ♥${playerHP}   allies ${allies}\n` +
-      `shells ${'●'.repeat(ammo).padEnd(AMMO_MAX, '·')} (${ammo})${cannonHeat > 0 ? ' · cannon HOT' : ''}   round ${round} · wave ${wave} · hostiles ${alive} · spawn points ${spAlive}/${spawnPoints.length}` +
-      (carryingRegen ? '   ⬤ CARRYING REGEN' : '') + `\n` +
+      `HEART ${'♥'.repeat(Math.max(0, heartHP)).padEnd(HEART_MAX, '·')}  YOU ♥${playerHP}  ✦${ammo}\n` +
+      `R${round} · wave ${wave} · hostiles ${alive} · portals ${spAlive}/${spawnPoints.length} · allies ${allies}${alerts}\n` +
       (manualActive()
-        ? (cruise ? 'MANUAL · CRUISE — S/▼ stops' : 'MANUAL — double-tap W/▲ to cruise')
-        : 'auto-wander — double-tap W/▲ to cruise') +
-      `   ·   laser ${laserOverheat ? '🔥 COOLING' : 'SHIFT/⚡'}` +
-      '   ·   RAM the small ones · shells for the red · hunt the spawn points';
+        ? (cruise ? 'CRUISE — ▼/S stops' : 'MANUAL')
+        : 'auto — double-tap ▲/W to cruise');
     // diegetic shell rack: the 3×3 turret dots ARE the ammo counter —
     // neon white loaded, faded grey spent (allies stay full: infinite ammo)
     const dots = playerMesh && playerMesh.userData.ammoDots;
