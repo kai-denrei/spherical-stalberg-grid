@@ -1,4 +1,8 @@
-// heart-tab.js — defend the Heart. An OPEN battlefield (~80% walkable;
+// td-tab.js — TOWER DEFENSE mode (heart-tab sibling). M1: adds the
+// build/action camera pair and the minimap/threat-view swap on top of
+// the full heart game. Towers/economy arrive in M2/M3.
+// Original header:
+// defend the Heart. An OPEN battlefield (~80% walkable;
 // walls are scattered obstacle clumps to maneuver around and shelter
 // behind, not corridors) with the Heart at the north pole. Enemies are
 // INTRODUCED one type per wave (HokorobiTawaa's announce pattern): each
@@ -25,7 +29,7 @@ import { LOOKS, LOOK_NAMES } from './looks.js?v=b4bb539e';
 import { makeCellIndex } from './cellindex.js?v=b4bb539e';
 import { CREATURE_TINTS, ENEMY_SPEC, INTROS } from './enemyspec.js?v=b4bb539e';
 
-export function initHeartTab(root) {
+export function initTdTab(root) {
   let active = false;
 
   const params = {
@@ -102,7 +106,7 @@ export function initHeartTab(root) {
   };
 
   // --- scene ---------------------------------------------------------------
-  const container = root.querySelector('#h-app');
+  const container = root.querySelector('#td-app');
   const renderer = new THREE.WebGLRenderer({ antialias: true });
   renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
   container.appendChild(renderer.domElement);
@@ -732,7 +736,48 @@ export function initHeartTab(root) {
 
   // --- trench / third-person camera ----------------------------------------
   // follows the interpolated position and the SMOOTHED direction
+  // --- TD modes: BUILD (top-down planning) vs ACTION (the heart rig) -----
+  // B toggles; the shared camGoal + the loop's lerp gives the eased
+  // no-cut transition for free. M swaps the minimap for the Heart
+  // threat view. Build FREEZES the war only when the field is clear —
+  // mid-assault it is camera-only (no combat escape hatch).
+  let buildMode = false;
+  let mapMode = 'player'; // 'player' | 'heart'
+  let buildYaw = 0;       // drag orbits the azimuth around the pole axis
+  let buildDist = 2.6;    // wheel/pinch zooms
+  const anyHostiles = () => enemies.some((e) => e.alive);
+  const buildFrozen = () => buildMode && !anyHostiles();
+  function toggleBuild() {
+    buildMode = !buildMode;
+    updateHud();
+  }
+  function toggleMap() {
+    mapMode = mapMode === 'player' ? 'heart' : 'player';
+    updateHud();
+  }
+  // stable tangent frame at the Heart pole (for both build cam and threat map)
+  function poleFrame() {
+    const hn = graph.normals[dungeon.heart];
+    const ref = Math.abs(hn[1]) < 0.9 ? [0, 1, 0] : [1, 0, 0];
+    const t1 = norm3(cross3(hn, ref));
+    const t2 = cross3(hn, t1);
+    return { hn, t1, t2 };
+  }
+
   function updateCameraGoal() {
+    if (buildMode) {
+      // top-down planning: over the pole, the active hemisphere framed;
+      // lookAt the sphere center so the horizon stays level while orbiting
+      const { hn, t1, t2 } = poleFrame();
+      const up = add3(scale3(t1, Math.cos(buildYaw)), scale3(t2, Math.sin(buildYaw)));
+      const eye = scale3(hn, buildDist);
+      camGoal.pos.set(eye[0], eye[1], eye[2]);
+      tmpCam.position.copy(camGoal.pos);
+      tmpCam.up.set(up[0], up[1], up[2]);
+      tmpCam.lookAt(0, 0, 0);
+      camGoal.quat.copy(tmpCam.quaternion);
+      return;
+    }
     const c = player.pos;
     const n = norm3(c);
     const h = player.smoothDir;
@@ -1031,6 +1076,8 @@ export function initHeartTab(root) {
     if (down && k === 'h') pulseHint();
     if (down && k === 'c') commandeer();
     if (down && k === 'v') toggleView();
+    if (down && k === 'b') toggleBuild(); // BUILD ↔ ACTION
+    if (down && k === 'm') toggleMap();   // minimap ↔ threat view
   }
   addEventListener('keydown', (ev) => onKeyEvent(ev, true));
   addEventListener('keyup', (ev) => onKeyEvent(ev, false));
@@ -1059,14 +1106,35 @@ export function initHeartTab(root) {
       });
     }
   }
-  holdButton('#h-pad-up', 'fast', noteFastTap); // double-tap ▲ → cruise
-  holdButton('#h-pad-laser', 'laser');
-  holdButton('#h-pad-left', 'left');
-  holdButton('#h-pad-right', 'right');
-  holdButton('#h-pad-down', 'slow', () => { cruise = false; });
-  root.querySelector('#h-pad-hint').addEventListener('click', () => commandeer());
-  root.querySelector('#h-pad-view').addEventListener('click', () => toggleView());
-  root.querySelector('#h-pad-fire').addEventListener('click', () => fire());
+  holdButton('#td-pad-up', 'fast', noteFastTap); // double-tap ▲ → cruise
+  holdButton('#td-pad-laser', 'laser');
+  holdButton('#td-pad-left', 'left');
+  holdButton('#td-pad-right', 'right');
+  holdButton('#td-pad-down', 'slow', () => { cruise = false; });
+  root.querySelector('#td-pad-hint').addEventListener('click', () => commandeer());
+  root.querySelector('#td-pad-view').addEventListener('click', () => toggleView());
+  root.querySelector('#td-pad-build').addEventListener('click', () => toggleBuild());
+  root.querySelector('#td-pad-map').addEventListener('click', () => toggleMap());
+
+  // build-camera orbit: drag = azimuth, wheel = zoom. Active only in
+  // build mode, so action-mode pointer input stays untouched.
+  let buildDragX = null;
+  container.addEventListener('pointerdown', (ev) => {
+    if (buildMode) buildDragX = ev.clientX;
+  });
+  addEventListener('pointermove', (ev) => {
+    if (buildMode && buildDragX !== null) {
+      buildYaw += (ev.clientX - buildDragX) * 0.006;
+      buildDragX = ev.clientX;
+    }
+  });
+  addEventListener('pointerup', () => { buildDragX = null; });
+  container.addEventListener('wheel', (ev) => {
+    if (!buildMode) return;
+    buildDist = Math.min(4, Math.max(1.7, buildDist + ev.deltaY * 0.002));
+    ev.preventDefault();
+  }, { passive: false });
+  root.querySelector('#td-pad-fire').addEventListener('click', () => fire());
 
   // ☆ flash the neighbouring cell that is one hop closer to the heart
   let hintTimer = null;
@@ -1084,8 +1152,8 @@ export function initHeartTab(root) {
   }
 
   // --- HUD -----------------------------------------------------------------
-  const statsEl = root.querySelector('#h-stats');
-  const msgEl = root.querySelector('#h-msg');
+  const statsEl = root.querySelector('#td-stats');
+  const msgEl = root.querySelector('#td-msg');
   // the modal's buttons (event delegation survives innerHTML swaps)
   msgEl.addEventListener('click', (ev) => {
     const cl = ev.target.classList;
@@ -1213,9 +1281,11 @@ export function initHeartTab(root) {
     statsEl.textContent =
       `HEART ${'♥'.repeat(Math.max(0, heartHP)).padEnd(HEART_MAX, '·')}  YOU ♥${playerHP}  ✦${ammo}\n` +
       `R${round} · wave ${wave} · hostiles ${alive} · portals ${spAlive}/${spawnPoints.length} · allies ${allies}${alerts}\n` +
-      (manualActive()
-        ? (cruise ? 'CRUISE — ▼/S stops' : 'MANUAL')
-        : 'auto — double-tap ▲/W to cruise');
+      (buildMode
+        ? (anyHostiles() ? 'BUILD (war still on!) — B to fight · M map' : 'BUILD · frozen — B to fight · M map')
+        : (manualActive()
+          ? (cruise ? 'CRUISE — ▼/S stops' : 'MANUAL')
+          : 'auto — double-tap ▲/W to cruise') + ' · B build');
     // diegetic shell rack: the 3×3 turret dots ARE the ammo counter —
     // neon white loaded, faded grey spent (allies stay full: infinite ammo)
     const dots = playerMesh && playerMesh.userData.ammoDots;
@@ -1245,7 +1315,7 @@ export function initHeartTab(root) {
   // with its spinning live model of the enemy. The sprite renderer is ONE
   // persistent context created up front (never per-announcement — contexts
   // are a scarce browser resource and leak on loss).
-  const waveEl = root.querySelector('#h-wave');
+  const waveEl = root.querySelector('#td-wave');
   let waveTimer = null;
   // preserveDrawingBuffer: the glossary snapshots toDataURL() this canvas
   const waveSpriteRenderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, preserveDrawingBuffer: true });
@@ -2210,7 +2280,7 @@ export function initHeartTab(root) {
   }
 
   // --- dashboard -----------------------------------------------------------
-  const gui = new GUI({ title: 'the heart', container: root });
+  const gui = new GUI({ title: 'TD', container: root });
   gui.add(params, 'creature', UNIT_NAMES).onChange(regenerate);
   gui.add(params, 'look', LOOK_NAMES).onChange(applyLook);
   gui.add(params, 'wallTops', ['auto', 'bright', 'dim', 'black'])
@@ -2270,13 +2340,19 @@ export function initHeartTab(root) {
     }
     t += dt;
 
+    // BUILD downtime: with the field clear, build mode freezes the WAR —
+    // wave clock, motion, combat — while ambient life (portal twinkle,
+    // heart moods, debris) and the camera transition keep breathing.
+    // Mid-assault the same toggle is camera-only.
+    const frozen = buildFrozen();
+
     bumpLeft = Math.max(0, bumpLeft - dt);
     recoilLeft = Math.max(0, recoilLeft - dt);
     cannonHeat = Math.max(0, cannonHeat - dt);
     // diegetic cannon gauge: the mid-barrel sleeve glows with the heat
     const sleeve = playerMesh && playerMesh.userData.heatSleeve;
     if (sleeve) sleeve.material.color.lerpColors(sleeveCool, sleeveHot, cannonHeat / CANNON_COOL);
-    advanceMotion(dt);
+    if (!frozen) advanceMotion(dt);
     for (const orb of orbMeshes.values()) orb.userData.tick(t);
     for (let i = debris.length - 1; i >= 0; i--) {
       if (!debris[i].userData.tick(dt)) {
@@ -2285,7 +2361,7 @@ export function initHeartTab(root) {
         debris.splice(i, 1);
       }
     }
-    if (!player.won) {
+    if (!player.won && !frozen) {
       waveClock += dt;
       // waves keep coming while introductions remain, even if the player
       // has razed every spawn point standing — the next threat still lands
@@ -2295,13 +2371,15 @@ export function initHeartTab(root) {
         spawnWave();
       }
     }
-    updateEnemies(dt, t);
-    updateFriendlies(dt, t);
-    updateAllyFire(dt);
-    updateAllyShots(dt, t);
-    checkRewards();
-    updateProjectiles(dt, t);
-    updateLasers(dt, t);
+    if (!frozen) {
+      updateEnemies(dt, t);
+      updateFriendlies(dt, t);
+      updateAllyFire(dt);
+      updateAllyShots(dt, t);
+      checkRewards();
+      updateProjectiles(dt, t);
+      updateLasers(dt, t);
+    }
     for (const sp of spawnPoints) {
       if (!sp.alive) continue;
       sp.obj.userData.tick(t);
@@ -2357,14 +2435,22 @@ export function initHeartTab(root) {
     playerMesh.visible = params.view === 'third';
     renderer.render(scene, camera);
 
-    // minimap: the whole sphere (walls included), player-centred,
-    // smoothed-direction up, pulled back so nothing clips the circle
-    const n = norm3(player.pos);
-    const hd = player.smoothDir;
+    // minimap, two modes (M): player-centred heading-up as in the heart
+    // tab, or the fixed HEART THREAT VIEW — top-down over the pole,
+    // portals/streams/defenses in one glance
     const mapDist = 3.05 * (1 + params.wallHeight);
-    mapCamera.position.set(n[0] * mapDist, n[1] * mapDist, n[2] * mapDist);
-    mapCamera.up.set(hd[0], hd[1], hd[2]);
-    mapCamera.lookAt(0, 0, 0);
+    if (mapMode === 'heart') {
+      const { hn, t1 } = poleFrame();
+      mapCamera.position.set(hn[0] * mapDist, hn[1] * mapDist, hn[2] * mapDist);
+      mapCamera.up.set(t1[0], t1[1], t1[2]);
+      mapCamera.lookAt(0, 0, 0);
+    } else {
+      const n = norm3(player.pos);
+      const hd = player.smoothDir;
+      mapCamera.position.set(n[0] * mapDist, n[1] * mapDist, n[2] * mapDist);
+      mapCamera.up.set(hd[0], hd[1], hd[2]);
+      mapCamera.lookAt(0, 0, 0);
+    }
     mapCamera.updateProjectionMatrix();
     scene.background = mapBg;
     markerMesh.visible = true;
@@ -2432,6 +2518,10 @@ export function initHeartTab(root) {
   // ?laser=1 holds the laser trigger down (headless visual check)
   if (urlParams.get('laser') === '1') keys.laser = true;
 
+  // ?mode=build / ?map=heart jump straight into the TD viewpoints
+  if (urlParams.get('mode') === 'build') { buildMode = true; snapCamera(); }
+  if (urlParams.get('map') === 'heart') mapMode = 'heart';
+
   // ?recoil=1 freezes a mid-recoil pose (turret back, hull rocked) so the
   // kick can be screenshot; the sim pauses to hold it
   if (urlParams.get('recoil') === '1') {
@@ -2470,7 +2560,7 @@ export function initHeartTab(root) {
 
   // opening briefing on a clean load; any debug hook means headless/demo,
   // where a frozen sim would break the verification flow
-  const debugging = ['walk', 'tick', 'wave', 'blast', 'laser', 'found', 'recoil']
+  const debugging = ['walk', 'tick', 'wave', 'blast', 'laser', 'found', 'recoil', 'mode', 'map']
     .some((k) => urlParams.get(k));
   if (!debugging) showBriefing();
 

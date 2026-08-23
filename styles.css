@@ -36,12 +36,12 @@ html, body {
   display: none;
 }
 
-#app, #maze-app, #o-app, #b-app, #h-app {
+#app, #maze-app, #o-app, #b-app, #h-app, #td-app {
   position: absolute;
   inset: 0;
 }
 
-#app canvas, #maze-app canvas, #o-app canvas, #b-app canvas, #h-app canvas {
+#app canvas, #maze-app canvas, #o-app canvas, #b-app canvas, #h-app canvas, #td-app canvas {
   display: block;
 }
 
@@ -71,7 +71,7 @@ html, body {
   border-color: #4a5a8a;
 }
 
-#stats, #maze-stats, #o-stats, #b-stats, #h-stats {
+#stats, #maze-stats, #o-stats, #b-stats, #h-stats, #td-stats {
   position: absolute;
   top: 46px;
   left: 14px;
@@ -84,7 +84,7 @@ html, body {
   z-index: 5;
 }
 
-#hint, #maze-hint, #o-hint, #b-hint, #h-hint {
+#hint, #maze-hint, #o-hint, #b-hint, #h-hint, #td-hint {
   position: absolute;
   bottom: 12px;
   right: 14px;
@@ -261,7 +261,7 @@ html, body {
   .dpad .dpad-row {
     gap: 6px;
   }
-  #hint, #maze-hint, #o-hint, #b-hint, #h-hint {
+  #hint, #maze-hint, #o-hint, #b-hint, #h-hint, #td-hint {
     display: none; /* collides with the cb badge on narrow screens; hints are in button titles */
   }
 }
@@ -273,7 +273,7 @@ html, body {
   }
 }
 
-#maze-msg, #o-msg, #b-msg, #h-msg {
+#maze-msg, #o-msg, #b-msg, #h-msg, #td-msg {
   position: absolute;
   top: 50%;
   left: 50%;
@@ -303,7 +303,7 @@ html, body {
 }
 
 /* CRT scanlines */
-#maze-msg::after, #o-msg::after, #b-msg::after, #h-msg::after {
+#maze-msg::after, #o-msg::after, #b-msg::after, #h-msg::after, #td-msg::after {
   content: '';
   position: absolute;
   inset: 0;
@@ -316,7 +316,7 @@ html, body {
 }
 
 /* hologram sweep */
-#maze-msg::before, #o-msg::before, #b-msg::before, #h-msg::before {
+#maze-msg::before, #o-msg::before, #b-msg::before, #h-msg::before, #td-msg::before {
   content: '';
   position: absolute;
   left: 0; right: 0; top: 0; height: 45%;
@@ -361,13 +361,13 @@ html, body {
 }
 .msg-regen:hover { background: rgba(53, 255, 208, 0.22); color: #fff; }
 
-#maze-msg.hidden, #o-msg.hidden, #b-msg.hidden, #h-msg.hidden {
+#maze-msg.hidden, #o-msg.hidden, #b-msg.hidden, #h-msg.hidden, #td-msg.hidden {
   display: none;
 }
 
 /* --- wave announcement banner (heart tab): the "New Threat" card ------- */
 /* border/text color are set inline per enemy tint by announceWave() */
-#h-wave {
+#h-wave, #td-wave {
   position: absolute;
   top: 16%;
   left: 50%;
@@ -384,31 +384,31 @@ html, body {
   pointer-events: none;
   animation: wave-pop 0.35s ease-out;
 }
-#h-wave.hidden { display: none; }
-#h-wave .wave-num {
+#h-wave.hidden, #td-wave.hidden { display: none; }
+#h-wave .wave-num, #td-wave .wave-num {
   font-size: 10px;
   letter-spacing: 0.32em;
   text-transform: uppercase;
   opacity: 0.8;
 }
-#h-wave .wave-name {
+#h-wave .wave-name, #td-wave .wave-name {
   font-size: 19px;
   letter-spacing: 0.14em;
   margin: 4px 0 2px;
   text-shadow: 0 0 10px currentColor;
 }
-#h-wave .wave-role {
+#h-wave .wave-role, #td-wave .wave-role {
   font-size: 12px;
   opacity: 0.85;
   color: #d8e2ea;
 }
-#h-wave .wave-sprite {
+#h-wave .wave-sprite, #td-wave .wave-sprite {
   display: block;
   margin: 4px auto 2px;
   width: 96px;
   height: 96px;
 }
-#h-wave .wave-ram {
+#h-wave .wave-ram, #td-wave .wave-ram {
   font-size: 11px;
   letter-spacing: 0.18em;
   margin-top: 5px;
@@ -619,7 +619,7 @@ html, body {
     left: max(12px, env(safe-area-inset-left));
     top: calc(max(10px, env(safe-area-inset-top)) + 36px);
   }
-  #stats, #maze-stats, #o-stats, #b-stats, #h-stats {
+  #stats, #maze-stats, #o-stats, #b-stats, #h-stats, #td-stats {
     top: 118px;
   }
 }
@@ -652,7 +652,7 @@ html, body {
   }
   /* the hint line fights the thumb clusters for the bottom edge, and the
      briefing already teaches everything it says */
-  #h-hint { display: none !important; }
+  #h-hint, #td-hint { display: none !important; }
   /* minimap top-right: bottom corners belong to thumbs */
   .minimap {
     left: auto;
@@ -661,7 +661,7 @@ html, body {
     top: max(12px, env(safe-area-inset-top));
   }
   /* stats clear the ☰ button */
-  #stats, #maze-stats, #o-stats, #b-stats, #h-stats {
+  #stats, #maze-stats, #o-stats, #b-stats, #h-stats, #td-stats {
     top: max(54px, calc(env(safe-area-inset-top) + 44px));
     left: max(12px, env(safe-area-inset-left));
     font-size: 11px;
