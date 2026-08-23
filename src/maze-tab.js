@@ -6,11 +6,11 @@
 
 import * as THREE from '../vendor/three.module.js';
 import GUI from '../vendor/lil-gui.esm.js';
-import { generateSphereMesh, relax } from './grid.js?v=802ca9de';
-import { generateDungeon, BLOCKED, PATH, ROOM } from './dungeon.js?v=802ca9de';
-import { mulberry32, randomSeed } from './rng.js?v=802ca9de';
-import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3 } from './vec3.js?v=802ca9de';
-import { LOOKS, LOOK_NAMES } from './looks.js?v=802ca9de';
+import { generateSphereMesh, relax } from './grid.js?v=983e8d07';
+import { generateDungeon, BLOCKED, PATH, ROOM } from './dungeon.js?v=983e8d07';
+import { mulberry32, randomSeed } from './rng.js?v=983e8d07';
+import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3 } from './vec3.js?v=983e8d07';
+import { LOOKS, LOOK_NAMES } from './looks.js?v=983e8d07';
 
 export function initMazeTab(root) {
   let active = false;
@@ -173,7 +173,11 @@ export function initMazeTab(root) {
       const top = q.map((vi) => scale3(vertices[vi], H));
       const j = (jr() - 0.5) * 0.08 * look().jitter;
       pushQuad(top[0], top[1], top[2], top[3], look().walls.top, j);
-      for (let i = 0; i < 4; i++) pushEdge(top[i], top[(i + 1) % 4]);
+      // wallTops:false (wireframe looks) keeps wall TOPS wire-free — pure
+      // black voids so the minimap reads corridors, not a solid wire ball.
+      // Sides stay outlined: verticals + the rim segment above each skirt.
+      const rimWires = look().edges.wallTops !== false;
+      if (rimWires) for (let i = 0; i < 4; i++) pushEdge(top[i], top[(i + 1) % 4]);
       for (let i = 0; i < 4; i++) {
         const a = q[i], b = q[(i + 1) % 4];
         const nb = edgeToCell.get(`${b}-${a}`); // twin edge's owner
@@ -182,6 +186,7 @@ export function initMazeTab(root) {
         pushQuad(top[(i + 1) % 4], top[i], vertices[a], vertices[b], look().walls.side, j);
         pushEdge(top[i], vertices[a]);
         pushEdge(top[(i + 1) % 4], vertices[b]);
+        if (!rimWires) pushEdge(top[i], top[(i + 1) % 4]);
       }
     }
 
