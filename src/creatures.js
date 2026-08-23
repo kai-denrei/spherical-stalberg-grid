@@ -128,17 +128,36 @@ export const CREATURES = {
 //   Jelly — volume-preserving squash-stretch, sy = 1 + 0.24·sin(3t), sx = 1/√sy
 // plus the shared slow rotY spin. Writes local-space positions into `out`
 // (Float32Array of length base.length*3).
-export function waveJelly(base, t, out) {
+//
+// opts.reachDir + opts.reachAmt: phagocytosis — points whose direction aligns
+// with reachDir (FINAL local frame, post-spin) stretch outward, so the
+// membrane extends a pseudopod toward the target. Amt 0..1.
+export function waveJelly(base, t, out, opts = null) {
   const sy = 1 + 0.18 * Math.sin(t * 3);
   const sx = 1 / Math.sqrt(sy);
   const spin = t * 0.3, cs = Math.cos(spin), sn = Math.sin(spin);
+  const rd = opts && opts.reachAmt > 0 ? opts.reachDir : null;
+  const ra = rd ? opts.reachAmt : 0;
+  // the pseudopod ripples too, so the reach reads as membrane, not a spike
+  const raWob = ra * (1 + 0.15 * Math.sin(t * 5));
   for (let i = 0; i < base.length; i++) {
     const p = base[i];
     const d = 1 + 0.14 * Math.sin(3 * Math.atan2(p[2], p[0]) + t * 3 - p[1] * 2);
-    const x = p[0] * d * sx, y = p[1] * sy, z = p[2] * d * sx;
-    out[i * 3] = x * cs + z * sn;
-    out[i * 3 + 1] = y;
-    out[i * 3 + 2] = -x * sn + z * cs;
+    const x0 = p[0] * d * sx, y = p[1] * sy, z0 = p[2] * d * sx;
+    let x = x0 * cs + z0 * sn;
+    let z = -x0 * sn + z0 * cs;
+    let yy = y;
+    if (rd) {
+      const rl = Math.hypot(x, yy, z) || 1e-6;
+      const al = (x * rd[0] + yy * rd[1] + z * rd[2]) / rl;
+      if (al > 0) {
+        const f = 1 + raWob * 1.15 * Math.pow(al, 5);
+        x *= f; yy *= f; z *= f;
+      }
+    }
+    out[i * 3] = x;
+    out[i * 3 + 1] = yy;
+    out[i * 3 + 2] = z;
   }
   return out;
 }

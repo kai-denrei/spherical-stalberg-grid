@@ -6,11 +6,11 @@
 
 import * as THREE from '../vendor/three.module.js';
 import GUI from '../vendor/lil-gui.esm.js';
-import { generateSphereMesh, relax } from './grid.js?v=afb5e495';
-import { generateDungeon, BLOCKED, PATH, ROOM } from './dungeon.js?v=afb5e495';
-import { mulberry32, randomSeed } from './rng.js?v=afb5e495';
-import { sub3, add3, scale3, dot3, cross3, norm3, len3 } from './vec3.js?v=afb5e495';
-import { CREATURES, waveJelly } from './creatures.js?v=afb5e495';
+import { generateSphereMesh, relax } from './grid.js?v=163bc942';
+import { generateDungeon, BLOCKED, PATH, ROOM } from './dungeon.js?v=163bc942';
+import { mulberry32, randomSeed } from './rng.js?v=163bc942';
+import { sub3, add3, scale3, dot3, cross3, norm3, len3 } from './vec3.js?v=163bc942';
+import { CREATURES, waveJelly } from './creatures.js?v=163bc942';
 
 export function initOrganicTab(root) {
   let active = false;
@@ -27,6 +27,28 @@ export function initOrganicTab(root) {
     speed: 1.1, // cells per second, wanderer pace
     creature: 'amoeba', // amoeba | phage | jellyfish
     orbs: 12,
+    orbRespawn: 8, // seconds between respawns (0 = off)
+  };
+
+  // creature-specific locomotion: a speed profile over time (multiplies the
+  // wander pace) and a hover profile (fraction of unitScale above the floor)
+  const MOVES = {
+    amoeba: {
+      // crawl: pseudopod surge then pause
+      speed: (tt) => 0.5 + 0.7 * Math.pow(0.5 + 0.5 * Math.sin(tt * 1.6), 2),
+      hover: () => 0,
+    },
+    phage: {
+      // stalk & pounce: creeps, then rare quick darts on spindly legs
+      speed: (tt) => 0.45 + 2.8 * Math.pow(0.5 + 0.5 * Math.sin(tt * 0.7), 10),
+      hover: (tt) => 0.1 + 0.06 * Math.sin(tt * 2.2),
+    },
+    jellyfish: {
+      // pulse & drift: thrust on the bell contraction (same 3t as the Jelly
+      // treatment, so the push visibly matches the squeeze), then coast
+      speed: (tt) => 0.3 + 1.5 * Math.pow(Math.max(0, Math.sin(tt * 3 + 0.4)), 2),
+      hover: (tt) => 0.5 + 0.18 * Math.sin(tt * 3 - 0.9),
+    },
   };
 
   // --- scene ---------------------------------------------------------------
@@ -78,6 +100,14 @@ export function initOrganicTab(root) {
   let unitScale = 0.04;      // current radius; grows on absorb
   let absorbed = 0;
   const orbMeshes = new Map(); // open-cell index -> orb mesh
+  let orbRng = mulberry32(1);  // reseeded per maze
+  let respawnClock = 0;
+  const orbMat = new THREE.MeshLambertMaterial({ color: 0xffb84d, emissive: 0x4d2f00 });
+
+  // phagocytosis state, recomputed per frame (amoeba only)
+  const reach = { dir: null, amt: 0 };
+  const tmpV = new THREE.Vector3();
+  const tmpQ = new THREE.Quaternion();
 
   function clearOrbs() {
     for (const orb of orbMeshes.values()) {
@@ -87,26 +117,58 @@ export function initOrganicTab(root) {
     orbMeshes.clear();
   }
 
-  // static food: small spheres on random open cells (never spawn or heart)
-  function spawnOrbs() {
-    clearOrbs();
-    const rng = mulberry32((params.seed ^ 0x0b0b5) >>> 0);
+  // one orb on a random open cell (never spawn/heart/occupied/under the creature)
+  function spawnOneOrb() {
     const open = [];
     for (let i = 0; i < dungeon.tags.length; i++) {
-      if (dungeon.tags[i] !== BLOCKED && i !== dungeon.spawn && i !== dungeon.heart) open.push(i);
+      if (dungeon.tags[i] !== BLOCKED && i !== dungeon.spawn && i !== dungeon.heart
+        && i !== player.cur && !orbMeshes.has(i)) open.push(i);
     }
-    const mat = new THREE.MeshLambertMaterial({ color: 0xffb84d, emissive: 0x4d2f00 });
-    for (let k = 0; k < params.orbs && open.length > 0; k++) {
-      const ci = open.splice(Math.floor(rng() * open.length), 1)[0];
-      const r = cellSide * 0.16;
-      const orb = new THREE.Mesh(new THREE.SphereGeometry(r, 12, 10), mat);
-      const c = graph.centers[ci];
-      const n = graph.normals[ci];
-      const p = add3(c, scale3(n, r * 1.1));
-      orb.position.set(p[0], p[1], p[2]);
-      scene.add(orb);
-      orbMeshes.set(ci, orb);
+    if (open.length === 0) return false;
+    const ci = open[Math.floor(orbRng() * open.length)];
+    const r = cellSide * 0.16;
+    const orb = new THREE.Mesh(new THREE.SphereGeometry(r, 12, 10), orbMat);
+    const c = graph.centers[ci];
+    const n = graph.normals[ci];
+    const p = add3(c, scale3(n, r * 1.1));
+    orb.position.set(p[0], p[1], p[2]);
+    scene.add(orb);
+    orbMeshes.set(ci, orb);
+    return true;
+  }
+
+  function spawnOrbs() {
+    clearOrbs();
+    for (let k = 0; k < params.orbs; k++) spawnOneOrb();
+  }
+
+  function absorbOrb(ci) {
+    const orb = orbMeshes.get(ci);
+    if (!orb) return;
+    scene.remove(orb);
+    orb.geometry.dispose();
+    orbMeshes.delete(ci);
+    absorbed++;
+    unitScale *= 1.13;
+    updateHud();
+  }
+
+  // nearest orb to the creature's position; absorb on contact
+  function nearestOrb() {
+    let bestCi = -1, bestD = Infinity;
+    for (const [ci, orb] of orbMeshes) {
+      const dx = orb.position.x - player.pos[0];
+      const dy = orb.position.y - player.pos[1];
+      const dz = orb.position.z - player.pos[2];
+      const d = Math.sqrt(dx * dx + dy * dy + dz * dz);
+      if (d < bestD) { bestD = d; bestCi = ci; }
     }
+    return { ci: bestCi, d: bestD };
+  }
+
+  function checkAbsorb() {
+    const { ci, d } = nearestOrb();
+    if (ci !== -1 && d < unitScale * 0.85 + cellSide * 0.16) absorbOrb(ci);
   }
 
   // The walker WANDERS on its own: it glides cell-to-cell continuously and
@@ -326,8 +388,11 @@ export function initOrganicTab(root) {
     heartSprite.scale.set(s, s, s);
 
     const n = norm3(player.pos);
-    // creature floats with its belly just above the floor
-    const p = add3(player.pos, scale3(n, unitScale * 0.85));
+    // belly just above the floor, plus the creature's own hover profile
+    // (jellyfish floats and bobs with the bell pulse; phage bobs on its legs)
+    const prof = MOVES[params.creature];
+    const lift = unitScale * (0.85 + (prof ? prof.hover(simTime) : 0));
+    const p = add3(player.pos, scale3(n, lift));
     playerMesh.position.set(p[0], p[1], p[2]);
     playerMesh.scale.setScalar(unitScale);
     markerMesh.position.set(p[0], p[1], p[2]);
@@ -408,31 +473,34 @@ export function initOrganicTab(root) {
     player.moves++;
     player.visited.add(cell);
     paintCell(player.prev, floorColorOf(player.prev));
-
-    // absorb: orb on this cell feeds the creature
-    const orb = orbMeshes.get(cell);
-    if (orb) {
-      scene.remove(orb);
-      orb.geometry.dispose();
-      orbMeshes.delete(cell);
-      absorbed++;
-      unitScale *= 1.13;
-    }
     updateHud();
 
     if (cell === dungeon.heart && !player.won) {
       player.won = true;
       msgEl.innerHTML = `💗 the creature found the heart<br>` +
-        `${player.moves} moves · ${absorbed}/${params.orbs} orbs absorbed<br>` +
+        `${player.moves} moves · ${absorbed} orbs absorbed · ` +
+        `size ×${(unitScale / baseUnitScale).toFixed(2)}<br>` +
         `<span style="color:#8a93ad">regenerate (panel) for a new maze</span>`;
       msgEl.classList.remove('hidden');
     }
   }
 
-  // called once per frame: glide, and pick a new exit on each cell arrival
+  // called once per frame: glide (creature-paced), respawn, absorb
   function advanceMotion(dt) {
     if (player.won || player.next === -1) return;
-    player.prog += params.speed * dt;
+    simTime += dt;
+    // creature-specific pace modulates the wander speed
+    const prof = MOVES[params.creature];
+    player.prog += params.speed * (prof ? prof.speed(simTime) : 1) * dt;
+
+    // orb respawn: the maze regrows food over time
+    if (params.orbRespawn > 0) {
+      respawnClock += dt;
+      if (respawnClock >= params.orbRespawn) {
+        respawnClock = 0;
+        if (orbMeshes.size < params.orbs) spawnOneOrb();
+      }
+    }
     while (player.prog >= 1 && !player.won) {
       arriveAt(player.next);
       // steering intent drifts toward actual travel so stale input fades
@@ -445,8 +513,8 @@ export function initOrganicTab(root) {
     // interpolate along the chord, then push back onto the sphere
     const a = graph.centers[player.cur];
     const b = graph.centers[player.next === -1 ? player.cur : player.next];
-    const t = Math.min(player.prog, 1);
-    const p = [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t, a[2] + (b[2] - a[2]) * t];
+    const f = Math.min(player.prog, 1);
+    const p = [a[0] + (b[0] - a[0]) * f, a[1] + (b[1] - a[1]) * f, a[2] + (b[2] - a[2]) * f];
     player.pos = norm3(p); // radius 1
     const n = player.pos;
     const d = sub3(b, player.pos);
@@ -455,7 +523,10 @@ export function initOrganicTab(root) {
     if (l > 1e-9) player.travelDir = scale3(flat, 1 / l);
     // keep the steering intent in the local tangent plane as we move
     player.heading = norm3(sub3(player.heading, scale3(n, dot3(player.heading, n))));
+
+    checkAbsorb();
   }
+  let simTime = 0;
 
   const TURN = Math.PI / 5; // 36° per press — a nudge, not a command
   function rotate(theta) {
@@ -516,7 +587,7 @@ export function initOrganicTab(root) {
   function updateHud() {
     statsEl.textContent =
       `hops to heart ${dungeon.distToHeart[player.cur]}   moves ${player.moves}\n` +
-      `orbs absorbed ${absorbed}/${params.orbs}   size ×${(unitScale / baseUnitScale).toFixed(2)}`;
+      `orbs absorbed ${absorbed} · on field ${orbMeshes.size}   size ×${(unitScale / baseUnitScale).toFixed(2)}`;
   }
 
   // --- generation ----------------------------------------------------------
@@ -554,6 +625,9 @@ export function initOrganicTab(root) {
     absorbed = 0;
     baseUnitScale = cellSide * 0.5;
     unitScale = baseUnitScale;
+    orbRng = mulberry32((params.seed ^ 0x0b0b5) >>> 0);
+    respawnClock = 0;
+    simTime = 0;
 
     buildGeometry();
     buildActors();
@@ -580,6 +654,7 @@ export function initOrganicTab(root) {
   const viewCtrl = gui.add(params, 'view', ['pov', 'third']).name('camera (V)');
   const speedCtrl = gui.add(params, 'speed', 0.2, 4, 0.1).name('wander speed');
   gui.add(params, 'orbs', 0, 40, 1).onFinishChange(regenerate);
+  gui.add(params, 'orbRespawn', 0, 30, 1).name('orb respawn (s)');
   const seedCtrl = gui.add(params, 'seed', 0, 99999, 1).onFinishChange(regenerate);
   gui.add(params, 'points', 150, 1200, 10).name('sample points').onFinishChange(regenerate);
   gui.add(params, 'rooms', 2, 12, 1).onFinishChange(regenerate);
@@ -606,11 +681,28 @@ export function initOrganicTab(root) {
     t += dt;
 
     advanceMotion(dt);
-    // Wave×Jelly: re-pose the dot cloud every frame (local space; the object
-    // transform carries it to the surface)
-    waveJelly(creatureBase, t, creaturePos);
-    creatureGeo.getAttribute('position').needsUpdate = true;
     placeActors();
+
+    // phagocytosis: when the amoeba nears an orb, aim the membrane at it.
+    // Direction is converted into the creature's FINAL local frame (inverse
+    // of the mesh quaternion), where waveJelly applies the stretch.
+    reach.dir = null; reach.amt = 0;
+    if (params.creature === 'amoeba' && orbMeshes.size > 0 && !player.won) {
+      const { ci, d } = nearestOrb();
+      const reachRange = cellSide * 1.7 + unitScale;
+      if (ci !== -1 && d < reachRange) {
+        const orb = orbMeshes.get(ci);
+        tmpV.copy(orb.position).sub(playerMesh.position).normalize()
+          .applyQuaternion(tmpQ.copy(playerMesh.quaternion).invert());
+        reach.dir = [tmpV.x, tmpV.y, tmpV.z];
+        reach.amt = Math.min(1, Math.max(0, 1 - d / reachRange));
+      }
+    }
+
+    // Wave×Jelly (+ reach): re-pose the dot cloud every frame (local space;
+    // the object transform carries it to the surface)
+    waveJelly(creatureBase, t, creaturePos, reach.amt > 0 ? { reachDir: reach.dir, reachAmt: reach.amt } : null);
+    creatureGeo.getAttribute('position').needsUpdate = true;
     updateCameraGoal();
 
     camera.position.lerp(camGoal.pos, 0.14);
@@ -659,6 +751,9 @@ export function initOrganicTab(root) {
   const wallOverride = parseFloat(urlParams.get('wall') || '');
   if (Number.isFinite(wallOverride)) params.wallHeight = wallOverride;
   if (urlParams.get('view') === 'third') { params.view = 'third'; viewCtrl.updateDisplay(); }
+  const creatureOverride = urlParams.get('creature');
+  if (CREATURES[creatureOverride]) params.creature = creatureOverride;
+  gui.controllersRecursive().forEach((c) => c.updateDisplay());
 
   regenerate();
 

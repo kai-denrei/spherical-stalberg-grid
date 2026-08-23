@@ -6,10 +6,10 @@
 
 import * as THREE from '../vendor/three.module.js';
 import GUI from '../vendor/lil-gui.esm.js';
-import { generateSphereMesh, relax } from './grid.js?v=afb5e495';
-import { generateDungeon, BLOCKED, PATH, ROOM } from './dungeon.js?v=afb5e495';
-import { mulberry32, randomSeed } from './rng.js?v=afb5e495';
-import { sub3, add3, scale3, dot3, cross3, norm3, len3 } from './vec3.js?v=afb5e495';
+import { generateSphereMesh, relax } from './grid.js?v=163bc942';
+import { generateDungeon, BLOCKED, PATH, ROOM } from './dungeon.js?v=163bc942';
+import { mulberry32, randomSeed } from './rng.js?v=163bc942';
+import { sub3, add3, scale3, dot3, cross3, norm3, len3 } from './vec3.js?v=163bc942';
 
 export function initMazeTab(root) {
   let active = false;
