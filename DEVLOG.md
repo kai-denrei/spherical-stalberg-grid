@@ -6,6 +6,37 @@ Demo links assume `npm run serve` (port 8144) or the
 
 ---
 
+## `3870d3d` — The heart learns HokorobiTawaa's escalation grammar
+
+The heart tab's gameplay reshaped around three ideas. **Introductions**:
+enemies arrive one type per wave, each announce (`#h-wave` banner, tinted
+per enemy) creating that type's spawn point far from the pole — the loop
+is identify → hunt the source → destroy it. Schedule: phage, amoeba,
+jellyfish (fodder), then the borrowed HokorobiTawaa tier — corona
+(armored ×2, slows itself when shot), barbed (×3, *accelerates* when
+shot), knot boss (×5, accelerates, 3 heart damage). The on-hit reaction
+is one `behMult`/`behUntil` pair per enemy; erratic pace is a sine over
+`phase`, so everything stays deterministic. Victory now demands all
+types introduced first — early spawn kills just buy quiet. **Ramming**:
+`ENEMY_SPEC.rammable` splits the roster; fodder dies on player/ally
+contact for free, the dangerous tier survives and bites back on a 1.2 s
+per-enemy cooldown (without the cooldown, overlap was a blender).
+**Breaching**: a player shell that hits a BLOCKED cell carves it —
+stand-in wall block fed to `makeDebris` for the tank-style burst, then
+`bfsDist` re-lay and a full `buildGeometry()`; ~single-digit ms at
+default density, fine per shot. Deliberate asymmetry: ally shots don't
+carve (infinite ammo would strip-mine the map), and the re-laid distance
+field means enemies exploit your shortcuts too.
+
+Support: ammo pickups are now triads of `makeBulletCloud` (+3 shells) —
+the pickup depicts its payload; minimap self-marker became a pulsing
+arrowhead and found spawn points pulse in their tint, both sized against
+the *sphere* (cell-relative sizes vanish on dense boards — the map
+always frames the whole ball). New headless hooks: `?wave=N` force-runs
+wave beats, `?found=1` reveals beacons, `?blast=N` exercises the carve
+path. New mesh units keep the transform-tick crowd path; roster
+invariants auto-cover them.
+
 ## `6db7bae` — Mobile chrome, wall margins, and a heart with moods
 
 Three fixes with one lesson each. **Mobile**: game chrome hides behind
