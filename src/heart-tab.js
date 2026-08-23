@@ -15,14 +15,14 @@
 
 import * as THREE from '../vendor/three.module.js';
 import GUI from '../vendor/lil-gui.esm.js';
-import { generateSphereMesh, relax } from './grid.js?v=cbe3419a';
-import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=cbe3419a';
-import { mulberry32, randomSeed } from './rng.js?v=cbe3419a';
-import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3 } from './vec3.js?v=cbe3419a';
-import { CREATURES, waveJelly } from './creatures.js?v=cbe3419a';
-import { UNITS, UNIT_NAMES, buildUnit, makeOrbCloud, makeBulletCloud, makeDebris, makeHeartCloud } from './units.js?v=cbe3419a';
-import { LOOKS, LOOK_NAMES } from './looks.js?v=cbe3419a';
-import { makeCellIndex } from './cellindex.js?v=cbe3419a';
+import { generateSphereMesh, relax } from './grid.js?v=243b3f99';
+import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=243b3f99';
+import { mulberry32, randomSeed } from './rng.js?v=243b3f99';
+import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3 } from './vec3.js?v=243b3f99';
+import { CREATURES, waveJelly } from './creatures.js?v=243b3f99';
+import { UNITS, UNIT_NAMES, buildUnit, makeOrbCloud, makeBulletCloud, makeDebris, makeDotBurst, makeHeartCloud } from './units.js?v=243b3f99';
+import { LOOKS, LOOK_NAMES } from './looks.js?v=243b3f99';
+import { makeCellIndex } from './cellindex.js?v=243b3f99';
 
 export function initHeartTab(root) {
   let active = false;
@@ -192,13 +192,15 @@ export function initHeartTab(root) {
     knot:      { hp: 5, speed: 0.6,  size: 0.8,  rammable: false, heartDmg: 3, accelOnHit: 1.7, boss: true },
   };
   // one new threat per wave; its spawn point is created at announce time
+  // role = flavor only; the announce card's ram badge (from ENEMY_SPEC)
+  // owns the run-over verdict — don't restate it here
   const INTROS = [
-    { wave: 1, type: 'phage',     label: 'THE PHAGE',           role: 'agile swarm · RAM IT · hunt its source' },
-    { wave: 2, type: 'amoeba',    label: 'THE AMOEBA',          role: 'crawler · ram it · destroy the spawn' },
-    { wave: 3, type: 'jellyfish', label: 'THE JELLYFISH',       role: 'pulse drifter · rammable' },
-    { wave: 4, type: 'corona',    label: 'CORONAVIRUS',         role: 'armored ×2 · slows when shot · DO NOT RAM' },
-    { wave: 5, type: 'barbed',    label: 'BARBED MINE',         role: 'SPEEDS UP when shot · DO NOT RAM' },
-    { wave: 6, type: 'knot',      label: 'SOLVING TORUS · BOSS', role: 'accelerates when hit · shells only' },
+    { wave: 1, type: 'phage',     label: 'THE PHAGE',           role: 'agile swarm · hunt its source' },
+    { wave: 2, type: 'amoeba',    label: 'THE AMOEBA',          role: 'crawler · destroy the spawn' },
+    { wave: 3, type: 'jellyfish', label: 'THE JELLYFISH',       role: 'pulse drifter' },
+    { wave: 4, type: 'corona',    label: 'CORONAVIRUS',         role: 'armored ×2 · slows when shot' },
+    { wave: 5, type: 'barbed',    label: 'BARBED MINE',         role: 'SPEEDS UP when shot' },
+    { wave: 6, type: 'knot',      label: 'SOLVING TORUS · BOSS', role: 'accelerates when hit · 3 heart damage' },
   ];
   const LAST_INTRO_WAVE = INTROS[INTROS.length - 1].wave;
   const rewardMeshes = new Map(); // cell -> { obj, type } far-field rewards
@@ -669,6 +671,8 @@ export function initHeartTab(root) {
     const c = player.pos;
     const n = norm3(c);
     const h = player.smoothDir;
+    // suspension dip while a ram bump is live: sink the eye, ease out
+    const dip = cellSide * 0.55 * bumpFactor() * bumpFactor();
     let eye, look;
     if (params.view === 'third') {
       // behind and above; pulls back as the creature grows so it stays framed
@@ -681,6 +685,7 @@ export function initHeartTab(root) {
       eye = add3(add3(c, scale3(n, params.wallHeight * 0.62)), scale3(h, -cellSide * 0.5));
       look = add3(add3(c, scale3(n, params.wallHeight * 0.28)), scale3(h, cellSide * 2.4));
     }
+    if (dip > 0) eye = add3(eye, scale3(n, -dip));
     camGoal.pos.set(eye[0], eye[1], eye[2]);
     tmpCam.position.copy(camGoal.pos);
     tmpCam.up.set(n[0], n[1], n[2]);
@@ -770,7 +775,8 @@ export function initHeartTab(root) {
       // goes to steering and aiming, not throttle. S reverses, W boosts.
       const drive = keys.slow ? -0.55 : keys.fast ? 1.45 : 1;
       if (drive !== 0) {
-        const v = params.speed * speedBonus * cellSide * 1.6 * drive;
+        const v = params.speed * speedBonus * cellSide * 1.6 * drive
+          * (1 - 0.5 * bumpFactor()); // the run-over drag
         const step = scale3(player.heading, v * dt);
         let cand = norm3(add3(player.pos, step));
         if (freeBlocked(cand)) {
@@ -847,7 +853,8 @@ export function initHeartTab(root) {
     // locomotion profile modulates the pace on top.
     // manual: motion only while W/S are held; auto: the creature's own pace
     const prof = MOVES[params.creature];
-    const pace = params.speed * speedBonus * (prof ? prof.speed(simTime) : 1);
+    const pace = params.speed * speedBonus * (prof ? prof.speed(simTime) : 1)
+      * (1 - 0.5 * bumpFactor()); // the run-over drag
     player.prog += (pace * cellSide * dt) / player.segLen;
     while (player.prog >= 1 && !player.won) {
       const carry = (player.prog - 1) * player.segLen; // leftover distance
@@ -883,6 +890,13 @@ export function initHeartTab(root) {
   }
   let simTime = 0;
 
+  // ram bump: running something over has WEIGHT — a short window where the
+  // tank loses pace and the camera dips, like the suspension taking it.
+  // Countdown-seconds (not a timestamp) so it works on both clocks.
+  const BUMP_LEN = 0.35;
+  let bumpLeft = 0;
+  const bumpFactor = () => Math.max(0, bumpLeft / BUMP_LEN);
+
   const STEER_RATE = 2.6; // rad/s while a steer key is held
   function rotate(theta) {
     const n = norm3(player.pos);
@@ -909,6 +923,14 @@ export function initHeartTab(root) {
 
   function onKeyEvent(ev, down) {
     if (!active) return;
+    // a clicked button (lil-gui title, d-pad, modal regen) keeps FOCUS, and
+    // the browser "clicks" the focused button again on Space — which is the
+    // fire key. That's how the panel kept "opening by itself" mid-battle.
+    // Drop button focus before handling any game key. Inputs keep focus
+    // (typing a seed must not drive the tank's keys into blur).
+    if (down && document.activeElement && document.activeElement.tagName === 'BUTTON') {
+      document.activeElement.blur();
+    }
     const k = ev.key.toLowerCase();
     const m = { arrowleft: 'left', a: 'left', arrowright: 'right', d: 'right',
       arrowup: 'fast', w: 'fast', arrowdown: 'slow', s: 'slow' }[k];
@@ -977,19 +999,49 @@ export function initHeartTab(root) {
       '   ·   RAM the small ones · shells for the red · shells breach walls · hunt the spawn points';
   }
 
-  // wave announcement banner — HokorobiTawaa's "New Threat" card
+  // wave announcement banner — HokorobiTawaa's "New Threat" card, complete
+  // with its spinning live model of the enemy. The sprite renderer is ONE
+  // persistent context created up front (never per-announcement — contexts
+  // are a scarce browser resource and leak on loss).
   const waveEl = root.querySelector('#h-wave');
   let waveTimer = null;
+  const waveSpriteRenderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+  waveSpriteRenderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+  waveSpriteRenderer.setSize(96, 96);
+  waveSpriteRenderer.domElement.className = 'wave-sprite';
+  const waveScene = new THREE.Scene();
+  const waveCam = new THREE.PerspectiveCamera(38, 1, 0.1, 10);
+  waveCam.position.set(0, 0.55, 2.7);
+  waveCam.lookAt(0, 0.3, 0);
+  waveScene.add(new THREE.HemisphereLight(0xffffff, 0x445566, 2.6));
+  const waveSun = new THREE.DirectionalLight(0xffffff, 1.4);
+  waveSun.position.set(2, 3, 2);
+  waveScene.add(waveSun);
+  let waveUnit = null;
+
   function announceWave(intro) {
     const tint = '#' + CREATURE_TINTS[intro.type].toString(16).padStart(6, '0');
+    const spec = ENEMY_SPEC[intro.type];
+    // the one fact the player must not miss: can I drive over it?
+    const ram = spec.rammable
+      ? '<div class="wave-ram" style="color:#66ff88">▼ RAMMABLE — run it over</div>'
+      : '<div class="wave-ram" style="color:#ff5340">✖ DO NOT RAM — shells only</div>';
     waveEl.style.borderColor = tint;
     waveEl.style.color = tint;
     waveEl.innerHTML = `<div class="wave-num">WAVE ${intro.wave} · NEW THREAT</div>` +
       `<div class="wave-name">${intro.label}</div>` +
-      `<div class="wave-role">${intro.role}</div>`;
+      `<div class="wave-role">${intro.role}</div>` + ram;
+    // live model between the header and the name (innerHTML wipe means the
+    // canvas must be re-inserted each announcement)
+    waveEl.insertBefore(waveSpriteRenderer.domElement, waveEl.querySelector('.wave-name'));
+    if (waveUnit) { waveScene.remove(waveUnit); disposeObj(waveUnit); }
+    waveUnit = buildUnit(intro.type, { walker: CREATURE_TINTS[intro.type], walkerHi: 0xffffff });
+    // mesh units stand on y=0, clouds center on the origin — lift clouds
+    if (waveUnit.userData.kind === 'cloud') waveUnit.position.y = 0.3;
+    waveScene.add(waveUnit);
     waveEl.classList.remove('hidden');
     clearTimeout(waveTimer);
-    waveTimer = setTimeout(() => waveEl.classList.add('hidden'), 3500);
+    waveTimer = setTimeout(() => waveEl.classList.add('hidden'), 4200);
   }
 
   // --- generation ----------------------------------------------------------
@@ -1307,7 +1359,19 @@ export function initHeartTab(root) {
       // (per-enemy cooldown so overlap isn't a blender)
       const touchR = cellSide * Math.max(0.42, spec.size * 0.8);
       if (dist3(e.pos, player.pos) < touchR) {
-        if (spec.rammable) { killCreature(e, true); checkVictory(); continue; }
+        if (spec.rammable) {
+          // run over: tinted splat under the treads + the weight bump
+          const burst = makeDotBurst(CREATURE_TINTS[e.type], n);
+          burst.scale.setScalar(cellSide * 0.8);
+          const bp = add3(e.pos, scale3(n, cellSide * 0.12));
+          burst.position.set(bp[0], bp[1], bp[2]);
+          scene.add(burst);
+          debris.push(burst);
+          bumpLeft = BUMP_LEN;
+          killCreature(e, true);
+          checkVictory();
+          continue;
+        }
         if (tNow > e.touchCd) { e.touchCd = tNow + 1.2; playerHit(); }
       }
       // allies are tanks too: same ram rule
@@ -1806,6 +1870,7 @@ export function initHeartTab(root) {
     lastFrame = now;
     t += dt;
 
+    bumpLeft = Math.max(0, bumpLeft - dt);
     advanceMotion(dt);
     for (const orb of orbMeshes.values()) orb.userData.tick(t);
     for (let i = debris.length - 1; i >= 0; i--) {
@@ -1870,6 +1935,13 @@ export function initHeartTab(root) {
     camera.quaternion.slerp(camGoal.quat, 0.14);
 
     heartSprite.userData.tick(t);
+
+    // announce card: spin the introduced enemy while the banner is up
+    if (waveUnit && !waveEl.classList.contains('hidden')) {
+      waveUnit.rotation.y = t * 0.8; // HokorobiTawaa's announce spin
+      if (waveUnit.userData.tick) waveUnit.userData.tick(t);
+      waveSpriteRenderer.render(waveScene, waveCam);
+    }
 
     // main view
     scene.background = mainBg;

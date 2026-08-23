@@ -15,7 +15,7 @@
 // tick(t) (idle animation) }.
 
 import * as THREE from '../vendor/three.module.js';
-import { CREATURES, waveJelly, spherePts, bulletPts, heartPts } from './creatures.js?v=cbe3419a';
+import { CREATURES, waveJelly, spherePts, bulletPts, heartPts } from './creatures.js?v=243b3f99';
 
 function normalizeToUnit(group) {
   group.updateMatrixWorld(true);
@@ -350,6 +350,53 @@ export function makeDebris(obj, outwardN) {
     return life < LIFE;
   };
   return mesh;
+}
+
+// dot burst — the cloud-unit counterpart of makeDebris: a puff of tinted
+// dots scattering outward from a squash point (Points have no triangles
+// to explode, so run-over kills get this instead). Caller positions the
+// object; velocities favor the tangent plane around `outwardN` so the
+// splat hugs the ground like something flattened. tick(dt) -> alive.
+export function makeDotBurst(colorHex, outwardN, n = 42) {
+  const hshf = (i) => { const s = Math.sin(i * 91.7 + 2.3) * 43758.5453; return s - Math.floor(s); };
+  const pos = new Float32Array(n * 3); // all start at the origin
+  const vel = new Float32Array(n * 3);
+  const col = new Float32Array(n * 3);
+  const c = new THREE.Color(colorHex);
+  for (let i = 0; i < n; i++) {
+    // random dir, flattened against the surface normal, slight upward pop
+    const th = hshf(i) * 6.283;
+    const up = hshf(i + 50) * 0.55;
+    let dx = Math.cos(th), dy = 0, dz = Math.sin(th);
+    dx += outwardN[0] * up; dy += outwardN[1] * up; dz += outwardN[2] * up;
+    const sp = 0.45 + hshf(i + 100) * 1.1;
+    vel[i * 3] = dx * sp; vel[i * 3 + 1] = dy * sp; vel[i * 3 + 2] = dz * sp;
+    const b = 0.7 + 0.3 * hshf(i + 150);
+    col[i * 3] = c.r * b; col[i * 3 + 1] = c.g * b; col[i * 3 + 2] = c.b * b;
+  }
+  const geo = new THREE.BufferGeometry();
+  const posAttr = new THREE.BufferAttribute(pos, 3);
+  geo.setAttribute('position', posAttr);
+  geo.setAttribute('color', new THREE.BufferAttribute(col, 3));
+  const mat = new THREE.PointsMaterial({
+    size: 2.4, sizeAttenuation: false, vertexColors: true,
+    transparent: true, opacity: 1,
+  });
+  const pts = new THREE.Points(geo, mat);
+  const LIFE = 0.7;
+  let life = 0;
+  pts.userData.tick = (dt) => {
+    life += dt;
+    for (let i = 0; i < n; i++) {
+      pos[i * 3] += vel[i * 3] * dt;
+      pos[i * 3 + 1] += vel[i * 3 + 1] * dt;
+      pos[i * 3 + 2] += vel[i * 3 + 2] * dt;
+    }
+    posAttr.needsUpdate = true;
+    mat.opacity = Math.max(0, 1 - life / LIFE);
+    return life < LIFE;
+  };
+  return pts;
 }
 
 // bullet projectile — the Braille shell as a static dot-cloud. Animation is

@@ -259,6 +259,18 @@ html, body {
   opacity: 0.85;
   color: #d8e2ea;
 }
+#h-wave .wave-sprite {
+  display: block;
+  margin: 4px auto 2px;
+  width: 96px;
+  height: 96px;
+}
+#h-wave .wave-ram {
+  font-size: 11px;
+  letter-spacing: 0.18em;
+  margin-top: 5px;
+  text-shadow: 0 0 8px currentColor;
+}
 @keyframes wave-pop {
   from { opacity: 0; transform: translateX(-50%) scale(0.85); }
   to   { opacity: 1; transform: translateX(-50%) scale(1); }
