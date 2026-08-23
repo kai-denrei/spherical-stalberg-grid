@@ -6,6 +6,26 @@ Demo links assume `npm run serve` (port 8144) or the
 
 ---
 
+## `6db7bae` — Mobile chrome, wall margins, and a heart with moods
+
+Three fixes with one lesson each. **Mobile**: game chrome hides behind
+a ☰ on touch devices and the minimap moves top-right — thumbs own the
+bottom corners. The debugging story is the entry's real content:
+headless Chrome clamps windows to ~500px and CROPS screenshots to the
+requested size, so a perfectly-positioned minimap looked clipped for a
+whole cycle. When layout misbehaves only in headless, log
+`innerWidth` from inside the page before touching CSS. **Collision**:
+point-in-open-cell was never enough — the unit has a body. Free
+movement now rejects positions within a margin of blocked-cell centers
+and slides along walls by stripping the into-wall velocity component;
+solid units (enemy tanks, spawn structures) use the same overridable
+blocker hook. Creatures stay passable on purpose: their contact IS the
+damage. **The heart**: the Braille implicit-surface heart (ray-marched
+against `heartF` along a fib lattice) replaces the sprite in all four
+tabs, cycling twinkle → breathe → jelly, flaring orange/red under Wave
+when hit. State machine in the dot cloud's tick; `hit()` timestamps
+against the last ticked time so the flare needs no external clock.
+
 ## `5d2eb5a` — The Heart becomes tower defense (and the walls become cover)
 
 Terrain flipped inside-out: instead of carving corridors from solid,
