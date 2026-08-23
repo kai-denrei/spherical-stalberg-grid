@@ -306,6 +306,22 @@ html, body {
   text-shadow: 0 1px 3px rgba(0, 0, 0, 0.9);
 }
 
+/* sector-breach flash: the world opens in a blink of white (HK reveal) */
+#td-flash {
+  position: fixed;
+  inset: 0;
+  background: #fff;
+  opacity: 0;
+  pointer-events: none;
+  z-index: 30;
+}
+#td-flash.on { animation: sector-flash 1.1s ease-out; }
+@keyframes sector-flash {
+  0% { opacity: 0; }
+  10% { opacity: 1; }
+  100% { opacity: 0; }
+}
+
 /* build mode is the planning instrument: driving controls step aside */
 #tab-td.build .tzone,
 #tab-td.build .tzone-mid,

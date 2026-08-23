@@ -19,17 +19,17 @@
 
 import * as THREE from '../vendor/three.module.js';
 import GUI from '../vendor/lil-gui.esm.js';
-import { generateSphereMesh, relax } from './grid.js?v=7bb4fe5a';
-import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=7bb4fe5a';
-import { mulberry32, randomSeed } from './rng.js?v=7bb4fe5a';
-import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3 } from './vec3.js?v=7bb4fe5a';
-import { CREATURES, waveJelly } from './creatures.js?v=7bb4fe5a';
-import { UNITS, UNIT_NAMES, buildUnit, makeOrbCloud, makeBulletCloud, makeDebris, makeDotBurst, makePortalCloud, makeHeartCloud, makeTowerUnit } from './units.js?v=7bb4fe5a';
-import { LOOKS, LOOK_NAMES } from './looks.js?v=7bb4fe5a';
-import { makeCellIndex } from './cellindex.js?v=7bb4fe5a';
-import { CREATURE_TINTS, ENEMY_SPEC, INTROS } from './enemyspec.js?v=7bb4fe5a';
-import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval } from './towers.js?v=7bb4fe5a';
-import { makeEconomy, sellRefund } from './economy.js?v=7bb4fe5a';
+import { generateSphereMesh, relax } from './grid.js?v=dc0eb989';
+import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=dc0eb989';
+import { mulberry32, randomSeed } from './rng.js?v=dc0eb989';
+import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3 } from './vec3.js?v=dc0eb989';
+import { CREATURES, waveJelly } from './creatures.js?v=dc0eb989';
+import { UNITS, UNIT_NAMES, buildUnit, makeOrbCloud, makeBulletCloud, makeDebris, makeDotBurst, makePortalCloud, makeHeartCloud, makeTowerUnit } from './units.js?v=dc0eb989';
+import { LOOKS, LOOK_NAMES } from './looks.js?v=dc0eb989';
+import { makeCellIndex } from './cellindex.js?v=dc0eb989';
+import { CREATURE_TINTS, ENEMY_SPEC, INTROS } from './enemyspec.js?v=dc0eb989';
+import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval } from './towers.js?v=dc0eb989';
+import { makeEconomy, sellRefund } from './economy.js?v=dc0eb989';
 
 export function initTdTab(root) {
   let active = false;
@@ -37,7 +37,7 @@ export function initTdTab(root) {
 
   const params = {
     seed: 7,
-    points: 150, // round 1 board — startRound() drives this upward per round
+    points: 700, // ONE persistent world per run; sectors unseal it in bands
     rooms: 12,          // unused by the open-field terrain, kept for the carve call
     roomRadius: 3,
     extraCorridors: 4,
@@ -56,9 +56,9 @@ export function initTdTab(root) {
     // more triads on the ground and a longer breath between waves
     orbs: 14,
     orbRespawn: 6, // seconds between respawns (0 = off)
-    waveSize: 5,
-    waveEvery: 26, // seconds
-    friendlies: 4,
+    waveSize: 4,
+    waveEvery: 16, // seconds — TD tempo is relentless
+    friendlies: 2, // the towers are your army here
     rewards: 6,
   };
 
@@ -185,12 +185,38 @@ export function initTdTab(root) {
   // roster data (tints/specs/intros) lives in enemyspec.js — one source
   // of truth shared with the TD tab (M0 extraction). See that module for
   // the field semantics.
-  // ROUNDS: clear every spawn point to advance. Each round the board grows
-  // and TWO more threat types join the schedule — round 1 fields four
-  // rammable types; the full 12-type roster is on the field by round 5.
+  // ROUNDS = SECTORS (HokorobiTawaa's fraying, spherized): ONE persistent
+  // world per run. Round 1 opens only a small inner region around the
+  // Heart — the rest of the sphere is SEALED (reads as solid wall mass).
+  // Clearing every portal flashes the frontier open: a wider ring
+  // unseals, farther portals rise, the wave counter keeps counting, and
+  // YOUR TOWERS AND PURSE STAY. Two more threat types unlock per round.
   let round = 1;
-  const roundPoints = () => Math.min(2400, 100 + 50 * round); // r1=150, r2=200…
+  let tdFullTags = null;  // the true world, pre-sealing
+  let tdFullDist = null;  // heart-distance over the full world
+  let tdMaxD = 0;
+  const SECTOR_FRAC = (r) => Math.min(1, 0.32 + 0.24 * (r - 1)); // r1 32% … r4 all
   const introCount = () => Math.min(INTROS.length, 2 + 2 * round); // r1=4 types
+  // seal/unseal to the current round's fraction; optionally re-pick the
+  // player start (only at run start — expansions don't teleport you)
+  function applySector(resetSpawn = false) {
+    const cut = tdMaxD * SECTOR_FRAC(round);
+    for (let i = 0; i < dungeon.tags.length; i++) {
+      dungeon.tags[i] = (tdFullTags[i] !== BLOCKED && tdFullDist[i] > cut)
+        ? BLOCKED : tdFullTags[i];
+    }
+    dungeon.distToHeart = bfsDist(graph.adj, [dungeon.heart],
+      (i) => dungeon.tags[i] !== BLOCKED && !towerCells.has(i));
+    if (resetSpawn) {
+      let sp = -1, bd = -1;
+      for (let i = 0; i < dungeon.tags.length; i++) {
+        if (dungeon.tags[i] !== BLOCKED && dungeon.distToHeart[i] > bd) {
+          bd = dungeon.distToHeart[i]; sp = i;
+        }
+      }
+      dungeon.spawn = sp;
+    }
+  }
   const rewardMeshes = new Map(); // cell -> { obj, type } far-field rewards
   let heartHP = 10;
   const HEART_MAX = 10;
@@ -1185,7 +1211,7 @@ export function initTdTab(root) {
     const cl = ev.target.classList;
     if (!cl) return;
     if (cl.contains('msg-regen')) regenerate(); // retry the CURRENT round
-    else if (cl.contains('msg-next')) { round++; params.seed++; startRound(); }
+    else if (cl.contains('msg-next')) { round++; expandRound(); }
     else if (cl.contains('msg-begin')) { paused = false; msgEl.classList.add('hidden'); }
     else if (cl.contains('msg-glenemy')) showEnemyGlossary();
     else if (cl.contains('msg-glfriend')) showFriendGlossary();
@@ -1387,12 +1413,13 @@ export function initTdTab(root) {
   // --- generation ----------------------------------------------------------
   function regenerate() {
     const t0 = performance.now();
-    // towers first: stale towerCells would poison openNeighbors during
-    // board generation. Cleared towers convert to round capital if a
-    // victory banked it (carryCredit); otherwise a fresh purse.
+    // a regenerate is a FRESH RUN: sector 1, towers gone, fresh purse.
+    // (Round expansion never comes through here — expandRound reveals the
+    // same world in place, towers standing.) Clear towers first: stale
+    // towerCells would poison openNeighbors during board generation.
+    round = 1;
     clearTowers();
-    eco = makeEconomy(carryCredit !== null ? { startCredit: carryCredit } : {});
-    carryCredit = null;
+    eco = makeEconomy();
     mesh = generateSphereMesh({ seed: params.seed >>> 0, n: params.points, k: 12 });
     relax(mesh, { n_iters: params.relaxIters, PULL_RATE: 0.25 });
     dungeon = generateDungeon(mesh, {
@@ -1452,6 +1479,15 @@ export function initTdTab(root) {
       }
       dungeon.spawn = sp;
     }
+    // TD: remember the FULL world, then seal everything beyond round 1's
+    // inner sector — the run reveals it back band by band
+    tdFullTags = dungeon.tags.slice();
+    tdFullDist = Array.from(dungeon.distToHeart);
+    tdMaxD = 0;
+    for (let i = 0; i < dungeon.tags.length; i++) {
+      if (tdFullTags[i] !== BLOCKED) tdMaxD = Math.max(tdMaxD, tdFullDist[i]);
+    }
+    applySector(true);
     cellIndex = makeCellIndex(graph.centers, cellSide * 1.7);
     player.freeMode = false;
     player.virtualStart = null;
@@ -1640,7 +1676,9 @@ export function initTdTab(root) {
       addSpawnPoint(intro.type);
       announceWave(intro);
     }
-    const base = params.waveSize + Math.floor(wave / 3) + (round - 1);
+    // INTENSE: counts climb with every wave and every sector — without
+    // towers this drowns you; with a few it's a mowing exercise
+    const base = params.waveSize + wave + 2 * (round - 1);
     for (const sp of spawnPoints) {
       if (!sp.alive) continue;
       const spec = ENEMY_SPEC[sp.type];
@@ -2309,7 +2347,6 @@ export function initTdTab(root) {
   const towerShots = [];          // { pos, dir, dist, mesh, dmg, splash, homing }
   const beams = [];               // { mesh, ttl } laser + slow-tether fx
   let eco = makeEconomy();
-  let carryCredit = null;         // round-clear: towers auto-sell at 100% into this
 
   // pathing re-lay that knows about tower cells (portals must stay linked)
   function relayNav() {
@@ -2568,6 +2605,11 @@ export function initTdTab(root) {
   }
 
   // --- shop / upgrade panel (build mode, tap a cell) ----------------------
+  // sector-breach flash: a white full-screen pulse when the world opens
+  const flashEl = document.createElement('div');
+  flashEl.id = 'td-flash';
+  root.appendChild(flashEl);
+
   const shopEl = document.createElement('div');
   shopEl.id = 'td-shop';
   shopEl.className = 'hidden';
@@ -2679,24 +2721,45 @@ export function initTdTab(root) {
     if (wave >= introCount() && spawnPoints.length > 0
       && spawnPoints.every((s) => !s.alive) && enemies.every((e) => !e.alive)) {
       player.won = true;
-      // towers auto-sell at 100% into next round's purse — investment
-      // carries as capital, not furniture (spec §6)
-      carryCredit = eco.credit + towers.reduce((s, tw) => s + tw.spent, 0);
       msgEl.innerHTML = `<div class="msg-head">transmission · combat log</div>` +
-        `✦ ROUND ${round} CLEARED — every spawn point destroyed<br>` +
+        `✦ SECTOR ${round} CLEARED — every portal destroyed<br>` +
         `${wave} waves · heart ${heartHP}/${HEART_MAX} · ` +
-        `${carryCredit}c carried forward (towers liquidated at full value)<br>` +
-        `<button class="msg-next">&rsaquo; round ${round + 1} — bigger sector, meaner waves</button>`;
+        `${towers.length} towers standing · ${eco.credit}c<br>` +
+        `<button class="msg-next">&rsaquo; breach sector ${round + 1} — bigger, farther, meaner</button>`;
       msgEl.classList.remove('hidden');
     }
   }
 
-  // next round: a bigger board, a fresh layout, one more threat type
-  function startRound() {
-    params.points = roundPoints();
-    pointsCtrl.updateDisplay();
-    seedCtrl.updateDisplay();
-    regenerate();
+  // sector expansion (HokorobiTawaa's fraying): FLASH WHITE, unseal the
+  // next band of the SAME world, re-seed pickups into the new ground,
+  // raise fresh portals farther out. Towers and credit persist.
+  function expandRound() {
+    flashEl.classList.remove('on');
+    void flashEl.offsetWidth; // restart the animation
+    flashEl.classList.add('on');
+    applySector();
+    buildGeometry();
+    spawnOrbs();
+    spawnRewards();
+    // a pair of immediate sources in the new band, drawn from the types
+    // already met; the intro schedule keeps adding NEW types on its waves
+    const known = INTROS.slice(0, introCount()).map((iv) => iv.type);
+    for (let k = 0; k < 2; k++) {
+      addSpawnPoint(known[Math.floor(whim() * known.length)]);
+    }
+    waveClock = params.waveEvery * 0.5;
+    player.won = false;
+    paused = false;
+    msgEl.classList.add('hidden');
+    waveEl.style.borderColor = '#ffffff';
+    waveEl.style.color = '#ffffff';
+    waveEl.innerHTML = `<div class="wave-num">SECTOR ${round}</div>` +
+      `<div class="wave-name">THE WORLD GROWS</div>` +
+      `<div class="wave-role">new ground · new portals · your towers hold</div>`;
+    waveEl.classList.remove('hidden');
+    clearTimeout(waveTimer);
+    waveTimer = setTimeout(() => waveEl.classList.add('hidden'), 3200);
+    updateHud();
   }
 
   // --- dashboard -----------------------------------------------------------
@@ -2941,6 +3004,15 @@ export function initTdTab(root) {
     snapCamera();
   }
 
+  // ?sector=N jumps the world to sector N pre-opened (headless check of
+  // the expansion path; runs before ?wave so portals land in the band)
+  const sectorN = parseInt(urlParams.get('sector') || '1', 10);
+  if (sectorN > 1) {
+    round = sectorN;
+    applySector();
+    buildGeometry();
+  }
+
   // ?wave=N force-runs N wave beats (introductions included) — headless
   // verification of the announce/spawn flow without waiting wall-clock
   const waveN = parseInt(urlParams.get('wave') || '0', 10);
@@ -3011,7 +3083,7 @@ export function initTdTab(root) {
 
   // opening briefing on a clean load; any debug hook means headless/demo,
   // where a frozen sim would break the verification flow
-  const debugging = ['walk', 'tick', 'wave', 'blast', 'laser', 'found', 'recoil', 'mode', 'map', 'tower', 'credit', 'shop']
+  const debugging = ['walk', 'tick', 'wave', 'blast', 'laser', 'found', 'recoil', 'mode', 'map', 'tower', 'credit', 'shop', 'sector']
     .some((k) => urlParams.get(k));
   if (!debugging) showBriefing();
 
