@@ -6,11 +6,11 @@
 
 import * as THREE from '../vendor/three.module.js';
 import GUI from '../vendor/lil-gui.esm.js';
-import { generateSphereMesh, relax } from './grid.js?v=701845d0';
-import { generateDungeon, BLOCKED, PATH, ROOM } from './dungeon.js?v=701845d0';
-import { mulberry32, randomSeed } from './rng.js?v=701845d0';
-import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3 } from './vec3.js?v=701845d0';
-import { CREATURES, waveJelly } from './creatures.js?v=701845d0';
+import { generateSphereMesh, relax } from './grid.js?v=326d96f3';
+import { generateDungeon, BLOCKED, PATH, ROOM } from './dungeon.js?v=326d96f3';
+import { mulberry32, randomSeed } from './rng.js?v=326d96f3';
+import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3 } from './vec3.js?v=326d96f3';
+import { CREATURES, waveJelly } from './creatures.js?v=326d96f3';
 
 export function initOrganicTab(root) {
   let active = false;
@@ -25,6 +25,7 @@ export function initOrganicTab(root) {
     relaxIters: 80,
     view: 'third', // pov | third
     speed: 1.1, // cells per second, wanderer pace
+    autoResume: 3, // seconds idle before auto-wander resumes
     creature: 'amoeba', // amoeba | phage | jellyfish
     orbs: 12,
     orbRespawn: 8, // seconds between respawns (0 = off)
@@ -194,6 +195,11 @@ export function initOrganicTab(root) {
   const keys = { left: false, right: false, fast: false, slow: false };
   let steerHold = 99; // seconds since the user last steered
   const steeringActive = () => steerHold < 1.2;
+  // manual override: ANY WASD press disables auto-wander entirely; it
+  // resumes only after params.autoResume seconds without input
+  let manualClock = 99;
+  let prevSlow = false;
+  const manualActive = () => manualClock < params.autoResume;
 
   const camGoal = { pos: new THREE.Vector3(), quat: new THREE.Quaternion() };
   const tmpObj = new THREE.Object3D();
@@ -464,7 +470,7 @@ export function initOrganicTab(root) {
     if (exits.length === 0) return -1;
     // control mode: while the user steers, their intent dominates — the
     // creature's curiosity, backtrack aversion, and whims all yield
-    const active = steeringActive();
+    const active = steeringActive() || manualActive();
     let best = exits[0], bestScore = -Infinity;
     for (const e of exits) {
       const dir = tangentDirTo(player.cur, e);
@@ -500,14 +506,28 @@ export function initOrganicTab(root) {
     if (player.won || player.next === -1) return;
     simTime += dt;
 
-    // continuous steering + pace while keys are held
+    // continuous steering while held; ANY key claims manual control
+    const anyKey = keys.left || keys.right || keys.fast || keys.slow;
+    manualClock = anyKey ? 0 : manualClock + dt;
+    steerHold = anyKey ? 0 : steerHold + dt;
+    const manual = manualActive();
     if (keys.left) rotate(STEER_RATE * dt);
     if (keys.right) rotate(-STEER_RATE * dt);
-    steerHold = (keys.left || keys.right) ? 0 : steerHold + dt;
-    const boost = keys.fast ? 2.3 : keys.slow ? 0.25 : 1;
+
+    // manual S (fresh press): turn around, then drive
+    if (manual && keys.slow && !prevSlow && player.next !== -1) {
+      const old = player.cur;
+      player.cur = player.next;
+      player.next = old;
+      player.prog = 1 - player.prog;
+      player.prev = -1;
+      player.heading = scale3(player.heading, -1);
+    }
+    prevSlow = keys.slow;
 
     // U-turn: heading swung behind the motion — reverse the glide in place.
-    if (steeringActive() && dot3(player.heading, player.travelDir) < -0.35
+    const driving = !manual || keys.fast || keys.slow;
+    if ((manual ? driving : steeringActive()) && dot3(player.heading, player.travelDir) < -0.35
       && player.prog > 0.04 && player.prog < 0.96) {
       const old = player.cur;
       player.cur = player.next;
@@ -529,15 +549,18 @@ export function initOrganicTab(root) {
     // so a long chord between large cells takes proportionally longer — the
     // grid offers the space, the motion traverses it. The creature's own
     // locomotion profile modulates the pace on top.
+    // manual: motion only while W/S are held; auto: the creature's own pace
     const prof = MOVES[params.creature];
-    const pace = params.speed * (prof ? prof.speed(simTime) : 1) * boost;
+    const pace = manual
+      ? ((keys.fast || keys.slow) ? params.speed * 1.5 : 0)
+      : params.speed * (prof ? prof.speed(simTime) : 1);
     player.prog += (pace * cellSide * dt) / player.segLen;
     while (player.prog >= 1 && !player.won) {
       const carry = (player.prog - 1) * player.segLen; // leftover distance
       arriveAt(player.next);
       // idle: steering intent drifts toward actual travel; while the user
       // steers, their intent is left untouched
-      if (!steeringActive()) {
+      if (!steeringActive() && !manualActive()) {
         const td = tangentDirTo(player.prev, player.cur);
         player.heading = norm3(add3(scale3(player.heading, 0.65), scale3(td, 0.35)));
       }
@@ -580,7 +603,8 @@ export function initOrganicTab(root) {
   function updateSmoothDir(dt) {
     const n = norm3(player.pos);
     let s = norm3(sub3(player.smoothDir, scale3(n, dot3(player.smoothDir, n))));
-    const g = player.travelDir;
+    const raw = manualActive() ? player.heading : player.travelDir;
+    const g = norm3(sub3(raw, scale3(n, dot3(raw, n))));
     const ang = Math.atan2(dot3(cross3(s, g), n), Math.max(-1, Math.min(1, dot3(s, g))));
     const step = Math.max(-SMOOTH_RATE * dt, Math.min(SMOOTH_RATE * dt, ang));
     const c = Math.cos(step), si = Math.sin(step);
@@ -642,7 +666,8 @@ export function initOrganicTab(root) {
   function updateHud() {
     statsEl.textContent =
       `hops to heart ${dungeon.distToHeart[player.cur]}   moves ${player.moves}\n` +
-      `orbs absorbed ${absorbed} · on field ${orbMeshes.size}   size ×${(unitScale / baseUnitScale).toFixed(2)}`;
+      `orbs absorbed ${absorbed} · on field ${orbMeshes.size}   size ×${(unitScale / baseUnitScale).toFixed(2)}\n` +
+      (manualActive() ? 'MANUAL — release keys to hand back control' : 'auto-wander');
   }
 
   // --- generation ----------------------------------------------------------
@@ -710,6 +735,7 @@ export function initOrganicTab(root) {
   gui.add(params, 'creature', Object.keys(CREATURES)).onChange(regenerate);
   const viewCtrl = gui.add(params, 'view', ['pov', 'third']).name('camera (V)');
   const speedCtrl = gui.add(params, 'speed', 0.2, 4, 0.1).name('wander speed');
+  gui.add(params, 'autoResume', 1, 10, 0.5).name('auto resume (s)');
   gui.add(params, 'orbs', 0, 40, 1).onFinishChange(regenerate);
   gui.add(params, 'orbRespawn', 0, 30, 1).name('orb respawn (s)');
   const seedCtrl = gui.add(params, 'seed', 0, 99999, 1).onFinishChange(regenerate);
@@ -738,6 +764,7 @@ export function initOrganicTab(root) {
     t += dt;
 
     advanceMotion(dt);
+    updateHud();
     placeActors();
 
     // phagocytosis: when the amoeba nears an orb, aim the membrane at it.
