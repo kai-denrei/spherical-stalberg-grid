@@ -1,13 +1,13 @@
 // main.js — tab shell. Each tab lazily initializes its own renderer/scene the
 // first time it's shown and pauses (skips its loop body) while hidden.
 
-import { wireDevlogBadge } from './devlog.js?v=ac743f60';
-import { initGridTab } from './grid-tab.js?v=ac743f60';
-import { initMazeTab } from './maze-tab.js?v=ac743f60';
-import { initOrganicTab } from './organic-tab.js?v=ac743f60';
-import { initBattleTab } from './battle-tab.js?v=ac743f60';
-import { initHeartTab } from './heart-tab.js?v=ac743f60';
-import { initHowTab } from './how-tab.js?v=ac743f60';
+import { wireDevlogBadge } from './devlog.js?v=813a9e52';
+import { initGridTab } from './grid-tab.js?v=813a9e52';
+import { initMazeTab } from './maze-tab.js?v=813a9e52';
+import { initOrganicTab } from './organic-tab.js?v=813a9e52';
+import { initBattleTab } from './battle-tab.js?v=813a9e52';
+import { initHeartTab } from './heart-tab.js?v=813a9e52';
+import { initHowTab } from './how-tab.js?v=813a9e52';
 
 const tabs = {
   grid: { root: document.getElementById('tab-grid'), init: initGridTab, api: null },
@@ -45,9 +45,13 @@ const initial = location.hash.slice(1);
 activate(tabs[initial] ? initial : 'heart');
 
 // iOS: no double-tap zoom (the cruise gesture IS a double tap) and no
-// pinch zoom on the play surface. touch-action handles double-tap;
-// gesturestart is Safari's non-standard pinch hook.
-document.addEventListener('gesturestart', (ev) => ev.preventDefault());
+// pinch zoom on the play surface. The universal touch-action rule in CSS
+// handles double-tap (per-element — it does not inherit); the gesture*
+// events are Safari's non-standard pinch pipeline; the viewport meta's
+// maximum-scale covers standalone mode and Android.
+for (const evt of ['gesturestart', 'gesturechange', 'gestureend']) {
+  document.addEventListener(evt, (ev) => ev.preventDefault());
+}
 
 wireDevlogBadge();
 

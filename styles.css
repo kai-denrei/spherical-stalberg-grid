@@ -1,14 +1,30 @@
+/* kill iOS double-tap zoom EVERYWHERE: touch-action does NOT inherit, so
+   a html/body rule never reaches the game canvases — the universal
+   selector does. (OrbitControls sets inline touch-action:none on its own
+   canvas, which still wins, as it should.) double-tap is a GAME gesture
+   (cruise); a surprise zoom mid-battle is never wanted. */
+* {
+  touch-action: manipulation;
+}
+
 html, body {
   margin: 0;
   height: 100%;
   overflow: hidden;
   background: #10131a;
   font-family: ui-monospace, "SF Mono", Menlo, monospace;
-  /* kill iOS double-tap zoom everywhere: double-tap is a GAME gesture
-     (cruise), and a surprise zoom mid-battle is never wanted */
-  touch-action: manipulation;
   overscroll-behavior: none;
   -webkit-tap-highlight-color: transparent;
+  /* no long-press callout / accidental text selection on the play surface */
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+/* reading surfaces get selection back */
+.mdview, .mdview * {
+  -webkit-user-select: text;
+  user-select: text;
 }
 
 .tab {
