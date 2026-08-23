@@ -15,14 +15,14 @@
 
 import * as THREE from '../vendor/three.module.js';
 import GUI from '../vendor/lil-gui.esm.js';
-import { generateSphereMesh, relax } from './grid.js?v=96aff44e';
-import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=96aff44e';
-import { mulberry32, randomSeed } from './rng.js?v=96aff44e';
-import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3 } from './vec3.js?v=96aff44e';
-import { CREATURES, waveJelly } from './creatures.js?v=96aff44e';
-import { UNITS, UNIT_NAMES, buildUnit, makeOrbCloud, makeBulletCloud, makeDebris, makeDotBurst, makePortalCloud, makeHeartCloud } from './units.js?v=96aff44e';
-import { LOOKS, LOOK_NAMES } from './looks.js?v=96aff44e';
-import { makeCellIndex } from './cellindex.js?v=96aff44e';
+import { generateSphereMesh, relax } from './grid.js?v=89017e22';
+import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=89017e22';
+import { mulberry32, randomSeed } from './rng.js?v=89017e22';
+import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3 } from './vec3.js?v=89017e22';
+import { CREATURES, waveJelly } from './creatures.js?v=89017e22';
+import { UNITS, UNIT_NAMES, buildUnit, makeOrbCloud, makeBulletCloud, makeDebris, makeDotBurst, makePortalCloud, makeHeartCloud } from './units.js?v=89017e22';
+import { LOOKS, LOOK_NAMES } from './looks.js?v=89017e22';
+import { makeCellIndex } from './cellindex.js?v=89017e22';
 
 export function initHeartTab(root) {
   let active = false;
@@ -41,14 +41,14 @@ export function initHeartTab(root) {
     look: 'tronColors', // visual identity, see looks.js
     wallTops: 'black', // obstacles read as voids; silhouettes matter here
     speed: 1.1, // cells per second, wanderer pace
-    recoil: 3, // shell-recoil intensity: scales hull jolt + camera kick
+    recoil: 8, // shell-recoil intensity, dialed to MAX per operator
     autoResume: 3, // seconds idle before auto-wander resumes
     creature: 'tank', // any roster unit; the tank has the sweeping turret
     // balance (operator pass): heavier early waves, but a richer field —
     // more triads on the ground and a longer breath between waves
     orbs: 14,
     orbRespawn: 6, // seconds between respawns (0 = off)
-    waveSize: 3,
+    waveSize: 5,
     waveEvery: 26, // seconds
     friendlies: 4,
     rewards: 6,
@@ -174,43 +174,65 @@ export function initHeartTab(root) {
   const spawnPoints = [];  // { type, ci, hp, obj, alive } — one per creature type
   let wave = 0;
   let waveClock = 0;
+  // colors are HokorobiTawaa's roster palette (hue = class, brightness =
+  // threat rank) for the borrowed types; our original three keep theirs
   const CREATURE_TINTS = {
-    amoeba: 0x66ff88,
     phage: 0xffb84d,
+    ghost: 0xfff07a,    // HK E_YELLOW2 — agile flyer
+    scoutufo: 0xffe14a, // HK E_YELLOW — fast scout
+    amoeba: 0x66ff88,
     jellyfish: 0xff5fd0,
-    corona: 0xff6a5a,   // HokorobiTawaa E_RED — armored tier
-    barbed: 0xff3020,   // E_RED2 — dangerous tier
+    gslime: 0x53ff8a,   // HK E_GREEN — regenerator
+    drifter: 0xffe14a,  // HK E_YELLOW body (+E_BLUE ring baked in the mesh)
+    corona: 0xff6a5a,   // HK E_RED — armored tier
+    barbed: 0xff3020,   // HK E_RED2 — dangerous tier
+    rolling: 0xff9a2e,  // HK E_ORANGE — epic
+    prime: 0xb44bff,    // HK E_PURPLE — epic-rare
     knot: 0xff1f1f,     // boss: brightest red on the field
   };
   // per-type combat spec. speed multiplies ENEMY_SPEED; size multiplies
   // cellSide; rammable types die under the tank's treads for free, the
   // rest hurt to touch and shrug the ram off. slowOnHit / accelOnHit are
-  // HokorobiTawaa's on-hit reactions (1.2 s, multiplies pace).
+  // HokorobiTawaa's on-hit reactions (1.2 s); regen is their healOOC
+  // (hp/s while unhit for 1.2 s); heavy = epic tier, spawns sparse.
   const ENEMY_SPEC = {
     phage:     { hp: 1, speed: 1.15, size: 0.4,  rammable: true,  heartDmg: 1, erratic: true },
+    ghost:     { hp: 1, speed: 1.25, size: 0.42, rammable: true,  heartDmg: 1, erratic: true },
+    scoutufo:  { hp: 1, speed: 1.4,  size: 0.42, rammable: true,  heartDmg: 1, erratic: true },
     amoeba:    { hp: 1, speed: 0.75, size: 0.5,  rammable: true,  heartDmg: 1 },
     jellyfish: { hp: 1, speed: 0.95, size: 0.45, rammable: true,  heartDmg: 1 },
+    gslime:    { hp: 2, speed: 0.7,  size: 0.5,  rammable: true,  heartDmg: 1, regen: 0.25 },
+    drifter:   { hp: 2, speed: 0.85, size: 0.52, rammable: false, heartDmg: 1, erratic: true },
     corona:    { hp: 2, speed: 0.8,  size: 0.5,  rammable: false, heartDmg: 2, slowOnHit: 0.6 },
     barbed:    { hp: 3, speed: 0.7,  size: 0.55, rammable: false, heartDmg: 2, accelOnHit: 1.9 },
+    rolling:   { hp: 4, speed: 0.65, size: 0.6,  rammable: false, heartDmg: 2, slowOnHit: 0.55, heavy: true },
+    prime:     { hp: 6, speed: 0.55, size: 0.65, rammable: false, heartDmg: 2, regen: 0.35, heavy: true },
     knot:      { hp: 5, speed: 0.6,  size: 0.8,  rammable: false, heartDmg: 3, accelOnHit: 1.7, boss: true },
   };
-  // one new threat per wave; its spawn point is created at announce time
-  // role = flavor only; the announce card's ram badge (from ENEMY_SPEC)
-  // owns the run-over verdict — don't restate it here
+  // one new threat per wave, in HokorobiTawaa's difficulty order (agile →
+  // support/regen → armored → dangerous → epic → boss); its spawn point
+  // is created at announce time. role = flavor only; the announce card's
+  // ram badge (from ENEMY_SPEC) owns the run-over verdict.
   const INTROS = [
-    { wave: 1, type: 'phage',     label: 'THE PHAGE',           role: 'agile swarm · hunt its source' },
-    { wave: 2, type: 'amoeba',    label: 'THE AMOEBA',          role: 'crawler · destroy the spawn' },
-    { wave: 3, type: 'jellyfish', label: 'THE JELLYFISH',       role: 'pulse drifter' },
-    { wave: 4, type: 'corona',    label: 'CORONAVIRUS',         role: 'armored ×2 · slows when shot' },
-    { wave: 5, type: 'barbed',    label: 'BARBED MINE',         role: 'SPEEDS UP when shot' },
-    { wave: 6, type: 'knot',      label: 'SOLVING TORUS · BOSS', role: 'accelerates when hit · 3 heart damage' },
+    { wave: 1,  type: 'phage',     label: 'THE PHAGE',           role: 'agile swarm · hunt its source' },
+    { wave: 2,  type: 'ghost',     label: 'WAVE GHOST',          role: 'agile flyer' },
+    { wave: 3,  type: 'scoutufo',  label: 'SCOUT UFO',           role: 'fast scout' },
+    { wave: 4,  type: 'amoeba',    label: 'THE AMOEBA',          role: 'crawler · destroy the spawn' },
+    { wave: 5,  type: 'jellyfish', label: 'THE JELLYFISH',       role: 'pulse drifter' },
+    { wave: 6,  type: 'gslime',    label: 'GREEN SLIME',         role: 'regenerator — ram it before it heals' },
+    { wave: 7,  type: 'drifter',   label: 'WAVE SATURN',         role: 'erratic drifter' },
+    { wave: 8,  type: 'corona',    label: 'CORONAVIRUS',         role: 'armored ×2 · slows when shot' },
+    { wave: 9,  type: 'barbed',    label: 'BARBED MINE',         role: 'SPEEDS UP when shot' },
+    { wave: 10, type: 'rolling',   label: 'ROLLING MINE',        role: 'epic · slows when shot' },
+    { wave: 11, type: 'prime',     label: 'PRIME MINE',          role: 'epic-rare · REGENERATES' },
+    { wave: 12, type: 'knot',      label: 'SOLVING TORUS · BOSS', role: 'accelerates when hit · 3 heart damage' },
   ];
   // ROUNDS: clear every spawn point to advance. Each round the board grows
-  // and one more threat type joins the schedule — round 1 fields only the
-  // three rammable fodder types; corona/barbed/knot arrive in rounds 2/3/4.
+  // and TWO more threat types join the schedule — round 1 fields four
+  // rammable types; the full 12-type roster is on the field by round 5.
   let round = 1;
   const roundPoints = () => Math.min(2400, 100 + 50 * round); // r1=150, r2=200…
-  const introCount = () => Math.min(INTROS.length, 2 + round); // r1=3 types
+  const introCount = () => Math.min(INTROS.length, 2 + 2 * round); // r1=4 types
   const rewardMeshes = new Map(); // cell -> { obj, type } far-field rewards
   let heartHP = 10;
   const HEART_MAX = 10;
@@ -1559,8 +1581,12 @@ export function initHeartTab(root) {
     for (const sp of spawnPoints) {
       if (!sp.alive) continue;
       const spec = ENEMY_SPEC[sp.type];
-      // fodder floods; the dangerous tier comes at half strength; one boss
-      const count = spec.boss ? 1 : spec.rammable ? base : Math.max(1, Math.ceil(base / 2));
+      // fodder floods; the dangerous tier at half strength; epics sparse;
+      // one boss
+      const count = spec.boss ? 1
+        : spec.heavy ? Math.max(1, Math.floor(base / 3))
+        : spec.rammable ? base
+        : Math.max(1, Math.ceil(base / 2));
       for (let k = 0; k < count; k++) {
         const obj = buildUnit(sp.type, { walker: CREATURE_TINTS[sp.type], walkerHi: 0xffffff });
         const scale0 = (obj.userData.baseScale ?? 1) * cellSide * spec.size;
@@ -1585,6 +1611,12 @@ export function initHeartTab(root) {
     for (const e of enemies) {
       if (!e.alive) continue;
       const spec = e.spec;
+      // HK healOOC: regenerators knit themselves back together while
+      // nothing has hit them for 1.2 s — burst them down or ram them
+      if (spec.regen && e.hp < spec.hp && tNow - (e.lastHitT ?? -9) > 1.2) {
+        e.hp = Math.min(spec.hp, e.hp + spec.regen * dt);
+        e.obj.scale.setScalar(e.scale0 * (0.7 + 0.3 * e.hp / spec.hp));
+      }
       let pace = ENEMY_SPEED * spec.speed;
       if (tNow < e.behUntil) pace *= e.behMult; // on-hit reaction window
       // erratic (phage): HokorobiTawaa velocity bursts, 0.7×–1.3×
@@ -1688,6 +1720,7 @@ export function initHeartTab(root) {
     const spec = e.spec;
     if (react && spec.slowOnHit) { e.behMult = spec.slowOnHit; e.behUntil = tNow + 1.2; }
     if (react && spec.accelOnHit) { e.behMult = spec.accelOnHit; e.behUntil = tNow + 1.2; }
+    e.lastHitT = tNow; // resets the regenerators' out-of-combat clock
     e.hp -= dmg;
     if (e.hp <= 0) { killCreature(e, true); return true; }
     e.obj.scale.setScalar(e.scale0 * (0.7 + 0.3 * Math.max(0, e.hp) / spec.hp));

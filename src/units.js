@@ -15,7 +15,7 @@
 // tick(t) (idle animation) }.
 
 import * as THREE from '../vendor/three.module.js';
-import { CREATURES, waveJelly, spherePts, bulletPts, heartPts, torusPts } from './creatures.js?v=96aff44e';
+import { CREATURES, waveJelly, spherePts, bulletPts, heartPts, torusPts } from './creatures.js?v=89017e22';
 
 function normalizeToUnit(group) {
   group.updateMatrixWorld(true);
@@ -133,6 +133,112 @@ function makeDrone(cols) {
     body.position.y = 0.8 + Math.sin(t * 2.1) * 0.06;
   };
   g.userData.lift = 0.15;
+  normalizeToUnit(g);
+  g.userData.kind = 'mesh';
+  return g;
+}
+
+// ghost — HokorobiTawaa's Wave Ghost: agile flyer, pale yellow. Dome +
+// skirt + dark eyes; bobs on its inner group while the root stays
+// lookAt-owned.
+function makeGhost(cols) {
+  const g = new THREE.Group();
+  const inner = new THREE.Group();
+  inner.position.y = 0.75;
+  g.add(inner);
+  const dome = new THREE.Mesh(
+    new THREE.SphereGeometry(0.55, 10, 8, 0, Math.PI * 2, 0, Math.PI / 2),
+    new THREE.MeshLambertMaterial({ color: cols.walker }));
+  inner.add(dome);
+  const skirt = new THREE.Mesh(new THREE.CylinderGeometry(0.55, 0.62, 0.5, 10, 1, true),
+    new THREE.MeshLambertMaterial({ color: cols.walker, side: THREE.DoubleSide }));
+  skirt.position.y = -0.25;
+  inner.add(skirt);
+  const eyeMat = new THREE.MeshBasicMaterial({ color: 0x1a1c26 });
+  for (const side of [-1, 1]) {
+    const eye = new THREE.Mesh(new THREE.SphereGeometry(0.09, 6, 6), eyeMat);
+    eye.position.set(side * 0.2, 0.12, 0.46);
+    inner.add(eye);
+  }
+  g.userData.tick = (t) => { inner.position.y = 0.75 + Math.sin(t * 2.4) * 0.12; };
+  g.userData.lift = 0.3;
+  normalizeToUnit(g);
+  g.userData.kind = 'mesh';
+  return g;
+}
+
+// scoutufo — HokorobiTawaa's Scout UFO: fast scout. Saucer disc + dome +
+// spinning underring.
+function makeUfo(cols) {
+  const g = new THREE.Group();
+  const inner = new THREE.Group();
+  inner.position.y = 0.75;
+  g.add(inner);
+  const disc = new THREE.Mesh(new THREE.SphereGeometry(0.68, 12, 8),
+    new THREE.MeshLambertMaterial({ color: cols.walker }));
+  disc.scale.y = 0.32;
+  inner.add(disc);
+  const dome = new THREE.Mesh(
+    new THREE.SphereGeometry(0.3, 10, 8, 0, Math.PI * 2, 0, Math.PI / 2),
+    new THREE.MeshLambertMaterial({ color: cols.walkerHi }));
+  dome.position.y = 0.16;
+  inner.add(dome);
+  const ring = new THREE.Mesh(new THREE.TorusGeometry(0.5, 0.05, 6, 20),
+    new THREE.MeshBasicMaterial({ color: cols.walkerHi }));
+  ring.rotation.x = Math.PI / 2;
+  ring.position.y = -0.12;
+  inner.add(ring);
+  g.userData.tick = (t) => { inner.rotation.y = t * 2.2; };
+  g.userData.lift = 0.35;
+  normalizeToUnit(g);
+  g.userData.kind = 'mesh';
+  return g;
+}
+
+// gslime — HokorobiTawaa's Green Slime: soft regenerator. A squashed
+// blob with a jelly squash-stretch tick.
+function makeSlime(cols) {
+  const g = new THREE.Group();
+  const inner = new THREE.Group();
+  inner.position.y = 0.5;
+  g.add(inner);
+  const blob = new THREE.Mesh(new THREE.SphereGeometry(0.75, 12, 9),
+    new THREE.MeshLambertMaterial({ color: cols.walker }));
+  blob.scale.set(1, 0.68, 1);
+  inner.add(blob);
+  const nucleus = new THREE.Mesh(new THREE.SphereGeometry(0.22, 8, 8),
+    new THREE.MeshBasicMaterial({ color: cols.walkerHi }));
+  nucleus.position.y = 0.1;
+  inner.add(nucleus);
+  g.userData.tick = (t) => {
+    const sy = 1 + 0.14 * Math.sin(t * 3.1);
+    inner.scale.set(1 / Math.sqrt(sy), sy, 1 / Math.sqrt(sy));
+  };
+  g.userData.lift = 0.02;
+  normalizeToUnit(g);
+  g.userData.kind = 'mesh';
+  return g;
+}
+
+// drifter — HokorobiTawaa's Wave Saturn: erratic drifter, dual-coded
+// yellow body + blue ring (E_BLUE 0x5a6bff, per the source roster).
+function makeSaturn(cols) {
+  const g = new THREE.Group();
+  const inner = new THREE.Group();
+  inner.position.y = 0.8;
+  g.add(inner);
+  const body = new THREE.Mesh(new THREE.SphereGeometry(0.5, 12, 9),
+    new THREE.MeshLambertMaterial({ color: cols.walker }));
+  inner.add(body);
+  const ring = new THREE.Mesh(new THREE.TorusGeometry(0.78, 0.07, 6, 24),
+    new THREE.MeshLambertMaterial({ color: 0x5a6bff }));
+  ring.rotation.x = Math.PI / 2 + 0.4; // the Saturn tilt
+  inner.add(ring);
+  g.userData.tick = (t) => {
+    inner.rotation.y = t * 0.7;
+    inner.rotation.z = Math.sin(t * 1.1) * 0.15;
+  };
+  g.userData.lift = 0.3;
   normalizeToUnit(g);
   g.userData.kind = 'mesh';
   return g;
@@ -620,8 +726,14 @@ export const UNITS = {
   jellyfish: { kind: 'cloud' },
   tank: { kind: 'mesh', make: makeTank },
   drone: { kind: 'mesh', make: makeDrone },
+  ghost: { kind: 'mesh', make: makeGhost },
+  scoutufo: { kind: 'mesh', make: makeUfo },
+  gslime: { kind: 'mesh', make: makeSlime },
+  drifter: { kind: 'mesh', make: makeSaturn },
   corona: { kind: 'mesh', make: makeCorona },
   barbed: { kind: 'mesh', make: makeMine },
+  rolling: { kind: 'mesh', make: makeMine }, // HK reuses the seamine shape
+  prime: { kind: 'mesh', make: makeMine },   // ditto — tint carries the tier
   knot: { kind: 'mesh', make: makeKnot },
 };
 
