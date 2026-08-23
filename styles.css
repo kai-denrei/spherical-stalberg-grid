@@ -369,3 +369,44 @@ html, body {
     top: 118px;
   }
 }
+
+/* --- mobile play mode: chrome hides, minimap moves clear of thumbs ------- */
+#chrome-toggle {
+  display: none;
+  position: fixed;
+  top: max(10px, env(safe-area-inset-top));
+  left: max(10px, env(safe-area-inset-left));
+  z-index: 60;
+  width: 40px;
+  height: 36px;
+  background: rgba(27, 33, 48, 0.85);
+  color: #aab8dd;
+  border: 1px solid #2a3350;
+  border-radius: 8px;
+  font-size: 16px;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+
+@media (pointer: coarse), (max-width: 700px) {
+  #chrome-toggle { display: block; }
+  /* game chrome hidden while playing; ☰ brings it back */
+  body:not(.chrome-open) #tabbar,
+  body:not(.chrome-open) #cb-badge,
+  body:not(.chrome-open) .tab .lil-gui.root {
+    display: none !important;
+  }
+  /* minimap top-right: bottom corners belong to thumbs */
+  .minimap {
+    left: auto;
+    bottom: auto;
+    right: max(12px, env(safe-area-inset-right));
+    top: max(12px, env(safe-area-inset-top));
+  }
+  /* stats clear the ☰ button */
+  #stats, #maze-stats, #o-stats, #b-stats, #h-stats {
+    top: max(54px, calc(env(safe-area-inset-top) + 44px));
+    left: max(12px, env(safe-area-inset-left));
+    font-size: 11px;
+  }
+}

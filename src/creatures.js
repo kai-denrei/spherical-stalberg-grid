@@ -164,6 +164,37 @@ export function spherePts(n = 170) {
   return pts;
 }
 
+// heart — the Braille implicit-surface heart (fun-shapes #heart): sample a
+// fib lattice of directions, ray-march the heart implicit to its surface
+function heartF(x, y, z) {
+  const X = x, Y = z, Z = y, a = X * X + 2.25 * Y * Y + Z * Z - 1;
+  return a * a * a - X * X * Z * Z * Z - 0.1125 * Y * Y * Z * Z * Z;
+}
+
+export function heartPts(n = 620) {
+  const pts = [];
+  for (let i = 0; i < n; i++) {
+    const d = fibDir(i, n);
+    // bracket the surface along the ray, then bisect
+    let thi = 0.1, f = heartF(d[0] * thi, d[1] * thi, d[2] * thi), g = 0;
+    while (f < 0 && thi < 5 && g < 50) {
+      thi *= 1.35;
+      f = heartF(d[0] * thi, d[1] * thi, d[2] * thi);
+      g++;
+    }
+    let tlo = 0, th = thi;
+    for (let k = 0; k < 20; k++) {
+      const tm = (tlo + th) * 0.5;
+      if (heartF(d[0] * tm, d[1] * tm, d[2] * tm) < 0) tlo = tm; else th = tm;
+    }
+    const r = (tlo + th) * 0.5;
+    pts.push(i % 14 === 0
+      ? [d[0] * r, d[1] * r, d[2] * r, 1]
+      : [d[0] * r, d[1] * r, d[2] * r]);
+  }
+  return fitUnit(pts);
+}
+
 export const CREATURES = {
   amoeba: amoebaPts,
   phage: phagePts,

@@ -15,7 +15,7 @@
 // tick(t) (idle animation) }.
 
 import * as THREE from '../vendor/three.module.js';
-import { CREATURES, waveJelly, spherePts, bulletPts } from './creatures.js?v=2a26021c';
+import { CREATURES, waveJelly, spherePts, bulletPts, heartPts } from './creatures.js?v=9dd0264c';
 
 function normalizeToUnit(group) {
   group.updateMatrixWorld(true);
@@ -289,6 +289,102 @@ export function makeBulletCloud(cols) {
     transparent: true, opacity: 0.95,
   }));
   pts.userData.kind = 'bullet';
+  return pts;
+}
+
+// the Heart itself: a dot-cloud that cycles treatments — twinkle, breathe,
+// jelly (3.5s each) — and on hit() flares orange/red under the Wave
+// treatment for ~1.6s before recovering. One instance per board; ~620
+// points re-posed per frame is nothing.
+export function makeHeartCloud(bodyHex) {
+  const base = heartPts(620);
+  const pos = new Float32Array(base.length * 3);
+  const col = new Float32Array(base.length * 3);
+  const baseCol = new Float32Array(base.length * 3);
+  const cBody = new THREE.Color(bodyHex);
+  const cHi = new THREE.Color(0xffffff);
+  const hshf = (i) => { const s = Math.sin(i * 127.1 + 0.7) * 43758.5453; return s - Math.floor(s); };
+  for (let i = 0; i < base.length; i++) {
+    const c = base[i][3] === 1 ? cHi : cBody;
+    baseCol[i * 3] = c.r; baseCol[i * 3 + 1] = c.g; baseCol[i * 3 + 2] = c.b;
+  }
+  col.set(baseCol);
+  const geo = new THREE.BufferGeometry();
+  geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+  geo.setAttribute('color', new THREE.BufferAttribute(col, 3));
+  const pts = new THREE.Points(geo, new THREE.PointsMaterial({
+    size: 2.4, sizeAttenuation: false, vertexColors: true,
+    transparent: true, opacity: 0.95,
+  }));
+  pts.userData.sizeScale = 1;
+
+  const cHurtA = new THREE.Color(0xff5330);
+  const cHurtB = new THREE.Color(0xffaa00);
+  let lastT = 0;
+  let hitUntil = -1;
+  let hurtColors = false;
+
+  const setHurtColors = (on) => {
+    const attr = geo.getAttribute('color');
+    for (let i = 0; i < base.length; i++) {
+      if (on) {
+        const c = hshf(i) < 0.5 ? cHurtA : cHurtB;
+        attr.setXYZ(i, c.r, c.g, c.b);
+      } else {
+        attr.setXYZ(i, baseCol[i * 3], baseCol[i * 3 + 1], baseCol[i * 3 + 2]);
+      }
+    }
+    attr.needsUpdate = true;
+    hurtColors = on;
+  };
+
+  const repose = (f) => {
+    for (let i = 0; i < base.length; i++) {
+      const [x, y, z] = f(base[i], i);
+      pos[i * 3] = x; pos[i * 3 + 1] = y; pos[i * 3 + 2] = z;
+    }
+    geo.getAttribute('position').needsUpdate = true;
+  };
+  const identity = (p) => p;
+
+  pts.userData.tick = (t) => {
+    lastT = t;
+    const s0 = pts.userData.sizeScale;
+    if (t < hitUntil) {
+      // HURT: orange/red + Wave
+      if (!hurtColors) setHurtColors(true);
+      repose((p) => {
+        const d = 1 + 0.2 * Math.sin(3 * Math.atan2(p[2], p[0]) + t * 5 - p[1] * 2);
+        return [p[0] * d, p[1], p[2] * d];
+      });
+      pts.scale.setScalar(s0);
+      return;
+    }
+    if (hurtColors) setHurtColors(false);
+    const phase = Math.floor(t / 3.5) % 3;
+    if (phase === 0) {
+      // twinkle
+      repose(identity);
+      const attr = geo.getAttribute('color');
+      for (let i = 0; i < base.length; i++) {
+        const b = 0.5 + 0.5 * (0.5 + 0.5 * Math.sin(t * 3.2 + hshf(i) * 6.283));
+        attr.setXYZ(i, baseCol[i * 3] * b, baseCol[i * 3 + 1] * b, baseCol[i * 3 + 2] * b);
+      }
+      attr.needsUpdate = true;
+      pts.scale.setScalar(s0);
+    } else if (phase === 1) {
+      // breathe
+      repose(identity);
+      pts.scale.setScalar(s0 * (1 + 0.14 * Math.sin(t * 2)));
+    } else {
+      // jelly: volume-preserving squash-stretch
+      const sy = 1 + 0.18 * Math.sin(t * 3);
+      const sx = 1 / Math.sqrt(sy);
+      repose((p) => [p[0] * sx, p[1] * sy, p[2] * sx]);
+      pts.scale.setScalar(s0);
+    }
+  };
+  pts.userData.hit = () => { hitUntil = lastT + 1.6; };
   return pts;
 }
 

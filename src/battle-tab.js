@@ -8,14 +8,14 @@
 
 import * as THREE from '../vendor/three.module.js';
 import GUI from '../vendor/lil-gui.esm.js';
-import { generateSphereMesh, relax } from './grid.js?v=2a26021c';
-import { generateDungeon, BLOCKED, PATH, ROOM } from './dungeon.js?v=2a26021c';
-import { mulberry32, randomSeed } from './rng.js?v=2a26021c';
-import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3 } from './vec3.js?v=2a26021c';
-import { CREATURES, waveJelly } from './creatures.js?v=2a26021c';
-import { UNITS, UNIT_NAMES, buildUnit, makeOrbCloud, makeBulletCloud, makeDebris, ORB_FX } from './units.js?v=2a26021c';
-import { LOOKS, LOOK_NAMES } from './looks.js?v=2a26021c';
-import { makeCellIndex } from './cellindex.js?v=2a26021c';
+import { generateSphereMesh, relax } from './grid.js?v=9dd0264c';
+import { generateDungeon, BLOCKED, PATH, ROOM } from './dungeon.js?v=9dd0264c';
+import { mulberry32, randomSeed } from './rng.js?v=9dd0264c';
+import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3 } from './vec3.js?v=9dd0264c';
+import { CREATURES, waveJelly } from './creatures.js?v=9dd0264c';
+import { UNITS, UNIT_NAMES, buildUnit, makeOrbCloud, makeBulletCloud, makeDebris, ORB_FX, makeHeartCloud } from './units.js?v=9dd0264c';
+import { LOOKS, LOOK_NAMES } from './looks.js?v=9dd0264c';
+import { makeCellIndex } from './cellindex.js?v=9dd0264c';
 
 export function initBattleTab(root) {
   let active = false;
@@ -146,6 +146,7 @@ export function initBattleTab(root) {
   const tmpV = new THREE.Vector3();
   const tmpQ = new THREE.Quaternion();
   const Y_AXIS = new THREE.Vector3(0, 1, 0);
+  const tmpN = new THREE.Vector3();
 
   function clearOrbs() {
     for (const orb of orbMeshes.values()) {
@@ -234,6 +235,35 @@ export function initBattleTab(root) {
   };
   let whim = mulberry32(1); // the walker's own randomness, reseeded per maze
   let cellIndex = () => -1; // voxel-hash nearest-cell lookup, built per board
+  let unitBlocker = () => false; // per-tab solid units (tanks, structures)
+
+  // free-move collision: the position is blocked if its cell is wall, if it
+  // presses into a blocked neighbour's margin (no more nosing into walls),
+  // or if a solid unit stands there
+  function freeBlocked(cand) {
+    const ci = cellIndex(cand);
+    if (ci === -1 || dungeon.tags[ci] === BLOCKED) return true;
+    for (const nb of graph.adj[ci]) {
+      if (dungeon.tags[nb] === BLOCKED
+        && dist3(cand, graph.centers[nb]) < cellSide * 0.62) return true;
+    }
+    return unitBlocker(cand);
+  }
+
+  // nearest blocked neighbour's center, for wall sliding
+  function nearestWall(cand) {
+    const ci = cellIndex(cand);
+    if (ci === -1) return null;
+    let best = null, bd = Infinity;
+    for (const nb of graph.adj[ci]) {
+      if (dungeon.tags[nb] !== BLOCKED) continue;
+      const d = dist3(cand, graph.centers[nb]);
+      if (d < bd) { bd = d; best = graph.centers[nb]; }
+    }
+    return best;
+  }
+  // enemy tanks are solid: no phasing through them
+  unitBlocker = (cand) => enemies.some((e) => e.alive && dist3(cand, e.pos) < cellSide * 0.5);
 
   // held-key state: steering and pace are continuous while held, not nudges
   const keys = { left: false, right: false, fast: false, slow: false };
@@ -456,41 +486,14 @@ export function initBattleTab(root) {
   }
 
   // --- heart & player objects ---------------------------------------------
-  function makeHeartTexture(tint) {
-    const c = document.createElement('canvas');
-    c.width = c.height = 256;
-    const x = c.getContext('2d');
-    const heartPath = () => {
-      x.beginPath();
-      x.moveTo(128, 224);
-      x.bezierCurveTo(24, 144, 24, 64, 88, 48);
-      x.bezierCurveTo(116, 41, 128, 64, 128, 80);
-      x.bezierCurveTo(128, 64, 140, 41, 168, 48);
-      x.bezierCurveTo(232, 64, 232, 144, 128, 224);
-      x.closePath();
-    };
-    // left half: solid
-    x.save();
-    x.beginPath(); x.rect(0, 0, 128, 256); x.clip();
-    heartPath(); x.fillStyle = tint; x.fill();
-    x.restore();
-    // right half: dotted outline
-    x.save();
-    x.beginPath(); x.rect(128, 0, 128, 256); x.clip();
-    heartPath();
-    x.strokeStyle = tint; x.lineWidth = 7; x.setLineDash([8, 9]); x.stroke();
-    x.restore();
-    const tex = new THREE.CanvasTexture(c);
-    tex.colorSpace = THREE.SRGBColorSpace;
-    return tex;
-  }
+
 
   function buildActors() {
     for (const o of [heartSprite, playerMesh, markerMesh]) if (o) scene.remove(o);
 
-    heartSprite = new THREE.Sprite(new THREE.SpriteMaterial({
-      map: makeHeartTexture(look().heart), transparent: true, depthTest: true,
-    }));
+    // the Braille heart: dot-cloud cycling twinkle → breathe → jelly,
+    // flaring orange/red under Wave when hit
+    heartSprite = makeHeartCloud(new THREE.Color(look().heart).getHex());
     scene.add(heartSprite);
 
     playerSize = Math.min(cellSide, params.wallHeight * 0.75);
@@ -538,8 +541,9 @@ export function initBattleTab(root) {
     const hn = graph.normals[dungeon.heart];
     const hPos = add3(hc, scale3(hn, params.wallHeight * 0.6 + cellSide * 0.55));
     heartSprite.position.set(hPos[0], hPos[1], hPos[2]);
-    const s = cellSide * 1.9;
-    heartSprite.scale.set(s, s, s);
+    heartSprite.userData.sizeScale = cellSide * 1.15;
+    tmpN.set(hn[0], hn[1], hn[2]);
+    heartSprite.quaternion.setFromUnitVectors(Y_AXIS, tmpN);
 
     const n = norm3(player.pos);
     // lift: the unit's own floor offset plus its hover profile
@@ -667,12 +671,24 @@ export function initBattleTab(root) {
       const drive = keys.slow ? -0.55 : keys.fast ? 1.45 : 1;
       if (drive !== 0) {
         const v = params.speed * cellSide * 1.6 * drive;
-        const cand = norm3(add3(player.pos, scale3(player.heading, v * dt)));
-        const ci = cellIndex(cand);
-        if (ci !== -1 && dungeon.tags[ci] !== BLOCKED) {
+        const step = scale3(player.heading, v * dt);
+        let cand = norm3(add3(player.pos, step));
+        if (freeBlocked(cand)) {
+          // slide: strip the into-wall component and try again
+          const w = nearestWall(cand);
+          if (w) {
+            const toWall = norm3(sub3(w, player.pos));
+            const into = Math.max(0, dot3(step, toWall));
+            const slid = sub3(step, scale3(toWall, into));
+            cand = norm3(add3(player.pos, slid));
+            if (freeBlocked(cand)) cand = null;
+          } else cand = null;
+        }
+        if (cand) {
           player.pos = cand;
           player.travelDir = drive > 0 ? player.heading.slice() : scale3(player.heading, -1);
-          if (ci !== player.cur) arriveAt(ci);
+          const ci = cellIndex(cand);
+          if (ci !== -1 && ci !== player.cur) arriveAt(ci);
         }
       }
       const nf = norm3(player.pos);
@@ -1189,9 +1205,7 @@ export function initBattleTab(root) {
     camera.position.lerp(camGoal.pos, 0.14);
     camera.quaternion.slerp(camGoal.quat, 0.14);
 
-    const pulse = 1 + Math.sin(t * 3.4) * 0.08;
-    const s = cellSide * 1.9 * pulse;
-    heartSprite.scale.set(s, s, s);
+    heartSprite.userData.tick(t);
 
     // main view
     scene.background = mainBg;

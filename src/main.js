@@ -1,13 +1,13 @@
 // main.js — tab shell. Each tab lazily initializes its own renderer/scene the
 // first time it's shown and pauses (skips its loop body) while hidden.
 
-import { wireDevlogBadge } from './devlog.js?v=2a26021c';
-import { initGridTab } from './grid-tab.js?v=2a26021c';
-import { initMazeTab } from './maze-tab.js?v=2a26021c';
-import { initOrganicTab } from './organic-tab.js?v=2a26021c';
-import { initBattleTab } from './battle-tab.js?v=2a26021c';
-import { initHeartTab } from './heart-tab.js?v=2a26021c';
-import { initHowTab } from './how-tab.js?v=2a26021c';
+import { wireDevlogBadge } from './devlog.js?v=9dd0264c';
+import { initGridTab } from './grid-tab.js?v=9dd0264c';
+import { initMazeTab } from './maze-tab.js?v=9dd0264c';
+import { initOrganicTab } from './organic-tab.js?v=9dd0264c';
+import { initBattleTab } from './battle-tab.js?v=9dd0264c';
+import { initHeartTab } from './heart-tab.js?v=9dd0264c';
+import { initHowTab } from './how-tab.js?v=9dd0264c';
 
 const tabs = {
   grid: { root: document.getElementById('tab-grid'), init: initGridTab, api: null },
@@ -44,3 +44,15 @@ const initial = location.hash.slice(1);
 activate(tabs[initial] ? initial : 'grid');
 
 wireDevlogBadge();
+
+// mobile: game chrome (tabs, badge, panels) hides behind a hamburger so
+// the whole screen is play surface; minimap relocation is pure CSS
+const chromeToggle = document.createElement('button');
+chromeToggle.id = 'chrome-toggle';
+chromeToggle.textContent = '☰';
+chromeToggle.title = 'settings & tabs';
+chromeToggle.addEventListener('click', () => {
+  document.body.classList.toggle('chrome-open');
+});
+document.body.appendChild(chromeToggle);
+
