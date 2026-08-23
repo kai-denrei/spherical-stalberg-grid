@@ -6,6 +6,26 @@ Demo links assume `npm run serve` (port 8144) or the
 
 ---
 
+## `ccc9d20` — Controls learn to whisper
+
+Second controls pass from the operator, and a philosophy shift: the
+maneuvering controls stopped explaining themselves. Steering is now a
+pair of tall, flat, unlabeled zones hugging the lower screen edges;
+forward/back are two more flat zones stacked dead-center between them.
+Their affordance is material, not textual — a translucent panel, a
+faint chevron, and a press-glow (`holdButton` now toggles a `.pressed`
+class, which matters because `preventDefault` on pointerdown makes
+`:active` unreliable). The player discovers how to drive; nothing
+tells them. Fire stays explicit and asymmetric by design: the shell is
+a big round button on the left, the laser a smaller one on the right —
+importance encoded in size. And every emoji left the game surface
+(eye, lightning, skull, play, pause…): utilities became SWAP/CAM text
+chips, modal buttons use plain glyphs. Emojis render as full-color
+sprites on iOS and fought the mono-tron aesthetic everywhere they
+appeared. All element ids survived again, so the JS wiring layer paid
+for itself a second time — two full control-layout rewrites, zero
+game-logic edits.
+
 ## `e846569` — The phone becomes a controller
 
 iPhone playtest drove this one. The briefing was clipped under the
