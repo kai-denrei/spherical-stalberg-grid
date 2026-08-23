@@ -6,11 +6,11 @@
 
 import * as THREE from '../vendor/three.module.js';
 import GUI from '../vendor/lil-gui.esm.js';
-import { generateSphereMesh, relax } from './grid.js?v=163bc942';
-import { generateDungeon, BLOCKED, PATH, ROOM } from './dungeon.js?v=163bc942';
-import { mulberry32, randomSeed } from './rng.js?v=163bc942';
-import { sub3, add3, scale3, dot3, cross3, norm3, len3 } from './vec3.js?v=163bc942';
-import { CREATURES, waveJelly } from './creatures.js?v=163bc942';
+import { generateSphereMesh, relax } from './grid.js?v=701845d0';
+import { generateDungeon, BLOCKED, PATH, ROOM } from './dungeon.js?v=701845d0';
+import { mulberry32, randomSeed } from './rng.js?v=701845d0';
+import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3 } from './vec3.js?v=701845d0';
+import { CREATURES, waveJelly } from './creatures.js?v=701845d0';
 
 export function initOrganicTab(root) {
   let active = false;
@@ -181,12 +181,19 @@ export function initOrganicTab(root) {
     prog: 0,            // 0..1 along cur -> next
     pos: [1, 0, 0],     // interpolated position on the sphere
     travelDir: [0, 1, 0],
+    smoothDir: [0, 1, 0], // rate-limited travelDir — cameras/creature follow THIS
     heading: [1, 0, 0], // steering intent, unit tangent
+    segLen: 1,          // world length of the current cur->next chord
     moves: 0,
     visited: new Set(),
     won: false,
   };
   let whim = mulberry32(1); // the walker's own randomness, reseeded per maze
+
+  // held-key state: steering and pace are continuous while held, not nudges
+  const keys = { left: false, right: false, fast: false, slow: false };
+  let steerHold = 99; // seconds since the user last steered
+  const steeringActive = () => steerHold < 1.2;
 
   const camGoal = { pos: new THREE.Vector3(), quat: new THREE.Quaternion() };
   const tmpObj = new THREE.Object3D();
@@ -396,8 +403,8 @@ export function initOrganicTab(root) {
     playerMesh.position.set(p[0], p[1], p[2]);
     playerMesh.scale.setScalar(unitScale);
     markerMesh.position.set(p[0], p[1], p[2]);
-    // upright on the surface (local +Y along the normal), facing travel
-    const h = player.travelDir;
+    // upright on the surface, facing the SMOOTHED direction (no snap)
+    const h = player.smoothDir;
     tmpObj.position.copy(playerMesh.position);
     tmpObj.up.set(n[0], n[1], n[2]);
     tmpObj.lookAt(p[0] + h[0], p[1] + h[1], p[2] + h[2]);
@@ -406,11 +413,11 @@ export function initOrganicTab(root) {
   }
 
   // --- trench / third-person camera ----------------------------------------
-  // follows the interpolated position and the ACTUAL travel direction
+  // follows the interpolated position and the SMOOTHED direction
   function updateCameraGoal() {
     const c = player.pos;
     const n = norm3(c);
-    const h = player.travelDir;
+    const h = player.smoothDir;
     let eye, look;
     if (params.view === 'third') {
       // behind and above; pulls back as the creature grows so it stays framed
@@ -455,13 +462,16 @@ export function initOrganicTab(root) {
   function chooseNext() {
     const exits = openNeighbors(player.cur);
     if (exits.length === 0) return -1;
+    // control mode: while the user steers, their intent dominates — the
+    // creature's curiosity, backtrack aversion, and whims all yield
+    const active = steeringActive();
     let best = exits[0], bestScore = -Infinity;
     for (const e of exits) {
       const dir = tangentDirTo(player.cur, e);
-      let score = 2.2 * dot3(player.heading, dir);   // steering bias
-      if (!player.visited.has(e)) score += 1.1;      // curiosity
-      if (e === player.prev && exits.length > 1) score -= 2.4; // no dithering
-      score += (whim() - 0.5) * 1.6;                 // its own will
+      let score = (active ? 4.5 : 2.2) * dot3(player.heading, dir);
+      if (!active && !player.visited.has(e)) score += 1.1;      // curiosity
+      if (!active && e === player.prev && exits.length > 1) score -= 2.4;
+      score += (whim() - 0.5) * (active ? 0.4 : 1.6);           // its own will
       if (score > bestScore) { bestScore = score; best = e; }
     }
     return best;
@@ -485,13 +495,26 @@ export function initOrganicTab(root) {
     }
   }
 
-  // called once per frame: glide (creature-paced), respawn, absorb
+  // called once per frame: steer, glide (creature-paced), respawn, absorb
   function advanceMotion(dt) {
     if (player.won || player.next === -1) return;
     simTime += dt;
-    // creature-specific pace modulates the wander speed
-    const prof = MOVES[params.creature];
-    player.prog += params.speed * (prof ? prof.speed(simTime) : 1) * dt;
+
+    // continuous steering + pace while keys are held
+    if (keys.left) rotate(STEER_RATE * dt);
+    if (keys.right) rotate(-STEER_RATE * dt);
+    steerHold = (keys.left || keys.right) ? 0 : steerHold + dt;
+    const boost = keys.fast ? 2.3 : keys.slow ? 0.25 : 1;
+
+    // U-turn: heading swung behind the motion — reverse the glide in place.
+    if (steeringActive() && dot3(player.heading, player.travelDir) < -0.35
+      && player.prog > 0.04 && player.prog < 0.96) {
+      const old = player.cur;
+      player.cur = player.next;
+      player.next = old;
+      player.prog = 1 - player.prog;
+      player.prev = -1;
+    }
 
     // orb respawn: the maze regrows food over time
     if (params.orbRespawn > 0) {
@@ -501,14 +524,27 @@ export function initOrganicTab(root) {
         if (orbMeshes.size < params.orbs) spawnOneOrb();
       }
     }
+
+    // world-space motion: speed is distance/sec over THIS segment's length,
+    // so a long chord between large cells takes proportionally longer — the
+    // grid offers the space, the motion traverses it. The creature's own
+    // locomotion profile modulates the pace on top.
+    const prof = MOVES[params.creature];
+    const pace = params.speed * (prof ? prof.speed(simTime) : 1) * boost;
+    player.prog += (pace * cellSide * dt) / player.segLen;
     while (player.prog >= 1 && !player.won) {
+      const carry = (player.prog - 1) * player.segLen; // leftover distance
       arriveAt(player.next);
-      // steering intent drifts toward actual travel so stale input fades
-      const td = tangentDirTo(player.prev, player.cur);
-      player.heading = norm3(add3(scale3(player.heading, 0.65), scale3(td, 0.35)));
+      // idle: steering intent drifts toward actual travel; while the user
+      // steers, their intent is left untouched
+      if (!steeringActive()) {
+        const td = tangentDirTo(player.prev, player.cur);
+        player.heading = norm3(add3(scale3(player.heading, 0.65), scale3(td, 0.35)));
+      }
       player.next = chooseNext();
       if (player.next === -1) { player.prog = 0; break; }
-      player.prog -= 1;
+      player.segLen = Math.max(1e-9, dist3(graph.centers[player.cur], graph.centers[player.next]));
+      player.prog = carry / player.segLen;
     }
     // interpolate along the chord, then push back onto the sphere
     const a = graph.centers[player.cur];
@@ -524,11 +560,12 @@ export function initOrganicTab(root) {
     // keep the steering intent in the local tangent plane as we move
     player.heading = norm3(sub3(player.heading, scale3(n, dot3(player.heading, n))));
 
+    updateSmoothDir(dt);
     checkAbsorb();
   }
   let simTime = 0;
 
-  const TURN = Math.PI / 5; // 36° per press — a nudge, not a command
+  const STEER_RATE = 2.6; // rad/s while a steer key is held
   function rotate(theta) {
     const n = norm3(player.pos);
     const h = player.heading;
@@ -537,32 +574,50 @@ export function initOrganicTab(root) {
     player.heading = norm3(add3(scale3(h, c), scale3(nxh, s)));
   }
 
-  function nudgeSpeed(factor) {
-    params.speed = Math.min(4, Math.max(0.2, params.speed * factor));
-    speedCtrl.updateDisplay();
+  // smoothDir chases travelDir at a bounded angular rate — the no-jump
+  // guarantee for cameras and the creature at exits and U-turns
+  const SMOOTH_RATE = 5.0; // rad/s
+  function updateSmoothDir(dt) {
+    const n = norm3(player.pos);
+    let s = norm3(sub3(player.smoothDir, scale3(n, dot3(player.smoothDir, n))));
+    const g = player.travelDir;
+    const ang = Math.atan2(dot3(cross3(s, g), n), Math.max(-1, Math.min(1, dot3(s, g))));
+    const step = Math.max(-SMOOTH_RATE * dt, Math.min(SMOOTH_RATE * dt, ang));
+    const c = Math.cos(step), si = Math.sin(step);
+    const nxs = cross3(n, s);
+    player.smoothDir = norm3(add3(scale3(s, c), scale3(nxs, si)));
   }
 
-  function onKey(ev) {
+  function onKeyEvent(ev, down) {
     if (!active) return;
     const k = ev.key.toLowerCase();
-    if (k === 'arrowup' || k === 'w') { nudgeSpeed(1.3); ev.preventDefault(); }
-    else if (k === 'arrowleft' || k === 'a') { rotate(TURN); ev.preventDefault(); }
-    else if (k === 'arrowright' || k === 'd') { rotate(-TURN); ev.preventDefault(); }
-    else if (k === 'arrowdown' || k === 's') { nudgeSpeed(1 / 1.3); ev.preventDefault(); }
-    else if (k === 'h') pulseHint();
-    else if (k === 'v') toggleView();
+    const m = { arrowleft: 'left', a: 'left', arrowright: 'right', d: 'right',
+      arrowup: 'fast', w: 'fast', arrowdown: 'slow', s: 'slow' }[k];
+    if (m) { keys[m] = down; ev.preventDefault(); return; }
+    if (down && k === 'h') pulseHint();
+    if (down && k === 'v') toggleView();
   }
-  addEventListener('keydown', onKey);
+  addEventListener('keydown', (ev) => onKeyEvent(ev, true));
+  addEventListener('keyup', (ev) => onKeyEvent(ev, false));
+  addEventListener('blur', () => { keys.left = keys.right = keys.fast = keys.slow = false; });
 
   function toggleView() {
     params.view = params.view === 'pov' ? 'third' : 'pov';
     viewCtrl.updateDisplay();
   }
 
-  root.querySelector('#o-pad-up').addEventListener('click', () => nudgeSpeed(1.3));
-  root.querySelector('#o-pad-left').addEventListener('click', () => rotate(TURN));
-  root.querySelector('#o-pad-right').addEventListener('click', () => rotate(-TURN));
-  root.querySelector('#o-pad-down').addEventListener('click', () => nudgeSpeed(1 / 1.3));
+  // D-pad: press-and-hold, like the keys
+  function holdButton(sel, flag) {
+    const el = root.querySelector(sel);
+    el.addEventListener('pointerdown', (ev) => { ev.preventDefault(); keys[flag] = true; });
+    for (const evt of ['pointerup', 'pointerleave', 'pointercancel']) {
+      el.addEventListener(evt, () => { keys[flag] = false; });
+    }
+  }
+  holdButton('#o-pad-up', 'fast');
+  holdButton('#o-pad-left', 'left');
+  holdButton('#o-pad-right', 'right');
+  holdButton('#o-pad-down', 'slow');
   root.querySelector('#o-pad-hint').addEventListener('click', () => pulseHint());
   root.querySelector('#o-pad-view').addEventListener('click', () => toggleView());
 
@@ -621,6 +676,8 @@ export function initOrganicTab(root) {
     player.travelDir = player.heading.slice();
     player.next = e0;
     player.prog = 0;
+    player.smoothDir = player.travelDir.slice();
+    player.segLen = Math.max(1e-9, dist3(graph.centers[player.cur], graph.centers[player.next]));
 
     absorbed = 0;
     baseUnitScale = cellSide * 0.5;
@@ -727,7 +784,7 @@ export function initOrganicTab(root) {
     // inset: the sphere as a minimap, player-centred, travel-direction up
     const m = Math.min(260, Math.floor(Math.min(w, h) * 0.34));
     const n = norm3(player.pos);
-    const hd = player.travelDir;
+    const hd = player.smoothDir;
     mapCamera.position.set(n[0] * 2.75, n[1] * 2.75, n[2] * 2.75);
     mapCamera.up.set(hd[0], hd[1], hd[2]);
     mapCamera.lookAt(0, 0, 0);
@@ -773,6 +830,8 @@ export function initOrganicTab(root) {
     player.heading = td.slice();
     player.next = player.won ? -1 : chooseNext();
     player.prog = 0;
+    player.smoothDir = player.travelDir.slice();
+    if (player.next !== -1) player.segLen = Math.max(1e-9, dist3(graph.centers[player.cur], graph.centers[player.next]));
     snapCamera();
   }
 
