@@ -6,11 +6,11 @@
 
 import * as THREE from '../vendor/three.module.js';
 import GUI from '../vendor/lil-gui.esm.js';
-import { generateSphereMesh, relax } from './grid.js?v=983e8d07';
-import { generateDungeon, BLOCKED, PATH, ROOM } from './dungeon.js?v=983e8d07';
-import { mulberry32, randomSeed } from './rng.js?v=983e8d07';
-import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3 } from './vec3.js?v=983e8d07';
-import { LOOKS, LOOK_NAMES } from './looks.js?v=983e8d07';
+import { generateSphereMesh, relax } from './grid.js?v=759889e2';
+import { generateDungeon, BLOCKED, PATH, ROOM } from './dungeon.js?v=759889e2';
+import { mulberry32, randomSeed } from './rng.js?v=759889e2';
+import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3 } from './vec3.js?v=759889e2';
+import { LOOKS, LOOK_NAMES } from './looks.js?v=759889e2';
 
 export function initMazeTab(root) {
   let active = false;
@@ -26,6 +26,7 @@ export function initMazeTab(root) {
     relaxIters: 80,
     view: 'third', // pov | third
     look: 'solid', // visual identity, see looks.js
+    wallTops: 'auto', // auto | bright | dim | black — wall-top wires & fill
     speed: 1.1, // cells per second, wanderer pace
     autoResume: 3, // seconds idle before auto-wander resumes
   };
@@ -77,6 +78,7 @@ export function initMazeTab(root) {
   let cellSide = 0.08;
   let floorGeo = null, wallGeo = null, floorMesh = null, wallMesh = null;
   let edgeGeo = null, edgeMesh = null;
+  let topGeo = null, topMesh = null; // interior wall-top wires, dimmable
   let floorOffsets = null; // cell -> [start,count] into floor color attr (verts)
   let heartSprite = null, playerMesh = null, markerMesh = null;
   let playerSize = 0.06; // set per-generation in buildActors
@@ -120,6 +122,9 @@ export function initMazeTab(root) {
 
   // --- colors: everything visual comes from the active look ----------------
   const look = () => LOOKS[params.look] || LOOKS.solid;
+  // wall-top treatment: the look supplies a default, the dropdown overrides
+  const wallTopMode = () => (params.wallTops === 'auto'
+    ? (look().wallTopMode || 'bright') : params.wallTops);
 
   function floorColorOf(ci) {
     const F = look().floors;
@@ -135,9 +140,16 @@ export function initMazeTab(root) {
     const H = 1 + params.wallHeight;
     const jr = mulberry32(params.seed ^ 0xc0ffee);
 
+    const mode = wallTopMode();
+    const baseTop = look().walls.top;
+    const topFill = mode === 'black' ? [0, 0, 0]
+      : mode === 'dim' ? [baseTop[0] * 0.45, baseTop[1] * 0.45, baseTop[2] * 0.45]
+      : baseTop;
+    const topJitter = mode === 'black' ? 0 : 1;
     // floors: open cells at the surface
-    const fPos = [], fCol = [], ePos = [];
+    const fPos = [], fCol = [], ePos = [], tPos = [];
     const pushEdge = (p, q2) => ePos.push(p[0], p[1], p[2], q2[0], q2[1], q2[2]);
+    const pushTopEdge = (p, q2) => tPos.push(p[0], p[1], p[2], q2[0], q2[1], q2[2]);
     floorOffsets = new Map();
     for (let ci = 0; ci < quads.length; ci++) {
       if (dungeon.tags[ci] === BLOCKED) continue;
@@ -172,25 +184,28 @@ export function initMazeTab(root) {
       const q = quads[ci];
       const top = q.map((vi) => scale3(vertices[vi], H));
       const j = (jr() - 0.5) * 0.08 * look().jitter;
-      pushQuad(top[0], top[1], top[2], top[3], look().walls.top, j);
-      // wallTops:false (wireframe looks) keeps wall TOPS wire-free — pure
-      // black voids so the minimap reads corridors, not a solid wire ball.
-      // Sides stay outlined: verticals + the rim segment above each skirt.
-      const rimWires = look().edges.wallTops !== false;
-      if (rimWires) for (let i = 0; i < 4; i++) pushEdge(top[i], top[(i + 1) % 4]);
+      pushQuad(top[0], top[1], top[2], top[3], topFill, j * topJitter);
+      // wall-top wires split by audience: rim segments over open cells are
+      // part of the wall's silhouette (always drawn, main edge set);
+      // interior top wires go to their own dimmable mesh — bright/dim/black
+      // is what makes walls read as wire, faint slab, or void on the minimap
       for (let i = 0; i < 4; i++) {
         const a = q[i], b = q[(i + 1) % 4];
         const nb = edgeToCell.get(`${b}-${a}`); // twin edge's owner
-        if (nb === undefined || dungeon.tags[nb] === BLOCKED) continue;
-        // skirt facing the open neighbour, wound outward
-        pushQuad(top[(i + 1) % 4], top[i], vertices[a], vertices[b], look().walls.side, j);
-        pushEdge(top[i], vertices[a]);
-        pushEdge(top[(i + 1) % 4], vertices[b]);
-        if (!rimWires) pushEdge(top[i], top[(i + 1) % 4]);
+        const facesOpen = nb !== undefined && dungeon.tags[nb] !== BLOCKED;
+        if (facesOpen) {
+          // skirt facing the open neighbour, wound outward + its outline
+          pushQuad(top[(i + 1) % 4], top[i], vertices[a], vertices[b], look().walls.side, j);
+          pushEdge(top[i], vertices[a]);
+          pushEdge(top[(i + 1) % 4], vertices[b]);
+          pushEdge(top[i], top[(i + 1) % 4]);
+        } else {
+          pushTopEdge(top[i], top[(i + 1) % 4]);
+        }
       }
     }
 
-    for (const [geo, obj] of [[floorGeo, floorMesh], [wallGeo, wallMesh], [edgeGeo, edgeMesh]]) {
+    for (const [geo, obj] of [[floorGeo, floorMesh], [wallGeo, wallMesh], [edgeGeo, edgeMesh], [topGeo, topMesh]]) {
       if (obj) scene.remove(obj);
       if (geo) geo.dispose();
     }
@@ -223,6 +238,18 @@ export function initMazeTab(root) {
       }));
     edgeMesh.visible = E.show;
     scene.add(edgeMesh);
+
+    topGeo = new THREE.BufferGeometry();
+    topGeo.setAttribute('position', new THREE.Float32BufferAttribute(tPos, 3));
+    topMesh = new THREE.LineSegments(topGeo,
+      new THREE.LineBasicMaterial({
+        color: E.color, transparent: true,
+        opacity: E.opacity * (mode === 'dim' ? 0.28 : 1),
+        blending: E.additive ? THREE.AdditiveBlending : THREE.NormalBlending,
+        depthWrite: !E.additive,
+      }));
+    topMesh.visible = E.show && mode !== 'black';
+    scene.add(topMesh);
   }
 
   function paintCell(ci, rgb) {
@@ -631,6 +658,8 @@ export function initMazeTab(root) {
   // --- dashboard -----------------------------------------------------------
   const gui = new GUI({ title: 'sphere dungeon', container: root });
   gui.add(params, 'look', LOOK_NAMES).onChange(applyLook);
+  gui.add(params, 'wallTops', ['auto', 'bright', 'dim', 'black'])
+    .name('wall tops').onChange(applyLook);
   const viewCtrl = gui.add(params, 'view', ['pov', 'third']).name('camera (V)');
   const speedCtrl = gui.add(params, 'speed', 0.2, 4, 0.1).name('wander speed');
   gui.add(params, 'autoResume', 1, 10, 0.5).name('auto resume (s)');
@@ -707,6 +736,8 @@ export function initMazeTab(root) {
   if (urlParams.get('view') === 'third') { params.view = 'third'; viewCtrl.updateDisplay(); }
   const lookOverride = urlParams.get('look');
   if (LOOKS[lookOverride]) params.look = lookOverride;
+  const wtOverride = urlParams.get('walltops');
+  if (['bright', 'dim', 'black'].includes(wtOverride)) params.wallTops = wtOverride;
   gui.controllersRecursive().forEach((c) => c.updateDisplay());
 
   regenerate();
