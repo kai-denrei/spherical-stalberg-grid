@@ -6,6 +6,25 @@ Demo links assume `npm run serve` (port 8144) or the
 
 ---
 
+## `a1aae5d` — 170× generation: incremental merge + voxel-hash sampling
+
+Benchmarking showed per-frame costs were a non-issue at every size — the
+wall was one-time generation, 92% of it in `mergeToQuads` rebuilding its
+full edge-count map and rescanning the triangle list per accepted merge
+(≈O(n²)). It now builds an edge→incident-triangles map once and keeps a
+candidate pool with O(1) swap-remove uniform random picks; a merge
+retires exactly the five edges of the dead triangle pair. Same tabu
+semantics, ≈O(n) total. Sampling's O(n²k) nearest-neighbor scan became a
+3D voxel hash over [-1,1]³ — points on a sphere need no cube-map seam
+logic, and an expanding-shell search with an exact stopping bound keeps
+it exact and deterministic. Numbers (M4): n=8000 went 33.4s → 197ms;
+64,000 samples → 285k quads in 2.9s, near-linear. Sliders raised to
+8,000 points (36k quads, ~1.4s all-in desktop). The new ceiling is the
+maze tabs' 80-iteration pre-relax — O(quads) per iteration — and, past
+~70k quads on the grid tab, per-frame normal recomputation. One honest
+cost: the merge consumes the rng stream differently, so a given seed
+produces a different (equally valid) board than pre-fix builds.
+
 ## `56d6d58` — Building Blocks: the by-concept companion
 
 `HOW-IT-WORKS.md`, rendered in-app as the fourth tab (`/#how`): the
