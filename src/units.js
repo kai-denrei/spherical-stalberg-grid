@@ -15,7 +15,7 @@
 // tick(t) (idle animation) }.
 
 import * as THREE from '../vendor/three.module.js';
-import { CREATURES, waveJelly, spherePts, bulletPts, heartPts, torusPts } from './creatures.js?v=2bff9a49';
+import { CREATURES, waveJelly, spherePts, bulletPts, heartPts, torusPts } from './creatures.js?v=96aff44e';
 
 function normalizeToUnit(group) {
   group.updateMatrixWorld(true);
@@ -407,7 +407,7 @@ export function makeDebris(obj, outwardN) {
 // it takes damage. Ring lies in local X-Y: align +Y to the surface
 // normal and it stands like a gate.
 export function makePortalCloud(cols, phase = 0) {
-  const base = torusPts(220);
+  const base = torusPts(560); // dense gate: ~2.5× the sphere-orb count
   const pos = new Float32Array(base.length * 3);
   const col = new Float32Array(base.length * 3);
   const baseCol = new Float32Array(base.length * 3);
@@ -429,9 +429,13 @@ export function makePortalCloud(cols, phase = 0) {
   const hshf = (i) => { const s = Math.sin(i * 127.1 + 0.7) * 43758.5453; return s - Math.floor(s); };
   let dim = 1;
   pts.userData.tick = (t) => {
+    // two-frequency shimmer: a slow per-dot wave times a fast glitter, so
+    // the ring reads as continuously alive rather than gently breathing
     const attr = geo.getAttribute('color');
     for (let i = 0; i < base.length; i++) {
-      const b = dim * (0.45 + 0.55 * (0.5 + 0.5 * Math.sin(t * 3.2 + phase + hshf(i) * 6.283)));
+      const slow = 0.5 + 0.5 * Math.sin(t * 4.2 + phase + hshf(i) * 6.283);
+      const fast = 0.65 + 0.35 * Math.sin(t * 9.7 + hshf(i + 71) * 6.283);
+      const b = dim * (0.25 + 0.75 * slow * fast);
       attr.setXYZ(i, baseCol[i * 3] * b, baseCol[i * 3 + 1] * b, baseCol[i * 3 + 2] * b);
     }
     attr.needsUpdate = true;

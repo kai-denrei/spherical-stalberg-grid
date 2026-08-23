@@ -1,13 +1,13 @@
 // main.js — tab shell. Each tab lazily initializes its own renderer/scene the
 // first time it's shown and pauses (skips its loop body) while hidden.
 
-import { wireDevlogBadge } from './devlog.js?v=2bff9a49';
-import { initGridTab } from './grid-tab.js?v=2bff9a49';
-import { initMazeTab } from './maze-tab.js?v=2bff9a49';
-import { initOrganicTab } from './organic-tab.js?v=2bff9a49';
-import { initBattleTab } from './battle-tab.js?v=2bff9a49';
-import { initHeartTab } from './heart-tab.js?v=2bff9a49';
-import { initHowTab } from './how-tab.js?v=2bff9a49';
+import { wireDevlogBadge } from './devlog.js?v=96aff44e';
+import { initGridTab } from './grid-tab.js?v=96aff44e';
+import { initMazeTab } from './maze-tab.js?v=96aff44e';
+import { initOrganicTab } from './organic-tab.js?v=96aff44e';
+import { initBattleTab } from './battle-tab.js?v=96aff44e';
+import { initHeartTab } from './heart-tab.js?v=96aff44e';
+import { initHowTab } from './how-tab.js?v=96aff44e';
 
 const tabs = {
   grid: { root: document.getElementById('tab-grid'), init: initGridTab, api: null },
@@ -39,9 +39,15 @@ for (const btn of document.querySelectorAll('#tabbar button')) {
   });
 }
 
-// deep-link: /#maze or /#organic opens that tab directly
+// deep-link: /#maze or /#grid opens that tab directly.
+// Default landing is THE GAME — the heart tab.
 const initial = location.hash.slice(1);
-activate(tabs[initial] ? initial : 'grid');
+activate(tabs[initial] ? initial : 'heart');
+
+// iOS: no double-tap zoom (the cruise gesture IS a double tap) and no
+// pinch zoom on the play surface. touch-action handles double-tap;
+// gesturestart is Safari's non-standard pinch hook.
+document.addEventListener('gesturestart', (ev) => ev.preventDefault());
 
 wireDevlogBadge();
 

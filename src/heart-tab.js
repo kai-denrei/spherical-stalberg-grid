@@ -15,14 +15,14 @@
 
 import * as THREE from '../vendor/three.module.js';
 import GUI from '../vendor/lil-gui.esm.js';
-import { generateSphereMesh, relax } from './grid.js?v=2bff9a49';
-import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=2bff9a49';
-import { mulberry32, randomSeed } from './rng.js?v=2bff9a49';
-import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3 } from './vec3.js?v=2bff9a49';
-import { CREATURES, waveJelly } from './creatures.js?v=2bff9a49';
-import { UNITS, UNIT_NAMES, buildUnit, makeOrbCloud, makeBulletCloud, makeDebris, makeDotBurst, makePortalCloud, makeHeartCloud } from './units.js?v=2bff9a49';
-import { LOOKS, LOOK_NAMES } from './looks.js?v=2bff9a49';
-import { makeCellIndex } from './cellindex.js?v=2bff9a49';
+import { generateSphereMesh, relax } from './grid.js?v=96aff44e';
+import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=96aff44e';
+import { mulberry32, randomSeed } from './rng.js?v=96aff44e';
+import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3 } from './vec3.js?v=96aff44e';
+import { CREATURES, waveJelly } from './creatures.js?v=96aff44e';
+import { UNITS, UNIT_NAMES, buildUnit, makeOrbCloud, makeBulletCloud, makeDebris, makeDotBurst, makePortalCloud, makeHeartCloud } from './units.js?v=96aff44e';
+import { LOOKS, LOOK_NAMES } from './looks.js?v=96aff44e';
+import { makeCellIndex } from './cellindex.js?v=96aff44e';
 
 export function initHeartTab(root) {
   let active = false;
@@ -1119,9 +1119,52 @@ export function initHeartTab(root) {
     else if (cl.contains('msg-back')) showBriefing();
   });
 
-  // one element = one little card: icon · name · what it does
-  const glossCard = (color, icon, name, desc) =>
-    `<div class="gcard"><div class="gicon" style="color:${color}">${icon}</div>` +
+  // card icons are the ACTUAL half-dotted representations: build the real
+  // object, render one frame through the sprite rig, snapshot to a data
+  // URL, dispose. Cached by key — each icon is rendered once per session.
+  const spriteCache = new Map();
+  function spriteShot(key, build) {
+    if (spriteCache.has(key)) return spriteCache.get(key);
+    const obj = build();
+    const kind = obj.userData.kind;
+    if (kind === 'cloud' || kind === 'orb' || kind === 'portal' || kind === 'triad' || kind === 'heart') {
+      obj.position.y = 0.32; // clouds center on the origin; lift into frame
+    }
+    if (obj.userData.tick) obj.userData.tick(1.3); // a lively mid-anim pose
+    obj.rotation.y += 0.6; // three-quarter view
+    waveScene.add(obj);
+    waveSpriteRenderer.render(waveScene, waveCam);
+    const url = waveSpriteRenderer.domElement.toDataURL();
+    waveScene.remove(obj);
+    disposeObj(obj);
+    spriteCache.set(key, url);
+    return url;
+  }
+
+  // mini bullet triad, briefing-icon edition
+  function makeTriadIcon() {
+    const g = new THREE.Group();
+    for (let k = -1; k <= 1; k++) {
+      const b = makeBulletCloud({ body: 0xffb000, hi: 0xffffff });
+      b.scale.setScalar(0.3);
+      b.position.set(k * 0.52, 0, 0);
+      g.add(b);
+    }
+    g.userData.kind = 'triad';
+    return g;
+  }
+
+  const heartIcon = () => {
+    const h = makeHeartCloud(new THREE.Color(look().heart).getHex());
+    h.userData.kind = 'heart';
+    h.userData.tick(1.2);
+    return h;
+  };
+  const unitIcon = (type, tint) => () => buildUnit(type, { walker: tint, walkerHi: 0xffffff });
+
+  // one element = one little card: real sprite · name · what it does
+  const glossCard = (color, iconUrl, name, desc) =>
+    `<div class="gcard"><img class="gicon" src="${iconUrl}" alt="">` +
     `<div class="gname" style="color:${color}">${name}</div>` +
     `<div class="gdesc">${desc}</div></div>`;
 
@@ -1131,13 +1174,13 @@ export function initHeartTab(root) {
     paused = true;
     msgEl.innerHTML = `<div class="msg-head">transmission · briefing</div>` +
       `<div class="gcards">` +
-      glossCard('#ff6a88', '💗', 'the heart', 'at the pole — its fall is the only defeat') +
-      glossCard('#9fdcff', '▣', 'your tank', 'hold W drive · double-tap W cruise · A/D steer · SPACE shell · SHIFT lasers · ESC pause') +
-      glossCard('#9fdcff', '✚', 'allies', 'patrol the pole · infinite ammo · C commandeers') +
-      glossCard('#ffb000', '▮▮▮', 'bullet triads', 'drive over = +3 shells · shells also blast walls open') +
-      glossCard('#66ff88', '☘', 'fodder', 'soft creatures — RAM them, it’s free') +
-      glossCard('#ff5340', '✴', 'spiked reds', 'armored — ramming hurts YOU · shells only') +
-      glossCard('#ffffff', '◎', 'portals', 'the enemy sources · 3 shells each · dim as they die') +
+      glossCard('#ff6a88', spriteShot('heart', heartIcon), 'the heart', 'at the pole — its fall is the only defeat') +
+      glossCard('#9fdcff', spriteShot('tank', unitIcon('tank', look().walker)), 'your tank', 'hold W drive · double-tap W cruise · A/D steer · SPACE shell · SHIFT lasers · ESC pause') +
+      glossCard('#9fdcff', spriteShot('tank', unitIcon('tank', look().walker)), 'allies', 'patrol the pole · infinite ammo · C commandeers') +
+      glossCard('#ffb000', spriteShot('triad', makeTriadIcon), 'bullet triads', 'drive over = +3 shells · shells also blast walls open') +
+      glossCard('#66ff88', spriteShot('phage', unitIcon('phage', CREATURE_TINTS.phage)), 'fodder', 'soft creatures — RAM them, it’s free') +
+      glossCard('#ff5340', spriteShot('barbed', unitIcon('barbed', CREATURE_TINTS.barbed)), 'spiked reds', 'armored — ramming hurts YOU · shells only') +
+      glossCard('#ffffff', spriteShot('portal', () => makePortalCloud({ body: 0xcfd8ff, hi: 0xffffff })), 'portals', 'the enemy sources · 3 shells each · dim as they die') +
       `</div>` +
       `<b>WIN = DESTROY EVERY PORTAL.</b> reaching the heart wins nothing — it's home.<br>` +
       `<button class="msg-glenemy">☠ enemy glossary</button> ` +
@@ -1146,7 +1189,6 @@ export function initHeartTab(root) {
     msgEl.classList.remove('hidden');
   }
 
-  const ENEMY_GLYPHS = { phage: '✜', amoeba: '⬤', jellyfish: '☂', corona: '❋', barbed: '✴', knot: '∞' };
   function showEnemyGlossary() {
     paused = true;
     const cards = INTROS.map((iv) => {
@@ -1155,27 +1197,27 @@ export function initHeartTab(root) {
       const ram = spec.rammable
         ? '<span style="color:#66ff88">▼ rammable</span>'
         : '<span style="color:#ff5340">✖ do not ram</span>';
-      return glossCard(tint, ENEMY_GLYPHS[iv.type], iv.label.toLowerCase(),
+      return glossCard(tint, spriteShot(iv.type, unitIcon(iv.type, CREATURE_TINTS[iv.type])), iv.label.toLowerCase(),
         `${iv.role} · ${spec.hp} hp · arrives wave ${iv.wave} · ${ram}`);
     }).join('');
     msgEl.innerHTML = `<div class="msg-head">glossary · hostiles</div>` +
       `<div class="gcards">${cards}` +
-      glossCard('#ffffff', '◎', 'portal', 'where they pour from · 3 shells to destroy · dims with each hit · pulses on the minimap once found') +
+      glossCard('#ffffff', spriteShot('portal', () => makePortalCloud({ body: 0xcfd8ff, hi: 0xffffff })), 'portal', 'where they pour from · 3 shells to destroy · dims with each hit · pulses on the minimap once found') +
       `</div><button class="msg-back">← back to briefing</button>`;
     msgEl.classList.remove('hidden');
   }
 
   function showFriendGlossary() {
     paused = true;
+    const orbIcon = (fx, body) => () => makeOrbCloud(fx, { body, hi: 0xffffff }, 1.7);
     msgEl.innerHTML = `<div class="msg-head">glossary · friendlies &amp; pickups</div>` +
       `<div class="gcards">` +
-      glossCard('#ff6a88', '💗', 'the heart', `${HEART_MAX} hp · enemy contact drains it · regen charges heal it`) +
-      glossCard('#9fdcff', '✚', 'ally tank', 'patrols the pole · infinite shells · 2 hp · solid — no driving through · C swaps you in') +
-      glossCard('#ffb000', '▮▮▮', 'bullet triad', '+3 shells on touch (rack caps at 9)') +
-      glossCard('#ffb000', '◍', 'ammo sphere', 'far-field reward · +3 shells') +
-      glossCard('#9ff8ff', '◍', 'power sphere', 'far-field reward · +8% speed, permanent') +
-      glossCard('#ffffff', '◍', 'health sphere', 'far-field reward · +1 your hp') +
-      glossCard('#ff2df0', '◍', 'regen charge', 'CARRY it back near the heart: +4 heart hp') +
+      glossCard('#ff6a88', spriteShot('heart', heartIcon), 'the heart', `${HEART_MAX} hp · enemy contact drains it · regen charges heal it`) +
+      glossCard('#9fdcff', spriteShot('tank', unitIcon('tank', look().walker)), 'ally tank', 'patrols the pole · infinite shells · 2 hp · solid — no driving through · C swaps you in') +
+      glossCard('#ffb000', spriteShot('triad', makeTriadIcon), 'bullet triad', '+3 shells on touch (rack caps at 9) — the ONLY ammo pickup') +
+      glossCard('#9ff8ff', spriteShot('orb-power', orbIcon('scatter', 0x9ff8ff)), 'power sphere', 'far-field reward · +8% speed, permanent') +
+      glossCard('#3dff6e', spriteShot('orb-health', orbIcon('wave', 0x3dff6e)), 'health sphere', 'far-field reward · +1 your hp') +
+      glossCard('#ff2df0', spriteShot('orb-regen', orbIcon('breathe', 0xff2df0)), 'regen charge', 'CARRY it back near the heart: +4 heart hp') +
       `</div><button class="msg-back">← back to briefing</button>`;
     msgEl.classList.remove('hidden');
   }
@@ -1223,7 +1265,8 @@ export function initHeartTab(root) {
   // are a scarce browser resource and leak on loss).
   const waveEl = root.querySelector('#h-wave');
   let waveTimer = null;
-  const waveSpriteRenderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+  // preserveDrawingBuffer: the glossary snapshots toDataURL() this canvas
+  const waveSpriteRenderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, preserveDrawingBuffer: true });
   waveSpriteRenderer.setPixelRatio(Math.min(devicePixelRatio, 2));
   waveSpriteRenderer.setSize(96, 96);
   waveSpriteRenderer.domElement.className = 'wave-sprite';
@@ -1988,10 +2031,11 @@ export function initHeartTab(root) {
   }
 
   // --- far-field rewards ----------------------------------------------------
+  // no ammo sphere: the bullet triad already IS the ammo pickup — two
+  // shapes meaning the same thing taught nothing (operator cut)
   const REWARD_TYPES = [
-    { type: 'ammo', body: 0xffb000, fx: 'twinkle' },   // +3 shells
     { type: 'power', body: 0x9ff8ff, fx: 'scatter' },  // permanent +8% speed
-    { type: 'health', body: 0xffffff, fx: 'wave' },    // you +1
+    { type: 'health', body: 0x3dff6e, fx: 'wave' },    // you +1 — GREEN = health
     { type: 'regen', body: 0xff2df0, fx: 'breathe' },  // carry home: heart +4
   ];
 
@@ -2034,8 +2078,7 @@ export function initHeartTab(root) {
       scene.remove(r.obj);
       r.obj.geometry.dispose();
       rewardMeshes.delete(player.cur);
-      if (r.type === 'ammo') ammo = Math.min(AMMO_MAX, ammo + 3);
-      else if (r.type === 'power') speedBonus *= 1.08;
+      if (r.type === 'power') speedBonus *= 1.08;
       else if (r.type === 'health') playerHP = Math.min(PLAYER_MAX, playerHP + 1);
       else if (r.type === 'regen') carryingRegen = true;
       updateHud();
