@@ -117,6 +117,17 @@ export function jellyfishPts() {
   return fitUnit(pts);
 }
 
+// dotted sphere — the Braille half-dotted primitive; every 12th dot marked
+// hi so treatments and tints have a sparkle layer to work with
+export function spherePts(n = 170) {
+  const pts = [];
+  for (let i = 0; i < n; i++) {
+    const d = fibDir(i, n);
+    pts.push(i % 12 === 0 ? [d[0], d[1], d[2], 1] : [d[0], d[1], d[2]]);
+  }
+  return pts;
+}
+
 export const CREATURES = {
   amoeba: amoebaPts,
   phage: phagePts,

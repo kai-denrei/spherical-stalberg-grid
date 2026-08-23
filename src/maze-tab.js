@@ -6,12 +6,13 @@
 
 import * as THREE from '../vendor/three.module.js';
 import GUI from '../vendor/lil-gui.esm.js';
-import { generateSphereMesh, relax } from './grid.js?v=ab80a3f8';
-import { generateDungeon, BLOCKED, PATH, ROOM } from './dungeon.js?v=ab80a3f8';
-import { mulberry32, randomSeed } from './rng.js?v=ab80a3f8';
-import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3 } from './vec3.js?v=ab80a3f8';
-import { LOOKS, LOOK_NAMES } from './looks.js?v=ab80a3f8';
-import { UNIT_NAMES, buildUnit } from './units.js?v=ab80a3f8';
+import { generateSphereMesh, relax } from './grid.js?v=86d5a084';
+import { generateDungeon, BLOCKED, PATH, ROOM } from './dungeon.js?v=86d5a084';
+import { mulberry32, randomSeed } from './rng.js?v=86d5a084';
+import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3 } from './vec3.js?v=86d5a084';
+import { LOOKS, LOOK_NAMES } from './looks.js?v=86d5a084';
+import { makeCellIndex } from './cellindex.js?v=86d5a084';
+import { UNIT_NAMES, buildUnit } from './units.js?v=86d5a084';
 
 export function initMazeTab(root) {
   let active = false;
@@ -98,11 +99,14 @@ export function initMazeTab(root) {
     smoothDir: [0, 1, 0], // rate-limited travelDir — cameras/cone follow THIS
     heading: [1, 0, 0], // steering intent, unit tangent
     segLen: 1,          // world length of the current cur->next chord
+    freeMode: false,    // true while manual drives the position off-graph
+    virtualStart: null, // glide origin when auto resumes from a free position
     moves: 0,
     visited: new Set(),
     won: false,
   };
   let whim = mulberry32(1); // the walker's own randomness, reseeded per maze
+  let cellIndex = () => -1; // voxel-hash nearest-cell lookup, built per board
 
   // held-key state: steering and pace are continuous while held, not nudges
   const keys = { left: false, right: false, fast: false, slow: false };
@@ -496,22 +500,51 @@ export function initMazeTab(root) {
     if (keys.left) rotate(STEER_RATE * dt);
     if (keys.right) rotate(-STEER_RATE * dt);
 
-    // manual S (fresh press): turn around, then drive
-    if (manual && keys.slow && !prevSlow && player.next !== -1) {
-      const old = player.cur;
-      player.cur = player.next;
-      player.next = old;
-      player.prog = 1 - player.prog;
-      player.prev = -1;
-      player.heading = scale3(player.heading, -1);
+    // MANUAL = FREE movement: kinematics leave the grid entirely. W drives
+    // along the heading, S reverses, A/D steer continuously; the grid is
+    // consulted only as a collision oracle (blocked cell? no entry) and to
+    // keep semantics (current cell, visited, absorption) in sync.
+    if (manual) {
+      player.freeMode = true;
+      const drive = keys.fast ? 1 : keys.slow ? -0.55 : 0;
+      if (drive !== 0) {
+        const v = params.speed * cellSide * 1.6 * drive;
+        const cand = norm3(add3(player.pos, scale3(player.heading, v * dt)));
+        const ci = cellIndex(cand);
+        if (ci !== -1 && dungeon.tags[ci] !== BLOCKED) {
+          player.pos = cand;
+          player.travelDir = drive > 0 ? player.heading.slice() : scale3(player.heading, -1);
+          if (ci !== player.cur) arriveAt(ci);
+        }
+      }
+      const nf = norm3(player.pos);
+      player.heading = norm3(sub3(player.heading, scale3(nf, dot3(player.heading, nf))));
+      updateSmoothDir(dt);
+      // (maze: nothing else runs while free)
+      return;
     }
     prevSlow = keys.slow;
+
+    // AUTO resumes from wherever free movement left off: the nearest open
+    // cell becomes home, and the first glide eases out from the actual
+    // position (virtualStart) instead of snapping to a cell center
+    if (player.freeMode) {
+      player.freeMode = false;
+      const ci = cellIndex(player.pos);
+      if (ci !== -1 && dungeon.tags[ci] !== BLOCKED) player.cur = ci;
+      player.prev = -1;
+      player.next = chooseNext();
+      player.prog = 0;
+      player.virtualStart = player.pos.slice();
+      if (player.next !== -1) {
+        player.segLen = Math.max(1e-9, dist3(player.pos, graph.centers[player.next]));
+      }
+    }
 
     // U-turn: heading swung behind the motion — reverse the glide in place.
     // Position is continuous (same chord, opposite direction), so holding A
     // or D sweeps you around and back the way you came with no jump.
-    const driving = !manual || keys.fast || keys.slow;
-    if ((manual ? driving : steeringActive()) && dot3(player.heading, player.travelDir) < -0.35
+    if (steeringActive() && dot3(player.heading, player.travelDir) < -0.35
       && player.prog > 0.04 && player.prog < 0.96) {
       const old = player.cur;
       player.cur = player.next;
@@ -526,12 +559,11 @@ export function initMazeTab(root) {
     // large cells takes proportionally longer than a short one. The grid
     // offers the space; the motion just traverses it.
     // manual: motion only while W/S are held; auto: steady wander pace
-    const pace = manual
-      ? ((keys.fast || keys.slow) ? params.speed * 1.5 : 0)
-      : params.speed;
+    const pace = params.speed;
     player.prog += (pace * cellSide * dt) / player.segLen;
     while (player.prog >= 1 && !player.won) {
       const carry = (player.prog - 1) * player.segLen; // leftover distance
+      player.virtualStart = null;
       arriveAt(player.next);
       // idle: steering intent drifts toward actual travel so stale input
       // fades. While the user steers, their intent is left untouched.
@@ -545,7 +577,7 @@ export function initMazeTab(root) {
       player.prog = carry / player.segLen;
     }
     // interpolate along the chord, then push back onto the sphere
-    const a = graph.centers[player.cur];
+    const a = player.virtualStart || graph.centers[player.cur];
     const b = graph.centers[player.next === -1 ? player.cur : player.next];
     const t = Math.min(player.prog, 1);
     const p = [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t, a[2] + (b[2] - a[2]) * t];
@@ -660,6 +692,9 @@ export function initMazeTab(root) {
     });
     graph = dungeon.graph;
     cellSide = mesh.defaultSide;
+    cellIndex = makeCellIndex(graph.centers, cellSide * 1.7);
+    player.freeMode = false;
+    player.virtualStart = null;
 
     player.cur = dungeon.spawn;
     player.prev = -1;

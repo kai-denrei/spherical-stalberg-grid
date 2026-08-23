@@ -6,13 +6,14 @@
 
 import * as THREE from '../vendor/three.module.js';
 import GUI from '../vendor/lil-gui.esm.js';
-import { generateSphereMesh, relax } from './grid.js?v=ab80a3f8';
-import { generateDungeon, BLOCKED, PATH, ROOM } from './dungeon.js?v=ab80a3f8';
-import { mulberry32, randomSeed } from './rng.js?v=ab80a3f8';
-import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3 } from './vec3.js?v=ab80a3f8';
-import { CREATURES, waveJelly } from './creatures.js?v=ab80a3f8';
-import { UNITS, UNIT_NAMES, buildUnit } from './units.js?v=ab80a3f8';
-import { LOOKS, LOOK_NAMES } from './looks.js?v=ab80a3f8';
+import { generateSphereMesh, relax } from './grid.js?v=86d5a084';
+import { generateDungeon, BLOCKED, PATH, ROOM } from './dungeon.js?v=86d5a084';
+import { mulberry32, randomSeed } from './rng.js?v=86d5a084';
+import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3 } from './vec3.js?v=86d5a084';
+import { CREATURES, waveJelly } from './creatures.js?v=86d5a084';
+import { UNITS, UNIT_NAMES, buildUnit, makeOrbCloud, makeDebris, ORB_FX } from './units.js?v=86d5a084';
+import { LOOKS, LOOK_NAMES } from './looks.js?v=86d5a084';
+import { makeCellIndex } from './cellindex.js?v=86d5a084';
 
 export function initOrganicTab(root) {
   let active = false;
@@ -153,11 +154,15 @@ export function initOrganicTab(root) {
     }
     if (open.length === 0) return false;
     const ci = open[Math.floor(orbRng() * open.length)];
-    const r = cellSide * 0.16;
-    const orb = new THREE.Mesh(new THREE.SphereGeometry(r, 12, 10), orbMat);
+    const r = cellSide * 0.19;
+    // Braille dotted sphere; treatment drawn from the five effects
+    const fx = ORB_FX[Math.floor(orbRng() * ORB_FX.length)];
+    const orb = makeOrbCloud(fx, { body: look().orb.color, hi: 0xffffff }, orbRng() * 6.283);
+    orb.scale.setScalar(r);
+    orb.userData.sizeScale = r;
     const c = graph.centers[ci];
     const n = graph.normals[ci];
-    const p = add3(c, scale3(n, r * 1.1));
+    const p = add3(c, scale3(n, r * 1.15));
     orb.position.set(p[0], p[1], p[2]);
     scene.add(orb);
     orbMeshes.set(ci, orb);
@@ -211,11 +216,14 @@ export function initOrganicTab(root) {
     smoothDir: [0, 1, 0], // rate-limited travelDir — cameras/creature follow THIS
     heading: [1, 0, 0], // steering intent, unit tangent
     segLen: 1,          // world length of the current cur->next chord
+    freeMode: false,    // true while manual drives the position off-graph
+    virtualStart: null, // glide origin when auto resumes from a free position
     moves: 0,
     visited: new Set(),
     won: false,
   };
   let whim = mulberry32(1); // the walker's own randomness, reseeded per maze
+  let cellIndex = () => -1; // voxel-hash nearest-cell lookup, built per board
 
   // held-key state: steering and pace are continuous while held, not nudges
   const keys = { left: false, right: false, fast: false, slow: false };
@@ -638,20 +646,57 @@ export function initOrganicTab(root) {
     if (keys.left) rotate(STEER_RATE * dt);
     if (keys.right) rotate(-STEER_RATE * dt);
 
-    // manual S (fresh press): turn around, then drive
-    if (manual && keys.slow && !prevSlow && player.next !== -1) {
-      const old = player.cur;
-      player.cur = player.next;
-      player.next = old;
-      player.prog = 1 - player.prog;
-      player.prev = -1;
-      player.heading = scale3(player.heading, -1);
+    // MANUAL = FREE movement: kinematics leave the grid entirely. W drives
+    // along the heading, S reverses, A/D steer continuously; the grid is
+    // consulted only as a collision oracle (blocked cell? no entry) and to
+    // keep semantics (current cell, visited, absorption) in sync.
+    if (manual) {
+      player.freeMode = true;
+      const drive = keys.fast ? 1 : keys.slow ? -0.55 : 0;
+      if (drive !== 0) {
+        const v = params.speed * cellSide * 1.6 * drive;
+        const cand = norm3(add3(player.pos, scale3(player.heading, v * dt)));
+        const ci = cellIndex(cand);
+        if (ci !== -1 && dungeon.tags[ci] !== BLOCKED) {
+          player.pos = cand;
+          player.travelDir = drive > 0 ? player.heading.slice() : scale3(player.heading, -1);
+          if (ci !== player.cur) arriveAt(ci);
+        }
+      }
+      const nf = norm3(player.pos);
+      player.heading = norm3(sub3(player.heading, scale3(nf, dot3(player.heading, nf))));
+      updateSmoothDir(dt);
+      // food systems keep running while driving free
+      if (params.orbRespawn > 0) {
+        respawnClock += dt;
+        if (respawnClock >= params.orbRespawn) {
+          respawnClock = 0;
+          if (orbMeshes.size < params.orbs) spawnOneOrb();
+        }
+      }
+      checkAbsorb();
+      return;
     }
     prevSlow = keys.slow;
 
+    // AUTO resumes from wherever free movement left off: the nearest open
+    // cell becomes home, and the first glide eases out from the actual
+    // position (virtualStart) instead of snapping to a cell center
+    if (player.freeMode) {
+      player.freeMode = false;
+      const ci = cellIndex(player.pos);
+      if (ci !== -1 && dungeon.tags[ci] !== BLOCKED) player.cur = ci;
+      player.prev = -1;
+      player.next = chooseNext();
+      player.prog = 0;
+      player.virtualStart = player.pos.slice();
+      if (player.next !== -1) {
+        player.segLen = Math.max(1e-9, dist3(player.pos, graph.centers[player.next]));
+      }
+    }
+
     // U-turn: heading swung behind the motion — reverse the glide in place.
-    const driving = !manual || keys.fast || keys.slow;
-    if ((manual ? driving : steeringActive()) && dot3(player.heading, player.travelDir) < -0.35
+    if (steeringActive() && dot3(player.heading, player.travelDir) < -0.35
       && player.prog > 0.04 && player.prog < 0.96) {
       const old = player.cur;
       player.cur = player.next;
@@ -675,12 +720,11 @@ export function initOrganicTab(root) {
     // locomotion profile modulates the pace on top.
     // manual: motion only while W/S are held; auto: the creature's own pace
     const prof = MOVES[params.creature];
-    const pace = manual
-      ? ((keys.fast || keys.slow) ? params.speed * 1.5 : 0)
-      : params.speed * (prof ? prof.speed(simTime) : 1);
+    const pace = params.speed * (prof ? prof.speed(simTime) : 1);
     player.prog += (pace * cellSide * dt) / player.segLen;
     while (player.prog >= 1 && !player.won) {
       const carry = (player.prog - 1) * player.segLen; // leftover distance
+      player.virtualStart = null;
       arriveAt(player.next);
       // idle: steering intent drifts toward actual travel; while the user
       // steers, their intent is left untouched
@@ -694,7 +738,7 @@ export function initOrganicTab(root) {
       player.prog = carry / player.segLen;
     }
     // interpolate along the chord, then push back onto the sphere
-    const a = graph.centers[player.cur];
+    const a = player.virtualStart || graph.centers[player.cur];
     const b = graph.centers[player.next === -1 ? player.cur : player.next];
     const f = Math.min(player.prog, 1);
     const p = [a[0] + (b[0] - a[0]) * f, a[1] + (b[1] - a[1]) * f, a[2] + (b[2] - a[2]) * f];
@@ -808,6 +852,9 @@ export function initOrganicTab(root) {
     });
     graph = dungeon.graph;
     cellSide = mesh.defaultSide;
+    cellIndex = makeCellIndex(graph.centers, cellSide * 1.7);
+    player.freeMode = false;
+    player.virtualStart = null;
 
     player.cur = dungeon.spawn;
     player.prev = -1;
@@ -914,6 +961,7 @@ export function initOrganicTab(root) {
     t += dt;
 
     advanceMotion(dt);
+    for (const orb of orbMeshes.values()) orb.userData.tick(t);
     updateHud();
     placeActors();
 
