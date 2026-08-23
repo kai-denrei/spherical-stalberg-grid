@@ -6,6 +6,30 @@ Demo links assume `npm run serve` (port 8144) or the
 
 ---
 
+## `197b4a2` — The game gets a shape: briefing, rounds, one win condition
+
+Structure day. The heart tab had mechanics but no arc — now it has
+both ends. At the front, a **briefing modal**: every element labeled in
+its own color (heart, tank and its controls, allies, triads, fodder vs
+spiked reds, spawn points) with the single win condition in bold. The
+sim stays frozen until ▶ begin; debug hooks skip the briefing because
+headless verification needs a live sim, not a modal. At the back,
+**rounds**: round r plays a 100+50r-point board and fields only 2+r
+threat types — round 1 is 150 points and pure rammable fodder, fast
+and winnable in minutes; corona, barbed, and the knot boss join in
+rounds 2, 3, 4 as the sectors grow. Clearing every spawn point offers
+the next round on a fresh seed; losing retries the current one. And
+the win condition became ONE sentence: destroy every spawn point. The
+maze-legacy "found the heart" victory — which ended the battle by
+accidentally wandering home — is deleted; the pole is home turf.
+
+The cannon also gained consequence: firing kicks the hull back along
+the heading (camera follows) and heats a collar around the barrel's
+middle red-hot — 3 s to cool, no second shell until cold. Same
+diegetic-gauge pattern as the shell rack and the laser tubes: the
+state of your weapons is readable off the tank itself, the HUD only
+echoes it. Ram bump strengthened to match (deeper dip, 65% pace loss).
+
 ## `248c442` — Pause, a smaller first stage, and the clipping arithmetic
 
 The tank-in-the-wall bug fell to arithmetic, not screenshots. The hull
