@@ -6,11 +6,11 @@
 
 import * as THREE from '../vendor/three.module.js';
 import GUI from '../vendor/lil-gui.esm.js';
-import { generateSphereMesh, relax } from './grid.js?v=2087595e';
-import { generateDungeon, BLOCKED, PATH, ROOM } from './dungeon.js?v=2087595e';
-import { mulberry32, randomSeed } from './rng.js?v=2087595e';
-import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3 } from './vec3.js?v=2087595e';
-import { CREATURES, waveJelly } from './creatures.js?v=2087595e';
+import { generateSphereMesh, relax } from './grid.js?v=6a97da9f';
+import { generateDungeon, BLOCKED, PATH, ROOM } from './dungeon.js?v=6a97da9f';
+import { mulberry32, randomSeed } from './rng.js?v=6a97da9f';
+import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3 } from './vec3.js?v=6a97da9f';
+import { CREATURES, waveJelly } from './creatures.js?v=6a97da9f';
 
 export function initOrganicTab(root) {
   let active = false;

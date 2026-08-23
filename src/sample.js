@@ -9,7 +9,7 @@
 // Chord distance is used instead of geodesic: monotonically equivalent on a
 // sphere, and cheaper.
 
-import { dist3 } from './vec3.js?v=2087595e';
+import { dist3 } from './vec3.js?v=6a97da9f';
 
 // Uniform random point on the unit sphere (area-preserving: z uniform).
 export function uniformSpherePoint(rng) {

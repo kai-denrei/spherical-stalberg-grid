@@ -1,0 +1,196 @@
+# Building Blocks
+
+How this thing works, what we decided, and what it actually costs.
+Companion to the [Dev Log](?devlog=1) (chronological); this one is by concept.
+
+---
+
+## The Stålberg idea
+
+Oskar Stålberg (Townscaper, Bad North) solved a problem most procedural
+systems dodge: handmade art dies on procedural grids. Voxel grids look
+stiff. Voronoi and triangle meshes look organic but won't accept
+rectangular art — nothing square maps onto them. His breakthrough is three
+tricks stacked, and the order matters.
+
+**Trick 1: every cell is a quad, but the connectivity is organic.** You
+can't lay out irregular quads directly. He goes *through* triangles:
+scatter points, triangulate, randomly merge adjacent triangle pairs into
+quads where the result is convex-ish, then subdivide every remaining face
+into quads (a triangle becomes 3, a quad becomes 4). That last step is the
+load-bearing one — it guarantees an all-quad mesh *no matter how the random
+merge went*. You get to be sloppy in the merge because subdivision forgives
+everything. Then relaxation nudges each vertex toward the position that
+makes its quads most square. The result reads as hand-drawn.
+
+**Trick 2: state lives on corners, not cells.** Ask "is this cell land or
+water" and tiling needs 2⁴ = 16 marching-squares cases (256 in 3D). Put
+the state on the *corners* and pick each tile by its four corner values,
+and symmetry collapses the count to ~6 families. Six meshes to author, not
+hundreds. This is the trick that makes the art budget survivable.
+
+**Trick 3: the art deforms to the grid, not the reverse.** Tiles are
+authored in a unit cell and bilinearly stretched onto whatever irregular
+quad they land in. The grid's irregularity is *hidden inside the art*
+instead of fighting it. Variants and multi-cell specials kill repetition.
+
+This repo implements trick 1 on a sphere, plus a game-shaped consumer of
+the grid. Tricks 2 and 3 are the obvious next phase and everything is
+shaped to receive them: state-on-quads is already how the dungeon works,
+and corner-state is one index-map away.
+
+## Taking it to a sphere
+
+The port's central discovery: **the topology code doesn't care about the
+plane.** Merge bookkeeping, subdivision with shared midpoints, the
+watertightness guarantees — byte-for-byte the 2D algorithm. Geometry is the
+only thing that changes, and it changes in exactly four places:
+
+**Triangulation.** Planar Delaunay doesn't exist on S², but for points on
+a sphere the 3D convex hull *is* the Delaunay triangulation — every point
+is extreme, and the empty-circumcircle property maps to hull faces. We use
+three.js's quickhull. Free bonus: the hull gives globally consistent
+outward winding, which the 2D version had to normalize into existence.
+
+**Sampling.** Bridson Poisson-disk needs a background grid; there's no
+clean grid on a sphere. Mitchell best-candidate (draw k uniform candidates,
+keep the farthest from the existing set) gives comparable blue noise with
+zero spatial structure. It's O(n²k) and we simply don't care at n ≤ 2000.
+Knowing when the asymptotically wrong algorithm is the right choice is a
+skill; this is what it looks like.
+
+**Relaxation.** "Squareness" of a spherical quad is undefined — the corners
+aren't coplanar. We *define* it: project each quad onto the tangent plane
+at its centroid, run the 2D closed-form closest-square fit on the shadow,
+apply the forces in 3D, then re-normalize every vertex onto the sphere.
+Constraint projection, the oldest trick in physics sims. It converges
+(0.26 → 0.14 RMS in 60 iterations) and nobody had to derive spherical
+trigonometry.
+
+**One deletion, no substitute.** The 2D pipeline drops sliver triangles at
+the boundary. A sphere has no boundary, and dropping a face on a closed
+surface tears a hole. The filter is simply gone; slivers get relaxed
+instead of culled. Porting isn't only translation — sometimes the correct
+port of a feature is its absence.
+
+**What the sphere forces on you.** Euler's formula makes `Σ(4 − valence)
+= 8` mandatory for any closed quad mesh. You cannot have a regular grid on
+a sphere; the only question is where the defects go. Our construction
+scatters ~21% irregular vertices (mostly cancelling v3/v5 pairs from
+triangle centroids and merge corners) — which is arguably *why* it looks
+organic. The honest open question: that same irregularity is exactly where
+trick-2 tile authoring will hurt, because multi-cell special pieces care
+about valence even when corner-state doesn't. We deferred it knowingly.
+
+## The dungeon: hallways are found, not drawn
+
+Borrowed wholesale from our HokorobiTawaa method. The board is a graph —
+two cells adjacent only if they share a *full edge* (corner contact would
+create diagonal leaks through wall joints). Everything defaults to blocked.
+Room seeds are farthest-point-sampled; each digs a BFS shortest-path
+corridor to the nearest carved cell; extra corridors run BFS with prior
+hallways in an avoid-set, which forces genuinely distinct routes and gives
+you cycles — a maze, not a tree. Spawn and heart are the double-BFS
+diameter endpoints of the open subgraph.
+
+The insight worth stealing: **no world-space distance is ever measured.**
+Everything is hops. That's the entire reason the method transplanted from a
+flat Voronoi board to a spherical quad mesh without modification. Code that
+only asks "which cells touch which" is portable across geometry it has
+never heard of; code that measures positions is married to its coordinate
+system.
+
+## Motion, and who owns it
+
+Three generations in one day, each correcting the last:
+
+Discrete tank moves (snap per keypress) → a continuous wanderer with
+blended steering authority → **a binary mode switch**: any WASD press kills
+auto-wander, idle N seconds restores it. The blended version was
+mathematically nicer and felt terrible. Users can feel a mode; they can't
+feel a coefficient. If "who is in control" is ever the question, make the
+answer discrete and print it on screen.
+
+Two mechanisms under the hood do the actual work:
+
+**smoothDir.** Raw travel direction is discontinuous — it snaps at every
+cell arrival and flips 180° on reversal. Every visual consumer (cameras,
+creature orientation, minimap up-vector) reads a rate-limited chase of it
+instead (bounded 5 rad/s, signed-angle-around-normal). One smoothed source,
+zero per-consumer masking. Fix discontinuities at the signal, not at each
+subscriber — the alternative (heavier camera lerp) adds lag everywhere and
+still jumps on big flips.
+
+**Grid/motion separation.** Progress advances as world-distance over the
+current segment's chord length, leftover distance carried across arrivals.
+Cells-per-second made the walker lurch — fast over big cells, crawling over
+small — because it let the grid's sampling density leak into kinematics.
+The grid offers space; motion traverses it. This also quietly future-proofs
+free movement (tangent-plane physics with the grid as collision only).
+
+## The creatures
+
+Dot-cloud organisms ported *verbatim* from our Braille fun-shapes
+generators — amoeba, bacteriophage, jellyfish, ~500–700 points each. They
+animate by re-computing every point on the CPU each frame: Wave (radial
+ripple keyed to azimuth) composed with Jelly (volume-preserving
+squash-stretch, `sy = 1+0.18·sin 3t`, `sx = 1/√sy`).
+
+The deliberate anti-optimization: no vertex shader. 700 points is nothing,
+and keeping the treatment as plain JS means it stays line-for-line
+identical to the reference implementation and trivially composable — the
+phagocytosis reach is one more multiplicative term (`1 + amt ×
+alignment⁵`, direction transformed into the creature's local frame per
+frame), not a shader rewrite. Micro-optimizing that loop would have cost
+the feature that made it worth having.
+
+One detail that carries the feel: the jellyfish's propulsion pulses on the
+*same* `3t` oscillator as its squash treatment. Thrust coincides with the
+bell squeeze, so the motion looks caused rather than coincidental.
+Synchronizing animation and kinematics oscillators is cheap and reads as
+life.
+
+## What was actually expensive
+
+Not the math. The conventions and the layers:
+
+**The lookAt convention bug.** three.js `Object3D.lookAt` faces +Z at the
+target; cameras render down −Z and get the opposite rotation. We computed
+the camera's goal quaternion on a scratch Object3D — 180° wrong,
+permanently. Cost: every camera-framing iteration before the fix was tuned
+against a *mirrored view*, and the bug masqueraded as "W goes backward."
+When a 3D view feels inverted, audit conventions before touching numbers.
+
+**Cache layers wearing a trench coat.** Browser cache, CDN cache
+(`max-age=600` on Pages), ES-module identity, and a fingerprinting tool
+that covered HTML/CSS but not import specifiers. Two rules paid for in
+debugging time: never version-token vendor imports (a tokened URL is a
+*different module* — we loaded three.js twice), and coverage claims from
+cache tooling are unverified until you trace one URL of each asset class.
+
+**Headless verification.** Chrome's `--virtual-time-budget` fast-forwards
+rAF but not `performance.now()`, so dt-driven motion is invisible to
+screenshots. Software WebGL needs `--use-angle=swiftshader
+--enable-unsafe-swiftshader`; `--disable-gpu` kills context creation. Our
+answer was URL hooks (`?tick=N` simulates N seconds synchronously,
+`?walk=N` teleports along the shortest path) — and once, instead of
+screenshot-hunting for the amoeba near an orb, replicating the seeded orb
+layout in Node to *compute* the right `?walk` value. Determinism beats
+luck, and building it in costs a dozen lines.
+
+**Relaxation never finishes.** It's an iterative global solve, O(quads)
+per step, and "converged" is a judgment call. We run it live and let you
+watch — which turned a cost into the grid tab's whole appeal. When a
+computation is inherently iterative, consider shipping the iteration as
+the experience.
+
+## Decisions we'd defend, briefly
+
+Port the working 2D code, don't rebuild from the paper — re-solving solved
+problems is how projects stall. Vanilla ESM with vendored three.js, no
+build step — the whole pipeline is inspectable with view-source, and cache
+busting substitutes for a bundler's hashing. Node-testable math modules
+with invariant tests (watertight, Euler = 2, defect law, determinism) and
+zero DOM — the render layer is verified separately with screenshots.
+Every scope cut recorded with its reason in a decision log, including the
+ones that were wrong — half this document is transcribed from it.

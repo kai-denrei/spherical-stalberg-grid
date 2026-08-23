@@ -5,7 +5,7 @@
 // exactly what DEVLOG.md uses: h1/h2, hr, paragraphs, `code`, **bold**,
 // *italic*, [links](…) — not general markdown.
 
-function mdToHtml(md) {
+export function mdToHtml(md) {
   const esc = (s) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
   const inline = (s) => esc(s)
     .replace(/`([^`]+)`/g, '<code>$1</code>')
@@ -39,7 +39,7 @@ function buildOverlay() {
   overlay.innerHTML =
     '<div id="devlog-panel">' +
     '<button id="devlog-close" title="close (Esc)">×</button>' +
-    '<div id="devlog-content">loading…</div>' +
+    '<div id="devlog-content" class="mdview">loading…</div>' +
     '</div>';
   document.body.appendChild(overlay);
 
