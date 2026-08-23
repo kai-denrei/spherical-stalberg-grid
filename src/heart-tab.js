@@ -15,21 +15,21 @@
 
 import * as THREE from '../vendor/three.module.js';
 import GUI from '../vendor/lil-gui.esm.js';
-import { generateSphereMesh, relax } from './grid.js?v=cfef3ba9';
-import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=cfef3ba9';
-import { mulberry32, randomSeed } from './rng.js?v=cfef3ba9';
-import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3 } from './vec3.js?v=cfef3ba9';
-import { CREATURES, waveJelly } from './creatures.js?v=cfef3ba9';
-import { UNITS, UNIT_NAMES, buildUnit, makeOrbCloud, makeBulletCloud, makeDebris, makeDotBurst, makeHeartCloud } from './units.js?v=cfef3ba9';
-import { LOOKS, LOOK_NAMES } from './looks.js?v=cfef3ba9';
-import { makeCellIndex } from './cellindex.js?v=cfef3ba9';
+import { generateSphereMesh, relax } from './grid.js?v=8cc88854';
+import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=8cc88854';
+import { mulberry32, randomSeed } from './rng.js?v=8cc88854';
+import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3 } from './vec3.js?v=8cc88854';
+import { CREATURES, waveJelly } from './creatures.js?v=8cc88854';
+import { UNITS, UNIT_NAMES, buildUnit, makeOrbCloud, makeBulletCloud, makeDebris, makeDotBurst, makeHeartCloud } from './units.js?v=8cc88854';
+import { LOOKS, LOOK_NAMES } from './looks.js?v=8cc88854';
+import { makeCellIndex } from './cellindex.js?v=8cc88854';
 
 export function initHeartTab(root) {
   let active = false;
 
   const params = {
     seed: 7,
-    points: 4000,
+    points: 800, // first-stage size: small enough to read, hunt, and win
     rooms: 12,          // unused by the open-field terrain, kept for the carve call
     roomRadius: 3,
     extraCorridors: 4,
@@ -361,6 +361,47 @@ export function initHeartTab(root) {
   // spawn-point structures are solid; creatures stay passable (contact IS
   // their damage — blocking them would neuter the threat)
   unitBlocker = (cand) => spawnPoints.some((s) => s.alive && dist3(cand, graph.centers[s.ci]) < cellSide * 0.6);
+
+  // WALL CUSHION — the clipping fix. The hull reaches ~0.5·cellSide from
+  // the position, but freeBlocked only guarantees ~0.12·cellSide from a
+  // wall FACE (0.62 from its center; the face sits at ~0.5), and the auto
+  // glide has no margin at all — so the tank could sit visibly inside a
+  // wall. Each frame the position is softly pushed out of a 0.8·cellSide
+  // band around blocked centers, sliding in the tangent plane so motion
+  // along the wall survives. Diagonal walls matter here: graph.adj is
+  // full-edge adjacency only, so corner-blocked cells are collected
+  // through the open neighbours' own adjacency.
+  function wallCushion(pos) {
+    const margin = cellSide * 0.8;
+    const ci = cellIndex(pos);
+    if (ci === -1) return pos;
+    let p = pos;
+    const seen = new Set([ci]);
+    const walls = [];
+    for (const nb of graph.adj[ci]) {
+      if (seen.has(nb)) continue;
+      seen.add(nb);
+      if (dungeon.tags[nb] === BLOCKED) { walls.push(nb); continue; }
+      for (const nb2 of graph.adj[nb]) {
+        if (seen.has(nb2)) continue;
+        seen.add(nb2);
+        if (dungeon.tags[nb2] === BLOCKED) walls.push(nb2);
+      }
+    }
+    for (const w of walls) {
+      const c = graph.centers[w];
+      const d = dist3(p, c);
+      if (d >= margin) continue;
+      const away = sub3(p, c);
+      const n = norm3(p);
+      let tg = sub3(away, scale3(n, dot3(away, n)));
+      const l = len3(tg);
+      if (l < 1e-9) continue;
+      tg = scale3(tg, 1 / l);
+      p = norm3(add3(p, scale3(tg, (margin - d) * 0.8)));
+    }
+    return p;
+  }
 
   // held-key state: steering and pace are continuous while held, not nudges
   const keys = { left: false, right: false, fast: false, slow: false, laser: false };
@@ -799,6 +840,7 @@ export function initHeartTab(root) {
           if (ci !== -1 && ci !== player.cur) arriveAt(ci);
         }
       }
+      player.pos = wallCushion(player.pos);
       const nf = norm3(player.pos);
       player.heading = norm3(sub3(player.heading, scale3(nf, dot3(player.heading, nf))));
       updateSmoothDir(dt);
@@ -884,6 +926,8 @@ export function initHeartTab(root) {
     const flat = sub3(d, scale3(n, dot3(d, n)));
     const l = Math.hypot(flat[0], flat[1], flat[2]);
     if (l > 1e-9) player.travelDir = scale3(flat, 1 / l);
+    // cushion AFTER travelDir so the push shifts the body, not the aim
+    player.pos = wallCushion(player.pos);
     // keep the steering intent in the local tangent plane as we move
     player.heading = norm3(sub3(player.heading, scale3(n, dot3(player.heading, n))));
 
@@ -938,6 +982,8 @@ export function initHeartTab(root) {
       arrowup: 'fast', w: 'fast', arrowdown: 'slow', s: 'slow',
       shift: 'laser' }[k];
     if (m) { keys[m] = down; ev.preventDefault(); return; }
+    if (down && k === 'escape') { togglePause(); ev.preventDefault(); return; }
+    if (paused) return; // frozen: only ESC gets through
     if (down && (k === ' ' || k === 'spacebar')) { fire(); ev.preventDefault(); return; }
     if (down && k === 'h') pulseHint();
     if (down && k === 'c') commandeer();
@@ -1010,6 +1056,21 @@ export function initHeartTab(root) {
         dots[i].material.color.setHex(i < ammo ? 0xffffff : 0x4a505c);
       }
     }
+  }
+
+  // --- pause (ESC): freeze the simulation, keep presenting the frame ------
+  let paused = false;
+  function togglePause() {
+    if (player.won) return; // the end-of-game modal owns the screen
+    paused = !paused;
+    if (paused) {
+      msgEl.innerHTML = `<div class="msg-head">transmission · paused</div>` +
+        `⏸ sector frozen<br>ESC resumes`;
+      msgEl.classList.remove('hidden');
+    } else {
+      msgEl.classList.add('hidden');
+    }
+    updateHud();
   }
 
   // wave announcement banner — HokorobiTawaa's "New Threat" card, complete
@@ -1171,6 +1232,7 @@ export function initHeartTab(root) {
     spawnRewards();
     placeActors();
     snapCamera();
+    paused = false;
     msgEl.classList.add('hidden');
     updateHud();
     console.log(`heart sector in ${(performance.now() - t0).toFixed(0)}ms — ` +
@@ -1987,6 +2049,24 @@ export function initHeartTab(root) {
     const now = performance.now();
     const dt = Math.min((now - lastFrame) / 1000, 0.1); // clamp tab-switch gaps
     lastFrame = now;
+
+    // paused: keep presenting the frozen frame (both views), zero sim.
+    // lastFrame keeps updating above so resume has no dt spike.
+    if (paused) {
+      scene.background = mainBg;
+      markerMesh.visible = false;
+      for (const sp of spawnPoints) if (sp.mapMarker) sp.mapMarker.visible = false;
+      playerMesh.visible = params.view === 'third';
+      renderer.render(scene, camera);
+      scene.background = mapBg;
+      markerMesh.visible = true;
+      for (const sp of spawnPoints) {
+        if (sp.mapMarker && sp.alive && sp.found) sp.mapMarker.visible = true;
+      }
+      playerMesh.visible = true;
+      mapRenderer.render(scene, mapCamera);
+      return;
+    }
     t += dt;
 
     bumpLeft = Math.max(0, bumpLeft - dt);
