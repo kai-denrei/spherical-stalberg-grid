@@ -6,6 +6,34 @@ Demo links assume `npm run serve` (port 8144) or the
 
 ---
 
+## `e846569` — The phone becomes a controller
+
+iPhone playtest drove this one. The briefing was clipped under the
+status bar and couldn't scroll — the modal's `top: 34%` centering plus
+tall card content overflowed both ends of the viewport. Fix: true
+centering with `max-height: min(86vh, calc(100dvh - 28px))` and
+`overflow-y: auto`. The unit that matters is **dvh**: iOS's `vh`
+includes the collapsed toolbar area, so a `vh`-capped modal still
+clips; `dvh` tracks the real visible viewport.
+
+Controls rebuilt around how a phone is actually held — two thumbs at
+the corners. Left thumb: a big steer-left button at the corner with
+the drive rocker above it (hold ▲ forward, double-tap ▲ cruise,
+▼ reverse and cruise-kill). Right thumb: steer-right plus the two
+tinted triggers, ⚡ laser above ✦ shell. Utilities (⇄ 👁) shrink to a
+centered pair. The reflow is pure HTML/CSS — every button keeps its
+id, so the game code didn't change a line: the wiring layer earning
+its keep. The HUD collapsed with it: the nine-dot shells row is gone
+(the turret rack was already the ammo counter — the HUD copy was
+redundant the day the rack shipped; a small ✦n survives for PoV where
+the turret is hidden), alerts print only when true, and teaching text
+left the HUD for the briefing, which owns it.
+
+TD spec gained the operator's rulings: aura imported, one health
+pool, ally tanks mortal AND purchasable (the shop will sell UNITS
+next to TOWERS), and the identity pair — top-down build view,
+third-person fray — as the differentiation to build first.
+
 ## `a9891fc` — The full dozen: HokorobiTawaa's roster comes across
 
 Six more enemy types, completing the import of HokorobiTawaa's twelve
