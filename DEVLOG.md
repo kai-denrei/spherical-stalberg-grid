@@ -6,6 +6,19 @@ Demo links assume `npm run serve` (port 8144) or the
 
 ---
 
+## `f9fddfd` — Four visual identities
+
+`src/looks.js` centralizes every color decision — backgrounds, light
+rig, floor/wall vertex palettes, edge treatment, actor tints — and both
+board tabs consume it; switching rebakes geometry in place with game
+state untouched. The interesting ones: *battlezone* reproduces the
+vector-monitor trick where near-black faces exist purely as hidden-line
+occluders behind phosphor-green edges, and *tron* fakes neon without a
+bloom pass by putting additive-blended pure-cyan lines over a near-black
+world — at these edge densities additive overdraw reads as glow.
+*clean* drops edge lines entirely and compensates with 1.8× per-cell
+tone jitter so faces still separate. `?look=` deep-links a look.
+
 ## `a1aae5d` — 170× generation: incremental merge + voxel-hash sampling
 
 Benchmarking showed per-frame costs were a non-issue at every size — the
