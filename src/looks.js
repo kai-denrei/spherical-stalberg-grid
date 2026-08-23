@@ -52,6 +52,48 @@ export const LOOKS = {
     heart: '#ff2df0',
   },
 
+  blueprint: {
+    // cyanotype: white ink on drawing-blue paper; flat, even light — it's a
+    // drawing, not a scene. The heart is the one thing allowed to be red.
+    bg: 0x0e2a52, mapBg: 0x0a1f3d,
+    hemi: [0xdce8ff, 0x33517e, 1.6], sun: [0xffffff, 0.25], fill: [0x9fc0ff, 0.2],
+    floors: {
+      path: [0.10, 0.21, 0.40],
+      room: [0.13, 0.25, 0.45],
+      visited: [0.18, 0.32, 0.53],
+      spawn: [0.16, 0.42, 0.55],
+      heartFloor: [0.42, 0.16, 0.22],
+      hintFlash: [0.85, 0.95, 1.0],
+    },
+    walls: { top: [0.055, 0.135, 0.28], side: [0.035, 0.095, 0.21] },
+    jitter: 0,
+    edges: { show: true, color: 0xd8ecff, opacity: 0.95, additive: false },
+    walker: 0xffffff, walkerHi: 0x9fd0ff, marker: 0xffffff,
+    orb: { color: 0xdcedff, emissive: 0x2a4a7a },
+    heart: '#ff5252',
+  },
+
+  amber: {
+    // monochrome amber phosphor terminal: everything is one hue, hierarchy
+    // comes from brightness alone
+    bg: 0x070300, mapBg: 0x050200,
+    hemi: [0xffc46b, 0x140a00, 0.8], sun: [0xffdf9e, 0.3], fill: [0x5c3a10, 0.25],
+    floors: {
+      path: [0.075, 0.038, 0.004],
+      room: [0.095, 0.050, 0.006],
+      visited: [0.140, 0.075, 0.010],
+      spawn: [0.200, 0.115, 0.020],
+      heartFloor: [0.260, 0.140, 0.020],
+      hintFlash: [1.0, 0.80, 0.35],
+    },
+    walls: { top: [0.030, 0.014, 0.001], side: [0.014, 0.006, 0.000] },
+    jitter: 0,
+    edges: { show: true, color: 0xffb000, opacity: 1.0, additive: false },
+    walker: 0xffe9c0, walkerHi: 0xffb000, marker: 0xffe9c0,
+    orb: { color: 0xffcf6e, emissive: 0x664100 },
+    heart: '#ffb000',
+  },
+
   solid: {
     bg: 0x0d1017, mapBg: 0x080a10,
     hemi: [0xc8cfe0, 0x555060, 1.5], sun: [0xffe8c8, 1.1], fill: [0x8a96c8, 0.8],
