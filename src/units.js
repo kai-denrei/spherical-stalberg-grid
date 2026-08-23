@@ -15,7 +15,7 @@
 // tick(t) (idle animation) }.
 
 import * as THREE from '../vendor/three.module.js';
-import { CREATURES, waveJelly, spherePts, bulletPts, heartPts } from './creatures.js?v=9dd0264c';
+import { CREATURES, waveJelly, spherePts, bulletPts, heartPts } from './creatures.js?v=cbe3419a';
 
 function normalizeToUnit(group) {
   group.updateMatrixWorld(true);
@@ -85,6 +85,91 @@ function makeDrone(cols) {
     body.position.y = 0.8 + Math.sin(t * 2.1) * 0.06;
   };
   g.userData.lift = 0.15;
+  normalizeToUnit(g);
+  g.userData.kind = 'mesh';
+  return g;
+}
+
+// corona — HokorobiTawaa's Coronavirus: armored spiked sphere, slows
+// itself when shot. Root stays lookAt-owned; the inner group spins.
+function makeCorona(cols) {
+  const g = new THREE.Group();
+  const inner = new THREE.Group();
+  inner.position.y = 0.75;
+  g.add(inner);
+  const core = new THREE.Mesh(new THREE.IcosahedronGeometry(0.62, 1),
+    new THREE.MeshLambertMaterial({ color: cols.walker }));
+  inner.add(core);
+  const spikeGeo = new THREE.ConeGeometry(0.11, 0.42, 5);
+  const spikeMat = new THREE.MeshLambertMaterial({ color: cols.walkerHi });
+  const up = new THREE.Vector3(0, 1, 0);
+  for (let i = 0; i < 14; i++) {
+    // fibonacci directions so the crown reads from every side
+    const y = 1 - (2 * (i + 0.5)) / 14;
+    const r = Math.sqrt(Math.max(0, 1 - y * y));
+    const a = i * 2.399963;
+    const d = new THREE.Vector3(r * Math.cos(a), y, r * Math.sin(a));
+    const spike = new THREE.Mesh(spikeGeo, spikeMat);
+    spike.position.copy(d).multiplyScalar(0.72);
+    spike.quaternion.setFromUnitVectors(up, d);
+    inner.add(spike);
+  }
+  g.userData.tick = (t) => { inner.rotation.y = t * 0.5; };
+  g.userData.lift = 0.12;
+  normalizeToUnit(g);
+  g.userData.kind = 'mesh';
+  return g;
+}
+
+// barbed — HokorobiTawaa's Barbed Mine: sea-mine that SPEEDS UP when
+// shot. Long barbs, an angry per-tick twist on the inner group.
+function makeMine(cols) {
+  const g = new THREE.Group();
+  const inner = new THREE.Group();
+  inner.position.y = 0.7;
+  g.add(inner);
+  const core = new THREE.Mesh(new THREE.SphereGeometry(0.55, 10, 8),
+    new THREE.MeshLambertMaterial({ color: cols.walker }));
+  inner.add(core);
+  const barbGeo = new THREE.CylinderGeometry(0.03, 0.09, 0.6, 5);
+  const barbMat = new THREE.MeshLambertMaterial({ color: cols.walkerHi });
+  const up = new THREE.Vector3(0, 1, 0);
+  for (let i = 0; i < 10; i++) {
+    const y = 1 - (2 * (i + 0.5)) / 10;
+    const r = Math.sqrt(Math.max(0, 1 - y * y));
+    const a = i * 2.399963;
+    const d = new THREE.Vector3(r * Math.cos(a), y, r * Math.sin(a));
+    const barb = new THREE.Mesh(barbGeo, barbMat);
+    barb.position.copy(d).multiplyScalar(0.72);
+    barb.quaternion.setFromUnitVectors(up, d);
+    inner.add(barb);
+  }
+  g.userData.tick = (t) => { inner.rotation.y = Math.sin(t * 1.5) * 0.5; };
+  g.userData.lift = 0.06;
+  normalizeToUnit(g);
+  g.userData.kind = 'mesh';
+  return g;
+}
+
+// knot — HokorobiTawaa's Solving Torus boss: accelerates when hit.
+// One torus-knot mesh, slow menacing spin + breath on the inner group.
+function makeKnot(cols) {
+  const g = new THREE.Group();
+  const inner = new THREE.Group();
+  inner.position.y = 0.85;
+  g.add(inner);
+  const knot = new THREE.Mesh(new THREE.TorusKnotGeometry(0.55, 0.15, 48, 8),
+    new THREE.MeshLambertMaterial({ color: cols.walker }));
+  inner.add(knot);
+  const eye = new THREE.Mesh(new THREE.SphereGeometry(0.16, 8, 8),
+    new THREE.MeshBasicMaterial({ color: cols.walkerHi }));
+  inner.add(eye);
+  g.userData.tick = (t) => {
+    inner.rotation.y = t * 0.4;
+    inner.rotation.x = Math.sin(t * 0.7) * 0.3;
+    inner.scale.setScalar(1 + 0.05 * Math.sin(t * 2.4));
+  };
+  g.userData.lift = 0.25;
   normalizeToUnit(g);
   g.userData.kind = 'mesh';
   return g;
@@ -394,6 +479,9 @@ export const UNITS = {
   jellyfish: { kind: 'cloud' },
   tank: { kind: 'mesh', make: makeTank },
   drone: { kind: 'mesh', make: makeDrone },
+  corona: { kind: 'mesh', make: makeCorona },
+  barbed: { kind: 'mesh', make: makeMine },
+  knot: { kind: 'mesh', make: makeKnot },
 };
 
 export const UNIT_NAMES = Object.keys(UNITS);

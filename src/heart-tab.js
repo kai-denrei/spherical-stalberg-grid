@@ -1,23 +1,28 @@
 // heart-tab.js — defend the Heart. An OPEN battlefield (~80% walkable;
 // walls are scattered obstacle clumps to maneuver around and shelter
-// behind, not corridors) with the Heart at the north pole. Waves of
-// creatures — amoebas, phages, jellyfish — pour from three SPAWN POINTS
-// (one per type, far from the pole; 3 hits to destroy) and beeline for
-// the Heart. Allies have infinite ammo and hold the line; the player
-// helps, or ranges out for pickups: shells, speed, health, and regen
-// charges that must be carried home. C / ⇄ commandeers any ally.
-// Win: destroy all spawn points and mop up. Lose: the Heart falls.
+// behind, not corridors) with the Heart at the north pole. Enemies are
+// INTRODUCED one type per wave (HokorobiTawaa's announce pattern): each
+// introduction creates that type's SPAWN POINT far from the pole — find
+// it and destroy it (3 hits). Fodder (phage/amoeba/jellyfish) is RUN
+// OVER: the tank is strong, ramming kills them free. The late roster is
+// borrowed from HokorobiTawaa and can NOT be rammed: corona (armored,
+// slows itself when shot), barbed (accelerates when shot), knot (BOSS).
+// Shells also blast walls open — clear your own path to the sources.
+// Allies hold the line; C / ⇄ commandeers. Pickups: bullet triads (+3
+// shells), speed, health, regen charges carried home.
+// Win: all types introduced, all spawn points dead, field clear.
+// Lose: the Heart falls.
 
 import * as THREE from '../vendor/three.module.js';
 import GUI from '../vendor/lil-gui.esm.js';
-import { generateSphereMesh, relax } from './grid.js?v=9dd0264c';
-import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=9dd0264c';
-import { mulberry32, randomSeed } from './rng.js?v=9dd0264c';
-import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3 } from './vec3.js?v=9dd0264c';
-import { CREATURES, waveJelly } from './creatures.js?v=9dd0264c';
-import { UNITS, UNIT_NAMES, buildUnit, makeOrbCloud, makeBulletCloud, makeDebris, ORB_FX, makeHeartCloud } from './units.js?v=9dd0264c';
-import { LOOKS, LOOK_NAMES } from './looks.js?v=9dd0264c';
-import { makeCellIndex } from './cellindex.js?v=9dd0264c';
+import { generateSphereMesh, relax } from './grid.js?v=cbe3419a';
+import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=cbe3419a';
+import { mulberry32, randomSeed } from './rng.js?v=cbe3419a';
+import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3 } from './vec3.js?v=cbe3419a';
+import { CREATURES, waveJelly } from './creatures.js?v=cbe3419a';
+import { UNITS, UNIT_NAMES, buildUnit, makeOrbCloud, makeBulletCloud, makeDebris, makeHeartCloud } from './units.js?v=cbe3419a';
+import { LOOKS, LOOK_NAMES } from './looks.js?v=cbe3419a';
+import { makeCellIndex } from './cellindex.js?v=cbe3419a';
 
 export function initHeartTab(root) {
   let active = false;
@@ -74,6 +79,21 @@ export function initHeartTab(root) {
       // treatment, so the push visibly matches the squeeze), then coast
       speed: (tt) => 0.3 + 1.5 * Math.pow(Math.max(0, Math.sin(tt * 3 + 0.4)), 2),
       hover: (tt) => 0.5 + 0.18 * Math.sin(tt * 3 - 0.9),
+    },
+    corona: {
+      // armored roll: slow and inevitable
+      speed: () => 0.7,
+      hover: (tt) => 0.12 + 0.03 * Math.sin(tt * 1.8),
+    },
+    barbed: {
+      // drifting mine: slow sway
+      speed: (tt) => 0.6 + 0.1 * Math.sin(tt * 1.2),
+      hover: () => 0.06,
+    },
+    knot: {
+      // the boss glides
+      speed: () => 0.55,
+      hover: (tt) => 0.3 + 0.06 * Math.sin(tt * 1.4),
     },
   };
 
@@ -155,7 +175,32 @@ export function initHeartTab(root) {
     amoeba: 0x66ff88,
     phage: 0xffb84d,
     jellyfish: 0xff5fd0,
+    corona: 0xff6a5a,   // HokorobiTawaa E_RED — armored tier
+    barbed: 0xff3020,   // E_RED2 — dangerous tier
+    knot: 0xff1f1f,     // boss: brightest red on the field
   };
+  // per-type combat spec. speed multiplies ENEMY_SPEED; size multiplies
+  // cellSide; rammable types die under the tank's treads for free, the
+  // rest hurt to touch and shrug the ram off. slowOnHit / accelOnHit are
+  // HokorobiTawaa's on-hit reactions (1.2 s, multiplies pace).
+  const ENEMY_SPEC = {
+    phage:     { hp: 1, speed: 1.15, size: 0.4,  rammable: true,  heartDmg: 1, erratic: true },
+    amoeba:    { hp: 1, speed: 0.75, size: 0.5,  rammable: true,  heartDmg: 1 },
+    jellyfish: { hp: 1, speed: 0.95, size: 0.45, rammable: true,  heartDmg: 1 },
+    corona:    { hp: 2, speed: 0.8,  size: 0.5,  rammable: false, heartDmg: 2, slowOnHit: 0.6 },
+    barbed:    { hp: 3, speed: 0.7,  size: 0.55, rammable: false, heartDmg: 2, accelOnHit: 1.9 },
+    knot:      { hp: 5, speed: 0.6,  size: 0.8,  rammable: false, heartDmg: 3, accelOnHit: 1.7, boss: true },
+  };
+  // one new threat per wave; its spawn point is created at announce time
+  const INTROS = [
+    { wave: 1, type: 'phage',     label: 'THE PHAGE',           role: 'agile swarm · RAM IT · hunt its source' },
+    { wave: 2, type: 'amoeba',    label: 'THE AMOEBA',          role: 'crawler · ram it · destroy the spawn' },
+    { wave: 3, type: 'jellyfish', label: 'THE JELLYFISH',       role: 'pulse drifter · rammable' },
+    { wave: 4, type: 'corona',    label: 'CORONAVIRUS',         role: 'armored ×2 · slows when shot · DO NOT RAM' },
+    { wave: 5, type: 'barbed',    label: 'BARBED MINE',         role: 'SPEEDS UP when shot · DO NOT RAM' },
+    { wave: 6, type: 'knot',      label: 'SOLVING TORUS · BOSS', role: 'accelerates when hit · shells only' },
+  ];
+  const LAST_INTRO_WAVE = INTROS[INTROS.length - 1].wave;
   const rewardMeshes = new Map(); // cell -> { obj, type } far-field rewards
   let heartHP = 10;
   const HEART_MAX = 10;
@@ -171,15 +216,25 @@ export function initHeartTab(root) {
   const Y_AXIS = new THREE.Vector3(0, 1, 0);
   const tmpN = new THREE.Vector3();
 
+  // groups (bullet triads, mesh units) carry geometry in children
+  function disposeObj(obj) {
+    obj.traverse((o) => {
+      if (o.geometry) o.geometry.dispose();
+      if (o.material) o.material.dispose();
+    });
+  }
+
   function clearOrbs() {
     for (const orb of orbMeshes.values()) {
       scene.remove(orb);
-      orb.geometry.dispose();
+      disposeObj(orb);
     }
     orbMeshes.clear();
   }
 
-  // one orb on a random open cell (never spawn/heart/occupied/under the creature)
+  // ammo pickup: THREE half-dotted Braille shells standing side-by-side
+  // on a random open cell (never spawn/heart/occupied/under the creature).
+  // The set reads as what it gives: +3 bullets.
   function spawnOneOrb() {
     const open = [];
     for (let i = 0; i < dungeon.tags.length; i++) {
@@ -188,18 +243,32 @@ export function initHeartTab(root) {
     }
     if (open.length === 0) return false;
     const ci = open[Math.floor(orbRng() * open.length)];
-    const r = cellSide * 0.19;
-    // Braille dotted sphere; treatment drawn from the five effects
-    const fx = ORB_FX[Math.floor(orbRng() * ORB_FX.length)];
-    const orb = makeOrbCloud(fx, { body: look().orb.color, hi: 0xffffff }, orbRng() * 6.283);
-    orb.scale.setScalar(r);
-    orb.userData.sizeScale = r;
+    const r = cellSide * 0.14;
+    const group = new THREE.Group();
+    const phase = orbRng() * 6.283;
+    const shells = [];
+    for (let k = -1; k <= 1; k++) {
+      const b = makeBulletCloud({ body: look().orb.color, hi: 0xffffff });
+      b.scale.setScalar(r);
+      b.position.set(k * r * 1.7, r * 1.1, 0); // side-by-side, noses up
+      group.add(b);
+      shells.push(b);
+    }
+    // transform-only idle: the triad spins about the surface normal, each
+    // shell bobs with a small phase offset
+    group.userData.tick = (t) => {
+      group.rotation.y = t * 0.9 + phase;
+      for (let k = 0; k < 3; k++) {
+        shells[k].position.y = r * (1.1 + 0.25 * Math.sin(t * 2.2 + phase + k * 2.1));
+      }
+    };
     const c = graph.centers[ci];
     const n = graph.normals[ci];
-    const p = add3(c, scale3(n, r * 1.15));
-    orb.position.set(p[0], p[1], p[2]);
-    scene.add(orb);
-    orbMeshes.set(ci, orb);
+    group.position.set(c[0], c[1], c[2]);
+    tmpN.set(n[0], n[1], n[2]);
+    group.quaternion.setFromUnitVectors(Y_AXIS, tmpN); // local +Y = surface normal
+    scene.add(group);
+    orbMeshes.set(ci, group);
     return true;
   }
 
@@ -212,10 +281,10 @@ export function initHeartTab(root) {
     const orb = orbMeshes.get(ci);
     if (!orb) return;
     scene.remove(orb);
-    orb.geometry.dispose();
+    disposeObj(orb);
     orbMeshes.delete(ci);
     absorbed++;
-    ammo = Math.min(AMMO_MAX, ammo + 1); // orbs are shells here, not food
+    ammo = Math.min(AMMO_MAX, ammo + 3); // a triad is three shells
     updateHud();
   }
 
@@ -552,9 +621,13 @@ export function initHeartTab(root) {
     }
     scene.add(playerMesh);
 
-    // fat marker so the player reads on the minimap
+    // minimap self-marker: a fat arrowhead nosing along the heading — the
+    // map is heading-up, so YOU are the big pulsing arrow pointing up.
+    // Sized against the SPHERE, not the cell: the map always frames the
+    // whole ball, so cell-relative sizes vanish on dense boards.
+    // Geometry pre-rotated so the cone's nose is +Z (lookAt convention).
     markerMesh = new THREE.Mesh(
-      new THREE.SphereGeometry(cellSide * 0.32, 12, 12),
+      new THREE.ConeGeometry(0.05, 0.115, 4).rotateX(Math.PI / 2),
       new THREE.MeshBasicMaterial({ color: look().marker }),
     );
     scene.add(markerMesh);
@@ -577,7 +650,9 @@ export function initHeartTab(root) {
     const p = add3(player.pos, scale3(n, lift));
     playerMesh.position.set(p[0], p[1], p[2]);
     playerMesh.scale.setScalar(unitScale * (playerMesh.userData.baseScale ?? 1));
-    markerMesh.position.set(p[0], p[1], p[2]);
+    // marker floats above the wall tops so nothing on the map occludes it
+    const mp = scale3(player.pos, 1 + params.wallHeight * 1.6);
+    markerMesh.position.set(mp[0], mp[1], mp[2]);
     // upright on the surface, facing the SMOOTHED direction (no snap)
     const h = player.smoothDir;
     tmpObj.position.copy(playerMesh.position);
@@ -585,6 +660,7 @@ export function initHeartTab(root) {
     tmpObj.lookAt(p[0] + h[0], p[1] + h[1], p[2] + h[2]);
     playerMesh.quaternion.copy(tmpObj.quaternion);
     // no extra rotation: lookAt with up=n already leaves body +Y ≈ normal
+    markerMesh.quaternion.copy(tmpObj.quaternion); // arrow nose = heading
   }
 
   // --- trench / third-person camera ----------------------------------------
@@ -895,10 +971,25 @@ export function initHeartTab(root) {
     const spAlive = spawnPoints.filter((s) => s.alive).length;
     statsEl.textContent =
       `HEART ${'♥'.repeat(Math.max(0, heartHP)).padEnd(HEART_MAX, '·')}   you ♥${playerHP}   allies ${allies}\n` +
-      `shells ${'●'.repeat(ammo).padEnd(AMMO_MAX, '·')} (${ammo})   wave ${wave} · hostiles ${alive} · spawn points ${spAlive}/3` +
+      `shells ${'●'.repeat(ammo).padEnd(AMMO_MAX, '·')} (${ammo})   wave ${wave} · hostiles ${alive} · spawn points ${spAlive}/${spawnPoints.length}` +
       (carryingRegen ? '   ⬤ CARRYING REGEN' : '') + `\n` +
       (manualActive() ? 'MANUAL — release keys to hand back control' : 'auto-wander') +
-      '   ·   C/⇄ commandeer · SPACE/✦ fire · kill the spawn points (3 hits)';
+      '   ·   RAM the small ones · shells for the red · shells breach walls · hunt the spawn points';
+  }
+
+  // wave announcement banner — HokorobiTawaa's "New Threat" card
+  const waveEl = root.querySelector('#h-wave');
+  let waveTimer = null;
+  function announceWave(intro) {
+    const tint = '#' + CREATURE_TINTS[intro.type].toString(16).padStart(6, '0');
+    waveEl.style.borderColor = tint;
+    waveEl.style.color = tint;
+    waveEl.innerHTML = `<div class="wave-num">WAVE ${intro.wave} · NEW THREAT</div>` +
+      `<div class="wave-name">${intro.label}</div>` +
+      `<div class="wave-role">${intro.role}</div>`;
+    waveEl.classList.remove('hidden');
+    clearTimeout(waveTimer);
+    waveTimer = setTimeout(() => waveEl.classList.add('hidden'), 3500);
   }
 
   // --- generation ----------------------------------------------------------
@@ -1077,42 +1168,19 @@ export function initHeartTab(root) {
   }
 
   function spawnEnemies() {
-    // heart-tab meaning: clear the creature roster and place the three
-    // SPAWN POINTS — far from the pole, spread apart, 3 hits each
+    // battle reset. Spawn points are no longer placed up front: each one
+    // arrives WITH its wave introduction (HokorobiTawaa's announce beat)
     clearEnemies();
-    for (const sp of spawnPoints) scene.remove(sp.obj);
+    for (const sp of spawnPoints) {
+      scene.remove(sp.obj);
+      disposeObj(sp.obj);
+      if (sp.mapMarker) { scene.remove(sp.mapMarker); disposeObj(sp.mapMarker); }
+    }
     spawnPoints.length = 0;
     wave = 0;
     waveClock = params.waveEvery * 0.6; // first wave arrives sooner
-    let maxD = 0;
-    for (let i = 0; i < dungeon.tags.length; i++) {
-      if (dungeon.tags[i] !== BLOCKED) maxD = Math.max(maxD, dungeon.distToHeart[i]);
-    }
-    const far = [];
-    for (let i = 0; i < dungeon.tags.length; i++) {
-      if (dungeon.tags[i] !== BLOCKED && dungeon.distToHeart[i] >= maxD * 0.55) far.push(i);
-    }
-    const types = Object.keys(CREATURE_TINTS);
-    const chosen = [];
-    for (const type of types) {
-      // greedy spread: farthest from already-chosen points
-      let best = -1, bs = -1;
-      for (const ci of far) {
-        let s = dungeon.distToHeart[ci];
-        for (const c of chosen) s += Math.min(20, hopEstimate(ci, c));
-        if (s > bs) { bs = s; best = ci; }
-      }
-      chosen.push(best);
-      const obj = makeOrbCloud('scatter', { body: CREATURE_TINTS[type], hi: 0xffffff }, whim() * 6.283);
-      const r = cellSide * 0.55;
-      obj.scale.setScalar(r);
-      obj.userData.sizeScale = r;
-      const c = graph.centers[best];
-      const n = graph.normals[best];
-      obj.position.set(c[0] + n[0] * r, c[1] + n[1] * r, c[2] + n[2] * r);
-      scene.add(obj);
-      spawnPoints.push({ type, ci: best, hp: 3, obj, alive: true });
-    }
+    clearTimeout(waveTimer);
+    waveEl.classList.add('hidden');
   }
 
   // cheap hop estimate for spreading spawn points (chord distance in cells)
@@ -1120,42 +1188,94 @@ export function initHeartTab(root) {
     return dist3(graph.centers[a], graph.centers[b]) / cellSide;
   }
 
+  // the introduced type's source: far from the pole, greedily spread from
+  // the spawn points already standing; 3 hits to destroy
+  function addSpawnPoint(type) {
+    let maxD = 0;
+    for (let i = 0; i < dungeon.tags.length; i++) {
+      if (dungeon.tags[i] !== BLOCKED) maxD = Math.max(maxD, dungeon.distToHeart[i]);
+    }
+    let best = -1, bs = -1;
+    for (let ci = 0; ci < dungeon.tags.length; ci++) {
+      if (dungeon.tags[ci] === BLOCKED || dungeon.distToHeart[ci] < maxD * 0.55) continue;
+      if (spawnPoints.some((s) => s.ci === ci)) continue;
+      let s = dungeon.distToHeart[ci];
+      for (const other of spawnPoints) s += Math.min(20, hopEstimate(ci, other.ci));
+      if (s > bs) { bs = s; best = ci; }
+    }
+    if (best === -1) best = dungeon.spawn;
+    const obj = makeOrbCloud('scatter', { body: CREATURE_TINTS[type], hi: 0xffffff }, whim() * 6.283);
+    const r = cellSide * 0.55;
+    obj.scale.setScalar(r);
+    obj.userData.sizeScale = r;
+    const c = graph.centers[best];
+    const n = graph.normals[best];
+    obj.position.set(c[0] + n[0] * r, c[1] + n[1] * r, c[2] + n[2] * r);
+    scene.add(obj);
+    // minimap beacon in the spawn's tint — dark until the player FINDS the
+    // source (comes close or lands a shell), then it pulses on the map.
+    // Sphere-relative size, same reasoning as the self-marker.
+    const mapMarker = new THREE.Mesh(
+      new THREE.SphereGeometry(0.035, 10, 10),
+      new THREE.MeshBasicMaterial({ color: CREATURE_TINTS[type] }));
+    const mm = scale3(c, 1 + params.wallHeight * 1.6);
+    mapMarker.position.set(mm[0], mm[1], mm[2]);
+    mapMarker.visible = false;
+    scene.add(mapMarker);
+    spawnPoints.push({ type, ci: best, hp: 3, obj, alive: true, found: false, mapMarker });
+  }
+
   function spawnWave() {
     wave++;
-    const count = params.waveSize + Math.floor(wave / 3);
+    const intro = INTROS.find((iv) => iv.wave === wave);
+    if (intro) {
+      addSpawnPoint(intro.type);
+      announceWave(intro);
+    }
+    const base = params.waveSize + Math.floor(wave / 3);
     for (const sp of spawnPoints) {
       if (!sp.alive) continue;
+      const spec = ENEMY_SPEC[sp.type];
+      // fodder floods; the dangerous tier comes at half strength; one boss
+      const count = spec.boss ? 1 : spec.rammable ? base : Math.max(1, Math.ceil(base / 2));
       for (let k = 0; k < count; k++) {
         const obj = buildUnit(sp.type, { walker: CREATURE_TINTS[sp.type], walkerHi: 0xffffff });
-        obj.scale.setScalar(cellSide * 0.45);
+        const scale0 = (obj.userData.baseScale ?? 1) * cellSide * spec.size;
+        obj.scale.setScalar(scale0);
         scene.add(obj);
         const exits = openNeighbors(sp.ci);
         enemies.push({
-          type: sp.type,
+          type: sp.type, spec, scale0,
           cur: sp.ci, prev: -1,
           next: exits.length ? exits[Math.floor(whim() * exits.length)] : sp.ci,
           prog: whim() * 0.4, pos: graph.centers[sp.ci].slice(), dir: [0, 1, 0],
           obj, alive: true, phase: whim() * 6.283,
+          hp: spec.hp, behMult: 1, behUntil: -1, touchCd: -1,
         });
       }
     }
     updateHud();
   }
 
-  const ENEMY_SPEED = 0.5; // cells per second toward the Heart
+  const ENEMY_SPEED = 0.5; // cells per second toward the Heart, fodder pace
   function updateEnemies(dt, tNow) {
     for (const e of enemies) {
       if (!e.alive) continue;
-      e.prog += ENEMY_SPEED * dt;
+      const spec = e.spec;
+      let pace = ENEMY_SPEED * spec.speed;
+      if (tNow < e.behUntil) pace *= e.behMult; // on-hit reaction window
+      // erratic (phage): HokorobiTawaa velocity bursts, 0.7×–1.3×
+      if (spec.erratic) pace *= 0.7 + 0.6 * (0.5 + 0.5 * Math.sin(tNow * 3.1 + e.phase * 7));
+      e.prog += pace * dt;
       while (e.prog >= 1) {
         e.prog -= 1;
         e.prev = e.cur;
         e.cur = e.next;
-        // heart-seeking: prefer strictly-descending distToHeart, with a
-        // little wobble so streams braid instead of forming a single file
+        // heart-seeking: drawn HARD toward the heart — only a sliver of
+        // wobble left so the streams braid but visibly converge
         const exits = openNeighbors(e.cur);
         const down = exits.filter((c) => dungeon.distToHeart[c] < dungeon.distToHeart[e.cur]);
-        const pool = (down.length && whim() > 0.15) ? down : exits;
+        const pool = (down.length && whim() > 0.05) ? down : exits;
         e.next = pool.length ? pool[Math.floor(whim() * pool.length)] : e.cur;
       }
       const a = graph.centers[e.cur];
@@ -1167,36 +1287,44 @@ export function initHeartTab(root) {
       const flat = sub3(raw, scale3(n, dot3(raw, n)));
       const l = Math.hypot(flat[0], flat[1], flat[2]);
       if (l > 1e-9) e.dir = scale3(flat, 1 / l);
-      const s = cellSide * 0.45;
-      e.obj.position.set(e.pos[0] + n[0] * s * 0.85, e.pos[1] + n[1] * s * 0.85, e.pos[2] + n[2] * s * 0.85);
+      const s = cellSide * spec.size;
+      const lift = s * (e.obj.userData.lift ?? 0.85);
+      e.obj.position.set(e.pos[0] + n[0] * lift, e.pos[1] + n[1] * lift, e.pos[2] + n[2] * lift);
       tmpObj.position.copy(e.obj.position);
       tmpObj.up.set(n[0], n[1], n[2]);
       tmpObj.lookAt(e.obj.position.x + e.dir[0], e.obj.position.y + e.dir[1], e.obj.position.z + e.dir[2]);
       e.obj.quaternion.copy(tmpObj.quaternion);
       if (e.obj.userData.tick) e.obj.userData.tick(tNow + e.phase);
 
-      // contact damage: the Heart, the player, or an ally — then it dies
+      // the Heart: contact costs heartDmg and consumes the creature
       if (dist3(e.pos, graph.centers[dungeon.heart]) < cellSide * 0.75) {
         killCreature(e);
-        heartHit();
+        heartHit(spec.heartDmg);
         continue;
       }
-      if (dist3(e.pos, player.pos) < cellSide * 0.42) {
-        killCreature(e);
-        playerHit();
-        continue;
+      // the player's tank is strong: fodder dies under the treads for
+      // free; the dangerous tier hurts to touch and shrugs the ram off
+      // (per-enemy cooldown so overlap isn't a blender)
+      const touchR = cellSide * Math.max(0.42, spec.size * 0.8);
+      if (dist3(e.pos, player.pos) < touchR) {
+        if (spec.rammable) { killCreature(e, true); checkVictory(); continue; }
+        if (tNow > e.touchCd) { e.touchCd = tNow + 1.2; playerHit(); }
       }
+      // allies are tanks too: same ram rule
       for (const fr of friendlies) {
         if (!fr.alive) continue;
-        if (dist3(e.pos, fr.pos) < cellSide * 0.42) {
-          killCreature(e);
-          fr.hp--;
-          if (fr.hp <= 0) {
-            fr.alive = false;
-            const fx = makeDebris(fr.obj, norm3(fr.pos));
-            scene.add(fx);
-            debris.push(fx);
-            scene.remove(fr.obj);
+        if (dist3(e.pos, fr.pos) < touchR) {
+          if (spec.rammable) { killCreature(e, true); }
+          else if (tNow > e.touchCd) {
+            e.touchCd = tNow + 1.2;
+            fr.hp--;
+            if (fr.hp <= 0) {
+              fr.alive = false;
+              const fx = makeDebris(fr.obj, norm3(fr.pos));
+              scene.add(fx);
+              debris.push(fx);
+              scene.remove(fr.obj);
+            }
           }
           break;
         }
@@ -1204,11 +1332,29 @@ export function initHeartTab(root) {
     }
   }
 
-  function killCreature(e) {
+  function killCreature(e, fx = false) {
     e.alive = false;
+    // mesh enemies blow apart like tanks; dot-clouds just wink out
+    if (fx && e.obj.userData.kind === 'mesh') {
+      const d = makeDebris(e.obj, norm3(e.pos));
+      scene.add(d);
+      debris.push(d);
+    }
     scene.remove(e.obj);
-    e.obj.geometry.dispose();
+    disposeObj(e.obj);
     updateHud();
+  }
+
+  // one shell's worth of damage: on-hit reaction (borrowed idiosyncrasy),
+  // shrink-step so damage reads, kill at zero. Returns true on kill.
+  function damageEnemy(e, tNow) {
+    const spec = e.spec;
+    if (spec.slowOnHit) { e.behMult = spec.slowOnHit; e.behUntil = tNow + 1.2; }
+    if (spec.accelOnHit) { e.behMult = spec.accelOnHit; e.behUntil = tNow + 1.2; }
+    e.hp--;
+    if (e.hp <= 0) { killCreature(e, true); return true; }
+    e.obj.scale.setScalar(e.scale0 * (0.7 + 0.3 * (e.hp / spec.hp)));
+    return false;
   }
 
   // --- firing: the shot leaves along the turret's CURRENT sweep ------------
@@ -1242,7 +1388,35 @@ export function initHeartTab(root) {
     projectiles.splice(i, 1);
   }
 
-  function updateProjectiles(dt) {
+  // shells breach walls: the cell blows apart the way a tank does (a
+  // stand-in wall block feeds makeDebris), opens to floor, and the
+  // heart-distance field is re-laid — everyone's nav sees the new gap,
+  // enemies included. Clearing your path can shorten theirs.
+  function blastWall(ci) {
+    dungeon.tags[ci] = PATH;
+    const c = graph.centers[ci];
+    const n = graph.normals[ci];
+    // wall hue, brightened: several looks keep sides near-black and the
+    // scatter has to read against them
+    const side = look().walls.side;
+    const block = new THREE.Mesh(
+      new THREE.BoxGeometry(cellSide * 0.9, params.wallHeight, cellSide * 0.9),
+      new THREE.MeshLambertMaterial({ color: new THREE.Color(
+        Math.min(1, side[0] * 4 + 0.1), Math.min(1, side[1] * 4 + 0.1), Math.min(1, side[2] * 4 + 0.1)) }));
+    const bp = scale3(c, 1 + params.wallHeight * 0.5);
+    block.position.set(bp[0], bp[1], bp[2]);
+    tmpN.set(n[0], n[1], n[2]);
+    block.quaternion.setFromUnitVectors(Y_AXIS, tmpN);
+    const fx = makeDebris(block, n);
+    scene.add(fx);
+    debris.push(fx);
+    block.geometry.dispose();
+    block.material.dispose();
+    dungeon.distToHeart = bfsDist(graph.adj, [dungeon.heart], (i) => dungeon.tags[i] !== BLOCKED);
+    buildGeometry();
+  }
+
+  function updateProjectiles(dt, tNow) {
     const v = 3.4 * cellSide;
     const maxDist = 10 * cellSide;
     for (let i = projectiles.length - 1; i >= 0; i--) {
@@ -1258,27 +1432,33 @@ export function initHeartTab(root) {
       p.mesh.quaternion.setFromUnitVectors(Y_AXIS, tmpV);
       p.mesh.rotateY(p.dist * 60);
 
-      // creature contact: one shell, one kill
+      // creature contact: fodder dies to one shell, the dangerous tier
+      // soaks its hp and reacts (slows / ACCELERATES) while it lasts
       let hit = false;
       for (const e of enemies) {
         if (!e.alive) continue;
-        if (dist3(p.pos, e.pos) < cellSide * 0.45) {
-          killCreature(e);
+        if (dist3(p.pos, e.pos) < cellSide * Math.max(0.45, e.spec.size * 0.8)) {
+          damageEnemy(e, tNow);
           hit = true;
           break;
         }
       }
-      // spawn points soak 3 hits
+      // spawn points soak 3 hits; a landed shell also marks the source
+      // FOUND — the minimap beacon starts pulsing
       if (!hit) {
         for (const sp of spawnPoints) {
           if (!sp.alive) continue;
           if (dist3(p.pos, graph.centers[sp.ci]) < cellSide * 0.6) {
             sp.hp--;
+            sp.found = true;
             hit = true;
             if (sp.hp <= 0) {
               sp.alive = false;
               scene.remove(sp.obj);
-              sp.obj.geometry.dispose();
+              disposeObj(sp.obj);
+              scene.remove(sp.mapMarker);
+              disposeObj(sp.mapMarker);
+              sp.mapMarker = null;
             } else {
               // wounded: shrink a step so damage reads
               const s = sp.obj.userData.sizeScale * (0.65 + 0.35 * (sp.hp / 3));
@@ -1291,7 +1471,7 @@ export function initHeartTab(root) {
       }
       if (hit) { killProjectile(i); checkVictory(); continue; }
 
-      // wall impact: nearest cell is a wall -> fizzle
+      // wall impact: the shell BREACHES it — one wall per shell
       let bestCi = -1, bd = Infinity;
       for (let ci = 0; ci < graph.centers.length; ci++) {
         const c = graph.centers[ci];
@@ -1299,9 +1479,12 @@ export function initHeartTab(root) {
         const d2 = dx * dx + dy * dy + dz * dz;
         if (d2 < bd) { bd = d2; bestCi = ci; }
       }
-      if ((bestCi !== -1 && dungeon.tags[bestCi] === BLOCKED) || p.dist > maxDist) {
+      if (bestCi !== -1 && dungeon.tags[bestCi] === BLOCKED) {
+        blastWall(bestCi);
         killProjectile(i);
+        continue;
       }
+      if (p.dist > maxDist) killProjectile(i);
     }
   }
 
@@ -1496,8 +1679,8 @@ export function initHeartTab(root) {
     }
   }
 
-  function heartHit() {
-    heartHP--;
+  function heartHit(dmg = 1) {
+    heartHP -= dmg;
     heartSprite.userData.hit(); // orange/red Wave flare
     updateHud();
     if (heartHP <= 0) loseGame('the heart is lost');
@@ -1531,7 +1714,7 @@ export function initHeartTab(root) {
     }
   }
 
-  function updateAllyShots(dt) {
+  function updateAllyShots(dt, tNow) {
     const v = 3.0 * cellSide;
     const maxDist = 4.5 * cellSide;
     for (let i = allyShots.length - 1; i >= 0; i--) {
@@ -1548,8 +1731,8 @@ export function initHeartTab(root) {
       let dead = false;
       for (const e of enemies) {
         if (!e.alive) continue;
-        if (dist3(p.pos, e.pos) < cellSide * 0.4) {
-          killCreature(e);
+        if (dist3(p.pos, e.pos) < cellSide * Math.max(0.4, e.spec.size * 0.8)) {
+          damageEnemy(e, tNow);
           dead = true;
           break;
         }
@@ -1568,7 +1751,10 @@ export function initHeartTab(root) {
 
   function checkVictory() {
     if (player.won) return;
-    if (spawnPoints.every((s) => !s.alive) && enemies.every((e) => !e.alive)) {
+    // every threat must have been introduced before the field can be won —
+    // an early spawn kill just buys quiet until the next announcement
+    if (wave >= LAST_INTRO_WAVE && spawnPoints.length > 0
+      && spawnPoints.every((s) => !s.alive) && enemies.every((e) => !e.alive)) {
       player.won = true;
       msgEl.innerHTML = `<div class="msg-head">transmission · combat log</div>` +
         `✦ the heart is safe<br>` +
@@ -1592,8 +1778,8 @@ export function initHeartTab(root) {
   gui.add(params, 'obstacles', 0.05, 0.4, 0.05).onFinishChange(regenerate);
   gui.add(params, 'friendlies', 0, 8, 1).onFinishChange(regenerate);
   gui.add(params, 'rewards', 0, 12, 1).onFinishChange(regenerate);
-  gui.add(params, 'orbs', 0, 40, 1).onFinishChange(regenerate);
-  gui.add(params, 'orbRespawn', 0, 30, 1).name('orb respawn (s)');
+  gui.add(params, 'orbs', 0, 40, 1).name('bullet triads').onFinishChange(regenerate);
+  gui.add(params, 'orbRespawn', 0, 30, 1).name('triad respawn (s)');
   const seedCtrl = gui.add(params, 'seed', 0, 99999, 1).onFinishChange(regenerate);
   gui.add(params, 'points', 150, 8000, 50).name('sample points').onFinishChange(regenerate);
   gui.add(params, 'rooms', 2, 24, 1).onFinishChange(regenerate);
@@ -1631,7 +1817,10 @@ export function initHeartTab(root) {
     }
     if (!player.won) {
       waveClock += dt;
-      if (waveClock >= params.waveEvery && spawnPoints.some((s) => s.alive)) {
+      // waves keep coming while introductions remain, even if the player
+      // has razed every spawn point standing — the next threat still lands
+      if (waveClock >= params.waveEvery
+        && (wave < LAST_INTRO_WAVE || spawnPoints.some((s) => s.alive))) {
         waveClock = 0;
         spawnWave();
       }
@@ -1639,10 +1828,16 @@ export function initHeartTab(root) {
     updateEnemies(dt, t);
     updateFriendlies(dt, t);
     updateAllyFire(dt);
-    updateAllyShots(dt);
+    updateAllyShots(dt, t);
     checkRewards();
-    updateProjectiles(dt);
-    for (const sp of spawnPoints) if (sp.alive) sp.obj.userData.tick(t);
+    updateProjectiles(dt, t);
+    for (const sp of spawnPoints) {
+      if (!sp.alive) continue;
+      sp.obj.userData.tick(t);
+      // proximity discovers the source: the minimap beacon lights up
+      if (!sp.found && dist3(player.pos, graph.centers[sp.ci]) < cellSide * 5) sp.found = true;
+    }
+    checkVictory(); // ram kills and heart-contact deaths can end it too
     updateHud();
     placeActors();
 
@@ -1679,6 +1874,7 @@ export function initHeartTab(root) {
     // main view
     scene.background = mainBg;
     markerMesh.visible = false;
+    for (const sp of spawnPoints) if (sp.mapMarker) sp.mapMarker.visible = false;
     // in PoV the camera sits inside the creature — hide it there
     playerMesh.visible = params.view === 'third';
     renderer.render(scene, camera);
@@ -1694,6 +1890,14 @@ export function initHeartTab(root) {
     mapCamera.updateProjectionMatrix();
     scene.background = mapBg;
     markerMesh.visible = true;
+    markerMesh.scale.setScalar(1 + 0.25 * Math.sin(t * 5)); // pulse: YOU
+    // discovered sources pulse in their own tint
+    for (const sp of spawnPoints) {
+      if (sp.mapMarker && sp.alive && sp.found) {
+        sp.mapMarker.visible = true;
+        sp.mapMarker.scale.setScalar(1 + 0.45 * Math.sin(t * 4 + sp.ci));
+      }
+    }
     playerMesh.visible = true;
     mapRenderer.render(scene, mapCamera);
   }
@@ -1739,12 +1943,37 @@ export function initHeartTab(root) {
     snapCamera();
   }
 
-  // ?tick=N synchronously simulates N seconds of wandering (demo/debug —
-  // headless virtual time doesn't advance performance.now, so real motion
-  // can't be screenshot-verified without this)
+  // ?wave=N force-runs N wave beats (introductions included) — headless
+  // verification of the announce/spawn flow without waiting wall-clock
+  const waveN = parseInt(urlParams.get('wave') || '0', 10);
+  for (let i = 0; i < waveN; i++) spawnWave();
+
+  // ?found=1 marks every spawn point discovered (minimap beacon check)
+  if (urlParams.get('found') === '1') for (const sp of spawnPoints) sp.found = true;
+
+  // ?blast=N breaches the N wall cells nearest the player — exercises the
+  // carve + debris + rebuild path without needing a live shot
+  const blastN = parseInt(urlParams.get('blast') || '0', 10);
+  for (let i = 0; i < blastN; i++) {
+    let best = -1, bd = Infinity;
+    for (let ci = 0; ci < dungeon.tags.length; ci++) {
+      if (dungeon.tags[ci] !== BLOCKED) continue;
+      const d = dist3(player.pos, graph.centers[ci]);
+      if (d < bd) { bd = d; best = ci; }
+    }
+    if (best === -1) break;
+    blastWall(best);
+  }
+
+  // ?tick=N synchronously simulates N seconds (demo/debug — headless
+  // virtual time doesn't advance performance.now, so real motion can't be
+  // screenshot-verified without this). Enemies advance too.
   const tickN = parseFloat(urlParams.get('tick') || '0');
   if (tickN > 0) {
-    for (let s = 0; s < tickN; s += 0.05) advanceMotion(0.05);
+    for (let s = 0; s < tickN; s += 0.05) {
+      advanceMotion(0.05);
+      updateEnemies(0.05, s);
+    }
     placeActors();
     snapCamera();
   }

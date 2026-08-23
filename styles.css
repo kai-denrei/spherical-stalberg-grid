@@ -222,6 +222,48 @@ html, body {
   display: none;
 }
 
+/* --- wave announcement banner (heart tab): the "New Threat" card ------- */
+/* border/text color are set inline per enemy tint by announceWave() */
+#h-wave {
+  position: absolute;
+  top: 16%;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 7;
+  min-width: 260px;
+  max-width: 82vw;
+  padding: 10px 22px 12px;
+  background: linear-gradient(180deg, rgba(14, 8, 8, 0.9), rgba(8, 4, 4, 0.9));
+  border: 1px solid;
+  border-radius: 10px;
+  text-align: center;
+  font: 13px ui-monospace, Menlo, monospace;
+  pointer-events: none;
+  animation: wave-pop 0.35s ease-out;
+}
+#h-wave.hidden { display: none; }
+#h-wave .wave-num {
+  font-size: 10px;
+  letter-spacing: 0.32em;
+  text-transform: uppercase;
+  opacity: 0.8;
+}
+#h-wave .wave-name {
+  font-size: 19px;
+  letter-spacing: 0.14em;
+  margin: 4px 0 2px;
+  text-shadow: 0 0 10px currentColor;
+}
+#h-wave .wave-role {
+  font-size: 12px;
+  opacity: 0.85;
+  color: #d8e2ea;
+}
+@keyframes wave-pop {
+  from { opacity: 0; transform: translateX(-50%) scale(0.85); }
+  to   { opacity: 1; transform: translateX(-50%) scale(1); }
+}
+
 /* lil-gui inside a tab wrapper */
 .tab .lil-gui.root {
   position: absolute;
