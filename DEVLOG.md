@@ -6,6 +6,23 @@ Demo links assume `npm run serve` (port 8144) or the
 
 ---
 
+## `05f1891` — The unit roster, and dots vs polygons
+
+`src/units.js`: the three dot-cloud creatures plus two new low-poly mesh
+units (tank, drone), a spawn dropdown on the maze tab, and any unit as
+the organic tab's main creature. The tank answered a design question:
+for a battle game with hundreds of units, which construction wins —
+half-dotted or polygons? The honest answer is that the axis isn't dots
+vs polys, it's *where the animation runs*. Our clouds re-pose ~700
+points in JS every frame per instance — charming at 1 unit, 210k
+point transforms/frame at 300. Low-poly meshes are static geometry the
+GPU transforms; animation is a handful of transform updates (turret
+rotation, hover bob), and InstancedMesh collapses hundreds of units into
+one draw call per type. So: mesh units for crowds, dot-clouds reserved
+for hero units — or, later, waveJelly moved into a vertex shader, which
+would let clouds scale too. The roster encodes the split as
+`kind: 'cloud' | 'mesh'` so both coexist and the choice is per-unit.
+
 ## `f9fddfd` — Four visual identities
 
 `src/looks.js` centralizes every color decision — backgrounds, light
