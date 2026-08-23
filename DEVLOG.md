@@ -6,6 +6,17 @@ Demo links assume `npm run serve` (port 8144) or the
 
 ---
 
+## `36a4b11` — The dev log, readable in-app
+
+Clicking the cache-bust badge (bottom-right) now opens this document in
+an overlay. `src/devlog.js` fetches `DEVLOG.md` with `cache: no-store`
+and renders it with a ~30-line markdown converter that handles exactly
+the constructs used here (headings, rules, paragraphs, code/bold/italic/
+links) — HTML-escaped before any tags are introduced. The badge script
+is toolkit-owned and reinstall-overwritten, so the click hook attaches
+from outside in the capture phase and parks the original copy-token
+action with `stopPropagation`. `?devlog=1` deep-links straight to it.
+
 ## `8815ba0` — Manual override: WASD claims control, auto resumes on idle
 
 Any WASD/arrow press now switches auto-wander **off** — the walker stands
