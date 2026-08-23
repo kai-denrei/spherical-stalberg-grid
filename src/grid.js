@@ -19,12 +19,12 @@
 // domain is a sphere (tangent-plane projection + reprojection). The merge
 // and subdivision bookkeeping is identical to the 2D version.
 
-import { mulberry32 } from './rng.js?v=6a97da9f';
-import { bestCandidateSphere } from './sample.js?v=6a97da9f';
-import { sphericalDelaunay } from './hull.js?v=6a97da9f';
+import { mulberry32 } from './rng.js?v=1663e0b3';
+import { bestCandidateSphere } from './sample.js?v=1663e0b3';
+import { sphericalDelaunay } from './hull.js?v=1663e0b3';
 import {
   sub3, add3, scale3, dot3, cross3, len3, norm3, mean3, tangentBasis,
-} from './vec3.js?v=6a97da9f';
+} from './vec3.js?v=1663e0b3';
 
 const QUAD_ANGLE_MIN = 0.2 * Math.PI; // 36°  (same limits as the 2D version)
 const QUAD_ANGLE_MAX = 0.9 * Math.PI; // 162°
@@ -73,62 +73,81 @@ function legitQuad(points, quad) {
   return signs.size === 1 && maxAng <= QUAD_ANGLE_MAX && minAng >= QUAD_ANGLE_MIN;
 }
 
-// Same tabu-driven greedy merge as 2D. quadBias in (0,1]: probability of
-// accepting a legal merge (lower -> more leftover triangles -> different
-// grid character after subdivision).
+// Tabu-driven random merge, INCREMENTAL version. Semantics match the 2D
+// original — pick a uniformly random mergeable edge, merge if the quad is
+// legit (and passes quadBias), else tabu it forever — but instead of
+// rebuilding edge counts and rescanning the triangle list per merge
+// (≈O(n²) total, 92% of generation time at n=8000), it maintains an
+// edge→incident-triangles map and a candidate pool with O(1) swap-remove
+// random picks. When a pair merges, only the 5 edges of the two dead
+// triangles change state. Total ≈O(n). Note: consumes the rng stream
+// differently than the old implementation, so the same seed produces a
+// different (equally valid) board than pre-incremental builds.
 function mergeToQuads(points, triangles, rng, quadBias = 1) {
-  let tris = triangles.map((t) => t.slice());
-  const prequads = [];
-  const tabu = new Set();
+  const alive = new Uint8Array(triangles.length).fill(1);
 
-  for (;;) {
-    const counts = new Map();
-    for (const t of tris) {
-      const es = [edgeKey(t[0], t[1]), edgeKey(t[1], t[2]), edgeKey(t[2], t[0])];
-      for (const e of es) {
-        if (tabu.has(e)) continue;
-        counts.set(e, (counts.get(e) || 0) + 1);
-      }
+  // edge key -> indices of incident triangles (exactly 2 on a closed mesh)
+  const edgeTris = new Map();
+  for (let ti = 0; ti < triangles.length; ti++) {
+    const t = triangles[ti];
+    for (let i = 0; i < 3; i++) {
+      const key = edgeKey(t[i], t[(i + 1) % 3]);
+      let list = edgeTris.get(key);
+      if (list === undefined) { list = []; edgeTris.set(key, list); }
+      list.push(ti);
     }
-    let candidates = [];
-    for (const [key, c] of counts) {
-      if (c > 1) candidates.push(key.split('-').map(Number));
-    }
-    if (candidates.length === 0) break;
-
-    let mergedThisRound = false;
-    while (candidates.length > 0) {
-      const idx = Math.floor(rng() * candidates.length);
-      const [ea, eb] = candidates.splice(idx, 1)[0];
-
-      const mergeIdx = [];
-      const opp = [];
-      for (let i = 0; i < tris.length; i++) {
-        const t = tris[i];
-        if (t.includes(ea) && t.includes(eb)) {
-          mergeIdx.push(i);
-          for (const v of t) if (v !== ea && v !== eb) opp.push(v);
-        }
-      }
-      if (mergeIdx.length !== 2) continue;
-
-      const candQuad = [ea, opp[0], eb, opp[1]];
-
-      if (legitQuad(points, candQuad) && rng() < quadBias) {
-        prequads.push(candQuad);
-        mergeIdx.sort((x, y) => y - x);
-        tris.splice(mergeIdx[0], 1);
-        tris.splice(mergeIdx[1], 1);
-        mergedThisRound = true;
-        break;
-      } else {
-        tabu.add(edgeKey(ea, eb));
-      }
-    }
-    if (!mergedThisRound) break;
   }
 
-  return { triangles: tris, prequads };
+  // candidate pool: every edge with exactly 2 live triangles. Array with a
+  // key->position index for O(1) uniform pick and O(1) removal.
+  const pool = [];
+  const poolPos = new Map();
+  const poolAdd = (key) => {
+    if (!poolPos.has(key)) { poolPos.set(key, pool.length); pool.push(key); }
+  };
+  const poolRemove = (key) => {
+    const pos = poolPos.get(key);
+    if (pos === undefined) return;
+    const last = pool.pop();
+    poolPos.delete(key);
+    if (pos < pool.length) { pool[pos] = last; poolPos.set(last, pos); }
+  };
+  for (const [key, list] of edgeTris) {
+    if (list.length === 2) poolAdd(key);
+  }
+
+  const prequads = [];
+  while (pool.length > 0) {
+    const key = pool[Math.floor(rng() * pool.length)];
+    const [ea, eb] = key.split('-').map(Number);
+    const [ta, tb] = edgeTris.get(key);
+
+    const opp = [];
+    for (const ti of [ta, tb]) {
+      for (const v of triangles[ti]) if (v !== ea && v !== eb) opp.push(v);
+    }
+    const candQuad = [ea, opp[0], eb, opp[1]];
+
+    if (legitQuad(points, candQuad) && rng() < quadBias) {
+      prequads.push(candQuad);
+      alive[ta] = 0;
+      alive[tb] = 0;
+      // every edge of the dead pair leaves the pool: the shared edge is
+      // consumed, the other four now border at most one live triangle
+      for (const ti of [ta, tb]) {
+        const t = triangles[ti];
+        for (let i = 0; i < 3; i++) poolRemove(edgeKey(t[i], t[(i + 1) % 3]));
+      }
+    } else {
+      poolRemove(key); // tabu
+    }
+  }
+
+  const leftover = [];
+  for (let ti = 0; ti < triangles.length; ti++) {
+    if (alive[ti]) leftover.push(triangles[ti].slice());
+  }
+  return { triangles: leftover, prequads };
 }
 
 // --- stage 4: subdivide every face into quads ------------------------------

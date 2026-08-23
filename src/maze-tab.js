@@ -6,10 +6,10 @@
 
 import * as THREE from '../vendor/three.module.js';
 import GUI from '../vendor/lil-gui.esm.js';
-import { generateSphereMesh, relax } from './grid.js?v=6a97da9f';
-import { generateDungeon, BLOCKED, PATH, ROOM } from './dungeon.js?v=6a97da9f';
-import { mulberry32, randomSeed } from './rng.js?v=6a97da9f';
-import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3 } from './vec3.js?v=6a97da9f';
+import { generateSphereMesh, relax } from './grid.js?v=1663e0b3';
+import { generateDungeon, BLOCKED, PATH, ROOM } from './dungeon.js?v=1663e0b3';
+import { mulberry32, randomSeed } from './rng.js?v=1663e0b3';
+import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3 } from './vec3.js?v=1663e0b3';
 
 export function initMazeTab(root) {
   let active = false;
@@ -597,7 +597,7 @@ export function initMazeTab(root) {
   const speedCtrl = gui.add(params, 'speed', 0.2, 4, 0.1).name('wander speed');
   gui.add(params, 'autoResume', 1, 10, 0.5).name('auto resume (s)');
   const seedCtrl = gui.add(params, 'seed', 0, 99999, 1).onFinishChange(regenerate);
-  gui.add(params, 'points', 150, 1200, 10).name('sample points').onFinishChange(regenerate);
+  gui.add(params, 'points', 150, 8000, 50).name('sample points').onFinishChange(regenerate);
   gui.add(params, 'rooms', 2, 12, 1).onFinishChange(regenerate);
   gui.add(params, 'roomRadius', 1, 4, 1).name('room radius').onFinishChange(regenerate);
   gui.add(params, 'extraCorridors', 0, 5, 1).name('extra corridors').onFinishChange(regenerate);
@@ -672,8 +672,11 @@ export function initMazeTab(root) {
   // (handy for screenshotting specific configurations)
   const urlParams = new URLSearchParams(location.search);
   const wallOverride = parseFloat(urlParams.get('wall') || '');
+  const pointsOverride = parseInt(urlParams.get('points') || '', 10);
+  if (Number.isFinite(pointsOverride)) params.points = Math.min(16000, Math.max(150, pointsOverride));
   if (Number.isFinite(wallOverride)) params.wallHeight = wallOverride;
   if (urlParams.get('view') === 'third') { params.view = 'third'; viewCtrl.updateDisplay(); }
+  gui.controllersRecursive().forEach((c) => c.updateDisplay());
 
   regenerate();
 

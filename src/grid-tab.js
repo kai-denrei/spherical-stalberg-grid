@@ -6,8 +6,8 @@ import { OrbitControls } from '../vendor/OrbitControls.js';
 import GUI from '../vendor/lil-gui.esm.js';
 import {
   generateSphereMesh, relaxStep, squarenessError, quadErrors, valences,
-} from './grid.js?v=6a97da9f';
-import { mulberry32, randomSeed } from './rng.js?v=6a97da9f';
+} from './grid.js?v=1663e0b3';
+import { mulberry32, randomSeed } from './rng.js?v=1663e0b3';
 
 export function initGridTab(root) {
   let active = true;
@@ -286,7 +286,7 @@ export function initGridTab(root) {
   const gGen = gui.addFolder('generation');
   const seedCtrl = gGen.add(params, 'seed', 0, 99999, 1).name('seed');
   seedCtrl.onFinishChange(regenerate);
-  gGen.add(params, 'points', 50, 2000, 10).name('sample points').onFinishChange(regenerate);
+  gGen.add(params, 'points', 50, 8000, 50).name('sample points').onFinishChange(regenerate);
   gGen.add(params, 'candidates', 2, 40, 1).name('blue-noise k').onFinishChange(regenerate);
   gGen.add(params, 'quadBias', 0, 1, 0.05).name('merge bias').onFinishChange(regenerate);
   gGen.add(params, 'randomize').name('🎲 random seed');
