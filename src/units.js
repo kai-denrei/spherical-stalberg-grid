@@ -15,7 +15,7 @@
 // tick(t) (idle animation) }.
 
 import * as THREE from '../vendor/three.module.js';
-import { CREATURES, waveJelly, spherePts, bulletPts, heartPts } from './creatures.js?v=8cc88854';
+import { CREATURES, waveJelly, spherePts, bulletPts, heartPts } from './creatures.js?v=679c9aa3';
 
 function normalizeToUnit(group) {
   group.updateMatrixWorld(true);
@@ -69,6 +69,11 @@ function makeTank(cols) {
   outline(turretBox, edgeWhite);
   const barrel = add(new THREE.CylinderGeometry(0.06, 0.085, 1.5, 8), accent, 0, 0.04, 1.15, turret);
   barrel.rotation.x = Math.PI / 2;
+  // cannon heat sleeve: a collar around the barrel's middle that the game
+  // glows red-hot after a shot and cools back to gunmetal (userData ref)
+  const sleeve = add(new THREE.CylinderGeometry(0.105, 0.105, 0.45, 8),
+    new THREE.MeshBasicMaterial({ color: 0x232833 }), 0, 0.04, 0.95, turret);
+  sleeve.rotation.x = Math.PI / 2;
   // shell rack: 3×3 dots on the turret roof, row-major — index < ammo lit
   const dotGeo = new THREE.SphereGeometry(0.05, 6, 6);
   const ammoDots = [];
@@ -97,6 +102,7 @@ function makeTank(cols) {
   g.userData.turret = turret; // battle aims along this group's world +Z
   g.userData.ammoDots = ammoDots;
   g.userData.laserGuns = laserGuns;
+  g.userData.heatSleeve = sleeve;
   g.userData.tick = (t) => { turret.rotation.y = Math.sin(t * 0.6) * 0.7; };
   g.userData.lift = 0.02;
   normalizeToUnit(g);

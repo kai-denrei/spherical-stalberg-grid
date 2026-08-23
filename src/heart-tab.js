@@ -15,21 +15,21 @@
 
 import * as THREE from '../vendor/three.module.js';
 import GUI from '../vendor/lil-gui.esm.js';
-import { generateSphereMesh, relax } from './grid.js?v=8cc88854';
-import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=8cc88854';
-import { mulberry32, randomSeed } from './rng.js?v=8cc88854';
-import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3 } from './vec3.js?v=8cc88854';
-import { CREATURES, waveJelly } from './creatures.js?v=8cc88854';
-import { UNITS, UNIT_NAMES, buildUnit, makeOrbCloud, makeBulletCloud, makeDebris, makeDotBurst, makeHeartCloud } from './units.js?v=8cc88854';
-import { LOOKS, LOOK_NAMES } from './looks.js?v=8cc88854';
-import { makeCellIndex } from './cellindex.js?v=8cc88854';
+import { generateSphereMesh, relax } from './grid.js?v=679c9aa3';
+import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=679c9aa3';
+import { mulberry32, randomSeed } from './rng.js?v=679c9aa3';
+import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3 } from './vec3.js?v=679c9aa3';
+import { CREATURES, waveJelly } from './creatures.js?v=679c9aa3';
+import { UNITS, UNIT_NAMES, buildUnit, makeOrbCloud, makeBulletCloud, makeDebris, makeDotBurst, makeHeartCloud } from './units.js?v=679c9aa3';
+import { LOOKS, LOOK_NAMES } from './looks.js?v=679c9aa3';
+import { makeCellIndex } from './cellindex.js?v=679c9aa3';
 
 export function initHeartTab(root) {
   let active = false;
 
   const params = {
     seed: 7,
-    points: 800, // first-stage size: small enough to read, hunt, and win
+    points: 150, // round 1 board — startRound() drives this upward per round
     rooms: 12,          // unused by the open-field terrain, kept for the carve call
     roomRadius: 3,
     extraCorridors: 4,
@@ -204,7 +204,12 @@ export function initHeartTab(root) {
     { wave: 5, type: 'barbed',    label: 'BARBED MINE',         role: 'SPEEDS UP when shot' },
     { wave: 6, type: 'knot',      label: 'SOLVING TORUS · BOSS', role: 'accelerates when hit · 3 heart damage' },
   ];
-  const LAST_INTRO_WAVE = INTROS[INTROS.length - 1].wave;
+  // ROUNDS: clear every spawn point to advance. Each round the board grows
+  // and one more threat type joins the schedule — round 1 fields only the
+  // three rammable fodder types; corona/barbed/knot arrive in rounds 2/3/4.
+  let round = 1;
+  const roundPoints = () => Math.min(2400, 100 + 50 * round); // r1=150, r2=200…
+  const introCount = () => Math.min(INTROS.length, 2 + round); // r1=3 types
   const rewardMeshes = new Map(); // cell -> { obj, type } far-field rewards
   let heartHP = 10;
   const HEART_MAX = 10;
@@ -692,7 +697,10 @@ export function initHeartTab(root) {
     const prof = MOVES[params.creature];
     const baseLift = creatureGeo ? 0.85 : (playerMesh.userData.lift ?? 0.05);
     const lift = unitScale * (baseLift + (prof ? prof.hover(simTime) : 0));
-    const p = add3(player.pos, scale3(n, lift));
+    let p = add3(player.pos, scale3(n, lift));
+    // recoil: the hull jolts back along the heading and eases home
+    const rf = recoilFactor();
+    if (rf > 0) p = add3(p, scale3(player.smoothDir, -unitScale * 0.5 * rf * rf));
     playerMesh.position.set(p[0], p[1], p[2]);
     playerMesh.scale.setScalar(unitScale * (playerMesh.userData.baseScale ?? 1));
     // marker floats above the wall tops so nothing on the map occludes it
@@ -714,8 +722,10 @@ export function initHeartTab(root) {
     const c = player.pos;
     const n = norm3(c);
     const h = player.smoothDir;
-    // suspension dip while a ram bump is live: sink the eye, ease out
-    const dip = cellSide * 0.55 * bumpFactor() * bumpFactor();
+    // suspension dip while a ram bump is live: sink the eye, ease out.
+    // Recoil pulls the eye straight back along the heading instead.
+    const dip = cellSide * 0.95 * bumpFactor() * bumpFactor();
+    const kick = cellSide * 0.5 * recoilFactor() * recoilFactor();
     let eye, look;
     if (params.view === 'third') {
       // behind and above; pulls back as the creature grows so it stays framed
@@ -729,6 +739,7 @@ export function initHeartTab(root) {
       look = add3(add3(c, scale3(n, params.wallHeight * 0.28)), scale3(h, cellSide * 2.4));
     }
     if (dip > 0) eye = add3(eye, scale3(n, -dip));
+    if (kick > 0) eye = add3(eye, scale3(h, -kick));
     camGoal.pos.set(eye[0], eye[1], eye[2]);
     tmpCam.position.copy(camGoal.pos);
     tmpCam.up.set(n[0], n[1], n[2]);
@@ -776,6 +787,9 @@ export function initHeartTab(root) {
     return best;
   }
 
+  // NOTE: reaching the heart is NOT a win here (that's the maze tabs'
+  // rule) — the pole is home turf. The only victory is checkVictory's:
+  // every spawn point destroyed and the field cleared.
   function arriveAt(cell) {
     player.prev = player.cur;
     player.cur = cell;
@@ -783,16 +797,6 @@ export function initHeartTab(root) {
     player.visited.add(cell);
     paintCell(player.prev, floorColorOf(player.prev));
     updateHud();
-
-    if (cell === dungeon.heart && !player.won) {
-      player.won = true;
-      msgEl.innerHTML = `<div class="msg-head">transmission · sector log</div>` +
-        `💗 the creature found the heart<br>` +
-        `${player.moves} moves · ${absorbed} orbs absorbed · ` +
-        `size ×${(unitScale / baseUnitScale).toFixed(2)}<br>` +
-        `<button class="msg-regen">⟲ regenerate</button>`;
-      msgEl.classList.remove('hidden');
-    }
   }
 
   // called once per frame: steer, glide (creature-paced), respawn, absorb
@@ -819,7 +823,7 @@ export function initHeartTab(root) {
       const drive = keys.slow ? -0.55 : keys.fast ? 1.45 : 1;
       if (drive !== 0) {
         const v = params.speed * speedBonus * cellSide * 1.6 * drive
-          * (1 - 0.5 * bumpFactor()); // the run-over drag
+          * (1 - 0.65 * bumpFactor()); // the run-over drag
         const step = scale3(player.heading, v * dt);
         let cand = norm3(add3(player.pos, step));
         if (freeBlocked(cand)) {
@@ -898,7 +902,7 @@ export function initHeartTab(root) {
     // manual: motion only while W/S are held; auto: the creature's own pace
     const prof = MOVES[params.creature];
     const pace = params.speed * speedBonus * (prof ? prof.speed(simTime) : 1)
-      * (1 - 0.5 * bumpFactor()); // the run-over drag
+      * (1 - 0.65 * bumpFactor()); // the run-over drag
     player.prog += (pace * cellSide * dt) / player.segLen;
     while (player.prog >= 1 && !player.won) {
       const carry = (player.prog - 1) * player.segLen; // leftover distance
@@ -939,9 +943,20 @@ export function initHeartTab(root) {
   // ram bump: running something over has WEIGHT — a short window where the
   // tank loses pace and the camera dips, like the suspension taking it.
   // Countdown-seconds (not a timestamp) so it works on both clocks.
-  const BUMP_LEN = 0.35;
+  const BUMP_LEN = 0.5;
   let bumpLeft = 0;
   const bumpFactor = () => Math.max(0, bumpLeft / BUMP_LEN);
+
+  // cannon: firing kicks the tank back (recoil) and heats the barrel
+  // sleeve red-hot — no second shell until it cools over 3 s. The sleeve
+  // IS the cooldown gauge; the HUD only echoes it.
+  const CANNON_COOL = 3.0;
+  const RECOIL_LEN = 0.25;
+  let cannonHeat = 0;
+  let recoilLeft = 0;
+  const recoilFactor = () => Math.max(0, recoilLeft / RECOIL_LEN);
+  const sleeveCool = new THREE.Color(0x232833);
+  const sleeveHot = new THREE.Color(0xff2a10);
 
   const STEER_RATE = 2.6; // rad/s while a steer key is held
   function rotate(theta) {
@@ -1035,15 +1050,38 @@ export function initHeartTab(root) {
   const msgEl = root.querySelector('#h-msg');
   // the modal's regenerate button (event delegation survives innerHTML swaps)
   msgEl.addEventListener('click', (ev) => {
-    if (ev.target.classList && ev.target.classList.contains('msg-regen')) regenerate();
+    const cl = ev.target.classList;
+    if (!cl) return;
+    if (cl.contains('msg-regen')) regenerate(); // retry the CURRENT round
+    else if (cl.contains('msg-next')) { round++; params.seed++; startRound(); }
+    else if (cl.contains('msg-begin')) { paused = false; msgEl.classList.add('hidden'); }
   });
+
+  // opening briefing: label the pieces, state the ONE win condition.
+  // The sim stays frozen until the player begins.
+  function showBriefing() {
+    paused = true;
+    msgEl.innerHTML = `<div class="msg-head">transmission · briefing</div>` +
+      `<div class="intro-grid">` +
+      `<span style="color:#ff6a88">💗 the heart</span><span>at the pole — its fall is the only defeat</span>` +
+      `<span style="color:#9fdcff">▣ your tank</span><span>WASD drive · SPACE shell · hold SHIFT lasers · C commandeer an ally · ESC pause</span>` +
+      `<span style="color:#9fdcff">✚ allies</span><span>patrol the pole, infinite ammo</span>` +
+      `<span style="color:#ffb000">▮▮▮ bullet triads</span><span>drive over = +3 shells · shells also blast walls open</span>` +
+      `<span style="color:#66ff88">soft creatures</span><span>fodder — RAM them, it's free</span>` +
+      `<span style="color:#ff5340">spiked reds</span><span>armored — ramming hurts YOU · shells only</span>` +
+      `<span style="color:#ffffff">◉ spawn points</span><span>the enemy sources · 3 shells each · found ones pulse on the minimap</span>` +
+      `</div>` +
+      `<b>WIN = DESTROY EVERY SPAWN POINT.</b> reaching the heart wins nothing — it's home.<br>` +
+      `<button class="msg-begin">▶ begin round 1</button>`;
+    msgEl.classList.remove('hidden');
+  }
   function updateHud() {
     const alive = enemies.filter((e) => e.alive).length;
     const allies = friendlies.filter((f) => f.alive).length;
     const spAlive = spawnPoints.filter((s) => s.alive).length;
     statsEl.textContent =
       `HEART ${'♥'.repeat(Math.max(0, heartHP)).padEnd(HEART_MAX, '·')}   you ♥${playerHP}   allies ${allies}\n` +
-      `shells ${'●'.repeat(ammo).padEnd(AMMO_MAX, '·')} (${ammo})   wave ${wave} · hostiles ${alive} · spawn points ${spAlive}/${spawnPoints.length}` +
+      `shells ${'●'.repeat(ammo).padEnd(AMMO_MAX, '·')} (${ammo})${cannonHeat > 0 ? ' · cannon HOT' : ''}   round ${round} · wave ${wave} · hostiles ${alive} · spawn points ${spAlive}/${spawnPoints.length}` +
       (carryingRegen ? '   ⬤ CARRYING REGEN' : '') + `\n` +
       (manualActive() ? 'MANUAL — release keys to hand back control' : 'auto-wander') +
       `   ·   laser ${laserOverheat ? '🔥 COOLING' : 'SHIFT/⚡'}` +
@@ -1356,12 +1394,13 @@ export function initHeartTab(root) {
 
   function spawnWave() {
     wave++;
-    const intro = INTROS.find((iv) => iv.wave === wave);
+    // only this round's slice of the schedule gets introduced
+    const intro = wave <= introCount() ? INTROS.find((iv) => iv.wave === wave) : null;
     if (intro) {
       addSpawnPoint(intro.type);
       announceWave(intro);
     }
-    const base = params.waveSize + Math.floor(wave / 3);
+    const base = params.waveSize + Math.floor(wave / 3) + (round - 1);
     for (const sp of spawnPoints) {
       if (!sp.alive) continue;
       const spec = ENEMY_SPEC[sp.type];
@@ -1604,8 +1643,11 @@ export function initHeartTab(root) {
 
   // --- firing: the shot leaves along the turret's CURRENT sweep ------------
   function fire() {
-    if (player.won || ammo <= 0) return;
+    if (player.won || paused || ammo <= 0 || cannonHeat > 0) return;
     ammo--;
+    cannonHeat = CANNON_COOL; // the sleeve glows red-hot, cools over 3 s
+    recoilLeft = RECOIL_LEN;
+    bumpLeft = Math.max(bumpLeft, BUMP_LEN * 0.4); // the shot rocks the hull too
     let dir;
     const turret = playerMesh.userData.turret;
     if (turret) {
@@ -1996,17 +2038,25 @@ export function initHeartTab(root) {
 
   function checkVictory() {
     if (player.won) return;
-    // every threat must have been introduced before the field can be won —
+    // every threat in THIS round's schedule must have been introduced —
     // an early spawn kill just buys quiet until the next announcement
-    if (wave >= LAST_INTRO_WAVE && spawnPoints.length > 0
+    if (wave >= introCount() && spawnPoints.length > 0
       && spawnPoints.every((s) => !s.alive) && enemies.every((e) => !e.alive)) {
       player.won = true;
       msgEl.innerHTML = `<div class="msg-head">transmission · combat log</div>` +
-        `✦ the heart is safe<br>` +
-        `${wave} waves repelled · heart ${heartHP}/${HEART_MAX} · ${player.moves} moves<br>` +
-        `<button class="msg-regen">⟲ new sector</button>`;
+        `✦ ROUND ${round} CLEARED — every spawn point destroyed<br>` +
+        `${wave} waves · heart ${heartHP}/${HEART_MAX} · ${player.moves} moves<br>` +
+        `<button class="msg-next">▶ round ${round + 1} — bigger sector, meaner waves</button>`;
       msgEl.classList.remove('hidden');
     }
+  }
+
+  // next round: a bigger board, a fresh layout, one more threat type
+  function startRound() {
+    params.points = roundPoints();
+    pointsCtrl.updateDisplay();
+    seedCtrl.updateDisplay();
+    regenerate();
   }
 
   // --- dashboard -----------------------------------------------------------
@@ -2026,7 +2076,7 @@ export function initHeartTab(root) {
   gui.add(params, 'orbs', 0, 40, 1).name('bullet triads').onFinishChange(regenerate);
   gui.add(params, 'orbRespawn', 0, 30, 1).name('triad respawn (s)');
   const seedCtrl = gui.add(params, 'seed', 0, 99999, 1).onFinishChange(regenerate);
-  gui.add(params, 'points', 150, 8000, 50).name('sample points').onFinishChange(regenerate);
+  const pointsCtrl = gui.add(params, 'points', 150, 8000, 50).name('sample points').onFinishChange(regenerate);
   gui.add(params, 'rooms', 2, 24, 1).onFinishChange(regenerate);
   gui.add(params, 'roomRadius', 1, 8, 1).name('room radius').onFinishChange(regenerate);
   gui.add(params, 'corridorWidth', 1, 4, 1).name('corridor width').onFinishChange(regenerate);
@@ -2070,6 +2120,11 @@ export function initHeartTab(root) {
     t += dt;
 
     bumpLeft = Math.max(0, bumpLeft - dt);
+    recoilLeft = Math.max(0, recoilLeft - dt);
+    cannonHeat = Math.max(0, cannonHeat - dt);
+    // diegetic cannon gauge: the mid-barrel sleeve glows with the heat
+    const sleeve = playerMesh && playerMesh.userData.heatSleeve;
+    if (sleeve) sleeve.material.color.lerpColors(sleeveCool, sleeveHot, cannonHeat / CANNON_COOL);
     advanceMotion(dt);
     for (const orb of orbMeshes.values()) orb.userData.tick(t);
     for (let i = debris.length - 1; i >= 0; i--) {
@@ -2084,7 +2139,7 @@ export function initHeartTab(root) {
       // waves keep coming while introductions remain, even if the player
       // has razed every spawn point standing — the next threat still lands
       if (waveClock >= params.waveEvery
-        && (wave < LAST_INTRO_WAVE || spawnPoints.some((s) => s.alive))) {
+        && (wave < introCount() || spawnPoints.some((s) => s.alive))) {
         waveClock = 0;
         spawnWave();
       }
@@ -2252,6 +2307,12 @@ export function initHeartTab(root) {
     placeActors();
     snapCamera();
   }
+
+  // opening briefing on a clean load; any debug hook means headless/demo,
+  // where a frozen sim would break the verification flow
+  const debugging = ['walk', 'tick', 'wave', 'blast', 'laser', 'found']
+    .some((k) => urlParams.get(k));
+  if (!debugging) showBriefing();
 
   resize();
   animate();
