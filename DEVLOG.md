@@ -6,6 +6,32 @@ Demo links assume `npm run serve` (port 8144) or the
 
 ---
 
+## `843e79e` — Announce sprites, the weight of a kill, and a focus bug
+
+The announce card grew its missing centerpiece: a live spinning model of
+the introduced enemy, rendered by one persistent 96px alpha-backed
+renderer (WebGL contexts are scarce and leak on loss — build one up
+front, never per-announcement; the canvas just gets re-inserted after
+each `innerHTML` wipe). The card also states the load-bearing fact
+outright — green `▼ RAMMABLE — run it over` vs red `✖ DO NOT RAM —
+shells only`, generated from `ENEMY_SPEC` so copy can't drift from
+mechanics. Running over fodder now *feels* like it: a tinted dot-splat
+flattened against the surface (`makeDotBurst`, the Points counterpart
+of `makeDebris`, which bakes triangles clouds don't have) and a 0.35 s
+suspension bump — pace −50%, camera eye sinks quadratically. The bump
+is countdown-seconds rather than a timestamp because the tab runs two
+clocks (render `t`, sim `simTime`) and a countdown is valid under both.
+
+The bug of the day: "the settings panel opens by itself, maybe when I
+kill something." Actual cause, nothing to do with kills — lil-gui's
+title bar is a `<button>`, buttons keep focus after a click, and
+browsers re-activate the focused button on Space. Space is the fire
+key. Every fix candidate that started from "what does killing an enemy
+do?" was chasing a coincidence. Game keys now blur any focused button
+before handling (inputs excepted — seed-typing keeps focus). When a UI
+element acts "by itself" on a timing that correlates with gameplay,
+check what has keyboard focus before auditing the game logic.
+
 ## `3870d3d` — The heart learns HokorobiTawaa's escalation grammar
 
 The heart tab's gameplay reshaped around three ideas. **Introductions**:
