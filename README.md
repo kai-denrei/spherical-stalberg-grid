@@ -6,6 +6,8 @@ surface of a sphere. Standalone, vanilla ES modules, no build step.
 
 Ported from the working 2D implementation in `~/Dev/oskar-procedure`.
 
+**[Dev Log](DEVLOG.md)** — per-commit highlights and technical deep-dives.
+
 ## Run
 
 ```bash
