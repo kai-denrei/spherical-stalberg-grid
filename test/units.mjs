@@ -28,7 +28,7 @@ for (const name of UNIT_NAMES) {
     if (!pos) return;
     for (let i = 0; i < pos.count; i++) {
       v.fromBufferAttribute(pos, i);
-      if (o.isMesh || o.isPoints) v.applyMatrix4(o.matrixWorld);
+      if (o.isMesh || o.isPoints || o.isLine) v.applyMatrix4(o.matrixWorld);
       r = Math.max(r, v.length());
     }
   });

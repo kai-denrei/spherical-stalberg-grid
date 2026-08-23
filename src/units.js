@@ -15,7 +15,7 @@
 // tick(t) (idle animation) }.
 
 import * as THREE from '../vendor/three.module.js';
-import { CREATURES, waveJelly, spherePts, bulletPts, heartPts } from './creatures.js?v=243b3f99';
+import { CREATURES, waveJelly, spherePts, bulletPts, heartPts } from './creatures.js?v=bb5beab8';
 
 function normalizeToUnit(group) {
   group.updateMatrixWorld(true);
@@ -35,10 +35,17 @@ function normalizeToUnit(group) {
 }
 
 // tank — the mesh-unit proof of concept: hull, treads, turret that sweeps,
-// barrel. ~350 triangles, one Lambert material per tint.
+// barrel. ~350 triangles, one Lambert material per tint. Tron dressing:
+// thin neon white/blue edge lines on the slabs (EdgesGeometry children,
+// so they ride each part's transform), a 3×3 diegetic shell rack on the
+// turret roof (userData.ammoDots — the game tints them full/empty), and
+// two toed-in laser mini-guns at the hull front (userData.laserGuns —
+// aim derives from THEIR world transforms, same-source principle).
 function makeTank(cols) {
   const main = new THREE.MeshLambertMaterial({ color: cols.walker });
   const accent = new THREE.MeshLambertMaterial({ color: cols.walkerHi });
+  const edgeWhite = new THREE.LineBasicMaterial({ color: 0xeaf6ff, transparent: true, opacity: 0.9 });
+  const edgeBlue = new THREE.LineBasicMaterial({ color: 0x5fc9ff, transparent: true, opacity: 0.85 });
   const g = new THREE.Group();
   const add = (geo, mat, x, y, z, parent = g) => {
     const m = new THREE.Mesh(geo, mat);
@@ -46,16 +53,50 @@ function makeTank(cols) {
     parent.add(m);
     return m;
   };
-  add(new THREE.BoxGeometry(1.3, 0.4, 2.0), main, 0, 0.48, 0);       // hull
-  add(new THREE.BoxGeometry(0.42, 0.46, 2.35), main, -0.82, 0.26, 0); // tread L
-  add(new THREE.BoxGeometry(0.42, 0.46, 2.35), main, 0.82, 0.26, 0);  // tread R
+  const outline = (mesh, mat) => {
+    mesh.add(new THREE.LineSegments(new THREE.EdgesGeometry(mesh.geometry), mat));
+  };
+  const hull = add(new THREE.BoxGeometry(1.3, 0.4, 2.0), main, 0, 0.48, 0);
+  outline(hull, edgeWhite);
+  const treadL = add(new THREE.BoxGeometry(0.42, 0.46, 2.35), main, -0.82, 0.26, 0);
+  const treadR = add(new THREE.BoxGeometry(0.42, 0.46, 2.35), main, 0.82, 0.26, 0);
+  outline(treadL, edgeBlue);
+  outline(treadR, edgeBlue);
   const turret = new THREE.Group();
   turret.position.set(0, 0.84, -0.12);
   g.add(turret);
-  add(new THREE.BoxGeometry(0.8, 0.34, 1.0), main, 0, 0, 0, turret);
+  const turretBox = add(new THREE.BoxGeometry(0.8, 0.34, 1.0), main, 0, 0, 0, turret);
+  outline(turretBox, edgeWhite);
   const barrel = add(new THREE.CylinderGeometry(0.06, 0.085, 1.5, 8), accent, 0, 0.04, 1.15, turret);
   barrel.rotation.x = Math.PI / 2;
+  // shell rack: 3×3 dots on the turret roof, row-major — index < ammo lit
+  const dotGeo = new THREE.SphereGeometry(0.05, 6, 6);
+  const ammoDots = [];
+  for (let r = 0; r < 3; r++) {
+    for (let c2 = 0; c2 < 3; c2++) {
+      const dot = new THREE.Mesh(dotGeo, new THREE.MeshBasicMaterial({ color: 0xffffff }));
+      dot.position.set((c2 - 1) * 0.24, 0.2, (r - 1) * 0.28);
+      turret.add(dot);
+      ammoDots.push(dot);
+    }
+  }
+  // mini-guns: hull front corners, ~5° toe-in so the bursts converge ahead
+  const gunGeo = new THREE.CylinderGeometry(0.045, 0.06, 0.55, 6).rotateX(Math.PI / 2);
+  const gunMat = new THREE.MeshBasicMaterial({ color: 0x7df9ff });
+  const laserGuns = [];
+  for (const side of [-1, 1]) {
+    const gun = new THREE.Group();
+    gun.position.set(side * 0.42, 0.42, 1.02);
+    gun.rotation.y = -side * 0.09; // +Z toed toward the centerline
+    const tube = new THREE.Mesh(gunGeo, gunMat);
+    tube.position.z = 0.12;
+    gun.add(tube);
+    g.add(gun);
+    laserGuns.push(gun);
+  }
   g.userData.turret = turret; // battle aims along this group's world +Z
+  g.userData.ammoDots = ammoDots;
+  g.userData.laserGuns = laserGuns;
   g.userData.tick = (t) => { turret.rotation.y = Math.sin(t * 0.6) * 0.7; };
   g.userData.lift = 0.02;
   normalizeToUnit(g);

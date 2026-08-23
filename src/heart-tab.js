@@ -15,14 +15,14 @@
 
 import * as THREE from '../vendor/three.module.js';
 import GUI from '../vendor/lil-gui.esm.js';
-import { generateSphereMesh, relax } from './grid.js?v=243b3f99';
-import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=243b3f99';
-import { mulberry32, randomSeed } from './rng.js?v=243b3f99';
-import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3 } from './vec3.js?v=243b3f99';
-import { CREATURES, waveJelly } from './creatures.js?v=243b3f99';
-import { UNITS, UNIT_NAMES, buildUnit, makeOrbCloud, makeBulletCloud, makeDebris, makeDotBurst, makeHeartCloud } from './units.js?v=243b3f99';
-import { LOOKS, LOOK_NAMES } from './looks.js?v=243b3f99';
-import { makeCellIndex } from './cellindex.js?v=243b3f99';
+import { generateSphereMesh, relax } from './grid.js?v=bb5beab8';
+import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=bb5beab8';
+import { mulberry32, randomSeed } from './rng.js?v=bb5beab8';
+import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3 } from './vec3.js?v=bb5beab8';
+import { CREATURES, waveJelly } from './creatures.js?v=bb5beab8';
+import { UNITS, UNIT_NAMES, buildUnit, makeOrbCloud, makeBulletCloud, makeDebris, makeDotBurst, makeHeartCloud } from './units.js?v=bb5beab8';
+import { LOOKS, LOOK_NAMES } from './looks.js?v=bb5beab8';
+import { makeCellIndex } from './cellindex.js?v=bb5beab8';
 
 export function initHeartTab(root) {
   let active = false;
@@ -997,6 +997,14 @@ export function initHeartTab(root) {
       (carryingRegen ? '   ⬤ CARRYING REGEN' : '') + `\n` +
       (manualActive() ? 'MANUAL — release keys to hand back control' : 'auto-wander') +
       '   ·   RAM the small ones · shells for the red · shells breach walls · hunt the spawn points';
+    // diegetic shell rack: the 3×3 turret dots ARE the ammo counter —
+    // neon white loaded, faded grey spent (allies stay full: infinite ammo)
+    const dots = playerMesh && playerMesh.userData.ammoDots;
+    if (dots) {
+      for (let i = 0; i < dots.length; i++) {
+        dots[i].material.color.setHex(i < ammo ? 0xffffff : 0x4a505c);
+      }
+    }
   }
 
   // wave announcement banner — HokorobiTawaa's "New Threat" card, complete
@@ -1144,6 +1152,8 @@ export function initHeartTab(root) {
       allyShots[i].mesh.geometry.dispose();
       allyShots.splice(i, 1);
     }
+    for (let i = laserShots.length - 1; i >= 0; i--) killLaser(i);
+    laserClock = 0;
     orbRng = mulberry32((params.seed ^ 0x0b0b5) >>> 0);
     respawnClock = 0;
     simTime = 0;
@@ -1409,16 +1419,85 @@ export function initHeartTab(root) {
     updateHud();
   }
 
-  // one shell's worth of damage: on-hit reaction (borrowed idiosyncrasy),
-  // shrink-step so damage reads, kill at zero. Returns true on kill.
-  function damageEnemy(e, tNow) {
+  // damage an enemy: shrink-step so it reads, kill at zero. Shells (dmg 1,
+  // react) trigger the borrowed on-hit reactions; laser ticks (dmg 0.4,
+  // react=false) don't — a constant graze must not keep barbed/knot
+  // permanently accelerated. Returns true on kill.
+  function damageEnemy(e, tNow, dmg = 1, react = true) {
     const spec = e.spec;
-    if (spec.slowOnHit) { e.behMult = spec.slowOnHit; e.behUntil = tNow + 1.2; }
-    if (spec.accelOnHit) { e.behMult = spec.accelOnHit; e.behUntil = tNow + 1.2; }
-    e.hp--;
+    if (react && spec.slowOnHit) { e.behMult = spec.slowOnHit; e.behUntil = tNow + 1.2; }
+    if (react && spec.accelOnHit) { e.behMult = spec.accelOnHit; e.behUntil = tNow + 1.2; }
+    e.hp -= dmg;
     if (e.hp <= 0) { killCreature(e, true); return true; }
-    e.obj.scale.setScalar(e.scale0 * (0.7 + 0.3 * (e.hp / spec.hp)));
+    e.obj.scale.setScalar(e.scale0 * (0.7 + 0.3 * Math.max(0, e.hp) / spec.hp));
     return false;
+  }
+
+  // --- twin mini-lasers: weak, infinite, always on -------------------------
+  // Bolt origin/direction derive from the gun groups' WORLD transforms
+  // (toe-in included) — the same-source rule, third use. No wall carving,
+  // no spawn-point damage, no on-hit reactions: shells stay the answer to
+  // everything that matters; the lasers chew fodder while you drive.
+  const laserShots = []; // { pos, dir, dist, mesh }
+  let laserClock = 0, laserSide = 0;
+  const LASER_RATE = 0.14;  // s between bursts (guns alternate)
+  const LASER_DMG = 0.4;    // fodder: 3 grazes; corona: 5 — weak on purpose
+  const laserGeo = new THREE.BoxGeometry(1, 1, 1); // shared; scaled per bolt
+  const laserMat = new THREE.MeshBasicMaterial({ color: 0x9ff8ff, transparent: true, opacity: 0.9 });
+  const Z_AXIS = new THREE.Vector3(0, 0, 1);
+
+  function killLaser(i) {
+    scene.remove(laserShots[i].mesh); // geometry/material are shared — keep
+    laserShots.splice(i, 1);
+  }
+
+  function updateLasers(dt, tNow) {
+    const guns = playerMesh && playerMesh.userData.laserGuns;
+    if (guns && !player.won) {
+      laserClock += dt;
+      if (laserClock >= LASER_RATE) {
+        laserClock = 0;
+        const gun = guns[laserSide ^= 1];
+        gun.getWorldPosition(tmpV);
+        const pos = norm3([tmpV.x, tmpV.y, tmpV.z]); // down to the unit sphere
+        gun.getWorldQuaternion(tmpQ);
+        tmpV.set(0, 0, 1).applyQuaternion(tmpQ);
+        const n = pos;
+        const d = [tmpV.x, tmpV.y, tmpV.z];
+        const dir = norm3(sub3(d, scale3(n, dot3(d, n))));
+        const mesh = new THREE.Mesh(laserGeo, laserMat);
+        mesh.scale.set(cellSide * 0.045, cellSide * 0.045, cellSide * 0.42);
+        scene.add(mesh);
+        laserShots.push({ pos, dir, dist: 0, mesh });
+      }
+    }
+    const v = 5.2 * cellSide;
+    const maxDist = 2.6 * cellSide;
+    for (let i = laserShots.length - 1; i >= 0; i--) {
+      const p = laserShots[i];
+      p.pos = norm3(add3(p.pos, scale3(p.dir, v * dt)));
+      const n = p.pos;
+      p.dir = norm3(sub3(p.dir, scale3(n, dot3(p.dir, n))));
+      p.dist += v * dt;
+      const lift = 1 + params.wallHeight * 0.5;
+      p.mesh.position.set(p.pos[0] * lift, p.pos[1] * lift, p.pos[2] * lift);
+      tmpV.set(p.dir[0], p.dir[1], p.dir[2]);
+      p.mesh.quaternion.setFromUnitVectors(Z_AXIS, tmpV);
+      let dead = false;
+      for (const e of enemies) {
+        if (!e.alive) continue;
+        if (dist3(p.pos, e.pos) < cellSide * Math.max(0.4, e.spec.size * 0.8)) {
+          damageEnemy(e, tNow, LASER_DMG, false);
+          dead = true;
+          break;
+        }
+      }
+      if (!dead) {
+        const ci = cellIndex(p.pos);
+        if ((ci !== -1 && dungeon.tags[ci] === BLOCKED) || p.dist > maxDist) dead = true;
+      }
+      if (dead) killLaser(i);
+    }
   }
 
   // --- firing: the shot leaves along the turret's CURRENT sweep ------------
@@ -1896,6 +1975,7 @@ export function initHeartTab(root) {
     updateAllyShots(dt, t);
     checkRewards();
     updateProjectiles(dt, t);
+    updateLasers(dt, t);
     for (const sp of spawnPoints) {
       if (!sp.alive) continue;
       sp.obj.userData.tick(t);
