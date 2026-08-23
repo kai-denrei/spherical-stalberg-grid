@@ -15,7 +15,7 @@
 // tick(t) (idle animation) }.
 
 import * as THREE from '../vendor/three.module.js';
-import { CREATURES, waveJelly, spherePts, bulletPts, heartPts, torusPts, towerHeadPts } from './creatures.js?v=9aa2e245';
+import { CREATURES, waveJelly, spherePts, bulletPts, heartPts, torusPts, towerHeadPts, enemyDotPts } from './creatures.js?v=4c0ca2b1';
 
 function normalizeToUnit(group) {
   group.updateMatrixWorld(true);
@@ -570,6 +570,69 @@ export function makeTowerUnit(def) {
   g.userData.baseScale = 1 / 1.55;
   g.userData.kind = 'mesh';
   return g;
+}
+
+// dot enemies — the WHOLE TD roster as half-dotted STATIC clouds.
+// The original three creatures use their rich generators (posed once,
+// never re-posed); the borrowed types use enemyDotPts silhouettes.
+// Animation is transform-only per type (spin / bob / squash), so a
+// hundred of these cost what one waveJelly hero costs.
+const DOT_SHAPES = {
+  phage: () => CREATURES.phage(),
+  amoeba: () => CREATURES.amoeba(),
+  jellyfish: () => CREATURES.jellyfish(),
+  ghost: () => enemyDotPts('ghost'),
+  scoutufo: () => enemyDotPts('ufo'),
+  gslime: () => enemyDotPts('slime'),
+  drifter: () => enemyDotPts('saturn'),
+  corona: () => enemyDotPts('corona'),
+  barbed: () => enemyDotPts('seamine'),
+  rolling: () => enemyDotPts('seamine'),
+  prime: () => enemyDotPts('seamine'),
+  knot: () => enemyDotPts('knot'),
+};
+
+export function makeDotEnemy(type, cols) {
+  const base = (DOT_SHAPES[type] || (() => spherePts(140)))();
+  const pos = new Float32Array(base.length * 3);
+  const col = new Float32Array(base.length * 3);
+  const cBody = new THREE.Color(cols.walker);
+  const cHi = new THREE.Color(cols.walkerHi);
+  for (let i = 0; i < base.length; i++) {
+    pos[i * 3] = base[i][0]; pos[i * 3 + 1] = base[i][1]; pos[i * 3 + 2] = base[i][2];
+    const c = base[i][3] === 1 ? cHi : cBody;
+    col[i * 3] = c.r; col[i * 3 + 1] = c.g; col[i * 3 + 2] = c.b;
+  }
+  const geo = new THREE.BufferGeometry();
+  geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+  geo.setAttribute('color', new THREE.BufferAttribute(col, 3));
+  const pts = new THREE.Points(geo, new THREE.PointsMaterial({
+    size: 2.1, sizeAttenuation: false, vertexColors: true,
+    transparent: true, opacity: 0.95,
+  }));
+  // transform-only idles, one flavor per family
+  const TICKS = {
+    ghost: (t) => { pts.position.y = 0; pts.rotation.y = Math.sin(t * 1.2) * 0.4; },
+    scoutufo: (t) => { pts.rotation.y = t * 2.4; },
+    gslime: (t) => {
+      const sy = 1 + 0.14 * Math.sin(t * 3);
+      pts.scale.y = pts.userData.s0 * sy;
+      pts.scale.x = pts.scale.z = pts.userData.s0 / Math.sqrt(sy);
+    },
+    drifter: (t) => { pts.rotation.y = t * 0.8; },
+    corona: (t) => { pts.rotation.y = t * 0.9; },
+    barbed: (t) => { pts.rotation.y = Math.sin(t * 1.5) * 0.6; },
+    rolling: (t) => { pts.rotation.y = t * 1.1; },
+    prime: (t) => { pts.rotation.y = t * 0.5; },
+    knot: (t) => { pts.rotation.y = t * 0.7; pts.rotation.x = Math.sin(t * 0.8) * 0.3; },
+  };
+  const tick = TICKS[type] || ((t) => { pts.rotation.y = Math.sin(t) * 0.25; });
+  pts.userData.s0 = 1; // scale captured by the game after sizing
+  pts.userData.tick = tick;
+  pts.userData.lift = { ghost: 0.9, scoutufo: 0.95, drifter: 0.85, knot: 0.8 }[type] ?? 0.6;
+  pts.userData.kind = 'cloud';
+  pts.userData.baseScale = 1;
+  return pts;
 }
 
 // portal — the braille-lab half-dotted STATIC torus: an upright dotted

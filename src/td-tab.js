@@ -19,17 +19,17 @@
 
 import * as THREE from '../vendor/three.module.js';
 import GUI from '../vendor/lil-gui.esm.js';
-import { generateSphereMesh, relax } from './grid.js?v=9aa2e245';
-import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=9aa2e245';
-import { mulberry32, randomSeed } from './rng.js?v=9aa2e245';
-import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3 } from './vec3.js?v=9aa2e245';
-import { CREATURES, waveJelly } from './creatures.js?v=9aa2e245';
-import { UNITS, UNIT_NAMES, buildUnit, makeOrbCloud, makeBulletCloud, makeDebris, makeDotBurst, makePortalCloud, makeHeartCloud, makeTowerUnit } from './units.js?v=9aa2e245';
-import { LOOKS, LOOK_NAMES } from './looks.js?v=9aa2e245';
-import { makeCellIndex } from './cellindex.js?v=9aa2e245';
-import { CREATURE_TINTS, ENEMY_SPEC, INTROS } from './enemyspec.js?v=9aa2e245';
-import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval } from './towers.js?v=9aa2e245';
-import { makeEconomy, sellRefund } from './economy.js?v=9aa2e245';
+import { generateSphereMesh, relax } from './grid.js?v=4c0ca2b1';
+import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=4c0ca2b1';
+import { mulberry32, randomSeed } from './rng.js?v=4c0ca2b1';
+import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3 } from './vec3.js?v=4c0ca2b1';
+import { CREATURES, waveJelly } from './creatures.js?v=4c0ca2b1';
+import { UNITS, UNIT_NAMES, buildUnit, makeOrbCloud, makeBulletCloud, makeDebris, makeDotBurst, makePortalCloud, makeHeartCloud, makeTowerUnit, makeDotEnemy } from './units.js?v=4c0ca2b1';
+import { LOOKS, LOOK_NAMES } from './looks.js?v=4c0ca2b1';
+import { makeCellIndex } from './cellindex.js?v=4c0ca2b1';
+import { CREATURE_TINTS, ENEMY_SPEC, INTROS } from './enemyspec.js?v=4c0ca2b1';
+import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval } from './towers.js?v=4c0ca2b1';
+import { makeEconomy, sellRefund } from './economy.js?v=4c0ca2b1';
 
 export function initTdTab(root) {
   let active = false;
@@ -37,11 +37,11 @@ export function initTdTab(root) {
 
   const params = {
     seed: 7,
-    points: 700, // ONE persistent world per run; sectors unseal it in bands
-    rooms: 12,          // unused by the open-field terrain, kept for the carve call
-    roomRadius: 3,
-    extraCorridors: 4,
-    corridorWidth: 3,
+    points: 3000, // ONE big pre-decided lane world; sectors unseal it in bands
+    rooms: 16,          // lane structure: rooms joined by wide corridors
+    roomRadius: 4,
+    extraCorridors: 8,
+    corridorWidth: 4, // WIDE lanes — HT's, broader
     obstacles: 0.2,     // fraction of the sphere left as wall clumps
     wallHeight: 0.03,
     relaxIters: 80,
@@ -58,7 +58,7 @@ export function initTdTab(root) {
     orbRespawn: 6, // seconds between respawns (0 = off)
     waveSize: 4,
     waveEvery: 16, // seconds — TD tempo is relentless
-    friendlies: 2, // the towers are your army here
+    friendlies: 0, // NO ally tanks in TD — new players read them as enemies
     rewards: 6,
   };
 
@@ -195,7 +195,7 @@ export function initTdTab(root) {
   let tdFullTags = null;  // the true world, pre-sealing
   let tdFullDist = null;  // heart-distance over the full world
   let tdMaxD = 0;
-  const SECTOR_FRAC = (r) => Math.min(1, 0.32 + 0.24 * (r - 1)); // r1 32% … r4 all
+  const SECTOR_FRAC = (r) => Math.min(1, 0.25 + 0.2 * (r - 1)); // r1 25% … r5 all
   const introCount = () => Math.min(INTROS.length, 2 + 2 * round); // r1=4 types
   // seal/unseal to the current round's fraction; optionally re-pick the
   // player start (only at run start — expansions don't teleport you)
@@ -1148,7 +1148,7 @@ export function initTdTab(root) {
   holdButton('#td-pad-left', 'left');
   holdButton('#td-pad-right', 'right');
   holdButton('#td-pad-down', 'slow', () => { cruise = false; });
-  root.querySelector('#td-pad-hint').addEventListener('click', () => commandeer());
+  // (no ally tanks in TD — the commandeer button is gone from the markup)
   root.querySelector('#td-pad-view').addEventListener('click', () => toggleView());
   root.querySelector('#td-pad-build').addEventListener('click', () => toggleBuild());
   root.querySelector('#td-pad-map').addEventListener('click', () => toggleMap());
@@ -1275,7 +1275,7 @@ export function initTdTab(root) {
       `<div class="gcards">` +
       glossCard('#ff6a88', spriteShot('heart', heartIcon), 'the heart', 'at the pole — its fall is the only defeat') +
       glossCard('#9fdcff', spriteShot('tank', unitIcon('tank', look().walker)), 'your tank', 'hold W drive · double-tap W cruise · A/D steer · SPACE shell · SHIFT lasers · ESC pause') +
-      glossCard('#9fdcff', spriteShot('tank', unitIcon('tank', look().walker)), 'allies', 'patrol the pole · infinite ammo · C commandeers') +
+      glossCard('#9fdcff', spriteShot('tower', () => makeTowerUnit(TOWER_BY_KEY.single)), 'towers', 'your army — build them on the HIGH GROUND (walls) in BUILD mode') +
       glossCard('#ffb000', spriteShot('triad', makeTriadIcon), 'bullet triads', 'drive over = +3 shells · shells also blast walls open') +
       glossCard('#66ff88', spriteShot('phage', unitIcon('phage', CREATURE_TINTS.phage)), 'fodder', 'soft creatures — RAM them, it’s free') +
       glossCard('#ff5340', spriteShot('barbed', unitIcon('barbed', CREATURE_TINTS.barbed)), 'spiked reds', 'armored — ramming hurts YOU · shells only') +
@@ -1312,7 +1312,7 @@ export function initTdTab(root) {
     msgEl.innerHTML = `<div class="msg-head">glossary · friendlies &amp; pickups</div>` +
       `<div class="gcards">` +
       glossCard('#ff6a88', spriteShot('heart', heartIcon), 'the heart', `${HEART_MAX} hp · enemy contact drains it · regen charges heal it`) +
-      glossCard('#9fdcff', spriteShot('tank', unitIcon('tank', look().walker)), 'ally tank', 'patrols the pole · infinite shells · 2 hp · solid — no driving through · C swaps you in') +
+      glossCard('#9fdcff', spriteShot('tower', () => makeTowerUnit(TOWER_BY_KEY.single)), 'towers', 'mount on walls only · tap high ground in BUILD mode · upgrade twice · sell 75%') +
       glossCard('#ffb000', spriteShot('triad', makeTriadIcon), 'bullet triad', '+3 shells on touch (rack caps at 9) — the ONLY ammo pickup') +
       glossCard('#9ff8ff', spriteShot('orb-power', orbIcon('scatter', 0x9ff8ff)), 'power sphere', 'far-field reward · +8% speed, permanent') +
       glossCard('#3dff6e', spriteShot('orb-health', orbIcon('wave', 0x3dff6e)), 'health sphere', 'far-field reward · +1 your hp') +
@@ -1333,7 +1333,7 @@ export function initTdTab(root) {
     statsEl.textContent =
       `HEART ${'♥'.repeat(Math.max(0, heartHP)).padEnd(HEART_MAX, '·')}  YOU ♥${playerHP}  ✦${ammo}\n` +
       `${eco.credit}c ×${eco.multiplier().toFixed(2)} · towers ${towers.length}\n` +
-      `R${round} · wave ${wave} · hostiles ${alive} · portals ${spAlive}/${spawnPoints.length} · allies ${allies}${alerts}\n` +
+      `R${round} · wave ${wave} · hostiles ${alive} · portals ${spAlive}/${spawnPoints.length}${alerts}\n` +
       (buildMode
         ? (anyHostiles() ? 'BUILD (war still on!) — B to fight · M map' : 'BUILD · frozen — B to fight · M map')
         : (manualActive()
@@ -1431,54 +1431,10 @@ export function initTdTab(root) {
     });
     graph = dungeon.graph;
     cellSide = mesh.defaultSide;
-    // OPEN BATTLEFIELD: discard the corridor carve. Everything is open,
-    // then ~`obstacles` of the sphere is re-blocked as small clumps —
-    // cover to maneuver around, not halls. Pockets sealed off by clumps
-    // are turned into wall too (connectivity by construction).
-    {
-      const C = dungeon.tags.length;
-      dungeon.tags.fill(PATH);
-      const orng = mulberry32((params.seed ^ 0xba771e) >>> 0);
-      const targetBlocked = Math.floor(C * params.obstacles);
-      let blocked = 0;
-      let guard = 0;
-      while (blocked < targetBlocked && guard++ < C) {
-        const seedCell = Math.floor(orng() * C);
-        // clump: the seed plus a random walk of 2–6 neighbours
-        const clump = [seedCell];
-        let cur = seedCell;
-        const len = 2 + Math.floor(orng() * 5);
-        for (let s = 0; s < len; s++) {
-          const nbs = graph.adj[cur];
-          cur = nbs[Math.floor(orng() * nbs.length)];
-          clump.push(cur);
-        }
-        for (const ci of clump) {
-          if (dungeon.tags[ci] !== BLOCKED) { dungeon.tags[ci] = BLOCKED; blocked++; }
-        }
-      }
-      // Heart at the pole: highest +Y OPEN cell; carve its plaza open
-      let best = -1, by = -Infinity;
-      for (let i = 0; i < C; i++) {
-        if (dungeon.tags[i] === BLOCKED) continue;
-        if (graph.normals[i][1] > by) { by = graph.normals[i][1]; best = i; }
-      }
-      dungeon.heart = best;
-      for (const nb of graph.adj[best]) dungeon.tags[nb] = PATH;
-      // seal unreachable pockets (become obstacles too)
-      const reach = bfsDist(graph.adj, [best], (i) => dungeon.tags[i] !== BLOCKED);
-      for (let i = 0; i < C; i++) {
-        if (dungeon.tags[i] !== BLOCKED && reach[i] === -1) dungeon.tags[i] = BLOCKED;
-      }
-      dungeon.distToHeart = bfsDist(graph.adj, [best], (i) => dungeon.tags[i] !== BLOCKED);
-      let sp = -1, bd = -1;
-      for (let i = 0; i < C; i++) {
-        if (dungeon.tags[i] !== BLOCKED && dungeon.distToHeart[i] > bd) {
-          bd = dungeon.distToHeart[i]; sp = i;
-        }
-      }
-      dungeon.spawn = sp;
-    }
+    // LANES (HT): keep the dungeon carve — rooms joined by WIDE corridors
+    // are the monster lanes, and the wall mass between them is the HIGH
+    // GROUND where towers mount. generateDungeon already supplies heart,
+    // spawn, and distToHeart over the open subgraph.
     // TD: remember the FULL world, then seal everything beyond round 1's
     // inner sector — the run reveals it back band by band
     tdFullTags = dungeon.tags.slice();
@@ -1682,20 +1638,23 @@ export function initTdTab(root) {
     for (const sp of spawnPoints) {
       if (!sp.alive) continue;
       const spec = ENEMY_SPEC[sp.type];
-      // fodder floods; the dangerous tier at half strength; epics sparse;
-      // one boss
+      // fodder FLOODS (x1.4 — hectic is the brief); dangerous at half;
+      // epics sparse; one boss
       const count = spec.boss ? 1
         : spec.heavy ? Math.max(1, Math.floor(base / 3))
-        : spec.rammable ? base
+        : spec.rammable ? Math.round(base * 1.4)
         : Math.max(1, Math.ceil(base / 2));
       for (let k = 0; k < count; k++) {
-        const obj = buildUnit(sp.type, { walker: CREATURE_TINTS[sp.type], walkerHi: 0xffffff });
-        const scale0 = (obj.userData.baseScale ?? 1) * cellSide * spec.size;
+        // every enemy is a half-dotted STATIC cloud, a notch smaller
+        const obj = makeDotEnemy(sp.type, { walker: CREATURE_TINTS[sp.type], walkerHi: 0xffffff });
+        const size = spec.size * 0.85;
+        const scale0 = cellSide * size;
         obj.scale.setScalar(scale0);
+        obj.userData.s0 = scale0;
         scene.add(obj);
         const exits = openNeighbors(sp.ci);
         enemies.push({
-          type: sp.type, spec, scale0,
+          type: sp.type, spec, scale0, size,
           cur: sp.ci, prev: -1,
           next: exits.length ? exits[Math.floor(whim() * exits.length)] : sp.ci,
           prog: whim() * 0.4, pos: graph.centers[sp.ci].slice(), dir: [0, 1, 0],
@@ -1717,7 +1676,9 @@ export function initTdTab(root) {
       // nothing has hit them for 1.2 s — burst them down or ram them
       if (spec.regen && e.hp < spec.hp && tNow - (e.lastHitT ?? -9) > 1.2) {
         e.hp = Math.min(spec.hp, e.hp + spec.regen * dt);
-        e.obj.scale.setScalar(e.scale0 * (0.7 + 0.3 * e.hp / spec.hp));
+        const sv = e.scale0 * (0.7 + 0.3 * e.hp / spec.hp);
+        e.obj.scale.setScalar(sv);
+        e.obj.userData.s0 = sv;
       }
       let pace = ENEMY_SPEED * spec.speed;
       if (tNow < e.behUntil) pace *= e.behMult; // on-hit reaction window
@@ -1745,7 +1706,7 @@ export function initTdTab(root) {
       const flat = sub3(raw, scale3(n, dot3(raw, n)));
       const l = Math.hypot(flat[0], flat[1], flat[2]);
       if (l > 1e-9) e.dir = scale3(flat, 1 / l);
-      const s = cellSide * spec.size;
+      const s = cellSide * (e.size ?? spec.size);
       const lift = s * (e.obj.userData.lift ?? 0.85);
       e.obj.position.set(e.pos[0] + n[0] * lift, e.pos[1] + n[1] * lift, e.pos[2] + n[2] * lift);
       tmpObj.position.copy(e.obj.position);
@@ -1763,7 +1724,7 @@ export function initTdTab(root) {
       // the player's tank is strong: fodder dies under the treads for
       // free; the dangerous tier hurts to touch and shrugs the ram off
       // (per-enemy cooldown so overlap isn't a blender)
-      const touchR = cellSide * Math.max(0.42, spec.size * 0.8);
+      const touchR = cellSide * Math.max(0.4, (e.size ?? spec.size) * 0.8);
       if (dist3(e.pos, player.pos) < touchR) {
         if (spec.rammable) {
           // run over: tinted splat under the treads + the weight bump
@@ -1805,9 +1766,16 @@ export function initTdTab(root) {
 
   function killCreature(e, fx = false) {
     e.alive = false;
-    // mesh enemies blow apart like tanks; dot-clouds just wink out
+    // mesh enemies blow apart; dot-clouds burst into tinted dots
     if (fx && e.obj.userData.kind === 'mesh') {
       const d = makeDebris(e.obj, norm3(e.pos));
+      scene.add(d);
+      debris.push(d);
+    } else if (fx) {
+      const d = makeDotBurst(CREATURE_TINTS[e.type] ?? 0xffffff, norm3(e.pos), 24);
+      d.scale.setScalar(cellSide * 0.6);
+      const dp = add3(e.pos, scale3(norm3(e.pos), cellSide * 0.15));
+      d.position.set(dp[0], dp[1], dp[2]);
       scene.add(d);
       debris.push(d);
     }
@@ -1831,7 +1799,9 @@ export function initTdTab(root) {
       killCreature(e, true);
       return true;
     }
-    e.obj.scale.setScalar(e.scale0 * (0.7 + 0.3 * Math.max(0, e.hp) / spec.hp));
+    const sv = e.scale0 * (0.7 + 0.3 * Math.max(0, e.hp) / spec.hp);
+    e.obj.scale.setScalar(sv);
+    e.obj.userData.s0 = sv;
     return false;
   }
 
@@ -1923,7 +1893,7 @@ export function initTdTab(root) {
       let dead = false;
       for (const e of enemies) {
         if (!e.alive) continue;
-        if (dist3(p.pos, e.pos) < cellSide * Math.max(0.4, e.spec.size * 0.8)) {
+        if (dist3(p.pos, e.pos) < cellSide * Math.max(0.4, (e.size ?? e.spec.size) * 0.8)) {
           damageEnemy(e, tNow, LASER_DMG, false);
           dead = true;
           break;
@@ -1976,6 +1946,7 @@ export function initTdTab(root) {
   // heart-distance field is re-laid — everyone's nav sees the new gap,
   // enemies included. Clearing your path can shorten theirs.
   function blastWall(ci) {
+    if (towerByCell.has(ci)) return; // a mounted tower anchors its wall
     dungeon.tags[ci] = PATH;
     const c = graph.centers[ci];
     const n = graph.normals[ci];
@@ -2020,7 +1991,7 @@ export function initTdTab(root) {
       let hit = false;
       for (const e of enemies) {
         if (!e.alive) continue;
-        if (dist3(p.pos, e.pos) < cellSide * Math.max(0.45, e.spec.size * 0.8)) {
+        if (dist3(p.pos, e.pos) < cellSide * Math.max(0.45, (e.size ?? e.spec.size) * 0.8)) {
           damageEnemy(e, tNow);
           hit = true;
           break;
@@ -2317,7 +2288,7 @@ export function initTdTab(root) {
       let dead = false;
       for (const e of enemies) {
         if (!e.alive) continue;
-        if (dist3(p.pos, e.pos) < cellSide * Math.max(0.4, e.spec.size * 0.8)) {
+        if (dist3(p.pos, e.pos) < cellSide * Math.max(0.4, (e.size ?? e.spec.size) * 0.8)) {
           damageEnemy(e, tNow);
           dead = true;
           break;
@@ -2348,25 +2319,16 @@ export function initTdTab(root) {
   const beams = [];               // { mesh, ttl } laser + slow-tether fx
   let eco = makeEconomy();
 
-  // pathing re-lay that knows about tower cells (portals must stay linked)
-  function relayNav() {
-    dungeon.distToHeart = bfsDist(graph.adj, [dungeon.heart],
-      (i) => dungeon.tags[i] !== BLOCKED && !towerCells.has(i));
-  }
-
+  // HT rule: towers build on the HIGH GROUND only — real wall cells (in
+  // the un-sealed world) that border the open sector. Low ground belongs
+  // to monsters and the player. No connectivity guard needed: walls never
+  // carry enemy pathing, so a tower can never dam a lane.
   function placeError(ci) {
-    if (ci === -1 || dungeon.tags[ci] === BLOCKED) return 'not open ground';
-    if (ci === dungeon.heart) return 'that is the Heart';
+    if (ci === -1) return 'nothing there';
+    if (tdFullTags[ci] !== BLOCKED) return 'towers need HIGH GROUND';
     if (towerByCell.has(ci)) return 'occupied';
-    if (spawnPoints.some((s) => s.alive && s.ci === ci)) return 'that is a portal';
-    // connectivity guard: simulate the block, every live portal must still
-    // reach the Heart — you shape the flow, you don't dam it
-    towerCells.add(ci);
-    const d = bfsDist(graph.adj, [dungeon.heart],
-      (i) => dungeon.tags[i] !== BLOCKED && !towerCells.has(i));
-    towerCells.delete(ci);
-    for (const sp of spawnPoints) {
-      if (sp.alive && d[sp.ci] === -1) return 'would seal a portal off';
+    if (!graph.adj[ci].some((nb) => dungeon.tags[nb] !== BLOCKED)) {
+      return 'beyond the frontier';
     }
     return null;
   }
@@ -2382,7 +2344,8 @@ export function initTdTab(root) {
     obj.scale.setScalar(s);
     const c = graph.centers[ci];
     const n = graph.normals[ci];
-    obj.position.set(c[0], c[1], c[2]);
+    const top = 1 + params.wallHeight; // mounted on the wall's roof
+    obj.position.set(c[0] * top, c[1] * top, c[2] * top);
     tmpN.set(n[0], n[1], n[2]);
     obj.quaternion.setFromUnitVectors(Y_AXIS, tmpN);
     scene.add(obj);
@@ -2390,7 +2353,6 @@ export function initTdTab(root) {
     towers.push(tower);
     towerByCell.set(ci, tower);
     towerCells.add(ci);
-    relayNav();
     showRangeRing(ci, effectiveStats(def, 0).range, def.color, 1.6);
     updateHud();
     return true;
@@ -2403,7 +2365,6 @@ export function initTdTab(root) {
     towers.splice(towers.indexOf(tower), 1);
     towerByCell.delete(tower.ci);
     towerCells.delete(tower.ci);
-    relayNav();
     updateHud();
   }
 
@@ -2605,7 +2566,7 @@ export function initTdTab(root) {
       let hit = false;
       for (const e of enemies) {
         if (!e.alive) continue;
-        if (chord(p.pos, e.pos) < cellSide * Math.max(0.42, e.spec.size * 0.8)) {
+        if (chord(p.pos, e.pos) < cellSide * Math.max(0.42, (e.size ?? e.spec.size) * 0.8)) {
           if (p.splash > 0) detonate(p, tNow);
           else damageEnemy(e, tNow, p.dmg, true);
           hit = true;
@@ -2799,7 +2760,7 @@ export function initTdTab(root) {
     const r = renderer.domElement.getBoundingClientRect();
     ndc.set(((x - r.left) / r.width) * 2 - 1, -((y - r.top) / r.height) * 2 + 1);
     raycaster.setFromCamera(ndc, camera);
-    const hits = raycaster.intersectObject(floorMesh, false);
+    const hits = raycaster.intersectObjects([wallMesh, floorMesh], false);
     if (!hits.length) return -1;
     const p = hits[0].point;
     return cellIndex([p.x, p.y, p.z]);
@@ -2866,7 +2827,6 @@ export function initTdTab(root) {
   gui.add(params, 'waveSize', 1, 6, 1).name('wave size').onFinishChange(regenerate);
   gui.add(params, 'waveEvery', 6, 40, 1).name('wave every (s)');
   gui.add(params, 'obstacles', 0.05, 0.4, 0.05).onFinishChange(regenerate);
-  gui.add(params, 'friendlies', 0, 8, 1).onFinishChange(regenerate);
   gui.add(params, 'rewards', 0, 12, 1).onFinishChange(regenerate);
   gui.add(params, 'orbs', 0, 40, 1).name('bullet triads').onFinishChange(regenerate);
   gui.add(params, 'orbRespawn', 0, 30, 1).name('triad respawn (s)');

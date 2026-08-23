@@ -164,6 +164,96 @@ export function spherePts(n = 170) {
   return pts;
 }
 
+// enemy dot shapes — half-dotted STATIC silhouettes for the TD roster's
+// borrowed types (the original three creatures have their own rich
+// generators above). Static means the game animates them with transform
+// ticks only — crowds cost nothing per frame.
+export function enemyDotPts(kind, n = 150) {
+  const pts = [];
+  const GA = Math.PI * (3 - Math.sqrt(5));
+  const P = (x, y, z, i) => pts.push(i % 12 === 0 ? [x, y, z, 1] : [x, y, z]);
+  if (kind === 'ghost') {
+    // dome + flared skirt
+    for (let i = 0; i < n; i++) {
+      const f = i / n, th = i * GA;
+      if (f < 0.55) {
+        const ph = (f / 0.55) * (Math.PI / 2); // top hemisphere
+        const r = Math.sin(ph);
+        P(r * Math.cos(th), Math.cos(ph) * 0.8, r * Math.sin(th), i);
+      } else {
+        const g2 = (f - 0.55) / 0.45;
+        const r = 1 + 0.25 * g2;
+        P(r * Math.cos(th), -g2 * 0.9, r * Math.sin(th), i);
+      }
+    }
+  } else if (kind === 'ufo') {
+    // oblate saucer + small crown dome
+    for (let i = 0; i < n; i++) {
+      const f = i / n, th = i * GA;
+      if (f < 0.75) {
+        const z = 2 * (f / 0.75) - 1;
+        const r = Math.sqrt(Math.max(0, 1 - z * z));
+        P(r * Math.cos(th), z * 0.32, r * Math.sin(th), i);
+      } else {
+        const g2 = (f - 0.75) / 0.25;
+        const ph = g2 * (Math.PI / 2);
+        const r = 0.4 * Math.sin(ph);
+        P(r * Math.cos(th), 0.3 + 0.35 * Math.cos(ph), r * Math.sin(th), i);
+      }
+    }
+  } else if (kind === 'slime') {
+    // squashed blob
+    for (let i = 0; i < n; i++) {
+      const z = 1 - (2 * (i + 0.5)) / n;
+      const r = Math.sqrt(Math.max(0, 1 - z * z));
+      const th = i * GA;
+      P(r * Math.cos(th), z * 0.62, r * Math.sin(th), i);
+    }
+  } else if (kind === 'saturn') {
+    // body + tilted ring
+    const body = Math.round(n * 0.62);
+    for (let i = 0; i < body; i++) {
+      const z = 1 - (2 * (i + 0.5)) / body;
+      const r = Math.sqrt(Math.max(0, 1 - z * z)) * 0.72;
+      const th = i * GA;
+      P(r * Math.cos(th), z * 0.72, r * Math.sin(th), i);
+    }
+    for (let i = body; i < n; i++) {
+      const th = (i / (n - body)) * 2 * Math.PI;
+      const x = 1.15 * Math.cos(th), z = 1.15 * Math.sin(th);
+      P(x, z * 0.3, z * 0.95, i); // baked ~17° tilt
+    }
+  } else if (kind === 'corona' || kind === 'seamine') {
+    // sphere + radial spikes; the seamine's are longer and fewer
+    const spikes = kind === 'corona' ? 14 : 10;
+    const tip = kind === 'corona' ? 1.45 : 1.7;
+    const body = Math.round(n * 0.7);
+    for (let i = 0; i < body; i++) {
+      const d = fibDir(i, body);
+      P(d[0], d[1], d[2], i);
+    }
+    const per = Math.max(2, Math.floor((n - body) / spikes));
+    let i = body;
+    for (let s = 0; s < spikes; s++) {
+      const d = fibDir(s, spikes);
+      for (let k = 0; k < per; k++, i++) {
+        const r = 1 + (tip - 1) * ((k + 1) / per);
+        P(d[0] * r, d[1] * r, d[2] * r, i);
+      }
+    }
+  } else if (kind === 'knot') {
+    // trefoil curve
+    for (let i = 0; i < n; i++) {
+      const t = (i / n) * 2 * Math.PI;
+      const r = 2 + Math.cos(3 * t);
+      P(r * Math.cos(2 * t) / 3, Math.sin(3 * t) / 1.6, r * Math.sin(2 * t) / 3, i);
+    }
+  } else {
+    return spherePts(n);
+  }
+  return fitUnit(pts);
+}
+
 // tower heads — half-dotted silhouettes for the TD defense roster, one
 // per HokorobiTawaa tower shape. All fitUnit-normalized, every 12th dot
 // hi. These are STATIC clouds: the game animates them with transform
