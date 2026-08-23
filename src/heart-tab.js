@@ -15,14 +15,14 @@
 
 import * as THREE from '../vendor/three.module.js';
 import GUI from '../vendor/lil-gui.esm.js';
-import { generateSphereMesh, relax } from './grid.js?v=63de681e';
-import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=63de681e';
-import { mulberry32, randomSeed } from './rng.js?v=63de681e';
-import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3 } from './vec3.js?v=63de681e';
-import { CREATURES, waveJelly } from './creatures.js?v=63de681e';
-import { UNITS, UNIT_NAMES, buildUnit, makeOrbCloud, makeBulletCloud, makeDebris, makeDotBurst, makeHeartCloud } from './units.js?v=63de681e';
-import { LOOKS, LOOK_NAMES } from './looks.js?v=63de681e';
-import { makeCellIndex } from './cellindex.js?v=63de681e';
+import { generateSphereMesh, relax } from './grid.js?v=86382780';
+import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=86382780';
+import { mulberry32, randomSeed } from './rng.js?v=86382780';
+import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3 } from './vec3.js?v=86382780';
+import { CREATURES, waveJelly } from './creatures.js?v=86382780';
+import { UNITS, UNIT_NAMES, buildUnit, makeOrbCloud, makeBulletCloud, makeDebris, makeDotBurst, makeHeartCloud } from './units.js?v=86382780';
+import { LOOKS, LOOK_NAMES } from './looks.js?v=86382780';
+import { makeCellIndex } from './cellindex.js?v=86382780';
 
 export function initHeartTab(root) {
   let active = false;
@@ -264,19 +264,25 @@ export function initHeartTab(root) {
       group.add(b);
       shells.push(b);
     }
-    // transform-only idle: the triad spins about the surface normal, each
-    // shell bobs with a small phase offset
-    group.userData.tick = (t) => {
-      group.rotation.y = t * 0.9 + phase;
-      for (let k = 0; k < 3; k++) {
-        shells[k].position.y = r * (1.1 + 0.25 * Math.sin(t * 2.2 + phase + k * 2.1));
-      }
-    };
     const c = graph.centers[ci];
     const n = graph.normals[ci];
     group.position.set(c[0], c[1], c[2]);
     tmpN.set(n[0], n[1], n[2]);
     group.quaternion.setFromUnitVectors(Y_AXIS, tmpN); // local +Y = surface normal
+    // transform-only idle: spin PURELY about the cell's normal. Euler trap:
+    // writing rotation.y would REPLACE the alignment quaternion above (they
+    // are two views of one rotation) and spin about world-Y — shells then
+    // tilt into the ground everywhere but the pole. Compose quaternions:
+    // base alignment × local-Y spin.
+    const baseQ = group.quaternion.clone();
+    const spinQ = new THREE.Quaternion();
+    group.userData.tick = (t) => {
+      spinQ.setFromAxisAngle(Y_AXIS, t * 0.9 + phase);
+      group.quaternion.copy(baseQ).multiply(spinQ);
+      for (let k = 0; k < 3; k++) {
+        shells[k].position.y = r * (1.1 + 0.25 * Math.sin(t * 2.2 + phase + k * 2.1));
+      }
+    };
     scene.add(group);
     orbMeshes.set(ci, group);
     return true;
@@ -349,6 +355,10 @@ export function initHeartTab(root) {
       if (dungeon.tags[nb] === BLOCKED
         && dist3(cand, graph.centers[nb]) < cellSide * 0.62) return true;
     }
+    // ally tanks are solid — no driving through the patrol
+    for (const f of friendlies) {
+      if (f.alive && dist3(cand, f.pos) < cellSide * 0.5) return true;
+    }
     return unitBlocker(cand);
   }
 
@@ -378,7 +388,10 @@ export function initHeartTab(root) {
   // full-edge adjacency only, so corner-blocked cells are collected
   // through the open neighbours' own adjacency.
   function wallCushion(pos) {
-    const margin = cellSide * 0.8;
+    // 0.95: irregular quads put some wall FACES ~0.7·cellSide from their
+    // center, and the hull reaches 0.5 — 0.8 still let angled approaches
+    // overlap. Two passes so multi-wall pushes (corners) converge.
+    const margin = cellSide * 0.95;
     const ci = cellIndex(pos);
     if (ci === -1) return pos;
     let p = pos;
@@ -394,17 +407,24 @@ export function initHeartTab(root) {
         if (dungeon.tags[nb2] === BLOCKED) walls.push(nb2);
       }
     }
-    for (const w of walls) {
-      const c = graph.centers[w];
+    const pushFrom = (c, m) => {
       const d = dist3(p, c);
-      if (d >= margin) continue;
+      if (d >= m) return;
       const away = sub3(p, c);
       const n = norm3(p);
       let tg = sub3(away, scale3(n, dot3(away, n)));
       const l = len3(tg);
-      if (l < 1e-9) continue;
+      if (l < 1e-9) return;
       tg = scale3(tg, 1 / l);
-      p = norm3(add3(p, scale3(tg, (margin - d) * 0.8)));
+      p = norm3(add3(p, scale3(tg, (m - d) * 0.8)));
+    };
+    for (let pass = 0; pass < 2; pass++) {
+      for (const w of walls) pushFrom(graph.centers[w], margin);
+    }
+    // ally tanks are solid too: same soft push, tighter band — two hulls
+    // shouldn't interpenetrate but must still squeeze past each other
+    for (const f of friendlies) {
+      if (f.alive) pushFrom(f.pos, cellSide * 0.7);
     }
     return p;
   }
@@ -708,11 +728,20 @@ export function initHeartTab(root) {
     const baseLift = creatureGeo ? 0.85 : (playerMesh.userData.lift ?? 0.05);
     const lift = unitScale * (baseLift + (prof ? prof.hover(simTime) : 0));
     let p = add3(player.pos, scale3(n, lift));
-    // recoil: the hull jolts back along the heading and eases home
+    // recoil, reworked: the TURRET takes the kick — it slams back with a
+    // high-frequency shudder — while the hull only rocks (pitch below) and
+    // shifts a touch. Whole-body translation alone read as sliding, not
+    // firing. k scales everything through the 'shell recoil' dial.
     const rf = recoilFactor();
-    if (rf > 0) p = add3(p, scale3(player.smoothDir, -unitScale * 0.3 * params.recoil * rf * rf));
+    const rk = params.recoil * rf * rf;
+    if (rf > 0) p = add3(p, scale3(player.smoothDir, -unitScale * 0.06 * rk));
     playerMesh.position.set(p[0], p[1], p[2]);
     playerMesh.scale.setScalar(unitScale * (playerMesh.userData.baseScale ?? 1));
+    const turret = playerMesh.userData.turret;
+    if (turret) {
+      const shudder = rf > 0 ? Math.sin((RECOIL_LEN - recoilLeft) * 70) * 0.03 * rk : 0;
+      turret.position.z = (turret.userData.baseZ ?? -0.12) - 0.18 * rk + shudder;
+    }
     // marker floats above the wall tops so nothing on the map occludes it
     const mp = scale3(player.pos, 1 + params.wallHeight * 1.6);
     markerMesh.position.set(mp[0], mp[1], mp[2]);
@@ -723,6 +752,8 @@ export function initHeartTab(root) {
     tmpObj.lookAt(p[0] + h[0], p[1] + h[1], p[2] + h[2]);
     playerMesh.quaternion.copy(tmpObj.quaternion);
     // no extra rotation: lookAt with up=n already leaves body +Y ≈ normal
+    // — except the recoil rock: a nose-up pitch that eases back down
+    if (rf > 0) playerMesh.rotateX(-0.05 * rk);
     markerMesh.quaternion.copy(tmpObj.quaternion); // arrow nose = heading
   }
 
@@ -735,7 +766,7 @@ export function initHeartTab(root) {
     // suspension dip while a ram bump is live: sink the eye, ease out.
     // Recoil pulls the eye straight back along the heading instead.
     const dip = cellSide * 0.95 * bumpFactor() * bumpFactor();
-    const kick = cellSide * 0.3 * params.recoil * recoilFactor() * recoilFactor();
+    const kick = cellSide * 0.08 * params.recoil * recoilFactor() * recoilFactor();
     let eye, look;
     if (params.view === 'third') {
       // behind and above; pulls back as the creature grows so it stays framed
@@ -2309,6 +2340,15 @@ export function initHeartTab(root) {
   // ?laser=1 holds the laser trigger down (headless visual check)
   if (urlParams.get('laser') === '1') keys.laser = true;
 
+  // ?recoil=1 freezes a mid-recoil pose (turret back, hull rocked) so the
+  // kick can be screenshot; the sim pauses to hold it
+  if (urlParams.get('recoil') === '1') {
+    recoilLeft = RECOIL_LEN * 0.75;
+    cannonHeat = CANNON_COOL;
+    placeActors();
+    paused = true;
+  }
+
   // ?blast=N breaches the N wall cells nearest the player — exercises the
   // carve + debris + rebuild path without needing a live shot
   const blastN = parseInt(urlParams.get('blast') || '0', 10);
@@ -2338,7 +2378,7 @@ export function initHeartTab(root) {
 
   // opening briefing on a clean load; any debug hook means headless/demo,
   // where a frozen sim would break the verification flow
-  const debugging = ['walk', 'tick', 'wave', 'blast', 'laser', 'found']
+  const debugging = ['walk', 'tick', 'wave', 'blast', 'laser', 'found', 'recoil']
     .some((k) => urlParams.get(k));
   if (!debugging) showBriefing();
 

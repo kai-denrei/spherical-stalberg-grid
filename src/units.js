@@ -15,7 +15,7 @@
 // tick(t) (idle animation) }.
 
 import * as THREE from '../vendor/three.module.js';
-import { CREATURES, waveJelly, spherePts, bulletPts, heartPts } from './creatures.js?v=63de681e';
+import { CREATURES, waveJelly, spherePts, bulletPts, heartPts } from './creatures.js?v=86382780';
 
 function normalizeToUnit(group) {
   group.updateMatrixWorld(true);
@@ -64,6 +64,7 @@ function makeTank(cols) {
   outline(treadR, edgeBlue);
   const turret = new THREE.Group();
   turret.position.set(0, 0.84, -0.12);
+  turret.userData.baseZ = -0.12; // recoil slides the turret back from here
   g.add(turret);
   const turretBox = add(new THREE.BoxGeometry(0.8, 0.34, 1.0), main, 0, 0, 0, turret);
   outline(turretBox, edgeWhite);
