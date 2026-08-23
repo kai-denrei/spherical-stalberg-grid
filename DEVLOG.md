@@ -6,6 +6,27 @@ Demo links assume `npm run serve` (port 8144) or the
 
 ---
 
+## `db390f4` — Recoil as a dial, forward as a choice
+
+Two control-feel changes. Shell recoil became a parameter instead of a
+constant: `params.recoil` (GUI slider 0–8, default 3) scales the hull
+jolt and camera kick together, and the recoil window widened to
+0.35 s. The lesson folded in: when the operator says "more, but
+tweakable", ship the dial, not another guess — the default is the
+opinion, the slider is the escape hatch.
+
+Manual driving lost its auto-roll. The always-rolls-forward manual was
+a mobile-ergonomics bet that proved too aggressive in play — the tank
+committed you to motion the moment you touched a steering key. Forward
+is now player-triggered: hold W to drive, and a quick **double-tap**
+of the forward control (W or ▲) toggles CRUISE — self-rolling until
+S/▼ kills it, with W boosting on top. One wrinkle worth recording:
+cruise pins the manual-mode clock, otherwise the idle auto-wander
+would reclaim the tank three seconds into a hands-off cruise and the
+two "auto forward" systems would fight over the throttle. The idle
+wanderer itself is unchanged — it remains the tab's ambient mode, with
+its own HUD line and `auto resume` slider.
+
 ## `197b4a2` — The game gets a shape: briefing, rounds, one win condition
 
 Structure day. The heart tab had mechanics but no arc — now it has
