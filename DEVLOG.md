@@ -6,6 +6,28 @@ Demo links assume `npm run serve` (port 8144) or the
 
 ---
 
+## `a795ef0` — TD M1: two cameras, one identity
+
+The TD tab exists. It is knowingly the sixth cp+sed sibling — the spec
+bounded that cost in advance by moving the shared facts into
+enemyspec.js first, and the copy pre-empted the two recorded sibling
+traps: every `#h-` CSS selector group got its `#td-` twin via an
+anchored script (the organic-tab canvas-collapse bug, not repeated),
+and all element ids are td-prefixed (no duplicate-id roulette).
+
+On top of the full heart game, the mode pair the operator called the
+differentiation: **B** toggles between ACTION (the heart rig,
+untouched) and BUILD — a top-down planning camera over the Heart pole,
+drag to orbit, wheel to zoom. The switch costs one boolean because the
+camera system was already goal-based: updateCameraGoal computes a
+different goal, and the existing lerp eases the transition with no
+cut. **M** swaps the minimap for the fixed heart-top-down threat view.
+The tempo rule from the spec is live too: build FREEZES the war only
+when the field is clear — wave clock and combat stop, ambient life
+keeps breathing — while mid-assault the toggle is camera-only, so
+build mode can't be used as a combat pause. The HUD names the state
+you're in. Towers arrive in M2 onto exactly this camera.
+
 ## `a1839ca` — TD M0: the data moves out before the sixth sibling is born
 
 First TD commit, and it deliberately contains no TD gameplay. The
