@@ -6,6 +6,26 @@ Demo links assume `npm run serve` (port 8144) or the
 
 ---
 
+## `a1839ca` — TD M0: the data moves out before the sixth sibling is born
+
+First TD commit, and it deliberately contains no TD gameplay. The
+lesson from five cp+sed board tabs is that shared FACTS drift first,
+so before td-tab.js exists, the facts moved into pure modules:
+`enemyspec.js` (the 12-type roster — tints, specs, intro schedule, now
+with HK bounty values), `towers.js` (HK's eight towers re-based to
+cells and fractional hp, the exact 70%/120% upgrade economics, and
+targeting as a pure function with an *injected* distance metric — the
+module picks targets without knowing the world is a sphere), and
+`economy.js` (HK's credit loop verbatim: streak++ then bounty ×
+multiplier capped ×5, leak resets, 75% refunds — plus the design's ram
+premium and wave-tempo bonuses). All Node-tested (26 checks in
+test/tdcore.mjs, in the suite), because DOM-free math is the part of a
+game you can actually regression-proof.
+
+heart-tab now imports its roster instead of owning it — verified
+zero-change headlessly (same waves, same round gating, same HUD).
+When TD lands, a balance edit touches one file, not two siblings.
+
 ## `2ce7793` — touch-action does not inherit
 
 The double-tap zoom "fix" from two commits back never worked where it
