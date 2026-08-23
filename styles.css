@@ -246,6 +246,56 @@ html, body {
 }
 .tc-util button:active { background: rgba(90, 140, 230, 0.5); color: #fff; }
 
+/* --- TD shop / upgrade panel (build mode, tap a cell) -------------------- */
+#td-shop {
+  position: absolute;
+  bottom: calc(max(12px, env(safe-area-inset-bottom)) + 148px);
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 9;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 6px;
+  max-width: min(560px, 92vw);
+  padding: 10px 12px;
+  background: rgba(10, 20, 24, 0.88);
+  border: 1px solid rgba(53, 255, 208, 0.35);
+  border-radius: 12px;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+#td-shop.hidden { display: none; }
+#td-shop .shop-head {
+  flex-basis: 100%;
+  text-align: center;
+  font-size: 11px;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  color: #7fe8d0;
+}
+#td-shop button {
+  padding: 8px 11px;
+  font: 12px ui-monospace, Menlo, monospace;
+  background: rgba(30, 44, 58, 0.6);
+  color: #cfe2ee;
+  border: 1px solid rgba(120, 150, 210, 0.4);
+  border-radius: 9px;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+#td-shop button:disabled { opacity: 0.35; cursor: default; }
+#td-shop button:not(:disabled):hover { background: rgba(60, 90, 120, 0.7); color: #fff; }
+#td-shop .shop-sell { border-color: rgba(255, 170, 90, 0.5); color: #ffd9a8; }
+#td-shop .shop-max { align-self: center; font-size: 11px; color: #7fe8d0; letter-spacing: 0.12em; }
+#td-shop .shop-note {
+  flex-basis: 100%;
+  text-align: center;
+  font-size: 11px;
+  color: #ff8f80;
+  min-height: 13px;
+}
+
 /* touch devices: 44pt+ hit targets (Apple HIG), roomier gaps */
 @media (pointer: coarse) {
   .tzone-side { width: 96px; }

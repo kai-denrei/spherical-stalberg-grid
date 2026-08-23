@@ -19,15 +19,17 @@
 
 import * as THREE from '../vendor/three.module.js';
 import GUI from '../vendor/lil-gui.esm.js';
-import { generateSphereMesh, relax } from './grid.js?v=b4bb539e';
-import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=b4bb539e';
-import { mulberry32, randomSeed } from './rng.js?v=b4bb539e';
-import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3 } from './vec3.js?v=b4bb539e';
-import { CREATURES, waveJelly } from './creatures.js?v=b4bb539e';
-import { UNITS, UNIT_NAMES, buildUnit, makeOrbCloud, makeBulletCloud, makeDebris, makeDotBurst, makePortalCloud, makeHeartCloud } from './units.js?v=b4bb539e';
-import { LOOKS, LOOK_NAMES } from './looks.js?v=b4bb539e';
-import { makeCellIndex } from './cellindex.js?v=b4bb539e';
-import { CREATURE_TINTS, ENEMY_SPEC, INTROS } from './enemyspec.js?v=b4bb539e';
+import { generateSphereMesh, relax } from './grid.js?v=a184e9b0';
+import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=a184e9b0';
+import { mulberry32, randomSeed } from './rng.js?v=a184e9b0';
+import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3 } from './vec3.js?v=a184e9b0';
+import { CREATURES, waveJelly } from './creatures.js?v=a184e9b0';
+import { UNITS, UNIT_NAMES, buildUnit, makeOrbCloud, makeBulletCloud, makeDebris, makeDotBurst, makePortalCloud, makeHeartCloud, makeTowerUnit } from './units.js?v=a184e9b0';
+import { LOOKS, LOOK_NAMES } from './looks.js?v=a184e9b0';
+import { makeCellIndex } from './cellindex.js?v=a184e9b0';
+import { CREATURE_TINTS, ENEMY_SPEC, INTROS } from './enemyspec.js?v=a184e9b0';
+import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval } from './towers.js?v=a184e9b0';
+import { makeEconomy, sellRefund } from './economy.js?v=a184e9b0';
 
 export function initTdTab(root) {
   let active = false;
@@ -821,7 +823,8 @@ export function initTdTab(root) {
   }
 
   function openNeighbors(ci) {
-    return graph.adj[ci].filter((nb) => dungeon.tags[nb] !== BLOCKED);
+    // towers block PATHING for everyone — they are the walls you buy
+    return graph.adj[ci].filter((nb) => dungeon.tags[nb] !== BLOCKED && !towerCells.has(nb));
   }
 
   // --- the wanderer: exit choice = steering bias + its own whims -----------
@@ -1116,19 +1119,34 @@ export function initTdTab(root) {
   root.querySelector('#td-pad-build').addEventListener('click', () => toggleBuild());
   root.querySelector('#td-pad-map').addEventListener('click', () => toggleMap());
 
-  // build-camera orbit: drag = azimuth, wheel = zoom. Active only in
-  // build mode, so action-mode pointer input stays untouched.
+  // build-camera input: drag = azimuth orbit, wheel = zoom, TAP = select a
+  // cell (shop/upgrade). A tap is a press that never traveled; anything
+  // that moves >8 px is an orbit. Action-mode pointers stay untouched.
   let buildDragX = null;
+  let tapStart = null;
   container.addEventListener('pointerdown', (ev) => {
-    if (buildMode) buildDragX = ev.clientX;
+    if (!buildMode) return;
+    buildDragX = ev.clientX;
+    tapStart = [ev.clientX, ev.clientY];
   });
   addEventListener('pointermove', (ev) => {
     if (buildMode && buildDragX !== null) {
+      if (tapStart && Math.hypot(ev.clientX - tapStart[0], ev.clientY - tapStart[1]) > 8) {
+        tapStart = null; // it's an orbit now
+      }
       buildYaw += (ev.clientX - buildDragX) * 0.006;
       buildDragX = ev.clientX;
     }
   });
-  addEventListener('pointerup', () => { buildDragX = null; });
+  addEventListener('pointerup', (ev) => {
+    if (buildMode && tapStart
+      && Math.hypot(ev.clientX - tapStart[0], ev.clientY - tapStart[1]) <= 8) {
+      const ci = cellAtScreen(ev.clientX, ev.clientY);
+      if (ci !== -1) openShop(ci);
+    }
+    buildDragX = null;
+    tapStart = null;
+  });
   container.addEventListener('wheel', (ev) => {
     if (!buildMode) return;
     buildDist = Math.min(4, Math.max(1.7, buildDist + ev.deltaY * 0.002));
@@ -1280,6 +1298,7 @@ export function initTdTab(root) {
       + (laserOverheat ? ' · laser COOLING' : '');
     statsEl.textContent =
       `HEART ${'♥'.repeat(Math.max(0, heartHP)).padEnd(HEART_MAX, '·')}  YOU ♥${playerHP}  ✦${ammo}\n` +
+      `${eco.credit}c ×${eco.multiplier().toFixed(2)} · towers ${towers.length}\n` +
       `R${round} · wave ${wave} · hostiles ${alive} · portals ${spAlive}/${spawnPoints.length} · allies ${allies}${alerts}\n` +
       (buildMode
         ? (anyHostiles() ? 'BUILD (war still on!) — B to fight · M map' : 'BUILD · frozen — B to fight · M map')
@@ -1360,6 +1379,12 @@ export function initTdTab(root) {
   // --- generation ----------------------------------------------------------
   function regenerate() {
     const t0 = performance.now();
+    // towers first: stale towerCells would poison openNeighbors during
+    // board generation. Cleared towers convert to round capital if a
+    // victory banked it (carryCredit); otherwise a fresh purse.
+    clearTowers();
+    eco = makeEconomy(carryCredit !== null ? { startCredit: carryCredit } : {});
+    carryCredit = null;
     mesh = generateSphereMesh({ seed: params.seed >>> 0, n: params.points, k: 12 });
     relax(mesh, { n_iters: params.relaxIters, PULL_RATE: 0.25 });
     dungeon = generateDungeon(mesh, {
@@ -1630,6 +1655,7 @@ export function initTdTab(root) {
           prog: whim() * 0.4, pos: graph.centers[sp.ci].slice(), dir: [0, 1, 0],
           obj, alive: true, phase: whim() * 6.283,
           hp: spec.hp, behMult: 1, behUntil: -1, touchCd: -1,
+          slowFactor: 1, slowUntil: -1, // tower slow-field debuff
         });
       }
     }
@@ -1649,6 +1675,7 @@ export function initTdTab(root) {
       }
       let pace = ENEMY_SPEED * spec.speed;
       if (tNow < e.behUntil) pace *= e.behMult; // on-hit reaction window
+      if (tNow < e.slowUntil) pace *= e.slowFactor; // slow-tower debuff
       // erratic (phage): HokorobiTawaa velocity bursts, 0.7×–1.3×
       if (spec.erratic) pace *= 0.7 + 0.6 * (0.5 + 0.5 * Math.sin(tNow * 3.1 + e.phase * 7));
       e.prog += pace * dt;
@@ -1701,17 +1728,18 @@ export function initTdTab(root) {
           scene.add(burst);
           debris.push(burst);
           bumpLeft = BUMP_LEN;
+          eco.award(spec.bounty, { ram: true }); // the ram premium
           killCreature(e, true);
           checkVictory();
           continue;
         }
         if (tNow > e.touchCd) { e.touchCd = tNow + 1.2; playerHit(); }
       }
-      // allies are tanks too: same ram rule
+      // allies are tanks too: same ram rule (standard bounty, no premium)
       for (const fr of friendlies) {
         if (!fr.alive) continue;
         if (dist3(e.pos, fr.pos) < touchR) {
-          if (spec.rammable) { killCreature(e, true); }
+          if (spec.rammable) { eco.award(spec.bounty); killCreature(e, true); }
           else if (tNow > e.touchCd) {
             e.touchCd = tNow + 1.2;
             fr.hp--;
@@ -1752,7 +1780,11 @@ export function initTdTab(root) {
     if (react && spec.accelOnHit) { e.behMult = spec.accelOnHit; e.behUntil = tNow + 1.2; }
     e.lastHitT = tNow; // resets the regenerators' out-of-combat clock
     e.hp -= dmg;
-    if (e.hp <= 0) { killCreature(e, true); return true; }
+    if (e.hp <= 0) {
+      eco.award(spec.bounty); // any weapon's kill pays — tower, shell, laser
+      killCreature(e, true);
+      return true;
+    }
     e.obj.scale.setScalar(e.scale0 * (0.7 + 0.3 * Math.max(0, e.hp) / spec.hp));
     return false;
   }
@@ -2187,6 +2219,7 @@ export function initTdTab(root) {
   }
 
   function heartHit(dmg = 1) {
+    eco.leak(); // a breach kills the streak — HK's rule, our Heart
     heartHP -= dmg;
     heartSprite.userData.hit(); // orange/red Wave flare
     updateHud();
@@ -2256,6 +2289,356 @@ export function initTdTab(root) {
     }
   }
 
+  // ======================= TOWERS (TD M2) ==================================
+  // Slots are open cells; a placed tower is SOLID and blocks pathing (the
+  // maze you buy). Placement runs a connectivity guard: no live portal may
+  // be cut off from the Heart. Firing/targeting math lives in towers.js;
+  // this section owns raycast→cell selection, the shop/upgrade panels,
+  // projectile kinds, and the economy hookup.
+  const towers = [];              // { key, def, tier, ci, obj, cooldown, spent }
+  const towerByCell = new Map();  // ci -> tower
+  const towerCells = new Set();
+  const towerShots = [];          // { pos, dir, dist, mesh, dmg, splash, homing }
+  const beams = [];               // { mesh, ttl } laser + slow-tether fx
+  let eco = makeEconomy();
+  let carryCredit = null;         // round-clear: towers auto-sell at 100% into this
+
+  // pathing re-lay that knows about tower cells (portals must stay linked)
+  function relayNav() {
+    dungeon.distToHeart = bfsDist(graph.adj, [dungeon.heart],
+      (i) => dungeon.tags[i] !== BLOCKED && !towerCells.has(i));
+  }
+
+  function placeError(ci) {
+    if (ci === -1 || dungeon.tags[ci] === BLOCKED) return 'not open ground';
+    if (ci === dungeon.heart) return 'that is the Heart';
+    if (towerByCell.has(ci)) return 'occupied';
+    if (spawnPoints.some((s) => s.alive && s.ci === ci)) return 'that is a portal';
+    // connectivity guard: simulate the block, every live portal must still
+    // reach the Heart — you shape the flow, you don't dam it
+    towerCells.add(ci);
+    const d = bfsDist(graph.adj, [dungeon.heart],
+      (i) => dungeon.tags[i] !== BLOCKED && !towerCells.has(i));
+    towerCells.delete(ci);
+    for (const sp of spawnPoints) {
+      if (sp.alive && d[sp.ci] === -1) return 'would seal a portal off';
+    }
+    return null;
+  }
+
+  function placeTower(key, ci) {
+    const def = TOWER_BY_KEY[key];
+    if (!def) return false;
+    const err = placeError(ci);
+    if (err) { flashShopNote(err); return false; }
+    if (!eco.spend(def.cost)) { flashShopNote('not enough credit'); return false; }
+    const obj = makeTowerUnit(def);
+    const s = (obj.userData.baseScale ?? 1) * cellSide * 0.62;
+    obj.scale.setScalar(s);
+    const c = graph.centers[ci];
+    const n = graph.normals[ci];
+    obj.position.set(c[0], c[1], c[2]);
+    tmpN.set(n[0], n[1], n[2]);
+    obj.quaternion.setFromUnitVectors(Y_AXIS, tmpN);
+    scene.add(obj);
+    const tower = { key, def, tier: 0, ci, obj, cooldown: 0, spent: def.cost };
+    towers.push(tower);
+    towerByCell.set(ci, tower);
+    towerCells.add(ci);
+    relayNav();
+    showRangeRing(ci, effectiveStats(def, 0).range, def.color, 1.6);
+    updateHud();
+    return true;
+  }
+
+  function sellTower(tower) {
+    eco.addCredit(sellRefund(tower.spent));
+    scene.remove(tower.obj);
+    disposeObj(tower.obj);
+    towers.splice(towers.indexOf(tower), 1);
+    towerByCell.delete(tower.ci);
+    towerCells.delete(tower.ci);
+    relayNav();
+    updateHud();
+  }
+
+  function upgradeTower(tower) {
+    const cost = upgradeCost(tower.def, tower.tier);
+    if (cost === null || !eco.spend(cost)) return false;
+    tower.tier++;
+    tower.spent += cost;
+    tower.obj.scale.multiplyScalar(1.12); // a tier reads as bulk
+    showRangeRing(tower.ci, effectiveStats(tower.def, tower.tier).range, tower.def.color, 1.4);
+    updateHud();
+    return true;
+  }
+
+  // dotted range ring on the surface — one reusable mesh, house style
+  let rangeRing = null;
+  let rangeRingTtl = 0;
+  function showRangeRing(ci, radiusCells, color, ttl = 0) {
+    hideRangeRing();
+    const c = graph.centers[ci];
+    const n = graph.normals[ci];
+    const theta = radiusCells * cellSide; // arc angle on the unit sphere
+    const ref = Math.abs(n[1]) < 0.9 ? [0, 1, 0] : [1, 0, 0];
+    const t1 = norm3(cross3(n, ref));
+    const t2 = cross3(n, t1);
+    const pos = [];
+    const SEG = 72;
+    for (let i = 0; i < SEG; i++) {
+      const a = (i / SEG) * 2 * Math.PI;
+      const dir = add3(scale3(t1, Math.cos(a)), scale3(t2, Math.sin(a)));
+      const p = scale3(norm3(add3(scale3(norm3(c), Math.cos(theta)), scale3(dir, Math.sin(theta)))),
+        1 + params.wallHeight * 0.7);
+      pos.push(p[0], p[1], p[2]);
+    }
+    const geo = new THREE.BufferGeometry();
+    geo.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+    rangeRing = new THREE.Points(geo, new THREE.PointsMaterial({
+      size: 2.4, sizeAttenuation: false, color,
+      transparent: true, opacity: 0.9,
+    }));
+    scene.add(rangeRing);
+    rangeRingTtl = ttl; // 0 = sticky until hidden
+  }
+  function hideRangeRing() {
+    if (!rangeRing) return;
+    scene.remove(rangeRing);
+    rangeRing.geometry.dispose();
+    rangeRing.material.dispose();
+    rangeRing = null;
+  }
+
+  // --- firing ------------------------------------------------------------
+  const chord = (a, b) => dist3(a, b);
+  function stepTowers(dt, tNow) {
+    for (const tw of towers) {
+      if (tw.obj.userData.tick) tw.obj.userData.tick(tNow + tw.ci);
+      tw.cooldown -= dt;
+      if (tw.cooldown > 0) continue;
+      const eff = effectiveStats(tw.def, tw.tier);
+      const range = eff.range * cellSide;
+      const tp = graph.centers[tw.ci];
+      const target = pickTarget(tp, range, enemies, chord);
+      if (!target) continue;
+      tw.cooldown = shotInterval(eff.rate);
+      const n = graph.normals[tw.ci];
+      const muzzle = add3(tp, scale3(n, cellSide * 0.55));
+      const raw = sub3(target.pos, tp);
+      const flat = norm3(sub3(raw, scale3(norm3(tp), dot3(raw, norm3(tp)))));
+      const atk = tw.def.attack;
+      if (atk === 'beam') {
+        // hitscan: damage now, draw the light
+        damageEnemy(target, tNow, eff.dmg, true);
+        spawnBeam(muzzle, add3(target.pos, scale3(norm3(target.pos), cellSide * 0.3)), tw.def.color);
+      } else if (atk === 'slowfield') {
+        // tether EVERY hostile in range: chip damage + the slow
+        for (const e of enemies) {
+          if (!e.alive || chord(tp, e.pos) > range) continue;
+          damageEnemy(e, tNow, eff.dmg, true);
+          if (e.alive) {
+            e.slowFactor = eff.slowFactor;
+            e.slowUntil = tNow + eff.slowDur;
+            spawnBeam(muzzle, e.pos, tw.def.color, 0.1);
+          }
+        }
+      } else if (atk === 'spread') {
+        for (let p = 0; p < eff.pellets; p++) {
+          const ang = (p - (eff.pellets - 1) / 2) * 0.22;
+          const cs = Math.cos(ang), sn = Math.sin(ang);
+          const nn = norm3(tp);
+          const nxd = cross3(nn, flat);
+          const dir = norm3(add3(scale3(flat, cs), scale3(nxd, sn)));
+          spawnTowerShot(muzzle, dir, tw, eff, null);
+        }
+      } else {
+        spawnTowerShot(muzzle, flat, tw, eff, atk === 'homing' ? target : null);
+      }
+    }
+  }
+
+  const towerShotGeo = new THREE.SphereGeometry(1, 6, 6); // shared, scaled per shot
+  function spawnTowerShot(pos, dir, tw, eff, homing) {
+    const mesh = new THREE.Mesh(towerShotGeo,
+      new THREE.MeshBasicMaterial({ color: tw.def.color }));
+    mesh.scale.setScalar(cellSide * 0.09);
+    scene.add(mesh);
+    towerShots.push({
+      pos: norm3(pos), dir, dist: 0, mesh,
+      dmg: eff.dmg, splash: (eff.splash || 0) * cellSide, homing,
+      range: eff.range * cellSide * 1.35,
+    });
+  }
+
+  function killTowerShot(i) {
+    scene.remove(towerShots[i].mesh);
+    towerShots[i].mesh.material.dispose(); // geometry is shared
+    towerShots.splice(i, 1);
+  }
+
+  function updateTowerShots(dt, tNow) {
+    const v = 4.2 * cellSide;
+    for (let i = towerShots.length - 1; i >= 0; i--) {
+      const p = towerShots[i];
+      // homing re-steers toward its (living) target each frame
+      if (p.homing && p.homing.alive) {
+        const raw = sub3(p.homing.pos, p.pos);
+        const n0 = norm3(p.pos);
+        const want = norm3(sub3(raw, scale3(n0, dot3(raw, n0))));
+        p.dir = norm3(add3(scale3(p.dir, 0.75), scale3(want, 0.25)));
+      }
+      p.pos = norm3(add3(p.pos, scale3(p.dir, v * dt)));
+      const n = p.pos;
+      p.dir = norm3(sub3(p.dir, scale3(n, dot3(p.dir, n))));
+      p.dist += v * dt;
+      const lift = 1 + params.wallHeight * 0.5;
+      p.mesh.position.set(p.pos[0] * lift, p.pos[1] * lift, p.pos[2] * lift);
+      let hit = false;
+      for (const e of enemies) {
+        if (!e.alive) continue;
+        if (chord(p.pos, e.pos) < cellSide * Math.max(0.42, e.spec.size * 0.8)) {
+          if (p.splash > 0) {
+            // mortar: everyone near the impact eats it
+            for (const e2 of enemies) {
+              if (e2.alive && chord(p.pos, e2.pos) <= p.splash) damageEnemy(e2, tNow, p.dmg, true);
+            }
+          } else {
+            damageEnemy(e, tNow, p.dmg, true);
+          }
+          hit = true;
+          break;
+        }
+      }
+      if (hit || p.dist > p.range) killTowerShot(i);
+    }
+  }
+
+  // beams: a thin bright segment that burns out fast — laser + slow tethers
+  const beamGeo = new THREE.BoxGeometry(1, 1, 1);
+  function spawnBeam(a, b, color, ttl = 0.16) {
+    const mat = new THREE.MeshBasicMaterial({
+      color, transparent: true, opacity: 0.9,
+      blending: THREE.AdditiveBlending, depthWrite: false,
+    });
+    const mesh = new THREE.Mesh(beamGeo, mat);
+    const mid = scale3(add3(a, b), 0.5 * (1 + params.wallHeight * 0.5));
+    mesh.position.set(mid[0], mid[1], mid[2]);
+    const d = sub3(b, a);
+    const len = len3(d);
+    mesh.scale.set(cellSide * 0.03, cellSide * 0.03, Math.max(1e-6, len));
+    tmpV.set(d[0], d[1], d[2]).normalize();
+    mesh.quaternion.setFromUnitVectors(Z_AXIS, tmpV);
+    scene.add(mesh);
+    beams.push({ mesh, ttl });
+  }
+  function updateBeams(dt) {
+    for (let i = beams.length - 1; i >= 0; i--) {
+      beams[i].ttl -= dt;
+      beams[i].mesh.material.opacity = Math.max(0, beams[i].ttl / 0.16) * 0.9;
+      if (beams[i].ttl <= 0) {
+        scene.remove(beams[i].mesh);
+        beams[i].mesh.material.dispose();
+        beams.splice(i, 1);
+      }
+    }
+  }
+
+  function clearTowers() {
+    for (const tw of towers) { scene.remove(tw.obj); disposeObj(tw.obj); }
+    towers.length = 0;
+    towerByCell.clear();
+    towerCells.clear();
+    for (let i = towerShots.length - 1; i >= 0; i--) killTowerShot(i);
+    for (let i = beams.length - 1; i >= 0; i--) {
+      scene.remove(beams[i].mesh);
+      beams[i].mesh.material.dispose();
+      beams.splice(i, 1);
+    }
+    hideRangeRing();
+    closeShop();
+  }
+
+  // --- shop / upgrade panel (build mode, tap a cell) ----------------------
+  const shopEl = document.createElement('div');
+  shopEl.id = 'td-shop';
+  shopEl.className = 'hidden';
+  root.appendChild(shopEl);
+  let shopCi = -1;
+  function closeShop() {
+    shopEl.classList.add('hidden');
+    shopCi = -1;
+    if (rangeRingTtl === 0) hideRangeRing();
+  }
+  function flashShopNote(text) {
+    const note = shopEl.querySelector('.shop-note');
+    if (note) note.textContent = text;
+  }
+  function openShop(ci) {
+    shopCi = ci;
+    const existing = towerByCell.get(ci);
+    if (existing) {
+      const cost = upgradeCost(existing.def, existing.tier);
+      shopEl.innerHTML =
+        `<div class="shop-head">${existing.def.label} · tier ${existing.tier}</div>` +
+        (cost !== null
+          ? `<button class="shop-up" ${eco.canAfford(cost) ? '' : 'disabled'}>upgrade ${cost}c</button>`
+          : `<span class="shop-max">MAX TIER</span>`) +
+        `<button class="shop-sell">sell +${sellRefund(existing.spent)}c</button>` +
+        `<button class="shop-close">close</button>` +
+        `<div class="shop-note"></div>`;
+      showRangeRing(ci, effectiveStats(existing.def, existing.tier).range, existing.def.color, 0);
+    } else {
+      const err = placeError(ci);
+      shopEl.innerHTML =
+        `<div class="shop-head">build · ${eco.credit}c</div>` +
+        TOWERS.map((def) =>
+          `<button class="shop-buy" data-key="${def.key}" ` +
+          `${(!err && eco.canAfford(def.cost)) ? '' : 'disabled'} ` +
+          `style="border-color:#${def.color.toString(16).padStart(6, '0')}66">` +
+          `${def.label} ${def.cost}c</button>`).join('') +
+        `<button class="shop-close">close</button>` +
+        `<div class="shop-note">${err ? err : ''}</div>`;
+    }
+    shopEl.classList.remove('hidden');
+  }
+  shopEl.addEventListener('click', (ev) => {
+    const el = ev.target;
+    if (!el.classList) return;
+    if (el.classList.contains('shop-close')) { closeShop(); return; }
+    const tower = towerByCell.get(shopCi);
+    if (el.classList.contains('shop-buy') && shopCi !== -1) {
+      if (placeTower(el.dataset.key, shopCi)) closeShop();
+    } else if (el.classList.contains('shop-up') && tower) {
+      if (upgradeTower(tower)) openShop(shopCi); // refresh
+    } else if (el.classList.contains('shop-sell') && tower) {
+      sellTower(tower);
+      closeShop();
+    }
+  });
+  // range preview while hovering a buy button
+  shopEl.addEventListener('pointerover', (ev) => {
+    const el = ev.target;
+    if (el.classList && el.classList.contains('shop-buy') && shopCi !== -1) {
+      const def = TOWER_BY_KEY[el.dataset.key];
+      showRangeRing(shopCi, effectiveStats(def, 0).range, def.color, 0);
+    }
+  });
+
+  // build-mode tap → cell (raycast the floor; a drag is an orbit, not a tap)
+  const raycaster = new THREE.Raycaster();
+  const ndc = new THREE.Vector2();
+  function cellAtScreen(x, y) {
+    if (!floorMesh) return -1;
+    const r = renderer.domElement.getBoundingClientRect();
+    ndc.set(((x - r.left) / r.width) * 2 - 1, -((y - r.top) / r.height) * 2 + 1);
+    raycaster.setFromCamera(ndc, camera);
+    const hits = raycaster.intersectObject(floorMesh, false);
+    if (!hits.length) return -1;
+    const p = hits[0].point;
+    return cellIndex([p.x, p.y, p.z]);
+  }
+
   function checkVictory() {
     if (player.won) return;
     // every threat in THIS round's schedule must have been introduced —
@@ -2263,9 +2646,13 @@ export function initTdTab(root) {
     if (wave >= introCount() && spawnPoints.length > 0
       && spawnPoints.every((s) => !s.alive) && enemies.every((e) => !e.alive)) {
       player.won = true;
+      // towers auto-sell at 100% into next round's purse — investment
+      // carries as capital, not furniture (spec §6)
+      carryCredit = eco.credit + towers.reduce((s, tw) => s + tw.spent, 0);
       msgEl.innerHTML = `<div class="msg-head">transmission · combat log</div>` +
         `✦ ROUND ${round} CLEARED — every spawn point destroyed<br>` +
-        `${wave} waves · heart ${heartHP}/${HEART_MAX} · ${player.moves} moves<br>` +
+        `${wave} waves · heart ${heartHP}/${HEART_MAX} · ` +
+        `${carryCredit}c carried forward (towers liquidated at full value)<br>` +
         `<button class="msg-next">&rsaquo; round ${round + 1} — bigger sector, meaner waves</button>`;
       msgEl.classList.remove('hidden');
     }
@@ -2379,6 +2766,13 @@ export function initTdTab(root) {
       checkRewards();
       updateProjectiles(dt, t);
       updateLasers(dt, t);
+      stepTowers(dt, t);
+      updateTowerShots(dt, t);
+    }
+    updateBeams(dt); // fx fade even during downtime
+    if (rangeRingTtl > 0) {
+      rangeRingTtl -= dt;
+      if (rangeRingTtl <= 0) { rangeRingTtl = 0; hideRangeRing(); }
     }
     for (const sp of spawnPoints) {
       if (!sp.alive) continue;
@@ -2522,6 +2916,19 @@ export function initTdTab(root) {
   if (urlParams.get('mode') === 'build') { buildMode = true; snapCamera(); }
   if (urlParams.get('map') === 'heart') mapMode = 'heart';
 
+  // ?credit=N pads the purse; ?tower=key@ci,key@ci force-places towers
+  // (both headless-verification hooks)
+  const creditN = parseInt(urlParams.get('credit') || '0', 10);
+  if (creditN > 0) eco.addCredit(creditN);
+  const towerSpec = urlParams.get('tower');
+  if (towerSpec) {
+    for (const part of towerSpec.split(',')) {
+      const [key, ciStr] = part.split('@');
+      const ci = parseInt(ciStr, 10);
+      if (TOWER_BY_KEY[key] && Number.isFinite(ci)) placeTower(key, ci);
+    }
+  }
+
   // ?recoil=1 freezes a mid-recoil pose (turret back, hull rocked) so the
   // kick can be screenshot; the sim pauses to hold it
   if (urlParams.get('recoil') === '1') {
@@ -2560,7 +2967,7 @@ export function initTdTab(root) {
 
   // opening briefing on a clean load; any debug hook means headless/demo,
   // where a frozen sim would break the verification flow
-  const debugging = ['walk', 'tick', 'wave', 'blast', 'laser', 'found', 'recoil', 'mode', 'map']
+  const debugging = ['walk', 'tick', 'wave', 'blast', 'laser', 'found', 'recoil', 'mode', 'map', 'tower', 'credit']
     .some((k) => urlParams.get(k));
   if (!debugging) showBriefing();
 

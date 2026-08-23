@@ -15,7 +15,7 @@
 // tick(t) (idle animation) }.
 
 import * as THREE from '../vendor/three.module.js';
-import { CREATURES, waveJelly, spherePts, bulletPts, heartPts, torusPts } from './creatures.js?v=b4bb539e';
+import { CREATURES, waveJelly, spherePts, bulletPts, heartPts, torusPts } from './creatures.js?v=a184e9b0';
 
 function normalizeToUnit(group) {
   group.updateMatrixWorld(true);
@@ -504,6 +504,91 @@ export function makeDebris(obj, outwardN) {
     return life < LIFE;
   };
   return mesh;
+}
+
+// tower — TD defensive units: one builder, eight silhouettes. A common
+// base slab + mast in the tower's tint, topped by a HEAD whose shape
+// encodes the attack family (cone=single, coil=rapid, sphere=spread,
+// fins=homing, ring=slow, drum=aoe, dish=sniper, prism=laser). Neon
+// edge outlines per house style; the head spins/pulses via tick.
+// userData.head is the aim/emit point for the game's fire code.
+export function makeTowerUnit(def) {
+  const main = new THREE.MeshLambertMaterial({ color: def.color });
+  const glow = new THREE.MeshBasicMaterial({ color: def.color });
+  const edge = new THREE.LineBasicMaterial({ color: 0xeaf6ff, transparent: true, opacity: 0.75 });
+  const g = new THREE.Group();
+  const outline = (mesh) => {
+    mesh.add(new THREE.LineSegments(new THREE.EdgesGeometry(mesh.geometry), edge));
+  };
+  const base = new THREE.Mesh(new THREE.BoxGeometry(0.9, 0.22, 0.9), main);
+  base.position.y = 0.11;
+  outline(base);
+  g.add(base);
+  const mast = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.14, 0.75, 6), main);
+  mast.position.y = 0.55;
+  g.add(mast);
+  const head = new THREE.Group();
+  head.position.y = 1.0;
+  g.add(head);
+  const H = (geo, mat = glow) => {
+    const m = new THREE.Mesh(geo, mat);
+    head.add(m);
+    return m;
+  };
+  switch (def.attack + ':' + def.key) {
+    case 'single:sniper':
+      H(new THREE.CylinderGeometry(0.3, 0.08, 0.3, 8)).rotation.x = Math.PI / 2; // dish
+      H(new THREE.CylinderGeometry(0.03, 0.03, 0.7, 5)).rotation.x = Math.PI / 2; // long barrel
+      break;
+    case 'single:rapid':
+      H(new THREE.TorusGeometry(0.2, 0.06, 6, 14)); // coil
+      H(new THREE.SphereGeometry(0.1, 6, 6));
+      break;
+    case 'spread:spread':
+      H(new THREE.SphereGeometry(0.24, 8, 8));
+      for (let i = 0; i < 5; i++) {
+        const p = H(new THREE.CylinderGeometry(0.025, 0.025, 0.3, 4));
+        p.rotation.z = (i - 2) * 0.35;
+        p.position.y = 0.15;
+      }
+      break;
+    case 'homing:homing': {
+      const core = H(new THREE.OctahedronGeometry(0.22));
+      core.rotation.y = 0.4;
+      for (const s of [-1, 1]) {
+        const fin = H(new THREE.BoxGeometry(0.05, 0.3, 0.18), main);
+        fin.position.x = s * 0.22;
+      }
+      break;
+    }
+    case 'slowfield:slow':
+      H(new THREE.TorusGeometry(0.28, 0.045, 6, 20)).rotation.x = Math.PI / 2;
+      H(new THREE.SphereGeometry(0.12, 6, 6));
+      break;
+    case 'mortar:aoe':
+      H(new THREE.CylinderGeometry(0.22, 0.26, 0.3, 8)); // drum
+      H(new THREE.CylinderGeometry(0.08, 0.1, 0.35, 6)).position.y = 0.25; // stubby tube
+      break;
+    case 'beam:laser': {
+      const p1 = H(new THREE.ConeGeometry(0.16, 0.36, 4));
+      const p2 = H(new THREE.ConeGeometry(0.16, 0.36, 4));
+      p1.position.y = 0.18;
+      p2.position.y = -0.18;
+      p2.rotation.x = Math.PI; // bipyramid
+      break;
+    }
+    default: // single:single — the plain cone
+      H(new THREE.ConeGeometry(0.2, 0.45, 6));
+  }
+  g.userData.tick = (t) => {
+    head.rotation.y = t * 0.8;
+    head.position.y = 1.0 + 0.03 * Math.sin(t * 2.1);
+  };
+  g.userData.head = head;
+  g.userData.lift = 0.02;
+  normalizeToUnit(g);
+  g.userData.kind = 'mesh';
+  return g;
 }
 
 // portal — the braille-lab half-dotted STATIC torus: an upright dotted
