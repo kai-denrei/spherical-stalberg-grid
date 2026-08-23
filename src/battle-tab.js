@@ -1,8 +1,10 @@
-// maze-tab.js — dungeon PoC on the sphere grid. All tiles start elevated
-// (walls); rooms + hallways are carved over the cell graph (dungeon.js).
-// Two views: the "trench" PoV riding the walker at wall-top height, and the
-// whole sphere as a minimap (bottom-left inset). A half-dotted heart sits at
-// the graph-farthest cell; the D-pad / arrow keys walk the graph to reach it.
+// battle-tab.js — combat on the sphere maze. The player (a tank by
+// default) starts with 3 shells; orbs are ammo pickups. Enemy tanks wander
+// the dungeon. The player's turret sweeps left-right on its own — hitting
+// something means TIMING the shot for the moment the sweep crosses the
+// target. Fire: Space or the ✦ pad button. Shots fly along the surface,
+// stop at walls, and destroy enemies on contact. Easy AI: enemies only
+// wander, for now.
 
 import * as THREE from '../vendor/three.module.js';
 import GUI from '../vendor/lil-gui.esm.js';
@@ -10,10 +12,11 @@ import { generateSphereMesh, relax } from './grid.js?v=52eb6ce5';
 import { generateDungeon, BLOCKED, PATH, ROOM } from './dungeon.js?v=52eb6ce5';
 import { mulberry32, randomSeed } from './rng.js?v=52eb6ce5';
 import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3 } from './vec3.js?v=52eb6ce5';
+import { CREATURES, waveJelly } from './creatures.js?v=52eb6ce5';
+import { UNITS, UNIT_NAMES, buildUnit } from './units.js?v=52eb6ce5';
 import { LOOKS, LOOK_NAMES } from './looks.js?v=52eb6ce5';
-import { UNIT_NAMES, buildUnit } from './units.js?v=52eb6ce5';
 
-export function initMazeTab(root) {
+export function initBattleTab(root) {
   let active = false;
 
   const params = {
@@ -28,13 +31,47 @@ export function initMazeTab(root) {
     view: 'third', // pov | third
     look: 'solid', // visual identity, see looks.js
     wallTops: 'auto', // auto | bright | dim | black — wall-top wires & fill
-    unit: 'tank', // roster unit for the spawn button
     speed: 1.1, // cells per second, wanderer pace
     autoResume: 3, // seconds idle before auto-wander resumes
+    creature: 'tank', // any roster unit; the tank has the sweeping turret
+    orbs: 10,
+    orbRespawn: 8, // seconds between respawns (0 = off)
+    enemies: 4,
+  };
+
+  // creature-specific locomotion: a speed profile over time (multiplies the
+  // wander pace) and a hover profile (fraction of unitScale above the floor)
+  const MOVES = {
+    amoeba: {
+      // crawl: pseudopod surge then pause
+      speed: (tt) => 0.5 + 0.7 * Math.pow(0.5 + 0.5 * Math.sin(tt * 1.6), 2),
+      hover: () => 0,
+    },
+    phage: {
+      // stalk & pounce: creeps, then rare quick darts on spindly legs
+      speed: (tt) => 0.45 + 2.8 * Math.pow(0.5 + 0.5 * Math.sin(tt * 0.7), 10),
+      hover: (tt) => 0.1 + 0.06 * Math.sin(tt * 2.2),
+    },
+    tank: {
+      // treads: steady, grounded, unhurried
+      speed: () => 0.85,
+      hover: () => 0,
+    },
+    drone: {
+      // quick hoverer with a slight altitude wobble
+      speed: (tt) => 1.25 + 0.15 * Math.sin(tt * 1.1),
+      hover: (tt) => 0.35 + 0.08 * Math.sin(tt * 2.3),
+    },
+    jellyfish: {
+      // pulse & drift: thrust on the bell contraction (same 3t as the Jelly
+      // treatment, so the push visibly matches the squeeze), then coast
+      speed: (tt) => 0.3 + 1.5 * Math.pow(Math.max(0, Math.sin(tt * 3 + 0.4)), 2),
+      hover: (tt) => 0.5 + 0.18 * Math.sin(tt * 3 - 0.9),
+    },
   };
 
   // --- scene ---------------------------------------------------------------
-  const container = root.querySelector('#maze-app');
+  const container = root.querySelector('#b-app');
   const renderer = new THREE.WebGLRenderer({ antialias: true });
   renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
   container.appendChild(renderer.domElement);
@@ -85,6 +122,91 @@ export function initMazeTab(root) {
   let heartSprite = null, playerMesh = null, markerMesh = null;
   let playerSize = 0.06; // set per-generation in buildActors
 
+  // creature dot-cloud + gameplay state
+  let creatureBase = null;   // unit-radius [x,y,z,(hi)] points from creatures.js
+  let creatureGeo = null;
+  let creaturePos = null;    // Float32Array scratch for waveJelly
+  let baseUnitScale = 0.04;  // creature world radius at birth
+  let unitScale = 0.04;      // current radius; grows on absorb
+  let absorbed = 0;
+  const orbMeshes = new Map(); // open-cell index -> orb mesh
+  let orbRng = mulberry32(1);  // reseeded per maze
+  let respawnClock = 0;
+  const orbMat = new THREE.MeshLambertMaterial({ color: 0xffb84d, emissive: 0x4d2f00 }); // retinted per look
+
+  // --- battle state --------------------------------------------------------
+  const AMMO_MAX = 9;
+  let ammo = 3;
+  const enemies = [];      // { cur, prev, next, prog, pos, dir, obj, alive }
+  const projectiles = [];  // { pos, dir, dist, mesh }
+
+  // phagocytosis state, recomputed per frame (amoeba only)
+  const reach = { dir: null, amt: 0 };
+  const tmpV = new THREE.Vector3();
+  const tmpQ = new THREE.Quaternion();
+
+  function clearOrbs() {
+    for (const orb of orbMeshes.values()) {
+      scene.remove(orb);
+      orb.geometry.dispose();
+    }
+    orbMeshes.clear();
+  }
+
+  // one orb on a random open cell (never spawn/heart/occupied/under the creature)
+  function spawnOneOrb() {
+    const open = [];
+    for (let i = 0; i < dungeon.tags.length; i++) {
+      if (dungeon.tags[i] !== BLOCKED && i !== dungeon.spawn && i !== dungeon.heart
+        && i !== player.cur && !orbMeshes.has(i)) open.push(i);
+    }
+    if (open.length === 0) return false;
+    const ci = open[Math.floor(orbRng() * open.length)];
+    const r = cellSide * 0.16;
+    const orb = new THREE.Mesh(new THREE.SphereGeometry(r, 12, 10), orbMat);
+    const c = graph.centers[ci];
+    const n = graph.normals[ci];
+    const p = add3(c, scale3(n, r * 1.1));
+    orb.position.set(p[0], p[1], p[2]);
+    scene.add(orb);
+    orbMeshes.set(ci, orb);
+    return true;
+  }
+
+  function spawnOrbs() {
+    clearOrbs();
+    for (let k = 0; k < params.orbs; k++) spawnOneOrb();
+  }
+
+  function absorbOrb(ci) {
+    const orb = orbMeshes.get(ci);
+    if (!orb) return;
+    scene.remove(orb);
+    orb.geometry.dispose();
+    orbMeshes.delete(ci);
+    absorbed++;
+    ammo = Math.min(AMMO_MAX, ammo + 1); // orbs are shells here, not food
+    updateHud();
+  }
+
+  // nearest orb to the creature's position; absorb on contact
+  function nearestOrb() {
+    let bestCi = -1, bestD = Infinity;
+    for (const [ci, orb] of orbMeshes) {
+      const dx = orb.position.x - player.pos[0];
+      const dy = orb.position.y - player.pos[1];
+      const dz = orb.position.z - player.pos[2];
+      const d = Math.sqrt(dx * dx + dy * dy + dz * dz);
+      if (d < bestD) { bestD = d; bestCi = ci; }
+    }
+    return { ci: bestCi, d: bestD };
+  }
+
+  function checkAbsorb() {
+    const { ci, d } = nearestOrb();
+    if (ci !== -1 && d < unitScale * 0.85 + cellSide * 0.16) absorbOrb(ci);
+  }
+
   // The walker WANDERS on its own: it glides cell-to-cell continuously and
   // picks each next exit itself. `heading` is the STEERING INTENT (what A/D
   // rotate) — it biases the choice but doesn't command it. `travelDir` is
@@ -95,7 +217,7 @@ export function initMazeTab(root) {
     prog: 0,            // 0..1 along cur -> next
     pos: [1, 0, 0],     // interpolated position on the sphere
     travelDir: [0, 1, 0],
-    smoothDir: [0, 1, 0], // rate-limited travelDir — cameras/cone follow THIS
+    smoothDir: [0, 1, 0], // rate-limited travelDir — cameras/creature follow THIS
     heading: [1, 0, 0], // steering intent, unit tangent
     segLen: 1,          // world length of the current cur->next chord
     moves: 0,
@@ -302,15 +424,36 @@ export function initMazeTab(root) {
     }));
     scene.add(heartSprite);
 
-    // walker size follows the SMALLER of cell width and wall height: the
-    // camera eye sits at 0.62×wallHeight, so at low walls a cell-sized cone
-    // would tower over the lens and blot out the view ahead. 0.75×wallHeight
-    // keeps the cone tip (elevation+height = 0.72×size) under the eye line.
     playerSize = Math.min(cellSide, params.wallHeight * 0.75);
-    playerMesh = new THREE.Mesh(
-      new THREE.ConeGeometry(playerSize * 0.18, playerSize * 0.5, 10),
-      new THREE.MeshBasicMaterial({ color: look().walker }), // unlit: must pop under every light rig
-    );
+
+    // the main unit: dot-cloud creatures keep the full Wave×Jelly +
+    // phagocytosis path (creatureBase/creatureGeo); mesh units are static
+    // geometry with transform-only idle animation (userData.tick)
+    if ((UNITS[params.creature] || {}).kind === 'cloud') {
+      creatureBase = CREATURES[params.creature]();
+      creaturePos = new Float32Array(creatureBase.length * 3);
+      waveJelly(creatureBase, 0, creaturePos);
+      const cols = new Float32Array(creatureBase.length * 3);
+      const cBody = new THREE.Color(look().walker);
+      const cHi = new THREE.Color(look().walkerHi);
+      for (let i = 0; i < creatureBase.length; i++) {
+        const c = creatureBase[i][3] === 1 ? cHi : cBody;
+        cols[i * 3] = c.r; cols[i * 3 + 1] = c.g; cols[i * 3 + 2] = c.b;
+      }
+      creatureGeo = new THREE.BufferGeometry();
+      creatureGeo.setAttribute('position', new THREE.BufferAttribute(creaturePos, 3));
+      creatureGeo.setAttribute('color', new THREE.Float32BufferAttribute(cols, 3));
+      playerMesh = new THREE.Points(creatureGeo, new THREE.PointsMaterial({
+        size: 2.2, sizeAttenuation: false, vertexColors: true,
+        transparent: true, opacity: 0.95,
+      }));
+    } else {
+      creatureBase = null;
+      creaturePos = null;
+      creatureGeo = null;
+      playerMesh = buildUnit(params.creature, { walker: look().walker, walkerHi: look().walkerHi });
+      playerMesh.scale.setScalar(playerMesh.userData.baseScale); // reset sizing
+    }
     scene.add(playerMesh);
 
     // fat marker so the player reads on the minimap
@@ -330,16 +473,21 @@ export function initMazeTab(root) {
     heartSprite.scale.set(s, s, s);
 
     const n = norm3(player.pos);
-    const p = add3(player.pos, scale3(n, playerSize * 0.22));
+    // lift: the unit's own floor offset plus its hover profile
+    const prof = MOVES[params.creature];
+    const baseLift = creatureGeo ? 0.85 : (playerMesh.userData.lift ?? 0.05);
+    const lift = unitScale * (baseLift + (prof ? prof.hover(simTime) : 0));
+    const p = add3(player.pos, scale3(n, lift));
     playerMesh.position.set(p[0], p[1], p[2]);
+    playerMesh.scale.setScalar(unitScale * (playerMesh.userData.baseScale ?? 1));
     markerMesh.position.set(p[0], p[1], p[2]);
-    // cone points along the smoothed direction (no snap at cell changes)
+    // upright on the surface, facing the SMOOTHED direction (no snap)
     const h = player.smoothDir;
     tmpObj.position.copy(playerMesh.position);
     tmpObj.up.set(n[0], n[1], n[2]);
     tmpObj.lookAt(p[0] + h[0], p[1] + h[1], p[2] + h[2]);
     playerMesh.quaternion.copy(tmpObj.quaternion);
-    playerMesh.rotateX(Math.PI / 2); // cone +Y -> forward
+    // no extra rotation: lookAt with up=n already leaves body +Y ≈ normal
   }
 
   // --- trench / third-person camera ----------------------------------------
@@ -350,10 +498,11 @@ export function initMazeTab(root) {
     const h = player.smoothDir;
     let eye, look;
     if (params.view === 'third') {
-      // behind and above: over the wall tops, walker in frame, maze readable
-      eye = add3(add3(c, scale3(n, params.wallHeight * 2.6 + cellSide * 1.1)),
-        scale3(h, -cellSide * 1.8));
-      look = add3(add3(c, scale3(n, params.wallHeight * 0.4)), scale3(h, cellSide * 1.4));
+      // behind and above; pulls back as the creature grows so it stays framed
+      eye = add3(add3(c, scale3(n, params.wallHeight * 2.6 + cellSide * 1.1 + unitScale * 1.8)),
+        scale3(h, -(cellSide * 1.8 + unitScale * 1.6)));
+      look = add3(add3(c, scale3(n, params.wallHeight * 0.4 + unitScale * 0.5)),
+        scale3(h, cellSide * 1.4));
     } else {
       // pov: down IN the corridor slot, below the wall tops, along its throat
       eye = add3(add3(c, scale3(n, params.wallHeight * 0.62)), scale3(h, -cellSide * 0.5));
@@ -392,7 +541,7 @@ export function initMazeTab(root) {
     const exits = openNeighbors(player.cur);
     if (exits.length === 0) return -1;
     // control mode: while the user steers, their intent dominates — the
-    // walker's curiosity, backtrack aversion, and whims all yield
+    // creature's curiosity, backtrack aversion, and whims all yield
     const active = steeringActive() || manualActive();
     let best = exits[0], bestScore = -Infinity;
     for (const e of exits) {
@@ -416,16 +565,18 @@ export function initMazeTab(root) {
 
     if (cell === dungeon.heart && !player.won) {
       player.won = true;
-      msgEl.innerHTML = `💗 the wanderer found the heart<br>${player.moves} moves · ` +
-        `${dungeon.distToHeart[dungeon.spawn]} was the shortest<br>` +
+      msgEl.innerHTML = `💗 the creature found the heart<br>` +
+        `${player.moves} moves · ${absorbed} orbs absorbed · ` +
+        `size ×${(unitScale / baseUnitScale).toFixed(2)}<br>` +
         `<span style="color:#8a93ad">regenerate (panel) for a new maze</span>`;
       msgEl.classList.remove('hidden');
     }
   }
 
-  // called once per frame: steer, glide, pick a new exit on each cell arrival
+  // called once per frame: steer, glide (creature-paced), respawn, absorb
   function advanceMotion(dt) {
     if (player.won || player.next === -1) return;
+    simTime += dt;
 
     // continuous steering while held; ANY key claims manual control
     const anyKey = keys.left || keys.right || keys.fast || keys.slow;
@@ -447,8 +598,6 @@ export function initMazeTab(root) {
     prevSlow = keys.slow;
 
     // U-turn: heading swung behind the motion — reverse the glide in place.
-    // Position is continuous (same chord, opposite direction), so holding A
-    // or D sweeps you around and back the way you came with no jump.
     const driving = !manual || keys.fast || keys.slow;
     if ((manual ? driving : steeringActive()) && dot3(player.heading, player.travelDir) < -0.35
       && player.prog > 0.04 && player.prog < 0.96) {
@@ -456,24 +605,33 @@ export function initMazeTab(root) {
       player.cur = player.next;
       player.next = old;
       player.prog = 1 - player.prog;
-      player.prev = -1; // forget the backtrack context; this is deliberate
+      player.prev = -1;
     }
 
-    // motion lives in WORLD space, not grid space: speed is distance/sec
-    // (scaled so the slider still reads as average-cells/sec), and prog is
-    // that distance over THIS segment's length — a long chord between two
-    // large cells takes proportionally longer than a short one. The grid
-    // offers the space; the motion just traverses it.
-    // manual: motion only while W/S are held; auto: steady wander pace
+    // orb respawn: the maze regrows food over time
+    if (params.orbRespawn > 0) {
+      respawnClock += dt;
+      if (respawnClock >= params.orbRespawn) {
+        respawnClock = 0;
+        if (orbMeshes.size < params.orbs) spawnOneOrb();
+      }
+    }
+
+    // world-space motion: speed is distance/sec over THIS segment's length,
+    // so a long chord between large cells takes proportionally longer — the
+    // grid offers the space, the motion traverses it. The creature's own
+    // locomotion profile modulates the pace on top.
+    // manual: motion only while W/S are held; auto: the creature's own pace
+    const prof = MOVES[params.creature];
     const pace = manual
       ? ((keys.fast || keys.slow) ? params.speed * 1.5 : 0)
-      : params.speed;
+      : params.speed * (prof ? prof.speed(simTime) : 1);
     player.prog += (pace * cellSide * dt) / player.segLen;
     while (player.prog >= 1 && !player.won) {
       const carry = (player.prog - 1) * player.segLen; // leftover distance
       arriveAt(player.next);
-      // idle: steering intent drifts toward actual travel so stale input
-      // fades. While the user steers, their intent is left untouched.
+      // idle: steering intent drifts toward actual travel; while the user
+      // steers, their intent is left untouched
       if (!steeringActive() && !manualActive()) {
         const td = tangentDirTo(player.prev, player.cur);
         player.heading = norm3(add3(scale3(player.heading, 0.65), scale3(td, 0.35)));
@@ -486,8 +644,8 @@ export function initMazeTab(root) {
     // interpolate along the chord, then push back onto the sphere
     const a = graph.centers[player.cur];
     const b = graph.centers[player.next === -1 ? player.cur : player.next];
-    const t = Math.min(player.prog, 1);
-    const p = [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t, a[2] + (b[2] - a[2]) * t];
+    const f = Math.min(player.prog, 1);
+    const p = [a[0] + (b[0] - a[0]) * f, a[1] + (b[1] - a[1]) * f, a[2] + (b[2] - a[2]) * f];
     player.pos = norm3(p); // radius 1
     const n = player.pos;
     const d = sub3(b, player.pos);
@@ -498,7 +656,9 @@ export function initMazeTab(root) {
     player.heading = norm3(sub3(player.heading, scale3(n, dot3(player.heading, n))));
 
     updateSmoothDir(dt);
+    checkAbsorb();
   }
+  let simTime = 0;
 
   const STEER_RATE = 2.6; // rad/s while a steer key is held
   function rotate(theta) {
@@ -509,14 +669,11 @@ export function initMazeTab(root) {
     player.heading = norm3(add3(scale3(h, c), scale3(nxh, s)));
   }
 
-  // smoothDir chases travelDir at a bounded angular rate, so cameras and the
-  // walker sweep through direction changes (new exits, U-turns) instead of
-  // snapping. This is THE no-jump guarantee: raw travelDir is discontinuous
-  // at every cell arrival; smoothDir never is.
+  // smoothDir chases travelDir at a bounded angular rate — the no-jump
+  // guarantee for cameras and the creature at exits and U-turns
   const SMOOTH_RATE = 5.0; // rad/s
   function updateSmoothDir(dt) {
     const n = norm3(player.pos);
-    // both projected into the current tangent plane
     let s = norm3(sub3(player.smoothDir, scale3(n, dot3(player.smoothDir, n))));
     const raw = manualActive() ? player.heading : player.travelDir;
     const g = norm3(sub3(raw, scale3(n, dot3(raw, n))));
@@ -533,6 +690,7 @@ export function initMazeTab(root) {
     const m = { arrowleft: 'left', a: 'left', arrowright: 'right', d: 'right',
       arrowup: 'fast', w: 'fast', arrowdown: 'slow', s: 'slow' }[k];
     if (m) { keys[m] = down; ev.preventDefault(); return; }
+    if (down && (k === ' ' || k === 'spacebar')) { fire(); ev.preventDefault(); return; }
     if (down && k === 'h') pulseHint();
     if (down && k === 'v') toggleView();
   }
@@ -553,12 +711,13 @@ export function initMazeTab(root) {
       el.addEventListener(evt, () => { keys[flag] = false; });
     }
   }
-  holdButton('#pad-up', 'fast');
-  holdButton('#pad-left', 'left');
-  holdButton('#pad-right', 'right');
-  holdButton('#pad-down', 'slow');
-  root.querySelector('#pad-hint').addEventListener('click', () => pulseHint());
-  root.querySelector('#pad-view').addEventListener('click', () => toggleView());
+  holdButton('#b-pad-up', 'fast');
+  holdButton('#b-pad-left', 'left');
+  holdButton('#b-pad-right', 'right');
+  holdButton('#b-pad-down', 'slow');
+  root.querySelector('#b-pad-hint').addEventListener('click', () => pulseHint());
+  root.querySelector('#b-pad-view').addEventListener('click', () => toggleView());
+  root.querySelector('#b-pad-fire').addEventListener('click', () => fire());
 
   // ☆ flash the neighbouring cell that is one hop closer to the heart
   let hintTimer = null;
@@ -576,13 +735,15 @@ export function initMazeTab(root) {
   }
 
   // --- HUD -----------------------------------------------------------------
-  const statsEl = root.querySelector('#maze-stats');
-  const msgEl = root.querySelector('#maze-msg');
+  const statsEl = root.querySelector('#b-stats');
+  const msgEl = root.querySelector('#b-msg');
   function updateHud() {
+    const alive = enemies.filter((e) => e.alive).length;
     statsEl.textContent =
-      `hops to heart ${dungeon.distToHeart[player.cur]}   moves ${player.moves}\n` +
-      `open cells ${floorOffsets.size}   walls ${dungeon.tags.length - floorOffsets.size}\n` +
-      (manualActive() ? 'MANUAL — release keys to hand back control' : 'auto-wander');
+      `shells ${'●'.repeat(ammo).padEnd(AMMO_MAX, '·')} (${ammo})   enemies ${alive}/${enemies.length}\n` +
+      `orbs on field ${orbMeshes.size} (each = +1 shell)   moves ${player.moves}\n` +
+      (manualActive() ? 'MANUAL — release keys to hand back control' : 'auto-wander') +
+      '   ·   SPACE / ✦ fires when the turret lines up';
   }
 
   // --- generation ----------------------------------------------------------
@@ -620,15 +781,26 @@ export function initMazeTab(root) {
     player.smoothDir = player.travelDir.slice();
     player.segLen = Math.max(1e-9, dist3(graph.centers[player.cur], graph.centers[player.next]));
 
-    clearUnits();
+    absorbed = 0;
+    baseUnitScale = cellSide * 0.5;
+    unitScale = baseUnitScale;
+    ammo = 3;
+    for (let i = projectiles.length - 1; i >= 0; i--) killProjectile(i);
+    orbRng = mulberry32((params.seed ^ 0x0b0b5) >>> 0);
+    respawnClock = 0;
+    simTime = 0;
+
     buildGeometry();
     buildActors();
+    spawnOrbs();
+    spawnEnemies();
     placeActors();
     snapCamera();
     msgEl.classList.add('hidden');
     updateHud();
-    console.log(`maze in ${(performance.now() - t0).toFixed(0)}ms — ` +
-      `${floorOffsets.size} open cells, spawn→heart ${dungeon.distToHeart[dungeon.spawn]} hops`);
+    console.log(`battle sector in ${(performance.now() - t0).toFixed(0)}ms — ` +
+      `${floorOffsets.size} open cells, ${orbMeshes.size} orbs, ` +
+      `spawn→heart ${dungeon.distToHeart[dungeon.spawn]} hops`);
   }
 
   params.regenerate = regenerate;
@@ -652,80 +824,182 @@ export function initMazeTab(root) {
     sun.intensity = L.sun[1];
     fill.color.setHex(L.fill[0]);
     fill.intensity = L.fill[1];
-    
+    orbMat.color.setHex(L.orb.color);
+    orbMat.emissive.setHex(L.orb.emissive);
     buildGeometry();
     buildActors();
+    spawnEnemies();
     placeActors();
-    retintSpawned();
   }
 
 
-  // --- unit spawning: drop roster units on the board to look at them -------
-  const spawned = []; // { name, ci, obj }
-
-  function placeSpawned(entry) {
-    const c = graph.centers[entry.ci];
-    const n = graph.normals[entry.ci];
-    const s = cellSide * 0.55;
-    const obj = entry.obj;
-    obj.scale.setScalar((obj.userData.baseScale ?? 1) * s);
-    const lift = s * (obj.userData.lift ?? 0.05);
-    obj.position.set(c[0] + n[0] * lift, c[1] + n[1] * lift, c[2] + n[2] * lift);
-    // upright on the surface, facing the walker's current heading
-    tmpObj.position.copy(obj.position);
-    tmpObj.up.set(n[0], n[1], n[2]);
-    const h = player.heading;
-    tmpObj.lookAt(obj.position.x + h[0], obj.position.y + h[1], obj.position.z + h[2]);
-    obj.quaternion.copy(tmpObj.quaternion);
+  // --- enemies: easy AI, they only wander ----------------------------------
+  function clearEnemies() {
+    for (const e of enemies) scene.remove(e.obj);
+    enemies.length = 0;
   }
 
-  function spawnUnit() {
-    // land on the walker's cell, or the nearest free open neighbour if a
-    // unit already stands there — repeat spawns spread instead of stacking
-    const taken = new Set(spawned.map((s) => s.ci));
-    let ci = player.cur;
-    if (taken.has(ci)) {
-      const free = openNeighbors(ci).find((nb) => !taken.has(nb));
-      if (free !== undefined) ci = free;
+  // hop distance from the player spawn over open cells (enemy placement)
+  function bfsDistFromSpawn() {
+    const dist = new Int32Array(dungeon.tags.length).fill(-1);
+    const queue = [dungeon.spawn];
+    dist[dungeon.spawn] = 0;
+    for (let head = 0; head < queue.length; head++) {
+      const cur = queue[head];
+      for (const nb of graph.adj[cur]) {
+        if (dist[nb] !== -1 || dungeon.tags[nb] === BLOCKED) continue;
+        dist[nb] = dist[cur] + 1;
+        queue.push(nb);
+      }
     }
-    const entry = {
-      name: params.unit,
-      ci,
-      obj: buildUnit(params.unit, { walker: look().walker, walkerHi: look().walkerHi }),
-    };
-    placeSpawned(entry);
-    scene.add(entry.obj);
-    spawned.push(entry);
+    return dist;
   }
 
-  function clearUnits() {
-    for (const s of spawned) scene.remove(s.obj);
-    spawned.length = 0;
+  function spawnEnemies() {
+    clearEnemies();
+    const d = bfsDistFromSpawn();
+    const candidates = [];
+    for (let i = 0; i < dungeon.tags.length; i++) {
+      if (dungeon.tags[i] !== BLOCKED && d[i] >= 6 && i !== dungeon.heart) candidates.push(i);
+    }
+    for (let k = 0; k < params.enemies && candidates.length > 0; k++) {
+      const ci = candidates.splice(Math.floor(whim() * candidates.length), 1)[0];
+      const obj = buildUnit('tank', { walker: look().enemy || 0xd94f4f, walkerHi: look().enemyHi || 0xffd77a });
+      obj.scale.setScalar((obj.userData.baseScale ?? 1) * cellSide * 0.55);
+      scene.add(obj);
+      const exits = openNeighbors(ci);
+      enemies.push({
+        cur: ci, prev: -1,
+        next: exits.length ? exits[Math.floor(whim() * exits.length)] : ci,
+        prog: 0, pos: graph.centers[ci].slice(), dir: [0, 1, 0],
+        obj, alive: true,
+      });
+    }
   }
 
-  // look changes rebuild spawned units in the new tints; regenerate clears
-  // them (the board they stood on is gone)
-  function retintSpawned() {
-    for (const entry of spawned) {
-      scene.remove(entry.obj);
-      entry.obj = buildUnit(entry.name, { walker: look().walker, walkerHi: look().walkerHi });
-      placeSpawned(entry);
-      scene.add(entry.obj);
+  const ENEMY_SPEED = 0.45; // cells per second — easy mode
+  function updateEnemies(dt, tNow) {
+    for (const e of enemies) {
+      if (!e.alive) continue;
+      e.prog += ENEMY_SPEED * dt;
+      while (e.prog >= 1) {
+        e.prog -= 1;
+        e.prev = e.cur;
+        e.cur = e.next;
+        const exits = openNeighbors(e.cur).filter((c) => c !== e.prev);
+        e.next = exits.length ? exits[Math.floor(whim() * exits.length)] : e.prev;
+      }
+      const a = graph.centers[e.cur];
+      const b = graph.centers[e.next];
+      const f = Math.min(e.prog, 1);
+      e.pos = norm3([a[0] + (b[0] - a[0]) * f, a[1] + (b[1] - a[1]) * f, a[2] + (b[2] - a[2]) * f]);
+      const n = e.pos;
+      const raw = sub3(b, e.pos);
+      const flat = sub3(raw, scale3(n, dot3(raw, n)));
+      const l = Math.hypot(flat[0], flat[1], flat[2]);
+      if (l > 1e-9) e.dir = scale3(flat, 1 / l);
+      const s = cellSide * 0.55;
+      const lift = s * (e.obj.userData.lift ?? 0.05);
+      e.obj.position.set(e.pos[0] + n[0] * lift, e.pos[1] + n[1] * lift, e.pos[2] + n[2] * lift);
+      tmpObj.position.copy(e.obj.position);
+      tmpObj.up.set(n[0], n[1], n[2]);
+      tmpObj.lookAt(e.obj.position.x + e.dir[0], e.obj.position.y + e.dir[1], e.obj.position.z + e.dir[2]);
+      e.obj.quaternion.copy(tmpObj.quaternion);
+      if (e.obj.userData.tick) e.obj.userData.tick(tNow + e.cur); // desync sweeps
+    }
+  }
+
+  // --- firing: the shot leaves along the turret's CURRENT sweep ------------
+  function fire() {
+    if (player.won || ammo <= 0) return;
+    ammo--;
+    let dir;
+    const turret = playerMesh.userData.turret;
+    if (turret) {
+      // world +Z of the turret group, flattened into the tangent plane —
+      // aim IS the sweep; no sign conventions to get wrong
+      turret.getWorldQuaternion(tmpQ);
+      tmpV.set(0, 0, 1).applyQuaternion(tmpQ);
+      const n = norm3(player.pos);
+      const d = [tmpV.x, tmpV.y, tmpV.z];
+      dir = norm3(sub3(d, scale3(n, dot3(d, n))));
+    } else {
+      dir = player.smoothDir.slice(); // turretless units fire straight ahead
+    }
+    const mesh = new THREE.Mesh(
+      new THREE.SphereGeometry(cellSide * 0.09, 8, 8),
+      new THREE.MeshBasicMaterial({ color: look().walkerHi }),
+    );
+    scene.add(mesh);
+    projectiles.push({ pos: player.pos.slice(), dir, dist: 0, mesh });
+    updateHud();
+  }
+
+  function killProjectile(i) {
+    scene.remove(projectiles[i].mesh);
+    projectiles[i].mesh.geometry.dispose();
+    projectiles.splice(i, 1);
+  }
+
+  function updateProjectiles(dt) {
+    const v = 3.4 * cellSide;
+    const maxDist = 10 * cellSide;
+    for (let i = projectiles.length - 1; i >= 0; i--) {
+      const p = projectiles[i];
+      p.pos = norm3(add3(p.pos, scale3(p.dir, v * dt)));
+      const n = p.pos;
+      p.dir = norm3(sub3(p.dir, scale3(n, dot3(p.dir, n))));
+      p.dist += v * dt;
+      const lift = 1 + params.wallHeight * 0.5;
+      p.mesh.position.set(p.pos[0] * lift, p.pos[1] * lift, p.pos[2] * lift);
+
+      // enemy contact
+      let hit = false;
+      for (const e of enemies) {
+        if (!e.alive) continue;
+        if (dist3(p.pos, e.pos) < cellSide * 0.45) {
+          e.alive = false;
+          scene.remove(e.obj);
+          hit = true;
+          updateHud();
+          if (enemies.every((en) => !en.alive)) {
+            player.won = true;
+            msgEl.innerHTML = `✦ sector cleared<br>` +
+              `${enemies.length} tanks destroyed · ${absorbed} orbs eaten · ${player.moves} moves<br>` +
+              `<span style="color:#8a93ad">regenerate (panel) for a new sector</span>`;
+            msgEl.classList.remove('hidden');
+          }
+          break;
+        }
+      }
+      if (hit) { killProjectile(i); continue; }
+
+      // wall impact: nearest cell is a wall -> fizzle
+      let bestCi = -1, bd = Infinity;
+      for (let ci = 0; ci < graph.centers.length; ci++) {
+        const c = graph.centers[ci];
+        const dx = c[0] - p.pos[0], dy = c[1] - p.pos[1], dz = c[2] - p.pos[2];
+        const d2 = dx * dx + dy * dy + dz * dz;
+        if (d2 < bd) { bd = d2; bestCi = ci; }
+      }
+      if ((bestCi !== -1 && dungeon.tags[bestCi] === BLOCKED) || p.dist > maxDist) {
+        killProjectile(i);
+      }
     }
   }
 
   // --- dashboard -----------------------------------------------------------
-  const gui = new GUI({ title: 'sphere dungeon', container: root });
+  const gui = new GUI({ title: 'sphere battle', container: root });
+  gui.add(params, 'creature', UNIT_NAMES).onChange(regenerate);
   gui.add(params, 'look', LOOK_NAMES).onChange(applyLook);
   gui.add(params, 'wallTops', ['auto', 'bright', 'dim', 'black'])
     .name('wall tops').onChange(applyLook);
-  const gUnits = gui.addFolder('units');
-  gUnits.add(params, 'unit', UNIT_NAMES);
-  gUnits.add({ spawn: spawnUnit }, 'spawn').name('⊕ spawn at walker');
-  gUnits.add({ clear: clearUnits }, 'clear').name('✕ clear units');
   const viewCtrl = gui.add(params, 'view', ['pov', 'third']).name('camera (V)');
   const speedCtrl = gui.add(params, 'speed', 0.2, 4, 0.1).name('wander speed');
   gui.add(params, 'autoResume', 1, 10, 0.5).name('auto resume (s)');
+  gui.add(params, 'enemies', 1, 12, 1).onFinishChange(regenerate);
+  gui.add(params, 'orbs', 0, 40, 1).onFinishChange(regenerate);
+  gui.add(params, 'orbRespawn', 0, 30, 1).name('orb respawn (s)');
   const seedCtrl = gui.add(params, 'seed', 0, 99999, 1).onFinishChange(regenerate);
   gui.add(params, 'points', 150, 8000, 50).name('sample points').onFinishChange(regenerate);
   gui.add(params, 'rooms', 2, 24, 1).onFinishChange(regenerate);
@@ -753,9 +1027,34 @@ export function initMazeTab(root) {
     t += dt;
 
     advanceMotion(dt);
+    updateEnemies(dt, t);
+    updateProjectiles(dt);
     updateHud();
     placeActors();
-    for (const s of spawned) if (s.obj.userData.tick) s.obj.userData.tick(t);
+
+    // phagocytosis: when the amoeba nears an orb, aim the membrane at it.
+    // Direction is converted into the creature's FINAL local frame (inverse
+    // of the mesh quaternion), where waveJelly applies the stretch.
+    reach.dir = null; reach.amt = 0;
+    if (params.creature === 'amoeba' && creatureGeo && orbMeshes.size > 0 && !player.won) {
+      const { ci, d } = nearestOrb();
+      const reachRange = cellSide * 1.7 + unitScale;
+      if (ci !== -1 && d < reachRange) {
+        const orb = orbMeshes.get(ci);
+        tmpV.copy(orb.position).sub(playerMesh.position).normalize()
+          .applyQuaternion(tmpQ.copy(playerMesh.quaternion).invert());
+        reach.dir = [tmpV.x, tmpV.y, tmpV.z];
+        reach.amt = Math.min(1, Math.max(0, 1 - d / reachRange));
+      }
+    }
+
+    // cloud: Wave×Jelly (+ reach) re-poses the dots; mesh: transform tick
+    if (creatureGeo) {
+      waveJelly(creatureBase, t, creaturePos, reach.amt > 0 ? { reachDir: reach.dir, reachAmt: reach.amt } : null);
+      creatureGeo.getAttribute('position').needsUpdate = true;
+    } else if (playerMesh.userData.tick) {
+      playerMesh.userData.tick(t);
+    }
     updateCameraGoal();
 
     camera.position.lerp(camGoal.pos, 0.14);
@@ -768,10 +1067,8 @@ export function initMazeTab(root) {
     // main view
     scene.background = mainBg;
     markerMesh.visible = false;
-    // below knee-height walls the PoV camera rides so low that even the scaled
-    // cone squats mid-frame — first-person goes clean, minimap keeps the cone.
-    // In third person the walker IS the subject: always visible.
-    playerMesh.visible = params.view === 'third' || params.wallHeight >= 0.05;
+    // in PoV the camera sits inside the creature — hide it there
+    playerMesh.visible = params.view === 'third';
     renderer.render(scene, camera);
 
     // minimap: the whole sphere (walls included), player-centred,
@@ -802,9 +1099,8 @@ export function initMazeTab(root) {
   if (LOOKS[lookOverride]) params.look = lookOverride;
   const wtOverride = urlParams.get('walltops');
   if (['bright', 'dim', 'black'].includes(wtOverride)) params.wallTops = wtOverride;
-
-  // ?spawn=tank,drone drops units at the walker after ?walk/?tick resolve
-  // (deferred below, after regenerate)
+  const creatureOverride = urlParams.get('creature');
+  if (UNITS[creatureOverride]) params.creature = creatureOverride;
   gui.controllersRecursive().forEach((c) => c.updateDisplay());
 
   regenerate();
@@ -839,10 +1135,6 @@ export function initMazeTab(root) {
     for (let s = 0; s < tickN; s += 0.05) advanceMotion(0.05);
     placeActors();
     snapCamera();
-  }
-
-  for (const name of (urlParams.get('spawn') || '').split(',')) {
-    if (name && UNIT_NAMES.includes(name)) { params.unit = name; spawnUnit(); }
   }
 
   resize();

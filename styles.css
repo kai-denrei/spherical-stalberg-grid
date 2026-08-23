@@ -15,12 +15,12 @@ html, body {
   display: none;
 }
 
-#app, #maze-app, #o-app {
+#app, #maze-app, #o-app, #b-app {
   position: absolute;
   inset: 0;
 }
 
-#app canvas, #maze-app canvas, #o-app canvas {
+#app canvas, #maze-app canvas, #o-app canvas, #b-app canvas {
   display: block;
 }
 
@@ -50,7 +50,7 @@ html, body {
   border-color: #4a5a8a;
 }
 
-#stats, #maze-stats, #o-stats {
+#stats, #maze-stats, #o-stats, #b-stats {
   position: absolute;
   top: 46px;
   left: 14px;
@@ -63,7 +63,7 @@ html, body {
   z-index: 5;
 }
 
-#hint, #maze-hint, #o-hint {
+#hint, #maze-hint, #o-hint, #b-hint {
   position: absolute;
   bottom: 12px;
   right: 14px;
@@ -124,7 +124,7 @@ html, body {
   .dpad .dpad-row {
     gap: 6px;
   }
-  #hint, #maze-hint, #o-hint {
+  #hint, #maze-hint, #o-hint, #b-hint {
     display: none; /* collides with the cb badge on narrow screens; hints are in button titles */
   }
 }
@@ -136,7 +136,7 @@ html, body {
   }
 }
 
-#maze-msg, #o-msg {
+#maze-msg, #o-msg, #b-msg {
   position: absolute;
   top: 38%;
   left: 50%;
@@ -153,7 +153,7 @@ html, body {
   pointer-events: none;
 }
 
-#maze-msg.hidden, #o-msg.hidden {
+#maze-msg.hidden, #o-msg.hidden, #b-msg.hidden {
   display: none;
 }
 
@@ -300,7 +300,7 @@ html, body {
     left: max(12px, env(safe-area-inset-left));
     top: calc(max(10px, env(safe-area-inset-top)) + 36px);
   }
-  #stats, #maze-stats, #o-stats {
+  #stats, #maze-stats, #o-stats, #b-stats {
     top: 118px;
   }
 }

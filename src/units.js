@@ -15,7 +15,7 @@
 // tick(t) (idle animation) }.
 
 import * as THREE from '../vendor/three.module.js';
-import { CREATURES, waveJelly } from './creatures.js?v=e2ffc3bf';
+import { CREATURES, waveJelly } from './creatures.js?v=52eb6ce5';
 
 function normalizeToUnit(group) {
   group.updateMatrixWorld(true);
@@ -55,6 +55,7 @@ function makeTank(cols) {
   add(new THREE.BoxGeometry(0.8, 0.34, 1.0), main, 0, 0, 0, turret);
   const barrel = add(new THREE.CylinderGeometry(0.06, 0.085, 1.5, 8), accent, 0, 0.04, 1.15, turret);
   barrel.rotation.x = Math.PI / 2;
+  g.userData.turret = turret; // battle aims along this group's world +Z
   g.userData.tick = (t) => { turret.rotation.y = Math.sin(t * 0.6) * 0.7; };
   g.userData.lift = 0.02;
   normalizeToUnit(g);

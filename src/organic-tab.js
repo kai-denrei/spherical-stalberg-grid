@@ -6,13 +6,13 @@
 
 import * as THREE from '../vendor/three.module.js';
 import GUI from '../vendor/lil-gui.esm.js';
-import { generateSphereMesh, relax } from './grid.js?v=e2ffc3bf';
-import { generateDungeon, BLOCKED, PATH, ROOM } from './dungeon.js?v=e2ffc3bf';
-import { mulberry32, randomSeed } from './rng.js?v=e2ffc3bf';
-import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3 } from './vec3.js?v=e2ffc3bf';
-import { CREATURES, waveJelly } from './creatures.js?v=e2ffc3bf';
-import { UNITS, UNIT_NAMES, buildUnit } from './units.js?v=e2ffc3bf';
-import { LOOKS, LOOK_NAMES } from './looks.js?v=e2ffc3bf';
+import { generateSphereMesh, relax } from './grid.js?v=52eb6ce5';
+import { generateDungeon, BLOCKED, PATH, ROOM } from './dungeon.js?v=52eb6ce5';
+import { mulberry32, randomSeed } from './rng.js?v=52eb6ce5';
+import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3 } from './vec3.js?v=52eb6ce5';
+import { CREATURES, waveJelly } from './creatures.js?v=52eb6ce5';
+import { UNITS, UNIT_NAMES, buildUnit } from './units.js?v=52eb6ce5';
+import { LOOKS, LOOK_NAMES } from './looks.js?v=52eb6ce5';
 
 export function initOrganicTab(root) {
   let active = false;
