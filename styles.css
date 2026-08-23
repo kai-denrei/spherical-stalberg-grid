@@ -116,50 +116,100 @@ html, body {
   color: #fff;
 }
 
-/* --- heart tab: two-handed touch clusters (thumbs own the corners) ------ */
-.tcluster {
+/* --- heart tab: maneuver zones + fire buttons ---------------------------
+   Steering/driving are large FLAT areas — visibly interactive (subtle
+   panel, faint chevron, press-glow) but unlabeled: the player discovers
+   the maneuvering. Fire controls are explicit buttons. */
+.tzone {
   position: absolute;
-  bottom: max(16px, env(safe-area-inset-bottom));
+  z-index: 6;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(28, 38, 58, 0.28);
+  border: 1px solid rgba(120, 150, 210, 0.22);
+  border-radius: 18px;
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  -webkit-user-select: none;
+  user-select: none;
+  touch-action: manipulation;
+  cursor: pointer;
+}
+.tzone > span {
+  font-size: 26px;
+  color: rgba(213, 226, 245, 0.4);
+  pointer-events: none;
+}
+.tzone.pressed {
+  background: rgba(90, 140, 230, 0.35);
+  border-color: rgba(140, 180, 250, 0.55);
+}
+.tzone.pressed > span { color: rgba(235, 244, 255, 0.9); }
+/* side zones: tall flat strips hugging the lower edges */
+.tzone-side {
+  bottom: max(12px, env(safe-area-inset-bottom));
+  width: 82px;
+  height: min(26vh, 230px);
+}
+.tzone-l { left: max(10px, env(safe-area-inset-left)); }
+.tzone-r { right: max(10px, env(safe-area-inset-right)); }
+/* drive zones: forward over back, centered between the sides */
+.tzone-mid {
+  position: absolute;
+  bottom: max(12px, env(safe-area-inset-bottom));
+  left: 50%;
+  transform: translateX(-50%);
   z-index: 6;
   display: flex;
   flex-direction: column;
-  align-items: center;
   gap: 8px;
 }
-.tc-left { left: max(16px, env(safe-area-inset-left)); }
-.tc-right { right: max(16px, env(safe-area-inset-right)); }
-.tc-col { display: flex; flex-direction: column; gap: 8px; }
-.tcluster button, .tc-util button {
-  background: rgba(30, 40, 60, 0.42);
-  color: #d5e2f5;
-  border: 1px solid rgba(120, 150, 210, 0.35);
-  border-radius: 16px;
-  font-size: 22px;
+.tzone-drive {
+  position: relative;
+  width: 128px;
+  height: 60px;
+}
+/* fire buttons: primary (shell) LARGE on the left, secondary smaller right */
+.tfire {
+  position: absolute;
+  z-index: 6;
+  border-radius: 50%;
   cursor: pointer;
   touch-action: manipulation;
-  backdrop-filter: blur(6px);
-  -webkit-backdrop-filter: blur(6px);
   -webkit-user-select: none;
   user-select: none;
+  backdrop-filter: blur(5px);
+  -webkit-backdrop-filter: blur(5px);
 }
-.tcluster .tc-big { width: 62px; height: 56px; }
-.tcluster .tc-corner {
-  width: 74px;
-  height: 66px;
-  font-size: 26px;
-  border-radius: 20px;
+.tfire-primary {
+  left: max(16px, env(safe-area-inset-left));
+  bottom: calc(max(12px, env(safe-area-inset-bottom)) + min(26vh, 230px) + 18px);
+  width: 78px;
+  height: 78px;
+  font-size: 30px;
+  background: rgba(24, 52, 48, 0.5);
+  color: #aefce8;
+  border: 1px solid rgba(53, 255, 208, 0.5);
 }
-.tcluster button:active {
-  background: rgba(90, 140, 230, 0.5);
+.tfire-secondary {
+  right: max(16px, env(safe-area-inset-right));
+  bottom: calc(max(12px, env(safe-area-inset-bottom)) + min(26vh, 230px) + 18px);
+  width: 54px;
+  height: 54px;
+  font-size: 21px;
+  background: rgba(22, 46, 58, 0.5);
+  color: #9ff8ff;
+  border: 1px solid rgba(125, 249, 255, 0.45);
+}
+.tfire:active, .tfire.pressed {
+  background: rgba(90, 200, 180, 0.5);
   color: #fff;
 }
-/* the triggers read as triggers */
-#h-pad-fire { color: #aefce8; border-color: rgba(53, 255, 208, 0.45); }
-#h-pad-laser { color: #9ff8ff; border-color: rgba(125, 249, 255, 0.4); }
-/* utility pair: small, centered, out of the thumbs' way */
+/* utility pair: small text buttons, centered above the drive zones */
 .tc-util {
   position: absolute;
-  bottom: max(16px, env(safe-area-inset-bottom));
+  bottom: calc(max(12px, env(safe-area-inset-bottom)) + 138px);
   left: 50%;
   transform: translateX(-50%);
   z-index: 6;
@@ -167,17 +217,23 @@ html, body {
   gap: 8px;
 }
 .tc-util button {
-  width: 44px;
-  height: 38px;
-  font-size: 15px;
-  border-radius: 12px;
-  opacity: 0.8;
+  padding: 8px 12px;
+  font: 11px ui-monospace, Menlo, monospace;
+  letter-spacing: 0.1em;
+  background: rgba(30, 40, 60, 0.4);
+  color: #aab8d5;
+  border: 1px solid rgba(120, 150, 210, 0.3);
+  border-radius: 10px;
+  cursor: pointer;
+  touch-action: manipulation;
+  opacity: 0.85;
 }
+.tc-util button:active { background: rgba(90, 140, 230, 0.5); color: #fff; }
 
 /* touch devices: 44pt+ hit targets (Apple HIG), roomier gaps */
 @media (pointer: coarse) {
-  .tcluster .tc-big { width: 72px; height: 62px; }
-  .tcluster .tc-corner { width: 88px; height: 76px; }
+  .tzone-side { width: 96px; }
+  .tzone-drive { width: 144px; height: 66px; }
   .dpad button {
     width: 58px;
     height: 50px;

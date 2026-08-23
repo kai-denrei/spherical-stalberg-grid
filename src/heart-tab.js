@@ -15,14 +15,14 @@
 
 import * as THREE from '../vendor/three.module.js';
 import GUI from '../vendor/lil-gui.esm.js';
-import { generateSphereMesh, relax } from './grid.js?v=3a9a683c';
-import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=3a9a683c';
-import { mulberry32, randomSeed } from './rng.js?v=3a9a683c';
-import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3 } from './vec3.js?v=3a9a683c';
-import { CREATURES, waveJelly } from './creatures.js?v=3a9a683c';
-import { UNITS, UNIT_NAMES, buildUnit, makeOrbCloud, makeBulletCloud, makeDebris, makeDotBurst, makePortalCloud, makeHeartCloud } from './units.js?v=3a9a683c';
-import { LOOKS, LOOK_NAMES } from './looks.js?v=3a9a683c';
-import { makeCellIndex } from './cellindex.js?v=3a9a683c';
+import { generateSphereMesh, relax } from './grid.js?v=ac743f60';
+import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=ac743f60';
+import { mulberry32, randomSeed } from './rng.js?v=ac743f60';
+import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3 } from './vec3.js?v=ac743f60';
+import { CREATURES, waveJelly } from './creatures.js?v=ac743f60';
+import { UNITS, UNIT_NAMES, buildUnit, makeOrbCloud, makeBulletCloud, makeDebris, makeDotBurst, makePortalCloud, makeHeartCloud } from './units.js?v=ac743f60';
+import { LOOKS, LOOK_NAMES } from './looks.js?v=ac743f60';
+import { makeCellIndex } from './cellindex.js?v=ac743f60';
 
 export function initHeartTab(root) {
   let active = false;
@@ -1090,16 +1090,22 @@ export function initHeartTab(root) {
     viewCtrl.updateDisplay();
   }
 
-  // D-pad: press-and-hold, like the keys; onPress fires per fresh tap
+  // touch zones/buttons: press-and-hold, like the keys; onPress fires per
+  // fresh tap. The .pressed glow is the zones' only feedback — they carry
+  // no labels, so the glow IS the affordance.
   function holdButton(sel, flag, onPress) {
     const el = root.querySelector(sel);
     el.addEventListener('pointerdown', (ev) => {
       ev.preventDefault();
       if (onPress) onPress();
       keys[flag] = true;
+      el.classList.add('pressed');
     });
     for (const evt of ['pointerup', 'pointerleave', 'pointercancel']) {
-      el.addEventListener(evt, () => { keys[flag] = false; });
+      el.addEventListener(evt, () => {
+        keys[flag] = false;
+        el.classList.remove('pressed');
+      });
     }
   }
   holdButton('#h-pad-up', 'fast', noteFastTap); // double-tap ▲ → cruise
@@ -1205,9 +1211,9 @@ export function initHeartTab(root) {
       glossCard('#ffffff', spriteShot('portal', () => makePortalCloud({ body: 0xcfd8ff, hi: 0xffffff })), 'portals', 'the enemy sources · 3 shells each · dim as they die') +
       `</div>` +
       `<b>WIN = DESTROY EVERY PORTAL.</b> reaching the heart wins nothing — it's home.<br>` +
-      `<button class="msg-glenemy">☠ enemy glossary</button> ` +
-      `<button class="msg-glfriend">✚ friendlies &amp; pickups</button><br>` +
-      `<button class="msg-begin">▶ begin round ${round}</button>`;
+      `<button class="msg-glenemy">enemy glossary</button> ` +
+      `<button class="msg-glfriend">friendlies &amp; pickups</button><br>` +
+      `<button class="msg-begin">&rsaquo; begin round ${round}</button>`;
     msgEl.classList.remove('hidden');
   }
 
@@ -1218,7 +1224,7 @@ export function initHeartTab(root) {
       const tint = '#' + CREATURE_TINTS[iv.type].toString(16).padStart(6, '0');
       const ram = spec.rammable
         ? '<span style="color:#66ff88">▼ rammable</span>'
-        : '<span style="color:#ff5340">✖ do not ram</span>';
+        : '<span style="color:#ff5340">× do not ram</span>';
       return glossCard(tint, spriteShot(iv.type, unitIcon(iv.type, CREATURE_TINTS[iv.type])), iv.label.toLowerCase(),
         `${iv.role} · ${spec.hp} hp · arrives wave ${iv.wave} · ${ram}`);
     }).join('');
@@ -1276,7 +1282,7 @@ export function initHeartTab(root) {
     paused = !paused;
     if (paused) {
       msgEl.innerHTML = `<div class="msg-head">transmission · paused</div>` +
-        `⏸ sector frozen<br>ESC resumes`;
+        `sector frozen<br>ESC resumes`;
       msgEl.classList.remove('hidden');
     } else {
       msgEl.classList.add('hidden');
@@ -1311,7 +1317,7 @@ export function initHeartTab(root) {
     // the one fact the player must not miss: can I drive over it?
     const ram = spec.rammable
       ? '<div class="wave-ram" style="color:#66ff88">▼ RAMMABLE — run it over</div>'
-      : '<div class="wave-ram" style="color:#ff5340">✖ DO NOT RAM — shells only</div>';
+      : '<div class="wave-ram" style="color:#ff5340">× DO NOT RAM — shells only</div>';
     waveEl.style.borderColor = tint;
     waveEl.style.color = tint;
     waveEl.innerHTML = `<div class="wave-num">WAVE ${intro.wave} · NEW THREAT</div>` +
@@ -1731,7 +1737,7 @@ export function initHeartTab(root) {
   }
 
   // --- twin mini-lasers: hold-to-fire, they overheat -----------------------
-  // Trigger: hold Shift (or the ⚡ pad button). Sustained fire builds heat;
+  // Trigger: hold Shift (or the secondary fire button). Fire builds heat;
   // at the cap the guns lock out until fully cooled — the gun tubes glow
   // from cyan to red as the diegetic gauge. Bolt origin/direction derive
   // from the gun groups' WORLD transforms (toe-in included) — same-source
@@ -2133,7 +2139,7 @@ export function initHeartTab(root) {
     if (player.won) return;
     player.won = true; // stops motion; same flag, sadder modal
     msgEl.innerHTML = `<div class="msg-head">transmission · last light</div>` +
-      `✖ ${reason}<br>` +
+      `× ${reason}<br>` +
       `${enemies.filter((e) => !e.alive).length}/${enemies.length} enemies destroyed · ` +
       `heart ${Math.max(0, heartHP)}/${HEART_MAX}<br>` +
       `<button class="msg-regen">⟲ new sector</button>`;
@@ -2239,7 +2245,7 @@ export function initHeartTab(root) {
       msgEl.innerHTML = `<div class="msg-head">transmission · combat log</div>` +
         `✦ ROUND ${round} CLEARED — every spawn point destroyed<br>` +
         `${wave} waves · heart ${heartHP}/${HEART_MAX} · ${player.moves} moves<br>` +
-        `<button class="msg-next">▶ round ${round + 1} — bigger sector, meaner waves</button>`;
+        `<button class="msg-next">&rsaquo; round ${round + 1} — bigger sector, meaner waves</button>`;
       msgEl.classList.remove('hidden');
     }
   }

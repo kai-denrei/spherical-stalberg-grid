@@ -5,18 +5,18 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>spherical stålberg grid</title>
   <meta name="theme-color" content="#10131a">
-  <link rel="manifest" href="./manifest.webmanifest?v=3a9a683c">
-  <link rel="apple-touch-icon" href="./icons/apple-touch-icon.png?v=3a9a683c">
+  <link rel="manifest" href="./manifest.webmanifest?v=ac743f60">
+  <link rel="apple-touch-icon" href="./icons/apple-touch-icon.png?v=ac743f60">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="SphereGrid">
-  <link rel="stylesheet" href="./styles.css?v=3a9a683c">
+  <link rel="stylesheet" href="./styles.css?v=ac743f60">
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
-  <meta name="cb" content="3a9a683c">
-  <link rel="icon" type="image/svg+xml" href="./cb-shapes/58.svg?v=3a9a683c">
-  <script src="./cb-badge.js?v=3a9a683c" defer></script>
+  <meta name="cb" content="ac743f60">
+  <link rel="icon" type="image/svg+xml" href="./cb-shapes/44.svg?v=ac743f60">
+  <script src="./cb-badge.js?v=ac743f60" defer></script>
 </head>
 <body>
   <nav id="tabbar">
@@ -97,28 +97,23 @@
     <div id="h-stats"></div>
     <div id="h-wave" class="hidden"></div>
     <div id="h-msg" class="hidden"></div>
-    <!-- two-handed touch layout: thumbs own the corners. Left thumb =
-         steer left + drive rocker (double-tap ▲ engages cruise); right
-         thumb = steer right + the two triggers. -->
-    <div class="tcluster tc-left">
-      <div class="tc-col">
-        <button id="h-pad-up" class="tc-big" title="hold: forward (W) · double-tap: cruise">▲</button>
-        <button id="h-pad-down" class="tc-big" title="hold: reverse (S) · stops cruise">▼</button>
-      </div>
-      <button id="h-pad-left" class="tc-corner" title="hold: steer left (← / A)">⟲</button>
+    <!-- maneuver = unlabeled flat ZONES, discovered not explained: steer
+         at the side edges, forward/back stacked centered between them.
+         Fire = explicit buttons: shell large on the left, laser smaller
+         on the right. No emojis — glyphs and text only. -->
+    <div id="h-pad-left" class="tzone tzone-side tzone-l"><span>&lsaquo;</span></div>
+    <div id="h-pad-right" class="tzone tzone-side tzone-r"><span>&rsaquo;</span></div>
+    <div class="tzone-mid">
+      <div id="h-pad-up" class="tzone tzone-drive"><span>&and;</span></div>
+      <div id="h-pad-down" class="tzone tzone-drive"><span>&or;</span></div>
     </div>
-    <div class="tcluster tc-right">
-      <div class="tc-col">
-        <button id="h-pad-laser" class="tc-big" title="hold: lasers (Shift) — they overheat">⚡</button>
-        <button id="h-pad-fire" class="tc-big" title="FIRE shell (Space) — time the turret sweep">✦</button>
-      </div>
-      <button id="h-pad-right" class="tc-corner" title="hold: steer right (→ / D)">⟳</button>
-    </div>
+    <button id="h-pad-fire" class="tfire tfire-primary" title="FIRE shell (Space) — time the turret sweep">&#9673;</button>
+    <button id="h-pad-laser" class="tfire tfire-secondary" title="hold: lasers (Shift) — they overheat">&#8767;</button>
     <div class="tc-util">
-      <button id="h-pad-hint" title="commandeer nearest ally (C)">⇄</button>
-      <button id="h-pad-view" title="toggle PoV / third person (V)">👁</button>
+      <button id="h-pad-hint" title="commandeer nearest ally (C)">SWAP</button>
+      <button id="h-pad-view" title="toggle PoV / third person (V)">CAM</button>
     </div>
-    <div id="h-hint">destroy ALL spawn points to clear the round · RAM the small ones · SHIFT/⚡ lasers · ESC pause</div>
+    <div id="h-hint">destroy ALL portals to clear the round · RAM the small ones · SHIFT lasers · ESC pause</div>
   </div>
 
   <div id="tab-how" class="tab tab-hidden">
@@ -127,6 +122,6 @@
     </div>
   </div>
 
-  <script type="module" src="./src/main.js?v=3a9a683c"></script>
+  <script type="module" src="./src/main.js?v=ac743f60"></script>
 </body>
 </html>
