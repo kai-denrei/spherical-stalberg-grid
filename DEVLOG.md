@@ -6,6 +6,27 @@ Demo links assume `npm run serve` (port 8144) or the
 
 ---
 
+## `0f7dc78` — Free movement, and what the grid is actually for
+
+The big one is the movement rework. The question was how to separate
+Stålberg world generation from movement. The answer that emerged: the
+grid plays four roles that were conflated — world-geometry generator,
+collision oracle, semantic map (what's on this cell), and AI nav-graph
+— and only KINEMATICS needed to leave. In manual mode the position is
+now free on the sphere: W drives along your heading at any angle, the
+grid answers exactly one question per frame ("which cell is under this
+position, and is it open?") via a voxel-hash nearest-cell index, and
+cell semantics (visited trail, orb absorption, heart win) key off that
+answer. Auto-wander still routes over the graph — it's a navigator, and
+navigators SHOULD think in cells. The handoff back is seamless via a
+virtualStart glide origin: auto's first segment interpolates from your
+actual free position, not a snapped cell center. Also in this commit:
+orbs became Braille dotted spheres under five treatments (spin /
+breathe / twinkle / wave / scatter — breathe is transform-only and
+free; the others re-pose ~170 points, negligible at orb counts), and
+destroyed tanks scatter their own polygons — world-space triangle soup,
+per-triangle velocities, 1.15s fade. A coming-apart, not an explosion.
+
 ## `e066613` — Battle: the sweeping turret becomes the game
 
 Fifth tab. The design seed: the tank's idle animation — a turret
