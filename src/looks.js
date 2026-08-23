@@ -56,6 +56,41 @@ export const LOOKS = {
     heart: '#ff2df0',
   },
 
+  tronColors: {
+    // tron with WEATHER: a turquoise base broken by amber, white, green and
+    // magenta zones — seeded accent centers on the sphere, gaussian falloff,
+    // blended per cell, so areas melt into each other instead of tiling
+    bg: 0x010107, mapBg: 0x000004,
+    hemi: [0x223a66, 0x050510, 0.55], sun: [0x8ab4ff, 0.25], fill: [0x33244d, 0.2],
+    floors: {
+      path: [0.014, 0.030, 0.055],
+      room: [0.020, 0.040, 0.070],
+      visited: [0.020, 0.075, 0.100],
+      spawn: [0.000, 0.110, 0.140],
+      heartFloor: [0.110, 0.015, 0.100],
+      hintFlash: [0.55, 1.0, 1.0],
+    },
+    walls: { top: [0.010, 0.016, 0.034], side: [0.004, 0.007, 0.018] },
+    jitter: 0,
+    wallTopMode: 'black',
+    edges: { show: true, color: 0x00e5ff, opacity: 0.9, additive: true },
+    zones: {
+      base: 0x00e5ff, baseWeight: 0.6,
+      accents: [
+        [0xffb000, 2, 0.40], // amber
+        [0xffffff, 2, 0.32], // white
+        [0x54ff7a, 2, 0.40], // green
+        [0xff2df0, 1, 0.30], // magenta, one small island
+      ],
+      floorLevels: { path: 0.055, room: 0.075, visited: 0.135 },
+      wallSideLevel: 0.03,
+    },
+    walker: 0x9ff8ff, walkerHi: 0xffffff, marker: 0x00e5ff,
+    enemy: 0xff2d6f, enemyHi: 0xffffff,
+    orb: { color: 0xffa02f, emissive: 0xb35a00 },
+    heart: '#ff2df0',
+  },
+
   blueprint: {
     // cyanotype: white ink on drawing-blue paper; flat, even light — it's a
     // drawing, not a scene. The heart is the one thing allowed to be red.

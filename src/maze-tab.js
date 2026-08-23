@@ -6,12 +6,12 @@
 
 import * as THREE from '../vendor/three.module.js';
 import GUI from '../vendor/lil-gui.esm.js';
-import { generateSphereMesh, relax } from './grid.js?v=52eb6ce5';
-import { generateDungeon, BLOCKED, PATH, ROOM } from './dungeon.js?v=52eb6ce5';
-import { mulberry32, randomSeed } from './rng.js?v=52eb6ce5';
-import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3 } from './vec3.js?v=52eb6ce5';
-import { LOOKS, LOOK_NAMES } from './looks.js?v=52eb6ce5';
-import { UNIT_NAMES, buildUnit } from './units.js?v=52eb6ce5';
+import { generateSphereMesh, relax } from './grid.js?v=ab80a3f8';
+import { generateDungeon, BLOCKED, PATH, ROOM } from './dungeon.js?v=ab80a3f8';
+import { mulberry32, randomSeed } from './rng.js?v=ab80a3f8';
+import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3 } from './vec3.js?v=ab80a3f8';
+import { LOOKS, LOOK_NAMES } from './looks.js?v=ab80a3f8';
+import { UNIT_NAMES, buildUnit } from './units.js?v=ab80a3f8';
 
 export function initMazeTab(root) {
   let active = false;
@@ -124,6 +124,11 @@ export function initMazeTab(root) {
 
   // --- colors: everything visual comes from the active look ----------------
   const look = () => LOOKS[params.look] || LOOKS.solid;
+  const rgbOf = (hex) => {
+    const c = new THREE.Color(hex);
+    return [c.r, c.g, c.b];
+  };
+  let zoneColors = null; // per-cell [r,g,b] field for zonal looks (tronColors)
   // wall-top treatment: the look supplies a default, the dropdown overrides
   const wallTopMode = () => (params.wallTops === 'auto'
     ? (look().wallTopMode || 'bright') : params.wallTops);
@@ -132,6 +137,12 @@ export function initMazeTab(root) {
     const F = look().floors;
     if (ci === dungeon.heart) return F.heartFloor;
     if (ci === dungeon.spawn) return F.spawn;
+    const zs = look().zones;
+    if (zs && zoneColors) {
+      const lv = player.visited.has(ci) ? zs.floorLevels.visited
+        : dungeon.tags[ci] === ROOM ? zs.floorLevels.room : zs.floorLevels.path;
+      return [zoneColors[ci * 3] * lv, zoneColors[ci * 3 + 1] * lv, zoneColors[ci * 3 + 2] * lv];
+    }
     if (player.visited.has(ci)) return F.visited;
     return dungeon.tags[ci] === ROOM ? F.room : F.path;
   }
@@ -143,15 +154,59 @@ export function initMazeTab(root) {
     const jr = mulberry32(params.seed ^ 0xc0ffee);
 
     const mode = wallTopMode();
+    const E = look().edges;
+    // zonal looks: bake the per-cell color field once per build — seeded
+    // accent centers, gaussian angular falloff, blended against the base
+    zoneColors = null;
+    if (look().zones) {
+      const zs = look().zones;
+      const zrng = mulberry32((params.seed ^ 0x7c0104) >>> 0);
+      const centers = [];
+      for (const [hex, count, sigma] of zs.accents) {
+        for (let k = 0; k < count; k++) {
+          const zz = 2 * zrng() - 1;
+          const th = 2 * Math.PI * zrng();
+          const rr = Math.sqrt(Math.max(0, 1 - zz * zz));
+          centers.push({ d: [rr * Math.cos(th), zz, rr * Math.sin(th)], c: rgbOf(hex), s: sigma });
+        }
+      }
+      const bc = rgbOf(zs.base);
+      zoneColors = new Float32Array(quads.length * 3);
+      for (let ci = 0; ci < quads.length; ci++) {
+        const u = graph.normals[ci];
+        let r = bc[0] * zs.baseWeight, g = bc[1] * zs.baseWeight, b = bc[2] * zs.baseWeight;
+        let W = zs.baseWeight;
+        for (const cn of centers) {
+          const dv = Math.max(-1, Math.min(1, u[0] * cn.d[0] + u[1] * cn.d[1] + u[2] * cn.d[2]));
+          const w = Math.exp(-((Math.acos(dv) / cn.s) ** 2));
+          r += cn.c[0] * w; g += cn.c[1] * w; b += cn.c[2] * w; W += w;
+        }
+        zoneColors[ci * 3] = r / W;
+        zoneColors[ci * 3 + 1] = g / W;
+        zoneColors[ci * 3 + 2] = b / W;
+      }
+    }
+    const constEdge = rgbOf(E.color);
+    const edgeTint = (ci) => (zoneColors
+      ? [zoneColors[ci * 3], zoneColors[ci * 3 + 1], zoneColors[ci * 3 + 2]]
+      : constEdge);
     const baseTop = look().walls.top;
     const topFill = mode === 'black' ? [0, 0, 0]
       : mode === 'dim' ? [baseTop[0] * 0.45, baseTop[1] * 0.45, baseTop[2] * 0.45]
       : baseTop;
     const topJitter = mode === 'black' ? 0 : 1;
     // floors: open cells at the surface
-    const fPos = [], fCol = [], ePos = [], tPos = [];
-    const pushEdge = (p, q2) => ePos.push(p[0], p[1], p[2], q2[0], q2[1], q2[2]);
-    const pushTopEdge = (p, q2) => tPos.push(p[0], p[1], p[2], q2[0], q2[1], q2[2]);
+    const fPos = [], fCol = [], ePos = [], eColA = [], tPos = [], tColA = [];
+    const pushEdge = (p, q2, ci) => {
+      ePos.push(p[0], p[1], p[2], q2[0], q2[1], q2[2]);
+      const c = edgeTint(ci);
+      eColA.push(c[0], c[1], c[2], c[0], c[1], c[2]);
+    };
+    const pushTopEdge = (p, q2, ci) => {
+      tPos.push(p[0], p[1], p[2], q2[0], q2[1], q2[2]);
+      const c = edgeTint(ci);
+      tColA.push(c[0], c[1], c[2], c[0], c[1], c[2]);
+    };
     floorOffsets = new Map();
     for (let ci = 0; ci < quads.length; ci++) {
       if (dungeon.tags[ci] === BLOCKED) continue;
@@ -164,7 +219,7 @@ export function initMazeTab(root) {
         fPos.push(p[0], p[1], p[2]);
         fCol.push(r + j, g + j, b + j);
       }
-      for (let i = 0; i < 4; i++) pushEdge(vertices[q[i]], vertices[q[(i + 1) % 4]]);
+      for (let i = 0; i < 4; i++) pushEdge(vertices[q[i]], vertices[q[(i + 1) % 4]], ci);
     }
 
     // walls: blocked cells extruded; top face + skirts on edges facing open cells
@@ -197,12 +252,17 @@ export function initMazeTab(root) {
         const facesOpen = nb !== undefined && dungeon.tags[nb] !== BLOCKED;
         if (facesOpen) {
           // skirt facing the open neighbour, wound outward + its outline
-          pushQuad(top[(i + 1) % 4], top[i], vertices[a], vertices[b], look().walls.side, j);
-          pushEdge(top[i], vertices[a]);
-          pushEdge(top[(i + 1) % 4], vertices[b]);
-          pushEdge(top[i], top[(i + 1) % 4]);
+          const sideCol = zoneColors
+            ? [zoneColors[ci * 3] * look().zones.wallSideLevel * 10,
+               zoneColors[ci * 3 + 1] * look().zones.wallSideLevel * 10,
+               zoneColors[ci * 3 + 2] * look().zones.wallSideLevel * 10]
+            : look().walls.side;
+          pushQuad(top[(i + 1) % 4], top[i], vertices[a], vertices[b], sideCol, j);
+          pushEdge(top[i], vertices[a], ci);
+          pushEdge(top[(i + 1) % 4], vertices[b], ci);
+          pushEdge(top[i], top[(i + 1) % 4], ci);
         } else {
-          pushTopEdge(top[i], top[(i + 1) % 4]);
+          pushTopEdge(top[i], top[(i + 1) % 4], ci);
         }
       }
     }
@@ -231,10 +291,10 @@ export function initMazeTab(root) {
 
     edgeGeo = new THREE.BufferGeometry();
     edgeGeo.setAttribute('position', new THREE.Float32BufferAttribute(ePos, 3));
-    const E = look().edges;
+    edgeGeo.setAttribute('color', new THREE.Float32BufferAttribute(eColA, 3));
     edgeMesh = new THREE.LineSegments(edgeGeo,
       new THREE.LineBasicMaterial({
-        color: E.color, transparent: true, opacity: E.opacity,
+        vertexColors: true, transparent: true, opacity: E.opacity,
         blending: E.additive ? THREE.AdditiveBlending : THREE.NormalBlending,
         depthWrite: !E.additive,
       }));
@@ -243,9 +303,10 @@ export function initMazeTab(root) {
 
     topGeo = new THREE.BufferGeometry();
     topGeo.setAttribute('position', new THREE.Float32BufferAttribute(tPos, 3));
+    topGeo.setAttribute('color', new THREE.Float32BufferAttribute(tColA, 3));
     topMesh = new THREE.LineSegments(topGeo,
       new THREE.LineBasicMaterial({
-        color: E.color, transparent: true,
+        vertexColors: true, transparent: true,
         opacity: E.opacity * (mode === 'dim' ? 0.28 : 1),
         blending: E.additive ? THREE.AdditiveBlending : THREE.NormalBlending,
         depthWrite: !E.additive,
