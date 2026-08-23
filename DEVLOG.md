@@ -6,6 +6,26 @@ Demo links assume `npm run serve` (port 8144) or the
 
 ---
 
+## `275731f` — Lasers earn a trigger, and the early game gets heavier
+
+The mini-lasers looked free because they were free — always on, no
+cost, no decision. Now they're a held trigger (Shift, or ⚡ on the pad)
+with an overheat: 2.4 s of continuous fire locks the guns until fully
+cold (~1.7 s), and there's no feathering the cap — heat is a commitment,
+not a rhythm to cheese. The gauge is diegetic in the same spirit as the
+turret shell rack: the gun tubes themselves lerp cyan→red with heat
+(`lerpColors` on the shared tube material; both guns follow for free).
+Bolts got the look pass too — the core shrank to a sliver and gained a
+wider additive-blended halo child, which over a dark board reads as
+glow without vendoring a bloom chain. The trigger key deliberately does
+NOT claim manual control: Shift is a fire button like Space, not a
+steering input, so lasering while auto-wandering stays possible.
+
+Balance pass from playtest: heavier early waves (waveSize 2→3), longer
+breath between them (18→26 s), and a richer ammo field to pay for it
+(triads 10→14, respawn 8→6 s). `?laser=1` holds the trigger for
+headless screenshots.
+
 ## `dabbb84` — The tank gets an identity: neon lines, a visible magazine, lasers
 
 Three reads on one unit. **Look**: thin white/blue neon edge lines on
