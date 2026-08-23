@@ -6,11 +6,12 @@
 
 import * as THREE from '../vendor/three.module.js';
 import GUI from '../vendor/lil-gui.esm.js';
-import { generateSphereMesh, relax } from './grid.js?v=759889e2';
-import { generateDungeon, BLOCKED, PATH, ROOM } from './dungeon.js?v=759889e2';
-import { mulberry32, randomSeed } from './rng.js?v=759889e2';
-import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3 } from './vec3.js?v=759889e2';
-import { LOOKS, LOOK_NAMES } from './looks.js?v=759889e2';
+import { generateSphereMesh, relax } from './grid.js?v=e2ffc3bf';
+import { generateDungeon, BLOCKED, PATH, ROOM } from './dungeon.js?v=e2ffc3bf';
+import { mulberry32, randomSeed } from './rng.js?v=e2ffc3bf';
+import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3 } from './vec3.js?v=e2ffc3bf';
+import { LOOKS, LOOK_NAMES } from './looks.js?v=e2ffc3bf';
+import { UNIT_NAMES, buildUnit } from './units.js?v=e2ffc3bf';
 
 export function initMazeTab(root) {
   let active = false;
@@ -27,6 +28,7 @@ export function initMazeTab(root) {
     view: 'third', // pov | third
     look: 'solid', // visual identity, see looks.js
     wallTops: 'auto', // auto | bright | dim | black — wall-top wires & fill
+    unit: 'tank', // roster unit for the spawn button
     speed: 1.1, // cells per second, wanderer pace
     autoResume: 3, // seconds idle before auto-wander resumes
   };
@@ -618,6 +620,7 @@ export function initMazeTab(root) {
     player.smoothDir = player.travelDir.slice();
     player.segLen = Math.max(1e-9, dist3(graph.centers[player.cur], graph.centers[player.next]));
 
+    clearUnits();
     buildGeometry();
     buildActors();
     placeActors();
@@ -653,6 +656,62 @@ export function initMazeTab(root) {
     buildGeometry();
     buildActors();
     placeActors();
+    retintSpawned();
+  }
+
+
+  // --- unit spawning: drop roster units on the board to look at them -------
+  const spawned = []; // { name, ci, obj }
+
+  function placeSpawned(entry) {
+    const c = graph.centers[entry.ci];
+    const n = graph.normals[entry.ci];
+    const s = cellSide * 0.55;
+    const obj = entry.obj;
+    obj.scale.setScalar((obj.userData.baseScale ?? 1) * s);
+    const lift = s * (obj.userData.lift ?? 0.05);
+    obj.position.set(c[0] + n[0] * lift, c[1] + n[1] * lift, c[2] + n[2] * lift);
+    // upright on the surface, facing the walker's current heading
+    tmpObj.position.copy(obj.position);
+    tmpObj.up.set(n[0], n[1], n[2]);
+    const h = player.heading;
+    tmpObj.lookAt(obj.position.x + h[0], obj.position.y + h[1], obj.position.z + h[2]);
+    obj.quaternion.copy(tmpObj.quaternion);
+  }
+
+  function spawnUnit() {
+    // land on the walker's cell, or the nearest free open neighbour if a
+    // unit already stands there — repeat spawns spread instead of stacking
+    const taken = new Set(spawned.map((s) => s.ci));
+    let ci = player.cur;
+    if (taken.has(ci)) {
+      const free = openNeighbors(ci).find((nb) => !taken.has(nb));
+      if (free !== undefined) ci = free;
+    }
+    const entry = {
+      name: params.unit,
+      ci,
+      obj: buildUnit(params.unit, { walker: look().walker, walkerHi: look().walkerHi }),
+    };
+    placeSpawned(entry);
+    scene.add(entry.obj);
+    spawned.push(entry);
+  }
+
+  function clearUnits() {
+    for (const s of spawned) scene.remove(s.obj);
+    spawned.length = 0;
+  }
+
+  // look changes rebuild spawned units in the new tints; regenerate clears
+  // them (the board they stood on is gone)
+  function retintSpawned() {
+    for (const entry of spawned) {
+      scene.remove(entry.obj);
+      entry.obj = buildUnit(entry.name, { walker: look().walker, walkerHi: look().walkerHi });
+      placeSpawned(entry);
+      scene.add(entry.obj);
+    }
   }
 
   // --- dashboard -----------------------------------------------------------
@@ -660,6 +719,10 @@ export function initMazeTab(root) {
   gui.add(params, 'look', LOOK_NAMES).onChange(applyLook);
   gui.add(params, 'wallTops', ['auto', 'bright', 'dim', 'black'])
     .name('wall tops').onChange(applyLook);
+  const gUnits = gui.addFolder('units');
+  gUnits.add(params, 'unit', UNIT_NAMES);
+  gUnits.add({ spawn: spawnUnit }, 'spawn').name('⊕ spawn at walker');
+  gUnits.add({ clear: clearUnits }, 'clear').name('✕ clear units');
   const viewCtrl = gui.add(params, 'view', ['pov', 'third']).name('camera (V)');
   const speedCtrl = gui.add(params, 'speed', 0.2, 4, 0.1).name('wander speed');
   gui.add(params, 'autoResume', 1, 10, 0.5).name('auto resume (s)');
@@ -692,6 +755,7 @@ export function initMazeTab(root) {
     advanceMotion(dt);
     updateHud();
     placeActors();
+    for (const s of spawned) if (s.obj.userData.tick) s.obj.userData.tick(t);
     updateCameraGoal();
 
     camera.position.lerp(camGoal.pos, 0.14);
@@ -738,6 +802,9 @@ export function initMazeTab(root) {
   if (LOOKS[lookOverride]) params.look = lookOverride;
   const wtOverride = urlParams.get('walltops');
   if (['bright', 'dim', 'black'].includes(wtOverride)) params.wallTops = wtOverride;
+
+  // ?spawn=tank,drone drops units at the walker after ?walk/?tick resolve
+  // (deferred below, after regenerate)
   gui.controllersRecursive().forEach((c) => c.updateDisplay());
 
   regenerate();
@@ -772,6 +839,10 @@ export function initMazeTab(root) {
     for (let s = 0; s < tickN; s += 0.05) advanceMotion(0.05);
     placeActors();
     snapCamera();
+  }
+
+  for (const name of (urlParams.get('spawn') || '').split(',')) {
+    if (name && UNIT_NAMES.includes(name)) { params.unit = name; spawnUnit(); }
   }
 
   resize();

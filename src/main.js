@@ -1,11 +1,11 @@
 // main.js — tab shell. Each tab lazily initializes its own renderer/scene the
 // first time it's shown and pauses (skips its loop body) while hidden.
 
-import { wireDevlogBadge } from './devlog.js?v=759889e2';
-import { initGridTab } from './grid-tab.js?v=759889e2';
-import { initMazeTab } from './maze-tab.js?v=759889e2';
-import { initOrganicTab } from './organic-tab.js?v=759889e2';
-import { initHowTab } from './how-tab.js?v=759889e2';
+import { wireDevlogBadge } from './devlog.js?v=e2ffc3bf';
+import { initGridTab } from './grid-tab.js?v=e2ffc3bf';
+import { initMazeTab } from './maze-tab.js?v=e2ffc3bf';
+import { initOrganicTab } from './organic-tab.js?v=e2ffc3bf';
+import { initHowTab } from './how-tab.js?v=e2ffc3bf';
 
 const tabs = {
   grid: { root: document.getElementById('tab-grid'), init: initGridTab, api: null },

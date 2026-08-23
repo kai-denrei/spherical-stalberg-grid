@@ -6,12 +6,13 @@
 
 import * as THREE from '../vendor/three.module.js';
 import GUI from '../vendor/lil-gui.esm.js';
-import { generateSphereMesh, relax } from './grid.js?v=759889e2';
-import { generateDungeon, BLOCKED, PATH, ROOM } from './dungeon.js?v=759889e2';
-import { mulberry32, randomSeed } from './rng.js?v=759889e2';
-import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3 } from './vec3.js?v=759889e2';
-import { CREATURES, waveJelly } from './creatures.js?v=759889e2';
-import { LOOKS, LOOK_NAMES } from './looks.js?v=759889e2';
+import { generateSphereMesh, relax } from './grid.js?v=e2ffc3bf';
+import { generateDungeon, BLOCKED, PATH, ROOM } from './dungeon.js?v=e2ffc3bf';
+import { mulberry32, randomSeed } from './rng.js?v=e2ffc3bf';
+import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3 } from './vec3.js?v=e2ffc3bf';
+import { CREATURES, waveJelly } from './creatures.js?v=e2ffc3bf';
+import { UNITS, UNIT_NAMES, buildUnit } from './units.js?v=e2ffc3bf';
+import { LOOKS, LOOK_NAMES } from './looks.js?v=e2ffc3bf';
 
 export function initOrganicTab(root) {
   let active = false;
@@ -47,6 +48,16 @@ export function initOrganicTab(root) {
       // stalk & pounce: creeps, then rare quick darts on spindly legs
       speed: (tt) => 0.45 + 2.8 * Math.pow(0.5 + 0.5 * Math.sin(tt * 0.7), 10),
       hover: (tt) => 0.1 + 0.06 * Math.sin(tt * 2.2),
+    },
+    tank: {
+      // treads: steady, grounded, unhurried
+      speed: () => 0.85,
+      hover: () => 0,
+    },
+    drone: {
+      // quick hoverer with a slight altitude wobble
+      speed: (tt) => 1.25 + 0.15 * Math.sin(tt * 1.1),
+      hover: (tt) => 0.35 + 0.08 * Math.sin(tt * 2.3),
     },
     jellyfish: {
       // pulse & drift: thrust on the bell contraction (same 3t as the Jelly
@@ -406,25 +417,34 @@ export function initOrganicTab(root) {
 
     playerSize = Math.min(cellSide, params.wallHeight * 0.75);
 
-    // the creature: a Braille dot-cloud under Wave×Jelly, body dots teal,
-    // highlight dots (nucleus / leg tips / bell rim) warm
-    creatureBase = CREATURES[params.creature]();
-    creaturePos = new Float32Array(creatureBase.length * 3);
-    waveJelly(creatureBase, 0, creaturePos);
-    const cols = new Float32Array(creatureBase.length * 3);
-    const cBody = new THREE.Color(look().walker);
-    const cHi = new THREE.Color(look().walkerHi);
-    for (let i = 0; i < creatureBase.length; i++) {
-      const c = creatureBase[i][3] === 1 ? cHi : cBody;
-      cols[i * 3] = c.r; cols[i * 3 + 1] = c.g; cols[i * 3 + 2] = c.b;
+    // the main unit: dot-cloud creatures keep the full Wave×Jelly +
+    // phagocytosis path (creatureBase/creatureGeo); mesh units are static
+    // geometry with transform-only idle animation (userData.tick)
+    if ((UNITS[params.creature] || {}).kind === 'cloud') {
+      creatureBase = CREATURES[params.creature]();
+      creaturePos = new Float32Array(creatureBase.length * 3);
+      waveJelly(creatureBase, 0, creaturePos);
+      const cols = new Float32Array(creatureBase.length * 3);
+      const cBody = new THREE.Color(look().walker);
+      const cHi = new THREE.Color(look().walkerHi);
+      for (let i = 0; i < creatureBase.length; i++) {
+        const c = creatureBase[i][3] === 1 ? cHi : cBody;
+        cols[i * 3] = c.r; cols[i * 3 + 1] = c.g; cols[i * 3 + 2] = c.b;
+      }
+      creatureGeo = new THREE.BufferGeometry();
+      creatureGeo.setAttribute('position', new THREE.BufferAttribute(creaturePos, 3));
+      creatureGeo.setAttribute('color', new THREE.Float32BufferAttribute(cols, 3));
+      playerMesh = new THREE.Points(creatureGeo, new THREE.PointsMaterial({
+        size: 2.2, sizeAttenuation: false, vertexColors: true,
+        transparent: true, opacity: 0.95,
+      }));
+    } else {
+      creatureBase = null;
+      creaturePos = null;
+      creatureGeo = null;
+      playerMesh = buildUnit(params.creature, { walker: look().walker, walkerHi: look().walkerHi });
+      playerMesh.scale.setScalar(playerMesh.userData.baseScale); // reset sizing
     }
-    creatureGeo = new THREE.BufferGeometry();
-    creatureGeo.setAttribute('position', new THREE.BufferAttribute(creaturePos, 3));
-    creatureGeo.setAttribute('color', new THREE.Float32BufferAttribute(cols, 3));
-    playerMesh = new THREE.Points(creatureGeo, new THREE.PointsMaterial({
-      size: 2.2, sizeAttenuation: false, vertexColors: true,
-      transparent: true, opacity: 0.95,
-    }));
     scene.add(playerMesh);
 
     // fat marker so the player reads on the minimap
@@ -444,13 +464,13 @@ export function initOrganicTab(root) {
     heartSprite.scale.set(s, s, s);
 
     const n = norm3(player.pos);
-    // belly just above the floor, plus the creature's own hover profile
-    // (jellyfish floats and bobs with the bell pulse; phage bobs on its legs)
+    // lift: the unit's own floor offset plus its hover profile
     const prof = MOVES[params.creature];
-    const lift = unitScale * (0.85 + (prof ? prof.hover(simTime) : 0));
+    const baseLift = creatureGeo ? 0.85 : (playerMesh.userData.lift ?? 0.05);
+    const lift = unitScale * (baseLift + (prof ? prof.hover(simTime) : 0));
     const p = add3(player.pos, scale3(n, lift));
     playerMesh.position.set(p[0], p[1], p[2]);
-    playerMesh.scale.setScalar(unitScale);
+    playerMesh.scale.setScalar(unitScale * (playerMesh.userData.baseScale ?? 1));
     markerMesh.position.set(p[0], p[1], p[2]);
     // upright on the surface, facing the SMOOTHED direction (no snap)
     const h = player.smoothDir;
@@ -797,7 +817,7 @@ export function initOrganicTab(root) {
 
   // --- dashboard -----------------------------------------------------------
   const gui = new GUI({ title: 'organic dungeon', container: root });
-  gui.add(params, 'creature', Object.keys(CREATURES)).onChange(regenerate);
+  gui.add(params, 'creature', UNIT_NAMES).onChange(regenerate);
   gui.add(params, 'look', LOOK_NAMES).onChange(applyLook);
   gui.add(params, 'wallTops', ['auto', 'bright', 'dim', 'black'])
     .name('wall tops').onChange(applyLook);
@@ -840,7 +860,7 @@ export function initOrganicTab(root) {
     // Direction is converted into the creature's FINAL local frame (inverse
     // of the mesh quaternion), where waveJelly applies the stretch.
     reach.dir = null; reach.amt = 0;
-    if (params.creature === 'amoeba' && orbMeshes.size > 0 && !player.won) {
+    if (params.creature === 'amoeba' && creatureGeo && orbMeshes.size > 0 && !player.won) {
       const { ci, d } = nearestOrb();
       const reachRange = cellSide * 1.7 + unitScale;
       if (ci !== -1 && d < reachRange) {
@@ -852,10 +872,13 @@ export function initOrganicTab(root) {
       }
     }
 
-    // Wave×Jelly (+ reach): re-pose the dot cloud every frame (local space;
-    // the object transform carries it to the surface)
-    waveJelly(creatureBase, t, creaturePos, reach.amt > 0 ? { reachDir: reach.dir, reachAmt: reach.amt } : null);
-    creatureGeo.getAttribute('position').needsUpdate = true;
+    // cloud: Wave×Jelly (+ reach) re-poses the dots; mesh: transform tick
+    if (creatureGeo) {
+      waveJelly(creatureBase, t, creaturePos, reach.amt > 0 ? { reachDir: reach.dir, reachAmt: reach.amt } : null);
+      creatureGeo.getAttribute('position').needsUpdate = true;
+    } else if (playerMesh.userData.tick) {
+      playerMesh.userData.tick(t);
+    }
     updateCameraGoal();
 
     camera.position.lerp(camGoal.pos, 0.14);
@@ -901,7 +924,7 @@ export function initOrganicTab(root) {
   const wtOverride = urlParams.get('walltops');
   if (['bright', 'dim', 'black'].includes(wtOverride)) params.wallTops = wtOverride;
   const creatureOverride = urlParams.get('creature');
-  if (CREATURES[creatureOverride]) params.creature = creatureOverride;
+  if (UNITS[creatureOverride]) params.creature = creatureOverride;
   gui.controllersRecursive().forEach((c) => c.updateDisplay());
 
   regenerate();
