@@ -109,9 +109,13 @@ export function diameterEndpoints(adj, passable) {
 // 3. blow each seed up into a room (cells within roomRadius hops)
 // 4. extra corridors between random room pairs, avoiding existing hallway
 //    interiors -> genuinely distinct routes = cycles = a maze, not a tree
+// 4b. widen: open every cell within corridorWidth-1 hops of the open set
+//    (HokorobiTawaa's buildable-band step — corridors become avenues, rooms
+//    grow aprons; the openness knob for dense boards where hop-sized rooms
+//    shrink toward nothing)
 // 5. spawn & heart = double-BFS diameter endpoints of the OPEN subgraph
 export function generateDungeon(mesh, {
-  seed = 0, rooms = 6, roomRadius = 2, extraCorridors = 2,
+  seed = 0, rooms = 6, roomRadius = 2, extraCorridors = 2, corridorWidth = 1,
 } = {}) {
   const graph = buildCellGraph(mesh);
   const { adj } = graph;
@@ -156,6 +160,19 @@ export function generateDungeon(mesh, {
     const path = bfsPath(adj, a, (c) => c === b, avoid);
     if (!path) continue;
     for (const c of path) { if (tags[c] === BLOCKED) { tags[c] = PATH; carved.add(c); } }
+  }
+
+  // 4b. widen the whole open set by corridorWidth−1 hops
+  if (corridorWidth > 1) {
+    const openNow = [];
+    for (let i = 0; i < C; i++) if (tags[i] !== BLOCKED) openNow.push(i);
+    const d = bfsDist(adj, openNow);
+    for (let i = 0; i < C; i++) {
+      if (tags[i] === BLOCKED && d[i] !== -1 && d[i] <= corridorWidth - 1) {
+        tags[i] = PATH;
+        carved.add(i);
+      }
+    }
   }
 
   // 5. spawn & heart: the two most-distant open cells

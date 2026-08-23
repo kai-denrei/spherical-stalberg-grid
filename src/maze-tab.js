@@ -6,10 +6,10 @@
 
 import * as THREE from '../vendor/three.module.js';
 import GUI from '../vendor/lil-gui.esm.js';
-import { generateSphereMesh, relax } from './grid.js?v=1663e0b3';
-import { generateDungeon, BLOCKED, PATH, ROOM } from './dungeon.js?v=1663e0b3';
-import { mulberry32, randomSeed } from './rng.js?v=1663e0b3';
-import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3 } from './vec3.js?v=1663e0b3';
+import { generateSphereMesh, relax } from './grid.js?v=c74a061a';
+import { generateDungeon, BLOCKED, PATH, ROOM } from './dungeon.js?v=c74a061a';
+import { mulberry32, randomSeed } from './rng.js?v=c74a061a';
+import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3 } from './vec3.js?v=c74a061a';
 
 export function initMazeTab(root) {
   let active = false;
@@ -20,6 +20,7 @@ export function initMazeTab(root) {
     rooms: 6,
     roomRadius: 2,
     extraCorridors: 2,
+    corridorWidth: 2,
     wallHeight: 0.03,
     relaxIters: 80,
     view: 'third', // pov | third
@@ -40,6 +41,13 @@ export function initMazeTab(root) {
   const camera = new THREE.PerspectiveCamera(68, 1, 0.004, 50);
   const mapCamera = new THREE.PerspectiveCamera(42, 1, 0.1, 50);
 
+  // circular minimap: its own small renderer on a round-clipped canvas —
+  // scissored insets on the main canvas can only ever be rectangles
+  const mapRenderer = new THREE.WebGLRenderer({ antialias: true });
+  mapRenderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+  mapRenderer.domElement.className = 'minimap';
+  container.appendChild(mapRenderer.domElement);
+
   // even-ish lighting: the walker can be anywhere on the sphere, so no side
   // may fall into unreadable darkness
   scene.add(new THREE.HemisphereLight(0xc8cfe0, 0x555060, 1.5));
@@ -56,6 +64,8 @@ export function initMazeTab(root) {
     renderer.setSize(w, h);
     camera.aspect = w / h;
     camera.updateProjectionMatrix();
+    const m = Math.min(240, Math.floor(Math.min(w, h) * 0.32));
+    mapRenderer.setSize(m, m);
   }
   addEventListener('resize', resize);
 
@@ -550,6 +560,7 @@ export function initMazeTab(root) {
       rooms: params.rooms,
       roomRadius: params.roomRadius,
       extraCorridors: params.extraCorridors,
+      corridorWidth: params.corridorWidth,
     });
     graph = dungeon.graph;
     cellSide = mesh.defaultSide;
@@ -598,8 +609,9 @@ export function initMazeTab(root) {
   gui.add(params, 'autoResume', 1, 10, 0.5).name('auto resume (s)');
   const seedCtrl = gui.add(params, 'seed', 0, 99999, 1).onFinishChange(regenerate);
   gui.add(params, 'points', 150, 8000, 50).name('sample points').onFinishChange(regenerate);
-  gui.add(params, 'rooms', 2, 12, 1).onFinishChange(regenerate);
-  gui.add(params, 'roomRadius', 1, 4, 1).name('room radius').onFinishChange(regenerate);
+  gui.add(params, 'rooms', 2, 24, 1).onFinishChange(regenerate);
+  gui.add(params, 'roomRadius', 1, 8, 1).name('room radius').onFinishChange(regenerate);
+  gui.add(params, 'corridorWidth', 1, 4, 1).name('corridor width').onFinishChange(regenerate);
   gui.add(params, 'extraCorridors', 0, 5, 1).name('extra corridors').onFinishChange(regenerate);
   gui.add(params, 'wallHeight', 0.02, 0.15, 0.005).name('wall height').onFinishChange(regenerate);
   gui.add(params, 'relaxIters', 0, 200, 10).name('relax iters').onFinishChange(regenerate);
@@ -633,12 +645,7 @@ export function initMazeTab(root) {
     const s = cellSide * 1.9 * pulse;
     heartSprite.scale.set(s, s, s);
 
-    const w = container.clientWidth, h = container.clientHeight;
-    renderer.setScissorTest(true);
-
-    // main: trench PoV
-    renderer.setViewport(0, 0, w, h);
-    renderer.setScissor(0, 0, w, h);
+    // main view
     scene.background = mainBg;
     markerMesh.visible = false;
     // below knee-height walls the PoV camera rides so low that even the scaled
@@ -647,24 +654,19 @@ export function initMazeTab(root) {
     playerMesh.visible = params.view === 'third' || params.wallHeight >= 0.05;
     renderer.render(scene, camera);
 
-    // inset: the sphere as a minimap, player-centred, smoothed-direction up
-    const m = Math.min(260, Math.floor(Math.min(w, h) * 0.34));
+    // minimap: the whole sphere (walls included), player-centred,
+    // smoothed-direction up, pulled back so nothing clips the circle
     const n = norm3(player.pos);
     const hd = player.smoothDir;
-    mapCamera.position.set(n[0] * 2.75, n[1] * 2.75, n[2] * 2.75);
+    const mapDist = 3.05 * (1 + params.wallHeight);
+    mapCamera.position.set(n[0] * mapDist, n[1] * mapDist, n[2] * mapDist);
     mapCamera.up.set(hd[0], hd[1], hd[2]);
     mapCamera.lookAt(0, 0, 0);
-    mapCamera.aspect = 1;
     mapCamera.updateProjectionMatrix();
-    renderer.setViewport(14, 14, m, m);
-    renderer.setScissor(14, 14, m, m);
     scene.background = mapBg;
     markerMesh.visible = true;
     playerMesh.visible = true;
-    renderer.clearDepth();
-    renderer.render(scene, mapCamera);
-
-    renderer.setScissorTest(false);
+    mapRenderer.render(scene, mapCamera);
   }
 
   // debug/demo overrides: ?wall=0.03 forces a wall height,

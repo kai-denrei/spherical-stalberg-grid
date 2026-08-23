@@ -43,5 +43,24 @@ for (const seed of [0, 7]) {
   console.log(`  info: cells=${C} open=${openCells.length} spawn→heart=${distToHeart[spawn]} hops`);
 }
 
+// corridorWidth widens the open set monotonically and keeps it connected
+{
+  console.log('corridorWidth:');
+  const mesh = generateSphereMesh({ seed: 3, n: 400, k: 10 });
+  relax(mesh, { n_iters: 40, PULL_RATE: 0.25 });
+  const counts = [1, 2, 3].map((w) => {
+    const dg = generateDungeon(mesh, { seed: 3, rooms: 6, roomRadius: 2, extraCorridors: 2, corridorWidth: w });
+    let open = 0;
+    for (const t of dg.tags) if (t !== BLOCKED) open++;
+    const reach = bfsDist(dg.graph.adj, [dg.heart], (i) => dg.tags[i] !== BLOCKED);
+    let reachable = 0;
+    for (let i = 0; i < dg.tags.length; i++) if (dg.tags[i] !== BLOCKED && reach[i] !== -1) reachable++;
+    check(`width ${w}: open connected`, reachable === open, `${reachable}/${open}`);
+    return open;
+  });
+  check('openness grows with width', counts[0] < counts[1] && counts[1] < counts[2],
+    counts.join(' < '));
+}
+
 if (failures > 0) { console.error(`\n${failures} failure(s)`); process.exit(1); }
 console.log('\nmaze invariants hold');
