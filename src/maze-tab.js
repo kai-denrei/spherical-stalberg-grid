@@ -6,10 +6,11 @@
 
 import * as THREE from '../vendor/three.module.js';
 import GUI from '../vendor/lil-gui.esm.js';
-import { generateSphereMesh, relax } from './grid.js?v=c74a061a';
-import { generateDungeon, BLOCKED, PATH, ROOM } from './dungeon.js?v=c74a061a';
-import { mulberry32, randomSeed } from './rng.js?v=c74a061a';
-import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3 } from './vec3.js?v=c74a061a';
+import { generateSphereMesh, relax } from './grid.js?v=3135aadd';
+import { generateDungeon, BLOCKED, PATH, ROOM } from './dungeon.js?v=3135aadd';
+import { mulberry32, randomSeed } from './rng.js?v=3135aadd';
+import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3 } from './vec3.js?v=3135aadd';
+import { LOOKS, LOOK_NAMES } from './looks.js?v=3135aadd';
 
 export function initMazeTab(root) {
   let active = false;
@@ -24,6 +25,7 @@ export function initMazeTab(root) {
     wallHeight: 0.03,
     relaxIters: 80,
     view: 'third', // pov | third
+    look: 'solid', // visual identity, see looks.js
     speed: 1.1, // cells per second, wanderer pace
     autoResume: 3, // seconds idle before auto-wander resumes
   };
@@ -50,7 +52,8 @@ export function initMazeTab(root) {
 
   // even-ish lighting: the walker can be anywhere on the sphere, so no side
   // may fall into unreadable darkness
-  scene.add(new THREE.HemisphereLight(0xc8cfe0, 0x555060, 1.5));
+  const hemi = new THREE.HemisphereLight(0xc8cfe0, 0x555060, 1.5);
+  scene.add(hemi);
   const sun = new THREE.DirectionalLight(0xffe8c8, 1.1);
   sun.position.set(2, 3, 1.5);
   scene.add(sun);
@@ -115,23 +118,15 @@ export function initMazeTab(root) {
   // ends up rotated 180° — staring backward along the heading.
   const tmpCam = new THREE.PerspectiveCamera();
 
-  // --- colors --------------------------------------------------------------
-  const COL = {
-    path: [0.80, 0.72, 0.52],
-    room: [0.86, 0.80, 0.62],
-    visited: [0.62, 0.68, 0.58],
-    spawn: [0.45, 0.68, 0.80],
-    heartFloor: [0.92, 0.45, 0.55],
-    wallTop: [0.36, 0.40, 0.47],
-    wallSide: [0.22, 0.25, 0.31],
-    hintFlash: [0.55, 0.95, 0.75],
-  };
+  // --- colors: everything visual comes from the active look ----------------
+  const look = () => LOOKS[params.look] || LOOKS.solid;
 
   function floorColorOf(ci) {
-    if (ci === dungeon.heart) return COL.heartFloor;
-    if (ci === dungeon.spawn) return COL.spawn;
-    if (player.visited.has(ci)) return COL.visited;
-    return dungeon.tags[ci] === ROOM ? COL.room : COL.path;
+    const F = look().floors;
+    if (ci === dungeon.heart) return F.heartFloor;
+    if (ci === dungeon.spawn) return F.spawn;
+    if (player.visited.has(ci)) return F.visited;
+    return dungeon.tags[ci] === ROOM ? F.room : F.path;
   }
 
   // --- geometry ------------------------------------------------------------
@@ -149,7 +144,7 @@ export function initMazeTab(root) {
       const q = quads[ci];
       floorOffsets.set(ci, fPos.length / 3);
       const [r, g, b] = floorColorOf(ci);
-      const j = (jr() - 0.5) * 0.05;
+      const j = (jr() - 0.5) * 0.05 * look().jitter;
       for (const vi of [q[0], q[1], q[2], q[0], q[2], q[3]]) {
         const p = vertices[vi];
         fPos.push(p[0], p[1], p[2]);
@@ -176,15 +171,15 @@ export function initMazeTab(root) {
       if (dungeon.tags[ci] !== BLOCKED) continue;
       const q = quads[ci];
       const top = q.map((vi) => scale3(vertices[vi], H));
-      const j = (jr() - 0.5) * 0.08;
-      pushQuad(top[0], top[1], top[2], top[3], COL.wallTop, j);
+      const j = (jr() - 0.5) * 0.08 * look().jitter;
+      pushQuad(top[0], top[1], top[2], top[3], look().walls.top, j);
       for (let i = 0; i < 4; i++) pushEdge(top[i], top[(i + 1) % 4]);
       for (let i = 0; i < 4; i++) {
         const a = q[i], b = q[(i + 1) % 4];
         const nb = edgeToCell.get(`${b}-${a}`); // twin edge's owner
         if (nb === undefined || dungeon.tags[nb] === BLOCKED) continue;
         // skirt facing the open neighbour, wound outward
-        pushQuad(top[(i + 1) % 4], top[i], vertices[a], vertices[b], COL.wallSide, j);
+        pushQuad(top[(i + 1) % 4], top[i], vertices[a], vertices[b], look().walls.side, j);
         pushEdge(top[i], vertices[a]);
         pushEdge(top[(i + 1) % 4], vertices[b]);
       }
@@ -214,8 +209,14 @@ export function initMazeTab(root) {
 
     edgeGeo = new THREE.BufferGeometry();
     edgeGeo.setAttribute('position', new THREE.Float32BufferAttribute(ePos, 3));
+    const E = look().edges;
     edgeMesh = new THREE.LineSegments(edgeGeo,
-      new THREE.LineBasicMaterial({ color: 0x171a22, transparent: true, opacity: 0.7 }));
+      new THREE.LineBasicMaterial({
+        color: E.color, transparent: true, opacity: E.opacity,
+        blending: E.additive ? THREE.AdditiveBlending : THREE.NormalBlending,
+        depthWrite: !E.additive,
+      }));
+    edgeMesh.visible = E.show;
     scene.add(edgeMesh);
   }
 
@@ -230,7 +231,7 @@ export function initMazeTab(root) {
   }
 
   // --- heart & player objects ---------------------------------------------
-  function makeHeartTexture() {
+  function makeHeartTexture(tint) {
     const c = document.createElement('canvas');
     c.width = c.height = 256;
     const x = c.getContext('2d');
@@ -246,13 +247,13 @@ export function initMazeTab(root) {
     // left half: solid
     x.save();
     x.beginPath(); x.rect(0, 0, 128, 256); x.clip();
-    heartPath(); x.fillStyle = '#ff5f7e'; x.fill();
+    heartPath(); x.fillStyle = tint; x.fill();
     x.restore();
     // right half: dotted outline
     x.save();
     x.beginPath(); x.rect(128, 0, 128, 256); x.clip();
     heartPath();
-    x.strokeStyle = '#ff5f7e'; x.lineWidth = 7; x.setLineDash([8, 9]); x.stroke();
+    x.strokeStyle = tint; x.lineWidth = 7; x.setLineDash([8, 9]); x.stroke();
     x.restore();
     const tex = new THREE.CanvasTexture(c);
     tex.colorSpace = THREE.SRGBColorSpace;
@@ -263,7 +264,7 @@ export function initMazeTab(root) {
     for (const o of [heartSprite, playerMesh, markerMesh]) if (o) scene.remove(o);
 
     heartSprite = new THREE.Sprite(new THREE.SpriteMaterial({
-      map: makeHeartTexture(), transparent: true, depthTest: true,
+      map: makeHeartTexture(look().heart), transparent: true, depthTest: true,
     }));
     scene.add(heartSprite);
 
@@ -274,14 +275,14 @@ export function initMazeTab(root) {
     playerSize = Math.min(cellSide, params.wallHeight * 0.75);
     playerMesh = new THREE.Mesh(
       new THREE.ConeGeometry(playerSize * 0.18, playerSize * 0.5, 10),
-      new THREE.MeshLambertMaterial({ color: 0x54e0c8 }),
+      new THREE.MeshBasicMaterial({ color: look().walker }), // unlit: must pop under every light rig
     );
     scene.add(playerMesh);
 
     // fat marker so the player reads on the minimap
     markerMesh = new THREE.Mesh(
       new THREE.SphereGeometry(cellSide * 0.32, 12, 12),
-      new THREE.MeshBasicMaterial({ color: 0x54e0c8 }),
+      new THREE.MeshBasicMaterial({ color: look().marker }),
     );
     scene.add(markerMesh);
   }
@@ -602,8 +603,29 @@ export function initMazeTab(root) {
     regenerate();
   };
 
+
+  // swap the whole visual identity in place: backgrounds, light rig, then
+  // rebake vertex palettes and actor tints (game state untouched)
+  function applyLook() {
+    const L = look();
+    mainBg.setHex(L.bg);
+    mapBg.setHex(L.mapBg);
+    hemi.color.setHex(L.hemi[0]);
+    hemi.groundColor.setHex(L.hemi[1]);
+    hemi.intensity = L.hemi[2];
+    sun.color.setHex(L.sun[0]);
+    sun.intensity = L.sun[1];
+    fill.color.setHex(L.fill[0]);
+    fill.intensity = L.fill[1];
+    
+    buildGeometry();
+    buildActors();
+    placeActors();
+  }
+
   // --- dashboard -----------------------------------------------------------
   const gui = new GUI({ title: 'sphere dungeon', container: root });
+  gui.add(params, 'look', LOOK_NAMES).onChange(applyLook);
   const viewCtrl = gui.add(params, 'view', ['pov', 'third']).name('camera (V)');
   const speedCtrl = gui.add(params, 'speed', 0.2, 4, 0.1).name('wander speed');
   gui.add(params, 'autoResume', 1, 10, 0.5).name('auto resume (s)');
@@ -678,9 +700,12 @@ export function initMazeTab(root) {
   if (Number.isFinite(pointsOverride)) params.points = Math.min(16000, Math.max(150, pointsOverride));
   if (Number.isFinite(wallOverride)) params.wallHeight = wallOverride;
   if (urlParams.get('view') === 'third') { params.view = 'third'; viewCtrl.updateDisplay(); }
+  const lookOverride = urlParams.get('look');
+  if (LOOKS[lookOverride]) params.look = lookOverride;
   gui.controllersRecursive().forEach((c) => c.updateDisplay());
 
   regenerate();
+  applyLook();
 
   // ?walk=N teleports the wanderer N hops along the shortest route (demo)
   const walkN = parseInt(urlParams.get('walk') || '0', 10);
