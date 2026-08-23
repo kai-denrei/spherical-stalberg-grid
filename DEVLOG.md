@@ -6,6 +6,32 @@ Demo links assume `npm run serve` (port 8144) or the
 
 ---
 
+## `d941e9d` — The game is the front door, and icons that are the thing
+
+The heart tab is now the landing page — a bare URL opens the game;
+hash deep-links still reach every other tab. With that, the mobile
+posture tightened: the ☰-hidden chrome already made the whole screen
+play surface, and now iOS's double-tap zoom is dead site-wide
+(`touch-action: manipulation` at the root — non-negotiable once the
+CRUISE gesture became a double tap), pinch is blocked via Safari's
+`gesturestart`, and overscroll/tap-highlight are off.
+
+The briefing's emoji icons are gone, replaced by the objects
+themselves: `spriteShot()` builds the real half-dotted thing — heart
+cloud, neon tank, bullet triad, each of the six enemies, the portal
+torus, the reward orbs — renders one frame through the announce-card
+sprite rig, and snapshots it to a data URL (`preserveDrawingBuffer`
+turned on for `toDataURL`). Cached per key: every icon costs one
+render per session, and the cards carry images, not live contexts.
+The pattern to keep: when a UI needs to show a game object, render
+the game object — hand-drawn stand-ins drift, snapshots can't.
+
+Housekeeping with teeth: the ammo *sphere* died (redundant with the
+bullet triad — two shapes meaning the same thing taught nothing), the
+health sphere went green (color = meaning), and portals got denser
+(560 dots) with a two-frequency shimmer — slow per-dot wave times fast
+glitter — so a gate reads as continuously alive.
+
 ## `495a540` — Portals, glossaries, and walls that thud
 
 The spawn points became what they always were narratively: **portals**.
