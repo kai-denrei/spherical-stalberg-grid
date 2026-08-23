@@ -6,6 +6,40 @@ Demo links assume `npm run serve` (port 8144) or the
 
 ---
 
+## `9c86d8c` — High ground, wide lanes, and a purge of tanks
+
+The operator's playtest note cut deep: multiple friendly tanks CONFUSE
+new players — they read as enemies. TD's answer is subtraction: no
+allies at all, just you and your towers. The briefing now shows a
+tower sprite where the ally card was, and the SWAP button simply
+doesn't exist in TD's markup (the id-stable wiring made removal a
+one-line guard).
+
+The board itself went back to HokorobiTawaa's grammar. The open-field
+clump carve is deleted — the DUNGEON carve is the map again, tuned
+wide: sixteen rooms joined by four-cell corridors are the monster
+lanes, and the wall mass between them is HIGH GROUND, the only place
+towers may build (mounted on the wall roof, raycast against wallMesh).
+The elegant dividend: the connectivity guard became unnecessary by
+construction — walls never carry pathing, so no tower placement can
+ever dam a lane. A rule that needed a simulated BFS under the old
+scheme is now free. And the world is big and pre-decided: 3000 sample
+points, ~10k cells, with sector 1 opening just 416 of them — the whole
+map exists from frame one, unsealing 25→45→65→85→100% by
+heart-distance as rounds clear. Sealed land renders as void, which
+makes each white-flash reveal literally materialize new world.
+
+The roster completed its migration into the house language: every
+enemy is now a half-dotted static cloud — the original three creatures
+posed once from their rich generators, the borrowed nine from new
+enemyDotPts silhouettes (dome-ghost, saucer, blob, ringed saturn,
+spiked spheres, trefoil knot) — sized ×0.85, transform-idled per
+family, bursting into tinted dots on death. A hundred of them cost
+what one waveJelly hero costs, which matters because fodder counts
+went ×1.4 on top of the wave-and-sector ramp. Hectic, as ordered.
+
+---
+
 ## `78838ea` — Towers in the house style, effects in HK's
 
 The mesh-head towers never quite belonged — everything else alive in
