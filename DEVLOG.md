@@ -6,6 +6,32 @@ Demo links assume `npm run serve` (port 8144) or the
 
 ---
 
+## `78838ea` — Towers in the house style, effects in HK's
+
+The mesh-head towers never quite belonged — everything else alive in
+this game is half-dotted. Now the towers are too: `towerHeadPts()` in
+creatures.js generates one dotted silhouette per HokorobiTawaa tower
+shape (cone, spiral, sphere, double helix, pyramid, gear, teardrop,
+bipyramid), and `makeTowerUnit` mounts it on an elevated mesh pedestal
+— slab, tapered column, tinted collar, neon edges. The operator's
+particle-count worry dissolves by construction: the clouds are static
+and the idle is transform-only spin+bob, so ~190 dots per tower cost
+nothing per frame. The rule the roster taught months ago holds: dot
+COUNT is free; per-dot CPU work is the thing that scales badly.
+
+The attack effects now carry HK's identity system. Every projectile is
+a tracer — a bright additive head dragging its tower's signature trail
+(sniper 11 ghosts, homing 6, rapid 3, single none), implemented as one
+tiny Points buffer per shot whose ghosts shift back a slot per frame.
+The mortar lofts on a sine arc over its measured throw and detonates
+at the end whether it hit or not. The slow field stopped drawing tidy
+lines and started throwing LIGHTNING — jagged additive polylines to
+every tethered victim plus impact sparks, with jitter computed from
+segment index + time so the fx layer never consumes the gameplay rng
+stream. Determinism discipline extends all the way into the sparks.
+
+---
+
 ## `c5a815d` — The world learns to open
 
 TD's biggest structural borrow yet: HokorobiTawaa's fraying, spherized.
