@@ -6,6 +6,27 @@ Demo links assume `npm run serve` (port 8144) or the
 
 ---
 
+## `a9891fc` — The full dozen: HokorobiTawaa's roster comes across
+
+Six more enemy types, completing the import of HokorobiTawaa's twelve
+in their difficulty order and palette (hue = class, brightness =
+threat): Wave Ghost and Scout UFO extend the yellow agile tier, Green
+Slime brings the **regenerator** mechanic (healOOC port — hp knits
+back after 1.2 s unhit, tracked by `e.lastHitT`; the counter is
+ramming, which ignores hp entirely), Wave Saturn is the first
+unrammable — yellow body, blue ring baked into the mesh per the
+source's dual-coding — and Rolling/Prime Mine form the epic tier,
+reusing the seamine mesh exactly as HK does: the tint carries the
+tier, not the silhouette. Prime at 6 hp + regen is the pre-boss wall.
+
+The schedule grew to 12 intros and rounds now unlock two types each —
+round 1 fields four rammable types, the full roster stands by round 5,
+with the boss at wave 12. A 'heavy' spawn tier keeps epics sparse
+(base/3). Stress-tested at ?wave=12: 215 hostiles simulated, and the
+round gate held — round 1 correctly refused to introduce past its
+four. Operator dials: shell recoil to 8 (the max — the dial shipped
+three commits ago and immediately got pinned), waveSize to 5.
+
 ## `d941e9d` — The game is the front door, and icons that are the thing
 
 The heart tab is now the landing page — a bare URL opens the game;
