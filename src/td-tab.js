@@ -19,17 +19,17 @@
 
 import * as THREE from '../vendor/three.module.js';
 import GUI from '../vendor/lil-gui.esm.js';
-import { generateSphereMesh, relax } from './grid.js?v=dc0eb989';
-import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=dc0eb989';
-import { mulberry32, randomSeed } from './rng.js?v=dc0eb989';
-import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3 } from './vec3.js?v=dc0eb989';
-import { CREATURES, waveJelly } from './creatures.js?v=dc0eb989';
-import { UNITS, UNIT_NAMES, buildUnit, makeOrbCloud, makeBulletCloud, makeDebris, makeDotBurst, makePortalCloud, makeHeartCloud, makeTowerUnit } from './units.js?v=dc0eb989';
-import { LOOKS, LOOK_NAMES } from './looks.js?v=dc0eb989';
-import { makeCellIndex } from './cellindex.js?v=dc0eb989';
-import { CREATURE_TINTS, ENEMY_SPEC, INTROS } from './enemyspec.js?v=dc0eb989';
-import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval } from './towers.js?v=dc0eb989';
-import { makeEconomy, sellRefund } from './economy.js?v=dc0eb989';
+import { generateSphereMesh, relax } from './grid.js?v=9aa2e245';
+import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=9aa2e245';
+import { mulberry32, randomSeed } from './rng.js?v=9aa2e245';
+import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3 } from './vec3.js?v=9aa2e245';
+import { CREATURES, waveJelly } from './creatures.js?v=9aa2e245';
+import { UNITS, UNIT_NAMES, buildUnit, makeOrbCloud, makeBulletCloud, makeDebris, makeDotBurst, makePortalCloud, makeHeartCloud, makeTowerUnit } from './units.js?v=9aa2e245';
+import { LOOKS, LOOK_NAMES } from './looks.js?v=9aa2e245';
+import { makeCellIndex } from './cellindex.js?v=9aa2e245';
+import { CREATURE_TINTS, ENEMY_SPEC, INTROS } from './enemyspec.js?v=9aa2e245';
+import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval } from './towers.js?v=9aa2e245';
+import { makeEconomy, sellRefund } from './economy.js?v=9aa2e245';
 
 export function initTdTab(root) {
   let active = false;
@@ -2485,7 +2485,13 @@ export function initTdTab(root) {
           if (e.alive) {
             e.slowFactor = eff.slowFactor;
             e.slowUntil = tNow + eff.slowDur;
-            spawnBeam(muzzle, e.pos, tw.def.color, 0.1);
+            spawnLightning(muzzle, e.pos, tw.def.color, tNow);
+            const spark = makeDotBurst(tw.def.color, norm3(e.pos), 12);
+            spark.scale.setScalar(cellSide * 0.3);
+            const spp = add3(e.pos, scale3(norm3(e.pos), cellSide * 0.2));
+            spark.position.set(spp[0], spp[1], spp[2]);
+            scene.add(spark);
+            debris.push(spark);
           }
         }
       } else if (atk === 'spread') {
@@ -2498,28 +2504,70 @@ export function initTdTab(root) {
           spawnTowerShot(muzzle, dir, tw, eff, null);
         }
       } else {
-        spawnTowerShot(muzzle, flat, tw, eff, atk === 'homing' ? target : null);
+        spawnTowerShot(muzzle, flat, tw, eff, atk === 'homing' ? target : null,
+          atk === 'mortar' ? chord(tp, target.pos) : 0);
       }
     }
   }
 
-  const towerShotGeo = new THREE.SphereGeometry(1, 6, 6); // shared, scaled per shot
-  function spawnTowerShot(pos, dir, tw, eff, homing) {
-    const mesh = new THREE.Mesh(towerShotGeo,
-      new THREE.MeshBasicMaterial({ color: tw.def.color }));
-    mesh.scale.setScalar(cellSide * 0.09);
+  // HK's projectile identity: every shot is a TRACER — a bright additive
+  // head dragging def.trail ghost points that dim toward the tail. Each
+  // tracer is one small Points object (≤12 verts), rebuilt per shot.
+  function makeTracer(color, px, trailN) {
+    const n = trailN + 1;
+    const pos = new Float32Array(n * 3);
+    const col = new Float32Array(n * 3);
+    const c = new THREE.Color(color);
+    for (let i = 0; i < n; i++) {
+      const f = 1 - i / n; // head bright, tail fading to black (additive)
+      col[i * 3] = c.r * f; col[i * 3 + 1] = c.g * f; col[i * 3 + 2] = c.b * f;
+    }
+    const geo = new THREE.BufferGeometry();
+    geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+    geo.setAttribute('color', new THREE.BufferAttribute(col, 3));
+    return new THREE.Points(geo, new THREE.PointsMaterial({
+      size: px, sizeAttenuation: false, vertexColors: true,
+      transparent: true, opacity: 0.95,
+      blending: THREE.AdditiveBlending, depthWrite: false,
+    }));
+  }
+
+  function spawnTowerShot(pos, dir, tw, eff, homing, arcTotal = 0) {
+    const mesh = makeTracer(tw.def.color, tw.def.projPx ?? 5, tw.def.trail ?? 0);
+    const p0 = norm3(pos);
+    const lift0 = 1 + params.wallHeight * 0.5;
+    const attr = mesh.geometry.getAttribute('position');
+    for (let i = 0; i < attr.count; i++) {
+      attr.setXYZ(i, p0[0] * lift0, p0[1] * lift0, p0[2] * lift0);
+    }
+    attr.needsUpdate = true;
     scene.add(mesh);
     towerShots.push({
-      pos: norm3(pos), dir, dist: 0, mesh,
+      pos: p0, dir, dist: 0, mesh,
       dmg: eff.dmg, splash: (eff.splash || 0) * cellSide, homing,
       range: eff.range * cellSide * 1.35,
+      arcTotal, arcH: cellSide * 1.5, color: tw.def.color,
     });
   }
 
   function killTowerShot(i) {
     scene.remove(towerShots[i].mesh);
-    towerShots[i].mesh.material.dispose(); // geometry is shared
+    towerShots[i].mesh.geometry.dispose(); // per-shot tracer geometry
+    towerShots[i].mesh.material.dispose();
     towerShots.splice(i, 1);
+  }
+
+  // splash detonation: tinted burst + damage to everything in the radius
+  function detonate(p, tNow) {
+    for (const e2 of enemies) {
+      if (e2.alive && chord(p.pos, e2.pos) <= p.splash) damageEnemy(e2, tNow, p.dmg, true);
+    }
+    const boom = makeDotBurst(p.color, norm3(p.pos), 42);
+    boom.scale.setScalar(cellSide * 1.1);
+    const bp = add3(p.pos, scale3(norm3(p.pos), cellSide * 0.2));
+    boom.position.set(bp[0], bp[1], bp[2]);
+    scene.add(boom);
+    debris.push(boom);
   }
 
   function updateTowerShots(dt, tNow) {
@@ -2537,20 +2585,29 @@ export function initTdTab(root) {
       const n = p.pos;
       p.dir = norm3(sub3(p.dir, scale3(n, dot3(p.dir, n))));
       p.dist += v * dt;
-      const lift = 1 + params.wallHeight * 0.5;
-      p.mesh.position.set(p.pos[0] * lift, p.pos[1] * lift, p.pos[2] * lift);
+      // mortar lofts: a sine arc over its measured throw
+      const arc = p.arcTotal > 0
+        ? Math.sin(Math.PI * Math.min(1, p.dist / p.arcTotal)) * p.arcH : 0;
+      const lift = 1 + params.wallHeight * 0.5 + arc;
+      // tracer: ghosts shift back one slot, the head takes the new point
+      const attr = p.mesh.geometry.getAttribute('position');
+      for (let k = attr.count - 1; k > 0; k--) {
+        attr.setXYZ(k, attr.getX(k - 1), attr.getY(k - 1), attr.getZ(k - 1));
+      }
+      attr.setXYZ(0, p.pos[0] * lift, p.pos[1] * lift, p.pos[2] * lift);
+      attr.needsUpdate = true;
+      // mortar detonates at the end of its arc, hit or not
+      if (p.arcTotal > 0 && p.dist >= p.arcTotal) {
+        detonate(p, tNow);
+        killTowerShot(i);
+        continue;
+      }
       let hit = false;
       for (const e of enemies) {
         if (!e.alive) continue;
         if (chord(p.pos, e.pos) < cellSide * Math.max(0.42, e.spec.size * 0.8)) {
-          if (p.splash > 0) {
-            // mortar: everyone near the impact eats it
-            for (const e2 of enemies) {
-              if (e2.alive && chord(p.pos, e2.pos) <= p.splash) damageEnemy(e2, tNow, p.dmg, true);
-            }
-          } else {
-            damageEnemy(e, tNow, p.dmg, true);
-          }
+          if (p.splash > 0) detonate(p, tNow);
+          else damageEnemy(e, tNow, p.dmg, true);
           hit = true;
           break;
         }
@@ -2577,6 +2634,39 @@ export function initTdTab(root) {
     scene.add(mesh);
     beams.push({ mesh, ttl });
   }
+
+  // lightning tether (slow field): a jagged additive polyline from the
+  // tower head to the victim — HK's slow-tower identity. Jitter is a
+  // pure function of segment index + time: deterministic, and it never
+  // touches the gameplay rng stream.
+  function spawnLightning(a, b, color, tNow) {
+    const SEG = 7;
+    const pos = new Float32Array((SEG + 1) * 3);
+    const d = sub3(b, a);
+    const nMid = norm3(scale3(add3(a, b), 0.5));
+    let side = cross3(nMid, d);
+    const sl = len3(side);
+    side = sl > 1e-9 ? scale3(side, 1 / sl) : [0, 1, 0];
+    const amp = len3(d) * 0.18;
+    for (let i = 0; i <= SEG; i++) {
+      const f = i / SEG;
+      const jag = (i === 0 || i === SEG) ? 0
+        : Math.sin(i * 12.9898 + tNow * 57.7) * amp * Math.sin(Math.PI * f);
+      const base = add3(a, scale3(d, f));
+      const lifted = scale3(base, 1 + params.wallHeight * 0.5);
+      const pnt = add3(lifted, scale3(side, jag));
+      pos[i * 3] = pnt[0]; pos[i * 3 + 1] = pnt[1]; pos[i * 3 + 2] = pnt[2];
+    }
+    const geo = new THREE.BufferGeometry();
+    geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+    const line = new THREE.Line(geo, new THREE.LineBasicMaterial({
+      color, transparent: true, opacity: 0.9,
+      blending: THREE.AdditiveBlending, depthWrite: false,
+    }));
+    scene.add(line);
+    beams.push({ mesh: line, ttl: 0.14, dg: true });
+  }
+
   function updateBeams(dt) {
     for (let i = beams.length - 1; i >= 0; i--) {
       beams[i].ttl -= dt;
@@ -2584,6 +2674,7 @@ export function initTdTab(root) {
       if (beams[i].ttl <= 0) {
         scene.remove(beams[i].mesh);
         beams[i].mesh.material.dispose();
+        if (beams[i].dg) beams[i].mesh.geometry.dispose(); // per-bolt geometry
         beams.splice(i, 1);
       }
     }
@@ -3036,8 +3127,13 @@ export function initTdTab(root) {
   if (towerSpec) {
     for (const part of towerSpec.split(',')) {
       const [key, ciStr] = part.split('@');
-      const ci = parseInt(ciStr, 10);
-      if (TOWER_BY_KEY[key] && Number.isFinite(ci)) placeTower(key, ci);
+      let ci = parseInt(ciStr, 10);
+      if (!TOWER_BY_KEY[key] || !Number.isFinite(ci)) continue;
+      // seek forward to the nearest placeable cell — raw indices are a
+      // lottery on a sealed sector world
+      for (let tries = 0; tries < 400 && ci < dungeon.tags.length; tries++, ci++) {
+        if (!placeError(ci)) { placeTower(key, ci); break; }
+      }
     }
   }
 

@@ -164,6 +164,83 @@ export function spherePts(n = 170) {
   return pts;
 }
 
+// tower heads — half-dotted silhouettes for the TD defense roster, one
+// per HokorobiTawaa tower shape. All fitUnit-normalized, every 12th dot
+// hi. These are STATIC clouds: the game animates them with transform
+// spin/bob only, so dot count costs nothing per frame.
+export function towerHeadPts(kind, n = 190) {
+  const pts = [];
+  const GA = Math.PI * (3 - Math.sqrt(5));
+  const P = (x, y, z, i) => pts.push(i % 12 === 0 ? [x, y, z, 1] : [x, y, z]);
+  if (kind === 'sphere') return spherePts(n);
+  if (kind === 'cone') {
+    for (let i = 0; i < n; i++) {
+      const f = i / n;
+      const r = f, th = i * GA;
+      P(r * Math.cos(th), 1 - 2 * f, r * Math.sin(th), i);
+    }
+  } else if (kind === 'bipyramid') {
+    for (let i = 0; i < n; i++) {
+      const f = i / n;                 // 0..1 sweeps bottom tip → top tip
+      const y = -1 + 2 * f;
+      const r = 1 - Math.abs(y), th = i * GA;
+      P(r * Math.cos(th), y, r * Math.sin(th), i);
+    }
+  } else if (kind === 'teardrop') {
+    for (let i = 0; i < n; i++) {
+      const f = i / n;
+      const y = -1 + 2 * f;
+      // fat base, drawn point: teardrop of revolution
+      const r = Math.sqrt(Math.max(0, 1 - y)) * (1 + y) * 0.62;
+      const th = i * GA;
+      P(r * Math.cos(th), y, r * Math.sin(th), i);
+    }
+  } else if (kind === 'pyramid') {
+    // square shells: levels of shrinking square outlines, apex up
+    const L = 12;
+    let i = 0;
+    for (let lv = 0; lv < L; lv++) {
+      const y = -1 + (2 * lv) / L;
+      const s = 1 - (lv / L);
+      const per = Math.max(4, Math.round((n / L) / 1));
+      for (let k = 0; k < per; k++, i++) {
+        const u = (k / per) * 4;      // 0..4 around the square perimeter
+        const edge = Math.floor(u), fr = u - edge;
+        const a = -s + 2 * s * fr;
+        const [x, z] = edge === 0 ? [a, -s] : edge === 1 ? [s, a]
+          : edge === 2 ? [-a, s] : [-s, -a];
+        P(x, y, z, i);
+      }
+    }
+  } else if (kind === 'gear') {
+    // flat cog: toothed outer ring + hub ring, lying in the X-Z plane
+    const outer = Math.round(n * 0.72);
+    for (let i = 0; i < outer; i++) {
+      const th = (i / outer) * 2 * Math.PI;
+      const r = 0.72 + (Math.sin(th * 8) > 0.15 ? 0.28 : 0);
+      P(r * Math.cos(th), 0, r * Math.sin(th), i);
+    }
+    for (let i = 0; i < n - outer; i++) {
+      const th = (i / (n - outer)) * 2 * Math.PI;
+      P(0.34 * Math.cos(th), 0, 0.34 * Math.sin(th), i + outer);
+    }
+  } else if (kind === 'spiral' || kind === 'dspiral') {
+    const strands = kind === 'dspiral' ? 2 : 1;
+    const per = Math.floor(n / strands);
+    let i = 0;
+    for (let sd = 0; sd < strands; sd++) {
+      for (let k = 0; k < per; k++, i++) {
+        const f = k / per;
+        const th = f * Math.PI * 6 + sd * Math.PI;
+        P(0.62 * Math.cos(th), -1 + 2 * f, 0.62 * Math.sin(th), i);
+      }
+    }
+  } else {
+    return spherePts(n);
+  }
+  return fitUnit(pts);
+}
+
 // dotted torus — the braille-lab half-dotted static torus. The ring lies
 // in the X-Y plane so an upright "portal" falls out of aligning local +Y
 // with the surface normal. Golden-angle winding spreads the dots evenly;
