@@ -15,14 +15,14 @@
 
 import * as THREE from '../vendor/three.module.js';
 import GUI from '../vendor/lil-gui.esm.js';
-import { generateSphereMesh, relax } from './grid.js?v=679c9aa3';
-import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=679c9aa3';
-import { mulberry32, randomSeed } from './rng.js?v=679c9aa3';
-import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3 } from './vec3.js?v=679c9aa3';
-import { CREATURES, waveJelly } from './creatures.js?v=679c9aa3';
-import { UNITS, UNIT_NAMES, buildUnit, makeOrbCloud, makeBulletCloud, makeDebris, makeDotBurst, makeHeartCloud } from './units.js?v=679c9aa3';
-import { LOOKS, LOOK_NAMES } from './looks.js?v=679c9aa3';
-import { makeCellIndex } from './cellindex.js?v=679c9aa3';
+import { generateSphereMesh, relax } from './grid.js?v=63de681e';
+import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=63de681e';
+import { mulberry32, randomSeed } from './rng.js?v=63de681e';
+import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3 } from './vec3.js?v=63de681e';
+import { CREATURES, waveJelly } from './creatures.js?v=63de681e';
+import { UNITS, UNIT_NAMES, buildUnit, makeOrbCloud, makeBulletCloud, makeDebris, makeDotBurst, makeHeartCloud } from './units.js?v=63de681e';
+import { LOOKS, LOOK_NAMES } from './looks.js?v=63de681e';
+import { makeCellIndex } from './cellindex.js?v=63de681e';
 
 export function initHeartTab(root) {
   let active = false;
@@ -41,6 +41,7 @@ export function initHeartTab(root) {
     look: 'tronColors', // visual identity, see looks.js
     wallTops: 'black', // obstacles read as voids; silhouettes matter here
     speed: 1.1, // cells per second, wanderer pace
+    recoil: 3, // shell-recoil intensity: scales hull jolt + camera kick
     autoResume: 3, // seconds idle before auto-wander resumes
     creature: 'tank', // any roster unit; the tank has the sweeping turret
     // balance (operator pass): heavier early waves, but a richer field —
@@ -410,6 +411,15 @@ export function initHeartTab(root) {
 
   // held-key state: steering and pace are continuous while held, not nudges
   const keys = { left: false, right: false, fast: false, slow: false, laser: false };
+  // CRUISE: player-triggered auto-forward. A quick double-tap of the
+  // forward control (W / ▲) toggles it; S/▼ always kills it.
+  let cruise = false;
+  let lastFastTap = -9; // seconds
+  function noteFastTap() {
+    const s = performance.now() / 1000;
+    if (s - lastFastTap < 0.35) cruise = !cruise;
+    lastFastTap = s;
+  }
   let steerHold = 99; // seconds since the user last steered
   const steeringActive = () => steerHold < 1.2;
   // manual override: ANY WASD press disables auto-wander entirely; it
@@ -700,7 +710,7 @@ export function initHeartTab(root) {
     let p = add3(player.pos, scale3(n, lift));
     // recoil: the hull jolts back along the heading and eases home
     const rf = recoilFactor();
-    if (rf > 0) p = add3(p, scale3(player.smoothDir, -unitScale * 0.5 * rf * rf));
+    if (rf > 0) p = add3(p, scale3(player.smoothDir, -unitScale * 0.3 * params.recoil * rf * rf));
     playerMesh.position.set(p[0], p[1], p[2]);
     playerMesh.scale.setScalar(unitScale * (playerMesh.userData.baseScale ?? 1));
     // marker floats above the wall tops so nothing on the map occludes it
@@ -725,7 +735,7 @@ export function initHeartTab(root) {
     // suspension dip while a ram bump is live: sink the eye, ease out.
     // Recoil pulls the eye straight back along the heading instead.
     const dip = cellSide * 0.95 * bumpFactor() * bumpFactor();
-    const kick = cellSide * 0.5 * recoilFactor() * recoilFactor();
+    const kick = cellSide * 0.3 * params.recoil * recoilFactor() * recoilFactor();
     let eye, look;
     if (params.view === 'third') {
       // behind and above; pulls back as the creature grows so it stays framed
@@ -804,9 +814,10 @@ export function initHeartTab(root) {
     if (player.won || player.next === -1) return;
     simTime += dt;
 
-    // continuous steering while held; ANY key claims manual control
+    // continuous steering while held; ANY key claims manual control —
+    // and an engaged cruise keeps manual alive without touching a key
     const anyKey = keys.left || keys.right || keys.fast || keys.slow;
-    manualClock = anyKey ? 0 : manualClock + dt;
+    manualClock = (anyKey || cruise) ? 0 : manualClock + dt;
     steerHold = anyKey ? 0 : steerHold + dt;
     const manual = manualActive();
     if (keys.left) rotate(STEER_RATE * dt);
@@ -818,9 +829,12 @@ export function initHeartTab(root) {
     // keep semantics (current cell, visited, absorption) in sync.
     if (manual) {
       player.freeMode = true;
-      // mobile-first: manual ALWAYS rolls forward — the player's attention
-      // goes to steering and aiming, not throttle. S reverses, W boosts.
-      const drive = keys.slow ? -0.55 : keys.fast ? 1.45 : 1;
+      // forward is PLAYER-TRIGGERED: hold W to drive, or double-tap W/▲
+      // to engage CRUISE (rolls on its own; W boosts, S kills it). The
+      // old always-rolls-forward manual proved too aggressive.
+      const drive = keys.slow ? -0.55
+        : keys.fast ? (cruise ? 1.45 : 1)
+        : cruise ? 1 : 0;
       if (drive !== 0) {
         const v = params.speed * speedBonus * cellSide * 1.6 * drive
           * (1 - 0.65 * bumpFactor()); // the run-over drag
@@ -951,7 +965,7 @@ export function initHeartTab(root) {
   // sleeve red-hot — no second shell until it cools over 3 s. The sleeve
   // IS the cooldown gauge; the HUD only echoes it.
   const CANNON_COOL = 3.0;
-  const RECOIL_LEN = 0.25;
+  const RECOIL_LEN = 0.35;
   let cannonHeat = 0;
   let recoilLeft = 0;
   const recoilFactor = () => Math.max(0, recoilLeft / RECOIL_LEN);
@@ -996,7 +1010,13 @@ export function initHeartTab(root) {
     const m = { arrowleft: 'left', a: 'left', arrowright: 'right', d: 'right',
       arrowup: 'fast', w: 'fast', arrowdown: 'slow', s: 'slow',
       shift: 'laser' }[k];
-    if (m) { keys[m] = down; ev.preventDefault(); return; }
+    if (m) {
+      if (down && m === 'fast' && !keys.fast) noteFastTap(); // double-tap → cruise
+      if (down && m === 'slow') cruise = false;              // brake kills cruise
+      keys[m] = down;
+      ev.preventDefault();
+      return;
+    }
     if (down && k === 'escape') { togglePause(); ev.preventDefault(); return; }
     if (paused) return; // frozen: only ESC gets through
     if (down && (k === ' ' || k === 'spacebar')) { fire(); ev.preventDefault(); return; }
@@ -1013,19 +1033,23 @@ export function initHeartTab(root) {
     viewCtrl.updateDisplay();
   }
 
-  // D-pad: press-and-hold, like the keys
-  function holdButton(sel, flag) {
+  // D-pad: press-and-hold, like the keys; onPress fires per fresh tap
+  function holdButton(sel, flag, onPress) {
     const el = root.querySelector(sel);
-    el.addEventListener('pointerdown', (ev) => { ev.preventDefault(); keys[flag] = true; });
+    el.addEventListener('pointerdown', (ev) => {
+      ev.preventDefault();
+      if (onPress) onPress();
+      keys[flag] = true;
+    });
     for (const evt of ['pointerup', 'pointerleave', 'pointercancel']) {
       el.addEventListener(evt, () => { keys[flag] = false; });
     }
   }
-  holdButton('#h-pad-up', 'fast');
+  holdButton('#h-pad-up', 'fast', noteFastTap); // double-tap ▲ → cruise
   holdButton('#h-pad-laser', 'laser');
   holdButton('#h-pad-left', 'left');
   holdButton('#h-pad-right', 'right');
-  holdButton('#h-pad-down', 'slow');
+  holdButton('#h-pad-down', 'slow', () => { cruise = false; });
   root.querySelector('#h-pad-hint').addEventListener('click', () => commandeer());
   root.querySelector('#h-pad-view').addEventListener('click', () => toggleView());
   root.querySelector('#h-pad-fire').addEventListener('click', () => fire());
@@ -1064,7 +1088,7 @@ export function initHeartTab(root) {
     msgEl.innerHTML = `<div class="msg-head">transmission · briefing</div>` +
       `<div class="intro-grid">` +
       `<span style="color:#ff6a88">💗 the heart</span><span>at the pole — its fall is the only defeat</span>` +
-      `<span style="color:#9fdcff">▣ your tank</span><span>WASD drive · SPACE shell · hold SHIFT lasers · C commandeer an ally · ESC pause</span>` +
+      `<span style="color:#9fdcff">▣ your tank</span><span>hold W drive · double-tap W = cruise · A/D steer · SPACE shell · hold SHIFT lasers · C commandeer · ESC pause</span>` +
       `<span style="color:#9fdcff">✚ allies</span><span>patrol the pole, infinite ammo</span>` +
       `<span style="color:#ffb000">▮▮▮ bullet triads</span><span>drive over = +3 shells · shells also blast walls open</span>` +
       `<span style="color:#66ff88">soft creatures</span><span>fodder — RAM them, it's free</span>` +
@@ -1083,7 +1107,9 @@ export function initHeartTab(root) {
       `HEART ${'♥'.repeat(Math.max(0, heartHP)).padEnd(HEART_MAX, '·')}   you ♥${playerHP}   allies ${allies}\n` +
       `shells ${'●'.repeat(ammo).padEnd(AMMO_MAX, '·')} (${ammo})${cannonHeat > 0 ? ' · cannon HOT' : ''}   round ${round} · wave ${wave} · hostiles ${alive} · spawn points ${spAlive}/${spawnPoints.length}` +
       (carryingRegen ? '   ⬤ CARRYING REGEN' : '') + `\n` +
-      (manualActive() ? 'MANUAL — release keys to hand back control' : 'auto-wander') +
+      (manualActive()
+        ? (cruise ? 'MANUAL · CRUISE — S/▼ stops' : 'MANUAL — double-tap W/▲ to cruise')
+        : 'auto-wander — double-tap W/▲ to cruise') +
       `   ·   laser ${laserOverheat ? '🔥 COOLING' : 'SHIFT/⚡'}` +
       '   ·   RAM the small ones · shells for the red · hunt the spawn points';
     // diegetic shell rack: the 3×3 turret dots ARE the ammo counter —
@@ -1271,6 +1297,7 @@ export function initHeartTab(root) {
     placeActors();
     snapCamera();
     paused = false;
+    cruise = false;
     msgEl.classList.add('hidden');
     updateHud();
     console.log(`heart sector in ${(performance.now() - t0).toFixed(0)}ms — ` +
@@ -2067,6 +2094,7 @@ export function initHeartTab(root) {
     .name('wall tops').onChange(applyLook);
   const viewCtrl = gui.add(params, 'view', ['pov', 'third']).name('camera (V)');
   const speedCtrl = gui.add(params, 'speed', 0.2, 4, 0.1).name('wander speed');
+  gui.add(params, 'recoil', 0, 8, 0.1).name('shell recoil');
   gui.add(params, 'autoResume', 1, 10, 0.5).name('auto resume (s)');
   gui.add(params, 'waveSize', 1, 6, 1).name('wave size').onFinishChange(regenerate);
   gui.add(params, 'waveEvery', 6, 40, 1).name('wave every (s)');
