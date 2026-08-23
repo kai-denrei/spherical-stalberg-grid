@@ -6,6 +6,38 @@ Demo links assume `npm run serve` (port 8144) or the
 
 ---
 
+## `98ca514` — Tidying pass: bullet, auto-forward, and an honest state of the code
+
+The Braille Bullet (case, ogive, driving band) replaces the sphere
+shell — oriented and rifled purely by object transform, zero per-point
+work. Manual mode now always rolls forward (S reverses, W boosts): on
+a phone, throttle was the finger we didn't have.
+
+**Practices that have earned their keep** (each paid for by a recorded
+mistake): derive render-coupled values FROM render transforms (camera
+facing, turret aim — twice bitten by sign conventions); make invariants
+Node-testable and screenshots deterministic via URL hooks (`?tick`,
+`?walk`, `?look`, `?spawn`); fix discontinuities at the source signal
+(smoothDir), not per consumer; make "who is in control" binary and
+visible; extend data schemas (looks, units) instead of forking code;
+when batch-patching sibling files, anchor on code lines — comments
+drift first — and let asserts abort atomically.
+
+**The named debt:** maze/organic/battle are ~900-line siblings from
+cp+sed lineage. Two patch-script aborts came from their drift. The
+extraction (a shared board-core module parameterized by game rules) is
+understood but deliberately deferred — the tabs are still diverging,
+and extracting a moving target locks in the wrong seams. Extract when
+a fourth board tab appears or when the divergence rate drops.
+
+**Roads not yet taken**, in rough order of leverage: the corner-state
+dual layer (the actual Townscaper payoff — state on corners, ~6 tile
+families, the grid is ready for it); enemies that shoot back + a lose
+condition; InstancedMesh crowds; waveJelly as a vertex shader (dot-
+cloud swarms); bloom for tron; cube/torus surfaces (the four-role
+split makes movement portable to any of them); biolume (gameplay-
+coupled zonal lighting); deliberate defect placement.
+
 ## `0f7dc78` — Free movement, and what the grid is actually for
 
 The big one is the movement rework. The question was how to separate
