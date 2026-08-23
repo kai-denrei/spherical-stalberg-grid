@@ -6,6 +6,16 @@ Demo links assume `npm run serve` (port 8144) or the
 
 ---
 
+## `56d6d58` — Building Blocks: the by-concept companion
+
+`HOW-IT-WORKS.md`, rendered in-app as the fourth tab (`/#how`): the
+Stålberg tricks, the sphere port's substitutions and deletions, the
+dungeon method's portability property, the motion arc, and what was
+actually expensive. Same markdown converter as this overlay (now
+exported from `devlog.js`), same `.mdview` styles, full-page article at
+72ch. The devlog stays chronological; that document is organized by
+concept — read it first if you're new here.
+
 ## `36a4b11` — The dev log, readable in-app
 
 Clicking the cache-bust badge (bottom-right) now opens this document in
