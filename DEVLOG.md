@@ -6,6 +6,33 @@ Demo links assume `npm run serve` (port 8144) or the
 
 ---
 
+## `fc894a3` — The Euler stomp, solid allies, and recoil that fires
+
+Best bug of the day: the bullet triads "rotating into the ground" were
+an **Euler stomp**. The pickup group is aligned to its cell's surface
+normal via `quaternion.setFromUnitVectors` — and then the idle tick
+wrote `rotation.y = t`. In three.js, `rotation` and `quaternion` are
+two views of ONE rotation; assigning either replaces the whole
+orientation. So every triad actually spun about *world* Y, which looks
+right at the pole and tilts shells into the ground everywhere else.
+Fix: compose — hold the base alignment quaternion and multiply a
+local-Y spin onto it per frame. Sibling of the lookAt-convention trap
+already in this log: three.js orientation has more than one API, and
+mixing them silently discards work.
+
+Wall overlap at angled approach was margin arithmetic again: irregular
+quads put some wall *faces* ~0.7·cellSide from their centers, so the
+0.95 margin (up from 0.8, two convergence passes for corners) is what
+actually clears the hull. Ally tanks became solid — hard block in
+`freeBlocked` plus a softer cushion push, so an ally driving into YOU
+separates instead of interpenetrating. And recoil was rebuilt on
+operator feedback: whole-body translation read as sliding, not firing.
+Now the **turret** takes the kick — slams back with a 70 Hz shudder —
+while the hull rocks nose-up and barely shifts. The pitch applies
+*after* the lookAt quaternion (rotateX on top of the derived frame),
+so it composes with the same-source facing rather than fighting it.
+`?recoil=1` freezes a mid-kick pose for screenshots.
+
 ## `db390f4` — Recoil as a dial, forward as a choice
 
 Two control-feel changes. Shell recoil became a parameter instead of a
