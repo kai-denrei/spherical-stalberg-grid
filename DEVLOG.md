@@ -6,6 +6,23 @@ Demo links assume `npm run serve` (port 8144) or the
 
 ---
 
+## `e066613` — Battle: the sweeping turret becomes the game
+
+Fifth tab. The design seed: the tank's idle animation — a turret
+sweeping left to right — is promoted from decoration to mechanic. You
+don't aim; you TIME. Firing launches a shell along the turret's current
+world heading, computed by taking the turret group's world quaternion,
+transforming +Z through it, and flattening into the tangent plane — the
+render transform IS the aim, so the visual sweep and the ballistic
+truth cannot disagree (a lesson applied from the lookAt bug: derive
+from the same source, never re-derive with your own signs). Three
+shells to start; orbs switch from food to ammo (+1, cap 9). Enemy
+tanks in per-look hostile tints wander the cell graph at 0.45 cells/s
+with desynced sweeps; shells ride the surface, die on walls via a
+nearest-cell lookup, and clearing the sector wins. AI is deliberately
+inert — wander-only — to make the timing mechanic testable in
+isolation before enemies learn to shoot back.
+
 ## `05f1891` — The unit roster, and dots vs polygons
 
 `src/units.js`: the three dot-cloud creatures plus two new low-poly mesh
