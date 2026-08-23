@@ -6,6 +6,30 @@ Demo links assume `npm run serve` (port 8144) or the
 
 ---
 
+## `c5a815d` — The world learns to open
+
+TD's biggest structural borrow yet: HokorobiTawaa's fraying, spherized.
+A run now lives on ONE persistent 700-point world, but round 1 only
+opens the inner 32% of it (by heart-distance) — the rest of the planet
+reads as sealed wall mass, a frontier you can see. Clearing every
+portal doesn't regenerate anymore: the screen FLASHES WHITE (HK's
+reveal beat, a CSS pulse) and the next band unseals *in place* —
+56%, 80%, then the whole sphere. The implementation is two arrays and
+a fraction: the full carve is remembered at generation
+(tdFullTags/tdFullDist), and applySector() re-derives the open set
+from `dist > frac·maxD`; the existing wall renderer does the rest,
+because sealed cells simply ARE walls to it.
+
+What persists is the point: towers stand, credit carries, the wave
+counter never resets (so the intro schedule flows across sectors), and
+new portals rise in the fresh band — the liquidation-carry mechanism
+from the new-board era is deleted outright. And the balance flipped to
+match the operator's brief — low-hp enemies in flooding counts
+(per-portal = waveSize + wave + 2·sector), 16-second wave cadence,
+allies cut to two. Without towers you drown by wave three; with a few,
+it's a mowing exercise. Sector 3 at wave 6 fields 259 hostiles — the
+stress hook made the point better than any tuning argument.
+
 ## `f9238df` — The radial comes home
 
 Two build-mode refinements from the operator. First, mode purity: in
