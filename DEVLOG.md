@@ -6,6 +6,31 @@ Demo links assume `npm run serve` (port 8144) or the
 
 ---
 
+## `495a540` — Portals, glossaries, and walls that thud
+
+The spawn points became what they always were narratively: **portals**.
+A new `torusPts` generator in creatures.js (braille-lab's half-dotted
+static torus — golden-angle tube winding, every 12th dot hi) feeds
+`makePortalCloud`: an upright dotted gate, ring in local X-Y so
+aligning +Y to the surface normal stands it up, twinkling in its
+enemy's tint. Damage now reads in *light*: `setDim` scales the twinkle
+brightness, so each shell visibly dims the gate before the third one
+kills it — dying portals fade. Numerically checked in Node (unit
+radius, real hole, sparkle layer) rather than screenshot-hunted.
+
+The briefing grew into a real reference: every element is its own card
+(tinted icon, name, one line) and two clickable glossaries branch off —
+hostiles (generated from `INTROS` + `ENEMY_SPEC`, so copy can't drift
+from data: role, hp, arrival wave, ram verdict) and friendlies &
+pickups, which finally documents the four reward spheres (ammo +3,
+power +8% permanent, health +1, regen carry-home +4). One delegation
+handler drives all modal navigation; the sim stays frozen throughout.
+
+Small but felt: mostly-head-on wall hits now fire the same suspension
+bump as running over fodder — gated on the into-wall velocity fraction
+and the bump timer, so grinding along a wall at a shallow angle doesn't
+re-trigger the thud sixty times a second.
+
 ## `fc894a3` — The Euler stomp, solid allies, and recoil that fires
 
 Best bug of the day: the bullet triads "rotating into the ground" were
