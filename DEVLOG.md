@@ -6,6 +6,29 @@ Demo links assume `npm run serve` (port 8144) or the
 
 ---
 
+## `248c442` — Pause, a smaller first stage, and the clipping arithmetic
+
+The tank-in-the-wall bug fell to arithmetic, not screenshots. The hull
+reaches ~0.5·cellSide from the position. Manual collision blocks at
+0.62·cellSide from a wall's *center* — but the wall's face sits at
+~0.5, so the guaranteed face clearance was ~0.12·cellSide. The auto
+glide never had a margin at all, and corner-diagonal wall cells are
+invisible to `graph.adj` (full-edge adjacency only). Conclusion: up to
+~0.4·cellSide of visual penetration wasn't a glitch, it was guaranteed
+by the numbers. The fix is a soft **wall cushion**: each frame the
+player position gets a tangent-plane push out of a 0.8·cellSide band
+around blocked centers — diagonals collected by walking the open
+neighbours' own adjacency — applied in both modes, *after* travelDir
+is derived so the push moves the body but never the aim. Positions are
+recomputed from the chord every frame in auto mode, so the cushion
+can't accumulate drift; in manual it converges instead of jittering.
+
+Also: ESC pauses (sim fully frozen, both views keep presenting, and
+`lastFrame` keeps updating so resume has no dt spike — clamping alone
+would still lurch), and the first stage shrank 4000→800 sample points:
+~2800 open cells, 61 hops pole-to-spawn, a board you can actually
+learn, hunt, and win.
+
 ## `275731f` — Lasers earn a trigger, and the early game gets heavier
 
 The mini-lasers looked free because they were free — always on, no
