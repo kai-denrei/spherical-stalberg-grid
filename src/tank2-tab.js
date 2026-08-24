@@ -4,9 +4,9 @@
 import * as THREE from '../vendor/three.module.js';
 import GUI from '../vendor/lil-gui.esm.js';
 import { OrbitControls } from '../vendor/OrbitControls.js';
-import { createPlanetTankGame, DYING_T } from './tanks2.js?v=d6108e41';
-import { mulberry32 } from './rng.js?v=d6108e41';
-import { norm3, scale3 } from './vec3.js?v=d6108e41';
+import { createPlanetTankGame, DYING_T } from './tanks2.js?v=02c9a0da';
+import { mulberry32 } from './rng.js?v=02c9a0da';
+import { norm3, scale3 } from './vec3.js?v=02c9a0da';
 
 const DT = 1 / 60;
 const TANK_SCALE = 0.08;
@@ -144,8 +144,8 @@ export function initTank2Tab(root) {
   const debris = [];
   function explodeAt(p, color) {
     const rng = mulberry32((game.time * 1000) >>> 0);
-    const mat = new THREE.MeshLambertMaterial({ color });
     for (let i = 0; i < 8; i++) {
+      const mat = new THREE.MeshLambertMaterial({ color });
       const m = new THREE.Mesh(new THREE.BoxGeometry(0.016, 0.016, 0.016), mat);
       m.position.set(...scale3(p, 1.03));
       const dir = norm3([rng() - 0.5, rng() - 0.5, rng() - 0.5]);

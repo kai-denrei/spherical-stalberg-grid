@@ -306,5 +306,50 @@ console.log('ai:');
   check('L4 holds without a shot', arcBetween(p0, g.tanks[1].pos) < 0.05);
 }
 
+{
+  // range accumulates across bounces: one bounce, then free flight to range
+  const g = stagePair(0.3, { ricochet: true });
+  const block = norm3(rotAbout(g.tanks[0].pos, [0, 1, 0], -0.2));
+  g.planet.walls.add(g.cellOf(block));
+  g.tanks[1].pos = rotAbout(g.tanks[1].pos, [0, 1, 0], -1.2);
+  g.tanks[1].head = tangentAt(g.tanks[1].head, g.tanks[1].pos);
+  g.step(DT, { fire: true });
+  let steps = 1;
+  while (g.shells[0] && steps < 60 * 6) { g.step(DT, {}); steps++; }
+  check('range accumulates across bounces', !g.shells[0]
+    && Math.abs(steps * DT - SHELL_RANGE / SHELL_RATE) < 0.25, `flew ${(steps * DT).toFixed(2)}s`);
+}
+{
+  // bounce cap: a three-wall pocket; the third impact kills at bounces === MAX_BOUNCES.
+  // The sphere's tangent-plane reflection sends the shell off the firing great circle
+  // (the wallA Voronoi center has y≈0.02, not 0), so a plain [0,1,0]-axis wallB
+  // misses the reflected leg. wallB/wallC are placed along the shell's actual reflected
+  // paths using the natural rotation axis from a.pos toward each wall's target region.
+  const g = stagePair(0.3, { ricochet: true });
+  const a = g.tanks[0];
+  const wallA = g.cellOf(norm3(rotAbout(a.pos, [0, 1, 0], -0.3)));
+  const wallB = g.cellOf(norm3(rotAbout(a.pos, norm3(cross3(a.pos, [0, -0.93, 1])), 0.145)));
+  const wallC = g.cellOf(norm3(rotAbout(a.pos, norm3(cross3(a.pos, [0, 0.668, 0.744])), 0.195)));
+  const muzzleCell = g.cellOf(norm3(rotAbout(a.pos, [0, 1, 0], -0.09)));
+  const allCells = [wallA, wallB, wallC];
+  check('staging: pocket cells distinct from each other + tank + muzzle cells',
+    new Set(allCells).size === 3
+    && !allCells.includes(g.cellOf(a.pos)) && !allCells.includes(muzzleCell));
+  g.planet.walls.add(wallA);
+  g.planet.walls.add(wallB);
+  g.planet.walls.add(wallC);
+  g.tanks[1].pos = rotAbout(g.tanks[1].pos, [0, 1, 0], -1.2);
+  g.tanks[1].head = tangentAt(g.tanks[1].head, g.tanks[1].pos);
+  g.step(DT, { fire: true });
+  let bounces = 0, steps = 1;
+  while (g.shells[0] && steps < 60 * 6) {
+    g.step(DT, {});
+    bounces += g.events.filter((e) => e.type === 'bounce').length;
+    steps++;
+  }
+  check('bounce cap kills on the third impact', !g.shells[0] && bounces === MAX_BOUNCES
+    && steps * DT < SHELL_RANGE / SHELL_RATE - 0.3, `bounces ${bounces}, flew ${(steps * DT).toFixed(2)}s`);
+}
+
 if (failures > 0) { console.error(`\n${failures} failure(s)`); process.exit(1); }
 console.log('\ntank2 invariants hold');
