@@ -6,6 +6,23 @@ Demo links assume `npm run serve` (port 8144) or the
 
 ---
 
+## `3d41c65` — One smooth sweep instead of a stutter
+
+The orbit follow stopped stuttering. The old version nudged the camera a
+little every frame while red sat near the edge — a staccato jitter. Now
+the camera holds dead still while red drives across the face, and when red
+reaches the leading edge it commits a single 0.7-second eased sweep that
+overshoots: the camera swings so its facing point lands well AHEAD of red
+along its heading, dropping red near the back of the frame with most of
+the battlefield in front of it. Then it holds again until the next edge.
+The trigger is directional — it only fires when red is driving away from
+centre — so the big overshoot never re-fires from the trailing side, which
+is what made it stutter before. Verified the geometry with a 40-second
+drive simulation: leads fire about every five seconds and red never leaves
+the visible face.
+
+---
+
 ## `63c4730` — The planet turns to keep you in view
 
 Reworked tank2's orbit from a hard lock into a dead-zone follow. Before,
