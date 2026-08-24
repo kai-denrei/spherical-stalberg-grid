@@ -6,6 +6,18 @@ Demo links assume `npm run serve` (port 8144) or the
 
 ---
 
+## `c593885` — 1977 extruded
+
+The tank tab renders: the Combat playfield pulled into 3D — olive
+ground, orange slab obstacles, two six-box tanks, an orthographic
+camera looking straight down. The tab is a thin consumer: it forwards
+keys as an input object, steps the Node-tested core at a fixed 60Hz
+accumulator, and copies poses onto meshes (`rotation.y = -heading`,
+the one place the sign convention is allowed to live). `?tick=N` runs
+the simulation synchronously for headless screenshots.
+
+---
+
 ## `0bf5599` — Four brains, one input shape
 
 The tank AI ladder is complete and Node-tested. Every level emits the
