@@ -3,7 +3,7 @@
 import {
   CLASSIC_ARENAS, parseArena, arenaConnected, genArena,
   createTankGame, TANK_R, TURN_RATE, DRIVE_SPEED, REVERSE_SPEED,
-  SHELL_SPEED, SHELL_RANGE_FRAC, SHELL_R, MAX_BOUNCES,
+  SHELL_SPEED, SHELL_RANGE_FRAC, SHELL_R, MAX_BOUNCES, DYING_T, INVULN_T,
 } from '../src/tanks.js';
 
 let failures = 0;
@@ -159,6 +159,67 @@ console.log('shells:');
   }
   check('bounces capped at MAX_BOUNCES', bounces <= MAX_BOUNCES);
   check('range accumulates across bounces', !g.shells[0]);
+}
+
+// --- hits, scoring, match flow -------------------------------------------
+console.log('match flow:');
+const stageDuel = (over = {}) => {
+  const g = createTankGame({ seed: 1, arena: 'open', aiLevel: 0, ...over });
+  g.tanks[0].x = 8; g.tanks[0].z = 9.5; g.tanks[0].heading = 0;
+  g.tanks[1].x = 14; g.tanks[1].z = 9.5;
+  return g;
+};
+const fireAndResolve = (g) => {
+  g.step(DT, { fire: true });
+  const out = [];
+  for (let i = 0; i < 60 * 2; i++) {
+    g.step(DT, {});
+    out.push(...g.events);
+    if (out.some((e) => e.type === 'hit' || e.type === 'shellDead')) break;
+  }
+  return out;
+};
+{
+  const g = stageDuel();
+  const ev = fireAndResolve(g);
+  check('point-blank hit scores', g.score[0] === 1 && ev.some((e) => e.type === 'hit' && e.by === 0));
+  check('victim dying + knocked in shell direction', g.tanks[1].state === 'dying' && g.tanks[1].knock[0] > 0);
+  const zx = g.tanks[1].x;
+  for (let i = 0; i < Math.ceil(DYING_T / DT) + 2; i++) g.step(DT, {});
+  check('knockback slid the victim', g.tanks[1].x > zx || g.tanks[1].state === 'alive');
+  check('respawn: both back at spawns, invulnerable', g.tanks[0].x === g.arena.spawns[0].x
+    && g.tanks[1].x === g.arena.spawns[1].x
+    && g.tanks[0].invulnT > 0 && g.tanks[1].invulnT > 0
+    && !g.shells[0] && !g.shells[1]);
+}
+{
+  const g = stageDuel();
+  g.tanks[1].invulnT = INVULN_T;
+  const ev = fireAndResolve(g);
+  check('invulnerable tank cannot be hit', g.score[0] === 0 && !ev.some((e) => e.type === 'hit'));
+}
+{
+  const g = stageDuel({ pointsToWin: 1 });
+  const ev = fireAndResolve(g);
+  check('match ends at pointsToWin', g.winner === 0 && ev.some((e) => e.type === 'matchEnd'));
+  const frozen = JSON.stringify(g.tanks);
+  g.step(DT, { forward: true, fire: true });
+  check('post-match state frozen', JSON.stringify(g.tanks) === frozen && g.events.length === 0);
+}
+{
+  // determinism: same seed + same scripted inputs → identical state
+  const snap = (g) => JSON.stringify([g.tanks, g.shells, g.score, g.winner, g.time],
+    (k, v) => (typeof v === 'number' ? Math.round(v * 1e9) / 1e9 : v));
+  const script = (i) => ({
+    left: i % 97 < 20, right: i % 89 < 15, forward: i % 7 !== 0,
+    reverse: i % 131 < 5, fire: i % 45 === 0,
+  });
+  const run = () => {
+    const g = createTankGame({ seed: 77, arena: 'maze', aiLevel: 1, ricochet: true });
+    for (let i = 0; i < 60 * 10; i++) g.step(DT, script(i));
+    return snap(g);
+  };
+  check('deterministic replay (10s, AI L1, ricochet)', run() === run());
 }
 
 if (failures > 0) { console.error(`\n${failures} failure(s)`); process.exit(1); }
