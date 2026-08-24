@@ -36,12 +36,12 @@ html, body {
   display: none;
 }
 
-#app, #maze-app, #o-app, #b-app, #h-app, #td-app {
+#app, #maze-app, #o-app, #b-app, #h-app, #td-app, #tank-app {
   position: absolute;
   inset: 0;
 }
 
-#app canvas, #maze-app canvas, #o-app canvas, #b-app canvas, #h-app canvas, #td-app canvas {
+#app canvas, #maze-app canvas, #o-app canvas, #b-app canvas, #h-app canvas, #td-app canvas, #tank-app canvas {
   display: block;
 }
 
