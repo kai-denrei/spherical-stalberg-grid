@@ -6,6 +6,17 @@ Demo links assume `npm run serve` (port 8144) or the
 
 ---
 
+## `ff7de02` — Three ways to watch a planet fight
+
+Chase rolls the horizon under you; POV puts the curve terrifyingly
+close (the mutual horizon is ~28° — an enemy three seconds away is
+invisible); orbit hands the whole ball to OrbitControls while the match
+keeps running, a war in a snow globe. Ladder unlocks live in
+tank2.unlocked — flat-arena wins don't transfer, the planet has to be
+earned on the planet.
+
+---
+
 ## `c7e1317` — A very small war on a very small world
 
 The planet tab renders: ~400 relaxed quads as a vertex-colored olive
