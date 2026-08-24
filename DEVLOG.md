@@ -6,6 +6,20 @@ Demo links assume `npm run serve` (port 8144) or the
 
 ---
 
+## `bd5f3c3` — Same game, three eyes
+
+The tank tab gained its camera set: authentic top-down ortho, a
+lerped chase camera, and a turret POV. Both moving views are derived
+from the tank group's world transform (`getWorldQuaternion` /
+`getWorldPosition` on anchors parented inside the group) — the
+same-source rule that already burned us twice elsewhere. Because the
+controls are tank-relative, the game core never knows which camera is
+live. The AI ladder wired in: beat your highest unlocked level and
+the next one opens (localStorage), `?ai=N` forces a level for
+headless runs.
+
+---
+
 ## `c593885` — 1977 extruded
 
 The tank tab renders: the Combat playfield pulled into 3D — olive
