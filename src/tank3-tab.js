@@ -1,14 +1,14 @@
-// tank3-tab.js — planet Combat: render shell + input around tanks2.js.
-// A tiny olive planet in black space; the game core never learns which
-// camera is watching it.
+// tank3-tab.js — planet Combat in the Battle/Tron skin: Tank2's tanks2.js
+// rules rendered with buildUnit mesh tanks, makeBulletCloud shells,
+// makeDebris deaths, and the LOOKS.tronColors neon world.
 import * as THREE from '../vendor/three.module.js';
 import GUI from '../vendor/lil-gui.esm.js';
 import { OrbitControls } from '../vendor/OrbitControls.js';
-import { createPlanetTankGame, DYING_T } from './tanks2.js?v=0dd42f2f';
-import { buildUnit, makeBulletCloud, makeDebris } from './units.js?v=0dd42f2f';
-import { LOOKS } from './looks.js?v=0dd42f2f';
-import { mulberry32 } from './rng.js?v=0dd42f2f';
-import { norm3, scale3 } from './vec3.js?v=0dd42f2f';
+import { createPlanetTankGame, DYING_T } from './tanks2.js?v=41b98d35';
+import { buildUnit, makeBulletCloud, makeDebris } from './units.js?v=41b98d35';
+import { LOOKS } from './looks.js?v=41b98d35';
+import { mulberry32 } from './rng.js?v=41b98d35';
+import { norm3, scale3 } from './vec3.js?v=41b98d35';
 
 const DT = 1 / 60;
 const TANK_SCALE = 0.09;    // world radius of each tank

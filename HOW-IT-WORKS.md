@@ -221,3 +221,16 @@ first answer: it dead-reckons your last-seen track and shells the ghost
 from beyond the horizon. The planet is a ~400-cell relaxed Stålberg
 mesh; walls are seeded cell clusters; the cellindex voxel hash answers
 "which cell am I over" for tanks and shells alike.
+
+## Tank3 (planet combat, Battle skin)
+
+The same planet duel as Tank2 — identical `tanks2.js` core, manual aim,
+great-circle shells, the L1–L4 AI ladder with the ghost gunner — wearing
+the Battle tab's Tron dress. The tab swaps only the render: the world is
+built from `LOOKS.tronColors` (additive neon-cyan edge wires, near-black
+void, a seeded zonal colour field over the floors, black-topped neon
+walls), the tanks are Battle's `buildUnit('tank')` meshes with their neon
+edge outlines (barrel along +Z, turret locked forward because aim is
+manual), shells are `makeBulletCloud` Braille dot-clouds, and a hit scatters
+the struck tank into its own polygons via `makeDebris`. No core changes —
+Tank3 is a skin over proven rules.
