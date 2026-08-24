@@ -6,6 +6,23 @@ Demo links assume `npm run serve` (port 8144) or the
 
 ---
 
+## `2f8c555` — The Play button comes back on phones
+
+TD's briefing was unstartable on mobile: the Play button was cropped off
+the bottom of the modal with no way to reach it — and TD is the default
+landing tab, so a phone visitor hit a dead end. The modal was built to
+scroll tall briefings (max-height, overflow-y:auto, touch scrolling), but
+a later `overflow: hidden` — added to clip the hologram sweep that slides
+far past the box — silently reset the scroll axis, so the modal just
+clipped its overflow instead. TD's briefing is taller than heart's (it
+carries an extra gameplay-tips block), so its Play button fell past the
+clip. Fix: the modal is now a flex column that keeps overflow:hidden for
+the sweep, scrolls its body in an inner `.msg-scroll`, and pins the
+glossary + Play buttons in a `.msg-foot` that's always visible. Both td
+and heart briefings use it.
+
+---
+
 ## `3d41c65` — One smooth sweep instead of a stutter
 
 The orbit follow stopped stuttering. The old version nudged the camera a
