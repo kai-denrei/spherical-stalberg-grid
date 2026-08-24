@@ -35,6 +35,10 @@ check('8 towers', TOWERS.length === 8);
 check('keys unique + lookup', new Set(TOWERS.map((t) => t.key)).size === 8
   && TOWER_BY_KEY.sniper.cost === 130);
 check('laser is the capstone cost', Math.max(...TOWERS.map((t) => t.cost)) === TOWER_BY_KEY.laser.cost);
+check('every projectile tower has its own tempo',
+  TOWERS.filter((t) => !['beam', 'slowfield'].includes(t.attack)).every((t) => t.projSpeed > 0)
+  && TOWER_BY_KEY.sniper.projSpeed > TOWER_BY_KEY.single.projSpeed
+  && TOWER_BY_KEY.aoe.projSpeed < TOWER_BY_KEY.homing.projSpeed);
 check('upgrade costs HK-exact (70%/120%, then maxed)',
   upgradeCost(TOWER_BY_KEY.single, 0) === 28
   && upgradeCost(TOWER_BY_KEY.single, 1) === 48

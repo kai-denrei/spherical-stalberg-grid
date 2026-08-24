@@ -19,17 +19,17 @@
 
 import * as THREE from '../vendor/three.module.js';
 import GUI from '../vendor/lil-gui.esm.js';
-import { generateSphereMesh, relax } from './grid.js?v=784e30d2';
-import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=784e30d2';
-import { mulberry32, randomSeed } from './rng.js?v=784e30d2';
-import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3 } from './vec3.js?v=784e30d2';
-import { CREATURES, waveJelly } from './creatures.js?v=784e30d2';
-import { UNITS, UNIT_NAMES, buildUnit, makeOrbCloud, makeBulletCloud, makeDebris, makeDotBurst, makePortalCloud, makeHeartCloud, makeTowerUnit, makeDotEnemy } from './units.js?v=784e30d2';
-import { LOOKS, LOOK_NAMES } from './looks.js?v=784e30d2';
-import { makeCellIndex } from './cellindex.js?v=784e30d2';
-import { CREATURE_TINTS, ENEMY_SPEC, INTROS } from './enemyspec.js?v=784e30d2';
-import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval } from './towers.js?v=784e30d2';
-import { makeEconomy, sellRefund } from './economy.js?v=784e30d2';
+import { generateSphereMesh, relax } from './grid.js?v=f7cb767a';
+import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=f7cb767a';
+import { mulberry32, randomSeed } from './rng.js?v=f7cb767a';
+import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3 } from './vec3.js?v=f7cb767a';
+import { CREATURES, waveJelly } from './creatures.js?v=f7cb767a';
+import { UNITS, UNIT_NAMES, buildUnit, makeOrbCloud, makeBulletCloud, makeDebris, makeDotBurst, makePortalCloud, makeHeartCloud, makeTowerUnit, makeDotEnemy } from './units.js?v=f7cb767a';
+import { LOOKS, LOOK_NAMES } from './looks.js?v=f7cb767a';
+import { makeCellIndex } from './cellindex.js?v=f7cb767a';
+import { CREATURE_TINTS, ENEMY_SPEC, INTROS } from './enemyspec.js?v=f7cb767a';
+import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval } from './towers.js?v=f7cb767a';
+import { makeEconomy, sellRefund } from './economy.js?v=f7cb767a';
 
 export function initTdTab(root) {
   let active = false;
@@ -2798,7 +2798,8 @@ export function initTdTab(root) {
       pos: p0, dir, dist: 0, mesh,
       dmg: eff.dmg, splash: (eff.splash || 0) * cellSide, homing,
       range: eff.range * cellSide * 1.35,
-      arcTotal, arcH: cellSide * 1.5, color: tw.def.color,
+      speed: (tw.def.projSpeed ?? 16) * cellSide, // per-tower tempo
+      arcTotal, arcH: cellSide * 2.2, color: tw.def.color,
     });
   }
 
@@ -2823,9 +2824,9 @@ export function initTdTab(root) {
   }
 
   function updateTowerShots(dt, tNow) {
-    const v = 6.5 * cellSide; // snappy — the action reads at this speed
     for (let i = towerShots.length - 1; i >= 0; i--) {
       const p = towerShots[i];
+      const v = p.speed; // each tower's own tempo — HK's feel lives here
       // homing re-steers toward its (living) target each frame
       if (p.homing && p.homing.alive) {
         const raw = sub3(p.homing.pos, p.pos);

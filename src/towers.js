@@ -12,31 +12,33 @@
 
 // shape = the half-dotted head silhouette (creatures.js towerHeadPts,
 // HK's tower shapes); spin = head idle rate; projPx/trail = HK's
-// projectile identity (tracer px size, ghost-trail length); arc marks
-// the mortar's lofted flight.
+// projectile identity (tracer px size, ghost-trail length); projSpeed
+// is PER-TOWER in cells/s (HK's board-unit values ×22) — the tempo IS
+// the identity: singles snap, homing glides, the mortar lobs; arc
+// marks the mortar's lofted flight.
 export const TOWERS = [
   { key: 'single', label: 'Single Shot', color: 0xeaf2ff, cost: 40,
     dmg: 14 / 90, range: 3.7, rate: 1.4, attack: 'single',
-    shape: 'cone', projPx: 5, trail: 0 },
+    shape: 'cone', projPx: 5, trail: 0, projSpeed: 20 },   // HK 0.9 — fast, near-hitscan
   { key: 'rapid',  label: 'Rapid',       color: 0x6fe6ff, cost: 70,
     dmg: 7 / 90,  range: 3.5, rate: 3.0, attack: 'single',
-    shape: 'spiral', spin: 1.5, projPx: 4, trail: 3 },
+    shape: 'spiral', spin: 1.5, projPx: 4, trail: 3, projSpeed: 26 }, // HK 1.2
   { key: 'spread', label: 'Spread',      color: 0x2fe6d0, cost: 80,
     dmg: 6 / 90,  range: 3.1, rate: 1.0, attack: 'spread', pellets: 5,
-    shape: 'sphere', projPx: 3.5, trail: 0 },
+    shape: 'sphere', projPx: 3.5, trail: 0, projSpeed: 15 }, // HK 0.7
   { key: 'homing', label: 'Homing',      color: 0x5a9bff, cost: 90,
     dmg: 9 / 90,  range: 3.5, rate: 1.2, attack: 'homing',
-    shape: 'dspiral', spin: 0.9, projPx: 5, trail: 6 },
+    shape: 'dspiral', spin: 0.9, projPx: 5, trail: 6, projSpeed: 13 }, // HK 0.6 — guided, unhurried
   { key: 'slow',   label: 'Slow',        color: 0xc4e6ff, cost: 100,
     dmg: 4 / 90,  range: 3.5, rate: 1.0, attack: 'slowfield',
     slowFactor: 0.45, slowDur: 1.6,
     shape: 'pyramid', spin: 0.3 },
   { key: 'aoe',    label: 'AoE',         color: 0x9fc4ff, cost: 110,
     dmg: 12 / 90, range: 3.5, rate: 0.9, attack: 'mortar', splash: 1.5,
-    shape: 'gear', spin: 0.7, projPx: 8, trail: 2, arc: true },
+    shape: 'gear', spin: 0.7, projPx: 8, trail: 2, arc: true, projSpeed: 3.5 }, // a slow deliberate LOB
   { key: 'sniper', label: 'Sniper',      color: 0xffffff, cost: 130,
     dmg: 62 / 90, range: 7.0, rate: 0.7, attack: 'single',
-    shape: 'teardrop', projPx: 7, trail: 11 },
+    shape: 'teardrop', projPx: 7, trail: 11, projSpeed: 42 }, // HK 1.9 — a streak
   { key: 'laser',  label: 'Laser',       color: 0x9ff5ff, cost: 220,
     dmg: 18 / 90, range: 5.3, rate: 1.5, attack: 'beam',
     shape: 'bipyramid', spin: 0.5 },
