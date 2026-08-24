@@ -19,17 +19,17 @@
 
 import * as THREE from '../vendor/three.module.js';
 import GUI from '../vendor/lil-gui.esm.js';
-import { generateSphereMesh, relax } from './grid.js?v=81c6bf62';
-import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=81c6bf62';
-import { mulberry32, randomSeed } from './rng.js?v=81c6bf62';
-import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3 } from './vec3.js?v=81c6bf62';
-import { CREATURES, waveJelly } from './creatures.js?v=81c6bf62';
-import { UNITS, UNIT_NAMES, buildUnit, makeOrbCloud, makeBulletCloud, makeDebris, makeDotBurst, makePortalCloud, makeHeartCloud, makeTowerUnit, makeDotEnemy } from './units.js?v=81c6bf62';
-import { LOOKS, LOOK_NAMES } from './looks.js?v=81c6bf62';
-import { makeCellIndex } from './cellindex.js?v=81c6bf62';
-import { CREATURE_TINTS, ENEMY_SPEC, INTROS } from './enemyspec.js?v=81c6bf62';
-import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval } from './towers.js?v=81c6bf62';
-import { makeEconomy, sellRefund } from './economy.js?v=81c6bf62';
+import { generateSphereMesh, relax } from './grid.js?v=c2d36961';
+import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=c2d36961';
+import { mulberry32, randomSeed } from './rng.js?v=c2d36961';
+import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3 } from './vec3.js?v=c2d36961';
+import { CREATURES, waveJelly } from './creatures.js?v=c2d36961';
+import { UNITS, UNIT_NAMES, buildUnit, makeOrbCloud, makeBulletCloud, makeDebris, makeDotBurst, makePortalCloud, makeHeartCloud, makeTowerUnit, makeDotEnemy } from './units.js?v=c2d36961';
+import { LOOKS, LOOK_NAMES } from './looks.js?v=c2d36961';
+import { makeCellIndex } from './cellindex.js?v=c2d36961';
+import { CREATURE_TINTS, ENEMY_SPEC, INTROS } from './enemyspec.js?v=c2d36961';
+import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval } from './towers.js?v=c2d36961';
+import { makeEconomy, sellRefund } from './economy.js?v=c2d36961';
 
 export function initTdTab(root) {
   let active = false;
@@ -1473,6 +1473,7 @@ export function initTdTab(root) {
   function showBriefing() {
     paused = true;
     msgEl.innerHTML = `<div class="msg-head">transmission · briefing</div>` +
+      `<div class="msg-scroll">` +
       `<div class="gcards">` +
       glossCard('#ff6a88', spriteShot('heart', heartIcon), 'the heart', 'at the pole — its fall is the only defeat') +
       glossCard('#9fdcff', spriteShot('tank', unitIcon('tank', look().walker)), 'your tank', 'hold W drive · double-tap W cruise · A/D steer · SPACE shell · SHIFT lasers · ESC pause') +
@@ -1483,10 +1484,13 @@ export function initTdTab(root) {
       glossCard('#ffffff', spriteShot('portal', () => makePortalCloud({ body: 0xcfd8ff, hi: 0xffffff })), 'portals', 'the enemy sources · 3 shells each · dim as they die') +
       `</div>` +
       GAMEPLAY_TIPS +
-      `<b>WIN = DESTROY EVERY PORTAL.</b> reaching the heart wins nothing — it's home.<br>` +
+      `<b>WIN = DESTROY EVERY PORTAL.</b> reaching the heart wins nothing — it's home.` +
+      `</div>` +
+      `<div class="msg-foot">` +
       `<button class="msg-glenemy">enemy glossary</button> ` +
       `<button class="msg-glfriend">friendlies &amp; pickups</button><br>` +
-      `<button class="msg-begin">&rsaquo; begin round ${round}</button>`;
+      `<button class="msg-begin">&rsaquo; begin round ${round}</button>` +
+      `</div>`;
     msgEl.classList.remove('hidden');
   }
 

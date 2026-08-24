@@ -387,6 +387,13 @@ html, body {
   left: 50%;
   transform: translate(-50%, -50%);
   z-index: 8;
+  /* fixed head + scrolling body + always-visible footer: the modal keeps
+     overflow:hidden (below) to clip the hologram sweep, so the briefing's
+     inner .msg-scroll does the scrolling and .msg-foot (the Play button)
+     is never clipped on short phones */
+  display: flex;
+  flex-direction: column;
+  align-items: center;
   min-width: 300px;
   max-width: 88vw;
   /* tall content (briefing/glossaries) must fit ANY phone and scroll —
@@ -560,6 +567,22 @@ html, body {
   line-height: 1.45;
 }
 .msg-glenemy, .msg-glfriend, .msg-back,
+/* briefing body scrolls; footer (glossary + Play buttons) stays pinned so
+   the Play button is always reachable even when the card list overflows */
+.msg-scroll {
+  flex: 1 1 auto;
+  min-height: 0;
+  width: 100%;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+}
+.msg-foot {
+  flex: 0 0 auto;
+  width: 100%;
+  padding-top: 6px;
+}
+
 .msg-next, .msg-begin {
   display: inline-block;
   margin-top: 12px;
