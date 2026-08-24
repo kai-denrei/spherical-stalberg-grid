@@ -6,6 +6,19 @@ Demo links assume `npm run serve` (port 8144) or the
 
 ---
 
+## `ab2a787` — Combat, bent around a sphere
+
+The planet tank core is complete and Node-tested: a ~400-cell relaxed
+Stålberg planet with seeded wall clusters, tanks that drive in tangent
+frames (position and heading stay an exact orthonormal pair for
+thousands of steps), and shells that fly great circles — which makes
+over-the-horizon hits physical, no line of sight required. LOS itself is
+two tests: does the turret-height chord clear the sphere, and does any
+wall cell sit on the arc. Same input shape, same events, same match flow
+as the flat core; the geometry is the only thing that changed.
+
+---
+
 ## `aa20820` — The arena earns its viewport
 
 The tank tab rendered in a 150px strip: #tank-app was absent from the
