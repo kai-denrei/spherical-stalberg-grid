@@ -6,6 +6,24 @@ Demo links assume `npm run serve` (port 8144) or the
 
 ---
 
+## `5d55b1b` — Density with intent
+
+The portals doubled their dots (560 → ~1150), but the commit's real
+content is that none of the new dots are noise. The stargate's ring
+winds two tube passes so it has thickness; its chevrons became true
+V-strokes meeting at inward tips; the horizon is a pool with a core
+sparkle. The torii's beams are parallel strands — front and back
+planes plus thickness offsets — so the timber reads as wood, not
+wireframe, and it gained footing stones, a doubled crown, and the
+little gakuzuka strut a real torii has. The moongate got seven
+concentric masonry courses with a bright inner rim and rubble
+between. Same lesson as ever from the dot-cloud work: granularity is
+free at render time (a handful of gates reposing ~1.2k points is
+still cheaper than one waveJelly hero) — the craft is in placing the
+dots where the structure is.
+
+---
+
 ## `75a7e72` — Three new doors, and a rule about cosmetics
 
 Portal silhouettes became a selectable: alongside the original torus,
