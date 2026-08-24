@@ -4,9 +4,9 @@
 import * as THREE from '../vendor/three.module.js';
 import GUI from '../vendor/lil-gui.esm.js';
 import { OrbitControls } from '../vendor/OrbitControls.js';
-import { createPlanetTankGame, DYING_T } from './tanks2.js?v=02c9a0da';
-import { mulberry32 } from './rng.js?v=02c9a0da';
-import { norm3, scale3 } from './vec3.js?v=02c9a0da';
+import { createPlanetTankGame, DYING_T } from './tanks2.js?v=bf2d1f78';
+import { mulberry32 } from './rng.js?v=bf2d1f78';
+import { norm3, scale3 } from './vec3.js?v=bf2d1f78';
 
 const DT = 1 / 60;
 const TANK_SCALE = 0.08;
@@ -224,10 +224,29 @@ export function initTank2Tab(root) {
     ArrowUp: 'forward', w: 'forward', ArrowDown: 'reverse', s: 'reverse',
     ' ': 'fire',
   };
+  // CRUISE: double-tap the forward control to latch auto-forward, freeing
+  // the player to focus on steering + firing (a mobile ergonomics win).
+  // Reverse or a second double-tap releases it. Double-tap zoom is already
+  // suppressed globally by `* { touch-action: manipulation }` in styles.css,
+  // and pointerdown preventDefault below is the belt to that suspenders.
+  let cruise = false;
+  let lastFwdTap = -9;
+  const upPad = root.querySelector('#tank2-pad-up');
+  const reflectCruise = () => { if (upPad) upPad.classList.toggle('pressed', cruise); };
+  function noteFwdTap() {
+    const s = performance.now() / 1000;
+    if (s - lastFwdTap < 0.35) { cruise = !cruise; reflectCruise(); }
+    lastFwdTap = s;
+  }
   addEventListener('keydown', (e) => {
     if (!active) return;
     const k = KEYMAP[e.key];
-    if (k) { input[k] = true; e.preventDefault(); }
+    if (k) {
+      if (k === 'forward' && !input.forward) noteFwdTap(); // leading edge; ignore key-repeat
+      if (k === 'reverse' && cruise) { cruise = false; reflectCruise(); }
+      input[k] = true;
+      e.preventDefault();
+    }
     if (e.key === 'Enter' && game.winner >= 0) newMatch();
     if (e.key === 'c' || e.key === 'C') {
       params.view = VIEWS[(VIEWS.indexOf(params.view) + 1) % VIEWS.length];
@@ -242,9 +261,12 @@ export function initTank2Tab(root) {
   msgEl.addEventListener('click', () => { if (game.winner >= 0) newMatch(); });
   for (const [id, k] of [['left', 'left'], ['right', 'right'], ['up', 'forward'], ['fire', 'fire']]) {
     const el = root.querySelector(`#tank2-pad-${id}`);
-    el.addEventListener('pointerdown', (e) => { input[k] = true; el.classList.add('pressed'); e.preventDefault(); });
+    el.addEventListener('pointerdown', (e) => {
+      if (k === 'forward') noteFwdTap();
+      input[k] = true; el.classList.add('pressed'); e.preventDefault();
+    });
     for (const ev of ['pointerup', 'pointercancel']) {
-      el.addEventListener(ev, () => { input[k] = false; el.classList.remove('pressed'); });
+      el.addEventListener(ev, () => { input[k] = false; if (!(k === 'forward' && cruise)) el.classList.remove('pressed'); });
     }
   }
 
@@ -301,12 +323,17 @@ export function initTank2Tab(root) {
     const now = performance.now();
     acc += Math.min(0.1, (now - last) / 1000);
     last = now;
+    // cruise ORs into forward for the step, then restores the held state so
+    // a later keyup can't leave forward stuck true once cruise disengages.
+    const heldFwd = input.forward;
+    input.forward = heldFwd || cruise;
     while (acc >= DT) {
       game.step(DT, input);
       consumeEvents();
       tickDebris(DT);
       acc -= DT;
     }
+    input.forward = heldFwd;
     syncScene();
     updateCamera();
     renderer.render(scene, cam);
