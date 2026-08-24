@@ -6,6 +6,18 @@ Demo links assume `npm run serve` (port 8144) or the
 
 ---
 
+## `7219824` — A second game grows in the test tube
+
+The tank-combat core (Atari Combat homage) landed as a pure module:
+`tanks.js` holds arenas (ASCII maps + a mirrored seeded generator),
+tank kinematics with axis-slide collision, one-shell-in-flight
+ballistics with exact-mirror ricochet, and the hit → knockback →
+respawn → match-end loop. No DOM, no three.js — the whole game is
+Node-tested (`test/tanks.mjs`), including a 10-second deterministic
+replay. The render tab comes next and will be a thin consumer.
+
+---
+
 ## `6083632` — The map teaches, the gates face forward
 
 Two small legibility moves with the same philosophy: encode the rule
