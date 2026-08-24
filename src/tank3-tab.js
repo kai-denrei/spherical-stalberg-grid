@@ -1,37 +1,40 @@
-// tank2-tab.js — planet Combat: render shell + input around tanks2.js.
+// tank3-tab.js — planet Combat: render shell + input around tanks2.js.
 // A tiny olive planet in black space; the game core never learns which
 // camera is watching it.
 import * as THREE from '../vendor/three.module.js';
 import GUI from '../vendor/lil-gui.esm.js';
 import { OrbitControls } from '../vendor/OrbitControls.js';
 import { createPlanetTankGame, DYING_T } from './tanks2.js?v=0dd42f2f';
+import { buildUnit, makeBulletCloud, makeDebris } from './units.js?v=0dd42f2f';
+import { LOOKS } from './looks.js?v=0dd42f2f';
 import { mulberry32 } from './rng.js?v=0dd42f2f';
 import { norm3, scale3 } from './vec3.js?v=0dd42f2f';
 
 const DT = 1 / 60;
-const TANK_SCALE = 0.08;
-const COLORS = {
-  space: 0x05070d, ground: 0x9cb04c, block: 0xd89048,
-  red: 0xd23b2f, blue: 0x3556d2, shell: 0xf5f0dc,
-};
+const TANK_SCALE = 0.09;    // world radius of each tank
+const WALL_H = 1.05;        // wall extrusion (× sphere radius)
+const LOOK = LOOKS.tronColors;
 
-export function initTank2Tab(root) {
+export function initTank3Tab(root) {
   let active = true;
   const params = {
     seed: 42, points: 400, wallClusters: 5, pointsToWin: 7,
     ricochet: false, aiLevel: 1, view: 'orbit',
   };
 
-  const container = root.querySelector('#tank2-app');
+  const container = root.querySelector('#tank3-app');
   const renderer = new THREE.WebGLRenderer({ antialias: true });
   renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
   container.appendChild(renderer.domElement);
   const scene = new THREE.Scene();
-  scene.background = new THREE.Color(COLORS.space);
-  scene.add(new THREE.AmbientLight(0xffffff, 0.6));
-  const sun = new THREE.DirectionalLight(0xffffff, 1.1);
+  scene.background = new THREE.Color(LOOK.bg);
+  scene.add(new THREE.HemisphereLight(LOOK.hemi[0], LOOK.hemi[1], LOOK.hemi[2]));
+  const sun = new THREE.DirectionalLight(LOOK.sun[0], LOOK.sun[1]);
   sun.position.set(3, 4, 2);
   scene.add(sun);
+  const fill = new THREE.DirectionalLight(LOOK.fill[0], LOOK.fill[1]);
+  fill.position.set(-3, -2, -4);
+  scene.add(fill);
 
   const cam = new THREE.PerspectiveCamera(55, 1, 0.005, 50);
   cam.position.set(0, 0, 3);
@@ -53,127 +56,169 @@ export function initTank2Tab(root) {
   orbit.enabled = false;
 
   // --- meshes --------------------------------------------------------------
-  function buildTank(color) {
-    const mat = new THREE.MeshLambertMaterial({ color });
-    const g = new THREE.Group();
-    const add = (w, h, d, x, y, z) => {
-      const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat);
-      m.position.set(x, y, z);
-      g.add(m);
-    };
-    add(1.0, 0.35, 0.7, 0, 0.28, 0);
-    add(1.1, 0.25, 0.22, 0, 0.13, 0.42);
-    add(1.1, 0.25, 0.22, 0, 0.13, -0.42);
-    add(0.5, 0.28, 0.45, -0.05, 0.6, 0);
-    add(0.7, 0.1, 0.1, 0.55, 0.62, 0);
-    g.scale.setScalar(TANK_SCALE);
+  // battle mesh tank; barrel is local +Z. Disable the sweep tick (manual
+  // aim). Scale so the normalized-to-unit group renders at TANK_SCALE.
+  function makeTankMesh(cols) {
+    const g = buildUnit('tank', cols);
+    g.userData.tick = null;                                  // no turret sweep
+    g.scale.setScalar((g.userData.baseScale ?? 1) * TANK_SCALE);
     return g;
   }
-  const tankMeshes = [buildTank(COLORS.red), buildTank(COLORS.blue)];
-  const shellMat = new THREE.MeshLambertMaterial({ color: COLORS.shell });
-  const shellMeshes = [0, 1].map(() =>
-    new THREE.Mesh(new THREE.BoxGeometry(0.02, 0.02, 0.02), shellMat));
-  scene.add(...tankMeshes, ...shellMeshes);
-  // chase anchors ride INSIDE the tank group: camera derives from world
-  // transforms, never from heading math (hard rule).
+  const tankMeshes = [
+    makeTankMesh({ walker: LOOK.walker, walkerHi: LOOK.walkerHi }), // player = cyan
+    makeTankMesh({ walker: LOOK.enemy, walkerHi: LOOK.enemyHi }),   // AI = magenta
+  ];
+  const shellMeshes = [0, 1].map((i) => {
+    const m = makeBulletCloud({ body: i === 0 ? LOOK.walkerHi : LOOK.enemyHi, hi: 0xffffff });
+    m.scale.setScalar(0.02);
+    m.visible = false;
+    scene.add(m);
+    return m;
+  });
+  scene.add(...tankMeshes);
+  // chase/POV anchors ride INSIDE the player tank group (barrel = +Z, so
+  // "behind" is -Z, "ahead" is +Z). Camera derives from their world
+  // transforms — never from heading math (hard rule).
   const chaseEye = new THREE.Object3D();
-  chaseEye.position.set(-3.4, 2.4, 0);
+  chaseEye.position.set(0, 2.4, -3.4);
   const chaseTarget = new THREE.Object3D();
-  chaseTarget.position.set(2.6, 0.6, 0);
+  chaseTarget.position.set(0, 0.6, 2.6);
   tankMeshes[0].add(chaseEye, chaseTarget);
   const povEye = new THREE.Object3D();
-  povEye.position.set(0.2, 1.15, 0);
+  povEye.position.set(0, 1.15, 0.2);
   const povTarget = new THREE.Object3D();
-  povTarget.position.set(6, 0.7, 0);
+  povTarget.position.set(0, 0.7, 6);
   tankMeshes[0].add(povEye, povTarget);
   const VIEWS = ['chase', 'pov', 'orbit'];
 
   let game = null;
   let planetGroup = null;
 
+  const rgbOf = (hex) => { const c = new THREE.Color(hex); return [c.r, c.g, c.b]; };
+
+  // Battle/Tron world on the tank2 planet: dark zone-tinted floors, additive
+  // neon-cyan edge wires, black-topped neon walls. Zone field = seeded
+  // accent centres with gaussian angular falloff, blended per cell (ported
+  // from battle-tab's buildGeometry, minus the dungeon tags).
   function buildPlanet() {
     if (planetGroup) {
       scene.remove(planetGroup);
       planetGroup.traverse((o) => o.geometry && o.geometry.dispose());
     }
     planetGroup = new THREE.Group();
-    const { mesh, walls } = game.planet;
+    const { mesh, walls, centers } = game.planet;
     const { vertices, quads } = mesh;
-    const shade = mulberry32(mesh.seed ^ 0x51ab);
-    const groundC = new THREE.Color(COLORS.ground);
-    const tmp = new THREE.Color();
-    const pos = [], col = [];
-    for (let qi = 0; qi < quads.length; qi++) {
-      if (walls.has(qi)) continue;
-      tmp.copy(groundC).offsetHSL(0, 0, (shade() - 0.5) * 0.07);
-      const q = quads[qi];
-      for (const vi of [q[0], q[1], q[2], q[0], q[2], q[3]]) {
-        pos.push(...vertices[vi]);
-        col.push(tmp.r, tmp.g, tmp.b);
+    const zs = LOOK.zones;
+
+    // bake the zonal color field
+    const zrng = mulberry32((params.seed ^ 0x7c0104) >>> 0);
+    const accents = [];
+    for (const [hex, count, sigma] of zs.accents) {
+      for (let k = 0; k < count; k++) {
+        const zz = 2 * zrng() - 1, th = 2 * Math.PI * zrng(), rr = Math.sqrt(Math.max(0, 1 - zz * zz));
+        accents.push({ d: [rr * Math.cos(th), zz, rr * Math.sin(th)], c: rgbOf(hex), s: sigma });
       }
     }
-    const gg = new THREE.BufferGeometry();
-    gg.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
-    gg.setAttribute('color', new THREE.Float32BufferAttribute(col, 3));
-    gg.computeVertexNormals();
-    planetGroup.add(new THREE.Mesh(gg,
-      new THREE.MeshLambertMaterial({ vertexColors: true })));
-    // wall prisms: top quad lifted radially + four sides
-    const wpos = [];
-    const H = 1.055;
-    for (const qi of walls) {
-      const q = quads[qi].map((vi) => vertices[vi]);
-      const t = q.map((v) => scale3(norm3(v), H));
-      for (const p of [t[0], t[1], t[2], t[0], t[2], t[3]]) wpos.push(...p);
-      for (let e = 0; e < 4; e++) {
-        const a = q[e], b = q[(e + 1) % 4];
-        const ta = t[e], tb = t[(e + 1) % 4];
-        for (const p of [a, b, tb, a, tb, ta]) wpos.push(...p);
+    const bc = rgbOf(zs.base);
+    const zone = new Float32Array(quads.length * 3);
+    for (let ci = 0; ci < quads.length; ci++) {
+      const u = centers[ci];
+      let r = bc[0] * zs.baseWeight, g = bc[1] * zs.baseWeight, b = bc[2] * zs.baseWeight, W = zs.baseWeight;
+      for (const cn of accents) {
+        const dv = Math.max(-1, Math.min(1, u[0] * cn.d[0] + u[1] * cn.d[1] + u[2] * cn.d[2]));
+        const w = Math.exp(-((Math.acos(dv) / cn.s) ** 2));
+        r += cn.c[0] * w; g += cn.c[1] * w; b += cn.c[2] * w; W += w;
+      }
+      zone[ci * 3] = r / W; zone[ci * 3 + 1] = g / W; zone[ci * 3 + 2] = b / W;
+    }
+    const tint = (ci) => [zone[ci * 3], zone[ci * 3 + 1], zone[ci * 3 + 2]];
+
+    const fPos = [], fCol = [], ePos = [], eCol = [], wPos = [], wCol = [], tPos = [], tCol = [];
+    const pushEdge = (p, q2, ci) => { ePos.push(p[0], p[1], p[2], q2[0], q2[1], q2[2]); const c = tint(ci); eCol.push(c[0], c[1], c[2], c[0], c[1], c[2]); };
+    const pushTop = (p, q2, ci) => { tPos.push(p[0], p[1], p[2], q2[0], q2[1], q2[2]); const c = tint(ci); tCol.push(c[0], c[1], c[2], c[0], c[1], c[2]); };
+    const pushQuad = (p0, p1, p2, p3, c) => { for (const p of [p0, p1, p2, p0, p2, p3]) wPos.push(p[0], p[1], p[2]); for (let i = 0; i < 6; i++) wCol.push(c[0], c[1], c[2]); };
+
+    // floors (open cells) at the surface
+    const lv = zs.floorLevels.path;
+    for (let ci = 0; ci < quads.length; ci++) {
+      if (walls.has(ci)) continue;
+      const q = quads[ci];
+      const r = zone[ci * 3] * lv, g = zone[ci * 3 + 1] * lv, b = zone[ci * 3 + 2] * lv;
+      for (const vi of [q[0], q[1], q[2], q[0], q[2], q[3]]) { const p = vertices[vi]; fPos.push(p[0], p[1], p[2]); fCol.push(r, g, b); }
+      for (let i = 0; i < 4; i++) pushEdge(vertices[q[i]], vertices[q[(i + 1) % 4]], ci);
+    }
+
+    // walls: extruded wall cells, black tops, zone-tinted skirts facing open cells
+    const edgeToCell = new Map();
+    for (let ci = 0; ci < quads.length; ci++) { const q = quads[ci]; for (let i = 0; i < 4; i++) edgeToCell.set(`${q[i]}-${q[(i + 1) % 4]}`, ci); }
+    for (const ci of walls) {
+      const q = quads[ci];
+      const top = q.map((vi) => scale3(norm3(vertices[vi]), WALL_H));
+      pushQuad(top[0], top[1], top[2], top[3], [0, 0, 0]); // black top (tron occluder)
+      for (let i = 0; i < 4; i++) {
+        const a = q[i], b = q[(i + 1) % 4];
+        const nb = edgeToCell.get(`${b}-${a}`);
+        const facesOpen = nb !== undefined && !walls.has(nb);
+        if (facesOpen) {
+          const sc = zs.wallSideLevel * 10;
+          const sideCol = [zone[ci * 3] * sc, zone[ci * 3 + 1] * sc, zone[ci * 3 + 2] * sc];
+          pushQuad(top[(i + 1) % 4], top[i], vertices[a], vertices[b], sideCol);
+          pushEdge(top[i], vertices[a], ci);
+          pushEdge(top[(i + 1) % 4], vertices[b], ci);
+          pushEdge(top[i], top[(i + 1) % 4], ci);
+        } else {
+          pushTop(top[i], top[(i + 1) % 4], ci);
+        }
       }
     }
-    const wg = new THREE.BufferGeometry();
-    wg.setAttribute('position', new THREE.Float32BufferAttribute(wpos, 3));
-    wg.computeVertexNormals();
-    planetGroup.add(new THREE.Mesh(wg,
-      new THREE.MeshLambertMaterial({ color: COLORS.block })));
+
+    const faceMat = () => new THREE.MeshLambertMaterial({ vertexColors: true, polygonOffset: true, polygonOffsetFactor: 1, polygonOffsetUnits: 1 });
+    const addFaces = (pos, col) => {
+      const g = new THREE.BufferGeometry();
+      g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+      g.setAttribute('color', new THREE.Float32BufferAttribute(col, 3));
+      g.computeVertexNormals();
+      planetGroup.add(new THREE.Mesh(g, faceMat()));
+    };
+    addFaces(fPos, fCol);
+    addFaces(wPos, wCol);
+    const E = LOOK.edges;
+    const addLines = (pos, col) => {
+      const g = new THREE.BufferGeometry();
+      g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+      g.setAttribute('color', new THREE.Float32BufferAttribute(col, 3));
+      planetGroup.add(new THREE.LineSegments(g, new THREE.LineBasicMaterial({
+        vertexColors: true, transparent: true, opacity: E.opacity,
+        blending: E.additive ? THREE.AdditiveBlending : THREE.NormalBlending,
+        depthWrite: !E.additive,
+      })));
+    };
+    addLines(ePos, eCol);
+    addLines(tPos, tCol);
     scene.add(planetGroup);
   }
 
-  // blocky explosion; debris falls along the LOCAL down (toward planet
-  // center). Own rng stream seeded from sim time: visual-only randomness.
+  // battle polygon-scatter death: bake the struck tank's triangles into a
+  // debris mesh that flies apart and fades (units.makeDebris).
   const debris = [];
-  function explodeAt(p, color) {
-    const rng = mulberry32((game.time * 1000) >>> 0);
-    for (let i = 0; i < 8; i++) {
-      const mat = new THREE.MeshLambertMaterial({ color });
-      const m = new THREE.Mesh(new THREE.BoxGeometry(0.016, 0.016, 0.016), mat);
-      m.position.set(...scale3(p, 1.03));
-      const dir = norm3([rng() - 0.5, rng() - 0.5, rng() - 0.5]);
-      m.userData.vel = scale3(dir, 0.12 + rng() * 0.25);
-      m.userData.up = p.slice();
-      m.userData.ttl = 0.7;
-      debris.push(m);
-      scene.add(m);
-    }
+  function explodeAt(i) {
+    const d = makeDebris(tankMeshes[i], game.tanks[i].pos);
+    scene.add(d);
+    debris.push(d);
   }
   function tickDebris(dt) {
-    for (let i = debris.length - 1; i >= 0; i--) {
-      const m = debris[i], v = m.userData.vel, up = m.userData.up;
-      m.userData.ttl -= dt;
-      for (let k = 0; k < 3; k++) v[k] -= up[k] * 0.9 * dt; // local gravity
-      m.position.x += v[0] * dt; m.position.y += v[1] * dt; m.position.z += v[2] * dt;
-      m.rotation.x += 5 * dt; m.rotation.z += 4 * dt;
-      if (m.userData.ttl <= 0 || m.position.length() < 0.995) {
-        scene.remove(m);
-        m.geometry.dispose();
-        m.material.dispose();
-        debris.splice(i, 1);
+    for (let k = debris.length - 1; k >= 0; k--) {
+      if (!debris[k].userData.tick(dt)) {
+        scene.remove(debris[k]);
+        debris[k].geometry.dispose();
+        if (debris[k].material.dispose) debris[k].material.dispose();
+        debris.splice(k, 1);
       }
     }
   }
 
-  const scoreEl = root.querySelector('#tank2-score');
-  const msgEl = root.querySelector('#tank2-msg');
+  const scoreEl = root.querySelector('#tank3-score');
+  const msgEl = root.querySelector('#tank3-msg');
 
   function updateScore() {
     scoreEl.innerHTML = `<span class="ts-red">${game.score[0]}</span>`
@@ -199,13 +244,12 @@ export function initTank2Tab(root) {
     for (const e of game.events) {
       if (e.type === 'hit') {
         updateScore();
-        const victim = game.tanks[1 - e.by];
-        explodeAt(victim.pos, e.by === 0 ? COLORS.blue : COLORS.red);
+        explodeAt(1 - e.by);
       }
       if (e.type === 'matchEnd') {
         if (e.winner === 0 && params.aiLevel === unlocked && unlocked < 4) {
           unlocked++;
-          localStorage.setItem('tank2.unlocked', String(unlocked));
+          localStorage.setItem('tank3.unlocked', String(unlocked));
           rebuildAiCtrl();
           msgEl.textContent = `RED WINS — LEVEL ${unlocked} UNLOCKED — click / ENTER`;
         } else {
@@ -231,7 +275,7 @@ export function initTank2Tab(root) {
   // and pointerdown preventDefault below is the belt to that suspenders.
   let cruise = false;
   let lastFwdTap = -9;
-  const upPad = root.querySelector('#tank2-pad-up');
+  const upPad = root.querySelector('#tank3-pad-up');
   const reflectCruise = () => { if (upPad) upPad.classList.toggle('pressed', cruise); };
   function noteFwdTap() {
     const s = performance.now() / 1000;
@@ -260,7 +304,7 @@ export function initTank2Tab(root) {
   });
   msgEl.addEventListener('click', () => { if (game.winner >= 0) newMatch(); });
   for (const [id, k] of [['left', 'left'], ['right', 'right'], ['up', 'forward'], ['fire', 'fire']]) {
-    const el = root.querySelector(`#tank2-pad-${id}`);
+    const el = root.querySelector(`#tank3-pad-${id}`);
     el.addEventListener('pointerdown', (e) => {
       if (k === 'forward') noteFwdTap();
       input[k] = true; el.classList.add('pressed'); e.preventDefault();
@@ -274,13 +318,14 @@ export function initTank2Tab(root) {
   const _m = new THREE.Matrix4();
   const _x = new THREE.Vector3(), _y = new THREE.Vector3(), _z = new THREE.Vector3();
   const _v1 = new THREE.Vector3(), _v2 = new THREE.Vector3(), _q = new THREE.Quaternion();
+  const _UP = new THREE.Vector3(0, 1, 0);
   const _fwd = new THREE.Vector3(), _tgt = new THREE.Vector3(), _axis = new THREE.Vector3();
   let camLead = null; // orbit auto-lead tween: {fromDir, qDelta, dur, t} or null
 
   function orientTank(group, t) {
-    _x.set(...t.head);          // barrel +x = heading
-    _y.set(...t.pos);           // up = surface normal
-    _z.crossVectors(_x, _y);    // right-handed basis
+    _z.set(...t.head);          // barrel +z = heading
+    _y.set(...t.pos);           // up = surface normal (+y)
+    _x.crossVectors(_y, _z);    // right = up × forward (right-handed)
     _m.makeBasis(_x, _y, _z);
     group.quaternion.setFromRotationMatrix(_m);
     group.position.set(...t.pos);
@@ -294,7 +339,12 @@ export function initTank2Tab(root) {
       if (t.state === 'dying') tankMeshes[i].rotateY((DYING_T - t.dyingT) * 0.6);
       const s = game.shells[i];
       shellMeshes[i].visible = !!s;
-      if (s) shellMeshes[i].position.set(...scale3(s.pos, 1.015));
+      if (s) {
+        shellMeshes[i].position.set(...scale3(s.pos, 1.02));
+        _v1.set(s.dir[0], s.dir[1], s.dir[2]).normalize();
+        shellMeshes[i].quaternion.setFromUnitVectors(_UP, _v1);
+        shellMeshes[i].rotateY(game.time * 40); // rifling spin about the flight axis
+      }
     }
   }
 
@@ -397,7 +447,7 @@ export function initTank2Tab(root) {
   if (matchMedia('(pointer: coarse), (max-width: 700px)').matches) gui.close();
 
   const readUnlocked = () => Math.min(4, Math.max(1,
-    parseInt(localStorage.getItem('tank2.unlocked') || '1', 10) || 1));
+    parseInt(localStorage.getItem('tank3.unlocked') || '1', 10) || 1));
   let unlocked = readUnlocked();
   let aiCtrl = null;
   function rebuildAiCtrl() {
@@ -429,7 +479,7 @@ export function initTank2Tab(root) {
   if (tickN > 0) {
     for (let i = 0; i < Math.round(tickN * 60); i++) { game.step(DT, {}); consumeEvents(); }
     syncScene();
-    console.log('TANK2 ' + JSON.stringify({
+    console.log('TANK3 ' + JSON.stringify({
       score: game.score, winner: game.winner,
       t: +game.time.toFixed(2), ai: params.aiLevel, view: params.view,
     }));
