@@ -4,9 +4,9 @@
 import * as THREE from '../vendor/three.module.js';
 import GUI from '../vendor/lil-gui.esm.js';
 import { OrbitControls } from '../vendor/OrbitControls.js';
-import { createPlanetTankGame, DYING_T } from './tanks2.js?v=d51892ee';
-import { mulberry32 } from './rng.js?v=d51892ee';
-import { norm3, scale3 } from './vec3.js?v=d51892ee';
+import { createPlanetTankGame, DYING_T } from './tanks2.js?v=d6108e41';
+import { mulberry32 } from './rng.js?v=d6108e41';
+import { norm3, scale3 } from './vec3.js?v=d6108e41';
 
 const DT = 1 / 60;
 const TANK_SCALE = 0.08;
@@ -139,6 +139,39 @@ export function initTank2Tab(root) {
     scene.add(planetGroup);
   }
 
+  // blocky explosion; debris falls along the LOCAL down (toward planet
+  // center). Own rng stream seeded from sim time: visual-only randomness.
+  const debris = [];
+  function explodeAt(p, color) {
+    const rng = mulberry32((game.time * 1000) >>> 0);
+    const mat = new THREE.MeshLambertMaterial({ color });
+    for (let i = 0; i < 8; i++) {
+      const m = new THREE.Mesh(new THREE.BoxGeometry(0.016, 0.016, 0.016), mat);
+      m.position.set(...scale3(p, 1.03));
+      const dir = norm3([rng() - 0.5, rng() - 0.5, rng() - 0.5]);
+      m.userData.vel = scale3(dir, 0.12 + rng() * 0.25);
+      m.userData.up = p.slice();
+      m.userData.ttl = 0.7;
+      debris.push(m);
+      scene.add(m);
+    }
+  }
+  function tickDebris(dt) {
+    for (let i = debris.length - 1; i >= 0; i--) {
+      const m = debris[i], v = m.userData.vel, up = m.userData.up;
+      m.userData.ttl -= dt;
+      for (let k = 0; k < 3; k++) v[k] -= up[k] * 0.9 * dt; // local gravity
+      m.position.x += v[0] * dt; m.position.y += v[1] * dt; m.position.z += v[2] * dt;
+      m.rotation.x += 5 * dt; m.rotation.z += 4 * dt;
+      if (m.userData.ttl <= 0 || m.position.length() < 0.995) {
+        scene.remove(m);
+        m.geometry.dispose();
+        m.material.dispose();
+        debris.splice(i, 1);
+      }
+    }
+  }
+
   const scoreEl = root.querySelector('#tank2-score');
   const msgEl = root.querySelector('#tank2-msg');
 
@@ -164,7 +197,11 @@ export function initTank2Tab(root) {
 
   function consumeEvents() {
     for (const e of game.events) {
-      if (e.type === 'hit') updateScore();
+      if (e.type === 'hit') {
+        updateScore();
+        const victim = game.tanks[1 - e.by];
+        explodeAt(victim.pos, e.by === 0 ? COLORS.blue : COLORS.red);
+      }
       if (e.type === 'matchEnd') {
         if (e.winner === 0 && params.aiLevel === unlocked && unlocked < 4) {
           unlocked++;
@@ -229,6 +266,8 @@ export function initTank2Tab(root) {
     for (let i = 0; i < 2; i++) {
       const t = game.tanks[i];
       orientTank(tankMeshes[i], t);
+      tankMeshes[i].visible = !(t.invulnT > 0 && Math.floor(game.time * 10) % 2 === 0);
+      if (t.state === 'dying') tankMeshes[i].rotateY((DYING_T - t.dyingT) * 0.6);
       const s = game.shells[i];
       shellMeshes[i].visible = !!s;
       if (s) shellMeshes[i].position.set(...scale3(s.pos, 1.015));
@@ -265,6 +304,7 @@ export function initTank2Tab(root) {
     while (acc >= DT) {
       game.step(DT, input);
       consumeEvents();
+      tickDebris(DT);
       acc -= DT;
     }
     syncScene();

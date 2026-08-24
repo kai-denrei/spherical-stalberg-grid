@@ -207,3 +207,17 @@ input shape as the keyboard: four brains, one contract. The tab
 copies poses onto box-built meshes, and derives the chase and POV
 cameras from the tank group's world transform. Beat your highest AI
 level to unlock the next; `C` cycles top-down / third-person / POV.
+
+## Planet combat (tank2)
+
+The flat tank duel bent around a sphere. `tanks2.js` is a sibling core,
+not a fork: same input contract, same events, same match flow — but
+positions are unit vectors, headings tangent vectors, and every speed a
+radian rate. Shells fly great circles at surface height, which quietly
+changes the game: a shot needs no line of sight to land, so cover is
+the planet itself. LOS is two questions — does the turret-height chord
+clear the sphere, and is any wall cell on the arc. L4 exploits the
+first answer: it dead-reckons your last-seen track and shells the ghost
+from beyond the horizon. The planet is a ~400-cell relaxed Stålberg
+mesh; walls are seeded cell clusters; the cellindex voxel hash answers
+"which cell am I over" for tanks and shells alike.
