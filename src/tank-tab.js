@@ -1,0 +1,227 @@
+// tank-tab.js — Atari Combat homage: three.js shell + input around the
+// pure game core in tanks.js. This file draws state and forwards keys;
+// every rule lives (Node-tested) in the core.
+import * as THREE from '../vendor/three.module.js';
+import GUI from '../vendor/lil-gui.esm.js';
+import { createTankGame } from './tanks.js?v=57c0658c';
+
+const DT = 1 / 60;
+const COLORS = {
+  ground: 0x9cb04c, surround: 0x6b7f2e, block: 0xd89048,
+  red: 0xd23b2f, blue: 0x3556d2, shell: 0xf5f0dc,
+};
+
+export function initTankTab(root) {
+  let active = true;
+  const params = {
+    seed: 42, arena: 'brackets', pointsToWin: 7, ricochet: false,
+    aiLevel: 1, view: 'top',
+  };
+
+  const container = root.querySelector('#tank-app');
+  const renderer = new THREE.WebGLRenderer({ antialias: true });
+  renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+  container.appendChild(renderer.domElement);
+
+  const scene = new THREE.Scene();
+  scene.background = new THREE.Color(COLORS.surround);
+  scene.add(new THREE.AmbientLight(0xffffff, 0.75));
+  const sun = new THREE.DirectionalLight(0xffffff, 0.9);
+  sun.position.set(10, 20, 6);
+  scene.add(sun);
+
+  // top-down ortho camera, sized to the arena in resize()
+  const topCam = new THREE.OrthographicCamera(-1, 1, 1, -1, 0.1, 100);
+  topCam.position.set(13, 40, 10);
+  topCam.up.set(0, 0, -1);
+  topCam.lookAt(13, 0, 10);
+
+  function resize() {
+    const w = container.clientWidth || 1;
+    const h = container.clientHeight || 1;
+    renderer.setSize(w, h);
+    const aspect = w / h;
+    const spanZ = Math.max(22, 28 / aspect) / 2; // fit 26×20 + margin
+    topCam.left = -spanZ * aspect; topCam.right = spanZ * aspect;
+    topCam.top = spanZ; topCam.bottom = -spanZ;
+    topCam.updateProjectionMatrix();
+  }
+  addEventListener('resize', resize);
+  resize();
+
+  // --- meshes --------------------------------------------------------------
+  const blockMat = new THREE.MeshLambertMaterial({ color: COLORS.block });
+  const shellMat = new THREE.MeshLambertMaterial({ color: COLORS.shell });
+
+  function buildTank(color) {
+    // barrel along +x at heading 0; group.rotation.y = -heading maps
+    // core (cos h, sin h) onto world (x, z).
+    const mat = new THREE.MeshLambertMaterial({ color });
+    const g = new THREE.Group();
+    const add = (w, h, d, x, y, z) => {
+      const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat);
+      m.position.set(x, y, z);
+      g.add(m);
+      return m;
+    };
+    add(1.0, 0.35, 0.7, 0, 0.28, 0);          // hull
+    add(1.1, 0.25, 0.22, 0, 0.13, 0.42);      // tread
+    add(1.1, 0.25, 0.22, 0, 0.13, -0.42);     // tread
+    add(0.5, 0.28, 0.45, -0.05, 0.6, 0);      // turret
+    add(0.7, 0.1, 0.1, 0.55, 0.62, 0);        // barrel
+    return g;
+  }
+
+  let game = null;
+  let arenaGroup = null;
+  const tankMeshes = [buildTank(COLORS.red), buildTank(COLORS.blue)];
+  const shellMeshes = [0, 1].map(() => new THREE.Mesh(new THREE.BoxGeometry(0.24, 0.24, 0.24), shellMat));
+  scene.add(...tankMeshes, ...shellMeshes);
+
+  const scoreEl = root.querySelector('#tank-score');
+  const msgEl = root.querySelector('#tank-msg');
+
+  function newMatch() {
+    if (arenaGroup) {
+      scene.remove(arenaGroup);
+      arenaGroup.traverse((o) => o.geometry && o.geometry.dispose());
+    }
+    game = createTankGame({
+      seed: params.seed >>> 0, arena: params.arena,
+      pointsToWin: params.pointsToWin, ricochet: params.ricochet,
+      aiLevel: params.aiLevel,
+    });
+    arenaGroup = new THREE.Group();
+    const { w, h, blocks } = game.arena;
+    const ground = new THREE.Mesh(new THREE.PlaneGeometry(w, h),
+      new THREE.MeshLambertMaterial({ color: COLORS.ground }));
+    ground.rotation.x = -Math.PI / 2;
+    ground.position.set(w / 2, 0, h / 2);
+    arenaGroup.add(ground);
+    for (const b of blocks) {
+      const bw = b.maxX - b.minX, bd = b.maxZ - b.minZ;
+      const m = new THREE.Mesh(new THREE.BoxGeometry(bw, 1.2, bd), blockMat);
+      m.position.set((b.minX + b.maxX) / 2, 0.6, (b.minZ + b.maxZ) / 2);
+      arenaGroup.add(m);
+    }
+    // perimeter wall: four low slabs just outside the field
+    for (const [ww, wd, x, z] of [
+      [w + 1, 0.5, w / 2, -0.25], [w + 1, 0.5, w / 2, h + 0.25],
+      [0.5, h + 1, -0.25, h / 2], [0.5, h + 1, w + 0.25, h / 2],
+    ]) {
+      const m = new THREE.Mesh(new THREE.BoxGeometry(ww, 0.9, wd), blockMat);
+      m.position.set(x, 0.45, z);
+      arenaGroup.add(m);
+    }
+    scene.add(arenaGroup);
+    msgEl.classList.add('hidden');
+    updateScore();
+  }
+
+  function updateScore() {
+    scoreEl.innerHTML = `<span class="ts-red">${game.score[0]}</span>`
+      + `<span class="ts-blue">${game.score[1]}</span>`;
+  }
+
+  function consumeEvents() {
+    for (const e of game.events) {
+      if (e.type === 'hit') updateScore();
+      if (e.type === 'matchEnd') {
+        msgEl.textContent = e.winner === 0 ? 'RED WINS — click / ENTER for rematch'
+          : 'BLUE WINS — click / ENTER for rematch';
+        msgEl.classList.remove('hidden');
+      }
+    }
+  }
+
+  // --- input ---------------------------------------------------------------
+  const input = {};
+  const KEYMAP = {
+    ArrowLeft: 'left', a: 'left', ArrowRight: 'right', d: 'right',
+    ArrowUp: 'forward', w: 'forward', ArrowDown: 'reverse', s: 'reverse',
+    ' ': 'fire',
+  };
+  addEventListener('keydown', (e) => {
+    if (!active) return;
+    const k = KEYMAP[e.key];
+    if (k) { input[k] = true; e.preventDefault(); }
+    if (e.key === 'Enter' && game.winner >= 0) newMatch();
+  });
+  addEventListener('keyup', (e) => {
+    const k = KEYMAP[e.key];
+    if (k) input[k] = false;
+  });
+  msgEl.addEventListener('click', () => { if (game.winner >= 0) newMatch(); });
+  // touch pads
+  for (const [id, k] of [['left', 'left'], ['right', 'right'], ['up', 'forward'], ['fire', 'fire']]) {
+    const el = root.querySelector(`#tank-pad-${id}`);
+    el.addEventListener('pointerdown', (e) => { input[k] = true; e.preventDefault(); });
+    el.addEventListener('pointerup', () => { input[k] = false; });
+    el.addEventListener('pointercancel', () => { input[k] = false; });
+  }
+
+  // --- sync + loop ---------------------------------------------------------
+  function syncScene() {
+    for (let i = 0; i < 2; i++) {
+      const t = game.tanks[i];
+      tankMeshes[i].position.set(t.x, 0, t.z);
+      tankMeshes[i].rotation.y = -t.heading;
+      const s = game.shells[i];
+      shellMeshes[i].visible = !!s;
+      if (s) shellMeshes[i].position.set(s.x, 0.62, s.z);
+    }
+  }
+
+  let acc = 0;
+  let last = performance.now();
+  function animate() {
+    requestAnimationFrame(animate);
+    if (!active) return;
+    const now = performance.now();
+    acc += Math.min(0.1, (now - last) / 1000);
+    last = now;
+    while (acc >= DT) {
+      game.step(DT, input);
+      consumeEvents();
+      acc -= DT;
+    }
+    syncScene();
+    renderer.render(scene, topCam);
+  }
+
+  // --- panel ---------------------------------------------------------------
+  const gui = new GUI({ title: 'tank combat', container: root });
+  gui.add(params, 'seed', 0, 99999, 1).onFinishChange(newMatch);
+  gui.add(params, 'arena', ['open', 'brackets', 'maze', 'proc']).onChange(newMatch);
+  gui.add(params, 'pointsToWin', 1, 15, 1).name('first to').onFinishChange(newMatch);
+  gui.add(params, 'ricochet').onChange(newMatch);
+  gui.add({ rematch: () => newMatch() }, 'rematch').name('↻ new match');
+  if (matchMedia('(pointer: coarse), (max-width: 700px)').matches) gui.close();
+
+  // --- URL hooks (headless verification) ----------------------------------
+  const urlParams = new URLSearchParams(location.search);
+  const seedOv = parseInt(urlParams.get('seed') || '', 10);
+  if (Number.isFinite(seedOv)) params.seed = seedOv;
+  gui.controllersRecursive().forEach((c) => c.updateDisplay());
+
+  newMatch();
+  animate();
+
+  // ?tick=N synchronously simulates N seconds, then logs a state line
+  const tickN = parseFloat(urlParams.get('tick') || '0');
+  if (tickN > 0) {
+    for (let i = 0; i < Math.round(tickN * 60); i++) { game.step(DT, {}); consumeEvents(); }
+    syncScene();
+    console.log('TANK ' + JSON.stringify({
+      score: game.score, winner: game.winner,
+      t: +game.time.toFixed(2), ai: params.aiLevel,
+    }));
+  }
+
+  return {
+    setActive(on) {
+      active = on;
+      if (on) { last = performance.now(); resize(); }
+    },
+  };
+}

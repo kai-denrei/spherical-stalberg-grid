@@ -803,3 +803,15 @@ html, body {
     font-size: 11px;
   }
 }
+
+/* tank tab: Combat-style HUD */
+#tank-score { position: absolute; top: 10px; left: 50%; transform: translateX(-50%);
+  font: 700 42px/1 ui-monospace, monospace; letter-spacing: .5em; pointer-events: none; z-index: 5; }
+#tank-score .ts-red { color: #d23b2f; }
+#tank-score .ts-blue { color: #3556d2; }
+#tank-msg { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+  font: 700 34px ui-monospace, monospace; color: #fff; background: rgba(0,0,0,.45);
+  z-index: 6; cursor: pointer; text-align: center; }
+#tank-msg.hidden { display: none; }
+#tank-hint { position: absolute; bottom: 8px; left: 50%; transform: translateX(-50%);
+  font: 12px ui-monospace, monospace; color: #cfd6e4; opacity: .7; pointer-events: none; z-index: 5; }
