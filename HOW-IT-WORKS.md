@@ -194,3 +194,16 @@ with invariant tests (watertight, Euler = 2, defect law, determinism) and
 zero DOM — the render layer is verified separately with screenshots.
 Every scope cut recorded with its reason in a decision log, including the
 ones that were wrong — half this document is transcribed from it.
+
+## Tank combat (the break-time tab)
+
+A 3D homage to Atari 2600 Combat. Everything that decides the game —
+arena maps and their mirrored procedural cousin, tank kinematics,
+one-shell-in-flight ballistics with mirror ricochet, the L1–L4 AI
+ladder — lives in `tanks.js`, a DOM-free module with its own Node
+suite. The AI emits the same `{left,right,forward,reverse,fire}`
+input shape as the keyboard: four brains, one contract. The tab
+(`tank-tab.js`) is a projector: it steps the core at a fixed 60Hz,
+copies poses onto box-built meshes, and derives the chase and POV
+cameras from the tank group's world transform. Beat your highest AI
+level to unlock the next; `C` cycles top-down / third-person / POV.

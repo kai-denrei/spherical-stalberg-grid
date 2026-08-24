@@ -3,7 +3,8 @@
 // every rule lives (Node-tested) in the core.
 import * as THREE from '../vendor/three.module.js';
 import GUI from '../vendor/lil-gui.esm.js';
-import { createTankGame } from './tanks.js?v=6d392440';
+import { createTankGame, DYING_T } from './tanks.js?v=7caee708';
+import { mulberry32 } from './rng.js?v=7caee708';
 
 const DT = 1 / 60;
 const COLORS = {
@@ -92,6 +93,38 @@ export function initTankTab(root) {
   // attach POV anchors to the player (red) tank group
   tankMeshes[0].add(povEye, povTarget);
 
+  // blocky explosion: a handful of cubes scattering from the hit point.
+  // Visual-only randomness — own stream, seeded from sim time, so game
+  // logic stays deterministic and replays don't drift.
+  const debris = [];
+  function explodeAt(x, z, color) {
+    const rng = mulberry32((game.time * 1000) >>> 0);
+    const mat = new THREE.MeshLambertMaterial({ color });
+    for (let i = 0; i < 8; i++) {
+      const m = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.18, 0.18), mat);
+      m.position.set(x, 0.4, z);
+      const a = rng() * Math.PI * 2;
+      m.userData.vel = [Math.cos(a) * (1 + rng() * 3), 2 + rng() * 3, Math.sin(a) * (1 + rng() * 3)];
+      m.userData.ttl = 0.7;
+      debris.push(m);
+      scene.add(m);
+    }
+  }
+  function tickDebris(dt) {
+    for (let i = debris.length - 1; i >= 0; i--) {
+      const m = debris[i], v = m.userData.vel;
+      m.userData.ttl -= dt;
+      v[1] -= 9 * dt;
+      m.position.x += v[0] * dt; m.position.y += v[1] * dt; m.position.z += v[2] * dt;
+      m.rotation.x += 5 * dt; m.rotation.z += 4 * dt;
+      if (m.userData.ttl <= 0 || m.position.y < 0) {
+        scene.remove(m);
+        m.geometry.dispose();
+        debris.splice(i, 1);
+      }
+    }
+  }
+
   const scoreEl = root.querySelector('#tank-score');
   const msgEl = root.querySelector('#tank-msg');
 
@@ -139,7 +172,11 @@ export function initTankTab(root) {
 
   function consumeEvents() {
     for (const e of game.events) {
-      if (e.type === 'hit') updateScore();
+      if (e.type === 'hit') {
+        updateScore();
+        const victim = game.tanks[1 - e.by];
+        explodeAt(victim.x, victim.z, e.by === 0 ? COLORS.blue : COLORS.red);
+      }
       if (e.type === 'matchEnd') {
         if (e.winner === 0 && params.aiLevel === unlocked && unlocked < 4) {
           unlocked++;
@@ -207,6 +244,9 @@ export function initTankTab(root) {
       const t = game.tanks[i];
       tankMeshes[i].position.set(t.x, 0, t.z);
       tankMeshes[i].rotation.y = -t.heading;
+      // invuln flash + dying spin are render-side only
+      tankMeshes[i].visible = !(t.invulnT > 0 && Math.floor(game.time * 10) % 2 === 0);
+      if (t.state === 'dying') tankMeshes[i].rotation.y += (DYING_T - t.dyingT) * 0.6;
       const s = game.shells[i];
       shellMeshes[i].visible = !!s;
       if (s) shellMeshes[i].position.set(s.x, 0.62, s.z);
@@ -224,6 +264,7 @@ export function initTankTab(root) {
     while (acc >= DT) {
       game.step(DT, input);
       consumeEvents();
+      tickDebris(DT);
       acc -= DT;
     }
     syncScene();
