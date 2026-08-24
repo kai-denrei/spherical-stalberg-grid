@@ -15,7 +15,7 @@
 // tick(t) (idle animation) }.
 
 import * as THREE from '../vendor/three.module.js';
-import { CREATURES, waveJelly, spherePts, bulletPts, heartPts, torusPts, towerHeadPts, enemyDotPts, portalPts } from './creatures.js?v=bd3bc6d1';
+import { CREATURES, waveJelly, spherePts, bulletPts, heartPts, torusPts, towerHeadPts, enemyDotPts, portalPts } from './creatures.js?v=3f3afc0a';
 
 function normalizeToUnit(group) {
   group.updateMatrixWorld(true);
@@ -642,7 +642,7 @@ export function makeDotEnemy(type, cols) {
 // it takes damage. Ring lies in local X-Y: align +Y to the surface
 // normal and it stands like a gate.
 export function makePortalCloud(cols, phase = 0, shape = 'torus') {
-  const base = portalPts(shape, 560);
+  const base = portalPts(shape, 1150); // dense — the gates are set pieces
   const pos = new Float32Array(base.length * 3);
   const col = new Float32Array(base.length * 3);
   const baseCol = new Float32Array(base.length * 3);

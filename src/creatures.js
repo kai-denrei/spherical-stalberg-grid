@@ -336,69 +336,105 @@ export function towerHeadPts(kind, n = 190) {
 // stand). 'torus' is the original braille-lab ring; the others are
 // test shapes: a Stargate (chevroned ring + event-horizon fill), a
 // Torii gate, and a Moongate (thick annulus).
-export function portalPts(kind, n = 560) {
+export function portalPts(kind, n = 1150) {
   if (!kind || kind === 'torus') return torusPts(n);
   const pts = [];
   const GA = Math.PI * (3 - Math.sqrt(5));
   const jz = (i) => (Math.sin(i * 12.9898) * 43758.5453 % 1) * 0.08 - 0.04;
   const P = (x, y, z, hi) => pts.push(hi ? [x, y, z, 1] : [x, y, z]);
   if (kind === 'stargate') {
-    const ring = Math.round(n * 0.5);
+    // the ring: a proper tube, two winding passes for visible thickness
+    const ring = Math.round(n * 0.42);
     for (let i = 0; i < ring; i++) {
-      const u = (i / ring) * 2 * Math.PI;
+      const u = (i / ring) * 2 * Math.PI * 2; // two laps
       const v = i * GA;
-      const w = 0.86 + 0.09 * Math.cos(v);
-      P(w * Math.cos(u), w * Math.sin(u), 0.09 * Math.sin(v), i % 14 === 0);
+      const w = 0.86 + 0.085 * Math.cos(v);
+      P(w * Math.cos(u), w * Math.sin(u), 0.085 * Math.sin(v), i % 16 === 0);
     }
-    // nine chevrons riding the rim — every dot hi, so they blaze
+    // nine chevrons: true V strokes meeting at an inward point, all hi
     for (let c = 0; c < 9; c++) {
       const a = (c / 9) * 2 * Math.PI + Math.PI / 2;
-      for (let k = 0; k < 6; k++) {
-        const spread = (k % 3 - 1) * 0.045;
-        const rr = 1.0 + 0.055 * Math.floor(k / 3);
-        P(rr * Math.cos(a + spread), rr * Math.sin(a + spread), 0, true);
+      const ca = Math.cos(a), sa = Math.sin(a);
+      const ta = -sa, tb = ca; // rim tangent
+      for (let k = 0; k <= 6; k++) {
+        const f = k / 6;
+        for (const side of [-1, 1]) {
+          const rr = 1.06 - 0.14 * f;               // strokes lean inward…
+          const off = side * 0.05 * (1 - f);        // …meeting at the tip
+          P(rr * ca + off * ta, rr * sa + off * tb, 0.02, true);
+        }
       }
     }
-    // the event horizon: a soft fill of dots inside the ring
-    const fill = n - ring - 54;
+    // the event horizon: dense luminous pool with a brighter core spiral
+    const fill = n - ring - 9 * 14;
     for (let i = 0; i < fill; i++) {
-      const r = 0.72 * Math.sqrt((i + 0.5) / fill);
+      const r = 0.74 * Math.sqrt((i + 0.5) / fill);
       const a = i * GA;
-      P(r * Math.cos(a), r * Math.sin(a), jz(i) * 0.5, false);
+      P(r * Math.cos(a), r * Math.sin(a), jz(i) * 0.4, i % 23 === 0);
     }
   } else if (kind === 'torii') {
-    const seg = (x0, y0, x1, y1, count, base) => {
+    // beams sampled as parallel dot-STRANDS (front/back + thickness) so
+    // the timber reads as solid, not wireframe
+    let idx = 0;
+    const strand = (x0, y0, x1, y1, count, dz, dy) => {
       for (let k = 0; k < count; k++) {
         const f = (k + 0.5) / count;
-        P(x0 + (x1 - x0) * f, y0 + (y1 - y0) * f, jz(base + k), (base + k) % 12 === 0);
+        P(x0 + (x1 - x0) * f, y0 + (y1 - y0) * f + dy, dz + jz(idx) * 0.3, idx % 12 === 0);
+        idx++;
       }
     };
-    const pillar = Math.round(n * 0.22);
-    seg(-0.55, -1.0, -0.5, 0.62, pillar, 0);        // left pillar, slight lean
-    seg(0.55, -1.0, 0.5, 0.62, pillar, pillar);     // right pillar
-    // kasagi: the top beam, ends swept upward
-    const kas = Math.round(n * 0.3);
-    for (let k = 0; k < kas; k++) {
-      const x = -0.95 + (1.9 * (k + 0.5)) / kas;
-      const y = 0.78 + 0.2 * Math.pow(Math.abs(x) / 0.95, 3);
-      P(x, y, jz(k + 900), k % 12 === 0);
+    const beam = (x0, y0, x1, y1, count) => {
+      for (const dz of [-0.045, 0.045]) {
+        strand(x0, y0, x1, y1, Math.round(count / 3), dz, 0);
+        strand(x0, y0, x1, y1, Math.round(count / 6), dz, 0.035);
+        strand(x0, y0, x1, y1, Math.round(count / 6), dz, -0.035);
+      }
+    };
+    const pillarN = Math.round(n * 0.2);
+    beam(-0.55, -1.0, -0.5, 0.62, pillarN);   // left pillar
+    beam(0.55, -1.0, 0.5, 0.62, pillarN);     // right pillar
+    // pillar footing stones
+    for (const px of [-0.55, 0.55]) {
+      for (let k = 0; k < 16; k++) {
+        const a = (k / 16) * 2 * Math.PI;
+        P(px + 0.09 * Math.cos(a), -1.0, 0.09 * Math.sin(a), false);
+      }
     }
-    // shimaki: the straight beam just under it
-    seg(-0.78, 0.68, 0.78, 0.68, Math.round(n * 0.13), 2000);
-    // nuki: the tie beam through the pillars
-    seg(-0.66, 0.24, 0.66, 0.24, n - 2 * pillar - kas - Math.round(n * 0.13), 3000);
+    // kasagi: the curved crown, doubled for thickness
+    const kas = Math.round(n * 0.24);
+    for (let k = 0; k < kas; k++) {
+      const x = -0.98 + (1.96 * (k + 0.5)) / kas;
+      const y = 0.78 + 0.2 * Math.pow(Math.abs(x) / 0.98, 3);
+      P(x, y + (k % 2 ? 0.035 : 0), (k % 2 ? -1 : 1) * 0.045 + jz(k + 900) * 0.3, k % 12 === 0);
+    }
+    beam(-0.8, 0.66, 0.8, 0.66, Math.round(n * 0.14));  // shimaki
+    beam(-0.66, 0.24, 0.66, 0.24, Math.round(n * 0.14)); // nuki
+    // gakuzuka: the small center strut between nuki and shimaki
+    strand(0, 0.28, 0, 0.62, Math.round(n * 0.03), 0, 0);
   } else if (kind === 'moongate') {
-    // a thick round wall with a round hole — the moon gate
-    for (let i = 0; i < n; i++) {
+    // structured masonry: concentric dot-rings for the wall, a bright
+    // inner rim, plus a loose rubble fill between courses
+    const courses = 7;
+    const ringsN = Math.round(n * 0.62);
+    let i = 0;
+    for (let cse = 0; cse < courses; cse++) {
+      const r = 0.6 + (0.4 * cse) / (courses - 1);
+      const per = Math.round((ringsN / courses) * (0.7 + 0.6 * (cse / courses)));
+      for (let k = 0; k < per; k++, i++) {
+        const a = (k / per) * 2 * Math.PI + cse * 0.37;
+        P(r * Math.cos(a), r * Math.sin(a), jz(i), cse === 0 ? k % 4 === 0 : i % 14 === 0);
+      }
+    }
+    for (; i < n; i++) {
       const a = i * GA;
-      const r = 0.58 + 0.42 * ((Math.sin(i * 78.233) * 43758.5453 % 1 + 1) % 1);
-      P(r * Math.cos(a), r * Math.sin(a), jz(i), i % 12 === 0);
+      const r = 0.62 + 0.36 * ((Math.sin(i * 78.233) * 43758.5453 % 1 + 1) % 1);
+      P(r * Math.cos(a), r * Math.sin(a), jz(i), false);
     }
   }
   return fitUnit(pts);
 }
 
-// dotted torus — the braille-lab half-dotted static torus. The ring lies
+// dotted torus — the braille-lab half-dotted static torus.// dotted torus — the braille-lab half-dotted static torus. The ring lies
 // in the X-Y plane so an upright "portal" falls out of aligning local +Y
 // with the surface normal. Golden-angle winding spreads the dots evenly;
 // every 12th is hi, matching the sphere's sparkle convention.
