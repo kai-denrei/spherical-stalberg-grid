@@ -6,6 +6,25 @@ Demo links assume `npm run serve` (port 8144) or the
 
 ---
 
+## `7961a33` — Seven small honesties
+
+A tweak pass where each item is a tiny usability truth. The mode chip
+now names where it takes you — BUILD from the tank, TANK from the
+build view — because a button that names where you already are is a
+lie of labeling. The app lands on TD, the game it has become. Corridors
+narrowed to width 1 so ROOMS read as arenas again. Enemies run at 0.85
+cells/s — fast enough that a lane without tower cover feels naked. The
+opening purse is exactly one Rapid plus one Slow (170c): the first
+build is a decision with no slack, which is a tutorial nobody has to
+write. CREDIT became the loud line of the HUD — orange, bold, glowing
+— because it is the number the whole TD loop turns on. And the how-to
+text left the live HUD entirely: a GAMEPLAY section now lives in the
+briefing and pause modals, and the HUD speaks only state words
+(AUTO / CRUISE / BUILD · war on). Screens that teach while you fight
+teach nothing; screens that teach while you're paused teach.
+
+---
+
 ## `9c86d8c` — High ground, wide lanes, and a purge of tanks
 
 The operator's playtest note cut deep: multiple friendly tanks CONFUSE
