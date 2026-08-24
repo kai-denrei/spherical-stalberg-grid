@@ -331,6 +331,73 @@ export function towerHeadPts(kind, n = 190) {
   return fitUnit(pts);
 }
 
+// portal shapes — selectable gate silhouettes, all half-dotted, all
+// upright in the X-Y plane (align +Y to the surface normal and they
+// stand). 'torus' is the original braille-lab ring; the others are
+// test shapes: a Stargate (chevroned ring + event-horizon fill), a
+// Torii gate, and a Moongate (thick annulus).
+export function portalPts(kind, n = 560) {
+  if (!kind || kind === 'torus') return torusPts(n);
+  const pts = [];
+  const GA = Math.PI * (3 - Math.sqrt(5));
+  const jz = (i) => (Math.sin(i * 12.9898) * 43758.5453 % 1) * 0.08 - 0.04;
+  const P = (x, y, z, hi) => pts.push(hi ? [x, y, z, 1] : [x, y, z]);
+  if (kind === 'stargate') {
+    const ring = Math.round(n * 0.5);
+    for (let i = 0; i < ring; i++) {
+      const u = (i / ring) * 2 * Math.PI;
+      const v = i * GA;
+      const w = 0.86 + 0.09 * Math.cos(v);
+      P(w * Math.cos(u), w * Math.sin(u), 0.09 * Math.sin(v), i % 14 === 0);
+    }
+    // nine chevrons riding the rim — every dot hi, so they blaze
+    for (let c = 0; c < 9; c++) {
+      const a = (c / 9) * 2 * Math.PI + Math.PI / 2;
+      for (let k = 0; k < 6; k++) {
+        const spread = (k % 3 - 1) * 0.045;
+        const rr = 1.0 + 0.055 * Math.floor(k / 3);
+        P(rr * Math.cos(a + spread), rr * Math.sin(a + spread), 0, true);
+      }
+    }
+    // the event horizon: a soft fill of dots inside the ring
+    const fill = n - ring - 54;
+    for (let i = 0; i < fill; i++) {
+      const r = 0.72 * Math.sqrt((i + 0.5) / fill);
+      const a = i * GA;
+      P(r * Math.cos(a), r * Math.sin(a), jz(i) * 0.5, false);
+    }
+  } else if (kind === 'torii') {
+    const seg = (x0, y0, x1, y1, count, base) => {
+      for (let k = 0; k < count; k++) {
+        const f = (k + 0.5) / count;
+        P(x0 + (x1 - x0) * f, y0 + (y1 - y0) * f, jz(base + k), (base + k) % 12 === 0);
+      }
+    };
+    const pillar = Math.round(n * 0.22);
+    seg(-0.55, -1.0, -0.5, 0.62, pillar, 0);        // left pillar, slight lean
+    seg(0.55, -1.0, 0.5, 0.62, pillar, pillar);     // right pillar
+    // kasagi: the top beam, ends swept upward
+    const kas = Math.round(n * 0.3);
+    for (let k = 0; k < kas; k++) {
+      const x = -0.95 + (1.9 * (k + 0.5)) / kas;
+      const y = 0.78 + 0.2 * Math.pow(Math.abs(x) / 0.95, 3);
+      P(x, y, jz(k + 900), k % 12 === 0);
+    }
+    // shimaki: the straight beam just under it
+    seg(-0.78, 0.68, 0.78, 0.68, Math.round(n * 0.13), 2000);
+    // nuki: the tie beam through the pillars
+    seg(-0.66, 0.24, 0.66, 0.24, n - 2 * pillar - kas - Math.round(n * 0.13), 3000);
+  } else if (kind === 'moongate') {
+    // a thick round wall with a round hole — the moon gate
+    for (let i = 0; i < n; i++) {
+      const a = i * GA;
+      const r = 0.58 + 0.42 * ((Math.sin(i * 78.233) * 43758.5453 % 1 + 1) % 1);
+      P(r * Math.cos(a), r * Math.sin(a), jz(i), i % 12 === 0);
+    }
+  }
+  return fitUnit(pts);
+}
+
 // dotted torus — the braille-lab half-dotted static torus. The ring lies
 // in the X-Y plane so an upright "portal" falls out of aligning local +Y
 // with the surface normal. Golden-angle winding spreads the dots evenly;
