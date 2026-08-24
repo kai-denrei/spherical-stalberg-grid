@@ -6,6 +6,31 @@ Demo links assume `npm run serve` (port 8144) or the
 
 ---
 
+## `75a7e72` — Three new doors, and a rule about cosmetics
+
+Portal silhouettes became a selectable: alongside the original torus,
+a STARGATE (nine all-hi chevron clusters on a ring around a dotted
+event-horizon fill), a TORII GATE (pillars, upswept kasagi, the tie
+beams — static, except a twist wave rolls through it once every five
+seconds), and a MOONGATE (thick dotted annulus under the radial Wave
+treatment). All half-dotted, all standing on the same +Y-to-normal
+alignment the torus established.
+
+The structural point is the swap rule: COSMETICS NEVER RESET THE RUN.
+Changing the portal shape rebuilds every standing gate in place —
+phases derived from cell indices so the gameplay rng stream is never
+consumed, wounded state (shrink + dim) carried over — and the hero
+dropdown now swaps the player unit through buildActors() instead of
+regenerate(). Dim itself moved off the baked vertex colors onto
+material.color, so position-based treatments dim exactly like
+color-based ones. And a confession the log owes: the first headless
+check of the new hook came back as a BLANK WORLD — the factoring had
+left one reference to a removed local, and the whole init chain died
+after it. One grep of the console found it; the screenshot alone
+would have said 'renderer bug' for an hour.
+
+---
+
 ## `7d4ec51` — Tempo is identity
 
 The operator caught a flattening: "make tower shots faster" had been
