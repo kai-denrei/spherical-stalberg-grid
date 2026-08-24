@@ -3,9 +3,10 @@
 // camera is watching it.
 import * as THREE from '../vendor/three.module.js';
 import GUI from '../vendor/lil-gui.esm.js';
-import { createPlanetTankGame, DYING_T } from './tanks2.js?v=0a6d569f';
-import { mulberry32 } from './rng.js?v=0a6d569f';
-import { norm3, scale3 } from './vec3.js?v=0a6d569f';
+import { OrbitControls } from '../vendor/OrbitControls.js';
+import { createPlanetTankGame, DYING_T } from './tanks2.js?v=d51892ee';
+import { mulberry32 } from './rng.js?v=d51892ee';
+import { norm3, scale3 } from './vec3.js?v=d51892ee';
 
 const DT = 1 / 60;
 const TANK_SCALE = 0.08;
@@ -45,6 +46,12 @@ export function initTank2Tab(root) {
   addEventListener('resize', resize);
   resize();
 
+  const orbit = new OrbitControls(cam, renderer.domElement);
+  orbit.enableDamping = true;
+  orbit.minDistance = 1.4;
+  orbit.maxDistance = 8;
+  orbit.enabled = false;
+
   // --- meshes --------------------------------------------------------------
   function buildTank(color) {
     const mat = new THREE.MeshLambertMaterial({ color });
@@ -74,6 +81,12 @@ export function initTank2Tab(root) {
   const chaseTarget = new THREE.Object3D();
   chaseTarget.position.set(2.6, 0.6, 0);
   tankMeshes[0].add(chaseEye, chaseTarget);
+  const povEye = new THREE.Object3D();
+  povEye.position.set(0.2, 1.15, 0);
+  const povTarget = new THREE.Object3D();
+  povTarget.position.set(6, 0.7, 0);
+  tankMeshes[0].add(povEye, povTarget);
+  const VIEWS = ['chase', 'pov', 'orbit'];
 
   let game = null;
   let planetGroup = null;
@@ -146,14 +159,22 @@ export function initTank2Tab(root) {
     syncScene();
     tankMeshes[0].updateMatrixWorld();
     cam.position.copy(chaseEye.getWorldPosition(new THREE.Vector3())); // no first-frame lerp snap
+    applyView();
   }
 
   function consumeEvents() {
     for (const e of game.events) {
       if (e.type === 'hit') updateScore();
       if (e.type === 'matchEnd') {
-        msgEl.textContent = e.winner === 0 ? 'RED WINS — click / ENTER for rematch'
-          : 'BLUE WINS — click / ENTER for rematch';
+        if (e.winner === 0 && params.aiLevel === unlocked && unlocked < 4) {
+          unlocked++;
+          localStorage.setItem('tank2.unlocked', String(unlocked));
+          rebuildAiCtrl();
+          msgEl.textContent = `RED WINS — LEVEL ${unlocked} UNLOCKED — click / ENTER`;
+        } else {
+          msgEl.textContent = e.winner === 0 ? 'RED WINS — click / ENTER for rematch'
+            : 'BLUE WINS — click / ENTER for rematch';
+        }
         msgEl.classList.remove('hidden');
       }
     }
@@ -171,6 +192,11 @@ export function initTank2Tab(root) {
     const k = KEYMAP[e.key];
     if (k) { input[k] = true; e.preventDefault(); }
     if (e.key === 'Enter' && game.winner >= 0) newMatch();
+    if (e.key === 'c' || e.key === 'C') {
+      params.view = VIEWS[(VIEWS.indexOf(params.view) + 1) % VIEWS.length];
+      applyView();
+      gui.controllersRecursive().forEach((c2) => c2.updateDisplay());
+    }
   });
   addEventListener('keyup', (e) => {
     const k = KEYMAP[e.key];
@@ -210,11 +236,22 @@ export function initTank2Tab(root) {
   }
 
   function updateCamera() {
+    if (params.view === 'orbit') { orbit.update(); return; }
     const tm = tankMeshes[0];
     tm.updateMatrixWorld();
-    cam.position.lerp(chaseEye.getWorldPosition(_v1), 0.15);
+    const eye = params.view === 'pov' ? povEye : chaseEye;
+    const tgt = params.view === 'pov' ? povTarget : chaseTarget;
+    cam.position.lerp(eye.getWorldPosition(_v1), params.view === 'pov' ? 1 : 0.15);
     cam.up.copy(_v2.set(0, 1, 0).applyQuaternion(tm.getWorldQuaternion(_q)));
-    cam.lookAt(chaseTarget.getWorldPosition(_v2));
+    cam.lookAt(tgt.getWorldPosition(_v2));
+  }
+
+  function applyView() {
+    orbit.enabled = params.view === 'orbit';
+    if (params.view === 'orbit') {
+      cam.up.set(0, 1, 0);
+      if (cam.position.length() < 1.4) cam.position.setLength(2.6);
+    }
   }
 
   let acc = 0;
@@ -245,11 +282,31 @@ export function initTank2Tab(root) {
   gui.add({ rematch: () => newMatch() }, 'rematch').name('↻ new match');
   if (matchMedia('(pointer: coarse), (max-width: 700px)').matches) gui.close();
 
+  const readUnlocked = () => Math.min(4, Math.max(1,
+    parseInt(localStorage.getItem('tank2.unlocked') || '1', 10) || 1));
+  let unlocked = readUnlocked();
+  let aiCtrl = null;
+  function rebuildAiCtrl() {
+    if (aiCtrl) aiCtrl.destroy();
+    const levels = {};
+    ['L1 drunk', 'L2 hunter', 'L3 marksman', 'L4 ghost gunner']
+      .slice(0, unlocked).forEach((n, i) => { levels[n] = i + 1; });
+    aiCtrl = gui.add(params, 'aiLevel', levels).name('AI level').onChange(newMatch);
+  }
+  rebuildAiCtrl();
+  gui.add(params, 'view', VIEWS).name('camera (C)').listen().onChange(applyView);
+
   // --- URL hooks -----------------------------------------------------------
   const urlParams = new URLSearchParams(location.search);
   const seedOv = parseInt(urlParams.get('seed') || '', 10);
   if (Number.isFinite(seedOv)) params.seed = seedOv;
   gui.controllersRecursive().forEach((c) => c.updateDisplay());
+
+  const aiOv = parseInt(urlParams.get('ai') || '', 10);
+  if (aiOv >= 1 && aiOv <= 4) { params.aiLevel = aiOv; unlocked = Math.max(unlocked, aiOv); rebuildAiCtrl(); }
+  const viewOv = urlParams.get('view');
+  if (VIEWS.includes(viewOv)) params.view = viewOv;
+  applyView();
 
   newMatch();
   animate();
