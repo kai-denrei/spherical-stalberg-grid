@@ -5,6 +5,7 @@
 // distances radians of arc. Radius is 1 everywhere.
 import { generateSphereMesh, relax } from './grid.js';
 import { buildCellGraph } from './dungeon.js';
+import { makeCellIndex } from './cellindex.js';
 import { mulberry32 } from './rng.js';
 import {
   norm3, scale3, mean3, dot3, cross3, sub3, dist3, tangentBasis,
@@ -118,3 +119,126 @@ export function generatePlanet(params) {
   // pathological seed: give up on walls, bare planet is always connected
   return generatePlanet({ ...params, wallClusters: 0 });
 }
+
+// --- game -----------------------------------------------------------------
+export function createPlanetTankGame(p = {}) {
+  const params = {
+    seed: 1, points: 400, wallClusters: 5,
+    pointsToWin: 7, ricochet: false, aiLevel: 1, ...p,
+  };
+  const planet = generatePlanet(params);
+  const game = {
+    params, planet,
+    cellOf: makeCellIndex(planet.centers, planet.mesh.defaultSide),
+    rng: mulberry32((params.seed ^ 0x7ab1e7) >>> 0),
+    tanks: planet.spawns.map((s) => ({
+      pos: s.pos.slice(), head: s.head.slice(), state: 'alive',
+      dyingT: 0, invulnT: 0, knockDir: [0, 0, 0], blocked: false,
+    })),
+    shells: [null, null],
+    score: [0, 0], winner: -1, time: 0, events: [],
+    aiMem: makeAiMem(),
+  };
+  game.step = (dt, input) => step(game, dt, input);
+  return game;
+}
+
+function hitsWall(game, p) {
+  const margin = WALL_MARGIN_F * game.planet.mesh.defaultSide;
+  const ci = game.cellOf(p);
+  if (game.planet.walls.has(ci)) return true;
+  for (const nb of game.planet.adj[ci]) {
+    if (game.planet.walls.has(nb) && dist3(p, game.planet.centers[nb]) < margin) return true;
+  }
+  return false;
+}
+
+function blockedAt(game, i, p) {
+  if (hitsWall(game, p)) return true;
+  const o = game.tanks[1 - i];
+  return arcBetween(p, o.pos) < 2 * TANK_ANG;
+}
+
+function nearestBlockingWall(game, p) {
+  const ci = game.cellOf(p);
+  let best = null, bd = Infinity;
+  for (const c of [ci, ...game.planet.adj[ci]]) {
+    if (!game.planet.walls.has(c)) continue;
+    const d = dist3(p, game.planet.centers[c]);
+    if (d < bd) { bd = d; best = game.planet.centers[c]; }
+  }
+  return best;
+}
+
+// move along unit tangent dir by arc radians; on block, slide by
+// stripping the into-wall component (TD's pattern). Returns moved?
+function driveTank(game, i, dir, arc) {
+  const t = game.tanks[i];
+  const attempt = (d, a) => {
+    const axis = norm3(cross3(t.pos, d));
+    const np = norm3(rotAbout(t.pos, axis, a));
+    return blockedAt(game, i, np) ? null : { np, axis, a };
+  };
+  let mv = attempt(dir, arc);
+  if (!mv) {
+    const probeAxis = norm3(cross3(t.pos, dir));
+    const probe = norm3(rotAbout(t.pos, probeAxis, arc));
+    const w = nearestBlockingWall(game, probe);
+    const into = w ? tangentDir(t.pos, w) : null;
+    if (into) {
+      const slide = sub3(dir, scale3(into, dot3(dir, into)));
+      const m = Math.hypot(slide[0], slide[1], slide[2]);
+      if (m > 0.25) mv = attempt(scale3(slide, 1 / m), arc * m);
+    }
+  }
+  if (!mv) return false;
+  t.head = tangentAt(rotAbout(t.head, mv.axis, mv.a), mv.np);
+  t.pos = mv.np;
+  return true;
+}
+
+function updateTank(game, i, input, dt) {
+  const t = game.tanks[i];
+  if (t.invulnT > 0) t.invulnT -= dt;
+  if (t.state === 'dying') {
+    t.dyingT -= dt;
+    const kd = tangentAt(t.knockDir, t.pos);
+    if (Math.hypot(kd[0], kd[1], kd[2]) > 0.5) driveTank(game, i, kd, KNOCK_RATE * dt);
+    if (t.dyingT <= 0) respawnBoth(game);
+    return;
+  }
+  const spin = ((input.left ? 1 : 0) - (input.right ? 1 : 0)) * TURN_RATE * dt;
+  if (spin) t.head = tangentAt(rotAbout(t.head, t.pos, spin), t.pos);
+  t.blocked = false;
+  if (input.forward) t.blocked = !driveTank(game, i, t.head, DRIVE_RATE * dt);
+  else if (input.reverse) t.blocked = !driveTank(game, i, scale3(t.head, -1), REVERSE_RATE * dt);
+  if (input.fire && !game.shells[i]) fireShell(game, i);
+}
+
+function respawnBoth(game) {
+  for (let i = 0; i < 2; i++) {
+    const s = game.planet.spawns[i], t = game.tanks[i];
+    t.pos = s.pos.slice(); t.head = s.head.slice();
+    t.state = 'alive'; t.dyingT = 0; t.invulnT = INVULN_T;
+    t.knockDir = [0, 0, 0];
+    game.shells[i] = null;
+  }
+  game.events.push({ type: 'respawn' });
+}
+
+// player updates first, THEN the AI decides, THEN the AI updates — the
+// LOS that authorizes an AI shot is computed against final tick positions
+// (race fix ported from tanks.js).
+function step(game, dt, playerInput = {}) {
+  game.events.length = 0;
+  if (game.winner >= 0) return;
+  game.time += dt;
+  updateTank(game, 0, playerInput, dt);
+  updateTank(game, 1, aiStep(game, dt), dt);
+  for (let i = 0; i < 2; i++) updateShell(game, i, dt);
+}
+
+function fireShell() {}                    // replaced in Task 3
+function updateShell() {}                  // replaced in Task 3
+function makeAiMem() { return {}; }        // replaced in Task 5
+function aiStep() { return {}; }           // replaced in Task 5

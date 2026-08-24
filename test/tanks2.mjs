@@ -2,9 +2,9 @@
 // Pure module; no DOM, no three.js.
 import {
   rotAbout, tangentAt, tangentDir, arcBetween, generatePlanet,
-  TANK_ANG, TURRET_H,
+  createPlanetTankGame, TANK_ANG, TURRET_H, TURN_RATE, DRIVE_RATE, REVERSE_RATE, WALL_MARGIN_F,
 } from '../src/tanks2.js';
-import { dot3, len3, dist3 } from '../src/vec3.js';
+import { dot3, len3, dist3, cross3, norm3 } from '../src/vec3.js';
 
 let failures = 0;
 const check = (name, cond, detail = '') => {
@@ -54,6 +54,66 @@ console.log('planet:');
   const R = generatePlanet({ seed: 8, points: 400, wallClusters: 5 });
   check('seed changes walls', [...P.walls].join() !== [...R.walls].join());
   check('bare planet option', generatePlanet({ seed: 7, points: 400, wallClusters: 0 }).walls.size === 0);
+}
+
+console.log('kinematics:');
+const DT = 1 / 60;
+{
+  const g = createPlanetTankGame({ seed: 7, wallClusters: 0, aiLevel: 0 });
+  const t = g.tanks[0];
+  const h0 = t.head.slice();
+  g.step(DT, { left: true });
+  const turned = Math.atan2(dot3(cross3(h0, t.head), t.pos), dot3(h0, t.head));
+  check('turn rate exact + tangent', approx(turned, TURN_RATE * DT, 1e-6)
+    && approx(dot3(t.pos, t.head), 0, 1e-9));
+  const p0 = t.pos.slice();
+  g.step(DT, { forward: true });
+  check('drive rate exact', approx(arcBetween(p0, t.pos), DRIVE_RATE * DT, 1e-6));
+  const p1 = t.pos.slice();
+  g.step(DT, { reverse: true });
+  check('reverse half speed', REVERSE_RATE === DRIVE_RATE / 2
+    && approx(arcBetween(p1, t.pos), REVERSE_RATE * DT, 1e-6));
+}
+{
+  // orthonormality survives a long scripted run
+  const g = createPlanetTankGame({ seed: 7, wallClusters: 5, aiLevel: 1 });
+  for (let i = 0; i < 1000; i++) {
+    g.step(DT, { left: i % 7 < 3, forward: i % 3 !== 0, fire: i % 50 === 0 });
+  }
+  for (const t of g.tanks) {
+    check('pos stays unit', approx(len3(t.pos), 1, 1e-6));
+    check('head stays unit tangent', approx(len3(t.head), 1, 1e-6)
+      && approx(dot3(t.pos, t.head), 0, 1e-6));
+  }
+}
+{
+  // wall collision: drive straight at a cluster; never end inside margin
+  const g = createPlanetTankGame({ seed: 7, wallClusters: 5, aiLevel: 0 });
+  const t = g.tanks[0];
+  const wallC = [...g.planet.walls].map((w) => g.planet.centers[w]);
+  // aim at the nearest wall center
+  let target = wallC[0];
+  for (const w of wallC) if (dist3(w, t.pos) < dist3(target, t.pos)) target = w;
+  t.head = tangentDir(t.pos, target) ?? t.head;
+  let everBlocked = false;
+  const margin = WALL_MARGIN_F * g.planet.mesh.defaultSide;
+  let ok = true;
+  for (let i = 0; i < 60 * 12; i++) {
+    g.step(DT, { forward: true });
+    everBlocked = everBlocked || g.tanks[0].blocked;
+    for (const w of wallC) if (dist3(w, g.tanks[0].pos) < margin * 0.95) ok = false;
+  }
+  check('never inside wall margin', ok);
+  check('blocked flag fired at the wall', everBlocked);
+}
+{
+  // tank-tank separation on a bare planet
+  const g = createPlanetTankGame({ seed: 7, wallClusters: 0, aiLevel: 0 });
+  const [a, b] = g.tanks;
+  b.pos = rotAbout(a.pos, norm3(cross3(a.pos, a.head)), 0.2);
+  b.head = tangentAt(b.head, b.pos);
+  for (let i = 0; i < 60 * 4; i++) g.step(DT, { forward: true });
+  check('tank-tank holds 2·TANK_ANG', arcBetween(g.tanks[0].pos, g.tanks[1].pos) >= 2 * TANK_ANG - 1e-3);
 }
 
 if (failures > 0) { console.error(`\n${failures} failure(s)`); process.exit(1); }
