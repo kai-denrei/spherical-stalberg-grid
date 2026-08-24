@@ -4,7 +4,7 @@ import {
   CLASSIC_ARENAS, parseArena, arenaConnected, genArena,
   createTankGame, TANK_R, TURN_RATE, DRIVE_SPEED, REVERSE_SPEED,
   SHELL_SPEED, SHELL_RANGE_FRAC, SHELL_R, MAX_BOUNCES, DYING_T, INVULN_T,
-  hasLineOfSight,
+  hasLineOfSight, interceptPoint, bankShot,
 } from '../src/tanks.js';
 
 let failures = 0;
@@ -277,6 +277,76 @@ console.log('ai 1-2:');
     fired += g.events.filter((e) => e.type === 'fire' && e.tank === 1).length;
   }
   check('L1 fires blind in a maze', fired >= 3);
+}
+
+// --- AI L3/L4 -------------------------------------------------------------
+console.log('ai 3-4:');
+{
+  // shooter origin, target at (10,0) drifting (0,3), shell 11 u/s:
+  // t = 10/sqrt(112), aim = (10, 3t)
+  const p = interceptPoint(0, 0, 10, 0, 0, 3, 11);
+  const t = 10 / Math.sqrt(112);
+  check('intercept math exact', p && approx(p[0], 10, 1e-6) && approx(p[1], 3 * t, 1e-6));
+  check('intercept arrival times agree', approx(Math.hypot(p[0], p[1]), 11 * t, 1e-6));
+  check('no intercept on faster receding target', interceptPoint(0, 0, 10, 0, 20, 0, 11) === null);
+}
+{
+  // fixture: center wall (cols 12-13, rows 2..17) with an open lane on top.
+  // Bank off z=0: shooter (8.5,4.5) → bounce (13,0) → target (17.5,4.5).
+  const fixture = Array.from({ length: 20 }, (_, r) => {
+    let row = '.'.repeat(26);
+    if (r >= 2 && r <= 17) row = row.slice(0, 12) + '##' + row.slice(14);
+    if (r === 9) row = '..1' + row.slice(3, 22) + '2' + row.slice(23);
+    return row;
+  });
+  const a = parseArena(fixture);
+  check('fixture: direct LOS blocked', !hasLineOfSight(8.5, 4.5, 17.5, 4.5, a.blocks));
+  const bs = bankShot(8.5, 4.5, 17.5, 4.5, a);
+  check('bank shot found off top wall', !!bs, JSON.stringify(bs));
+  check('bounce point exact', bs && approx(bs.bounce[0], 13, 0.2) && approx(bs.bounce[1], 0, 1e-9));
+  check('aim is the mirrored target', bs && approx(bs.aim[0], 17.5, 1e-9) && approx(bs.aim[1], -4.5, 1e-9));
+}
+{
+  // L3 leads a perpendicular runner: shell direction ≠ direct bearing
+  const g = createTankGame({ seed: 3, arena: 'open', aiLevel: 3 });
+  g.tanks[0].heading = Math.PI / 2; // player runs downward, across the AI's view
+  // Prime the velocity estimate: step without firing first
+  for (let i = 0; i < 30; i++) g.step(DT, { forward: true });
+  let shell = null, bearingAtFire = 0;
+  for (let i = 0; i < 60 * 15 && !shell; i++) {
+    g.step(DT, { forward: true });
+    if (g.events.some((e) => e.type === 'fire' && e.tank === 1)) {
+      shell = g.shells[1];
+      bearingAtFire = Math.atan2(g.tanks[0].z - g.tanks[1].z, g.tanks[0].x - g.tanks[1].x);
+    }
+  }
+  const shellAngle = shell ? Math.atan2(shell.dz, shell.dx) : 0;
+  check('L3 fired', !!shell);
+  check('L3 leads the target', shell && Math.abs(shellAngle - bearingAtFire) > 0.1,
+    `lead ${Math.abs(shellAngle - bearingAtFire)}`);
+}
+{
+  // L3 never fires blind (same monitor as L2)
+  const g = createTankGame({ seed: 9, arena: 'maze', aiLevel: 3 });
+  let violations = 0;
+  for (let i = 0; i < 60 * 20; i++) {
+    g.step(DT, { right: i % 4 === 0, forward: true });
+    if (g.events.some((e) => e.type === 'fire' && e.tank === 1)
+      && !hasLineOfSight(g.tanks[1].x, g.tanks[1].z, g.tanks[0].x, g.tanks[0].z, g.arena.blocks)) {
+      violations++;
+    }
+  }
+  check('L3 only fires with LOS', violations === 0);
+}
+{
+  // L4 ambush: no LOS, ricochet off → holds position
+  const g = createTankGame({ seed: 3, arena: 'brackets', aiLevel: 4, ricochet: false });
+  g.tanks[0].x = 3, g.tanks[0].z = 2.5;   // player hidden behind the top-left bracket
+  g.tanks[1].x = 21; g.tanks[1].z = 13.5; // AI far side, no LOS
+  const { x, z } = g.tanks[1];
+  for (let i = 0; i < 60 * 3; i++) g.step(DT, {});
+  check('L4 ambushes (holds position without LOS)',
+    Math.hypot(g.tanks[1].x - x, g.tanks[1].z - z) < 0.5);
 }
 
 if (failures > 0) { console.error(`\n${failures} failure(s)`); process.exit(1); }

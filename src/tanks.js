@@ -354,6 +354,59 @@ export function hasLineOfSight(x1, z1, x2, z2, blocks) {
 // shrinks with level. All randomness from game.rng (deterministic).
 const AIM_ERR = [0, 0.25, 0.15, 0.06, 0.04];
 
+// first-arrival intercept of a constant-velocity target:
+// solve |target + v·t − shooter| = speed·t  →  a·t² + b·t + c = 0
+export function interceptPoint(sx, sz, tx, tz, tvx, tvz, speed) {
+  const dx = tx - sx, dz = tz - sz;
+  const a = tvx * tvx + tvz * tvz - speed * speed;
+  const b = 2 * (dx * tvx + dz * tvz);
+  const c = dx * dx + dz * dz;
+  let t = null;
+  if (Math.abs(a) < 1e-9) {
+    if (Math.abs(b) > 1e-9) t = -c / b;
+  } else {
+    const disc = b * b - 4 * a * c;
+    if (disc >= 0) {
+      const r = Math.sqrt(disc);
+      const roots = [(-b - r) / (2 * a), (-b + r) / (2 * a)].filter((v) => v > 1e-9);
+      if (roots.length) t = Math.min(...roots);
+    }
+  }
+  return t === null || t <= 0 ? null : [tx + tvx * t, tz + tvz * t];
+}
+
+// one-bounce solution off a perimeter wall: mirror the target across each
+// wall plane; the straight line to the mirror unfolds into the bank shot.
+export function bankShot(sx, sz, tx, tz, arena) {
+  const range = SHELL_RANGE_FRAC * arena.w;
+  const walls = [
+    { aim: [tx, -tz], axis: 'z', at: 0 },
+    { aim: [tx, 2 * arena.h - tz], axis: 'z', at: arena.h },
+    { aim: [-tx, tz], axis: 'x', at: 0 },
+    { aim: [2 * arena.w - tx, tz], axis: 'x', at: arena.w },
+  ];
+  for (const wl of walls) {
+    const [ax, az] = wl.aim;
+    let bx, bz;
+    if (wl.axis === 'z') {
+      const t = (wl.at - sz) / (az - sz);
+      if (!(t > 0 && t < 1)) continue;
+      bx = sx + (ax - sx) * t; bz = wl.at;
+      if (bx < 0 || bx > arena.w) continue;
+    } else {
+      const t = (wl.at - sx) / (ax - sx);
+      if (!(t > 0 && t < 1)) continue;
+      bz = sz + (az - sz) * t; bx = wl.at;
+      if (bz < 0 || bz > arena.h) continue;
+    }
+    if (Math.hypot(bx - sx, bz - sz) + Math.hypot(tx - bx, tz - bz) > range) continue;
+    if (!hasLineOfSight(sx, sz, bx, bz, arena.blocks)) continue;
+    if (!hasLineOfSight(bx, bz, tx, tz, arena.blocks)) continue;
+    return { aim: [ax, az], bounce: [bx, bz] };
+  }
+  return null;
+}
+
 function makeAiMem() {
   return { wanderT: 0, wanderH: 0, fireT: 1, strafeDir: 1, prevPX: null, prevPZ: null, pvx: 0, pvz: 0 };
 }
@@ -413,16 +466,39 @@ function aiStep(game, dt) {
   return input;
 }
 
-// L2 baseline: aim at the player's position, fire only with LOS.
-// Task 6 extends this with lead (L3) and bank shots (L4).
-function aiAimPoint(game, lvl, me, you) {
+// aim selection by level: L2 tracks, L3 leads, L4 adds bank shots.
+function aiAimPoint(game, lvl, me, you, mem) {
   const los = hasLineOfSight(me.x, me.z, you.x, you.z, game.arena.blocks);
-  return { x: you.x, z: you.z, canFire: los };
+  let x = you.x, z = you.z, canFire = los;
+  if (lvl >= 3 && los) {
+    const p = interceptPoint(me.x, me.z, you.x, you.z, mem.pvx, mem.pvz, SHELL_SPEED);
+    if (p) { x = p[0]; z = p[1]; }
+  }
+  if (lvl >= 4 && !los && game.params.ricochet) {
+    const bs = bankShot(me.x, me.z, you.x, you.z, game.arena);
+    if (bs) { x = bs.aim[0]; z = bs.aim[1]; canFire = true; }
+  }
+  return { x, z, canFire, los };
 }
 
-// L2 movement: advance when roughly facing the target.
-// Task 6 extends with spacing/slip (L3) and ambush (L4).
+// movement by level: L2 advances; L3+ keeps spacing and slips sideways
+// while its shell flies; L4 holds still (ambush) when it has no shot.
 function aiMove(game, lvl, input, ctx) {
-  const facing = Math.abs(angleDiff(ctx.bearing, ctx.me.heading));
-  input.forward = facing < 0.6;
+  const { me, bearing, dist, los, mem, rng } = ctx;
+  if (lvl === 2) {
+    input.forward = Math.abs(angleDiff(bearing, me.heading)) < 0.6;
+    return;
+  }
+  const hasShot = los || (lvl >= 4 && game.params.ricochet
+    && !!bankShot(me.x, me.z, game.tanks[0].x, game.tanks[0].z, game.arena));
+  if (lvl >= 4 && !hasShot) return; // ambush: hold, keep tracking
+  if (game.shells[1]) {
+    // own shell in flight → can't fire anyway: slip sideways
+    if (rng() < 0.005) mem.strafeDir = -mem.strafeDir;
+    input.strafeOverride = bearing + (Math.PI / 2) * mem.strafeDir;
+    input.forward = true;
+    return;
+  }
+  if (dist > 12) input.forward = true;
+  else if (dist < 6) input.reverse = true;
 }
