@@ -267,5 +267,17 @@ console.log('ai 1-2:');
   check('L2 only fires with LOS', violations === 0, `${violations} blind shots`);
 }
 
+{
+  // L1 must fire blind on its timer even when walls block LOS (regression:
+  // a fire-time LOS gate once suppressed these shots)
+  const g = createTankGame({ seed: 11, arena: 'maze', aiLevel: 1 });
+  let fired = 0;
+  for (let i = 0; i < 60 * 20; i++) {
+    g.step(DT, {});
+    fired += g.events.filter((e) => e.type === 'fire' && e.tank === 1).length;
+  }
+  check('L1 fires blind in a maze', fired >= 3);
+}
+
 if (failures > 0) { console.error(`\n${failures} failure(s)`); process.exit(1); }
 console.log('\ntank invariants hold');

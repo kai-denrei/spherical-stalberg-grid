@@ -229,8 +229,11 @@ function step(game, dt, playerInput = {}) {
   game.events.length = 0;
   if (game.winner >= 0) return;
   game.time += dt;
-  const inputs = [playerInput, aiStep(game, dt)];
-  for (let i = 0; i < 2; i++) updateTank(game, i, inputs[i] || {}, dt);
+  // Player moves first so the AI's LOS check (in aiStep) sees final tick
+  // positions — eliminates the player-motion skew that caused spurious
+  // LOS violations in the L2 invariant test.
+  updateTank(game, 0, playerInput, dt);
+  updateTank(game, 1, aiStep(game, dt), dt);
   for (let i = 0; i < 2; i++) updateShell(game, i, dt);
 }
 
@@ -258,8 +261,6 @@ export function createTankGame(p = {}) {
 function fireShell(game, i) {
   const t = game.tanks[i];
   if (t.state !== 'alive') return;
-  const other = game.tanks[1 - i];
-  if (i === 1 && !hasLineOfSight(t.x, t.z, other.x, other.z, game.arena.blocks)) return;
   const dx = Math.cos(t.heading), dz = Math.sin(t.heading);
   game.shells[i] = {
     x: t.x + dx * (TANK_R + SHELL_R + 0.05),
@@ -405,7 +406,10 @@ function aiStep(game, dt) {
   const dh = angleDiff(desired, me.heading);
   if (dh > 0.06) input.right = true;
   else if (dh < -0.06) input.left = true;
-  if (canFire && Math.abs(dh) < 0.12 && !game.shells[1]) input.fire = true;
+  if (canFire && Math.abs(dh) < 0.12 && !game.shells[1]) {
+    input.fire = true;
+    input.forward = input.reverse = false; // hold still: the LOS that authorized the shot stays true at fire time
+  }
   return input;
 }
 
