@@ -6,6 +6,34 @@ Demo links assume `npm run serve` (port 8144) or the
 
 ---
 
+## `7bae749` — The cushion that pinned the tank
+
+The operator felt it before the code showed it: the tank wedging in
+width-1 corridors, and if the shells were spent, wedging permanently.
+The suspicion — "we increased the hitbox to remove clipping, and an
+unintended consequence is getting stuck" — was exactly right. The
+wall cushion was born on the open heart battlefield, where walls come
+one clump at a time; in a corridor, opposing walls BOTH sit inside
+the 0.95-cell band, the sequential pushes zigzag, and a push that
+out-muscles the drive step is a pin, not a cushion.
+
+The fix is three principles rather than one number. Margins now adapt
+to passage width — a cell with ≤3 open neighbours is a hall, and
+halls trade a little visual overlap for guaranteed passability (and
+skip diagonal wall collection, which is what jams corners). Pushes
+are net-summed then applied once, so opposing walls cancel into
+centering instead of fighting. And the applied correction is capped
+per frame well below drive speed: a cushion corrects over a few
+frames; the moment it can outrun the player, it's a wall. Backstop
+for the pathological pocket: if a step and its slide are both
+blocked, the tank creeps toward its current cell's center — open
+ground by definition. Un-stickable, shells or none. The general
+lesson joins the log: any corrective force in a movement system
+needs a cap relative to player speed, or geometry will find the spot
+where correction becomes capture.
+
+---
+
 ## `7961a33` — Seven small honesties
 
 A tweak pass where each item is a tiny usability truth. The mode chip
