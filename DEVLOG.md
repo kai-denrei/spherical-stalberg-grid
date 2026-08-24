@@ -6,6 +6,17 @@ Demo links assume `npm run serve` (port 8144) or the
 
 ---
 
+## `bb6eabf` — Debris pays its own GPU bill
+
+Final-review sweep: each explosion cube now owns its material (the
+shared one was disposed with whichever cube died first — the
+below-ground early-exit made that reachable, leaving siblings on a
+dead material), and the shell contract gained its two missing
+assertions: the range budget spans bounces, and the third impact
+kills at the two-bounce cap — proven in a two-wall pocket fixture.
+
+---
+
 ## `c7071d2` — Gravity is local now
 
 Hit feedback ported to the sphere: the explosion cubes fall toward the
