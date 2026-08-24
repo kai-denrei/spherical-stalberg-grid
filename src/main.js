@@ -1,14 +1,14 @@
 // main.js — tab shell. Each tab lazily initializes its own renderer/scene the
 // first time it's shown and pauses (skips its loop body) while hidden.
 
-import { wireDevlogBadge } from './devlog.js?v=4c0ca2b1';
-import { initGridTab } from './grid-tab.js?v=4c0ca2b1';
-import { initMazeTab } from './maze-tab.js?v=4c0ca2b1';
-import { initOrganicTab } from './organic-tab.js?v=4c0ca2b1';
-import { initBattleTab } from './battle-tab.js?v=4c0ca2b1';
-import { initHeartTab } from './heart-tab.js?v=4c0ca2b1';
-import { initTdTab } from './td-tab.js?v=4c0ca2b1';
-import { initHowTab } from './how-tab.js?v=4c0ca2b1';
+import { wireDevlogBadge } from './devlog.js?v=31dca804';
+import { initGridTab } from './grid-tab.js?v=31dca804';
+import { initMazeTab } from './maze-tab.js?v=31dca804';
+import { initOrganicTab } from './organic-tab.js?v=31dca804';
+import { initBattleTab } from './battle-tab.js?v=31dca804';
+import { initHeartTab } from './heart-tab.js?v=31dca804';
+import { initTdTab } from './td-tab.js?v=31dca804';
+import { initHowTab } from './how-tab.js?v=31dca804';
 
 const tabs = {
   grid: { root: document.getElementById('tab-grid'), init: initGridTab, api: null },
@@ -44,9 +44,9 @@ for (const btn of document.querySelectorAll('#tabbar button')) {
 }
 
 // deep-link: /#maze or /#grid opens that tab directly.
-// Default landing is THE GAME — the heart tab.
+// Default landing is THE GAME — the TD tab.
 const initial = location.hash.slice(1);
-activate(tabs[initial] ? initial : 'heart');
+activate(tabs[initial] ? initial : 'td');
 
 // iOS: no double-tap zoom (the cruise gesture IS a double tap) and no
 // pinch zoom on the play surface. The universal touch-action rule in CSS

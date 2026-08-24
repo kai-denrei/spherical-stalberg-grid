@@ -306,6 +306,29 @@ html, body {
   text-shadow: 0 1px 3px rgba(0, 0, 0, 0.9);
 }
 
+/* the credit line is the LOUD line: money-orange, glowing */
+.hud-credit {
+  color: #ffb000;
+  font-size: 15px;
+  font-weight: bold;
+  text-shadow: 0 0 9px rgba(255, 176, 0, 0.55);
+}
+
+/* GAMEPLAY tips block — lives in the briefing and pause modals only */
+.tips-head {
+  margin-top: 10px;
+  font-size: 10px;
+  letter-spacing: 0.32em;
+  text-transform: uppercase;
+  opacity: 0.8;
+}
+.tips {
+  margin: 4px 0 10px;
+  font-size: 12px;
+  line-height: 1.7;
+  color: #c7d4dc;
+}
+
 /* sector-breach flash: the world opens in a blink of white (HK reveal) */
 #td-flash {
   position: fixed;

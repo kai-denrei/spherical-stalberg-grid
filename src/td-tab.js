@@ -19,17 +19,17 @@
 
 import * as THREE from '../vendor/three.module.js';
 import GUI from '../vendor/lil-gui.esm.js';
-import { generateSphereMesh, relax } from './grid.js?v=4c0ca2b1';
-import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=4c0ca2b1';
-import { mulberry32, randomSeed } from './rng.js?v=4c0ca2b1';
-import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3 } from './vec3.js?v=4c0ca2b1';
-import { CREATURES, waveJelly } from './creatures.js?v=4c0ca2b1';
-import { UNITS, UNIT_NAMES, buildUnit, makeOrbCloud, makeBulletCloud, makeDebris, makeDotBurst, makePortalCloud, makeHeartCloud, makeTowerUnit, makeDotEnemy } from './units.js?v=4c0ca2b1';
-import { LOOKS, LOOK_NAMES } from './looks.js?v=4c0ca2b1';
-import { makeCellIndex } from './cellindex.js?v=4c0ca2b1';
-import { CREATURE_TINTS, ENEMY_SPEC, INTROS } from './enemyspec.js?v=4c0ca2b1';
-import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval } from './towers.js?v=4c0ca2b1';
-import { makeEconomy, sellRefund } from './economy.js?v=4c0ca2b1';
+import { generateSphereMesh, relax } from './grid.js?v=31dca804';
+import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=31dca804';
+import { mulberry32, randomSeed } from './rng.js?v=31dca804';
+import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3 } from './vec3.js?v=31dca804';
+import { CREATURES, waveJelly } from './creatures.js?v=31dca804';
+import { UNITS, UNIT_NAMES, buildUnit, makeOrbCloud, makeBulletCloud, makeDebris, makeDotBurst, makePortalCloud, makeHeartCloud, makeTowerUnit, makeDotEnemy } from './units.js?v=31dca804';
+import { LOOKS, LOOK_NAMES } from './looks.js?v=31dca804';
+import { makeCellIndex } from './cellindex.js?v=31dca804';
+import { CREATURE_TINTS, ENEMY_SPEC, INTROS } from './enemyspec.js?v=31dca804';
+import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval } from './towers.js?v=31dca804';
+import { makeEconomy, sellRefund } from './economy.js?v=31dca804';
 
 export function initTdTab(root) {
   let active = false;
@@ -41,7 +41,7 @@ export function initTdTab(root) {
     rooms: 16,          // lane structure: rooms joined by wide corridors
     roomRadius: 4,
     extraCorridors: 8,
-    corridorWidth: 4, // WIDE lanes — HT's, broader
+    corridorWidth: 1, // narrow halls between ROOMS — rooms are the arenas
     obstacles: 0.2,     // fraction of the sphere left as wall clumps
     wallHeight: 0.03,
     relaxIters: 80,
@@ -785,6 +785,9 @@ export function initTdTab(root) {
   // (zones, triggers, SWAP/CAM) leaving only BUILD/MAP and the board
   function syncBuildUi() {
     root.classList.toggle('build', buildMode);
+    // the chip names the mode you'd SWITCH TO — build↔build makes no sense
+    const chip = root.querySelector('#td-pad-build');
+    if (chip) chip.textContent = buildMode ? 'TANK' : 'BUILD';
     if (!buildMode) closeShop();
   }
   function toggleMap() {
@@ -1267,6 +1270,16 @@ export function initTdTab(root) {
     `<div class="gname" style="color:${color}">${name}</div>` +
     `<div class="gdesc">${desc}</div></div>`;
 
+  // the how-to, in ONE place: shown at the beginning and while paused —
+  // never on the live HUD
+  const GAMEPLAY_TIPS =
+    `<div class="tips-head">gameplay</div>` +
+    `<div class="tips">` +
+    `drive: hold &and; · double-tap &and; = cruise · &or; stops<br>` +
+    `steer: the side zones · fire: &#9673; shell · &#8767; laser (overheats)<br>` +
+    `B = build/tank · M = map view · in BUILD tap HIGH GROUND to place towers<br>` +
+    `ESC pause · RAM the small ones · shells breach walls</div>`;
+
   // opening briefing: the pieces as cards, the ONE win condition, and two
   // clickable glossaries. The sim stays frozen until the player begins.
   function showBriefing() {
@@ -1281,6 +1294,7 @@ export function initTdTab(root) {
       glossCard('#ff5340', spriteShot('barbed', unitIcon('barbed', CREATURE_TINTS.barbed)), 'spiked reds', 'armored — ramming hurts YOU · shells only') +
       glossCard('#ffffff', spriteShot('portal', () => makePortalCloud({ body: 0xcfd8ff, hi: 0xffffff })), 'portals', 'the enemy sources · 3 shells each · dim as they die') +
       `</div>` +
+      GAMEPLAY_TIPS +
       `<b>WIN = DESTROY EVERY PORTAL.</b> reaching the heart wins nothing — it's home.<br>` +
       `<button class="msg-glenemy">enemy glossary</button> ` +
       `<button class="msg-glfriend">friendlies &amp; pickups</button><br>` +
@@ -1330,15 +1344,15 @@ export function initTdTab(root) {
     const alerts = (carryingRegen ? ' · ⬤ REGEN' : '')
       + (cannonHeat > 0 ? ' · cannon HOT' : '')
       + (laserOverheat ? ' · laser COOLING' : '');
-    statsEl.textContent =
+    // state words only — the how-to lives in the GAMEPLAY section of the
+    // briefing and pause modals. CREDIT is the loud line, in orange.
+    statsEl.innerHTML =
       `HEART ${'♥'.repeat(Math.max(0, heartHP)).padEnd(HEART_MAX, '·')}  YOU ♥${playerHP}  ✦${ammo}\n` +
-      `${eco.credit}c ×${eco.multiplier().toFixed(2)} · towers ${towers.length}\n` +
+      `<span class="hud-credit">${eco.credit}c ×${eco.multiplier().toFixed(2)}</span> · towers ${towers.length}\n` +
       `R${round} · wave ${wave} · hostiles ${alive} · portals ${spAlive}/${spawnPoints.length}${alerts}\n` +
       (buildMode
-        ? (anyHostiles() ? 'BUILD (war still on!) — B to fight · M map' : 'BUILD · frozen — B to fight · M map')
-        : (manualActive()
-          ? (cruise ? 'CRUISE — ▼/S stops' : 'MANUAL')
-          : 'auto — double-tap ▲/W to cruise') + ' · B build');
+        ? (anyHostiles() ? 'BUILD · war on' : 'BUILD · frozen')
+        : (manualActive() ? (cruise ? 'CRUISE' : 'MANUAL') : 'AUTO'));
     // diegetic shell rack: the 3×3 turret dots ARE the ammo counter —
     // neon white loaded, faded grey spent (allies stay full: infinite ammo)
     const dots = playerMesh && playerMesh.userData.ammoDots;
@@ -1356,7 +1370,7 @@ export function initTdTab(root) {
     paused = !paused;
     if (paused) {
       msgEl.innerHTML = `<div class="msg-head">transmission · paused</div>` +
-        `sector frozen<br>ESC resumes`;
+        `sector frozen<br>ESC resumes` + GAMEPLAY_TIPS;
       msgEl.classList.remove('hidden');
     } else {
       msgEl.classList.add('hidden');
@@ -1419,7 +1433,8 @@ export function initTdTab(root) {
     // towerCells would poison openNeighbors during board generation.
     round = 1;
     clearTowers();
-    eco = makeEconomy();
+    // opening purse: exactly a Rapid (70c) + a Slow (100c) — your first plan
+    eco = makeEconomy({ startCredit: 170 });
     mesh = generateSphereMesh({ seed: params.seed >>> 0, n: params.points, k: 12 });
     relax(mesh, { n_iters: params.relaxIters, PULL_RATE: 0.25 });
     dungeon = generateDungeon(mesh, {
@@ -1667,7 +1682,7 @@ export function initTdTab(root) {
     updateHud();
   }
 
-  const ENEMY_SPEED = 0.5; // cells per second toward the Heart, fodder pace
+  const ENEMY_SPEED = 0.85; // cells/s toward the Heart — FAST, per operator
   function updateEnemies(dt, tNow) {
     for (const e of enemies) {
       if (!e.alive) continue;
