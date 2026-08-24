@@ -6,6 +6,15 @@ Demo links assume `npm run serve` (port 8144) or the
 
 ---
 
+## `c7071d2` — Gravity is local now
+
+Hit feedback ported to the sphere: the explosion cubes fall toward the
+planet's center (local down = minus the surface normal), victims spin
+through their knockback slide, respawns blink. With that, planet combat
+is complete — same cartridge, rounder world.
+
+---
+
 ## `ff7de02` — Three ways to watch a planet fight
 
 Chase rolls the horizon under you; POV puts the curve terrifyingly
