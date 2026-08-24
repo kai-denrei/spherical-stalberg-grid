@@ -6,6 +6,20 @@ Demo links assume `npm run serve` (port 8144) or the
 
 ---
 
+## `7322998` — Hands-free forward, both tanks
+
+Double-tap the forward control on either tank tab and it latches
+auto-forward — the same cruise gesture the heart and TD tabs use,
+now on flat Combat and the planet. It frees a thumb for steering and
+firing, which is the whole point on mobile. Reverse or a second
+double-tap releases it; the up pad glows while it's on. Two guards make
+it robust: leading-edge detection so held-key repeat doesn't false-
+toggle, and an OR-then-restore around the step so a late keyup can't
+leave forward jammed on after cruise ends. Double-tap zoom stays
+suppressed by the global touch-action rule.
+
+---
+
 ## `bb6eabf` — Debris pays its own GPU bill
 
 Final-review sweep: each explosion cube now owns its material (the
