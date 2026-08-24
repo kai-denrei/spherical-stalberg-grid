@@ -6,6 +6,33 @@ Demo links assume `npm run serve` (port 8144) or the
 
 ---
 
+## `75420f1` — The reveal becomes a moment, the tank takes orders
+
+Two systems that make the game legible at its two timescales. The
+sector reveal stopped being a flash you might miss: clearing a round
+now pulls the camera to a full-planet frame aimed at the centroid of
+the newly-unsealed band — computed by diffing sealed→open across
+applySector — and burns that band's floors hot orange for the length
+of the beat, cooling to their true colors as build mode begins. You
+see the whole world, and you see exactly what you just earned. The
+war is frozen for the 3.2 seconds; strategy resumes where spectacle
+ends.
+
+And the auto-wanderer graduated from personality to SOLDIER: the
+directive system (dropdown, cycling chip, `AUTO · NAME` in the HUD)
+feeds one strong term into the existing exit-scoring — a chase/flee
+vector for AVOID and RAM, a descending BFS field for HOME and SEEK
+PORTAL (the portal field recomputes whenever one rises or falls).
+The same pass gave auto mode a trigger finger: an auto-gunner that
+shells the nearest threat in range, rate-limited by the cannon heat
+that already existed, aim-overridden through the same tangent
+flattening as the turret path. SAVE AMMO and RAM keep shells for the
+unrammable tier. The design through-line: high-level orders, not
+micro-management — the tank stays willful about the steps and
+obedient about the goal.
+
+---
+
 ## `7bae749` — The cushion that pinned the tank
 
 The operator felt it before the code showed it: the tank wedging in
