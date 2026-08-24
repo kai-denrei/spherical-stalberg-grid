@@ -4,9 +4,9 @@
 import * as THREE from '../vendor/three.module.js';
 import GUI from '../vendor/lil-gui.esm.js';
 import { OrbitControls } from '../vendor/OrbitControls.js';
-import { createPlanetTankGame, DYING_T } from './tanks2.js?v=bf2d1f78';
-import { mulberry32 } from './rng.js?v=bf2d1f78';
-import { norm3, scale3 } from './vec3.js?v=bf2d1f78';
+import { createPlanetTankGame, DYING_T } from './tanks2.js?v=ed801853';
+import { mulberry32 } from './rng.js?v=ed801853';
+import { norm3, scale3 } from './vec3.js?v=ed801853';
 
 const DT = 1 / 60;
 const TANK_SCALE = 0.08;
@@ -19,7 +19,7 @@ export function initTank2Tab(root) {
   let active = true;
   const params = {
     seed: 42, points: 400, wallClusters: 5, pointsToWin: 7,
-    ricochet: false, aiLevel: 1, view: 'chase',
+    ricochet: false, aiLevel: 1, view: 'orbit',
   };
 
   const container = root.querySelector('#tank2-app');
@@ -297,7 +297,20 @@ export function initTank2Tab(root) {
   }
 
   function updateCamera() {
-    if (params.view === 'orbit') { orbit.update(); return; }
+    if (params.view === 'orbit') {
+      // FOLLOW player 1: shift the orbit pivot AND the camera by the tank's
+      // motion each frame, so the red tank stays framed while the user keeps
+      // free rotate/zoom. (Without this the tank drives off the far side of
+      // the planet and out of view — unplayable.)
+      const tm = tankMeshes[0];
+      tm.updateMatrixWorld();
+      tm.getWorldPosition(_v1);
+      _v2.subVectors(_v1, orbit.target); // how far the tank moved since last frame
+      cam.position.add(_v2);             // carry the camera along, offset preserved
+      orbit.target.copy(_v1);
+      orbit.update();
+      return;
+    }
     const tm = tankMeshes[0];
     tm.updateMatrixWorld();
     const eye = params.view === 'pov' ? povEye : chaseEye;
@@ -311,7 +324,14 @@ export function initTank2Tab(root) {
     orbit.enabled = params.view === 'orbit';
     if (params.view === 'orbit') {
       cam.up.set(0, 1, 0);
-      if (cam.position.length() < 1.4) cam.position.setLength(2.6);
+      // frame player 1: pivot on the tank, camera ~2 units out along its
+      // surface normal. updateCamera then keeps it following the tank.
+      const tm = tankMeshes[0];
+      tm.updateMatrixWorld();
+      const tp = tm.getWorldPosition(new THREE.Vector3());
+      orbit.target.copy(tp);
+      cam.position.copy(tp).multiplyScalar(3);
+      orbit.update();
     }
   }
 
