@@ -6,6 +6,15 @@ Demo links assume `npm run serve` (port 8144) or the
 
 ---
 
+## `aa20820` — The arena earns its viewport
+
+The tank tab rendered in a 150px strip: #tank-app was absent from the
+app-container CSS rule (position:absolute inset:0) that every other tab
+sits in — the plan authored HUD styles but never the container itself.
+One selector-list addition; headless canvas went 1280×150 → 1280×813.
+
+---
+
 ## `db01069` — Death is eight cubes
 
 Hit feedback landed: victims spin through their knockback slide,
