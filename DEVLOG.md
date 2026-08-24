@@ -6,6 +6,27 @@ Demo links assume `npm run serve` (port 8144) or the
 
 ---
 
+## `7d4ec51` — Tempo is identity
+
+The operator caught a flattening: "make tower shots faster" had been
+implemented as one global projectile speed, which made everything
+equally fast — and therefore nothing fast. In HK, the tempo IS each
+tower's identity: singles and lasers snap, the slow field is a
+deliberate electric shock, the mortar is a slow heavy verdict. That
+contrast was the feel, and a single constant erased it.
+
+Speeds are now per-tower data in towers.js, HK's exact projSpeed
+values converted to cells/s: single 20, rapid 26, spread 15, homing
+13 (guided things should glide), sniper 42 — a streak that crosses
+its whole range in a sixth of a second — and the mortar dropped to
+3.5 with its arc raised, a full second of flight before the splash
+lands like a decision. Slow-field and laser stay hitscan. The test
+suite gained an ordering invariant (sniper faster than single,
+mortar slower than homing) so no future "speed pass" can flatten the
+identity again without a red test saying so.
+
+---
+
 ## `ad11600` — One key, in context
 
 Small QoL from HK's keyboard map: W or ↑ upgrades the selected tower.
