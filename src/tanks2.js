@@ -238,7 +238,82 @@ function step(game, dt, playerInput = {}) {
   for (let i = 0; i < 2; i++) updateShell(game, i, dt);
 }
 
-function fireShell() {}                    // replaced in Task 3
-function updateShell() {}                  // replaced in Task 3
+// --- line of sight --------------------------------------------------------
+// Visible iff (a) within the mutual horizon at turret height and (b) no
+// wall cell sits on the great-circle arc (sampled every half cell).
+const HORIZON = 2 * Math.acos(1 / (1 + TURRET_H));
+
+export function hasLineOfSight(game, a, b) {
+  const sep = arcBetween(a, b);
+  if (sep > HORIZON) return false;
+  if (sep < 1e-9) return true;
+  const axis = norm3(cross3(a, b));
+  const steps = Math.max(2, Math.ceil(sep / (game.planet.mesh.defaultSide * 0.5)));
+  for (let s = 1; s < steps; s++) {
+    const p = norm3(rotAbout(a, axis, (sep * s) / steps));
+    if (game.planet.walls.has(game.cellOf(p))) return false;
+  }
+  return true;
+}
+
+// --- shells ---------------------------------------------------------------
+function fireShell(game, i) {
+  const t = game.tanks[i];
+  if (t.state !== 'alive') return;
+  const axis = norm3(cross3(t.pos, t.head));
+  const muzzle = TANK_ANG + SHELL_ANG + 0.005;
+  const pos = norm3(rotAbout(t.pos, axis, muzzle));
+  game.shells[i] = {
+    pos, dir: tangentAt(rotAbout(t.head, axis, muzzle), pos),
+    traveled: 0, bounces: 0, lastBounceCell: -1, justFired: true,
+  };
+  game.events.push({ type: 'fire', tank: i });
+}
+
+function killShell(game, i) {
+  game.shells[i] = null;
+  game.events.push({ type: 'shellDead', tank: i });
+}
+
+function updateShell(game, i, dt) {
+  const s = game.shells[i];
+  if (!s) return;
+  const arc = SHELL_RATE * dt;
+  const axis = norm3(cross3(s.pos, s.dir));
+  const prevPos = s.pos, prevDir = s.dir;
+  s.pos = norm3(rotAbout(s.pos, axis, arc));
+  s.dir = tangentAt(rotAbout(s.dir, axis, arc), s.pos);
+  s.traveled += arc;
+  const ci = game.cellOf(s.pos);
+  // Bounce only if hitting a new wall cell; prevent re-bouncing the cell we just left,
+  // and prevent bouncing on the frame the shell was just fired
+  if (!s.justFired && game.planet.walls.has(ci) && ci !== s.lastBounceCell) {
+    if (!game.params.ricochet || s.bounces >= MAX_BOUNCES) return killShell(game, i);
+    s.bounces++;
+    s.pos = prevPos; // back out of the wall, then reflect in the tangent plane
+    const into = tangentDir(s.pos, game.planet.centers[ci]);
+    const d = tangentAt(prevDir, s.pos);
+    s.dir = into
+      ? tangentAt(sub3(d, scale3(into, 2 * dot3(d, into))), s.pos)
+      : scale3(d, -1);
+    s.lastBounceCell = ci;
+    game.events.push({ type: 'bounce', tank: i });
+  }
+  s.justFired = false;
+  if (s.traveled >= SHELL_RANGE) return killShell(game, i);
+  const v = game.tanks[1 - i];
+  if (v.state === 'alive' && v.invulnT <= 0
+    && arcBetween(s.pos, v.pos) < TANK_ANG + SHELL_ANG) {
+    game.shells[i] = null;
+    game.score[i]++;
+    v.state = 'dying'; v.dyingT = DYING_T;
+    v.knockDir = tangentAt(s.dir, v.pos);
+    game.events.push({ type: 'hit', by: i });
+    if (game.score[i] >= game.params.pointsToWin) {
+      game.winner = i;
+      game.events.push({ type: 'matchEnd', winner: i });
+    }
+  }
+}
 function makeAiMem() { return {}; }        // replaced in Task 5
 function aiStep() { return {}; }           // replaced in Task 5

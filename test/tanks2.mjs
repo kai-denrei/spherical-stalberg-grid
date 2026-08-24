@@ -3,6 +3,7 @@
 import {
   rotAbout, tangentAt, tangentDir, arcBetween, generatePlanet,
   createPlanetTankGame, TANK_ANG, TURRET_H, TURN_RATE, DRIVE_RATE, REVERSE_RATE, WALL_MARGIN_F,
+  hasLineOfSight, SHELL_RATE, SHELL_RANGE, SHELL_ANG, MAX_BOUNCES,
 } from '../src/tanks2.js';
 import { dot3, len3, dist3, cross3, norm3 } from '../src/vec3.js';
 
@@ -114,6 +115,82 @@ const DT = 1 / 60;
   b.head = tangentAt(b.head, b.pos);
   for (let i = 0; i < 60 * 4; i++) g.step(DT, { forward: true });
   check('tank-tank holds 2·TANK_ANG', arcBetween(g.tanks[0].pos, g.tanks[1].pos) >= 2 * TANK_ANG - 1e-3);
+}
+
+console.log('shells + LOS:');
+const stagePair = (sepRad, over = {}) => {
+  // bare planet; place tanks sepRad apart on a great circle, facing each other
+  const g = createPlanetTankGame({ seed: 7, wallClusters: 0, aiLevel: 0, ...over });
+  const a = g.tanks[0], b = g.tanks[1];
+  a.pos = [1, 0, 0]; a.head = [0, 0, 1];
+  b.pos = norm3(rotAbout(a.pos, [0, 1, 0], -sepRad)); // rotate +x toward +z
+  b.head = tangentDir(b.pos, a.pos);
+  a.head = tangentDir(a.pos, b.pos);
+  return g;
+};
+{
+  const g = stagePair(0.25);
+  check('LOS true near + clear', hasLineOfSight(g, g.tanks[0].pos, g.tanks[1].pos));
+  const g2 = stagePair(Math.PI / 3);
+  check('horizon blocks at 60° even with no walls',
+    !hasLineOfSight(g2, g2.tanks[0].pos, g2.tanks[1].pos));
+}
+{
+  // wall occlusion: inject a wall on the arc midpoint, inside the horizon
+  const g = stagePair(0.4);
+  const mid = norm3(rotAbout(g.tanks[0].pos, [0, 1, 0], -0.2));
+  g.planet.walls.add(g.cellOf(mid));
+  check('wall on the arc blocks LOS', !hasLineOfSight(g, g.tanks[0].pos, g.tanks[1].pos));
+}
+{
+  const g = stagePair(0.3);
+  g.step(DT, { fire: true });
+  const s = g.shells[0];
+  check('fire spawns shell: unit pos, unit tangent dir', !!s
+    && approx(len3(s.pos), 1, 1e-6) && approx(dot3(s.pos, s.dir), 0, 1e-6)
+    && g.events.some((e) => e.type === 'fire' && e.tank === 0));
+  g.step(DT, { fire: true });
+  check('one in flight', !g.events.some((e) => e.type === 'fire'));
+}
+{
+  // over-the-horizon hit: 60° apart, no LOS, shell arrives anyway
+  const g = stagePair(Math.PI / 3);
+  check('no LOS at fire time', !hasLineOfSight(g, g.tanks[0].pos, g.tanks[1].pos));
+  g.step(DT, { fire: true });
+  let hit = false;
+  for (let i = 0; i < 60 * 3 && !hit; i++) {
+    g.step(DT, {});
+    hit = g.events.some((e) => e.type === 'hit' && e.by === 0);
+  }
+  check('over-the-horizon hit lands', hit && g.score[0] === 1);
+}
+{
+  // range cap on a miss
+  const g = stagePair(Math.PI / 3);
+  g.tanks[0].head = tangentAt(rotAbout(g.tanks[0].head, g.tanks[0].pos, 0.5), g.tanks[0].pos); // aim off
+  g.step(DT, { fire: true });
+  let steps = 0;
+  while (g.shells[0] && steps < 60 * 6) { g.step(DT, {}); steps++; }
+  check('range-capped flight time', Math.abs(steps * DT - SHELL_RANGE / SHELL_RATE) < 0.15,
+    `flew ${(steps * DT).toFixed(2)}s`);
+}
+{
+  // ricochet: wall injected in the path reflects the shell
+  const g = stagePair(0.3, { ricochet: true });
+  const block = norm3(rotAbout(g.tanks[0].pos, [0, 1, 0], -0.12));
+  g.planet.walls.add(g.cellOf(block));
+  g.tanks[1].pos = rotAbout(g.tanks[1].pos, [0, 1, 0], -1.2); // move target out of the line
+  g.tanks[1].head = tangentAt(g.tanks[1].head, g.tanks[1].pos);
+  g.step(DT, { fire: true });
+  let bounced = false;
+  for (let i = 0; i < 60 * 2 && !bounced && g.shells[0]; i++) {
+    g.step(DT, {});
+    bounced = g.events.some((e) => e.type === 'bounce');
+  }
+  const s = g.shells[0];
+  check('ricochet bounces, dir stays unit tangent', bounced && !!s
+    && approx(len3(s.dir), 1, 1e-6) && approx(dot3(s.pos, s.dir), 0, 1e-6)
+    && s.bounces === 1);
 }
 
 if (failures > 0) { console.error(`\n${failures} failure(s)`); process.exit(1); }
