@@ -6,6 +6,18 @@ Demo links assume `npm run serve` (port 8144) or the
 
 ---
 
+## `ad11600` — One key, in context
+
+Small QoL from HK's keyboard map: W or ↑ upgrades the selected tower.
+The interesting part is what "selected" means and what it protects —
+the shortcut only fires with a selection context live (the tower's
+radial open in build mode, or a tower being watched in the bastion
+view), and it consumes the key there, so the same W keeps driving the
+tank everywhere else. Refusals flash their reason in the radial's
+note. Context-scoped rebinding: one key, two meanings, zero conflict.
+
+---
+
 ## `276af67` — Opening the door behind you
 
 The operator's note named the flaw precisely: sector reveals kept
