@@ -4,9 +4,9 @@
 import * as THREE from '../vendor/three.module.js';
 import GUI from '../vendor/lil-gui.esm.js';
 import { OrbitControls } from '../vendor/OrbitControls.js';
-import { createPlanetTankGame, DYING_T } from './tanks2.js?v=eb039d24';
-import { mulberry32 } from './rng.js?v=eb039d24';
-import { norm3, scale3 } from './vec3.js?v=eb039d24';
+import { createPlanetTankGame, DYING_T } from './tanks2.js?v=81c6bf62';
+import { mulberry32 } from './rng.js?v=81c6bf62';
+import { norm3, scale3 } from './vec3.js?v=81c6bf62';
 
 const DT = 1 / 60;
 const TANK_SCALE = 0.08;
@@ -275,7 +275,7 @@ export function initTank2Tab(root) {
   const _x = new THREE.Vector3(), _y = new THREE.Vector3(), _z = new THREE.Vector3();
   const _v1 = new THREE.Vector3(), _v2 = new THREE.Vector3(), _q = new THREE.Quaternion();
   const _fwd = new THREE.Vector3(), _tgt = new THREE.Vector3(), _axis = new THREE.Vector3();
-  let recentering = false; // orbit dead-zone follow: latched while swinging red back
+  let camLead = null; // orbit auto-lead tween: {fromDir, qDelta, dur, t} or null
 
   function orientTank(group, t) {
     _x.set(...t.head);          // barrel +x = heading
@@ -300,28 +300,39 @@ export function initTank2Tab(root) {
 
   function updateCamera() {
     if (params.view === 'orbit') {
-      // DEAD-ZONE follow: the planet spins freely under the camera and red
-      // roams the visible face — not welded to centre. Only when it drifts
-      // near the limb (about to leave frame) does the camera swing around
-      // the planet centre to bring it back toward the middle, then hold.
-      const tm = tankMeshes[0];
-      tm.updateMatrixWorld();
-      tm.getWorldPosition(_v1);
-      _tgt.copy(_v1).normalize();         // red's point on the unit sphere
-      _fwd.copy(cam.position).normalize(); // sphere point facing the camera
-      const ang = _fwd.angleTo(_tgt);
+      // LEAD follow: hold steady while red drives across the visible face;
+      // when it reaches the leading edge, commit ONE eased sweep that
+      // overshoots AHEAD along red's heading, dropping it near the back of
+      // the frame with most of the battleground in front — then hold again.
+      // (One committed animation, not per-frame nudges — those stuttered.)
+      const t0 = game.tanks[0];
       const dist = cam.position.length();
-      // angular radius of the visible near-face cap (grows as you zoom out)
       const limb = Math.acos(Math.min(0.999, 1 / Math.max(1.001, dist)));
-      if (ang > limb * 0.72) recentering = true;  // too close to the edge
-      if (ang < limb * 0.35) recentering = false; // comfortably back — release
-      if (recentering) {
-        _axis.crossVectors(_fwd, _tgt);
-        if (_axis.lengthSq() > 1e-8) {
-          _axis.normalize();
-          // swing the camera around the planet so the facing point eases
-          // toward red; capped per frame so it glides rather than snaps
-          cam.position.applyAxisAngle(_axis, Math.min(0.05, ang * 0.15));
+      if (camLead) {
+        camLead.t = Math.min(1, camLead.t + DT / camLead.dur);
+        const e = camLead.t * camLead.t * (3 - 2 * camLead.t); // smoothstep ease
+        _q.identity().slerp(camLead.qDelta, e);
+        cam.position.copy(camLead.fromDir).applyQuaternion(_q).multiplyScalar(dist);
+        if (camLead.t >= 1) camLead = null;
+      } else {
+        _fwd.copy(cam.position).normalize();       // F: point the camera faces
+        _tgt.set(t0.pos[0], t0.pos[1], t0.pos[2]); // P: red on the unit sphere
+        if (_fwd.angleTo(_tgt) > limb * 0.72) {
+          // tangent direction from red back toward F, vs its heading: only
+          // lead when red is driving AWAY from F (toward the leading edge),
+          // so a big overshoot doesn't instantly re-fire from the far side.
+          const dotFP = _fwd.dot(_tgt);
+          _axis.copy(_fwd).addScaledVector(_tgt, -dotFP).normalize(); // P->F tangent
+          _v1.set(t0.head[0], t0.head[1], t0.head[2]);                // heading
+          if (_v1.dot(_axis) < 0) {
+            _v2.copy(_tgt).cross(_v1).normalize();                    // great-circle axis
+            _axis.copy(_tgt).applyAxisAngle(_v2, limb * 0.9).normalize(); // lead point
+            camLead = {
+              fromDir: _fwd.clone(),
+              qDelta: new THREE.Quaternion().setFromUnitVectors(_fwd.clone(), _axis.clone()),
+              dur: 0.7, t: 0,
+            };
+          }
         }
       }
       orbit.update();
@@ -341,7 +352,7 @@ export function initTank2Tab(root) {
     if (params.view === 'orbit') {
       cam.up.set(0, 1, 0);
       orbit.target.set(0, 0, 0); // orbit the PLANET centre, not the tank
-      recentering = false;
+      camLead = null;
       // start with red front-and-centre, a planet-scale distance out
       const tm = tankMeshes[0];
       tm.updateMatrixWorld();
