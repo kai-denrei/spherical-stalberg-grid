@@ -35,6 +35,9 @@ check('classics connected', Object.values(CLASSIC_ARENAS).every(arenaConnected))
 check('parse throws without spawns', (() => {
   try { parseArena(['####', '####']); return false; } catch { return true; }
 })());
+check('parse throws on ragged rows', (() => {
+  try { parseArena(['..1.......', '..2']); return false; } catch { return true; }
+})());
 {
   const rows = genArena(7);
   check('proc: 26×20', rows.length === 20 && rows.every((r) => r.length === 26));
