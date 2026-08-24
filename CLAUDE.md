@@ -19,10 +19,14 @@ Public: https://kai-denrei.github.io/spherical-stalberg-grid/ (Pages,
 - After editing any `src/*.js`, HTML, or CSS: run `./scripts/bust.sh --quiet`
   (rewrites `?v=` tokens incl. ES-module imports). NEVER put `?v=` on
   `../vendor/` imports — a tokened vendor URL loads a second copy of three.js.
+  Bust output commits ATOMICALLY: stage everything it touched, never just
+  your own files — a partial commit ships stale import tokens.
 - `npm test` = Node invariant suites (grid topology, dungeon, creatures,
   units). Keep green; they don't cover the render layer.
 - Headless verification: Chrome with `--use-angle=swiftshader
   --enable-unsafe-swiftshader` (NOT `--disable-gpu`, it kills WebGL).
+  Console lines (e.g. the `?tick` state logs) only surface with
+  `--enable-logging=stderr` — without it they're absent, not broken.
   Virtual time does not advance `performance.now()` → use the URL hooks:
   `?tick=N` (simulate N seconds), `?walk=N`, `?points=`, `?look=`,
   `?walltops=`, `?creature=`, `?spawn=`, `?view=`, `?devlog=1`, `#tabname`.
