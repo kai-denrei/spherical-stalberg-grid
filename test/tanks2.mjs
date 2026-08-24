@@ -3,7 +3,7 @@
 import {
   rotAbout, tangentAt, tangentDir, arcBetween, generatePlanet,
   createPlanetTankGame, TANK_ANG, TURRET_H, TURN_RATE, DRIVE_RATE, REVERSE_RATE, WALL_MARGIN_F,
-  hasLineOfSight, SHELL_RATE, SHELL_RANGE, SHELL_ANG, MAX_BOUNCES,
+  hasLineOfSight, SHELL_RATE, SHELL_RANGE, SHELL_ANG, MAX_BOUNCES, DYING_T, INVULN_T,
 } from '../src/tanks2.js';
 import { dot3, len3, dist3, cross3, norm3 } from '../src/vec3.js';
 
@@ -192,6 +192,57 @@ const stagePair = (sepRad, over = {}) => {
   check('ricochet bounces, dir stays unit tangent', bounced && !!s
     && approx(len3(s.dir), 1, 1e-6) && approx(dot3(s.pos, s.dir), 0, 1e-6)
     && s.bounces === 1);
+}
+
+console.log('match flow:');
+{
+  const g = stagePair(0.25, { pointsToWin: 2 });
+  g.step(DT, { fire: true });
+  let ev = [];
+  for (let i = 0; i < 60 * 2 && !ev.some((e) => e.type === 'hit'); i++) {
+    g.step(DT, {});
+    ev.push(...g.events);
+  }
+  check('close-range hit scores', g.score[0] === 1 && ev.some((e) => e.type === 'hit' && e.by === 0));
+  check('victim dying with tangent knockDir', g.tanks[1].state === 'dying'
+    && approx(dot3(g.tanks[1].knockDir, g.tanks[1].pos), 0, 1e-6));
+  for (let i = 0; i < Math.ceil(DYING_T / DT) + 2; i++) g.step(DT, {});
+  check('respawn: both at spawns, invulnerable, shells cleared',
+    dist3(g.tanks[0].pos, g.planet.spawns[0].pos) < 1e-9
+    && dist3(g.tanks[1].pos, g.planet.spawns[1].pos) < 1e-9
+    && g.tanks[0].invulnT > 0 && g.tanks[1].invulnT > 0
+    && !g.shells[0] && !g.shells[1]);
+}
+{
+  const g = stagePair(0.25);
+  g.tanks[1].invulnT = INVULN_T;
+  g.step(DT, { fire: true });
+  let hit = false;
+  for (let i = 0; i < 60 * 3 && g.shells[0]; i++) { g.step(DT, {}); hit = hit || g.score[0] > 0; }
+  check('invulnerable tank cannot be hit', !hit && g.score[0] === 0);
+}
+{
+  const g = stagePair(0.25, { pointsToWin: 1 });
+  g.step(DT, { fire: true });
+  for (let i = 0; i < 60 * 2 && g.winner < 0; i++) g.step(DT, {});
+  check('match ends at pointsToWin', g.winner === 0);
+  const frozen = JSON.stringify(g.tanks);
+  g.step(DT, { forward: true, fire: true });
+  check('post-match frozen, events empty', JSON.stringify(g.tanks) === frozen && g.events.length === 0);
+}
+{
+  const snap = (g) => JSON.stringify([g.tanks, g.shells, g.score, g.winner, g.time],
+    (k, v) => (typeof v === 'number' ? Math.round(v * 1e9) / 1e9 : v));
+  const script = (i) => ({
+    left: i % 97 < 20, right: i % 89 < 15, forward: i % 7 !== 0,
+    reverse: i % 131 < 5, fire: i % 45 === 0,
+  });
+  const run = () => {
+    const g = createPlanetTankGame({ seed: 77, wallClusters: 5, aiLevel: 1, ricochet: true });
+    for (let i = 0; i < 600; i++) g.step(DT, script(i));
+    return snap(g);
+  };
+  check('deterministic replay (10s, L1, ricochet)', run() === run());
 }
 
 if (failures > 0) { console.error(`\n${failures} failure(s)`); process.exit(1); }
