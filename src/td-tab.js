@@ -19,17 +19,17 @@
 
 import * as THREE from '../vendor/three.module.js';
 import GUI from '../vendor/lil-gui.esm.js';
-import { generateSphereMesh, relax } from './grid.js?v=11736ea8';
-import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=11736ea8';
-import { mulberry32, randomSeed } from './rng.js?v=11736ea8';
-import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3 } from './vec3.js?v=11736ea8';
-import { CREATURES, waveJelly } from './creatures.js?v=11736ea8';
-import { UNITS, UNIT_NAMES, buildUnit, makeOrbCloud, makeBulletCloud, makeDebris, makeDotBurst, makePortalCloud, makeHeartCloud, makeTowerUnit, makeDotEnemy } from './units.js?v=11736ea8';
-import { LOOKS, LOOK_NAMES } from './looks.js?v=11736ea8';
-import { makeCellIndex } from './cellindex.js?v=11736ea8';
-import { CREATURE_TINTS, ENEMY_SPEC, INTROS } from './enemyspec.js?v=11736ea8';
-import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval } from './towers.js?v=11736ea8';
-import { makeEconomy, sellRefund } from './economy.js?v=11736ea8';
+import { generateSphereMesh, relax } from './grid.js?v=03650f29';
+import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=03650f29';
+import { mulberry32, randomSeed } from './rng.js?v=03650f29';
+import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3 } from './vec3.js?v=03650f29';
+import { CREATURES, waveJelly } from './creatures.js?v=03650f29';
+import { UNITS, UNIT_NAMES, buildUnit, makeOrbCloud, makeBulletCloud, makeDebris, makeDotBurst, makePortalCloud, makeHeartCloud, makeTowerUnit, makeDotEnemy } from './units.js?v=03650f29';
+import { LOOKS, LOOK_NAMES } from './looks.js?v=03650f29';
+import { makeCellIndex } from './cellindex.js?v=03650f29';
+import { CREATURE_TINTS, ENEMY_SPEC, INTROS } from './enemyspec.js?v=03650f29';
+import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval } from './towers.js?v=03650f29';
+import { makeEconomy, sellRefund } from './economy.js?v=03650f29';
 
 export function initTdTab(root) {
   let active = false;
@@ -196,18 +196,34 @@ export function initTdTab(root) {
   let tdFullTags = null;  // the true world, pre-sealing
   let tdFullDist = null;  // heart-distance over the full world
   let tdMaxD = 0;
-  const SECTOR_FRAC = (r) => Math.min(1, 0.25 + 0.2 * (r - 1)); // r1 25% … r5 all
+  // PRE-DECIDED DIRECTIONAL SECTORS: 1 = the inner disk around the Heart;
+  // 2..5 = four azimuth lobes, opening in OPPOSITE-ALTERNATING order —
+  // the second reveal opens BEHIND the first (south after north), the
+  // third and fourth take the perpendicular pair. Expansion sweeps AROUND
+  // the planet instead of running deeper down lanes already cleared.
+  let tdSectorId = null; // per-cell sector number (1..5); 6 = never (walls)
   const introCount = () => Math.min(INTROS.length, 2 + 2 * round); // r1=4 types
   // seal/unseal to the current round's fraction; optionally re-pick the
   // player start (only at run start — expansions don't teleport you)
   function applySector(resetSpawn = false) {
-    const cut = tdMaxD * SECTOR_FRAC(round);
     for (let i = 0; i < dungeon.tags.length; i++) {
-      dungeon.tags[i] = (tdFullTags[i] !== BLOCKED && tdFullDist[i] > cut)
-        ? BLOCKED : tdFullTags[i];
+      dungeon.tags[i] = (tdFullTags[i] !== BLOCKED && tdSectorId[i] <= round)
+        ? tdFullTags[i] : BLOCKED;
     }
-    dungeon.distToHeart = bfsDist(graph.adj, [dungeon.heart],
-      (i) => dungeon.tags[i] !== BLOCKED && !towerCells.has(i));
+    let d = bfsDist(graph.adj, [dungeon.heart],
+      (i) => dungeon.tags[i] !== BLOCKED);
+    // lanes wander across lobe borders: any opened cell the Heart cannot
+    // reach yet belongs with a future reveal — seal it back for now
+    // (recomputed from scratch each round, so it reopens with its lobe)
+    for (let i = 0; i < dungeon.tags.length; i++) {
+      if (dungeon.tags[i] !== BLOCKED && d[i] === -1) dungeon.tags[i] = BLOCKED;
+    }
+    dungeon.distToHeart = d;
+    {
+      let n = 0;
+      for (let i = 0; i < dungeon.tags.length; i++) if (dungeon.tags[i] !== BLOCKED) n++;
+      console.log(`sector ${round}: ${n} open cells`);
+    }
     if (resetSpawn) {
       let sp = -1, bd = -1;
       for (let i = 0; i < dungeon.tags.length; i++) {
@@ -1640,6 +1656,59 @@ export function initTdTab(root) {
     tdMaxD = 0;
     for (let i = 0; i < dungeon.tags.length; i++) {
       if (tdFullTags[i] !== BLOCKED) tdMaxD = Math.max(tdMaxD, tdFullDist[i]);
+    }
+    // carve the sector map. Raw azimuth wedges fail on a lane world
+    // (corridors cross wedge borders and re-seal as unreachable), and
+    // one-gate-per-compass-point collapses when few lanes exit the disk.
+    // So: ITERATIVE DIRECTIONAL GROWTH. Each sector claims an equal
+    // share of the remaining land, grown breadth-first from a frontier
+    // seed picked in its compass direction — sector 2 one way, sector 3
+    // BEHIND it, sectors 4/5 the perpendicular pair. Seeds sit on the
+    // already-open frontier, so every sector is connected by
+    // construction; the applySector re-seal stays as a safety net.
+    tdSectorId = new Int8Array(dungeon.tags.length).fill(6);
+    {
+      const C = dungeon.tags.length;
+      const h = graph.normals[dungeon.heart];
+      const ref = Math.abs(h[1]) < 0.9 ? [0, 1, 0] : [1, 0, 0];
+      const t1 = norm3(cross3(h, ref));
+      const t2 = cross3(h, t1);
+      const cut1 = tdMaxD * 0.3;
+      const open = (i) => tdFullTags[i] !== BLOCKED;
+      for (let i = 0; i < C; i++) {
+        if (open(i) && tdFullDist[i] <= cut1) tdSectorId[i] = 1;
+      }
+      const beyond = [];
+      for (let i = 0; i < C; i++) if (open(i) && tdSectorId[i] === 6) beyond.push(i);
+      const unassigned = new Set(beyond);
+      const dirs = [t1, scale3(t1, -1), t2, scale3(t2, -1)]; // fwd, BEHIND, side, side
+      for (let r = 2; r <= 5; r++) {
+        const share = r === 5 ? unassigned.size : Math.ceil(beyond.length / 4);
+        const dq = dirs[r - 2];
+        let seed = -1, bs = -Infinity;
+        for (const i of unassigned) {
+          // frontier: touches land that will already be open before round r
+          if (!graph.adj[i].some((nb) => open(nb) && !unassigned.has(nb))) continue;
+          const sc = dot3(graph.centers[i], dq);
+          if (sc > bs) { bs = sc; seed = i; }
+        }
+        if (seed === -1) break;
+        const q2 = [seed];
+        unassigned.delete(seed);
+        tdSectorId[seed] = r;
+        let claimed = 1;
+        for (let head = 0; head < q2.length && claimed < share; head++) {
+          for (const nb of graph.adj[q2[head]]) {
+            if (!unassigned.has(nb)) continue;
+            unassigned.delete(nb);
+            tdSectorId[nb] = r;
+            q2.push(nb);
+            claimed++;
+            if (claimed >= share) break;
+          }
+        }
+      }
+      for (const i of unassigned) tdSectorId[i] = 5; // stragglers ride the last reveal
     }
     applySector(true);
     cellIndex = makeCellIndex(graph.centers, cellSide * 1.7);
