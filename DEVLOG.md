@@ -6,6 +6,21 @@ Demo links assume `npm run serve` (port 8144) or the
 
 ---
 
+## `3e1ca8c` — The gunner that shoots at where you were going
+
+The planet AI ladder is in. L1–L3 port straight over (wander; track and
+fire on sight; lead the target — the intercept solves on the sphere by
+iterating flight-time against the target's angular velocity, three
+rounds, converges to well under a cell). L4 could not port: bank shots
+need mirror walls and a sphere has none. Its replacement is native to
+the geometry — shells follow the surface, so L4 keeps a track of your
+last seen position and velocity, extrapolates it along its great circle
+while you hide behind the curve, and fires at the ghost. No line of
+sight, no warning, just artillery from beyond the horizon. Ambush
+unchanged: no shot worth taking, no movement worth making.
+
+---
+
 ## `ab2a787` — Combat, bent around a sphere
 
 The planet tank core is complete and Node-tested: a ~400-cell relaxed
