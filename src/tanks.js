@@ -258,6 +258,8 @@ export function createTankGame(p = {}) {
 function fireShell(game, i) {
   const t = game.tanks[i];
   if (t.state !== 'alive') return;
+  const other = game.tanks[1 - i];
+  if (i === 1 && !hasLineOfSight(t.x, t.z, other.x, other.z, game.arena.blocks)) return;
   const dx = Math.cos(t.heading), dz = Math.sin(t.heading);
   game.shells[i] = {
     x: t.x + dx * (TANK_R + SHELL_R + 0.05),
@@ -325,5 +327,98 @@ function updateShell(game, i, dt) {
   }
 }
 
-function makeAiMem() { return {}; }        // replaced in Task 5
-function aiStep() { return {}; }           // replaced in Task 5
+// --- line of sight --------------------------------------------------------
+function segHitsAABB(x1, z1, x2, z2, b) {
+  const dx = x2 - x1, dz = z2 - z1;
+  let t0 = 0, t1 = 1;
+  for (const [p, d, lo, hi] of [[x1, dx, b.minX, b.maxX], [z1, dz, b.minZ, b.maxZ]]) {
+    if (Math.abs(d) < 1e-12) { if (p < lo || p > hi) return false; continue; }
+    let a = (lo - p) / d, c = (hi - p) / d;
+    if (a > c) [a, c] = [c, a];
+    t0 = Math.max(t0, a); t1 = Math.min(t1, c);
+    if (t0 > t1) return false;
+  }
+  return true;
+}
+
+export function hasLineOfSight(x1, z1, x2, z2, blocks) {
+  for (const b of blocks) if (segHitsAABB(x1, z1, x2, z2, b)) return false;
+  return true;
+}
+
+// --- AI -------------------------------------------------------------------
+// Levels: 1 Drunk (wander + timed blind shots), 2 Hunter (track + LOS-gated
+// shots), 3 Marksman (lead + spacing + slip while shell flies, Task 6),
+// 4 Bank-shot (L3 + ricochet solutions + ambush, Task 6). Aim error
+// shrinks with level. All randomness from game.rng (deterministic).
+const AIM_ERR = [0, 0.25, 0.15, 0.06, 0.04];
+
+function makeAiMem() {
+  return { wanderT: 0, wanderH: 0, fireT: 1, strafeDir: 1, prevPX: null, prevPZ: null, pvx: 0, pvz: 0 };
+}
+
+function angleDiff(a, b) {
+  let d = (a - b) % (2 * Math.PI);
+  if (d > Math.PI) d -= 2 * Math.PI;
+  if (d < -Math.PI) d += 2 * Math.PI;
+  return d;
+}
+
+function aiStep(game, dt) {
+  const lvl = game.params.aiLevel | 0;
+  if (lvl <= 0) return {};
+  const me = game.tanks[1], you = game.tanks[0];
+  const mem = game.aiMem, rng = game.rng;
+  if (me.state !== 'alive') return {};
+
+  // player-velocity estimate (L3+ lead aim; cheap to keep always-on)
+  if (mem.prevPX !== null && dt > 0) {
+    mem.pvx = (you.x - mem.prevPX) / dt;
+    mem.pvz = (you.z - mem.prevPZ) / dt;
+  }
+  mem.prevPX = you.x; mem.prevPZ = you.z;
+
+  const input = {};
+  const bearing = Math.atan2(you.z - me.z, you.x - me.x);
+  const los = hasLineOfSight(me.x, me.z, you.x, you.z, game.arena.blocks);
+  const dist = Math.hypot(you.x - me.x, you.z - me.z);
+  let desired, canFire = false;
+
+  if (lvl === 1) {
+    mem.wanderT -= dt;
+    if (mem.wanderT <= 0 || me.blocked) {
+      mem.wanderT = 1.5 + rng() * 2;
+      mem.wanderH = rng() * Math.PI * 2;
+    }
+    desired = mem.wanderH;
+    input.forward = true;
+    mem.fireT -= dt;
+    if (mem.fireT <= 0 && !game.shells[1]) { input.fire = true; mem.fireT = 1 + rng() * 2; }
+  } else {
+    const aim = aiAimPoint(game, lvl, me, you, mem);
+    canFire = aim.canFire;
+    desired = Math.atan2(aim.z - me.z, aim.x - me.x) + (rng() - 0.5) * 2 * AIM_ERR[lvl];
+    aiMove(game, lvl, input, { me, bearing, dist, los, mem, rng });
+    if (input.strafeOverride !== undefined) { desired = input.strafeOverride; canFire = false; delete input.strafeOverride; }
+  }
+
+  const dh = angleDiff(desired, me.heading);
+  if (dh > 0.06) input.right = true;
+  else if (dh < -0.06) input.left = true;
+  if (canFire && Math.abs(dh) < 0.12 && !game.shells[1]) input.fire = true;
+  return input;
+}
+
+// L2 baseline: aim at the player's position, fire only with LOS.
+// Task 6 extends this with lead (L3) and bank shots (L4).
+function aiAimPoint(game, lvl, me, you) {
+  const los = hasLineOfSight(me.x, me.z, you.x, you.z, game.arena.blocks);
+  return { x: you.x, z: you.z, canFire: los };
+}
+
+// L2 movement: advance when roughly facing the target.
+// Task 6 extends with spacing/slip (L3) and ambush (L4).
+function aiMove(game, lvl, input, ctx) {
+  const facing = Math.abs(angleDiff(ctx.bearing, ctx.me.heading));
+  input.forward = facing < 0.6;
+}

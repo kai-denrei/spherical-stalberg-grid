@@ -4,6 +4,7 @@ import {
   CLASSIC_ARENAS, parseArena, arenaConnected, genArena,
   createTankGame, TANK_R, TURN_RATE, DRIVE_SPEED, REVERSE_SPEED,
   SHELL_SPEED, SHELL_RANGE_FRAC, SHELL_R, MAX_BOUNCES, DYING_T, INVULN_T,
+  hasLineOfSight,
 } from '../src/tanks.js';
 
 let failures = 0;
@@ -220,6 +221,50 @@ const fireAndResolve = (g) => {
     return snap(g);
   };
   check('deterministic replay (10s, AI L1, ricochet)', run() === run());
+}
+
+// --- AI L1/L2 + LOS -------------------------------------------------------
+console.log('ai 1-2:');
+{
+  const a = parseArena(CLASSIC_ARENAS.brackets);
+  check('LOS clear along empty lane', hasLineOfSight(7, 5.5, 19, 5.5, a.blocks));
+  check('LOS blocked by side bracket', !hasLineOfSight(2.5, 5.5, 23.5, 5.5, a.blocks));
+  check('LOS blocked by center bar', !hasLineOfSight(2.5, 9.5, 23.5, 9.5, a.blocks));
+}
+{
+  const g = createTankGame({ seed: 5, arena: 'open', aiLevel: 1 });
+  const { x, z } = g.tanks[1];
+  let fired = 0;
+  for (let i = 0; i < 60 * 20; i++) {
+    g.step(DT, {});
+    fired += g.events.filter((e) => e.type === 'fire' && e.tank === 1).length;
+  }
+  const moved = Math.hypot(g.tanks[1].x - x, g.tanks[1].z - z);
+  check('L1 wanders', moved > 2);
+  check('L1 fires on a timer', fired >= 3);
+}
+{
+  const g = createTankGame({ seed: 5, arena: 'open', aiLevel: 2 });
+  for (let i = 0; i < 60 * 4; i++) g.step(DT, {});
+  const me = g.tanks[1], you = g.tanks[0];
+  const bearing = Math.atan2(you.z - me.z, you.x - me.x);
+  let d = (bearing - me.heading) % (2 * Math.PI);
+  if (d > Math.PI) d -= 2 * Math.PI;
+  if (d < -Math.PI) d += 2 * Math.PI;
+  check('L2 turns toward the player', Math.abs(d) < 0.5, `off by ${d}`);
+}
+{
+  // L2 never fires without line-of-sight (maze, 30 simulated seconds)
+  const g = createTankGame({ seed: 9, arena: 'maze', aiLevel: 2 });
+  let violations = 0;
+  for (let i = 0; i < 60 * 30; i++) {
+    g.step(DT, { left: i % 3 === 0, forward: true }); // player circles as bait
+    if (g.events.some((e) => e.type === 'fire' && e.tank === 1)
+      && !hasLineOfSight(g.tanks[1].x, g.tanks[1].z, g.tanks[0].x, g.tanks[0].z, g.arena.blocks)) {
+      violations++;
+    }
+  }
+  check('L2 only fires with LOS', violations === 0, `${violations} blind shots`);
 }
 
 if (failures > 0) { console.error(`\n${failures} failure(s)`); process.exit(1); }
