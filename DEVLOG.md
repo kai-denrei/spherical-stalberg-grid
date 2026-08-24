@@ -6,6 +6,35 @@ Demo links assume `npm run serve` (port 8144) or the
 
 ---
 
+## `276af67` — Opening the door behind you
+
+The operator's note named the flaw precisely: sector reveals kept
+opening DEEPER — past the frontier you'd just fought across — because
+concentric distance rings can only ever grow outward. The ask: south
+if the last reveal was north, east if it was west. Two schemes died
+before the third worked, and the corpses are instructive. Raw azimuth
+wedges fail on a lane world: a winding width-1 corridor crosses wedge
+borders constantly, so everything past the first crossing re-seals as
+unreachable — sectors 1 through 3 rendered identically. Gates at four
+compass points feeding a multi-source BFS fail differently: when only
+a couple of lanes exit the starting disk, the gates collapse onto the
+same exits and two sectors own zero cells. The per-sector open-cell
+log caught both — numbers, not squinting at screenshots.
+
+The scheme that works is iterative directional growth: each sector
+claims an equal share of the remaining land, grown breadth-first from
+a seed chosen on the already-open frontier in that sector's compass
+direction — one way, then BEHIND, then the perpendicular pair.
+Connectivity is by construction (seeds touch open land), balance is
+by construction (equal shares), and direction is honored at the seed
+even when lane topology makes the growth snake. 146 → 455 → 764 →
+1073 → 1380 open cells, four equal reveals, each somewhere new. The
+meta-lesson: on graph worlds, geometric partitions (rings, wedges,
+Voronoi gates) keep losing to grown partitions — grow the thing you
+need connected, and connectivity stops being a constraint to check.
+
+---
+
 ## `e3f6499` — The bastion view, and a slow you can see
 
 The camera family grew its defensive seat: BASTION, third in the V
