@@ -19,17 +19,17 @@
 
 import * as THREE from '../vendor/three.module.js';
 import GUI from '../vendor/lil-gui.esm.js';
-import { generateSphereMesh, relax } from './grid.js?v=3f3afc0a';
-import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=3f3afc0a';
-import { mulberry32, randomSeed } from './rng.js?v=3f3afc0a';
-import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3 } from './vec3.js?v=3f3afc0a';
-import { CREATURES, waveJelly } from './creatures.js?v=3f3afc0a';
-import { UNITS, UNIT_NAMES, buildUnit, makeOrbCloud, makeBulletCloud, makeDebris, makeDotBurst, makePortalCloud, makeHeartCloud, makeTowerUnit, makeDotEnemy } from './units.js?v=3f3afc0a';
-import { LOOKS, LOOK_NAMES } from './looks.js?v=3f3afc0a';
-import { makeCellIndex } from './cellindex.js?v=3f3afc0a';
-import { CREATURE_TINTS, ENEMY_SPEC, INTROS } from './enemyspec.js?v=3f3afc0a';
-import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval } from './towers.js?v=3f3afc0a';
-import { makeEconomy, sellRefund } from './economy.js?v=3f3afc0a';
+import { generateSphereMesh, relax } from './grid.js?v=dd25bece';
+import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=dd25bece';
+import { mulberry32, randomSeed } from './rng.js?v=dd25bece';
+import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3 } from './vec3.js?v=dd25bece';
+import { CREATURES, waveJelly } from './creatures.js?v=dd25bece';
+import { UNITS, UNIT_NAMES, buildUnit, makeOrbCloud, makeBulletCloud, makeDebris, makeDotBurst, makePortalCloud, makeHeartCloud, makeTowerUnit, makeDotEnemy } from './units.js?v=dd25bece';
+import { LOOKS, LOOK_NAMES } from './looks.js?v=dd25bece';
+import { makeCellIndex } from './cellindex.js?v=dd25bece';
+import { CREATURE_TINTS, ENEMY_SPEC, INTROS } from './enemyspec.js?v=dd25bece';
+import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval } from './towers.js?v=dd25bece';
+import { makeEconomy, sellRefund } from './economy.js?v=dd25bece';
 
 export function initTdTab(root) {
   let active = false;
@@ -557,6 +557,10 @@ export function initTdTab(root) {
     const topFill = mode === 'black' ? [0, 0, 0]
       : mode === 'dim' ? [baseTop[0] * 0.45, baseTop[1] * 0.45, baseTop[2] * 0.45]
       : baseTop;
+    // TD's buildable-frontier read: in black mode, wall tops that BORDER a
+    // hallway glow dim — exactly the cells towers may mount — while the
+    // interior wall mass stays void. The map itself teaches where to build.
+    const frontierTop = [baseTop[0] * 0.5, baseTop[1] * 0.5, baseTop[2] * 0.5];
     const topJitter = mode === 'black' ? 0 : 1;
     // floors: open cells at the surface
     const fPos = [], fCol = [], ePos = [], eColA = [], tPos = [], tColA = [];
@@ -604,7 +608,9 @@ export function initTdTab(root) {
       const q = quads[ci];
       const top = q.map((vi) => scale3(vertices[vi], H));
       const j = (jr() - 0.5) * 0.08 * look().jitter;
-      pushQuad(top[0], top[1], top[2], top[3], topFill, j * topJitter);
+      const nearHall = mode === 'black'
+        && graph.adj[ci].some((nb) => dungeon.tags[nb] !== BLOCKED);
+      pushQuad(top[0], top[1], top[2], top[3], nearHall ? frontierTop : topFill, j * topJitter);
       // wall-top wires split by audience: rim segments over open cells are
       // part of the wall's silhouette (always drawn, main edge set);
       // interior top wires go to their own dimmable mesh — bright/dim/black
@@ -2942,7 +2948,10 @@ export function initTdTab(root) {
   }
 
   // --- shop / upgrade panel (build mode, tap a cell) ----------------------
-  // portal object factory — shared by creation and live re-shaping
+  // portal object factory — shared by creation and live re-shaping.
+  // Orientation: upright (local +Y = surface normal) AND the gate's open
+  // face turned down the lane — toward the open neighbor nearest the
+  // Heart, where its creatures will march — never sideways into walls.
   function buildPortalObj(type, ci, phase) {
     const obj = makePortalCloud({ body: CREATURE_TINTS[type], hi: 0xffffff },
       phase, params.portalShape);
@@ -2952,8 +2961,22 @@ export function initTdTab(root) {
     const c = graph.centers[ci];
     const n = graph.normals[ci];
     obj.position.set(c[0] + n[0] * r * 0.9, c[1] + n[1] * r * 0.9, c[2] + n[2] * r * 0.9);
-    tmpN.set(n[0], n[1], n[2]);
-    obj.quaternion.setFromUnitVectors(Y_AXIS, tmpN);
+    let face = null, bd = Infinity;
+    for (const nb of graph.adj[ci]) {
+      if (dungeon.tags[nb] === BLOCKED) continue;
+      const d = dungeon.distToHeart[nb];
+      if (d !== -1 && d < bd) { bd = d; face = nb; }
+    }
+    if (face !== null) {
+      const fdir = tangentDirTo(ci, face);
+      tmpObj.position.copy(obj.position);
+      tmpObj.up.set(n[0], n[1], n[2]);
+      tmpObj.lookAt(obj.position.x + fdir[0], obj.position.y + fdir[1], obj.position.z + fdir[2]);
+      obj.quaternion.copy(tmpObj.quaternion); // gate axis (+Z) down the lane
+    } else {
+      tmpN.set(n[0], n[1], n[2]);
+      obj.quaternion.setFromUnitVectors(Y_AXIS, tmpN);
+    }
     return obj;
   }
 
