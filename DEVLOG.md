@@ -6,6 +6,20 @@ Demo links assume `npm run serve` (port 8144) or the
 
 ---
 
+## `7893731` — Orbit that keeps up, and a tidier top edge
+
+Three play-feel changes on tank2. Orbit is the default camera now, and
+it follows: each frame the orbit pivot and the camera both translate by
+player 1's motion, so the red tank stays framed while you keep free
+rotate and zoom — before, driving carried the tank off the far side of
+the planet and out of view. And the mode chooser (grid/maze/organic/…)
+finally collapses behind the ☰ on desktop the way it already did on
+mobile; a game shouldn't wear the dev tab-row across its top. The ☰
+sits right of the cache badge and drops the tabs down on click; the
+settings panel stays put.
+
+---
+
 ## `7322998` — Hands-free forward, both tanks
 
 Double-tap the forward control on either tank tab and it latches
