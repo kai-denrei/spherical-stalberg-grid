@@ -4,9 +4,9 @@
 import * as THREE from '../vendor/three.module.js';
 import GUI from '../vendor/lil-gui.esm.js';
 import { OrbitControls } from '../vendor/OrbitControls.js';
-import { createPlanetTankGame, DYING_T } from './tanks2.js?v=ed801853';
-import { mulberry32 } from './rng.js?v=ed801853';
-import { norm3, scale3 } from './vec3.js?v=ed801853';
+import { createPlanetTankGame, DYING_T } from './tanks2.js?v=eb039d24';
+import { mulberry32 } from './rng.js?v=eb039d24';
+import { norm3, scale3 } from './vec3.js?v=eb039d24';
 
 const DT = 1 / 60;
 const TANK_SCALE = 0.08;
@@ -274,6 +274,8 @@ export function initTank2Tab(root) {
   const _m = new THREE.Matrix4();
   const _x = new THREE.Vector3(), _y = new THREE.Vector3(), _z = new THREE.Vector3();
   const _v1 = new THREE.Vector3(), _v2 = new THREE.Vector3(), _q = new THREE.Quaternion();
+  const _fwd = new THREE.Vector3(), _tgt = new THREE.Vector3(), _axis = new THREE.Vector3();
+  let recentering = false; // orbit dead-zone follow: latched while swinging red back
 
   function orientTank(group, t) {
     _x.set(...t.head);          // barrel +x = heading
@@ -298,16 +300,30 @@ export function initTank2Tab(root) {
 
   function updateCamera() {
     if (params.view === 'orbit') {
-      // FOLLOW player 1: shift the orbit pivot AND the camera by the tank's
-      // motion each frame, so the red tank stays framed while the user keeps
-      // free rotate/zoom. (Without this the tank drives off the far side of
-      // the planet and out of view — unplayable.)
+      // DEAD-ZONE follow: the planet spins freely under the camera and red
+      // roams the visible face — not welded to centre. Only when it drifts
+      // near the limb (about to leave frame) does the camera swing around
+      // the planet centre to bring it back toward the middle, then hold.
       const tm = tankMeshes[0];
       tm.updateMatrixWorld();
       tm.getWorldPosition(_v1);
-      _v2.subVectors(_v1, orbit.target); // how far the tank moved since last frame
-      cam.position.add(_v2);             // carry the camera along, offset preserved
-      orbit.target.copy(_v1);
+      _tgt.copy(_v1).normalize();         // red's point on the unit sphere
+      _fwd.copy(cam.position).normalize(); // sphere point facing the camera
+      const ang = _fwd.angleTo(_tgt);
+      const dist = cam.position.length();
+      // angular radius of the visible near-face cap (grows as you zoom out)
+      const limb = Math.acos(Math.min(0.999, 1 / Math.max(1.001, dist)));
+      if (ang > limb * 0.72) recentering = true;  // too close to the edge
+      if (ang < limb * 0.35) recentering = false; // comfortably back — release
+      if (recentering) {
+        _axis.crossVectors(_fwd, _tgt);
+        if (_axis.lengthSq() > 1e-8) {
+          _axis.normalize();
+          // swing the camera around the planet so the facing point eases
+          // toward red; capped per frame so it glides rather than snaps
+          cam.position.applyAxisAngle(_axis, Math.min(0.05, ang * 0.15));
+        }
+      }
       orbit.update();
       return;
     }
@@ -324,13 +340,13 @@ export function initTank2Tab(root) {
     orbit.enabled = params.view === 'orbit';
     if (params.view === 'orbit') {
       cam.up.set(0, 1, 0);
-      // frame player 1: pivot on the tank, camera ~2 units out along its
-      // surface normal. updateCamera then keeps it following the tank.
+      orbit.target.set(0, 0, 0); // orbit the PLANET centre, not the tank
+      recentering = false;
+      // start with red front-and-centre, a planet-scale distance out
       const tm = tankMeshes[0];
       tm.updateMatrixWorld();
-      const tp = tm.getWorldPosition(new THREE.Vector3());
-      orbit.target.copy(tp);
-      cam.position.copy(tp).multiplyScalar(3);
+      tm.getWorldPosition(_v1);
+      cam.position.copy(_v1).setLength(2.8);
       orbit.update();
     }
   }
