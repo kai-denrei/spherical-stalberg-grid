@@ -19,17 +19,17 @@
 
 import * as THREE from '../vendor/three.module.js';
 import GUI from '../vendor/lil-gui.esm.js';
-import { generateSphereMesh, relax } from './grid.js?v=31dca804';
-import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=31dca804';
-import { mulberry32, randomSeed } from './rng.js?v=31dca804';
-import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3 } from './vec3.js?v=31dca804';
-import { CREATURES, waveJelly } from './creatures.js?v=31dca804';
-import { UNITS, UNIT_NAMES, buildUnit, makeOrbCloud, makeBulletCloud, makeDebris, makeDotBurst, makePortalCloud, makeHeartCloud, makeTowerUnit, makeDotEnemy } from './units.js?v=31dca804';
-import { LOOKS, LOOK_NAMES } from './looks.js?v=31dca804';
-import { makeCellIndex } from './cellindex.js?v=31dca804';
-import { CREATURE_TINTS, ENEMY_SPEC, INTROS } from './enemyspec.js?v=31dca804';
-import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval } from './towers.js?v=31dca804';
-import { makeEconomy, sellRefund } from './economy.js?v=31dca804';
+import { generateSphereMesh, relax } from './grid.js?v=83b5800a';
+import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=83b5800a';
+import { mulberry32, randomSeed } from './rng.js?v=83b5800a';
+import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3 } from './vec3.js?v=83b5800a';
+import { CREATURES, waveJelly } from './creatures.js?v=83b5800a';
+import { UNITS, UNIT_NAMES, buildUnit, makeOrbCloud, makeBulletCloud, makeDebris, makeDotBurst, makePortalCloud, makeHeartCloud, makeTowerUnit, makeDotEnemy } from './units.js?v=83b5800a';
+import { LOOKS, LOOK_NAMES } from './looks.js?v=83b5800a';
+import { makeCellIndex } from './cellindex.js?v=83b5800a';
+import { CREATURE_TINTS, ENEMY_SPEC, INTROS } from './enemyspec.js?v=83b5800a';
+import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval } from './towers.js?v=83b5800a';
+import { makeEconomy, sellRefund } from './economy.js?v=83b5800a';
 
 export function initTdTab(root) {
   let active = false;
@@ -354,16 +354,24 @@ export function initTdTab(root) {
   // free-move collision: the position is blocked if its cell is wall, if it
   // presses into a blocked neighbour's margin (no more nosing into walls),
   // or if a solid unit stands there
+  // how many open neighbours a cell has — ≤3 means a narrow hall or a
+  // corner pocket, where the anti-clipping margins must relax or the
+  // hitbox wedges the tank (the stuck-in-width-1-corridor bug)
+  function openCount(ci) {
+    let n = 0;
+    for (const nb of graph.adj[ci]) if (dungeon.tags[nb] !== BLOCKED) n++;
+    return n;
+  }
+
   function freeBlocked(cand) {
     const ci = cellIndex(cand);
     if (ci === -1 || dungeon.tags[ci] === BLOCKED) return true;
+    // wide ground keeps the clipping margin; narrow halls trade a little
+    // visual overlap for guaranteed passability
+    const margin = cellSide * (openCount(ci) <= 3 ? 0.45 : 0.62);
     for (const nb of graph.adj[ci]) {
       if (dungeon.tags[nb] === BLOCKED
-        && dist3(cand, graph.centers[nb]) < cellSide * 0.62) return true;
-    }
-    // ally tanks are solid — no driving through the patrol
-    for (const f of friendlies) {
-      if (f.alive && dist3(cand, f.pos) < cellSide * 0.5) return true;
+        && dist3(cand, graph.centers[nb]) < margin) return true;
     }
     return unitBlocker(cand);
   }
@@ -384,55 +392,53 @@ export function initTdTab(root) {
   // their damage — blocking them would neuter the threat)
   unitBlocker = (cand) => spawnPoints.some((s) => s.alive && dist3(cand, graph.centers[s.ci]) < cellSide * 0.6);
 
-  // WALL CUSHION — the clipping fix. The hull reaches ~0.5·cellSide from
-  // the position, but freeBlocked only guarantees ~0.12·cellSide from a
-  // wall FACE (0.62 from its center; the face sits at ~0.5), and the auto
-  // glide has no margin at all — so the tank could sit visibly inside a
-  // wall. Each frame the position is softly pushed out of a 0.8·cellSide
-  // band around blocked centers, sliding in the tangent plane so motion
-  // along the wall survives. Diagonal walls matter here: graph.adj is
-  // full-edge adjacency only, so corner-blocked cells are collected
-  // through the open neighbours' own adjacency.
+  // WALL CUSHION, corridor-safe edition. The first version (0.95 margin,
+  // sequential pushes, two passes, diagonal walls) fixed clipping on the
+  // open heart battlefield but WEDGED the tank in width-1 corridors:
+  // opposing walls both push every frame, sequential application
+  // zigzags, and the push out-muscled the drive step — stuck, and with
+  // no shells, stuck for good. Three changes make it passage-safe:
+  //   1. margins ADAPT: narrow cells (≤3 open neighbours) use a smaller
+  //      band and skip diagonal wall collection (diagonals jam corners)
+  //   2. pushes are NET-SUMMED then applied once — opposing walls cancel
+  //      into centering instead of fighting
+  //   3. the applied push is CAPPED per frame well below drive speed —
+  //      the cushion corrects clipping over a few frames, never pins
   function wallCushion(pos) {
-    // 0.95: irregular quads put some wall FACES ~0.7·cellSide from their
-    // center, and the hull reaches 0.5 — 0.8 still let angled approaches
-    // overlap. Two passes so multi-wall pushes (corners) converge.
-    const margin = cellSide * 0.95;
     const ci = cellIndex(pos);
     if (ci === -1) return pos;
-    let p = pos;
+    const narrow = openCount(ci) <= 3;
+    const margin = cellSide * (narrow ? 0.6 : 0.95);
+    let px = 0, py = 0, pz = 0;
     const seen = new Set([ci]);
-    const walls = [];
+    const consider = (w) => {
+      const c = graph.centers[w];
+      const d = dist3(pos, c);
+      if (d >= margin) return;
+      const away = sub3(pos, c);
+      const n = norm3(pos);
+      const tg = sub3(away, scale3(n, dot3(away, n)));
+      const l = len3(tg);
+      if (l < 1e-9) return;
+      const f = (margin - d) / margin;
+      px += (tg[0] / l) * f; py += (tg[1] / l) * f; pz += (tg[2] / l) * f;
+    };
     for (const nb of graph.adj[ci]) {
       if (seen.has(nb)) continue;
       seen.add(nb);
-      if (dungeon.tags[nb] === BLOCKED) { walls.push(nb); continue; }
-      for (const nb2 of graph.adj[nb]) {
-        if (seen.has(nb2)) continue;
-        seen.add(nb2);
-        if (dungeon.tags[nb2] === BLOCKED) walls.push(nb2);
+      if (dungeon.tags[nb] === BLOCKED) { consider(nb); continue; }
+      if (!narrow) {
+        for (const nb2 of graph.adj[nb]) {
+          if (seen.has(nb2)) continue;
+          seen.add(nb2);
+          if (dungeon.tags[nb2] === BLOCKED) consider(nb2);
+        }
       }
     }
-    const pushFrom = (c, m) => {
-      const d = dist3(p, c);
-      if (d >= m) return;
-      const away = sub3(p, c);
-      const n = norm3(p);
-      let tg = sub3(away, scale3(n, dot3(away, n)));
-      const l = len3(tg);
-      if (l < 1e-9) return;
-      tg = scale3(tg, 1 / l);
-      p = norm3(add3(p, scale3(tg, (m - d) * 0.8)));
-    };
-    for (let pass = 0; pass < 2; pass++) {
-      for (const w of walls) pushFrom(graph.centers[w], margin);
-    }
-    // ally tanks are solid too: same soft push, tighter band — two hulls
-    // shouldn't interpenetrate but must still squeeze past each other
-    for (const f of friendlies) {
-      if (f.alive) pushFrom(f.pos, cellSide * 0.7);
-    }
-    return p;
+    const mag = Math.hypot(px, py, pz);
+    if (mag < 1e-9) return pos;
+    const step = Math.min(mag * cellSide * 0.3, cellSide * 0.035);
+    return norm3(add3(pos, scale3([px / mag, py / mag, pz / mag], step)));
   }
 
   // held-key state: steering and pace are continuous while held, not nudges
@@ -943,6 +949,19 @@ export function initTdTab(root) {
             cand = norm3(add3(player.pos, slid));
             if (freeBlocked(cand)) cand = null;
           } else cand = null;
+          // wedged with nowhere to slide? creep toward the CURRENT cell's
+          // center — it is open ground by definition, so the tank can
+          // always un-stick itself, shells or no shells
+          if (!cand) {
+            const home = graph.centers[player.cur];
+            const toHome = sub3(home, player.pos);
+            const l = len3(toHome);
+            if (l > 1e-6) {
+              const creep = norm3(add3(player.pos,
+                scale3(toHome, Math.min(1, (v * dt) / l))));
+              if (!freeBlocked(creep)) cand = creep;
+            }
+          }
         }
         if (cand) {
           player.pos = cand;
