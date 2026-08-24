@@ -36,12 +36,12 @@ html, body {
   display: none;
 }
 
-#app, #maze-app, #o-app, #b-app, #h-app, #td-app, #tank-app, #tank2-app {
+#app, #maze-app, #o-app, #b-app, #h-app, #td-app, #tank-app, #tank2-app, #tank3-app {
   position: absolute;
   inset: 0;
 }
 
-#app canvas, #maze-app canvas, #o-app canvas, #b-app canvas, #h-app canvas, #td-app canvas, #tank-app canvas, #tank2-app canvas {
+#app canvas, #maze-app canvas, #o-app canvas, #b-app canvas, #h-app canvas, #td-app canvas, #tank-app canvas, #tank2-app canvas, #tank3-app canvas {
   display: block;
 }
 
@@ -863,3 +863,7 @@ html, body {
 .combat-msg.hidden { display: none; }
 .combat-hint { position: absolute; bottom: 8px; left: 50%; transform: translateX(-50%);
   font: 12px ui-monospace, monospace; color: #cfd6e4; opacity: .7; pointer-events: none; z-index: 5; }
+
+/* tank3 (battle/tron skin): score digits in the Tron player/enemy tints */
+.combat-score.tron .ts-red { color: #9ff8ff; }
+.combat-score.tron .ts-blue { color: #ff2d6f; }
