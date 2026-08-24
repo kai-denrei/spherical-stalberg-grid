@@ -254,7 +254,76 @@ export function createTankGame(p = {}) {
   return game;
 }
 
-function fireShell() {}                    // replaced in Task 3
-function updateShell() {}                  // replaced in Task 3
+// --- shells ---------------------------------------------------------------
+function fireShell(game, i) {
+  const t = game.tanks[i];
+  if (t.state !== 'alive') return;
+  const dx = Math.cos(t.heading), dz = Math.sin(t.heading);
+  game.shells[i] = {
+    x: t.x + dx * (TANK_R + SHELL_R + 0.05),
+    z: t.z + dz * (TANK_R + SHELL_R + 0.05),
+    dx: dx * SHELL_SPEED, dz: dz * SHELL_SPEED,
+    traveled: 0, bounces: 0,
+  };
+  game.events.push({ type: 'fire', tank: i });
+}
+
+function killShell(game, i) {
+  game.shells[i] = null;
+  game.events.push({ type: 'shellDead', tank: i });
+}
+
+function updateShell(game, i, dt) {
+  const s = game.shells[i];
+  if (!s) return;
+  const { arena } = game;
+  s.x += s.dx * dt; s.z += s.dz * dt;
+  s.traveled += SHELL_SPEED * dt;
+
+  // impact: perimeter walls, then blocks. Reflection axis = the wall's
+  // normal (perimeter) or the face with the smaller penetration (blocks).
+  let hitX = false, hitZ = false, faceX = 0, faceZ = 0;
+  if (s.x < SHELL_R) { hitX = true; faceX = SHELL_R; }
+  else if (s.x > arena.w - SHELL_R) { hitX = true; faceX = arena.w - SHELL_R; }
+  if (s.z < SHELL_R) { hitZ = true; faceZ = SHELL_R; }
+  else if (s.z > arena.h - SHELL_R) { hitZ = true; faceZ = arena.h - SHELL_R; }
+  if (!hitX && !hitZ) {
+    for (const b of arena.blocks) {
+      if (!circleHitsAABB(s.x, s.z, SHELL_R, b)) continue;
+      const px = Math.min(s.x - (b.minX - SHELL_R), (b.maxX + SHELL_R) - s.x);
+      const pz = Math.min(s.z - (b.minZ - SHELL_R), (b.maxZ + SHELL_R) - s.z);
+      if (px < pz) { hitX = true; faceX = s.dx > 0 ? b.minX - SHELL_R : b.maxX + SHELL_R; }
+      else { hitZ = true; faceZ = s.dz > 0 ? b.minZ - SHELL_R : b.maxZ + SHELL_R; }
+      break;
+    }
+  }
+  if (hitX || hitZ) {
+    if (!game.params.ricochet || s.bounces >= MAX_BOUNCES) return killShell(game, i);
+    s.bounces++;
+    if (hitX) { s.x = 2 * faceX - s.x; s.dx = -s.dx; }
+    if (hitZ) { s.z = 2 * faceZ - s.z; s.dz = -s.dz; }
+    game.events.push({ type: 'bounce', tank: i });
+  }
+  if (s.traveled >= SHELL_RANGE_FRAC * arena.w) return killShell(game, i);
+
+  // tank hit (scored + verified in Task 4)
+  const v = game.tanks[1 - i];
+  if (v.state === 'alive' && v.invulnT <= 0) {
+    const ddx = s.x - v.x, ddz = s.z - v.z;
+    if (ddx * ddx + ddz * ddz < (TANK_R + SHELL_R) ** 2) {
+      game.shells[i] = null;
+      game.score[i]++;
+      const m = Math.hypot(s.dx, s.dz);
+      v.state = 'dying'; v.dyingT = DYING_T;
+      v.knock = [(s.dx / m) * KNOCKBACK_SPEED, (s.dz / m) * KNOCKBACK_SPEED];
+      game.events.push({ type: 'hit', by: i });
+      if (game.score[i] >= game.params.pointsToWin) {
+        game.winner = i;
+        game.events.push({ type: 'matchEnd', winner: i });
+      }
+    }
+  }
+}
+
 function makeAiMem() { return {}; }        // replaced in Task 5
 function aiStep() { return {}; }           // replaced in Task 5

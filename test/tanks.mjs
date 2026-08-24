@@ -3,6 +3,7 @@
 import {
   CLASSIC_ARENAS, parseArena, arenaConnected, genArena,
   createTankGame, TANK_R, TURN_RATE, DRIVE_SPEED, REVERSE_SPEED,
+  SHELL_SPEED, SHELL_RANGE_FRAC, SHELL_R, MAX_BOUNCES,
 } from '../src/tanks.js';
 
 let failures = 0;
@@ -94,6 +95,70 @@ const DT = 1 / 60;
   for (let i = 0; i < 60 * 2; i++) g.step(DT, { forward: true });
   const d = Math.hypot(g.tanks[0].x - g.tanks[1].x, g.tanks[0].z - g.tanks[1].z);
   check('tank-tank collision holds 2R', d >= 2 * TANK_R - 1e-6);
+}
+
+// --- shells ---------------------------------------------------------------
+console.log('shells:');
+{
+  const g = createTankGame({ seed: 1, arena: 'open', aiLevel: 0 });
+  g.step(DT, { fire: true });
+  check('fire spawns one shell + event', !!g.shells[0]
+    && g.events.some((e) => e.type === 'fire' && e.tank === 0));
+  const s0x = g.shells[0].x;
+  g.step(DT, { fire: true });
+  check('one in flight: second fire ignored',
+    !g.events.some((e) => e.type === 'fire')
+    && approx(g.shells[0].x, s0x + SHELL_SPEED * DT));
+  check('shell speed is SHELL_SPEED', approx(Math.hypot(g.shells[0].dx, g.shells[0].dz), SHELL_SPEED));
+}
+{
+  const g = createTankGame({ seed: 1, arena: 'open', aiLevel: 0 });
+  g.tanks[1].z = 2.5; // move AI tank out of the firing line
+  g.step(DT, { fire: true });
+  let steps = 0;
+  while (g.shells[0] && steps < 60 * 5) { g.step(DT, {}); steps++; }
+  const flight = steps * DT;
+  const expected = (SHELL_RANGE_FRAC * 26) / SHELL_SPEED;
+  check('range-limited flight time', Math.abs(flight - expected) < 0.1, `flew ${flight}s`);
+}
+{
+  // no ricochet: dies on the wall
+  const g = createTankGame({ seed: 1, arena: 'open', aiLevel: 0 });
+  g.tanks[0].heading = Math.PI; g.tanks[1].z = 2.5; // fire at the near (left) wall
+  g.step(DT, { fire: true });
+  let died = false;
+  for (let i = 0; i < 60 && !died; i++) { g.step(DT, {}); died = !g.shells[0]; }
+  check('wall kills shell without ricochet', died);
+}
+{
+  // ricochet: exact mirror off the left wall
+  const g = createTankGame({ seed: 1, arena: 'open', aiLevel: 0, ricochet: true });
+  g.tanks[0].heading = Math.PI; g.tanks[1].z = 2.5;
+  g.step(DT, { fire: true });
+  const vz = g.shells[0].dz;
+  let bounced = false;
+  for (let i = 0; i < 60 && !bounced; i++) {
+    g.step(DT, {});
+    bounced = g.events.some((e) => e.type === 'bounce');
+  }
+  check('ricochet reflects: dx flips, dz preserved, speed unchanged', bounced
+    && g.shells[0].dx > 0 && approx(g.shells[0].dz, vz)
+    && approx(Math.hypot(g.shells[0].dx, g.shells[0].dz), SHELL_SPEED));
+  check('bounce counted', g.shells[0].bounces === 1);
+}
+{
+  // bounce cap: third impact kills even with ricochet on
+  const g = createTankGame({ seed: 1, arena: 'open', aiLevel: 0, ricochet: true });
+  g.tanks[0].x = 13; g.tanks[0].z = 1.0; g.tanks[0].heading = -Math.PI / 2; // straight up at z=0
+  g.tanks[1].z = 18;
+  g.step(DT, { fire: true });
+  let bounces = 0;
+  for (let i = 0; i < 60 * 3 && g.shells[0]; i++) {
+    g.step(DT, {});
+    bounces += g.events.filter((e) => e.type === 'bounce').length;
+  }
+  check('bounces capped at MAX_BOUNCES', bounces <= MAX_BOUNCES);
+  check('range accumulates across bounces', !g.shells[0]);
 }
 
 if (failures > 0) { console.error(`\n${failures} failure(s)`); process.exit(1); }
