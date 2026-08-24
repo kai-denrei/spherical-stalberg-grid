@@ -6,6 +6,18 @@ Demo links assume `npm run serve` (port 8144) or the
 
 ---
 
+## `c7e1317` — A very small war on a very small world
+
+The planet tab renders: ~400 relaxed quads as a vertex-colored olive
+ball in black space, wall cells extruded into orange prisms, the same
+six-box tanks riding the surface with up = surface normal (one
+makeBasis from the core's pos/head pair — the tab adds no orientation
+math of its own). The chase camera hangs off anchors parented inside
+the tank group, so the horizon rolls underneath you as you drive.
+Shared .combat-* HUD classes now dress both tank tabs.
+
+---
+
 ## `3e1ca8c` — The gunner that shoots at where you were going
 
 The planet AI ladder is in. L1–L3 port straight over (wander; track and
