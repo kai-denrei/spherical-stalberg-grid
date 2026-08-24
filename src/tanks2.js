@@ -265,7 +265,7 @@ function fireShell(game, i) {
   const pos = norm3(rotAbout(t.pos, axis, muzzle));
   game.shells[i] = {
     pos, dir: tangentAt(rotAbout(t.head, axis, muzzle), pos),
-    traveled: 0, bounces: 0, lastBounceCell: -1, justFired: true,
+    traveled: 0, bounces: 0,
   };
   game.events.push({ type: 'fire', tank: i });
 }
@@ -285,9 +285,7 @@ function updateShell(game, i, dt) {
   s.dir = tangentAt(rotAbout(s.dir, axis, arc), s.pos);
   s.traveled += arc;
   const ci = game.cellOf(s.pos);
-  // Bounce only if hitting a new wall cell; prevent re-bouncing the cell we just left,
-  // and prevent bouncing on the frame the shell was just fired
-  if (!s.justFired && game.planet.walls.has(ci) && ci !== s.lastBounceCell) {
+  if (game.planet.walls.has(ci)) {
     if (!game.params.ricochet || s.bounces >= MAX_BOUNCES) return killShell(game, i);
     s.bounces++;
     s.pos = prevPos; // back out of the wall, then reflect in the tangent plane
@@ -296,10 +294,8 @@ function updateShell(game, i, dt) {
     s.dir = into
       ? tangentAt(sub3(d, scale3(into, 2 * dot3(d, into))), s.pos)
       : scale3(d, -1);
-    s.lastBounceCell = ci;
     game.events.push({ type: 'bounce', tank: i });
   }
-  s.justFired = false;
   if (s.traveled >= SHELL_RANGE) return killShell(game, i);
   const v = game.tanks[1 - i];
   if (v.state === 'alive' && v.invulnT <= 0

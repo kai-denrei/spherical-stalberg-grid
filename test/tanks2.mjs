@@ -177,8 +177,9 @@ const stagePair = (sepRad, over = {}) => {
 {
   // ricochet: wall injected in the path reflects the shell
   const g = stagePair(0.3, { ricochet: true });
-  const block = norm3(rotAbout(g.tanks[0].pos, [0, 1, 0], -0.12));
+  const block = norm3(rotAbout(g.tanks[0].pos, [0, 1, 0], -0.2));
   g.planet.walls.add(g.cellOf(block));
+  check('staging: wall cell is not the muzzle cell', g.cellOf(block) !== g.cellOf(g.tanks[0].pos));
   g.tanks[1].pos = rotAbout(g.tanks[1].pos, [0, 1, 0], -1.2); // move target out of the line
   g.tanks[1].head = tangentAt(g.tanks[1].head, g.tanks[1].pos);
   g.step(DT, { fire: true });
