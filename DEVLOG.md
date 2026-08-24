@@ -6,6 +6,20 @@ Demo links assume `npm run serve` (port 8144) or the
 
 ---
 
+## `63c4730` — The planet turns to keep you in view
+
+Reworked tank2's orbit from a hard lock into a dead-zone follow. Before,
+the camera welded red to screen centre and the planet felt dragged along
+under a motionless tank. Now the orbit pivots on the planet's centre, so
+the globe spins freely and red drives across the visible face on its own.
+Only when red nears the limb — measured as a fraction of the visible-cap
+angle, which widens as you zoom out — does the camera swing around the
+planet to bring it back toward the middle, then hold (with hysteresis so
+it glides instead of jittering at the threshold). Free rotate and zoom
+still work inside the dead zone.
+
+---
+
 ## `7893731` — Orbit that keeps up, and a tidier top edge
 
 Three play-feel changes on tank2. Orbit is the default camera now, and
