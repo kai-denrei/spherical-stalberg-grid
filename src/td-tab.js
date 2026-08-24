@@ -19,17 +19,17 @@
 
 import * as THREE from '../vendor/three.module.js';
 import GUI from '../vendor/lil-gui.esm.js';
-import { generateSphereMesh, relax } from './grid.js?v=83b5800a';
-import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=83b5800a';
-import { mulberry32, randomSeed } from './rng.js?v=83b5800a';
-import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3 } from './vec3.js?v=83b5800a';
-import { CREATURES, waveJelly } from './creatures.js?v=83b5800a';
-import { UNITS, UNIT_NAMES, buildUnit, makeOrbCloud, makeBulletCloud, makeDebris, makeDotBurst, makePortalCloud, makeHeartCloud, makeTowerUnit, makeDotEnemy } from './units.js?v=83b5800a';
-import { LOOKS, LOOK_NAMES } from './looks.js?v=83b5800a';
-import { makeCellIndex } from './cellindex.js?v=83b5800a';
-import { CREATURE_TINTS, ENEMY_SPEC, INTROS } from './enemyspec.js?v=83b5800a';
-import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval } from './towers.js?v=83b5800a';
-import { makeEconomy, sellRefund } from './economy.js?v=83b5800a';
+import { generateSphereMesh, relax } from './grid.js?v=ec1cf036';
+import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=ec1cf036';
+import { mulberry32, randomSeed } from './rng.js?v=ec1cf036';
+import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3 } from './vec3.js?v=ec1cf036';
+import { CREATURES, waveJelly } from './creatures.js?v=ec1cf036';
+import { UNITS, UNIT_NAMES, buildUnit, makeOrbCloud, makeBulletCloud, makeDebris, makeDotBurst, makePortalCloud, makeHeartCloud, makeTowerUnit, makeDotEnemy } from './units.js?v=ec1cf036';
+import { LOOKS, LOOK_NAMES } from './looks.js?v=ec1cf036';
+import { makeCellIndex } from './cellindex.js?v=ec1cf036';
+import { CREATURE_TINTS, ENEMY_SPEC, INTROS } from './enemyspec.js?v=ec1cf036';
+import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval } from './towers.js?v=ec1cf036';
+import { makeEconomy, sellRefund } from './economy.js?v=ec1cf036';
 
 export function initTdTab(root) {
   let active = false;
@@ -50,6 +50,7 @@ export function initTdTab(root) {
     wallTops: 'black', // obstacles read as voids; silhouettes matter here
     speed: 1.1, // cells per second, wanderer pace
     recoil: 8, // shell-recoil intensity, dialed to MAX per operator
+    directive: 'wander', // auto-mode order: wander/avoid/ram/conserve/home/portal
     autoResume: 3, // seconds idle before auto-wander resumes
     creature: 'tank', // any roster unit; the tank has the sweeping turret
     // balance (operator pass): heavier early waves, but a richer field —
@@ -777,6 +778,20 @@ export function initTdTab(root) {
   // threat view. Build FREEZES the war only when the field is clear —
   // mid-assault it is camera-only (no combat escape hatch).
   let buildMode = false;
+  // SECTOR REVEAL: a short full-planet beat after each clear — the camera
+  // pulls out to frame the whole world, aimed at the freshly-unsealed
+  // band, whose floors burn hot until the beat ends (then build mode).
+  const REVEAL_LEN = 3.2;
+  let revealLeft = 0;
+  let revealDir = null;
+  let revealCells = [];
+  // AUTO DIRECTIVES: high-level orders for the wanderer
+  const DIRECTIVES = ['wander', 'avoid', 'ram', 'conserve', 'home', 'portal'];
+  const DIRECTIVE_LABEL = {
+    wander: 'WANDER', avoid: 'AVOID', ram: 'RAM',
+    conserve: 'SAVE AMMO', home: 'HOME', portal: 'PORTAL',
+  };
+  let portalDist = null; // BFS field to the nearest live portal (directive)
   let mapMode = 'player'; // 'player' | 'heart'
   let buildYaw = 0;       // drag orbits the azimuth around the pole axis
   let buildDist = 2.6;    // wheel/pinch zooms
@@ -810,6 +825,18 @@ export function initTdTab(root) {
   }
 
   function updateCameraGoal() {
+    if (revealLeft > 0 && revealDir) {
+      // cinematic: whole planet in frame, the new band centered
+      const ref = Math.abs(revealDir[1]) < 0.9 ? [0, 1, 0] : [1, 0, 0];
+      const up = norm3(cross3(revealDir, ref));
+      const eye = scale3(revealDir, 3.3);
+      camGoal.pos.set(eye[0], eye[1], eye[2]);
+      tmpCam.position.copy(camGoal.pos);
+      tmpCam.up.set(up[0], up[1], up[2]);
+      tmpCam.lookAt(0, 0, 0);
+      camGoal.quat.copy(tmpCam.quaternion);
+      return;
+    }
     if (buildMode) {
       // top-down planning: over the pole, the active hemisphere framed;
       // lookAt the sphere center so the horizon stays level while orbiting
@@ -880,12 +907,45 @@ export function initTdTab(root) {
     // control mode: while the user steers, their intent dominates — the
     // creature's curiosity, backtrack aversion, and whims all yield
     const active = steeringActive() || manualActive();
+    // DIRECTIVE: a high-level order shapes the wander. Vector goals
+    // (avoid/ram) become a tangent to chase or flee; field goals
+    // (home/portal) score descending hop-distance.
+    let goalVec = null, goalField = null, goalSign = 1;
+    if (!active) {
+      const d = params.directive;
+      if (d === 'home') goalField = dungeon.distToHeart;
+      else if (d === 'portal' && portalDist) goalField = portalDist;
+      else if (d === 'avoid' || d === 'ram') {
+        let bt = null, bd = Infinity;
+        for (const en of enemies) {
+          if (!en.alive) continue;
+          if (d === 'ram' && !en.spec.rammable) continue;
+          const dd = dist3(player.pos, en.pos);
+          if (dd < bd) { bd = dd; bt = en; }
+        }
+        if (bt && bd < cellSide * 14) {
+          const n = norm3(player.pos);
+          const raw = sub3(bt.pos, player.pos);
+          const flat = sub3(raw, scale3(n, dot3(raw, n)));
+          const l = len3(flat);
+          if (l > 1e-9) {
+            goalVec = scale3(flat, 1 / l);
+            goalSign = d === 'avoid' ? -1 : 1;
+          }
+        }
+      }
+    }
     let best = exits[0], bestScore = -Infinity;
     for (const e of exits) {
       const dir = tangentDirTo(player.cur, e);
       let score = (active ? 4.5 : 2.2) * dot3(player.heading, dir);
       if (!active && !player.visited.has(e)) score += 1.1;      // curiosity
       if (!active && e === player.prev && exits.length > 1) score -= 2.4;
+      if (goalVec) score += 3.2 * goalSign * dot3(dir, goalVec);
+      if (goalField) {
+        const gain = goalField[player.cur] - goalField[e];      // +1 closer
+        score += 3.2 * Math.max(-1, Math.min(1, gain));
+      }
       score += (whim() - 0.5) * (active ? 0.4 : 1.6);           // its own will
       if (score > bestScore) { bestScore = score; best = e; }
     }
@@ -1173,6 +1233,18 @@ export function initTdTab(root) {
   // (no ally tanks in TD — the commandeer button is gone from the markup)
   root.querySelector('#td-pad-view').addEventListener('click', () => toggleView());
   root.querySelector('#td-pad-build').addEventListener('click', () => toggleBuild());
+  function syncDirectiveChip() {
+    const chip = root.querySelector('#td-pad-dir');
+    if (chip) chip.textContent = DIRECTIVE_LABEL[params.directive] || 'WANDER';
+  }
+  root.querySelector('#td-pad-dir').addEventListener('click', () => {
+    const i = DIRECTIVES.indexOf(params.directive);
+    params.directive = DIRECTIVES[(i + 1) % DIRECTIVES.length];
+    directiveCtrl.updateDisplay();
+    syncDirectiveChip();
+    updateHud();
+  });
+  syncDirectiveChip();
   root.querySelector('#td-pad-map').addEventListener('click', () => toggleMap());
 
   // build-camera input: drag = azimuth orbit, wheel = zoom, TAP = select a
@@ -1371,7 +1443,8 @@ export function initTdTab(root) {
       `R${round} · wave ${wave} · hostiles ${alive} · portals ${spAlive}/${spawnPoints.length}${alerts}\n` +
       (buildMode
         ? (anyHostiles() ? 'BUILD · war on' : 'BUILD · frozen')
-        : (manualActive() ? (cruise ? 'CRUISE' : 'MANUAL') : 'AUTO'));
+        : (manualActive() ? (cruise ? 'CRUISE' : 'MANUAL')
+          : `AUTO · ${DIRECTIVE_LABEL[params.directive] || 'WANDER'}`));
     // diegetic shell rack: the 3×3 turret dots ARE the ammo counter —
     // neon white loaded, faded grey spent (allies stay full: infinite ammo)
     const dots = playerMesh && playerMesh.userData.ammoDots;
@@ -1380,6 +1453,39 @@ export function initTdTab(root) {
         dots[i].material.color.setHex(i < ammo ? 0xffffff : 0x4a505c);
       }
     }
+  }
+
+  // AUTO GUNNER: in auto mode the tank fights for itself — shells at the
+  // nearest enemy in range (the 3 s cannon heat is the fire rate). The
+  // directives shape it: 'conserve' and 'ram' spend shells only on the
+  // unrammable tier; portals are always worth a shell when nothing else
+  // is pressing. Manual mode leaves the trigger entirely to the player.
+  function autoGunner(tNow) {
+    if (manualActive() || buildMode || player.won || paused) return;
+    if (ammo <= 0 || cannonHeat > 0) return;
+    const R = cellSide * 3.0;
+    const shellsForAll = params.directive !== 'conserve' && params.directive !== 'ram';
+    let target = null, bd = R;
+    for (const e of enemies) {
+      if (!e.alive) continue;
+      if (!shellsForAll && e.spec.rammable) continue;
+      const d = dist3(player.pos, e.pos);
+      if (d < bd) { bd = d; target = e.pos; }
+    }
+    if (!target) {
+      for (const sp of spawnPoints) {
+        if (!sp.alive) continue;
+        const d = dist3(player.pos, graph.centers[sp.ci]);
+        if (d < bd) { bd = d; target = graph.centers[sp.ci]; }
+      }
+    }
+    if (!target) return;
+    const n = norm3(player.pos);
+    const raw = sub3(target, player.pos);
+    const flat = sub3(raw, scale3(n, dot3(raw, n)));
+    const l = len3(flat);
+    if (l < 1e-9) return;
+    fire(scale3(flat, 1 / l));
   }
 
   // --- pause (ESC): freeze the simulation, keep presenting the frame ------
@@ -1607,6 +1713,7 @@ export function initTdTab(root) {
     spawnPoints.length = 0;
     wave = 0;
     waveClock = params.waveEvery * 0.6; // first wave arrives sooner
+    portalDist = null;
     clearTimeout(waveTimer);
     waveEl.classList.add('hidden');
   }
@@ -1656,6 +1763,7 @@ export function initTdTab(root) {
     mapMarker.visible = false;
     scene.add(mapMarker);
     spawnPoints.push({ type, ci: best, hp: 3, obj, alive: true, found: false, mapMarker });
+    recomputePortalDist();
   }
 
   function spawnWave() {
@@ -1942,15 +2050,15 @@ export function initTdTab(root) {
   }
 
   // --- firing: the shot leaves along the turret's CURRENT sweep ------------
-  function fire() {
+  function fire(aimDir = null) {
     if (player.won || paused || ammo <= 0 || cannonHeat > 0) return;
     ammo--;
     cannonHeat = CANNON_COOL; // the sleeve glows red-hot, cools over 3 s
     recoilLeft = RECOIL_LEN;
     bumpLeft = Math.max(bumpLeft, BUMP_LEN * 0.4); // the shot rocks the hull too
-    let dir;
+    let dir = aimDir;
     const turret = playerMesh.userData.turret;
-    if (turret) {
+    if (!dir && turret) {
       // world +Z of the turret group, flattened into the tangent plane —
       // aim IS the sweep; no sign conventions to get wrong
       turret.getWorldQuaternion(tmpQ);
@@ -1958,7 +2066,7 @@ export function initTdTab(root) {
       const n = norm3(player.pos);
       const d = [tmpV.x, tmpV.y, tmpV.z];
       dir = norm3(sub3(d, scale3(n, dot3(d, n))));
-    } else {
+    } else if (!dir) {
       dir = player.smoothDir.slice(); // turretless units fire straight ahead
     }
     // the Braille bullet, nose along the flight direction
@@ -2047,6 +2155,7 @@ export function initTdTab(root) {
               scene.remove(sp.mapMarker);
               disposeObj(sp.mapMarker);
               sp.mapMarker = null;
+              recomputePortalDist();
             } else {
               // wounded: the portal shrinks a step AND its light dims —
               // a dying gate fades before it falls
@@ -2691,6 +2800,15 @@ export function initTdTab(root) {
   }
 
   // --- shop / upgrade panel (build mode, tap a cell) ----------------------
+  // BFS field to the nearest LIVE portal — the 'portal' directive's map.
+  // Recomputed when portals rise or fall; null when none stand.
+  function recomputePortalDist() {
+    const seeds = spawnPoints.filter((sp) => sp.alive).map((sp) => sp.ci);
+    portalDist = seeds.length
+      ? bfsDist(graph.adj, seeds, (i) => dungeon.tags[i] !== BLOCKED)
+      : null;
+  }
+
   // sector-breach flash: a white full-screen pulse when the world opens
   const flashEl = document.createElement('div');
   flashEl.id = 'td-flash';
@@ -2823,8 +2941,24 @@ export function initTdTab(root) {
     flashEl.classList.remove('on');
     void flashEl.offsetWidth; // restart the animation
     flashEl.classList.add('on');
+    const beforeTags = dungeon.tags.slice();
     applySector();
+    // the freshly-opened band: sealed before, floor now
+    revealCells = [];
+    let cx = 0, cy = 0, cz = 0;
+    for (let i = 0; i < dungeon.tags.length; i++) {
+      if (beforeTags[i] === BLOCKED && dungeon.tags[i] !== BLOCKED) {
+        revealCells.push(i);
+        const c = graph.centers[i];
+        cx += c[0]; cy += c[1]; cz += c[2];
+      }
+    }
+    revealDir = revealCells.length ? norm3([cx, cy, cz]) : norm3(graph.normals[dungeon.heart]);
+    revealLeft = REVEAL_LEN;
     buildGeometry();
+    // burn the new ground hot — repainted to its true colors when the
+    // beat ends (see animate)
+    for (const ci of revealCells) paintCell(ci, [1.0, 0.68, 0.16]);
     spawnOrbs();
     spawnRewards();
     // a pair of immediate sources in the new band, drawn from the types
@@ -2833,6 +2967,7 @@ export function initTdTab(root) {
     for (let k = 0; k < 2; k++) {
       addSpawnPoint(known[Math.floor(whim() * known.length)]);
     }
+    recomputePortalDist();
     waveClock = params.waveEvery * 0.5;
     player.won = false;
     paused = false;
@@ -2856,6 +2991,7 @@ export function initTdTab(root) {
     .name('wall tops').onChange(applyLook);
   const viewCtrl = gui.add(params, 'view', ['pov', 'third']).name('camera (V)');
   const speedCtrl = gui.add(params, 'speed', 0.2, 4, 0.1).name('wander speed');
+  const directiveCtrl = gui.add(params, 'directive', DIRECTIVES).name('auto directive').onChange(syncDirectiveChip);
   gui.add(params, 'recoil', 0, 8, 0.1).name('shell recoil');
   gui.add(params, 'autoResume', 1, 10, 0.5).name('auto resume (s)');
   gui.add(params, 'waveSize', 1, 6, 1).name('wave size').onFinishChange(regenerate);
@@ -2919,7 +3055,18 @@ export function initTdTab(root) {
     // wave clock, motion, combat — while ambient life (portal twinkle,
     // heart moods, debris) and the camera transition keep breathing.
     // Mid-assault the same toggle is camera-only.
-    const frozen = buildFrozen();
+    if (revealLeft > 0) {
+      revealLeft -= dt;
+      if (revealLeft <= 0) {
+        revealLeft = 0;
+        // the new ground cools back to its true colors; planning begins
+        for (const ci of revealCells) paintCell(ci, floorColorOf(ci));
+        revealCells = [];
+        if (!buildMode) { buildMode = true; syncBuildUi(); }
+        updateHud();
+      }
+    }
+    const frozen = buildFrozen() || revealLeft > 0;
 
     bumpLeft = Math.max(0, bumpLeft - dt);
     recoilLeft = Math.max(0, recoilLeft - dt);
@@ -2968,6 +3115,7 @@ export function initTdTab(root) {
       // proximity discovers the source: the minimap beacon lights up
       if (!sp.found && dist3(player.pos, graph.centers[sp.ci]) < cellSide * 5) sp.found = true;
     }
+    autoGunner(t);
     checkVictory(); // ram kills and heart-contact deaths can end it too
     updateHud();
     placeActors();
@@ -3131,6 +3279,10 @@ export function initTdTab(root) {
     }
   }
 
+  // ?reveal=1 fires a sector-2 expansion immediately (headless check of
+  // the full-planet reveal beat)
+  if (urlParams.get('reveal') === '1') { round = 2; expandRound(); }
+
   // ?shop=ci opens the radial on that cell, screen-centered (headless check)
   const shopN = parseInt(urlParams.get('shop') || '-1', 10);
   if (shopN >= 0) openShop(shopN);
@@ -3173,7 +3325,7 @@ export function initTdTab(root) {
 
   // opening briefing on a clean load; any debug hook means headless/demo,
   // where a frozen sim would break the verification flow
-  const debugging = ['walk', 'tick', 'wave', 'blast', 'laser', 'found', 'recoil', 'mode', 'map', 'tower', 'credit', 'shop', 'sector']
+  const debugging = ['walk', 'tick', 'wave', 'blast', 'laser', 'found', 'recoil', 'mode', 'map', 'tower', 'credit', 'shop', 'sector', 'reveal']
     .some((k) => urlParams.get(k));
   if (!debugging) showBriefing();
 
