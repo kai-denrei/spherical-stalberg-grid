@@ -6,6 +6,31 @@ Demo links assume `npm run serve` (port 8144) or the
 
 ---
 
+## `e3f6499` — The bastion view, and a slow you can see
+
+The camera family grew its defensive seat: BASTION, third in the V
+cycle, parks the eye behind the Heart facing the nearest live
+portal's lane — the classic tower-defense vantage. The trick that
+makes it a system rather than a preset: clicking any tower in view
+re-anchors the camera behind THAT tower, facing outward along the
+lane it guards (the heart→tower direction, tangent-projected — the
+geometry answers "which way does this gun look" for free). Empty
+ground hands the watch back to the Heart. It's HK's bastion/action
+presets collapsed into one view plus one click.
+
+The slow tower had been mechanically honest and visually mute: a
+0.14-second lightning flicker for a 1.6-second debuff. Now the debuff
+wears its duration — slowed enemies tint ice-blue for the whole
+window via material.color, which multiplies over vertex colors, so
+one hex write per enemy per frame recolors a whole dot cloud — and
+the tethers linger 0.32 s. Tempo turned up to match the operator's
+brief: enemies ×0.7 size at 1.0 cells/s, tower shots at 6.5 cells/s.
+Verification had a nice moment: the HUD read 'cannon HOT' with a
+×2.00 streak in a run with zero player input — the auto-gunner
+confirming itself.
+
+---
+
 ## `75420f1` — The reveal becomes a moment, the tank takes orders
 
 Two systems that make the game legible at its two timescales. The
