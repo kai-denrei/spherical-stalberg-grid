@@ -2,6 +2,7 @@
 // Pure module; no DOM, no three.js.
 import {
   CLASSIC_ARENAS, parseArena, arenaConnected, genArena,
+  createTankGame, TANK_R, TURN_RATE, DRIVE_SPEED, REVERSE_SPEED,
 } from '../src/tanks.js';
 
 let failures = 0;
@@ -47,6 +48,52 @@ check('parse throws on ragged rows', (() => {
     && rows.some((r) => r.includes('1')) && rows.some((r) => r.includes('2')));
   check('proc: deterministic', rows.join('\n') === genArena(7).join('\n'));
   check('proc: seed changes layout', rows.join('\n') !== genArena(8).join('\n'));
+}
+
+// --- kinematics + collision ----------------------------------------------
+console.log('kinematics:');
+const DT = 1 / 60;
+{
+  const g = createTankGame({ seed: 1, arena: 'open', aiLevel: 0 });
+  const h0 = g.tanks[0].heading;
+  g.step(DT, { right: true });
+  check('turn rate exact', approx(g.tanks[0].heading, h0 + TURN_RATE * DT));
+  g.step(DT, { left: true });
+  check('left turn symmetric', approx(g.tanks[0].heading, h0));
+}
+{
+  const g = createTankGame({ seed: 1, arena: 'open', aiLevel: 0 });
+  const { x, z } = g.tanks[0]; // spawn (2.5, 9.5) heading 0 (+x)
+  g.step(DT, { forward: true });
+  check('forward speed exact', approx(g.tanks[0].x, x + DRIVE_SPEED * DT) && approx(g.tanks[0].z, z));
+  g.step(DT, { reverse: true });
+  check('reverse is half speed', REVERSE_SPEED === DRIVE_SPEED / 2
+    && approx(g.tanks[0].x, x + (DRIVE_SPEED - REVERSE_SPEED) * DT));
+}
+{
+  const g = createTankGame({ seed: 1, arena: 'open', aiLevel: 0 });
+  for (let i = 0; i < 60 * 5; i++) g.step(DT, { reverse: true }); // back into left wall
+  check('perimeter clamps at tank radius', approx(g.tanks[0].x, TANK_R, 1e-3)
+    && g.tanks[0].blocked);
+}
+{
+  const g = createTankGame({ seed: 1, arena: 'brackets', aiLevel: 0 });
+  // stage: aim at the center bar (x 11..13, z 9..10) from the left
+  g.tanks[0].x = 9.5; g.tanks[0].z = 9.5; g.tanks[0].heading = 0;
+  for (let i = 0; i < 60 * 3; i++) g.step(DT, { forward: true });
+  check('block stops tank at expanded AABB', g.tanks[0].x <= 11 - TANK_R + 1e-6);
+  // diagonal approach slides along the free axis
+  g.tanks[0].x = 9.5; g.tanks[0].z = 8.0; g.tanks[0].heading = Math.PI / 4;
+  const z0 = g.tanks[0].z;
+  for (let i = 0; i < 30; i++) g.step(DT, { forward: true });
+  check('axis-separated slide', g.tanks[0].z > z0);
+}
+{
+  const g = createTankGame({ seed: 1, arena: 'open', aiLevel: 0 });
+  g.tanks[1].x = g.tanks[0].x + 2; g.tanks[1].z = g.tanks[0].z; // AI parked ahead
+  for (let i = 0; i < 60 * 2; i++) g.step(DT, { forward: true });
+  const d = Math.hypot(g.tanks[0].x - g.tanks[1].x, g.tanks[0].z - g.tanks[1].z);
+  check('tank-tank collision holds 2R', d >= 2 * TANK_R - 1e-6);
 }
 
 if (failures > 0) { console.error(`\n${failures} failure(s)`); process.exit(1); }

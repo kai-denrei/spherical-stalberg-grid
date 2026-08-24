@@ -141,3 +141,120 @@ export function genArena(seed) {
   }
   return CLASSIC_ARENAS.open;
 }
+
+// --- game -----------------------------------------------------------------
+function circleHitsAABB(x, z, r, b) {
+  const cx = Math.max(b.minX, Math.min(x, b.maxX));
+  const cz = Math.max(b.minZ, Math.min(z, b.maxZ));
+  const dx = x - cx, dz = z - cz;
+  return dx * dx + dz * dz < r * r;
+}
+
+// axis-separated move: blocked axes are dropped so the tank slides.
+// Boundaries are clamped; obstacles (blocks, tanks) halt the move on that axis.
+function tryMove(game, i, dx, dz) {
+  const t = game.tanks[i];
+  const { arena, tanks } = game;
+  const o = tanks[1 - i];
+  let ok = true;
+
+  // Try x movement: clamp to boundaries, check for obstacles
+  let newX = t.x + dx;
+  const clampedX = Math.max(TANK_R, Math.min(newX, arena.w - TANK_R));
+  const xClamped = clampedX !== newX;
+  const xBlocked = circleHitsAnyBlock(clampedX, t.z, TANK_R, arena.blocks) ||
+                   circleTouches(clampedX, t.z, TANK_R, o.x, o.z);
+  if (xBlocked) {
+    ok = false;
+  } else {
+    t.x = clampedX;
+    if (xClamped) ok = false;
+  }
+
+  // Try z movement: clamp to boundaries, check for obstacles
+  let newZ = t.z + dz;
+  const clampedZ = Math.max(TANK_R, Math.min(newZ, arena.h - TANK_R));
+  const zClamped = clampedZ !== newZ;
+  const zBlocked = circleHitsAnyBlock(t.x, clampedZ, TANK_R, arena.blocks) ||
+                   circleTouches(t.x, clampedZ, TANK_R, o.x, o.z);
+  if (zBlocked) {
+    ok = false;
+  } else {
+    t.z = clampedZ;
+    if (zClamped) ok = false;
+  }
+
+  return ok;
+}
+
+function circleHitsAnyBlock(x, z, r, blocks) {
+  for (const b of blocks) if (circleHitsAABB(x, z, r, b)) return true;
+  return false;
+}
+
+function circleTouches(x, z, r, ox, oz) {
+  const dx = x - ox, dz = z - oz;
+  return dx * dx + dz * dz < (2 * r) ** 2;
+}
+
+function updateTank(game, i, input, dt) {
+  const t = game.tanks[i];
+  if (t.invulnT > 0) t.invulnT -= dt;
+  if (t.state === 'dying') {
+    t.dyingT -= dt;
+    tryMove(game, i, t.knock[0] * dt, t.knock[1] * dt);
+    if (t.dyingT <= 0) respawnBoth(game);
+    return;
+  }
+  t.heading += ((input.right ? 1 : 0) - (input.left ? 1 : 0)) * TURN_RATE * dt;
+  const ds = input.forward ? DRIVE_SPEED * dt : input.reverse ? -REVERSE_SPEED * dt : 0;
+  t.blocked = false;
+  if (ds) {
+    t.blocked = !tryMove(game, i, Math.cos(t.heading) * ds, Math.sin(t.heading) * ds);
+  }
+  if (input.fire && !game.shells[i]) fireShell(game, i);
+}
+
+function respawnBoth(game) {
+  for (let i = 0; i < 2; i++) {
+    const s = game.arena.spawns[i], t = game.tanks[i];
+    t.x = s.x; t.z = s.z; t.heading = s.heading;
+    t.state = 'alive'; t.dyingT = 0; t.invulnT = INVULN_T; t.knock = [0, 0];
+    game.shells[i] = null;
+  }
+  game.events.push({ type: 'respawn' });
+}
+
+function step(game, dt, playerInput = {}) {
+  game.events.length = 0;
+  if (game.winner >= 0) return;
+  game.time += dt;
+  const inputs = [playerInput, aiStep(game, dt)];
+  for (let i = 0; i < 2; i++) updateTank(game, i, inputs[i] || {}, dt);
+  for (let i = 0; i < 2; i++) updateShell(game, i, dt);
+}
+
+export function createTankGame(p = {}) {
+  const params = { seed: 1, arena: 'brackets', pointsToWin: 7, ricochet: false, aiLevel: 1, ...p };
+  const rows = params.arena === 'proc' ? genArena(params.seed) : CLASSIC_ARENAS[params.arena];
+  if (!rows) throw new Error(`unknown arena ${params.arena}`);
+  const arena = parseArena(rows);
+  const game = {
+    params, arena,
+    rng: mulberry32((params.seed ^ 0xc0deba5e) >>> 0),
+    tanks: arena.spawns.map((s) => ({
+      x: s.x, z: s.z, heading: s.heading, state: 'alive',
+      dyingT: 0, invulnT: 0, knock: [0, 0], blocked: false,
+    })),
+    shells: [null, null],
+    score: [0, 0], winner: -1, time: 0, events: [],
+    aiMem: makeAiMem(),
+  };
+  game.step = (dt, input) => step(game, dt, input);
+  return game;
+}
+
+function fireShell() {}                    // replaced in Task 3
+function updateShell() {}                  // replaced in Task 3
+function makeAiMem() { return {}; }        // replaced in Task 5
+function aiStep() { return {}; }           // replaced in Task 5
