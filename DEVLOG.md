@@ -6,6 +6,18 @@ Demo links assume `npm run serve` (port 8144) or the
 
 ---
 
+## `0fc5860` — Tank2's rules, Battle's clothes
+
+Tank3 is the planet duel in neon. It reuses the whole `tanks2.js` core —
+manual aim, great-circle shells, the ghost-gunner AI ladder, the
+dead-zone orbit follow — and changes only what you see: a Tron world
+(additive cyan wire-grid, near-black void, seeded zone-tinted floors,
+black neon walls), Battle's mesh tanks with edge outlines (cyan you,
+magenta the AI), Braille dot-cloud shells, and polygon-scatter deaths.
+One new tab file; the core never moved.
+
+---
+
 ## `2f8c555` — The Play button comes back on phones
 
 TD's briefing was unstartable on mobile: the Play button was cropped off
