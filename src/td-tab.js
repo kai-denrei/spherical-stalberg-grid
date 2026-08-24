@@ -19,17 +19,17 @@
 
 import * as THREE from '../vendor/three.module.js';
 import GUI from '../vendor/lil-gui.esm.js';
-import { generateSphereMesh, relax } from './grid.js?v=ec1cf036';
-import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=ec1cf036';
-import { mulberry32, randomSeed } from './rng.js?v=ec1cf036';
-import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3 } from './vec3.js?v=ec1cf036';
-import { CREATURES, waveJelly } from './creatures.js?v=ec1cf036';
-import { UNITS, UNIT_NAMES, buildUnit, makeOrbCloud, makeBulletCloud, makeDebris, makeDotBurst, makePortalCloud, makeHeartCloud, makeTowerUnit, makeDotEnemy } from './units.js?v=ec1cf036';
-import { LOOKS, LOOK_NAMES } from './looks.js?v=ec1cf036';
-import { makeCellIndex } from './cellindex.js?v=ec1cf036';
-import { CREATURE_TINTS, ENEMY_SPEC, INTROS } from './enemyspec.js?v=ec1cf036';
-import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval } from './towers.js?v=ec1cf036';
-import { makeEconomy, sellRefund } from './economy.js?v=ec1cf036';
+import { generateSphereMesh, relax } from './grid.js?v=11736ea8';
+import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=11736ea8';
+import { mulberry32, randomSeed } from './rng.js?v=11736ea8';
+import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3 } from './vec3.js?v=11736ea8';
+import { CREATURES, waveJelly } from './creatures.js?v=11736ea8';
+import { UNITS, UNIT_NAMES, buildUnit, makeOrbCloud, makeBulletCloud, makeDebris, makeDotBurst, makePortalCloud, makeHeartCloud, makeTowerUnit, makeDotEnemy } from './units.js?v=11736ea8';
+import { LOOKS, LOOK_NAMES } from './looks.js?v=11736ea8';
+import { makeCellIndex } from './cellindex.js?v=11736ea8';
+import { CREATURE_TINTS, ENEMY_SPEC, INTROS } from './enemyspec.js?v=11736ea8';
+import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval } from './towers.js?v=11736ea8';
+import { makeEconomy, sellRefund } from './economy.js?v=11736ea8';
 
 export function initTdTab(root) {
   let active = false;
@@ -792,6 +792,9 @@ export function initTdTab(root) {
     conserve: 'SAVE AMMO', home: 'HOME', portal: 'PORTAL',
   };
   let portalDist = null; // BFS field to the nearest live portal (directive)
+  // BASTION view: third-person from behind the Heart — or behind any
+  // tower you click while in it. watchTower null = the Heart.
+  let watchTower = null;
   let mapMode = 'player'; // 'player' | 'heart'
   let buildYaw = 0;       // drag orbits the azimuth around the pole axis
   let buildDist = 2.6;    // wheel/pinch zooms
@@ -834,6 +837,42 @@ export function initTdTab(root) {
       tmpCam.position.copy(camGoal.pos);
       tmpCam.up.set(up[0], up[1], up[2]);
       tmpCam.lookAt(0, 0, 0);
+      camGoal.quat.copy(tmpCam.quaternion);
+      return;
+    }
+    if (params.view === 'bastion' && !buildMode) {
+      // behind the anchor, facing the incoming lane (outward from the
+      // Heart through a watched tower; toward the nearest live portal
+      // when watching the Heart itself)
+      const anchorCi = (watchTower && towers.includes(watchTower)) ? watchTower.ci : dungeon.heart;
+      const ac = graph.centers[anchorCi];
+      const an = graph.normals[anchorCi];
+      const tangentAt = (pnt, toward) => {
+        const nn = norm3(pnt);
+        const raw = sub3(toward, pnt);
+        const flat = sub3(raw, scale3(nn, dot3(raw, nn)));
+        const l = len3(flat);
+        return l > 1e-9 ? scale3(flat, 1 / l) : [1, 0, 0];
+      };
+      let lookDir;
+      if (anchorCi === dungeon.heart) {
+        let bp = null, bd = Infinity;
+        for (const sp of spawnPoints) {
+          if (!sp.alive) continue;
+          const dd = dist3(ac, graph.centers[sp.ci]);
+          if (dd < bd) { bd = dd; bp = graph.centers[sp.ci]; }
+        }
+        lookDir = bp ? tangentAt(ac, bp) : tangentAt(ac, graph.centers[dungeon.spawn]);
+      } else {
+        lookDir = scale3(tangentAt(ac, graph.centers[dungeon.heart]), -1); // outward
+      }
+      const eye = add3(add3(ac, scale3(an, params.wallHeight * 4 + cellSide * 2.0)),
+        scale3(lookDir, -cellSide * 2.8));
+      const look = add3(add3(ac, scale3(an, params.wallHeight)), scale3(lookDir, cellSide * 3));
+      camGoal.pos.set(eye[0], eye[1], eye[2]);
+      tmpCam.position.copy(camGoal.pos);
+      tmpCam.up.set(an[0], an[1], an[2]);
+      tmpCam.lookAt(look[0], look[1], look[2]);
       camGoal.quat.copy(tmpCam.quaternion);
       return;
     }
@@ -1203,8 +1242,11 @@ export function initTdTab(root) {
   addEventListener('blur', () => { keys.left = keys.right = keys.fast = keys.slow = keys.laser = false; });
 
   function toggleView() {
-    params.view = params.view === 'pov' ? 'third' : 'pov';
+    const cycle = ['pov', 'third', 'bastion'];
+    params.view = cycle[(cycle.indexOf(params.view) + 1) % cycle.length];
+    if (params.view !== 'bastion') watchTower = null;
     viewCtrl.updateDisplay();
+    updateHud();
   }
 
   // touch zones/buttons: press-and-hold, like the keys; onPress fires per
@@ -1253,8 +1295,8 @@ export function initTdTab(root) {
   let buildDragX = null;
   let tapStart = null;
   container.addEventListener('pointerdown', (ev) => {
-    if (!buildMode) return;
-    buildDragX = ev.clientX;
+    if (!buildMode && params.view !== 'bastion') return;
+    if (buildMode) buildDragX = ev.clientX;
     tapStart = [ev.clientX, ev.clientY];
   });
   addEventListener('pointermove', (ev) => {
@@ -1267,10 +1309,26 @@ export function initTdTab(root) {
     }
   });
   addEventListener('pointerup', (ev) => {
-    if (buildMode && tapStart
-      && Math.hypot(ev.clientX - tapStart[0], ev.clientY - tapStart[1]) <= 8) {
+    const isTap = tapStart
+      && Math.hypot(ev.clientX - tapStart[0], ev.clientY - tapStart[1]) <= 8;
+    if (buildMode && isTap) {
       const ci = cellAtScreen(ev.clientX, ev.clientY);
       if (ci !== -1) openShop(ci, ev.clientX, ev.clientY);
+    } else if (!buildMode && params.view === 'bastion' && isTap) {
+      // click a tower in view → the camera moves behind IT; empty ground
+      // returns the watch to the Heart
+      const r = renderer.domElement.getBoundingClientRect();
+      ndc.set(((ev.clientX - r.left) / r.width) * 2 - 1,
+        -((ev.clientY - r.top) / r.height) * 2 + 1);
+      raycaster.setFromCamera(ndc, camera);
+      const hits = raycaster.intersectObjects(towers.map((tw) => tw.obj), true);
+      if (hits.length) {
+        let obj = hits[0].object;
+        while (obj && !towers.some((tw) => tw.obj === obj)) obj = obj.parent;
+        watchTower = towers.find((tw) => tw.obj === obj) || null;
+      } else {
+        watchTower = null;
+      }
     }
     buildDragX = null;
     tapStart = null;
@@ -1789,7 +1847,7 @@ export function initTdTab(root) {
       for (let k = 0; k < count; k++) {
         // every enemy is a half-dotted STATIC cloud, a notch smaller
         const obj = makeDotEnemy(sp.type, { walker: CREATURE_TINTS[sp.type], walkerHi: 0xffffff });
-        const size = spec.size * 0.85;
+        const size = spec.size * 0.7; // small and mean
         const scale0 = cellSide * size;
         obj.scale.setScalar(scale0);
         obj.userData.s0 = scale0;
@@ -1809,7 +1867,7 @@ export function initTdTab(root) {
     updateHud();
   }
 
-  const ENEMY_SPEED = 0.85; // cells/s toward the Heart — FAST, per operator
+  const ENEMY_SPEED = 1.0; // cells/s toward the Heart — FASTER still
   function updateEnemies(dt, tNow) {
     for (const e of enemies) {
       if (!e.alive) continue;
@@ -1825,6 +1883,10 @@ export function initTdTab(root) {
       let pace = ENEMY_SPEED * spec.speed;
       if (tNow < e.behUntil) pace *= e.behMult; // on-hit reaction window
       if (tNow < e.slowUntil) pace *= e.slowFactor; // slow-tower debuff
+      // the slow READS for its full duration: the whole cloud tints ice
+      if (e.obj.material) {
+        e.obj.material.color.setHex(tNow < e.slowUntil ? 0x8fd4ff : 0xffffff);
+      }
       // erratic (phage): HokorobiTawaa velocity bursts, 0.7×–1.3×
       if (spec.erratic) pace *= 0.7 + 0.6 * (0.5 + 0.5 * Math.sin(tNow * 3.1 + e.phase * 7));
       e.prog += pace * dt;
@@ -2508,6 +2570,7 @@ export function initTdTab(root) {
     towers.splice(towers.indexOf(tower), 1);
     towerByCell.delete(tower.ci);
     towerCells.delete(tower.ci);
+    if (watchTower === tower) watchTower = null;
     updateHud();
   }
 
@@ -2675,7 +2738,7 @@ export function initTdTab(root) {
   }
 
   function updateTowerShots(dt, tNow) {
-    const v = 4.2 * cellSide;
+    const v = 6.5 * cellSide; // snappy — the action reads at this speed
     for (let i = towerShots.length - 1; i >= 0; i--) {
       const p = towerShots[i];
       // homing re-steers toward its (living) target each frame
@@ -2736,7 +2799,7 @@ export function initTdTab(root) {
     tmpV.set(d[0], d[1], d[2]).normalize();
     mesh.quaternion.setFromUnitVectors(Z_AXIS, tmpV);
     scene.add(mesh);
-    beams.push({ mesh, ttl });
+    beams.push({ mesh, ttl, ttl0: ttl });
   }
 
   // lightning tether (slow field): a jagged additive polyline from the
@@ -2768,13 +2831,13 @@ export function initTdTab(root) {
       blending: THREE.AdditiveBlending, depthWrite: false,
     }));
     scene.add(line);
-    beams.push({ mesh: line, ttl: 0.14, dg: true });
+    beams.push({ mesh: line, ttl: 0.32, ttl0: 0.32, dg: true });
   }
 
   function updateBeams(dt) {
     for (let i = beams.length - 1; i >= 0; i--) {
       beams[i].ttl -= dt;
-      beams[i].mesh.material.opacity = Math.max(0, beams[i].ttl / 0.16) * 0.9;
+      beams[i].mesh.material.opacity = Math.max(0, beams[i].ttl / (beams[i].ttl0 || 0.16)) * 0.9;
       if (beams[i].ttl <= 0) {
         scene.remove(beams[i].mesh);
         beams[i].mesh.material.dispose();
@@ -2789,6 +2852,7 @@ export function initTdTab(root) {
     towers.length = 0;
     towerByCell.clear();
     towerCells.clear();
+    watchTower = null;
     for (let i = towerShots.length - 1; i >= 0; i--) killTowerShot(i);
     for (let i = beams.length - 1; i >= 0; i--) {
       scene.remove(beams[i].mesh);
@@ -2989,7 +3053,7 @@ export function initTdTab(root) {
   gui.add(params, 'look', LOOK_NAMES).onChange(applyLook);
   gui.add(params, 'wallTops', ['auto', 'bright', 'dim', 'black'])
     .name('wall tops').onChange(applyLook);
-  const viewCtrl = gui.add(params, 'view', ['pov', 'third']).name('camera (V)');
+  const viewCtrl = gui.add(params, 'view', ['pov', 'third', 'bastion']).name('camera (V)');
   const speedCtrl = gui.add(params, 'speed', 0.2, 4, 0.1).name('wander speed');
   const directiveCtrl = gui.add(params, 'directive', DIRECTIVES).name('auto directive').onChange(syncDirectiveChip);
   gui.add(params, 'recoil', 0, 8, 0.1).name('shell recoil');
@@ -3038,7 +3102,7 @@ export function initTdTab(root) {
       scene.background = mainBg;
       markerMesh.visible = false;
       for (const sp of spawnPoints) if (sp.mapMarker) sp.mapMarker.visible = false;
-      playerMesh.visible = params.view === 'third';
+      playerMesh.visible = params.view !== 'pov';
       renderer.render(scene, camera);
       scene.background = mapBg;
       markerMesh.visible = true;
@@ -3162,7 +3226,7 @@ export function initTdTab(root) {
     markerMesh.visible = false;
     for (const sp of spawnPoints) if (sp.mapMarker) sp.mapMarker.visible = false;
     // in PoV the camera sits inside the creature — hide it there
-    playerMesh.visible = params.view === 'third';
+    playerMesh.visible = params.view !== 'pov';
     renderer.render(scene, camera);
 
     // minimap, two modes (M): player-centred heading-up as in the heart
@@ -3204,7 +3268,8 @@ export function initTdTab(root) {
   const pointsOverride = parseInt(urlParams.get('points') || '', 10);
   if (Number.isFinite(pointsOverride)) params.points = Math.min(16000, Math.max(150, pointsOverride));
   if (Number.isFinite(wallOverride)) params.wallHeight = wallOverride;
-  if (urlParams.get('view') === 'third') { params.view = 'third'; viewCtrl.updateDisplay(); }
+  const viewOv = urlParams.get('view');
+  if (['pov', 'third', 'bastion'].includes(viewOv)) { params.view = viewOv; viewCtrl.updateDisplay(); }
   const lookOverride = urlParams.get('look');
   if (LOOKS[lookOverride]) params.look = lookOverride;
   const wtOverride = urlParams.get('walltops');
