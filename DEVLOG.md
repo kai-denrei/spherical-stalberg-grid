@@ -6,6 +6,16 @@ Demo links assume `npm run serve` (port 8144) or the
 
 ---
 
+## `db01069` — Death is eight cubes
+
+Hit feedback landed: victims spin through their knockback slide,
+explode into a fistful of gravity-obeying cubes, and both tanks
+respawn blinking. The debris uses its own mulberry32 stream seeded
+from sim time — visual chaos, deterministic core. With that, the
+Combat homage is complete: core, cameras, ladder, feel.
+
+---
+
 ## `bd5f3c3` — Same game, three eyes
 
 The tank tab gained its camera set: authentic top-down ortho, a
