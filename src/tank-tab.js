@@ -3,7 +3,7 @@
 // every rule lives (Node-tested) in the core.
 import * as THREE from '../vendor/three.module.js';
 import GUI from '../vendor/lil-gui.esm.js';
-import { createTankGame } from './tanks.js?v=57c0658c';
+import { createTankGame } from './tanks.js?v=6d392440';
 
 const DT = 1 / 60;
 const COLORS = {
@@ -36,6 +36,17 @@ export function initTankTab(root) {
   topCam.up.set(0, 0, -1);
   topCam.lookAt(13, 0, 10);
 
+  // perspective camera + view state
+  const perspCam = new THREE.PerspectiveCamera(60, 1, 0.05, 200);
+  const VIEWS = ['top', 'third', 'pov'];
+  // POV anchors ride INSIDE the player tank group so camera placement is
+  // derived from render transforms (hard rule), never from heading math.
+  const povEye = new THREE.Object3D();
+  povEye.position.set(0.1, 0.95, 0);
+  const povTarget = new THREE.Object3D();
+  povTarget.position.set(6, 0.8, 0);
+  const _v1 = new THREE.Vector3(), _v2 = new THREE.Vector3(), _q = new THREE.Quaternion();
+
   function resize() {
     const w = container.clientWidth || 1;
     const h = container.clientHeight || 1;
@@ -45,6 +56,7 @@ export function initTankTab(root) {
     topCam.left = -spanZ * aspect; topCam.right = spanZ * aspect;
     topCam.top = spanZ; topCam.bottom = -spanZ;
     topCam.updateProjectionMatrix();
+    perspCam.aspect = w / h; perspCam.updateProjectionMatrix();
   }
   addEventListener('resize', resize);
   resize();
@@ -77,6 +89,8 @@ export function initTankTab(root) {
   const tankMeshes = [buildTank(COLORS.red), buildTank(COLORS.blue)];
   const shellMeshes = [0, 1].map(() => new THREE.Mesh(new THREE.BoxGeometry(0.24, 0.24, 0.24), shellMat));
   scene.add(...tankMeshes, ...shellMeshes);
+  // attach POV anchors to the player (red) tank group
+  tankMeshes[0].add(povEye, povTarget);
 
   const scoreEl = root.querySelector('#tank-score');
   const msgEl = root.querySelector('#tank-msg');
@@ -127,8 +141,15 @@ export function initTankTab(root) {
     for (const e of game.events) {
       if (e.type === 'hit') updateScore();
       if (e.type === 'matchEnd') {
-        msgEl.textContent = e.winner === 0 ? 'RED WINS — click / ENTER for rematch'
-          : 'BLUE WINS — click / ENTER for rematch';
+        if (e.winner === 0 && params.aiLevel === unlocked && unlocked < 4) {
+          unlocked++;
+          localStorage.setItem('tank.unlocked', String(unlocked));
+          rebuildAiCtrl();
+          msgEl.textContent = `RED WINS — LEVEL ${unlocked} UNLOCKED — click / ENTER`;
+        } else {
+          msgEl.textContent = e.winner === 0 ? 'RED WINS — click / ENTER for rematch'
+            : 'BLUE WINS — click / ENTER for rematch';
+        }
         msgEl.classList.remove('hidden');
       }
     }
@@ -146,6 +167,10 @@ export function initTankTab(root) {
     const k = KEYMAP[e.key];
     if (k) { input[k] = true; e.preventDefault(); }
     if (e.key === 'Enter' && game.winner >= 0) newMatch();
+    if (e.key === 'c' || e.key === 'C') {
+      params.view = VIEWS[(VIEWS.indexOf(params.view) + 1) % VIEWS.length];
+      gui.controllersRecursive().forEach((c2) => c2.updateDisplay());
+    }
   });
   addEventListener('keyup', (e) => {
     const k = KEYMAP[e.key];
@@ -158,6 +183,22 @@ export function initTankTab(root) {
     el.addEventListener('pointerdown', (e) => { input[k] = true; e.preventDefault(); });
     el.addEventListener('pointerup', () => { input[k] = false; });
     el.addEventListener('pointercancel', () => { input[k] = false; });
+  }
+
+  // --- camera select -------------------------------------------------------
+  function activeCamera() {
+    if (params.view === 'top') return topCam;
+    const tm = tankMeshes[0];
+    if (params.view === 'pov') {
+      perspCam.position.copy(povEye.getWorldPosition(_v1));
+      perspCam.lookAt(povTarget.getWorldPosition(_v2));
+    } else { // third person: behind and above, following the tank's facing
+      tm.getWorldQuaternion(_q);
+      const behind = _v1.set(-7, 4.5, 0).applyQuaternion(_q).add(tm.position);
+      perspCam.position.lerp(behind, 0.12);
+      perspCam.lookAt(_v2.copy(tm.position).setY(0.6));
+    }
+    return perspCam;
   }
 
   // --- sync + loop ---------------------------------------------------------
@@ -186,7 +227,7 @@ export function initTankTab(root) {
       acc -= DT;
     }
     syncScene();
-    renderer.render(scene, topCam);
+    renderer.render(scene, activeCamera());
   }
 
   // --- panel ---------------------------------------------------------------
@@ -198,10 +239,29 @@ export function initTankTab(root) {
   gui.add({ rematch: () => newMatch() }, 'rematch').name('↻ new match');
   if (matchMedia('(pointer: coarse), (max-width: 700px)').matches) gui.close();
 
+  // unlock storage + AI/view controllers
+  const readUnlocked = () => Math.min(4, Math.max(1,
+    parseInt(localStorage.getItem('tank.unlocked') || '1', 10) || 1));
+  let unlocked = readUnlocked();
+  let aiCtrl = null;
+  function rebuildAiCtrl() {
+    if (aiCtrl) aiCtrl.destroy();
+    const levels = {};
+    ['L1 drunk', 'L2 hunter', 'L3 marksman', 'L4 bank-shot']
+      .slice(0, unlocked).forEach((n, i) => { levels[n] = i + 1; });
+    aiCtrl = gui.add(params, 'aiLevel', levels).name('AI level').onChange(newMatch);
+  }
+  rebuildAiCtrl();
+  gui.add(params, 'view', VIEWS).name('camera (C)').listen();
+
   // --- URL hooks (headless verification) ----------------------------------
   const urlParams = new URLSearchParams(location.search);
   const seedOv = parseInt(urlParams.get('seed') || '', 10);
   if (Number.isFinite(seedOv)) params.seed = seedOv;
+  const aiOv = parseInt(urlParams.get('ai') || '', 10);
+  if (aiOv >= 1 && aiOv <= 4) { params.aiLevel = aiOv; unlocked = Math.max(unlocked, aiOv); rebuildAiCtrl(); }
+  const viewOv = urlParams.get('view');
+  if (VIEWS.includes(viewOv)) params.view = viewOv;
   gui.controllersRecursive().forEach((c) => c.updateDisplay());
 
   newMatch();
@@ -214,7 +274,7 @@ export function initTankTab(root) {
     syncScene();
     console.log('TANK ' + JSON.stringify({
       score: game.score, winner: game.winner,
-      t: +game.time.toFixed(2), ai: params.aiLevel,
+      t: +game.time.toFixed(2), ai: params.aiLevel, view: params.view,
     }));
   }
 
