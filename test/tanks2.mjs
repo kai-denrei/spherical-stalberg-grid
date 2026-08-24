@@ -4,8 +4,9 @@ import {
   rotAbout, tangentAt, tangentDir, arcBetween, generatePlanet,
   createPlanetTankGame, TANK_ANG, TURRET_H, TURN_RATE, DRIVE_RATE, REVERSE_RATE, WALL_MARGIN_F,
   hasLineOfSight, SHELL_RATE, SHELL_RANGE, SHELL_ANG, MAX_BOUNCES, DYING_T, INVULN_T,
+  interceptPos,
 } from '../src/tanks2.js';
-import { dot3, len3, dist3, cross3, norm3 } from '../src/vec3.js';
+import { dot3, len3, dist3, cross3, norm3, scale3 } from '../src/vec3.js';
 
 let failures = 0;
 const check = (name, cond, detail = '') => {
@@ -243,6 +244,66 @@ console.log('match flow:');
     return snap(g);
   };
   check('deterministic replay (10s, L1, ricochet)', run() === run());
+}
+
+console.log('ai:');
+{
+  // intercept: target circling at known rate; shell must arrive where it will be
+  const shooter = [1, 0, 0];
+  const target = norm3(rotAbout(shooter, [0, 1, 0], -0.9));
+  const velAxis = [1, 0, 0]; // target circles around +x
+  const p = interceptPos(shooter, target, velAxis, 0.3);
+  const tFly = arcBetween(shooter, p) / SHELL_RATE;
+  const truth = norm3(rotAbout(target, velAxis, 0.3 * tFly));
+  check('interceptPos converges on the moving target', arcBetween(p, truth) < 0.01);
+}
+{
+  const g = createPlanetTankGame({ seed: 5, wallClusters: 0, aiLevel: 1 });
+  const start = g.tanks[1].pos.slice();
+  let fired = 0;
+  for (let i = 0; i < 60 * 20; i++) {
+    g.step(DT, {});
+    fired += g.events.filter((e) => e.type === 'fire' && e.tank === 1).length;
+  }
+  check('L1 wanders the planet', arcBetween(start, g.tanks[1].pos) > 0.3);
+  check('L1 fires blind on a timer', fired >= 3);
+}
+{
+  // L2/L3 never fire without LOS (walled planet, moving player, 20s each)
+  for (const lvl of [2, 3]) {
+    const g = createPlanetTankGame({ seed: 9, wallClusters: 6, aiLevel: lvl });
+    let violations = 0;
+    for (let i = 0; i < 60 * 20; i++) {
+      g.step(DT, { left: i % 4 === 0, forward: true });
+      if (g.events.some((e) => e.type === 'fire' && e.tank === 1)
+        && !hasLineOfSight(g, g.tanks[1].pos, g.tanks[0].pos)) violations++;
+    }
+    check(`L${lvl} only fires with LOS`, violations === 0, `${violations} blind`);
+  }
+}
+{
+  // L4 ghost gunner: sees the player, player flees over the horizon,
+  // L4 fires at the extrapolated position with NO line of sight.
+  const g = createPlanetTankGame({ seed: 5, wallClusters: 0, aiLevel: 4 });
+  const a = g.tanks[0], b = g.tanks[1];
+  a.pos = [1, 0, 0];
+  b.pos = norm3(rotAbout(a.pos, [0, 1, 0], -0.3)); // inside the horizon
+  b.head = tangentDir(b.pos, a.pos);
+  a.head = tangentDir(a.pos, b.pos) ? scale3(tangentDir(a.pos, b.pos), -1) : a.head; // face AWAY
+  let blindFire = false;
+  for (let i = 0; i < 60 * 12 && !blindFire; i++) {
+    g.step(DT, { forward: true }); // flee straight over the horizon
+    if (g.events.some((e) => e.type === 'fire' && e.tank === 1)
+      && !hasLineOfSight(g, g.tanks[1].pos, g.tanks[0].pos)) blindFire = true;
+  }
+  check('L4 fires over the horizon at the ghost', blindFire);
+}
+{
+  // L4 ambush: never saw the player, no ghost -> holds position
+  const g = createPlanetTankGame({ seed: 5, wallClusters: 0, aiLevel: 4 });
+  const p0 = g.tanks[1].pos.slice(); // spawns are antipodal: no LOS, no track
+  for (let i = 0; i < 60 * 3; i++) g.step(DT, {});
+  check('L4 holds without a shot', arcBetween(p0, g.tanks[1].pos) < 0.05);
 }
 
 if (failures > 0) { console.error(`\n${failures} failure(s)`); process.exit(1); }

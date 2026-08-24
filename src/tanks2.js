@@ -311,5 +311,113 @@ function updateShell(game, i, dt) {
     }
   }
 }
-function makeAiMem() { return {}; }        // replaced in Task 5
-function aiStep() { return {}; }           // replaced in Task 5
+// --- AI -------------------------------------------------------------------
+// L1 Drunk: wander + blind timer fire. L2 Hunter: track bearing, fire on
+// LOS. L3 Marksman: lead via great-circle intercept, spacing, slip while
+// its shell flies. L4 Ghost gunner: no bank shots on a sphere — instead
+// it dead-reckons the last-seen player along their great circle and fires
+// over the horizon without LOS. All randomness from game.rng.
+const AIM_ERR = [0, 0.25, 0.15, 0.06, 0.04];
+const GHOST_MAX_AGE = 4;
+
+function makeAiMem() {
+  return {
+    wanderT: 0, wanderDir: null, fireT: 1, strafeSign: 1,
+    prevP: null, velAxis: null, velRate: 0,
+    seenPos: null, seenAxis: null, seenRate: 0, seenAge: Infinity,
+  };
+}
+
+const signedAngle = (pos, from, to) =>
+  Math.atan2(dot3(cross3(from, to), pos), dot3(from, to));
+
+export function interceptPos(shooter, target, velAxis, velRate) {
+  let t = arcBetween(shooter, target) / SHELL_RATE;
+  for (let k = 0; k < 3; k++) {
+    const p = norm3(rotAbout(target, velAxis, velRate * t));
+    t = arcBetween(shooter, p) / SHELL_RATE;
+  }
+  return norm3(rotAbout(target, velAxis, velRate * t));
+}
+
+function aiStep(game, dt) {
+  const lvl = game.params.aiLevel | 0;
+  if (lvl <= 0) return {};
+  const me = game.tanks[1], you = game.tanks[0];
+  const mem = game.aiMem, rng = game.rng;
+  if (me.state !== 'alive') return {};
+
+  // player track: angular velocity as axis + rate
+  if (mem.prevP && dt > 0) {
+    const moved = arcBetween(mem.prevP, you.pos);
+    mem.velRate = moved / dt;
+    if (moved > 1e-7) mem.velAxis = norm3(cross3(mem.prevP, you.pos));
+  }
+  mem.prevP = you.pos.slice();
+  const los = hasLineOfSight(game, me.pos, you.pos);
+  if (los) {
+    mem.seenPos = you.pos.slice();
+    mem.seenAxis = mem.velAxis; mem.seenRate = mem.velRate; mem.seenAge = 0;
+  } else mem.seenAge += dt;
+
+  const input = {};
+  const bearing = tangentDir(me.pos, you.pos) ?? tangentBasis(me.pos)[0];
+  const sep = arcBetween(me.pos, you.pos);
+  let desired, canFire = false;
+
+  if (lvl === 1) {
+    mem.wanderT -= dt;
+    if (mem.wanderT <= 0 || me.blocked || !mem.wanderDir) {
+      mem.wanderT = 1.5 + rng() * 2;
+      mem.wanderDir = tangentAt(rotAbout(me.head, me.pos, rng() * Math.PI * 2), me.pos);
+    }
+    mem.wanderDir = tangentAt(mem.wanderDir, me.pos);
+    desired = mem.wanderDir;
+    input.forward = true;
+    mem.fireT -= dt;
+    if (mem.fireT <= 0 && !game.shells[1]) { input.fire = true; mem.fireT = 1 + rng() * 2; }
+  } else {
+    let aimPos = you.pos, hasAim = los;
+    if (lvl >= 3 && los && mem.velAxis) {
+      aimPos = interceptPos(me.pos, you.pos, mem.velAxis, mem.velRate);
+    }
+    if (lvl >= 4 && !los && mem.seenPos && mem.seenAge < GHOST_MAX_AGE) {
+      const ghost = mem.seenAxis
+        ? norm3(rotAbout(mem.seenPos, mem.seenAxis, mem.seenRate * mem.seenAge))
+        : mem.seenPos;
+      if (arcBetween(me.pos, ghost) < SHELL_RANGE * 0.95) { aimPos = ghost; hasAim = true; }
+    }
+    desired = tangentDir(me.pos, aimPos) ?? bearing;
+    desired = tangentAt(rotAbout(desired, me.pos, (rng() - 0.5) * 2 * AIM_ERR[lvl]), me.pos);
+    canFire = hasAim;
+    aiMove(game, lvl, input, { me, bearing, sep, mem, rng, hasAim });
+    if (input.strafeDir) { desired = input.strafeDir; canFire = false; delete input.strafeDir; }
+  }
+
+  const dh = signedAngle(me.pos, me.head, desired);
+  if (dh > 0.06) input.left = true;
+  else if (dh < -0.06) input.right = true;
+  if (canFire && Math.abs(dh) < 0.12 && !game.shells[1]) {
+    input.fire = true;
+    input.forward = input.reverse = false; // hold still: the aim stays true at fire time
+  }
+  return input;
+}
+
+function aiMove(game, lvl, input, ctx) {
+  const { me, bearing, sep, mem, rng, hasAim } = ctx;
+  if (lvl === 2) {
+    input.forward = Math.abs(signedAngle(me.pos, me.head, bearing)) < 0.6;
+    return;
+  }
+  if (lvl >= 4 && !hasAim) return; // ambush: hold, keep tracking the bearing
+  if (game.shells[1]) {
+    if (rng() < 0.005) mem.strafeSign = -mem.strafeSign;
+    input.strafeDir = tangentAt(
+      rotAbout(bearing, me.pos, (mem.strafeSign * Math.PI) / 2), me.pos);
+    input.forward = true;
+    return;
+  }
+  if (sep > 1.0) input.forward = true;
+  else if (sep < 0.45) input.reverse = true;
+}
