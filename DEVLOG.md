@@ -6,6 +6,20 @@ Demo links assume `npm run serve` (port 8144) or the
 
 ---
 
+## `0bf5599` — Four brains, one input shape
+
+The tank AI ladder is complete and Node-tested. Every level emits the
+same input shape as the player's keys — the AI plays the same game.
+L1 wanders and fires blind on a timer; L2 gates fire on a slab-test
+line of sight; L3 solves the constant-velocity intercept quadratic to
+lead a runner and slips sideways while its shell flies; L4 mirrors
+the target across the perimeter walls to unfold one-bounce ricochet
+solutions, and simply waits when it has no shot. Aim error shrinks
+with level — the ladder is a difficulty dial made of behaviors, not
+stat inflation.
+
+---
+
 ## `7219824` — A second game grows in the test tube
 
 The tank-combat core (Atari Combat homage) landed as a pure module:
