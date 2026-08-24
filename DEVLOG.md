@@ -6,6 +6,27 @@ Demo links assume `npm run serve` (port 8144) or the
 
 ---
 
+## `6083632` — The map teaches, the gates face forward
+
+Two small legibility moves with the same philosophy: encode the rule
+in the render. First, buildable ground announces itself — in black
+wall-top mode, only the wall cells that BORDER a hallway fill with a
+dim tint, which is precisely the set of cells towers may mount (the
+placeError border rule, painted). The player reads 'build here' off
+the terrain; the deep wall mass and the sealed frontier stay void, so
+the contrast survives. One boolean per wall cell at build time, zero
+per-frame cost.
+
+Second, portals stopped standing sideways. The upright alignment
+always left the gate's azimuth arbitrary, so a torii could face the
+wall on both sides of its lane. Now the gate axis turns toward the
+open neighbor nearest the Heart — the direction its creatures will
+actually march — through the same up-plus-lookAt pattern every unit
+uses. A doorway that faces its road: the kind of detail nobody
+notices when it's right and everybody feels when it's wrong.
+
+---
+
 ## `5d55b1b` — Density with intent
 
 The portals doubled their dots (560 → ~1150), but the commit's real
