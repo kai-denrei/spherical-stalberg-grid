@@ -19,17 +19,17 @@
 
 import * as THREE from '../vendor/three.module.js';
 import GUI from '../vendor/lil-gui.esm.js';
-import { generateSphereMesh, relax } from './grid.js?v=03650f29';
-import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=03650f29';
-import { mulberry32, randomSeed } from './rng.js?v=03650f29';
-import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3 } from './vec3.js?v=03650f29';
-import { CREATURES, waveJelly } from './creatures.js?v=03650f29';
-import { UNITS, UNIT_NAMES, buildUnit, makeOrbCloud, makeBulletCloud, makeDebris, makeDotBurst, makePortalCloud, makeHeartCloud, makeTowerUnit, makeDotEnemy } from './units.js?v=03650f29';
-import { LOOKS, LOOK_NAMES } from './looks.js?v=03650f29';
-import { makeCellIndex } from './cellindex.js?v=03650f29';
-import { CREATURE_TINTS, ENEMY_SPEC, INTROS } from './enemyspec.js?v=03650f29';
-import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval } from './towers.js?v=03650f29';
-import { makeEconomy, sellRefund } from './economy.js?v=03650f29';
+import { generateSphereMesh, relax } from './grid.js?v=784e30d2';
+import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=784e30d2';
+import { mulberry32, randomSeed } from './rng.js?v=784e30d2';
+import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3 } from './vec3.js?v=784e30d2';
+import { CREATURES, waveJelly } from './creatures.js?v=784e30d2';
+import { UNITS, UNIT_NAMES, buildUnit, makeOrbCloud, makeBulletCloud, makeDebris, makeDotBurst, makePortalCloud, makeHeartCloud, makeTowerUnit, makeDotEnemy } from './units.js?v=784e30d2';
+import { LOOKS, LOOK_NAMES } from './looks.js?v=784e30d2';
+import { makeCellIndex } from './cellindex.js?v=784e30d2';
+import { CREATURE_TINTS, ENEMY_SPEC, INTROS } from './enemyspec.js?v=784e30d2';
+import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval } from './towers.js?v=784e30d2';
+import { makeEconomy, sellRefund } from './economy.js?v=784e30d2';
 
 export function initTdTab(root) {
   let active = false;
@@ -1234,6 +1234,22 @@ export function initTdTab(root) {
       document.activeElement.blur();
     }
     const k = ev.key.toLowerCase();
+    // QoL: with a tower SELECTED (its radial open, or watched in bastion),
+    // W/↑ upgrades it instead of driving — HK's shortcut, kept out of the
+    // tank's way by requiring a selection context
+    if (down && (k === 'w' || k === 'arrowup')) {
+      const sel = towerByCell.get(shopCi)
+        || (params.view === 'bastion' && !buildMode ? watchTower : null);
+      if (sel && (buildMode || params.view === 'bastion')) {
+        if (upgradeTower(sel)) {
+          if (shopCi !== -1) openShop(shopCi); // refresh the radial
+        } else if (shopCi !== -1) {
+          flashShopNote(upgradeCost(sel.def, sel.tier) === null ? 'max tier' : 'not enough credit');
+        }
+        ev.preventDefault();
+        return;
+      }
+    }
     const m = { arrowleft: 'left', a: 'left', arrowright: 'right', d: 'right',
       arrowup: 'fast', w: 'fast', arrowdown: 'slow', s: 'slow',
       shift: 'laser' }[k];
