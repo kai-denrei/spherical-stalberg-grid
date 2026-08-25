@@ -19,17 +19,17 @@
 
 import * as THREE from '../vendor/three.module.js';
 import GUI from '../vendor/lil-gui.esm.js';
-import { generateSphereMesh, relax } from './grid.js?v=db100696';
-import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=db100696';
-import { mulberry32, randomSeed } from './rng.js?v=db100696';
-import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3 } from './vec3.js?v=db100696';
-import { CREATURES, waveJelly } from './creatures.js?v=db100696';
-import { UNITS, UNIT_NAMES, buildUnit, makeOrbCloud, makeBulletCloud, makeMissileCloud, makeDebris, makeDotBurst, makePortalCloud, makeHeartCloud, makeTowerUnit, makeDotEnemy } from './units.js?v=db100696';
-import { LOOKS, LOOK_NAMES } from './looks.js?v=db100696';
-import { makeCellIndex } from './cellindex.js?v=db100696';
-import { CREATURE_TINTS, ENEMY_SPEC, INTROS } from './enemyspec.js?v=db100696';
-import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockRound } from './towers.js?v=db100696';
-import { makeEconomy, sellRefund } from './economy.js?v=db100696';
+import { generateSphereMesh, relax } from './grid.js?v=91f7eeae';
+import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=91f7eeae';
+import { mulberry32, randomSeed } from './rng.js?v=91f7eeae';
+import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3 } from './vec3.js?v=91f7eeae';
+import { CREATURES, waveJelly } from './creatures.js?v=91f7eeae';
+import { UNITS, UNIT_NAMES, buildUnit, makeOrbCloud, makeBulletCloud, makeMissileCloud, makeDebris, makeDotBurst, makePortalCloud, makeHeartCloud, makeTowerUnit, makeDotEnemy } from './units.js?v=91f7eeae';
+import { LOOKS, LOOK_NAMES } from './looks.js?v=91f7eeae';
+import { makeCellIndex } from './cellindex.js?v=91f7eeae';
+import { CREATURE_TINTS, ENEMY_SPEC, INTROS } from './enemyspec.js?v=91f7eeae';
+import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockRound } from './towers.js?v=91f7eeae';
+import { makeEconomy, sellRefund } from './economy.js?v=91f7eeae';
 
 export function initTdTab(root) {
   let active = false;
@@ -1440,12 +1440,20 @@ export function initTdTab(root) {
       ammo = 0; updateHud();
       clearOrbs();
 
-      // one portal, near the heart but a couple cells past the player, so
-      // the fodder walk toward the heart. Pick a distToHeart-1 cell.
-      let portalCi = startCi;
+      // portal 20–30 hops DOWN THE HALL from the heart (target 25); the
+      // fodder march back toward the heart and the player intercepts.
+      let portalCi = startCi, bestBand = Infinity, farCi = startCi, farD = -1;
       for (let i = 0; i < dungeon.tags.length; i++) {
-        if (dungeon.tags[i] !== BLOCKED && dungeon.distToHeart[i] === 1) { portalCi = i; break; }
+        if (dungeon.tags[i] === BLOCKED) continue;
+        const d = dungeon.distToHeart[i];
+        if (d < 0) continue;
+        if (d > farD) { farD = d; farCi = i; }
+        if (d >= 20 && d <= 30) {
+          const off = Math.abs(d - 25);
+          if (off < bestBand) { bestBand = off; portalCi = i; }
+        }
       }
+      if (bestBand === Infinity) portalCi = farCi; // small map: use the farthest cell
       const obj = buildPortalObj('phage', portalCi, whim() * 6.283);
       scene.add(obj);
       const mm = new THREE.Mesh(new THREE.SphereGeometry(0.035, 10, 10),
