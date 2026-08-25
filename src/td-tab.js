@@ -19,17 +19,17 @@
 
 import * as THREE from '../vendor/three.module.js';
 import GUI from '../vendor/lil-gui.esm.js';
-import { generateSphereMesh, relax } from './grid.js?v=06eab33c';
-import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=06eab33c';
-import { mulberry32, randomSeed } from './rng.js?v=06eab33c';
-import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3 } from './vec3.js?v=06eab33c';
-import { CREATURES, waveJelly } from './creatures.js?v=06eab33c';
-import { UNITS, UNIT_NAMES, buildUnit, makeOrbCloud, makeBulletCloud, makeDebris, makeDotBurst, makePortalCloud, makeHeartCloud, makeTowerUnit, makeDotEnemy } from './units.js?v=06eab33c';
-import { LOOKS, LOOK_NAMES } from './looks.js?v=06eab33c';
-import { makeCellIndex } from './cellindex.js?v=06eab33c';
-import { CREATURE_TINTS, ENEMY_SPEC, INTROS } from './enemyspec.js?v=06eab33c';
-import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockRound } from './towers.js?v=06eab33c';
-import { makeEconomy, sellRefund } from './economy.js?v=06eab33c';
+import { generateSphereMesh, relax } from './grid.js?v=7e83bfd8';
+import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=7e83bfd8';
+import { mulberry32, randomSeed } from './rng.js?v=7e83bfd8';
+import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3 } from './vec3.js?v=7e83bfd8';
+import { CREATURES, waveJelly } from './creatures.js?v=7e83bfd8';
+import { UNITS, UNIT_NAMES, buildUnit, makeOrbCloud, makeBulletCloud, makeDebris, makeDotBurst, makePortalCloud, makeHeartCloud, makeTowerUnit, makeDotEnemy } from './units.js?v=7e83bfd8';
+import { LOOKS, LOOK_NAMES } from './looks.js?v=7e83bfd8';
+import { makeCellIndex } from './cellindex.js?v=7e83bfd8';
+import { CREATURE_TINTS, ENEMY_SPEC, INTROS } from './enemyspec.js?v=7e83bfd8';
+import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockRound } from './towers.js?v=7e83bfd8';
+import { makeEconomy, sellRefund } from './economy.js?v=7e83bfd8';
 
 export function initTdTab(root) {
   let active = false;
@@ -1464,11 +1464,12 @@ export function initTdTab(root) {
       const spec = ENEMY_SPEC.phage;
       for (let k = 0; k < 3; k++) {
         const eObj = makeDotEnemy('phage', { walker: CREATURE_TINTS.phage, walkerHi: 0xffffff });
-        const scale0 = cellSide * spec.size * 0.7;
+        const size = spec.size * 0.7;
+        const scale0 = cellSide * size;
         eObj.scale.setScalar(scale0); eObj.userData.s0 = scale0; scene.add(eObj);
         const nx = openNeighbors(portalCi);
         const e = {
-          type: 'phage', spec, scale0, size: spec.size,
+          type: 'phage', spec, scale0, size,
           cur: portalCi, prev: -1,
           next: nx.length ? nx[Math.floor(whim() * nx.length)] : portalCi,
           prog: whim() * 0.4, pos: graph.centers[portalCi].slice(), dir: [0, 1, 0],
