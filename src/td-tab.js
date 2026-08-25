@@ -19,17 +19,17 @@
 
 import * as THREE from '../vendor/three.module.js';
 import GUI from '../vendor/lil-gui.esm.js';
-import { generateSphereMesh, relax } from './grid.js?v=9cad104a';
-import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=9cad104a';
-import { mulberry32, randomSeed } from './rng.js?v=9cad104a';
-import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3 } from './vec3.js?v=9cad104a';
-import { CREATURES, waveJelly } from './creatures.js?v=9cad104a';
-import { UNITS, UNIT_NAMES, buildUnit, makeOrbCloud, makeBulletCloud, makeDebris, makeDotBurst, makePortalCloud, makeHeartCloud, makeTowerUnit, makeDotEnemy } from './units.js?v=9cad104a';
-import { LOOKS, LOOK_NAMES } from './looks.js?v=9cad104a';
-import { makeCellIndex } from './cellindex.js?v=9cad104a';
-import { CREATURE_TINTS, ENEMY_SPEC, INTROS } from './enemyspec.js?v=9cad104a';
-import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval } from './towers.js?v=9cad104a';
-import { makeEconomy, sellRefund } from './economy.js?v=9cad104a';
+import { generateSphereMesh, relax } from './grid.js?v=80b0d834';
+import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=80b0d834';
+import { mulberry32, randomSeed } from './rng.js?v=80b0d834';
+import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3 } from './vec3.js?v=80b0d834';
+import { CREATURES, waveJelly } from './creatures.js?v=80b0d834';
+import { UNITS, UNIT_NAMES, buildUnit, makeOrbCloud, makeBulletCloud, makeDebris, makeDotBurst, makePortalCloud, makeHeartCloud, makeTowerUnit, makeDotEnemy } from './units.js?v=80b0d834';
+import { LOOKS, LOOK_NAMES } from './looks.js?v=80b0d834';
+import { makeCellIndex } from './cellindex.js?v=80b0d834';
+import { CREATURE_TINTS, ENEMY_SPEC, INTROS } from './enemyspec.js?v=80b0d834';
+import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval } from './towers.js?v=80b0d834';
+import { makeEconomy, sellRefund } from './economy.js?v=80b0d834';
 
 export function initTdTab(root) {
   let active = false;

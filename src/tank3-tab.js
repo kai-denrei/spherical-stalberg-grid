@@ -4,21 +4,23 @@
 import * as THREE from '../vendor/three.module.js';
 import GUI from '../vendor/lil-gui.esm.js';
 import { OrbitControls } from '../vendor/OrbitControls.js';
-import { createPlanetTankGame, DYING_T } from './tanks2.js?v=9cad104a';
-import { buildUnit, makeBulletCloud, makeDebris } from './units.js?v=9cad104a';
-import { LOOKS } from './looks.js?v=9cad104a';
-import { mulberry32 } from './rng.js?v=9cad104a';
-import { norm3, scale3 } from './vec3.js?v=9cad104a';
+import { createPlanetTankGame, DYING_T } from './tanks2.js?v=80b0d834';
+import { buildUnit, makeBulletCloud, makeDebris } from './units.js?v=80b0d834';
+import { LOOKS } from './looks.js?v=80b0d834';
+import { mulberry32 } from './rng.js?v=80b0d834';
+import { norm3, scale3 } from './vec3.js?v=80b0d834';
 
 const DT = 1 / 60;
 const TANK_SCALE = 0.09;    // world radius of each tank
 const WALL_H = 1.05;        // wall extrusion (× sphere radius)
 const LOOK = LOOKS.tronColors;
+// planet size = cell count: more cells = a bigger world to fight across
+const PLANET_SIZES = { small: 400, medium: 900, large: 1500 };
 
 export function initTank3Tab(root) {
   let active = true;
   const params = {
-    seed: 42, points: 400, wallClusters: 5, pointsToWin: 7,
+    seed: 42, planetSize: 'small', wallClusters: 5, pointsToWin: 7,
     ricochet: false, aiLevel: 1, view: 'orbit',
   };
 
@@ -148,13 +150,15 @@ export function initTank3Tab(root) {
       for (let i = 0; i < 4; i++) pushEdge(vertices[q[i]], vertices[q[(i + 1) % 4]], ci);
     }
 
-    // walls: extruded wall cells, black tops, zone-tinted skirts facing open cells
+    // walls: extruded wall cells, DIM tops (faint slab = base wall-top × 0.45,
+    // the tron 'dim' treatment), zone-tinted skirts facing open cells
+    const dimTop = LOOK.walls.top.map((c) => c * 0.45);
     const edgeToCell = new Map();
     for (let ci = 0; ci < quads.length; ci++) { const q = quads[ci]; for (let i = 0; i < 4; i++) edgeToCell.set(`${q[i]}-${q[(i + 1) % 4]}`, ci); }
     for (const ci of walls) {
       const q = quads[ci];
       const top = q.map((vi) => scale3(norm3(vertices[vi]), WALL_H));
-      pushQuad(top[0], top[1], top[2], top[3], [0, 0, 0]); // black top (tron occluder)
+      pushQuad(top[0], top[1], top[2], top[3], dimTop); // dim wall top (faint slab)
       for (let i = 0; i < 4; i++) {
         const a = q[i], b = q[(i + 1) % 4];
         const nb = edgeToCell.get(`${b}-${a}`);
@@ -183,18 +187,18 @@ export function initTank3Tab(root) {
     addFaces(fPos, fCol);
     addFaces(wPos, wCol);
     const E = LOOK.edges;
-    const addLines = (pos, col) => {
+    const addLines = (pos, col, op) => {
       const g = new THREE.BufferGeometry();
       g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
       g.setAttribute('color', new THREE.Float32BufferAttribute(col, 3));
       planetGroup.add(new THREE.LineSegments(g, new THREE.LineBasicMaterial({
-        vertexColors: true, transparent: true, opacity: E.opacity,
+        vertexColors: true, transparent: true, opacity: op,
         blending: E.additive ? THREE.AdditiveBlending : THREE.NormalBlending,
         depthWrite: !E.additive,
       })));
     };
-    addLines(ePos, eCol);
-    addLines(tPos, tCol);
+    addLines(ePos, eCol, E.opacity);
+    addLines(tPos, tCol, E.opacity * 0.28); // dim wall-top wires
     scene.add(planetGroup);
   }
 
@@ -227,7 +231,7 @@ export function initTank3Tab(root) {
 
   function newMatch() {
     game = createPlanetTankGame({
-      seed: params.seed >>> 0, points: params.points,
+      seed: params.seed >>> 0, points: PLANET_SIZES[params.planetSize] || 400,
       wallClusters: params.wallClusters, pointsToWin: params.pointsToWin,
       ricochet: params.ricochet, aiLevel: params.aiLevel,
     });
@@ -439,7 +443,7 @@ export function initTank3Tab(root) {
   // --- panel ---------------------------------------------------------------
   const gui = new GUI({ title: 'planet combat', container: root });
   gui.add(params, 'seed', 0, 99999, 1).onFinishChange(newMatch);
-  gui.add(params, 'points', 250, 700, 50).name('planet cells').onFinishChange(newMatch);
+  gui.add(params, 'planetSize', ['small', 'medium', 'large']).name('planet size').onChange(newMatch);
   gui.add(params, 'wallClusters', 0, 10, 1).name('wall clusters').onFinishChange(newMatch);
   gui.add(params, 'pointsToWin', 1, 15, 1).name('first to').onFinishChange(newMatch);
   gui.add(params, 'ricochet').onChange(newMatch);
