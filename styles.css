@@ -482,6 +482,10 @@ html, body {
 }
 .msg-regen:hover { background: rgba(53, 255, 208, 0.22); color: #fff; }
 
+/* shared close-button for any modal that needs an × (Task 2+: override modal, tutorial modal) */
+#td-msg .msg-x { position: absolute; top: 8px; right: 12px; width: 30px; height: 30px;
+  padding: 0; line-height: 28px; text-align: center; font-size: 20px; border-radius: 6px; }
+
 #maze-msg.hidden, #o-msg.hidden, #b-msg.hidden, #h-msg.hidden, #td-msg.hidden {
   display: none;
 }

@@ -19,17 +19,17 @@
 
 import * as THREE from '../vendor/three.module.js';
 import GUI from '../vendor/lil-gui.esm.js';
-import { generateSphereMesh, relax } from './grid.js?v=339c90f5';
-import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=339c90f5';
-import { mulberry32, randomSeed } from './rng.js?v=339c90f5';
-import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3 } from './vec3.js?v=339c90f5';
-import { CREATURES, waveJelly } from './creatures.js?v=339c90f5';
-import { UNITS, UNIT_NAMES, buildUnit, makeOrbCloud, makeBulletCloud, makeMissileCloud, makeDebris, makeDotBurst, makePortalCloud, makeHeartCloud, makeTowerUnit, makeDotEnemy } from './units.js?v=339c90f5';
-import { LOOKS, LOOK_NAMES } from './looks.js?v=339c90f5';
-import { makeCellIndex } from './cellindex.js?v=339c90f5';
-import { CREATURE_TINTS, ENEMY_SPEC, INTROS } from './enemyspec.js?v=339c90f5';
-import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockRound } from './towers.js?v=339c90f5';
-import { makeEconomy, sellRefund } from './economy.js?v=339c90f5';
+import { generateSphereMesh, relax } from './grid.js?v=4c630d12';
+import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=4c630d12';
+import { mulberry32, randomSeed } from './rng.js?v=4c630d12';
+import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3 } from './vec3.js?v=4c630d12';
+import { CREATURES, waveJelly } from './creatures.js?v=4c630d12';
+import { UNITS, UNIT_NAMES, buildUnit, makeOrbCloud, makeBulletCloud, makeMissileCloud, makeDebris, makeDotBurst, makePortalCloud, makeHeartCloud, makeTowerUnit, makeDotEnemy } from './units.js?v=4c630d12';
+import { LOOKS, LOOK_NAMES } from './looks.js?v=4c630d12';
+import { makeCellIndex } from './cellindex.js?v=4c630d12';
+import { CREATURE_TINTS, ENEMY_SPEC, INTROS } from './enemyspec.js?v=4c630d12';
+import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockRound } from './towers.js?v=4c630d12';
+import { makeEconomy, sellRefund } from './economy.js?v=4c630d12';
 
 export function initTdTab(root) {
   let active = false;
@@ -833,6 +833,7 @@ export function initTdTab(root) {
     buildMode = !buildMode;
     syncBuildUi();
     updateHud();
+    if (!buildMode) showOverrideModal(); // just switched INTO manual drive
   }
   // build mode is a different INSTRUMENT: the driving controls vanish
   // (zones, triggers, SWAP/CAM) leaving only BUILD/MAP and the board
@@ -840,7 +841,7 @@ export function initTdTab(root) {
     root.classList.toggle('build', buildMode);
     // the chip names the mode you'd SWITCH TO — build↔build makes no sense
     const chip = root.querySelector('#td-pad-build');
-    if (chip) chip.textContent = buildMode ? 'TANK' : 'BUILD';
+    if (chip) chip.textContent = buildMode ? 'MANUAL' : 'BUILD';
     if (!buildMode) closeShop();
   }
   function toggleMap() {
@@ -1633,6 +1634,7 @@ export function initTdTab(root) {
     else if (cl.contains('msg-glenemy')) showEnemyGlossary();
     else if (cl.contains('msg-glfriend')) showFriendGlossary();
     else if (cl.contains('msg-back')) showBriefing();
+    else if (cl.contains('msg-ovr-ok')) { paused = false; msgEl.classList.add('hidden'); }
   });
 
   // card icons are the ACTUAL half-dotted representations: build the real
@@ -1750,6 +1752,22 @@ export function initTdTab(root) {
       glossCard('#3dff6e', spriteShot('orb-health', orbIcon('wave', 0x3dff6e)), 'health sphere', 'far-field reward · +1 your hp') +
       glossCard('#ff2df0', spriteShot('orb-regen', orbIcon('breathe', 0xff2df0)), 'regen charge', 'CARRY it back near the heart: +4 heart hp') +
       `</div><button class="msg-back">← back to briefing</button>`;
+    msgEl.classList.remove('hidden');
+  }
+  // switching into manual drive: remind the player the tank is autonomous
+  // until they take the wheel. Shown on EVERY build→manual switch (pauses
+  // the war so it can be read un-rammed).
+  function showOverrideModal() {
+    paused = true;
+    msgEl.innerHTML = `<button class="msg-ovr-ok msg-x">×</button>` +
+      `<div class="msg-head">⬢ tank · manual override</div>` +
+      `<div class="msg-scroll"><div class="gcards">` +
+      glossCard('#9fdcff', spriteShot('tank', unitIcon('tank', look().walker)), 'your tank',
+        'fights on its own — it patrols, rams, and follows your directive') +
+      `</div>` +
+      `<div class="tips">Touch the controls to <b>TAKE OVER</b>. Let go and it resumes command in ~10s.<br>Tap a directive to hand command back instantly.</div>` +
+      `</div>` +
+      `<div class="msg-foot"><button class="msg-ovr-ok">&rsaquo; got it</button></div>`;
     msgEl.classList.remove('hidden');
   }
   function updateHud() {
