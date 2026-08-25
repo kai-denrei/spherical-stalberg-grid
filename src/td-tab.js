@@ -19,17 +19,17 @@
 
 import * as THREE from '../vendor/three.module.js';
 import GUI from '../vendor/lil-gui.esm.js';
-import { generateSphereMesh, relax } from './grid.js?v=0f10c261';
-import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=0f10c261';
-import { mulberry32, randomSeed } from './rng.js?v=0f10c261';
-import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3 } from './vec3.js?v=0f10c261';
-import { CREATURES, waveJelly } from './creatures.js?v=0f10c261';
-import { UNITS, UNIT_NAMES, buildUnit, makeOrbCloud, makeBulletCloud, makeDebris, makeDotBurst, makePortalCloud, makeHeartCloud, makeTowerUnit, makeDotEnemy } from './units.js?v=0f10c261';
-import { LOOKS, LOOK_NAMES } from './looks.js?v=0f10c261';
-import { makeCellIndex } from './cellindex.js?v=0f10c261';
-import { CREATURE_TINTS, ENEMY_SPEC, INTROS } from './enemyspec.js?v=0f10c261';
-import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockRound } from './towers.js?v=0f10c261';
-import { makeEconomy, sellRefund } from './economy.js?v=0f10c261';
+import { generateSphereMesh, relax } from './grid.js?v=db100696';
+import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=db100696';
+import { mulberry32, randomSeed } from './rng.js?v=db100696';
+import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3 } from './vec3.js?v=db100696';
+import { CREATURES, waveJelly } from './creatures.js?v=db100696';
+import { UNITS, UNIT_NAMES, buildUnit, makeOrbCloud, makeBulletCloud, makeMissileCloud, makeDebris, makeDotBurst, makePortalCloud, makeHeartCloud, makeTowerUnit, makeDotEnemy } from './units.js?v=db100696';
+import { LOOKS, LOOK_NAMES } from './looks.js?v=db100696';
+import { makeCellIndex } from './cellindex.js?v=db100696';
+import { CREATURE_TINTS, ENEMY_SPEC, INTROS } from './enemyspec.js?v=db100696';
+import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockRound } from './towers.js?v=db100696';
+import { makeEconomy, sellRefund } from './economy.js?v=db100696';
 
 export function initTdTab(root) {
   let active = false;
@@ -288,7 +288,7 @@ export function initTdTab(root) {
     const phase = orbRng() * 6.283;
     const shells = [];
     for (let k = -1; k <= 1; k++) {
-      const b = makeBulletCloud({ body: look().orb.color, hi: 0xffffff });
+      const b = makeMissileCloud({ body: look().orb.color, hi: 0xffffff });
       b.scale.setScalar(r);
       b.position.set(k * r * 1.7, r * 1.1, 0); // side-by-side, noses up
       group.add(b);
@@ -1630,7 +1630,7 @@ export function initTdTab(root) {
   function makeTriadIcon() {
     const g = new THREE.Group();
     for (let k = -1; k <= 1; k++) {
-      const b = makeBulletCloud({ body: 0xffb000, hi: 0xffffff });
+      const b = makeMissileCloud({ body: 0xffb000, hi: 0xffffff });
       b.scale.setScalar(0.3);
       b.position.set(k * 0.52, 0, 0);
       g.add(b);
@@ -1673,7 +1673,7 @@ export function initTdTab(root) {
       glossCard('#ff6a88', spriteShot('heart', heartIcon), 'the heart', 'at the pole — its fall is the only defeat') +
       glossCard('#9fdcff', spriteShot('tank', unitIcon('tank', look().walker)), 'your tank', 'hold W drive · double-tap W cruise · A/D steer · SPACE shell · SHIFT lasers · ESC pause') +
       glossCard('#9fdcff', spriteShot('tower', () => makeTowerUnit(TOWER_BY_KEY.single)), 'towers', 'your army — build them on the HIGH GROUND (walls) in BUILD mode') +
-      glossCard('#ffb000', spriteShot('triad', makeTriadIcon), 'bullet triads', 'drive over = +3 shells · shells also blast walls open') +
+      glossCard('#ffb000', spriteShot('triad', makeTriadIcon), 'missile triads', 'drive over = +3 shells · shells also blast walls open') +
       glossCard('#66ff88', spriteShot('phage', unitIcon('phage', CREATURE_TINTS.phage)), 'fodder', 'soft creatures — RAM them, it’s free') +
       glossCard('#ff5340', spriteShot('barbed', unitIcon('barbed', CREATURE_TINTS.barbed)), 'spiked reds', 'armored — ramming hurts YOU · shells only') +
       glossCard('#ffffff', spriteShot('portal', () => makePortalCloud({ body: 0xcfd8ff, hi: 0xffffff })), 'portals', 'the enemy sources · 3 shells each · dim as they die') +

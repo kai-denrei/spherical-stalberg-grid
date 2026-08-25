@@ -15,7 +15,7 @@
 // tick(t) (idle animation) }.
 
 import * as THREE from '../vendor/three.module.js';
-import { CREATURES, waveJelly, spherePts, bulletPts, heartPts, torusPts, towerHeadPts, enemyDotPts, portalPts } from './creatures.js?v=0f10c261';
+import { CREATURES, waveJelly, spherePts, bulletPts, missilePts, heartPts, torusPts, towerHeadPts, enemyDotPts, portalPts } from './creatures.js?v=db100696';
 
 function normalizeToUnit(group) {
   group.updateMatrixWorld(true);
@@ -786,6 +786,29 @@ export function makeBulletCloud(cols) {
     transparent: true, opacity: 0.95,
   }));
   pts.userData.kind = 'bullet';
+  return pts;
+}
+
+// missile dot-cloud — same builder as makeBulletCloud, missile silhouette.
+export function makeMissileCloud(cols) {
+  const base = missilePts();
+  const pos = new Float32Array(base.length * 3);
+  const col = new Float32Array(base.length * 3);
+  const cBody = new THREE.Color(cols.body);
+  const cHi = new THREE.Color(cols.hi);
+  for (let i = 0; i < base.length; i++) {
+    pos[i * 3] = base[i][0]; pos[i * 3 + 1] = base[i][1]; pos[i * 3 + 2] = base[i][2];
+    const c = base[i][3] === 1 ? cHi : cBody;
+    col[i * 3] = c.r; col[i * 3 + 1] = c.g; col[i * 3 + 2] = c.b;
+  }
+  const geo = new THREE.BufferGeometry();
+  geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+  geo.setAttribute('color', new THREE.BufferAttribute(col, 3));
+  const pts = new THREE.Points(geo, new THREE.PointsMaterial({
+    size: 2, sizeAttenuation: false, vertexColors: true,
+    transparent: true, opacity: 0.95,
+  }));
+  pts.userData.kind = 'missile';
   return pts;
 }
 

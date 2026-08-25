@@ -153,6 +153,18 @@ export function bulletPts() {
   return fitUnit(pts);
 }
 
+// missile — sleek standalone rocket: pointed nose, banded body, 4 tail fins.
+// Ported from ~/Dev/Braille/fun-shapes. 695 pts [x,y,z,(hi)], unit-radius,
+// +Y up, tip at y≈+1, one hi point (nose tip). No new deps (uses fitUnit).
+export function missilePts() {
+  const pts = [], R = 0.16;
+  for (let iy = 0; iy <= 22; iy++) { const y = -0.75 + iy / 22 * 1.2; for (let a = 0; a < 14; a++) { const ang = a / 14 * 2 * Math.PI; pts.push([R * Math.cos(ang), y, R * Math.sin(ang)]); } } // body
+  for (let iy = 0; iy <= 12; iy++) { const f = iy / 12, y = 0.45 + f * 0.5, r = R * (1 - f * f); for (let a = 0; a < 12; a++) { const ang = a / 12 * 2 * Math.PI; pts.push([r * Math.cos(ang), y, r * Math.sin(ang)]); } } // ogive nose
+  pts.push([0, 0.95, 0, 1]); // nose-tip highlight
+  for (let k = 0; k < 4; k++) { const ca = Math.cos(k / 4 * 2 * Math.PI), sa = Math.sin(k / 4 * 2 * Math.PI); for (let i = 0; i <= 8; i++) { const f = i / 8; for (let j = 0; j <= 5; j++) { const g = j / 5, x = R + g * 0.16 * (1 - f); pts.push([x * ca, -0.75 + f * 0.3, x * sa]); } } } // 4 tail fins
+  return fitUnit(pts);
+}
+
 // dotted sphere — the Braille half-dotted primitive; every 12th dot marked
 // hi so treatments and tints have a sparkle layer to work with
 export function spherePts(n = 170) {
