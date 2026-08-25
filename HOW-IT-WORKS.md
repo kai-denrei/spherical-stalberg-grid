@@ -270,3 +270,14 @@ idle), and picking an Auto directive hands command over at once. The old
 tank fights on its own until you grab the controls. And the build camera
 is no longer bolted to the heart — flick to pan across the sphere (within
 reach of home) and pinch to zoom, so you can mount towers anywhere.
+
+## Deliberate waves + stargate gates
+
+Progression now reads off one number — the wave. Wave N fields N enemy
+types and unlocks N tower types (one new tower each wave, cheap → laser by
+wave 8); the newest threat headlines each wave with a few older types mixed
+in. A NEXT WAVE strip previews what's coming and counts it down, a NEW
+TOWER card marks each unlock, and the HUD leads with the wave. Sectors still
+grow the sphere when you clear every gate, but they no longer gate towers or
+types — they're spatial now. And the gates are all one shape: the stargate,
+a neutral source that pours out whatever the wave dictates.
