@@ -6,6 +6,18 @@ Demo links assume `npm run serve` (port 8144) or the
 
 ---
 
+## `41cf984` — Dimmer walls, and a planet that can grow
+
+Two tank3 tweaks. The wall tops were pure black — occluders that read as
+holes in the neon shell; now they wear the tron 'dim' treatment (a faint
+dark-blue slab at 0.45× the base with its top wires dropped to 0.28×
+opacity), so walls read as faint slabs. And the developer-ish "planet
+cells" slider became a plain size picker — small (400 cells, the old
+default), medium (900), large (1500) — more cells meaning more world to
+duel across.
+
+---
+
 ## `0fc5860` — Tank2's rules, Battle's clothes
 
 Tank3 is the planet duel in neon. It reuses the whole `tanks2.js` core —
