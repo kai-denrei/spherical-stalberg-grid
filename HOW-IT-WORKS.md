@@ -281,3 +281,15 @@ TOWER card marks each unlock, and the HUD leads with the wave. Sectors still
 grow the sphere when you clear every gate, but they no longer gate towers or
 types — they're spatial now. And the gates are all one shape: the stargate,
 a neutral source that pours out whatever the wave dictates.
+
+## First impressions: a frozen opening, patience, and manual by default
+
+The tutorial now opens on a held tableau — your tank just ahead of the heart,
+two enemies in the lane, the laser pulsing, "SHOOT TO DEFEND THE HEART." Your
+first shot unfreezes it into live combat, then shells and towers follow.
+Guidance is transient now: brief toasts that fade on their own, no × to
+dismiss and no modal to stop the game. Drive starts in MANUAL and stays there
+— the tank is yours until you tap a directive to hand it to auto, and taking
+the wheel always takes it back. And waves breathe: clear the field and a
+"WAVE OVER" beat plays, then a countdown of anticipation before the next
+wave — with a safety timer so a stalled field can't freeze the war.
