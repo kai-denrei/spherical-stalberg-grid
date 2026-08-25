@@ -19,17 +19,17 @@
 
 import * as THREE from '../vendor/three.module.js';
 import GUI from '../vendor/lil-gui.esm.js';
-import { generateSphereMesh, relax } from './grid.js?v=c5cecc7f';
-import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=c5cecc7f';
-import { mulberry32, randomSeed } from './rng.js?v=c5cecc7f';
-import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3 } from './vec3.js?v=c5cecc7f';
-import { CREATURES, waveJelly } from './creatures.js?v=c5cecc7f';
-import { UNITS, UNIT_NAMES, buildUnit, makeOrbCloud, makeBulletCloud, makeDebris, makeDotBurst, makePortalCloud, makeHeartCloud, makeTowerUnit, makeDotEnemy } from './units.js?v=c5cecc7f';
-import { LOOKS, LOOK_NAMES } from './looks.js?v=c5cecc7f';
-import { makeCellIndex } from './cellindex.js?v=c5cecc7f';
-import { CREATURE_TINTS, ENEMY_SPEC, INTROS } from './enemyspec.js?v=c5cecc7f';
-import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockRound } from './towers.js?v=c5cecc7f';
-import { makeEconomy, sellRefund } from './economy.js?v=c5cecc7f';
+import { generateSphereMesh, relax } from './grid.js?v=7d136f74';
+import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=7d136f74';
+import { mulberry32, randomSeed } from './rng.js?v=7d136f74';
+import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3 } from './vec3.js?v=7d136f74';
+import { CREATURES, waveJelly } from './creatures.js?v=7d136f74';
+import { UNITS, UNIT_NAMES, buildUnit, makeOrbCloud, makeBulletCloud, makeDebris, makeDotBurst, makePortalCloud, makeHeartCloud, makeTowerUnit, makeDotEnemy } from './units.js?v=7d136f74';
+import { LOOKS, LOOK_NAMES } from './looks.js?v=7d136f74';
+import { makeCellIndex } from './cellindex.js?v=7d136f74';
+import { CREATURE_TINTS, ENEMY_SPEC, INTROS } from './enemyspec.js?v=7d136f74';
+import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockRound } from './towers.js?v=7d136f74';
+import { makeEconomy, sellRefund } from './economy.js?v=7d136f74';
 
 export function initTdTab(root) {
   let active = false;
@@ -194,6 +194,9 @@ export function initTdTab(root) {
   // unseals, farther portals rise, the wave counter keeps counting, and
   // YOUR TOWERS AND PURSE STAY. Two more threat types unlock per round.
   let round = 1;
+  let tutorialActive = false;
+  let runTutorial = true; // resolved from ?tutorial in the URL-hook block
+  const tutEl = root.querySelector('#td-tut');
   let tdFullTags = null;  // the true world, pre-sealing
   let tdFullDist = null;  // heart-distance over the full world
   let tdMaxD = 0;
@@ -1381,6 +1384,63 @@ export function initTdTab(root) {
 
   // ☆ flash the neighbouring cell that is one hop closer to the heart
   let hintTimer = null;
+  // non-freezing tutorial callout; flash = big centred, skip = show Skip
+  function tutBanner(html, opts = {}) {
+    tutEl.className = opts.flash ? 'tut-flash' : '';
+    tutEl.innerHTML = html + (opts.skip
+      ? '<div><button class="tut-skip">skip tutorial</button></div>' : '');
+    tutEl.classList.remove('hidden');
+    const sk = tutEl.querySelector('.tut-skip');
+    if (sk) sk.addEventListener('click', skipTutorial);
+  }
+  function hideTutBanner() { tutEl.classList.add('hidden'); }
+  // pulse ONE hud button; pass null to clear all pulses
+  let pulsedBtn = null;
+  function pulseButton(sel) {
+    if (pulsedBtn) pulsedBtn.classList.remove('tutorial-pulse');
+    pulsedBtn = sel ? root.querySelector(sel) : null;
+    if (pulsedBtn) pulsedBtn.classList.add('tutorial-pulse');
+  }
+
+  // Scripted onboarding. A linear phase machine driven from animate() while
+  // tutorialActive. Phase bodies land in later tasks; this is the frame.
+  const tutorial = {
+    phase: 'setup',
+    portal: null,   // the scripted spawn point
+    fodder: [],     // the 3 scripted enemies
+    tShown: 0,
+    setup() { /* task 4 */ },
+    tick(dt) { /* task 4 & 5 dispatch on this.phase */ },
+    teardown() { pulseButton(null); hideTutBanner(); },
+  };
+
+  function startTutorial() {
+    tutorialActive = true;
+    tutorial.phase = 'setup';
+    tutorial.setup();
+  }
+  function endTutorial() {
+    tutorialActive = false;
+    tutorial.teardown();
+    try { localStorage.setItem('td.tutorialSeen', '1'); } catch (e) { /* private mode */ }
+  }
+  function skipTutorial() {
+    // tear down tutorial-only entities, then hand to a clean normal round
+    for (const e of tutorial.fodder) { if (e.alive) { e.alive = false; scene.remove(e.obj); } }
+    if (tutorial.portal && tutorial.portal.alive) {
+      tutorial.portal.alive = false;
+      scene.remove(tutorial.portal.obj);
+      const idx = spawnPoints.indexOf(tutorial.portal);
+      if (idx >= 0) spawnPoints.splice(idx, 1);
+    }
+    clearOrbs();
+    endTutorial();
+    regenerate(); // fresh normal game
+  }
+  function maybeStartTutorial() {
+    if (runTutorial) startTutorial();
+  }
+
   function pulseHint() {
     const d = dungeon.distToHeart;
     let next = -1;
@@ -2529,7 +2589,7 @@ export function initTdTab(root) {
 
   function heartHit(dmg = 1) {
     eco.leak(); // a breach kills the streak — HK's rule, our Heart
-    heartHP -= dmg;
+    if (!tutorialActive) heartHP -= dmg;
     heartSprite.userData.hit(); // orange/red Wave flare
     updateHud();
     if (heartHP <= 0) loseGame('the heart is lost');
@@ -3294,7 +3354,7 @@ export function initTdTab(root) {
         debris.splice(i, 1);
       }
     }
-    if (!player.won && !frozen) {
+    if (!player.won && !frozen && !tutorialActive) {
       waveClock += dt;
       // waves keep coming while introductions remain, even if the player
       // has razed every spawn point standing — the next threat still lands
@@ -3304,6 +3364,7 @@ export function initTdTab(root) {
         spawnWave();
       }
     }
+    if (tutorialActive) tutorial.tick(dt);
     if (!frozen) {
       updateEnemies(dt, t);
       updateFriendlies(dt, t);
@@ -3546,7 +3607,10 @@ export function initTdTab(root) {
   // where a frozen sim would break the verification flow
   const debugging = ['walk', 'tick', 'wave', 'blast', 'laser', 'found', 'recoil', 'mode', 'map', 'tower', 'credit', 'shop', 'sector', 'reveal', 'portal']
     .some((k) => urlParams.get(k));
-  if (!debugging) showBriefing();
+  const tutParam = urlParams.get('tutorial');
+  runTutorial = tutParam === '1' || (tutParam !== '0' && !debugging);
+  if (runTutorial) maybeStartTutorial();
+  else if (!debugging) showBriefing();
 
   resize();
   animate();
