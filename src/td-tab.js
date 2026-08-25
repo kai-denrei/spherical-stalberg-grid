@@ -19,17 +19,17 @@
 
 import * as THREE from '../vendor/three.module.js';
 import GUI from '../vendor/lil-gui.esm.js';
-import { generateSphereMesh, relax } from './grid.js?v=91f7eeae';
-import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=91f7eeae';
-import { mulberry32, randomSeed } from './rng.js?v=91f7eeae';
-import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3 } from './vec3.js?v=91f7eeae';
-import { CREATURES, waveJelly } from './creatures.js?v=91f7eeae';
-import { UNITS, UNIT_NAMES, buildUnit, makeOrbCloud, makeBulletCloud, makeMissileCloud, makeDebris, makeDotBurst, makePortalCloud, makeHeartCloud, makeTowerUnit, makeDotEnemy } from './units.js?v=91f7eeae';
-import { LOOKS, LOOK_NAMES } from './looks.js?v=91f7eeae';
-import { makeCellIndex } from './cellindex.js?v=91f7eeae';
-import { CREATURE_TINTS, ENEMY_SPEC, INTROS } from './enemyspec.js?v=91f7eeae';
-import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockRound } from './towers.js?v=91f7eeae';
-import { makeEconomy, sellRefund } from './economy.js?v=91f7eeae';
+import { generateSphereMesh, relax } from './grid.js?v=689f8b8e';
+import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=689f8b8e';
+import { mulberry32, randomSeed } from './rng.js?v=689f8b8e';
+import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3 } from './vec3.js?v=689f8b8e';
+import { CREATURES, waveJelly } from './creatures.js?v=689f8b8e';
+import { UNITS, UNIT_NAMES, buildUnit, makeOrbCloud, makeBulletCloud, makeMissileCloud, makeDebris, makeDotBurst, makePortalCloud, makeHeartCloud, makeTowerUnit, makeDotEnemy } from './units.js?v=689f8b8e';
+import { LOOKS, LOOK_NAMES } from './looks.js?v=689f8b8e';
+import { makeCellIndex } from './cellindex.js?v=689f8b8e';
+import { CREATURE_TINTS, ENEMY_SPEC, INTROS } from './enemyspec.js?v=689f8b8e';
+import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockRound } from './towers.js?v=689f8b8e';
+import { makeEconomy, sellRefund } from './economy.js?v=689f8b8e';
 
 export function initTdTab(root) {
   let active = false;
@@ -826,7 +826,7 @@ export function initTdTab(root) {
   let watchTower = null;
   let mapMode = 'player'; // 'player' | 'heart'
   let buildYaw = 0;       // drag orbits the azimuth around the pole axis
-  let buildDist = 2.6;    // wheel/pinch zooms
+  let buildDist = 2.0;    // wheel/pinch zooms
   const anyHostiles = () => enemies.some((e) => e.alive);
   const buildFrozen = () => buildMode && !anyHostiles();
   function toggleBuild() {
@@ -1337,31 +1337,49 @@ export function initTdTab(root) {
   // build-camera input: drag = azimuth orbit, wheel = zoom, TAP = select a
   // cell (shop/upgrade). A tap is a press that never traveled; anything
   // that moves >8 px is an orbit. Action-mode pointers stay untouched.
-  let buildDragX = null;
+  // build-mode input: single finger orbits the azimuth, TWO fingers pinch to
+  // zoom. Track pointers by id so a pinch never fires a tower-placing tap.
+  const buildPointers = new Map(); // pointerId -> {x, y}
+  let pinchPrev = null;            // last two-finger pixel distance
+  let pinched = false;             // ≥2 fingers touched this gesture → no tap
   let tapStart = null;
   container.addEventListener('pointerdown', (ev) => {
     if (!buildMode && params.view !== 'bastion') return;
-    if (buildMode) buildDragX = ev.clientX;
+    if (buildMode) {
+      buildPointers.set(ev.pointerId, { x: ev.clientX, y: ev.clientY });
+      if (buildPointers.size >= 2) { pinched = true; pinchPrev = null; tapStart = null; return; }
+    }
     tapStart = [ev.clientX, ev.clientY];
   });
   addEventListener('pointermove', (ev) => {
-    if (buildMode && buildDragX !== null) {
-      if (tapStart && Math.hypot(ev.clientX - tapStart[0], ev.clientY - tapStart[1]) > 8) {
-        tapStart = null; // it's an orbit now
+    if (!buildMode) return;
+    const prev = buildPointers.get(ev.pointerId);
+    if (!prev) return;
+    const dx = ev.clientX - prev.x;
+    prev.x = ev.clientX; prev.y = ev.clientY;
+    if (buildPointers.size >= 2) {
+      const p = [...buildPointers.values()];
+      const d = Math.hypot(p[0].x - p[1].x, p[0].y - p[1].y);
+      if (pinchPrev !== null && d > 0) {
+        buildDist = Math.min(4, Math.max(1.4, buildDist * (pinchPrev / d)));
       }
-      buildYaw += (ev.clientX - buildDragX) * 0.006;
-      buildDragX = ev.clientX;
+      pinchPrev = d; pinched = true; tapStart = null;
+      return;
     }
+    if (tapStart && Math.hypot(ev.clientX - tapStart[0], ev.clientY - tapStart[1]) > 8) {
+      tapStart = null; // it's an orbit now
+    }
+    buildYaw += dx * 0.006;
   });
-  addEventListener('pointerup', (ev) => {
-    const isTap = tapStart
+  function endBuildPointer(ev) {
+    const wasTap = !pinched && tapStart
       && Math.hypot(ev.clientX - tapStart[0], ev.clientY - tapStart[1]) <= 8;
-    if (buildMode && isTap) {
+    buildPointers.delete(ev.pointerId);
+    if (buildPointers.size < 2) pinchPrev = null;
+    if (buildMode && wasTap) {
       const ci = cellAtScreen(ev.clientX, ev.clientY);
       if (ci !== -1) openShop(ci, ev.clientX, ev.clientY);
-    } else if (!buildMode && params.view === 'bastion' && isTap) {
-      // click a tower in view → the camera moves behind IT; empty ground
-      // returns the watch to the Heart
+    } else if (!buildMode && params.view === 'bastion' && wasTap) {
       const r = renderer.domElement.getBoundingClientRect();
       ndc.set(((ev.clientX - r.left) / r.width) * 2 - 1,
         -((ev.clientY - r.top) / r.height) * 2 + 1);
@@ -1375,12 +1393,13 @@ export function initTdTab(root) {
         watchTower = null;
       }
     }
-    buildDragX = null;
-    tapStart = null;
-  });
+    if (buildPointers.size === 0) { pinched = false; tapStart = null; }
+  }
+  addEventListener('pointerup', endBuildPointer);
+  addEventListener('pointercancel', endBuildPointer);
   container.addEventListener('wheel', (ev) => {
     if (!buildMode) return;
-    buildDist = Math.min(4, Math.max(1.7, buildDist + ev.deltaY * 0.002));
+    buildDist = Math.min(4, Math.max(1.4, buildDist + ev.deltaY * 0.002));
     ev.preventDefault();
   }, { passive: false });
   root.querySelector('#td-pad-fire').addEventListener('click', () => fire());

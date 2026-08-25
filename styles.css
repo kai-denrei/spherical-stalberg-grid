@@ -918,3 +918,7 @@ html, body {
   50% { box-shadow: 0 0 0 6px rgba(53, 255, 208, 0.5), 0 0 18px rgba(53, 255, 208, 0.7); }
 }
 .tutorial-pulse { animation: tutorial-pulse 1.1s ease-in-out infinite; }
+
+/* build mode: the app owns the pinch (zoom the board, not the page). Driving
+   thumb-zones are hidden in build mode, so nothing else needs the gesture. */
+#tab-td.build #td-app { touch-action: none; }
