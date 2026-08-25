@@ -6,6 +6,21 @@ Demo links assume `npm run serve` (port 8144) or the
 
 ---
 
+## `0de457f` — The glow we owed the neon
+
+The original looks arc ended on a deliberate deferral: additive Tron edges
+shipped, but the bloom chain didn't — "the 6-module EffectComposer cost
+deferred until a look earns it." Comparing feel against HokorobiTawaa found
+the bill for that: HK runs UnrealBloom at 0.9 over additive everything, and a
+real part of "it looks better" was post-processing we'd chosen not to build.
+So the chain is vendored now — ten modules at exactly r160 to match our
+three, their bare `'three'` specifiers rewritten to our copy so the browser
+can't load a second one — behind a shared `postfx.js` that any tab opts into
+with two lines. TD, battle, heart and tank3 all render through it, half-res
+on phones, with live strength/radius/threshold sliders.
+
+---
+
 ## `04eeb1c` — First impressions
 
 The TD open got a rewrite for the first thirty seconds. The tutorial starts
