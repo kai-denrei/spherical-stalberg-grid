@@ -19,17 +19,17 @@
 
 import * as THREE from '../vendor/three.module.js';
 import GUI from '../vendor/lil-gui.esm.js';
-import { generateSphereMesh, relax } from './grid.js?v=955d9b5c';
-import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=955d9b5c';
-import { mulberry32, randomSeed } from './rng.js?v=955d9b5c';
-import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3 } from './vec3.js?v=955d9b5c';
-import { CREATURES, waveJelly } from './creatures.js?v=955d9b5c';
-import { UNITS, UNIT_NAMES, buildUnit, makeOrbCloud, makeBulletCloud, makeMissileCloud, makeDebris, makeDotBurst, makePortalCloud, makeHeartCloud, makeTowerUnit, makeDotEnemy } from './units.js?v=955d9b5c';
-import { LOOKS, LOOK_NAMES } from './looks.js?v=955d9b5c';
-import { makeCellIndex } from './cellindex.js?v=955d9b5c';
-import { CREATURE_TINTS, ENEMY_SPEC, INTROS, computeWavePlan } from './enemyspec.js?v=955d9b5c';
-import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER } from './towers.js?v=955d9b5c';
-import { makeEconomy, sellRefund } from './economy.js?v=955d9b5c';
+import { generateSphereMesh, relax } from './grid.js?v=fe34bff5';
+import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=fe34bff5';
+import { mulberry32, randomSeed } from './rng.js?v=fe34bff5';
+import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3 } from './vec3.js?v=fe34bff5';
+import { CREATURES, waveJelly } from './creatures.js?v=fe34bff5';
+import { UNITS, UNIT_NAMES, buildUnit, makeOrbCloud, makeBulletCloud, makeMissileCloud, makeDebris, makeDotBurst, makePortalCloud, makeHeartCloud, makeTowerUnit, makeDotEnemy } from './units.js?v=fe34bff5';
+import { LOOKS, LOOK_NAMES } from './looks.js?v=fe34bff5';
+import { makeCellIndex } from './cellindex.js?v=fe34bff5';
+import { CREATURE_TINTS, ENEMY_SPEC, INTROS, computeWavePlan } from './enemyspec.js?v=fe34bff5';
+import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER } from './towers.js?v=fe34bff5';
+import { makeEconomy, sellRefund } from './economy.js?v=fe34bff5';
 
 export function initTdTab(root) {
   let active = false;
@@ -51,7 +51,6 @@ export function initTdTab(root) {
     speed: 1.1, // cells per second, wanderer pace
     recoil: 8, // shell-recoil intensity, dialed to MAX per operator
     directive: 'wander', // auto-mode order: wander/avoid/ram/conserve/home/portal
-    autoResume: 10, // seconds idle before auto-wander resumes
     creature: 'tank', // any roster unit; the tank has the sweeping turret
     // balance (operator pass): heavier early waves, but a richer field —
     // more triads on the ground and a longer breath between waves
@@ -477,10 +476,8 @@ export function initTdTab(root) {
   }
   let steerHold = 99; // seconds since the user last steered
   const steeringActive = () => steerHold < 1.2;
-  // manual override: ANY WASD press disables auto-wander entirely; it
-  // resumes only after params.autoResume seconds without input
-  let manualClock = 99;
-  const manualActive = () => manualClock < params.autoResume;
+  let autoMode = false; // AUTO is opt-in (the directive chip); MANUAL is sticky
+  const manualActive = () => !autoMode;
 
   const camGoal = { pos: new THREE.Vector3(), quat: new THREE.Quaternion() };
   const tmpObj = new THREE.Object3D();
@@ -1054,7 +1051,7 @@ export function initTdTab(root) {
     // continuous steering while held; ANY key claims manual control —
     // and an engaged cruise keeps manual alive without touching a key
     const anyKey = keys.left || keys.right || keys.fast || keys.slow;
-    manualClock = (anyKey || cruise) ? 0 : manualClock + dt;
+    if (anyKey || cruise) autoMode = false; // any drive input takes the wheel — sticky, no timer
     steerHold = anyKey ? 0 : steerHold + dt;
     const manual = manualActive();
     if (keys.left) rotate(STEER_RATE * dt);
@@ -1344,8 +1341,7 @@ export function initTdTab(root) {
     directiveCtrl.updateDisplay();
     syncDirectiveChip();
     updateHud();
-    // picking a directive is an AUTO order — resume auto this frame, no idle wait
-    manualClock = params.autoResume;
+    autoMode = true;  // picking a directive is the ONLY way into auto
     steerHold = 1.2;
     cruise = false;
   });
@@ -3524,7 +3520,6 @@ export function initTdTab(root) {
   const speedCtrl = gui.add(params, 'speed', 0.2, 4, 0.1).name('wander speed');
   const directiveCtrl = gui.add(params, 'directive', DIRECTIVES).name('auto directive').onChange(syncDirectiveChip);
   gui.add(params, 'recoil', 0, 8, 0.1).name('shell recoil');
-  gui.add(params, 'autoResume', 1, 15, 0.5).name('auto resume (s)');
   gui.add(params, 'waveSize', 1, 6, 1).name('wave size').onFinishChange(regenerate);
   gui.add(params, 'waveEvery', 6, 40, 1).name('wave every (s)');
   gui.add(params, 'obstacles', 0.05, 0.4, 0.05).onFinishChange(regenerate);
