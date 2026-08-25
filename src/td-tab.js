@@ -19,17 +19,17 @@
 
 import * as THREE from '../vendor/three.module.js';
 import GUI from '../vendor/lil-gui.esm.js';
-import { generateSphereMesh, relax } from './grid.js?v=a5ef13c3';
-import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=a5ef13c3';
-import { mulberry32, randomSeed } from './rng.js?v=a5ef13c3';
-import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3 } from './vec3.js?v=a5ef13c3';
-import { CREATURES, waveJelly } from './creatures.js?v=a5ef13c3';
-import { UNITS, UNIT_NAMES, buildUnit, makeOrbCloud, makeBulletCloud, makeMissileCloud, makeDebris, makeDotBurst, makePortalCloud, makeHeartCloud, makeTowerUnit, makeDotEnemy } from './units.js?v=a5ef13c3';
-import { LOOKS, LOOK_NAMES } from './looks.js?v=a5ef13c3';
-import { makeCellIndex } from './cellindex.js?v=a5ef13c3';
-import { CREATURE_TINTS, ENEMY_SPEC, INTROS } from './enemyspec.js?v=a5ef13c3';
-import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockRound } from './towers.js?v=a5ef13c3';
-import { makeEconomy, sellRefund } from './economy.js?v=a5ef13c3';
+import { generateSphereMesh, relax } from './grid.js?v=339c90f5';
+import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=339c90f5';
+import { mulberry32, randomSeed } from './rng.js?v=339c90f5';
+import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3 } from './vec3.js?v=339c90f5';
+import { CREATURES, waveJelly } from './creatures.js?v=339c90f5';
+import { UNITS, UNIT_NAMES, buildUnit, makeOrbCloud, makeBulletCloud, makeMissileCloud, makeDebris, makeDotBurst, makePortalCloud, makeHeartCloud, makeTowerUnit, makeDotEnemy } from './units.js?v=339c90f5';
+import { LOOKS, LOOK_NAMES } from './looks.js?v=339c90f5';
+import { makeCellIndex } from './cellindex.js?v=339c90f5';
+import { CREATURE_TINTS, ENEMY_SPEC, INTROS } from './enemyspec.js?v=339c90f5';
+import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockRound } from './towers.js?v=339c90f5';
+import { makeEconomy, sellRefund } from './economy.js?v=339c90f5';
 
 export function initTdTab(root) {
   let active = false;
@@ -52,7 +52,7 @@ export function initTdTab(root) {
     recoil: 8, // shell-recoil intensity, dialed to MAX per operator
     directive: 'wander', // auto-mode order: wander/avoid/ram/conserve/home/portal
     portalShape: 'torus', // gate silhouette: torus/stargate/torii/moongate
-    autoResume: 3, // seconds idle before auto-wander resumes
+    autoResume: 10, // seconds idle before auto-wander resumes
     creature: 'tank', // any roster unit; the tank has the sweeping turret
     // balance (operator pass): heavier early waves, but a richer field —
     // more triads on the ground and a longer breath between waves
@@ -1330,6 +1330,10 @@ export function initTdTab(root) {
     directiveCtrl.updateDisplay();
     syncDirectiveChip();
     updateHud();
+    // picking a directive is an AUTO order — resume auto this frame, no idle wait
+    manualClock = params.autoResume;
+    steerHold = 1.2;
+    cruise = false;
   });
   syncDirectiveChip();
   root.querySelector('#td-pad-map').addEventListener('click', () => toggleMap());
@@ -3426,7 +3430,7 @@ export function initTdTab(root) {
   const speedCtrl = gui.add(params, 'speed', 0.2, 4, 0.1).name('wander speed');
   const directiveCtrl = gui.add(params, 'directive', DIRECTIVES).name('auto directive').onChange(syncDirectiveChip);
   gui.add(params, 'recoil', 0, 8, 0.1).name('shell recoil');
-  gui.add(params, 'autoResume', 1, 10, 0.5).name('auto resume (s)');
+  gui.add(params, 'autoResume', 1, 15, 0.5).name('auto resume (s)');
   gui.add(params, 'waveSize', 1, 6, 1).name('wave size').onFinishChange(regenerate);
   gui.add(params, 'waveEvery', 6, 40, 1).name('wave every (s)');
   gui.add(params, 'obstacles', 0.05, 0.4, 0.05).onFinishChange(regenerate);
