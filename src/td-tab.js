@@ -19,17 +19,17 @@
 
 import * as THREE from '../vendor/three.module.js';
 import GUI from '../vendor/lil-gui.esm.js';
-import { generateSphereMesh, relax } from './grid.js?v=d8df6616';
-import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=d8df6616';
-import { mulberry32, randomSeed } from './rng.js?v=d8df6616';
-import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3 } from './vec3.js?v=d8df6616';
-import { CREATURES, waveJelly } from './creatures.js?v=d8df6616';
-import { UNITS, UNIT_NAMES, buildUnit, makeOrbCloud, makeBulletCloud, makeDebris, makeDotBurst, makePortalCloud, makeHeartCloud, makeTowerUnit, makeDotEnemy } from './units.js?v=d8df6616';
-import { LOOKS, LOOK_NAMES } from './looks.js?v=d8df6616';
-import { makeCellIndex } from './cellindex.js?v=d8df6616';
-import { CREATURE_TINTS, ENEMY_SPEC, INTROS } from './enemyspec.js?v=d8df6616';
-import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockRound } from './towers.js?v=d8df6616';
-import { makeEconomy, sellRefund } from './economy.js?v=d8df6616';
+import { generateSphereMesh, relax } from './grid.js?v=0f10c261';
+import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=0f10c261';
+import { mulberry32, randomSeed } from './rng.js?v=0f10c261';
+import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3 } from './vec3.js?v=0f10c261';
+import { CREATURES, waveJelly } from './creatures.js?v=0f10c261';
+import { UNITS, UNIT_NAMES, buildUnit, makeOrbCloud, makeBulletCloud, makeDebris, makeDotBurst, makePortalCloud, makeHeartCloud, makeTowerUnit, makeDotEnemy } from './units.js?v=0f10c261';
+import { LOOKS, LOOK_NAMES } from './looks.js?v=0f10c261';
+import { makeCellIndex } from './cellindex.js?v=0f10c261';
+import { CREATURE_TINTS, ENEMY_SPEC, INTROS } from './enemyspec.js?v=0f10c261';
+import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockRound } from './towers.js?v=0f10c261';
+import { makeEconomy, sellRefund } from './economy.js?v=0f10c261';
 
 export function initTdTab(root) {
   let active = false;
@@ -1527,7 +1527,7 @@ export function initTdTab(root) {
       let pulses = 0;
       const beat = () => {
         const on = pulses % 2 === 0;
-        for (const ci of show) paintCell(ci, on ? COL.hintFlash : floorColorOf(ci));
+        for (const ci of show) paintCell(ci, on ? look().floors.hintFlash : floorColorOf(ci));
         pulses++;
         if (pulses < 6) setTimeout(beat, 420);
         else for (const ci of show) paintCell(ci, floorColorOf(ci));
@@ -1583,7 +1583,7 @@ export function initTdTab(root) {
       if (d[nb] === d[player.cur] - 1) { next = nb; break; }
     }
     if (next === -1) return;
-    paintCell(next, COL.hintFlash);
+    paintCell(next, look().floors.hintFlash);
     clearTimeout(hintTimer);
     const cell = next;
     hintTimer = setTimeout(() => paintCell(cell, floorColorOf(cell)), 900);
