@@ -59,3 +59,45 @@ export const INTROS = [
   { wave: 11, type: 'prime',     label: 'PRIME MINE',          role: 'epic-rare · REGENERATES' },
   { wave: 12, type: 'knot',      label: 'SOLVING TORUS · BOSS', role: 'accelerates when hit · 3 heart damage' },
 ];
+
+// deterministic per-wave RNG (no Math.random — keeps the plan reproducible
+// for both the preview and the actual spawn)
+function mulberry32(a) {
+  return function () {
+    a |= 0; a = (a + 0x6D2B79F5) | 0;
+    let t = Math.imul(a ^ (a >>> 15), 1 | a);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+// enemy types available at a wave: the first min(wave,12) INTROS, in order
+export function typesByWave(wave) {
+  const n = Math.max(1, Math.min(INTROS.length, Math.floor(wave) || 1));
+  return INTROS.slice(0, n).map((iv) => iv.type);
+}
+
+// per-wave spawn plan: the NEWEST type in bulk + a seeded sprinkle of ≤2
+// earlier types. Counts use the same density tiers as the live spawner so
+// the preview never lies. Pure + deterministic.
+export function computeWavePlan(wave, round = 1, waveSize = 4) {
+  const avail = typesByWave(wave);
+  const headline = avail[avail.length - 1];
+  const earlier = avail.slice(0, -1);
+  const rnd = mulberry32((Math.floor(wave) || 1) * 2654435761);
+  const pool = earlier.slice();
+  const supports = [];
+  const k = Math.min(2, pool.length);
+  for (let i = 0; i < k; i++) supports.push(pool.splice(Math.floor(rnd() * pool.length), 1)[0]);
+  const base = waveSize + wave + 2 * (Math.max(1, round) - 1);
+  const density = (t) => {
+    const s = ENEMY_SPEC[t];
+    return s.boss ? 1
+      : s.heavy ? Math.max(1, Math.ceil(base / 3))
+      : s.rammable ? Math.round(base * 1.4)
+      : Math.max(1, Math.ceil(base / 2));
+  };
+  const entries = [{ type: headline, count: density(headline) }];
+  for (const t of supports) entries.push({ type: t, count: Math.max(1, Math.round(density(t) * 0.4)) });
+  return { headline, entries };
+}

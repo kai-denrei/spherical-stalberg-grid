@@ -2,8 +2,8 @@
 // roster data), towers (configs + upgrade + targeting math), economy
 // (credits/streak math). All pure modules; no DOM, no three.js.
 
-import { CREATURE_TINTS, ENEMY_SPEC, INTROS } from '../src/enemyspec.js';
-import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockRound, TOWER_UNLOCKS } from '../src/towers.js';
+import { CREATURE_TINTS, ENEMY_SPEC, INTROS, computeWavePlan, typesByWave } from '../src/enemyspec.js';
+import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER } from '../src/towers.js';
 import { makeEconomy, sellRefund, waveClearBonus, earlyCallBonus, START_CREDIT, RAM_PREMIUM } from '../src/economy.js';
 
 let failures = 0;
@@ -101,32 +101,24 @@ console.log('economy:');
 
 // --- tower-unlock ladder -------------------------------------------------
 console.log('tower unlocks:');
-check('R1 is exactly single + rapid',
-  JSON.stringify(unlockedTowerKeys(1)) === JSON.stringify(['single', 'rapid']));
-check('round clamps below 1 to R1',
-  JSON.stringify(unlockedTowerKeys(0)) === JSON.stringify(['single', 'rapid'])
-  && JSON.stringify(unlockedTowerKeys(-3)) === JSON.stringify(['single', 'rapid']));
-check('set grows monotonically each round', (() => {
-  for (let r = 2; r <= 6; r++) {
-    const prev = unlockedTowerKeys(r - 1), cur = unlockedTowerKeys(r);
-    if (cur.length < prev.length) return false;
-    if (!prev.every((k) => cur.includes(k))) return false; // never loses a tower
-  }
-  return true;
-})());
-check('all 8 towers unlocked by R5',
-  unlockedTowerKeys(5).length === 8 && unlockedTowerKeys(99).length === 8);
-check('every unlocked key is a real tower',
-  unlockedTowerKeys(5).every((k) => TOWER_BY_KEY[k]));
-check('laser unlocks last (R5), single/rapid first (R1)',
-  towerUnlockRound('laser') === 5 && towerUnlockRound('single') === 1 && towerUnlockRound('rapid') === 1);
-check('every tower appears in the schedule exactly once',
-  TOWERS.every((t) => towerUnlockRound(t.key) >= 1)
-  && TOWER_UNLOCKS.reduce((n, u) => n + u.keys.length, 0) === TOWERS.length);
-check('schedule matches spec (R2 spread+slow, R3 homing+aoe, R4 sniper)',
-  towerUnlockRound('spread') === 2 && towerUnlockRound('slow') === 2
-  && towerUnlockRound('homing') === 3 && towerUnlockRound('aoe') === 3
-  && towerUnlockRound('sniper') === 4);
+check('wave 1 unlocks single only', JSON.stringify(unlockedTowerKeys(1)) === JSON.stringify(['single']));
+check('wave 2 unlocks single+rapid', JSON.stringify(unlockedTowerKeys(2)) === JSON.stringify(['single', 'rapid']));
+check('unlock clamps below 1', JSON.stringify(unlockedTowerKeys(0)) === JSON.stringify(['single'])
+  && JSON.stringify(unlockedTowerKeys(-3)) === JSON.stringify(['single']));
+check('wave N grants N towers (cumulative)', [1, 2, 3, 4, 5, 6, 7, 8].every((w) => unlockedTowerKeys(w).length === w));
+check('all 8 towers by wave 8, capped after', unlockedTowerKeys(8).length === 8 && unlockedTowerKeys(99).length === 8);
+check('every unlocked key is a real tower', unlockedTowerKeys(8).every((k) => TOWER_BY_KEY[k]));
+check('towerUnlockWave: laser=8, single=1, rapid=2', towerUnlockWave('laser') === 8 && towerUnlockWave('single') === 1 && towerUnlockWave('rapid') === 2);
+check('TOWER_ORDER covers the roster', TOWER_ORDER.length === TOWERS.length && TOWER_ORDER.every((k) => TOWER_BY_KEY[k]));
+
+// --- wave plan -----------------------------------------------------------
+check('wave 1 plan is a single type', (() => { const p = computeWavePlan(1, 1, 4); return p.entries.length === 1 && p.headline === 'phage'; })());
+check('headline is the newest available type', [2, 5, 9, 12].every((w) => computeWavePlan(w, 1, 4).headline === INTROS[Math.min(w, 12) - 1].type));
+check('plan entries = 1 + up to 2 supports', [1, 2, 3, 8, 12].every((w) => { const n = computeWavePlan(w, 1, 4).entries.length; return n >= 1 && n <= 3; }));
+check('supports are earlier types, never the headline', [3, 8, 12].every((w) => { const p = computeWavePlan(w, 1, 4); const avail = typesByWave(w); return p.entries.slice(1).every((e) => e.type !== p.headline && avail.includes(e.type)); }));
+check('wave plan is deterministic', JSON.stringify(computeWavePlan(7, 2, 4)) === JSON.stringify(computeWavePlan(7, 2, 4)));
+check('all wave-plan counts are >= 1', [1, 4, 8, 12, 20].every((w) => computeWavePlan(w, 2, 4).entries.every((e) => e.count >= 1)));
+check('typesByWave grows with wave, caps at 12', typesByWave(1).length === 1 && typesByWave(5).length === 5 && typesByWave(99).length === 12);
 
 if (failures > 0) { console.error(`\n${failures} failure(s)`); process.exit(1); }
 console.log('\ntd-core invariants hold');
