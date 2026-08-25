@@ -19,17 +19,17 @@
 
 import * as THREE from '../vendor/three.module.js';
 import GUI from '../vendor/lil-gui.esm.js';
-import { generateSphereMesh, relax } from './grid.js?v=689f8b8e';
-import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=689f8b8e';
-import { mulberry32, randomSeed } from './rng.js?v=689f8b8e';
-import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3 } from './vec3.js?v=689f8b8e';
-import { CREATURES, waveJelly } from './creatures.js?v=689f8b8e';
-import { UNITS, UNIT_NAMES, buildUnit, makeOrbCloud, makeBulletCloud, makeMissileCloud, makeDebris, makeDotBurst, makePortalCloud, makeHeartCloud, makeTowerUnit, makeDotEnemy } from './units.js?v=689f8b8e';
-import { LOOKS, LOOK_NAMES } from './looks.js?v=689f8b8e';
-import { makeCellIndex } from './cellindex.js?v=689f8b8e';
-import { CREATURE_TINTS, ENEMY_SPEC, INTROS } from './enemyspec.js?v=689f8b8e';
-import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockRound } from './towers.js?v=689f8b8e';
-import { makeEconomy, sellRefund } from './economy.js?v=689f8b8e';
+import { generateSphereMesh, relax } from './grid.js?v=a5ef13c3';
+import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=a5ef13c3';
+import { mulberry32, randomSeed } from './rng.js?v=a5ef13c3';
+import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3 } from './vec3.js?v=a5ef13c3';
+import { CREATURES, waveJelly } from './creatures.js?v=a5ef13c3';
+import { UNITS, UNIT_NAMES, buildUnit, makeOrbCloud, makeBulletCloud, makeMissileCloud, makeDebris, makeDotBurst, makePortalCloud, makeHeartCloud, makeTowerUnit, makeDotEnemy } from './units.js?v=a5ef13c3';
+import { LOOKS, LOOK_NAMES } from './looks.js?v=a5ef13c3';
+import { makeCellIndex } from './cellindex.js?v=a5ef13c3';
+import { CREATURE_TINTS, ENEMY_SPEC, INTROS } from './enemyspec.js?v=a5ef13c3';
+import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockRound } from './towers.js?v=a5ef13c3';
+import { makeEconomy, sellRefund } from './economy.js?v=a5ef13c3';
 
 export function initTdTab(root) {
   let active = false;
@@ -1741,7 +1741,7 @@ export function initTdTab(root) {
       `<div class="gcards">` +
       glossCard('#ff6a88', spriteShot('heart', heartIcon), 'the heart', `${HEART_MAX} hp · enemy contact drains it · regen charges heal it`) +
       glossCard('#9fdcff', spriteShot('tower', () => makeTowerUnit(TOWER_BY_KEY.single)), 'towers', 'mount on walls only · tap high ground in BUILD mode · upgrade twice · sell 75%') +
-      glossCard('#ffb000', spriteShot('triad', makeTriadIcon), 'bullet triad', '+3 shells on touch (rack caps at 9) — the ONLY ammo pickup') +
+      glossCard('#ffb000', spriteShot('triad', makeTriadIcon), 'missile triad', '+3 shells on touch (rack caps at 9) — the ONLY ammo pickup') +
       glossCard('#9ff8ff', spriteShot('orb-power', orbIcon('scatter', 0x9ff8ff)), 'power sphere', 'far-field reward · +8% speed, permanent') +
       glossCard('#3dff6e', spriteShot('orb-health', orbIcon('wave', 0x3dff6e)), 'health sphere', 'far-field reward · +1 your hp') +
       glossCard('#ff2df0', spriteShot('orb-regen', orbIcon('breathe', 0xff2df0)), 'regen charge', 'CARRY it back near the heart: +4 heart hp') +
@@ -3431,7 +3431,7 @@ export function initTdTab(root) {
   gui.add(params, 'waveEvery', 6, 40, 1).name('wave every (s)');
   gui.add(params, 'obstacles', 0.05, 0.4, 0.05).onFinishChange(regenerate);
   gui.add(params, 'rewards', 0, 12, 1).onFinishChange(regenerate);
-  gui.add(params, 'orbs', 0, 40, 1).name('bullet triads').onFinishChange(regenerate);
+  gui.add(params, 'orbs', 0, 40, 1).name('missile triads').onFinishChange(regenerate);
   gui.add(params, 'orbRespawn', 0, 30, 1).name('triad respawn (s)');
   const seedCtrl = gui.add(params, 'seed', 0, 99999, 1).onFinishChange(regenerate);
   const pointsCtrl = gui.add(params, 'points', 150, 8000, 50).name('sample points').onFinishChange(regenerate);
