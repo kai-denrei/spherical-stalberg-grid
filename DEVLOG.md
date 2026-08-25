@@ -6,6 +6,19 @@ Demo links assume `npm run serve` (port 8144) or the
 
 ---
 
+## `16b5be1` — Reach, zoom, and missiles
+
+Three TD tweaks. The tutorial portal moved off the heart's doorstep to
+20–30 cells down the hall, so the opening reads as a real approach you
+drive out to stop. Build mode learned to zoom — it opens closer and takes
+a two-finger pinch on mobile (the board captures the gesture so the page
+holds still), while the tap-to-place raycast stays exact at any distance.
+And the shells you pick up are missiles now — the finned dot-cloud from the
+Braille lab, three to a triad, still +3 a grab; the towers' own tracers keep
+their bullets.
+
+---
+
 ## `a306ce8` — The first five minutes of TD, taught
 
 TD now opens on a hand-held tutorial instead of a wall of glossary. You
