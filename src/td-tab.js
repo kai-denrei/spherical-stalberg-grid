@@ -19,17 +19,17 @@
 
 import * as THREE from '../vendor/three.module.js';
 import GUI from '../vendor/lil-gui.esm.js';
-import { generateSphereMesh, relax } from './grid.js?v=0528a2c8';
-import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=0528a2c8';
-import { mulberry32, randomSeed } from './rng.js?v=0528a2c8';
-import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3 } from './vec3.js?v=0528a2c8';
-import { CREATURES, waveJelly } from './creatures.js?v=0528a2c8';
-import { UNITS, UNIT_NAMES, buildUnit, makeOrbCloud, makeBulletCloud, makeMissileCloud, makeDebris, makeDotBurst, makePortalCloud, makeHeartCloud, makeTowerUnit, makeDotEnemy } from './units.js?v=0528a2c8';
-import { LOOKS, LOOK_NAMES } from './looks.js?v=0528a2c8';
-import { makeCellIndex } from './cellindex.js?v=0528a2c8';
-import { CREATURE_TINTS, ENEMY_SPEC, INTROS, computeWavePlan } from './enemyspec.js?v=0528a2c8';
-import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER } from './towers.js?v=0528a2c8';
-import { makeEconomy, sellRefund } from './economy.js?v=0528a2c8';
+import { generateSphereMesh, relax } from './grid.js?v=19c3709c';
+import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=19c3709c';
+import { mulberry32, randomSeed } from './rng.js?v=19c3709c';
+import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3 } from './vec3.js?v=19c3709c';
+import { CREATURES, waveJelly } from './creatures.js?v=19c3709c';
+import { UNITS, UNIT_NAMES, buildUnit, makeOrbCloud, makeBulletCloud, makeMissileCloud, makeDebris, makeDotBurst, makePortalCloud, makeHeartCloud, makeTowerUnit, makeDotEnemy } from './units.js?v=19c3709c';
+import { LOOKS, LOOK_NAMES } from './looks.js?v=19c3709c';
+import { makeCellIndex } from './cellindex.js?v=19c3709c';
+import { CREATURE_TINTS, ENEMY_SPEC, INTROS, computeWavePlan } from './enemyspec.js?v=19c3709c';
+import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER } from './towers.js?v=19c3709c';
+import { makeEconomy, sellRefund } from './economy.js?v=19c3709c';
 
 export function initTdTab(root) {
   let active = false;
@@ -2458,7 +2458,6 @@ export function initTdTab(root) {
   function updateLasers(dt, tNow) {
     const guns = playerMesh && playerMesh.userData.laserGuns;
     const wantFire = keys.laser && guns && !player.won;
-    if (wantFire && tutorial.frozen) { tutorial.frozen = false; hideTutBanner(); }
     // heat: build while firing, shed otherwise; overheat locks the trigger
     // until the tubes are fully cold (no feathering the cap)
     if (laserOverheat) {
@@ -3578,6 +3577,9 @@ export function initTdTab(root) {
         updateHud();
       }
     }
+    // first laser input thaws the frozen tutorial opening — checked BEFORE the
+    // frozen gate, since updateLasers itself is skipped while frozen
+    if (tutorial.frozen && keys.laser) { tutorial.frozen = false; hideTutBanner(); }
     const frozen = buildFrozen() || revealLeft > 0 || tutorial.frozen;
 
     bumpLeft = Math.max(0, bumpLeft - dt);
