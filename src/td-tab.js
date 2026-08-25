@@ -19,17 +19,18 @@
 
 import * as THREE from '../vendor/three.module.js';
 import GUI from '../vendor/lil-gui.esm.js';
-import { generateSphereMesh, relax } from './grid.js?v=63a57906';
-import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=63a57906';
-import { mulberry32, randomSeed } from './rng.js?v=63a57906';
-import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3 } from './vec3.js?v=63a57906';
-import { CREATURES, waveJelly } from './creatures.js?v=63a57906';
-import { UNITS, UNIT_NAMES, buildUnit, makeOrbCloud, makeBulletCloud, makeMissileCloud, makeDebris, makeDotBurst, makePortalCloud, makeHeartCloud, makeTowerUnit, makeDotEnemy } from './units.js?v=63a57906';
-import { LOOKS, LOOK_NAMES } from './looks.js?v=63a57906';
-import { makeCellIndex } from './cellindex.js?v=63a57906';
-import { CREATURE_TINTS, ENEMY_SPEC, INTROS, computeWavePlan } from './enemyspec.js?v=63a57906';
-import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER } from './towers.js?v=63a57906';
-import { makeEconomy, sellRefund } from './economy.js?v=63a57906';
+import { generateSphereMesh, relax } from './grid.js?v=d474c3d9';
+import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=d474c3d9';
+import { mulberry32, randomSeed } from './rng.js?v=d474c3d9';
+import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3 } from './vec3.js?v=d474c3d9';
+import { CREATURES, waveJelly } from './creatures.js?v=d474c3d9';
+import { UNITS, UNIT_NAMES, buildUnit, makeOrbCloud, makeBulletCloud, makeMissileCloud, makeDebris, makeDotBurst, makePortalCloud, makeHeartCloud, makeTowerUnit, makeDotEnemy } from './units.js?v=d474c3d9';
+import { LOOKS, LOOK_NAMES } from './looks.js?v=d474c3d9';
+import { makeCellIndex } from './cellindex.js?v=d474c3d9';
+import { CREATURE_TINTS, ENEMY_SPEC, INTROS, computeWavePlan } from './enemyspec.js?v=d474c3d9';
+import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER } from './towers.js?v=d474c3d9';
+import { makeEconomy, sellRefund } from './economy.js?v=d474c3d9';
+import { makeBloom } from './postfx.js?v=d474c3d9';
 
 export function initTdTab(root) {
   let active = false;
@@ -121,6 +122,7 @@ export function initTdTab(root) {
 
   const camera = new THREE.PerspectiveCamera(68, 1, 0.004, 50);
   const mapCamera = new THREE.PerspectiveCamera(42, 1, 0.1, 50);
+  const postfx = makeBloom(renderer, scene, camera, {});
 
   // circular minimap: its own small renderer on a round-clipped canvas —
   // scissored insets on the main canvas can only ever be rectangles
@@ -144,6 +146,7 @@ export function initTdTab(root) {
     const w = container.clientWidth || 1;
     const h = container.clientHeight || 1;
     renderer.setSize(w, h);
+    postfx.setSize(w, h);
     camera.aspect = w / h;
     camera.updateProjectionMatrix();
     const m = Math.min(240, Math.floor(Math.min(w, h) * 0.32));
@@ -3530,6 +3533,12 @@ export function initTdTab(root) {
   gui.add(params, 'randomize').name('🎲 random seed');
   gui.add(params, 'regenerate').name('↻ regenerate');
 
+  const bloomF = gui.addFolder('bloom');
+  bloomF.add(postfx.params, 'enabled').name('enabled').onChange((v) => postfx.setEnabled(v));
+  bloomF.add(postfx.params, 'strength', 0, 3, 0.05).onChange((v) => postfx.setParams({ strength: v }));
+  bloomF.add(postfx.params, 'radius', 0, 1, 0.01).onChange((v) => postfx.setParams({ radius: v }));
+  bloomF.add(postfx.params, 'threshold', 0, 1, 0.01).onChange((v) => postfx.setParams({ threshold: v }));
+
   // phones: start with the panel folded so the maze isn't buried
   if (matchMedia('(pointer: coarse), (max-width: 700px)').matches) gui.close();
 
@@ -3558,7 +3567,7 @@ export function initTdTab(root) {
       markerMesh.visible = false;
       for (const sp of spawnPoints) if (sp.mapMarker) sp.mapMarker.visible = false;
       playerMesh.visible = params.view !== 'pov';
-      renderer.render(scene, camera);
+      postfx.render();
       scene.background = mapBg;
       markerMesh.visible = true;
       for (const sp of spawnPoints) {
@@ -3692,7 +3701,7 @@ export function initTdTab(root) {
     for (const sp of spawnPoints) if (sp.mapMarker) sp.mapMarker.visible = false;
     // in PoV the camera sits inside the creature — hide it there
     playerMesh.visible = params.view !== 'pov';
-    renderer.render(scene, camera);
+    postfx.render();
 
     // minimap, two modes (M): player-centred heading-up as in the heart
     // tab, or the fixed HEART THREAT VIEW — top-down over the pole,
