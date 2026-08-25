@@ -19,17 +19,17 @@
 
 import * as THREE from '../vendor/three.module.js';
 import GUI from '../vendor/lil-gui.esm.js';
-import { generateSphereMesh, relax } from './grid.js?v=15db5ee8';
-import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=15db5ee8';
-import { mulberry32, randomSeed } from './rng.js?v=15db5ee8';
-import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3 } from './vec3.js?v=15db5ee8';
-import { CREATURES, waveJelly } from './creatures.js?v=15db5ee8';
-import { UNITS, UNIT_NAMES, buildUnit, makeOrbCloud, makeBulletCloud, makeMissileCloud, makeDebris, makeDotBurst, makePortalCloud, makeHeartCloud, makeTowerUnit, makeDotEnemy } from './units.js?v=15db5ee8';
-import { LOOKS, LOOK_NAMES } from './looks.js?v=15db5ee8';
-import { makeCellIndex } from './cellindex.js?v=15db5ee8';
-import { CREATURE_TINTS, ENEMY_SPEC, INTROS } from './enemyspec.js?v=15db5ee8';
-import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER } from './towers.js?v=15db5ee8';
-import { makeEconomy, sellRefund } from './economy.js?v=15db5ee8';
+import { generateSphereMesh, relax } from './grid.js?v=22e3cf00';
+import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=22e3cf00';
+import { mulberry32, randomSeed } from './rng.js?v=22e3cf00';
+import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3 } from './vec3.js?v=22e3cf00';
+import { CREATURES, waveJelly } from './creatures.js?v=22e3cf00';
+import { UNITS, UNIT_NAMES, buildUnit, makeOrbCloud, makeBulletCloud, makeMissileCloud, makeDebris, makeDotBurst, makePortalCloud, makeHeartCloud, makeTowerUnit, makeDotEnemy } from './units.js?v=22e3cf00';
+import { LOOKS, LOOK_NAMES } from './looks.js?v=22e3cf00';
+import { makeCellIndex } from './cellindex.js?v=22e3cf00';
+import { CREATURE_TINTS, ENEMY_SPEC, INTROS } from './enemyspec.js?v=22e3cf00';
+import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER } from './towers.js?v=22e3cf00';
+import { makeEconomy, sellRefund } from './economy.js?v=22e3cf00';
 
 export function initTdTab(root) {
   let active = false;
@@ -51,7 +51,6 @@ export function initTdTab(root) {
     speed: 1.1, // cells per second, wanderer pace
     recoil: 8, // shell-recoil intensity, dialed to MAX per operator
     directive: 'wander', // auto-mode order: wander/avoid/ram/conserve/home/portal
-    portalShape: 'torus', // gate silhouette: torus/stargate/torii/moongate
     autoResume: 10, // seconds idle before auto-wander resumes
     creature: 'tank', // any roster unit; the tank has the sweeping turret
     // balance (operator pass): heavier early waves, but a richer field —
@@ -1508,7 +1507,7 @@ export function initTdTab(root) {
         }
       }
       if (bestBand === Infinity) portalCi = farCi; // small map: use the farthest cell
-      const obj = buildPortalObj('phage', portalCi, whim() * 6.283);
+      const obj = buildPortalObj(portalCi, whim() * 6.283);
       scene.add(obj);
       const mm = new THREE.Mesh(new THREE.SphereGeometry(0.035, 10, 10),
         new THREE.MeshBasicMaterial({ color: CREATURE_TINTS.phage }));
@@ -2190,7 +2189,7 @@ export function initTdTab(root) {
     if (best === -1) best = dungeon.spawn;
     // the source is a PORTAL, standing upright like a gate (local +Y =
     // surface normal), in the selected silhouette, tinted per enemy
-    const obj = buildPortalObj(type, best, whim() * 6.283);
+    const obj = buildPortalObj(best, whim() * 6.283);
     scene.add(obj);
     // minimap beacon in the spawn's tint — dark until the player FINDS the
     // source (comes close or lands a shell), then it pulses on the map.
@@ -3251,9 +3250,8 @@ export function initTdTab(root) {
   // Orientation: upright (local +Y = surface normal) AND the gate's open
   // face turned down the lane — toward the open neighbor nearest the
   // Heart, where its creatures will march — never sideways into walls.
-  function buildPortalObj(type, ci, phase) {
-    const obj = makePortalCloud({ body: CREATURE_TINTS[type], hi: 0xffffff },
-      phase, params.portalShape);
+  function buildPortalObj(ci, phase) {
+    const obj = makePortalCloud({ body: 0xcfd8ff, hi: 0xffffff }, phase);
     const r = cellSide * 0.7;
     obj.scale.setScalar(r);
     obj.userData.sizeScale = r;
@@ -3277,22 +3275,6 @@ export function initTdTab(root) {
       obj.quaternion.setFromUnitVectors(Y_AXIS, tmpN);
     }
     return obj;
-  }
-
-  // swap every standing portal's silhouette IN PLACE — no reset, no rng
-  // (rebuild phases derive from the cell index, not the gameplay stream)
-  function reshapePortals() {
-    for (const sp of spawnPoints) {
-      if (!sp.alive) continue;
-      scene.remove(sp.obj);
-      disposeObj(sp.obj);
-      sp.obj = buildPortalObj(sp.type, sp.ci, (sp.ci % 97) / 97 * 6.283);
-      // carry the wound state over: shrink + dim to match remaining hp
-      const sc = sp.obj.userData.sizeScale * (0.65 + 0.35 * (sp.hp / 3));
-      sp.obj.scale.setScalar(sc);
-      sp.obj.userData.setDim(0.2 + 0.8 * (sp.hp / 3));
-      scene.add(sp.obj);
-    }
   }
 
   // BFS field to the nearest LIVE portal — the 'portal' directive's map.
@@ -3490,8 +3472,6 @@ export function initTdTab(root) {
     buildActors();
     placeActors();
   });
-  gui.add(params, 'portalShape', ['torus', 'stargate', 'torii', 'moongate'])
-    .name('portal shape').onChange(reshapePortals);
   gui.add(params, 'look', LOOK_NAMES).onChange(applyLook);
   gui.add(params, 'wallTops', ['auto', 'bright', 'dim', 'black'])
     .name('wall tops').onChange(applyLook);
@@ -3785,13 +3765,6 @@ export function initTdTab(root) {
         if (!placeError(ci)) { placeTower(key, ci); break; }
       }
     }
-  }
-
-  // ?portal=shape forces a silhouette (headless visual check)
-  const portalOv = urlParams.get('portal');
-  if (['torus', 'stargate', 'torii', 'moongate'].includes(portalOv)) {
-    params.portalShape = portalOv;
-    reshapePortals();
   }
 
   // ?reveal=1 fires a sector-2 expansion immediately (headless check of

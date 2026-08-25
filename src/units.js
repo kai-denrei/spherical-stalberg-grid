@@ -15,7 +15,7 @@
 // tick(t) (idle animation) }.
 
 import * as THREE from '../vendor/three.module.js';
-import { CREATURES, waveJelly, spherePts, bulletPts, missilePts, heartPts, torusPts, towerHeadPts, enemyDotPts, portalPts } from './creatures.js?v=15db5ee8';
+import { CREATURES, waveJelly, spherePts, bulletPts, missilePts, heartPts, torusPts, towerHeadPts, enemyDotPts, portalPts } from './creatures.js?v=22e3cf00';
 
 function normalizeToUnit(group) {
   group.updateMatrixWorld(true);
@@ -641,8 +641,8 @@ export function makeDotEnemy(type, cols) {
 // userData.setDim(f) scales all brightness — the game dims a portal as
 // it takes damage. Ring lies in local X-Y: align +Y to the surface
 // normal and it stands like a gate.
-export function makePortalCloud(cols, phase = 0, shape = 'torus') {
-  const base = portalPts(shape, 1150); // dense — the gates are set pieces
+export function makePortalCloud(cols, phase = 0) {
+  const base = portalPts(1150); // dense — the gates are set pieces
   const pos = new Float32Array(base.length * 3);
   const col = new Float32Array(base.length * 3);
   const baseCol = new Float32Array(base.length * 3);
@@ -679,36 +679,8 @@ export function makePortalCloud(cols, phase = 0, shape = 'torus') {
     }
     attr.needsUpdate = true;
   };
-  // per-shape treatment. torus/stargate: the two-frequency shimmer.
-  // torii: STATIC — but once every 5 s a twist wave rolls through it
-  // (per-point rotation about the vertical, proportional to height).
-  // moongate: the Wave treatment, radial ripple in the gate's plane.
-  let toriiWasFlat = false;
-  const TICKS = {
-    torus: twinkle,
-    stargate: twinkle,
-    torii: (t) => {
-      const ph = (t + phase) % 5;
-      const amt = ph < 1.0 ? Math.sin(ph * Math.PI) * 0.75 : 0;
-      if (amt === 0) {
-        if (!toriiWasFlat) { repose((pnt) => pnt); toriiWasFlat = true; }
-        return;
-      }
-      toriiWasFlat = false;
-      repose((pnt) => {
-        const a = amt * pnt[1];
-        const cs = Math.cos(a), sn = Math.sin(a);
-        return [pnt[0] * cs - pnt[2] * sn, pnt[1], pnt[0] * sn + pnt[2] * cs];
-      });
-    },
-    moongate: (t) => {
-      repose((pnt) => {
-        const d = 1 + 0.12 * Math.sin(3 * Math.atan2(pnt[1], pnt[0]) + t * 3 + phase);
-        return [pnt[0] * d, pnt[1] * d, pnt[2]];
-      });
-    },
-  };
-  pts.userData.tick = TICKS[shape] || twinkle;
+  // stargate: two-frequency shimmer (the same twinkle used for the ring)
+  pts.userData.tick = twinkle;
   // dim rides the MATERIAL color (multiplies vertex colors), so every
   // treatment — color- or position-based — dims the same way
   pts.userData.setDim = (f) => { pts.material.color.setScalar(f); };
