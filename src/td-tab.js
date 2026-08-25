@@ -19,17 +19,17 @@
 
 import * as THREE from '../vendor/three.module.js';
 import GUI from '../vendor/lil-gui.esm.js';
-import { generateSphereMesh, relax } from './grid.js?v=c272e082';
-import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=c272e082';
-import { mulberry32, randomSeed } from './rng.js?v=c272e082';
-import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3 } from './vec3.js?v=c272e082';
-import { CREATURES, waveJelly } from './creatures.js?v=c272e082';
-import { UNITS, UNIT_NAMES, buildUnit, makeOrbCloud, makeBulletCloud, makeMissileCloud, makeDebris, makeDotBurst, makePortalCloud, makeHeartCloud, makeTowerUnit, makeDotEnemy } from './units.js?v=c272e082';
-import { LOOKS, LOOK_NAMES } from './looks.js?v=c272e082';
-import { makeCellIndex } from './cellindex.js?v=c272e082';
-import { CREATURE_TINTS, ENEMY_SPEC, INTROS } from './enemyspec.js?v=c272e082';
-import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockRound } from './towers.js?v=c272e082';
-import { makeEconomy, sellRefund } from './economy.js?v=c272e082';
+import { generateSphereMesh, relax } from './grid.js?v=f1b41625';
+import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=f1b41625';
+import { mulberry32, randomSeed } from './rng.js?v=f1b41625';
+import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3 } from './vec3.js?v=f1b41625';
+import { CREATURES, waveJelly } from './creatures.js?v=f1b41625';
+import { UNITS, UNIT_NAMES, buildUnit, makeOrbCloud, makeBulletCloud, makeMissileCloud, makeDebris, makeDotBurst, makePortalCloud, makeHeartCloud, makeTowerUnit, makeDotEnemy } from './units.js?v=f1b41625';
+import { LOOKS, LOOK_NAMES } from './looks.js?v=f1b41625';
+import { makeCellIndex } from './cellindex.js?v=f1b41625';
+import { CREATURE_TINTS, ENEMY_SPEC, INTROS } from './enemyspec.js?v=f1b41625';
+import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockRound } from './towers.js?v=f1b41625';
+import { makeEconomy, sellRefund } from './economy.js?v=f1b41625';
 
 export function initTdTab(root) {
   let active = false;
@@ -825,12 +825,15 @@ export function initTdTab(root) {
   // tower you click while in it. watchTower null = the Heart.
   let watchTower = null;
   let mapMode = 'player'; // 'player' | 'heart'
-  let buildYaw = 0;       // drag orbits the azimuth around the pole axis
-  let buildDist = 2.0;    // wheel/pinch zooms
+  let buildDist = 2.0;      // wheel/pinch zooms
+  let buildCenter = null;   // unit vec: the surface point under the overhead cam (pan)
+  const BUILD_MAXR = 0.6;   // max resting pan angle off the heart (rad)
+  const BUILD_CEIL = 0.9;   // hard ceiling while dragging
   const anyHostiles = () => enemies.some((e) => e.alive);
   const buildFrozen = () => buildMode && !anyHostiles();
   function toggleBuild() {
     buildMode = !buildMode;
+    if (buildMode) buildCenter = poleFrame().hn.slice(); // start centered on the heart
     syncBuildUi();
     updateHud();
     if (!buildMode) showOverrideModal(); // just switched INTO manual drive
@@ -907,11 +910,22 @@ export function initTdTab(root) {
       return;
     }
     if (buildMode) {
-      // top-down planning: over the pole, the active hemisphere framed;
-      // lookAt the sphere center so the horizon stays level while orbiting
-      const { hn, t1, t2 } = poleFrame();
-      const up = add3(scale3(t1, Math.cos(buildYaw)), scale3(t2, Math.sin(buildYaw)));
-      const eye = scale3(hn, buildDist);
+      const { hn, t1 } = poleFrame();
+      if (!buildCenter) buildCenter = hn.slice();
+      let c = buildCenter;
+      // elastic return: when NOT dragging, ease the center back inside the radius
+      const ang = Math.acos(Math.max(-1, Math.min(1, dot3(c, hn))));
+      if (buildPointers.size === 0 && ang > BUILD_MAXR) {
+        const f = BUILD_MAXR / ang;
+        const b = norm3(add3(scale3(hn, 1 - f), scale3(c, f))); // boundary point toward hn
+        buildCenter = norm3(add3(scale3(c, 0.85), scale3(b, 0.15)));
+        c = buildCenter;
+      }
+      // stable up: heart pole projected into the tangent plane at c (no spin)
+      let up = add3(scale3(hn, 1), scale3(c, -dot3(hn, c)));
+      if (dot3(up, up) < 1e-6) up = t1.slice(); // degenerate at the start (c≈hn)
+      up = norm3(up);
+      const eye = scale3(c, buildDist);
       camGoal.pos.set(eye[0], eye[1], eye[2]);
       tmpCam.position.copy(camGoal.pos);
       tmpCam.up.set(up[0], up[1], up[2]);
@@ -1361,6 +1375,7 @@ export function initTdTab(root) {
     const prev = buildPointers.get(ev.pointerId);
     if (!prev) return;
     const dx = ev.clientX - prev.x;
+    const dy = ev.clientY - prev.y;
     prev.x = ev.clientX; prev.y = ev.clientY;
     if (buildPointers.size >= 2) {
       const p = [...buildPointers.values()];
@@ -1372,9 +1387,22 @@ export function initTdTab(root) {
       return;
     }
     if (tapStart && Math.hypot(ev.clientX - tapStart[0], ev.clientY - tapStart[1]) > 8) {
-      tapStart = null; // it's an orbit now
+      tapStart = null; // it's a pan now
     }
-    buildYaw += dx * 0.006;
+    // flick-to-pan: grab the map — nudge the overhead center across the sphere
+    if (buildCenter) {
+      const { hn, t1 } = poleFrame();
+      const c = buildCenter;
+      let up = add3(scale3(hn, 1), scale3(c, -dot3(hn, c)));
+      if (dot3(up, up) < 1e-6) up = t1.slice();
+      up = norm3(up);
+      const right = norm3(cross3(up, c));
+      const k = buildDist * 0.0016; // px → tangent nudge, zoom-aware
+      let nc = norm3(add3(c, add3(scale3(right, -dx * k), scale3(up, dy * k))));
+      const a = Math.acos(Math.max(-1, Math.min(1, dot3(nc, hn))));
+      if (a > BUILD_CEIL) { const f = BUILD_CEIL / a; nc = norm3(add3(scale3(hn, 1 - f), scale3(nc, f))); }
+      buildCenter = nc;
+    }
   });
   function endBuildPointer(ev) {
     const wasTap = !pinched && tapStart
