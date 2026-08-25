@@ -6,6 +6,20 @@ Demo links assume `npm run serve` (port 8144) or the
 
 ---
 
+## `04eeb1c` — First impressions
+
+The TD open got a rewrite for the first thirty seconds. The tutorial starts
+frozen — tank by the heart, two enemies in the lane, the laser lit, "SHOOT TO
+DEFEND THE HEART"; the first shot thaws it. All the guidance is transient
+toasts now (no × buttons, no start-choice modal, nothing that pauses the
+game). Drive is MANUAL by default and sticky — auto is opt-in through the
+directive chip and any input reclaims the wheel, with the idle auto-resume
+timer gone. And waves are clear-gated: clearing the field plays a WAVE OVER
+beat, then an anticipation countdown (waveGap) before the next wave, with a
+waveCap safety so the war never stalls.
+
+---
+
 ## `5f4862d` — Deliberate waves, one true gate
 
 TD progression collapses onto the wave counter: wave N = N enemy types + N
