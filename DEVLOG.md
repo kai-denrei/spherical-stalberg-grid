@@ -6,6 +6,20 @@ Demo links assume `npm run serve` (port 8144) or the
 
 ---
 
+## `5f4862d` — Deliberate waves, one true gate
+
+TD progression collapses onto the wave counter: wave N = N enemy types + N
+tower types (one new tower a wave, capped at the roster), the newest threat
+headlining with a few older types folded in. A NEXT WAVE strip previews and
+counts down what's incoming; a NEW TOWER card marks each unlock; the HUD
+leads with the wave. Portals became type-agnostic neutral **stargate**
+sources — a bounded set per sector, seeded spatially, pouring out whatever
+the wave plan dictates — and the torii/moongate shapes and the shape
+dropdown are gone. Sectors stay as pure spatial growth. The plan itself
+(`computeWavePlan`) and the wave-keyed tower ladder are pure and Node-tested.
+
+---
+
 ## `6f955b9` — Onboarding, patience, and a camera that roams
 
 Four TD tweaks. The tutorial greets you with a real choice — play or skip —
