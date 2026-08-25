@@ -19,17 +19,17 @@
 
 import * as THREE from '../vendor/three.module.js';
 import GUI from '../vendor/lil-gui.esm.js';
-import { generateSphereMesh, relax } from './grid.js?v=7d136f74';
-import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=7d136f74';
-import { mulberry32, randomSeed } from './rng.js?v=7d136f74';
-import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3 } from './vec3.js?v=7d136f74';
-import { CREATURES, waveJelly } from './creatures.js?v=7d136f74';
-import { UNITS, UNIT_NAMES, buildUnit, makeOrbCloud, makeBulletCloud, makeDebris, makeDotBurst, makePortalCloud, makeHeartCloud, makeTowerUnit, makeDotEnemy } from './units.js?v=7d136f74';
-import { LOOKS, LOOK_NAMES } from './looks.js?v=7d136f74';
-import { makeCellIndex } from './cellindex.js?v=7d136f74';
-import { CREATURE_TINTS, ENEMY_SPEC, INTROS } from './enemyspec.js?v=7d136f74';
-import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockRound } from './towers.js?v=7d136f74';
-import { makeEconomy, sellRefund } from './economy.js?v=7d136f74';
+import { generateSphereMesh, relax } from './grid.js?v=06eab33c';
+import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=06eab33c';
+import { mulberry32, randomSeed } from './rng.js?v=06eab33c';
+import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3 } from './vec3.js?v=06eab33c';
+import { CREATURES, waveJelly } from './creatures.js?v=06eab33c';
+import { UNITS, UNIT_NAMES, buildUnit, makeOrbCloud, makeBulletCloud, makeDebris, makeDotBurst, makePortalCloud, makeHeartCloud, makeTowerUnit, makeDotEnemy } from './units.js?v=06eab33c';
+import { LOOKS, LOOK_NAMES } from './looks.js?v=06eab33c';
+import { makeCellIndex } from './cellindex.js?v=06eab33c';
+import { CREATURE_TINTS, ENEMY_SPEC, INTROS } from './enemyspec.js?v=06eab33c';
+import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockRound } from './towers.js?v=06eab33c';
+import { makeEconomy, sellRefund } from './economy.js?v=06eab33c';
 
 export function initTdTab(root) {
   let active = false;
@@ -279,7 +279,10 @@ export function initTdTab(root) {
         && i !== player.cur && !orbMeshes.has(i)) open.push(i);
     }
     if (open.length === 0) return false;
-    const ci = open[Math.floor(orbRng() * open.length)];
+    return spawnOrbAt(open[Math.floor(orbRng() * open.length)]);
+  }
+  function spawnOrbAt(ci) {
+    if (orbMeshes.has(ci)) return false;
     const r = cellSide * 0.14;
     const group = new THREE.Group();
     const phase = orbRng() * 6.283;
@@ -1401,6 +1404,7 @@ export function initTdTab(root) {
     pulsedBtn = sel ? root.querySelector(sel) : null;
     if (pulsedBtn) pulsedBtn.classList.add('tutorial-pulse');
   }
+  const safeSeen = () => { try { return localStorage.getItem('td.tutorialSeen'); } catch (e) { return null; } };
 
   // Scripted onboarding. A linear phase machine driven from animate() while
   // tutorialActive. Phase bodies land in later tasks; this is the frame.
@@ -1409,8 +1413,101 @@ export function initTdTab(root) {
     portal: null,   // the scripted spawn point
     fodder: [],     // the 3 scripted enemies
     tShown: 0,
-    setup() { /* task 4 */ },
-    tick(dt) { /* task 4 & 5 dispatch on this.phase */ },
+    setup() {
+      // player starts a few hops from the heart (distToHeart 2..3)
+      let startCi = dungeon.heart;
+      for (let d = 2; d <= 4 && startCi === dungeon.heart; d++) {
+        for (let i = 0; i < dungeon.tags.length; i++) {
+          if (dungeon.tags[i] !== BLOCKED && dungeon.distToHeart[i] === d) { startCi = i; break; }
+        }
+      }
+      player.cur = startCi;
+      player.prev = -1;
+      player.pos = graph.centers[startCi].slice();
+      player.visited = new Set([startCi]);
+      const exits = openNeighbors(startCi);
+      let e0 = exits[0] ?? startCi;
+      for (const e of exits) {
+        if (dungeon.distToHeart[e] === dungeon.distToHeart[startCi] - 1) { e0 = e; break; }
+      }
+      player.heading = tangentDirTo(startCi, e0);
+      player.travelDir = player.heading.slice();
+      player.smoothDir = player.travelDir.slice();
+      player.next = e0;
+      player.prog = 0;
+      player.segLen = Math.max(1e-9, dist3(graph.centers[startCi], graph.centers[player.next]));
+
+      ammo = 0; updateHud();
+      clearOrbs();
+
+      // one portal, near the heart but a couple cells past the player, so
+      // the fodder walk toward the heart. Pick a distToHeart-1 cell.
+      let portalCi = startCi;
+      for (let i = 0; i < dungeon.tags.length; i++) {
+        if (dungeon.tags[i] !== BLOCKED && dungeon.distToHeart[i] === 1) { portalCi = i; break; }
+      }
+      const obj = buildPortalObj('phage', portalCi, whim() * 6.283);
+      scene.add(obj);
+      const mm = new THREE.Mesh(new THREE.SphereGeometry(0.035, 10, 10),
+        new THREE.MeshBasicMaterial({ color: CREATURE_TINTS.phage }));
+      const mmp = scale3(graph.centers[portalCi], 1 + params.wallHeight * 1.6);
+      mm.position.set(mmp[0], mmp[1], mmp[2]);
+      mm.visible = true; scene.add(mm);
+      this.portal = { type: 'phage', ci: portalCi, hp: 3, obj, alive: true, found: true, mapMarker: mm };
+      spawnPoints.push(this.portal);
+      recomputePortalDist();
+      wave = 1; // the scripted wave counts as wave 1, so the BUILD-phase
+                // spawnWave() (task 5) introduces the wave-2 enemy type
+
+      // 3 phage fodder from the portal
+      this.fodder = [];
+      const spec = ENEMY_SPEC.phage;
+      for (let k = 0; k < 3; k++) {
+        const eObj = makeDotEnemy('phage', { walker: CREATURE_TINTS.phage, walkerHi: 0xffffff });
+        const scale0 = cellSide * spec.size * 0.7;
+        eObj.scale.setScalar(scale0); eObj.userData.s0 = scale0; scene.add(eObj);
+        const nx = openNeighbors(portalCi);
+        const e = {
+          type: 'phage', spec, scale0, size: spec.size,
+          cur: portalCi, prev: -1,
+          next: nx.length ? nx[Math.floor(whim() * nx.length)] : portalCi,
+          prog: whim() * 0.4, pos: graph.centers[portalCi].slice(), dir: [0, 1, 0],
+          obj: eObj, alive: true, phase: whim() * 6.283,
+          hp: spec.hp, behMult: 1, behUntil: -1, touchCd: -1, slowFactor: 1, slowUntil: -1,
+        };
+        enemies.push(e); this.fodder.push(e);
+      }
+      tutBanner('PROTECT THE HEART!', { flash: true, skip: !!safeSeen() });
+      this.tShown = 0; this.phase = 'ram';
+      // after the flash, swap to the action prompt + pulse fire
+      setTimeout(() => {
+        if (this.phase !== 'ram') return;
+        tutBanner('Shoot or RAM the enemies!', { skip: !!safeSeen() });
+        pulseButton('#td-pad-fire');
+      }, 1800);
+    },
+    tick(dt) {
+      if (this.phase === 'ram') {
+        if (this.fodder.every((e) => !e.alive)) {
+          // fodder cleared → shells appear beside the player
+          const near = openNeighbors(player.cur).slice(0, 3);
+          const cells = near.length ? near : [player.cur];
+          for (const ci of cells) spawnOrbAt(ci);
+          tutBanner('Pick up the shells to destroy the portal — it takes 3 shots.',
+            { skip: !!safeSeen() });
+          pulseButton('#td-pad-fire');
+          this.phase = 'portal';
+        }
+      } else if (this.phase === 'portal') {
+        if (this.portal && !this.portal.alive) {
+          this.startBuild(); // task 5
+        }
+      } else if (this.phase === 'build' || this.phase === 'done') {
+        this.tickBuild(dt); // task 5
+      }
+    },
+    startBuild() { /* task 5 */ },
+    tickBuild() { /* task 5 */ },
     teardown() { pulseButton(null); hideTutBanner(); },
   };
 
