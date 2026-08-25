@@ -540,6 +540,44 @@ html, body {
   text-shadow: 0 0 8px currentColor;
 }
 
+/* --- tower-unlock toast (#td-tower) — own element so it never clobbers   */
+/* the enemy "NEW THREAT" waveEl card on the same wave. Offset below it.   */
+#td-tower {
+  position: absolute;
+  top: calc(16% + 200px); /* below #td-wave (top:16%) with room for its content */
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 7;
+  min-width: 220px;
+  max-width: 72vw;
+  padding: 8px 18px 10px;
+  background: linear-gradient(180deg, rgba(4, 14, 22, 0.92), rgba(4, 10, 18, 0.92));
+  border: 1px solid #7fdfff;
+  border-radius: 10px;
+  text-align: center;
+  font: 13px ui-monospace, Menlo, monospace;
+  color: #7fdfff;
+  pointer-events: none;
+  animation: wave-pop 0.35s ease-out;
+}
+#td-tower.hidden { display: none; }
+#td-tower .wave-num {
+  font-size: 10px;
+  letter-spacing: 0.32em;
+  text-transform: uppercase;
+  opacity: 0.8;
+}
+#td-tower .wave-name {
+  font-size: 17px;
+  letter-spacing: 0.14em;
+  margin: 4px 0 2px;
+  text-shadow: 0 0 10px currentColor;
+}
+#td-tower .wave-role {
+  font-size: 12px;
+  opacity: 0.85;
+}
+
 /* --- briefing & glossaries (heart tab): one card per element ------------ */
 .gcards {
   display: grid;

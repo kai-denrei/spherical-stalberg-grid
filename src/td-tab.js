@@ -19,17 +19,17 @@
 
 import * as THREE from '../vendor/three.module.js';
 import GUI from '../vendor/lil-gui.esm.js';
-import { generateSphereMesh, relax } from './grid.js?v=0b4e4775';
-import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=0b4e4775';
-import { mulberry32, randomSeed } from './rng.js?v=0b4e4775';
-import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3 } from './vec3.js?v=0b4e4775';
-import { CREATURES, waveJelly } from './creatures.js?v=0b4e4775';
-import { UNITS, UNIT_NAMES, buildUnit, makeOrbCloud, makeBulletCloud, makeMissileCloud, makeDebris, makeDotBurst, makePortalCloud, makeHeartCloud, makeTowerUnit, makeDotEnemy } from './units.js?v=0b4e4775';
-import { LOOKS, LOOK_NAMES } from './looks.js?v=0b4e4775';
-import { makeCellIndex } from './cellindex.js?v=0b4e4775';
-import { CREATURE_TINTS, ENEMY_SPEC, INTROS, computeWavePlan } from './enemyspec.js?v=0b4e4775';
-import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER } from './towers.js?v=0b4e4775';
-import { makeEconomy, sellRefund } from './economy.js?v=0b4e4775';
+import { generateSphereMesh, relax } from './grid.js?v=8e75c685';
+import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=8e75c685';
+import { mulberry32, randomSeed } from './rng.js?v=8e75c685';
+import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3 } from './vec3.js?v=8e75c685';
+import { CREATURES, waveJelly } from './creatures.js?v=8e75c685';
+import { UNITS, UNIT_NAMES, buildUnit, makeOrbCloud, makeBulletCloud, makeMissileCloud, makeDebris, makeDotBurst, makePortalCloud, makeHeartCloud, makeTowerUnit, makeDotEnemy } from './units.js?v=8e75c685';
+import { LOOKS, LOOK_NAMES } from './looks.js?v=8e75c685';
+import { makeCellIndex } from './cellindex.js?v=8e75c685';
+import { CREATURE_TINTS, ENEMY_SPEC, INTROS, computeWavePlan } from './enemyspec.js?v=8e75c685';
+import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER } from './towers.js?v=8e75c685';
+import { makeEconomy, sellRefund } from './economy.js?v=8e75c685';
 
 export function initTdTab(root) {
   let active = false;
@@ -180,9 +180,10 @@ export function initTdTab(root) {
   const debris = [];       // scatter effects, tick(dt) -> alive
   const friendlies = [];   // ally tanks: { cur, prev, next, prog, pos, dir, obj, alive, hp }
   const allyShots = [];    // infinite-ammo covering fire: { pos, dir, dist, mesh }
-  const spawnPoints = [];  // { type, ci, hp, obj, alive } — one per creature type
+  const spawnPoints = [];  // { ci, hp, obj, alive, found, mapMarker } — type-agnostic gates
   let wave = 0;
   let waveClock = 0;
+  const seenTypes = new Set(); // headline types already revealed this run
   // roster data (tints/specs/intros) lives in enemyspec.js — one source
   // of truth shared with the TD tab (M0 extraction). See that module for
   // the field semantics.
@@ -205,7 +206,6 @@ export function initTdTab(root) {
   // third and fourth take the perpendicular pair. Expansion sweeps AROUND
   // the planet instead of running deeper down lanes already cleared.
   let tdSectorId = null; // per-cell sector number (1..5); 6 = never (walls)
-  const introCount = () => Math.min(INTROS.length, 2 + 2 * round); // r1=4 types
   // seal/unseal to the current round's fraction; optionally re-pick the
   // player start (only at run start — expansions don't teleport you)
   function applySector(resetSpawn = false) {
@@ -1467,6 +1467,14 @@ export function initTdTab(root) {
     fodder: [],     // the 3 scripted enemies
     tShown: 0,
     setup() {
+      // wipe any seeded neutral gates so the tutorial has exactly its one
+      // scripted portal (the plan-driven wave engine seeds these at run-start;
+      // the tutorial overrides with a hand-scripted phage portal instead)
+      for (const sp of spawnPoints) {
+        scene.remove(sp.obj); disposeObj(sp.obj);
+        if (sp.mapMarker) { scene.remove(sp.mapMarker); disposeObj(sp.mapMarker); }
+      }
+      spawnPoints.length = 0;
       // player starts a few hops from the heart (distToHeart 2..3)
       let startCi = dungeon.heart;
       for (let d = 2; d <= 4 && startCi === dungeon.heart; d++) {
@@ -1962,23 +1970,27 @@ export function initTdTab(root) {
     nextEl.classList.remove('hidden');
   }
 
-  // tower-unlock toast (called by Task 4's spawn); reuses waveEl slot
+  // tower-unlock toast — own element (#td-tower) so it never clobbers the
+  // enemy "NEW THREAT" waveEl card that fires on the same spawnWave() call
+  const towerEl = root.querySelector('#td-tower');
   let towerToastTimer = null;
   function showTowerToast(key) {
     const def = TOWER_BY_KEY[key];
     if (!def) return;
-    nextEl && nextEl.classList.add('hidden'); // yield the strip briefly
-    waveEl.style.borderColor = '#7fdfff';
-    waveEl.style.color = '#7fdfff';
-    waveEl.innerHTML = `<div class="wave-num">NEW TOWER UNLOCKED</div>` +
+    towerEl.style.borderColor = '#7fdfff';
+    towerEl.style.color = '#7fdfff';
+    towerEl.innerHTML = `<div class="wave-num">NEW TOWER UNLOCKED</div>` +
       `<div class="wave-name">${def.label}</div>` +
       `<div class="wave-role">available now in BUILD</div>`;
+    // clear any stale icon before inserting the new one
+    const old = towerEl.querySelector('.wave-icon');
+    if (old) old.remove();
     const icon = spriteShot('tower-' + key, () => makeTowerUnit(def));
     const img = new Image(); img.src = icon; img.className = 'wave-icon';
-    waveEl.insertBefore(img, waveEl.querySelector('.wave-name'));
-    waveEl.classList.remove('hidden');
+    towerEl.insertBefore(img, towerEl.querySelector('.wave-name'));
+    towerEl.classList.remove('hidden');
     clearTimeout(towerToastTimer);
-    towerToastTimer = setTimeout(() => waveEl.classList.add('hidden'), 3000);
+    towerToastTimer = setTimeout(() => towerEl.classList.add('hidden'), 3000);
   }
 
   // --- generation ----------------------------------------------------------
@@ -2187,8 +2199,8 @@ export function initTdTab(root) {
   }
 
   function spawnEnemies() {
-    // battle reset. Spawn points are no longer placed up front: each one
-    // arrives WITH its wave introduction (HokorobiTawaa's announce beat)
+    // battle reset — clear all enemies and gates, then seed the starting
+    // neutral portals; the wave plan decides what pours out of them
     clearEnemies();
     for (const sp of spawnPoints) {
       scene.remove(sp.obj);
@@ -2201,6 +2213,8 @@ export function initTdTab(root) {
     portalDist = null;
     clearTimeout(waveTimer);
     waveEl.classList.add('hidden');
+    seenTypes.clear();
+    seedPortals(2);
   }
 
   // cheap hop estimate for spreading spawn points (chord distance in cells)
@@ -2208,9 +2222,9 @@ export function initTdTab(root) {
     return dist3(graph.centers[a], graph.centers[b]) / cellSide;
   }
 
-  // the introduced type's source: far from the pole, greedily spread from
-  // the spawn points already standing; 3 hits to destroy
-  function addSpawnPoint(type) {
+  // a sector's gates are spatial sources, not type-bound — place one far
+  // from the heart, spread from existing gates; 3 hits to destroy
+  function addSpawnPoint() {
     let maxD = 0;
     for (let i = 0; i < dungeon.tags.length; i++) {
       if (dungeon.tags[i] !== BLOCKED) maxD = Math.max(maxD, dungeon.distToHeart[i]);
@@ -2225,61 +2239,59 @@ export function initTdTab(root) {
     }
     if (best === -1) best = dungeon.spawn;
     // the source is a PORTAL, standing upright like a gate (local +Y =
-    // surface normal), in the selected silhouette, tinted per enemy
+    // surface normal); neutral tint — the wave plan decides what pours out
     const obj = buildPortalObj(best, whim() * 6.283);
     scene.add(obj);
-    // minimap beacon in the spawn's tint — dark until the player FINDS the
-    // source (comes close or lands a shell), then it pulses on the map.
-    // Sphere-relative size, same reasoning as the self-marker.
+    // minimap beacon — neutral blue, dark until the player FINDS the source
     const mapMarker = new THREE.Mesh(
       new THREE.SphereGeometry(0.035, 10, 10),
-      new THREE.MeshBasicMaterial({ color: CREATURE_TINTS[type] }));
+      new THREE.MeshBasicMaterial({ color: 0x9fdcff }));
     const mm = scale3(graph.centers[best], 1 + params.wallHeight * 1.6);
     mapMarker.position.set(mm[0], mm[1], mm[2]);
     mapMarker.visible = false;
     scene.add(mapMarker);
-    spawnPoints.push({ type, ci: best, hp: 3, obj, alive: true, found: false, mapMarker });
+    spawnPoints.push({ ci: best, hp: 3, obj, alive: true, found: false, mapMarker });
     recomputePortalDist();
   }
 
+  // a sector's gates are spatial sources, not type-bound — seed a small
+  // fixed set; the wave plan decides what pours out of them
+  function seedPortals(n) { for (let i = 0; i < n; i++) addSpawnPoint(); }
+
   function spawnWave() {
     wave++;
-    // only this round's slice of the schedule gets introduced
-    const intro = wave <= introCount() ? INTROS.find((iv) => iv.wave === wave) : null;
-    if (intro) {
-      addSpawnPoint(intro.type);
-      announceWave(intro);
+    const plan = computeWavePlan(wave, round, params.waveSize);
+    // NEW THREAT reveal the first time a headline type appears
+    if (!seenTypes.has(plan.headline)) {
+      seenTypes.add(plan.headline);
+      const intro = INTROS.find((iv) => iv.type === plan.headline);
+      if (intro) announceWave(intro);
     }
-    // INTENSE: counts climb with every wave and every sector — without
-    // towers this drowns you; with a few it's a mowing exercise
-    const base = params.waveSize + wave + 2 * (round - 1);
-    for (const sp of spawnPoints) {
-      if (!sp.alive) continue;
-      const spec = ENEMY_SPEC[sp.type];
-      // fodder FLOODS (x1.4 — hectic is the brief); dangerous at half;
-      // epics sparse; one boss
-      const count = spec.boss ? 1
-        : spec.heavy ? Math.max(1, Math.floor(base / 3))
-        : spec.rammable ? Math.round(base * 1.4)
-        : Math.max(1, Math.ceil(base / 2));
-      for (let k = 0; k < count; k++) {
-        // every enemy is a half-dotted STATIC cloud, a notch smaller
-        const obj = makeDotEnemy(sp.type, { walker: CREATURE_TINTS[sp.type], walkerHi: 0xffffff });
-        const size = spec.size * 0.7; // small and mean
-        const scale0 = cellSide * size;
-        obj.scale.setScalar(scale0);
-        obj.userData.s0 = scale0;
-        scene.add(obj);
-        const exits = openNeighbors(sp.ci);
-        enemies.push({
-          type: sp.type, spec, scale0, size,
-          cur: sp.ci, prev: -1,
-          next: exits.length ? exits[Math.floor(whim() * exits.length)] : sp.ci,
-          prog: whim() * 0.4, pos: graph.centers[sp.ci].slice(), dir: [0, 1, 0],
-          obj, alive: true, phase: whim() * 6.283,
-          hp: spec.hp, behMult: 1, behUntil: -1, touchCd: -1,
-          slowFactor: 1, slowUntil: -1, // tower slow-field debuff
-        });
+    // one new tower unlocks per wave through wave 8
+    if (wave >= 1 && wave <= TOWER_ORDER.length) showTowerToast(TOWER_ORDER[wave - 1]);
+    const live = spawnPoints.filter((s) => s.alive);
+    if (live.length) {
+      let pi = 0;
+      for (const { type, count } of plan.entries) {
+        const spec = ENEMY_SPEC[type];
+        for (let k = 0; k < count; k++) {
+          const sp = live[pi % live.length]; pi++;
+          const obj = makeDotEnemy(type, { walker: CREATURE_TINTS[type], walkerHi: 0xffffff });
+          const size = spec.size * 0.7;
+          const scale0 = cellSide * size;
+          obj.scale.setScalar(scale0); obj.userData.s0 = scale0;
+          scene.add(obj);
+          const exits = openNeighbors(sp.ci);
+          enemies.push({
+            type, spec, scale0, size,
+            cur: sp.ci, prev: -1,
+            next: exits.length ? exits[Math.floor(whim() * exits.length)] : sp.ci,
+            prog: whim() * 0.4, pos: graph.centers[sp.ci].slice(), dir: [0, 1, 0],
+            obj, alive: true, phase: whim() * 6.283,
+            hp: spec.hp, behMult: 1, behUntil: -1, touchCd: -1,
+            slowFactor: 1, slowUntil: -1,
+          });
+        }
       }
     }
     updateHud();
@@ -3439,10 +3451,7 @@ export function initTdTab(root) {
 
   function checkVictory() {
     if (player.won) return;
-    // every threat in THIS round's schedule must have been introduced —
-    // an early spawn kill just buys quiet until the next announcement
-    if (wave >= introCount() && spawnPoints.length > 0
-      && spawnPoints.every((s) => !s.alive) && enemies.every((e) => !e.alive)) {
+    if (spawnPoints.length > 0 && spawnPoints.every((s) => !s.alive) && enemies.every((e) => !e.alive)) {
       player.won = true;
       msgEl.innerHTML = `<div class="msg-head">transmission · combat log</div>` +
         `✦ SECTOR ${round} CLEARED — every portal destroyed<br>` +
@@ -3480,12 +3489,7 @@ export function initTdTab(root) {
     for (const ci of revealCells) paintCell(ci, [1.0, 0.68, 0.16]);
     spawnOrbs();
     spawnRewards();
-    // a pair of immediate sources in the new band, drawn from the types
-    // already met; the intro schedule keeps adding NEW types on its waves
-    const known = INTROS.slice(0, introCount()).map((iv) => iv.type);
-    for (let k = 0; k < 2; k++) {
-      addSpawnPoint(known[Math.floor(whim() * known.length)]);
-    }
+    seedPortals(2); // fresh neutral gates in the new band
     recomputePortalDist();
     waveClock = params.waveEvery * 0.5;
     player.won = false;
@@ -3610,8 +3614,7 @@ export function initTdTab(root) {
       waveClock += dt;
       // waves keep coming while introductions remain, even if the player
       // has razed every spawn point standing — the next threat still lands
-      if (waveClock >= params.waveEvery
-        && (wave < introCount() || spawnPoints.some((s) => s.alive))) {
+      if (waveClock >= params.waveEvery && spawnPoints.some((s) => s.alive)) {
         waveClock = 0;
         spawnWave();
       }
