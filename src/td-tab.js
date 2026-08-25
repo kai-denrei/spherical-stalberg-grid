@@ -19,17 +19,17 @@
 
 import * as THREE from '../vendor/three.module.js';
 import GUI from '../vendor/lil-gui.esm.js';
-import { generateSphereMesh, relax } from './grid.js?v=80b0d834';
-import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=80b0d834';
-import { mulberry32, randomSeed } from './rng.js?v=80b0d834';
-import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3 } from './vec3.js?v=80b0d834';
-import { CREATURES, waveJelly } from './creatures.js?v=80b0d834';
-import { UNITS, UNIT_NAMES, buildUnit, makeOrbCloud, makeBulletCloud, makeDebris, makeDotBurst, makePortalCloud, makeHeartCloud, makeTowerUnit, makeDotEnemy } from './units.js?v=80b0d834';
-import { LOOKS, LOOK_NAMES } from './looks.js?v=80b0d834';
-import { makeCellIndex } from './cellindex.js?v=80b0d834';
-import { CREATURE_TINTS, ENEMY_SPEC, INTROS } from './enemyspec.js?v=80b0d834';
-import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval } from './towers.js?v=80b0d834';
-import { makeEconomy, sellRefund } from './economy.js?v=80b0d834';
+import { generateSphereMesh, relax } from './grid.js?v=c5cecc7f';
+import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=c5cecc7f';
+import { mulberry32, randomSeed } from './rng.js?v=c5cecc7f';
+import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3 } from './vec3.js?v=c5cecc7f';
+import { CREATURES, waveJelly } from './creatures.js?v=c5cecc7f';
+import { UNITS, UNIT_NAMES, buildUnit, makeOrbCloud, makeBulletCloud, makeDebris, makeDotBurst, makePortalCloud, makeHeartCloud, makeTowerUnit, makeDotEnemy } from './units.js?v=c5cecc7f';
+import { LOOKS, LOOK_NAMES } from './looks.js?v=c5cecc7f';
+import { makeCellIndex } from './cellindex.js?v=c5cecc7f';
+import { CREATURE_TINTS, ENEMY_SPEC, INTROS } from './enemyspec.js?v=c5cecc7f';
+import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockRound } from './towers.js?v=c5cecc7f';
+import { makeEconomy, sellRefund } from './economy.js?v=c5cecc7f';
 
 export function initTdTab(root) {
   let active = false;
@@ -3061,13 +3061,17 @@ export function initTdTab(root) {
     } else {
       const err = placeError(ci);
       center = `<div class="radial-center">${err ? 'blocked' : eco.credit + 'c'}</div>`;
-      items = TOWERS.map((def) => ({
-        cls: 'shop-buy',
-        key: def.key,
-        txt: `${def.key}<br>${def.cost}c`,
-        dis: !!err || !eco.canAfford(def.cost),
-        bc: '#' + def.color.toString(16).padStart(6, '0'),
-      }));
+      const unlocked = new Set(unlockedTowerKeys(round));
+      items = TOWERS.map((def) => {
+        const locked = !unlocked.has(def.key);
+        return {
+          cls: locked ? 'shop-buy locked' : 'shop-buy',
+          key: def.key,
+          txt: locked ? `${def.key}<br>R${towerUnlockRound(def.key)}` : `${def.key}<br>${def.cost}c`,
+          dis: locked || !!err || !eco.canAfford(def.cost),
+          bc: '#' + def.color.toString(16).padStart(6, '0'),
+        };
+      });
       items.push({ cls: 'shop-close', txt: '×' });
     }
     const n = items.length;
@@ -3078,7 +3082,7 @@ export function initTdTab(root) {
       return `<button class="radial-item ${it.cls}"` +
         `${it.key ? ` data-key="${it.key}"` : ''}${it.dis ? ' disabled' : ''} ` +
         `style="left:${x}px;top:${y}px;${it.bc ? `border-color:${it.bc}aa;` : ''}">${it.txt}</button>`;
-    }).join('') + `<div class="shop-note" style="top:${R + 44}px"></div>`;
+    }).join('') + `<div class="shop-note" style="top:${R + 44}px">more unlock as you expand</div>`;
     shopEl.classList.remove('hidden');
   }
   shopEl.addEventListener('click', (ev) => {
@@ -3087,6 +3091,7 @@ export function initTdTab(root) {
     if (el.classList.contains('shop-close')) { closeShop(); return; }
     const tower = towerByCell.get(shopCi);
     if (el.classList.contains('shop-buy') && shopCi !== -1) {
+      if (el.classList.contains('locked') || el.hasAttribute('disabled')) return;
       if (placeTower(el.dataset.key, shopCi)) closeShop();
     } else if (el.classList.contains('shop-up') && tower) {
       if (upgradeTower(tower)) openShop(shopCi); // refresh

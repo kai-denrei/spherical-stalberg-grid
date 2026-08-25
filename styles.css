@@ -294,6 +294,12 @@ html, body {
 #td-shop .radial-item:disabled { opacity: 0.32; cursor: default; }
 #td-shop .radial-item:not(:disabled):hover,
 #td-shop .radial-item:not(:disabled):active { background: rgba(60, 100, 130, 0.85); color: #fff; }
+#td-shop .radial-item.locked {
+  opacity: 0.4;
+  filter: grayscale(0.6);
+  border-color: rgba(120, 150, 210, 0.3) !important;
+  cursor: not-allowed;
+}
 #td-shop .shop-sell { border-color: rgba(255, 170, 90, 0.55); color: #ffd9a8; }
 #td-shop .shop-close { width: 44px; height: 44px; font-size: 15px; }
 #td-shop .shop-note {
