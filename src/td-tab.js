@@ -19,17 +19,17 @@
 
 import * as THREE from '../vendor/three.module.js';
 import GUI from '../vendor/lil-gui.esm.js';
-import { generateSphereMesh, relax } from './grid.js?v=22e3cf00';
-import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=22e3cf00';
-import { mulberry32, randomSeed } from './rng.js?v=22e3cf00';
-import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3 } from './vec3.js?v=22e3cf00';
-import { CREATURES, waveJelly } from './creatures.js?v=22e3cf00';
-import { UNITS, UNIT_NAMES, buildUnit, makeOrbCloud, makeBulletCloud, makeMissileCloud, makeDebris, makeDotBurst, makePortalCloud, makeHeartCloud, makeTowerUnit, makeDotEnemy } from './units.js?v=22e3cf00';
-import { LOOKS, LOOK_NAMES } from './looks.js?v=22e3cf00';
-import { makeCellIndex } from './cellindex.js?v=22e3cf00';
-import { CREATURE_TINTS, ENEMY_SPEC, INTROS } from './enemyspec.js?v=22e3cf00';
-import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER } from './towers.js?v=22e3cf00';
-import { makeEconomy, sellRefund } from './economy.js?v=22e3cf00';
+import { generateSphereMesh, relax } from './grid.js?v=0b4e4775';
+import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=0b4e4775';
+import { mulberry32, randomSeed } from './rng.js?v=0b4e4775';
+import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3 } from './vec3.js?v=0b4e4775';
+import { CREATURES, waveJelly } from './creatures.js?v=0b4e4775';
+import { UNITS, UNIT_NAMES, buildUnit, makeOrbCloud, makeBulletCloud, makeMissileCloud, makeDebris, makeDotBurst, makePortalCloud, makeHeartCloud, makeTowerUnit, makeDotEnemy } from './units.js?v=0b4e4775';
+import { LOOKS, LOOK_NAMES } from './looks.js?v=0b4e4775';
+import { makeCellIndex } from './cellindex.js?v=0b4e4775';
+import { CREATURE_TINTS, ENEMY_SPEC, INTROS, computeWavePlan } from './enemyspec.js?v=0b4e4775';
+import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER } from './towers.js?v=0b4e4775';
+import { makeEconomy, sellRefund } from './economy.js?v=0b4e4775';
 
 export function initTdTab(root) {
   let active = false;
@@ -1835,7 +1835,7 @@ export function initTdTab(root) {
     statsEl.innerHTML =
       `HEART ${'♥'.repeat(Math.max(0, heartHP)).padEnd(HEART_MAX, '·')}  YOU ♥${playerHP}  ✦${ammo}\n` +
       `<span class="hud-credit">${eco.credit}c ×${eco.multiplier().toFixed(2)}</span> · towers ${towers.length}\n` +
-      `R${round} · wave ${wave} · hostiles ${alive} · portals ${spAlive}/${spawnPoints.length}${alerts}\n` +
+      `WAVE ${wave} · ${Math.min(8, Math.max(0, wave))}/8 towers · portals ${spAlive}/${spawnPoints.length} · R${round}${alerts}\n` +
       (buildMode
         ? (anyHostiles() ? 'BUILD · war on' : 'BUILD · frozen')
         : (manualActive() ? (cruise ? 'CRUISE' : 'MANUAL')
@@ -1942,6 +1942,43 @@ export function initTdTab(root) {
     waveEl.classList.remove('hidden');
     clearTimeout(waveTimer);
     waveTimer = setTimeout(() => waveEl.classList.add('hidden'), 4200);
+  }
+
+  const nextEl = root.querySelector('#td-next');
+  function updateNextPreview() {
+    if (player.won || tutorialActive || !nextEl) { nextEl && nextEl.classList.add('hidden'); return; }
+    const n = wave + 1;
+    const plan = computeWavePlan(n, round, params.waveSize);
+    const chips = plan.entries.map((e, i) => {
+      const tint = '#' + CREATURE_TINTS[e.type].toString(16).padStart(6, '0');
+      const mark = i === 0 ? '◈' : '●';
+      const nm = (INTROS.find((iv) => iv.type === e.type)?.label || e.type).toLowerCase();
+      return `<span class="nx-chip" style="color:${tint}">${mark} ${nm} ×${e.count}</span>`;
+    }).join('');
+    const frozen = buildFrozen() || revealLeft > 0;
+    const when = frozen ? 'ready · leave BUILD to engage'
+      : `in ${Math.max(0, Math.ceil(params.waveEvery - waveClock))}s`;
+    nextEl.innerHTML = `<div class="nx-head">NEXT WAVE ${n} · ${when}</div><div class="nx-row">${chips}</div>`;
+    nextEl.classList.remove('hidden');
+  }
+
+  // tower-unlock toast (called by Task 4's spawn); reuses waveEl slot
+  let towerToastTimer = null;
+  function showTowerToast(key) {
+    const def = TOWER_BY_KEY[key];
+    if (!def) return;
+    nextEl && nextEl.classList.add('hidden'); // yield the strip briefly
+    waveEl.style.borderColor = '#7fdfff';
+    waveEl.style.color = '#7fdfff';
+    waveEl.innerHTML = `<div class="wave-num">NEW TOWER UNLOCKED</div>` +
+      `<div class="wave-name">${def.label}</div>` +
+      `<div class="wave-role">available now in BUILD</div>`;
+    const icon = spriteShot('tower-' + key, () => makeTowerUnit(def));
+    const img = new Image(); img.src = icon; img.className = 'wave-icon';
+    waveEl.insertBefore(img, waveEl.querySelector('.wave-name'));
+    waveEl.classList.remove('hidden');
+    clearTimeout(towerToastTimer);
+    towerToastTimer = setTimeout(() => waveEl.classList.add('hidden'), 3000);
   }
 
   // --- generation ----------------------------------------------------------
@@ -3605,6 +3642,7 @@ export function initTdTab(root) {
     autoGunner(t);
     checkVictory(); // ram kills and heart-contact deaths can end it too
     updateHud();
+    updateNextPreview();
     placeActors();
 
     // phagocytosis: when the amoeba nears an orb, aim the membrane at it.

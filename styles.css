@@ -929,3 +929,43 @@ html, body {
 /* build mode: the app owns the pinch (zoom the board, not the page). Driving
    thumb-zones are hidden in build mode, so nothing else needs the gesture. */
 #tab-td.build #td-app { touch-action: none; }
+
+/* ── next-wave preview strip ─────────────────────────────────────── */
+#td-next {
+  position: fixed;
+  top: 8px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(0, 0, 0, 0.62);
+  border: 1px solid rgba(255,255,255,0.18);
+  border-radius: 6px;
+  padding: 5px 10px 6px;
+  font-family: monospace;
+  font-size: 11px;
+  color: #cde;
+  pointer-events: none;
+  z-index: 30;
+  max-width: 96vw;
+  text-align: center;
+}
+.nx-head {
+  font-weight: bold;
+  letter-spacing: 0.04em;
+  margin-bottom: 3px;
+}
+.nx-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 8px;
+  justify-content: center;
+}
+.nx-chip {
+  font-size: 10px;
+  opacity: 0.9;
+}
+.wave-icon {
+  display: block;
+  width: 48px;
+  height: 48px;
+  margin: 4px auto;
+}
