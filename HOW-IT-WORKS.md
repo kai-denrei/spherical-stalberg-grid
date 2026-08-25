@@ -248,3 +248,14 @@ spawn itself (the normal wave clock is paused) until you place your first
 tower, then hands off to normal play. Tower availability is a by-round
 ladder (`towers.js` `unlockedTowerKeys`): normal+rapid at round 1, up to
 the laser at round 5; the shop dims locked towers with the round they open.
+
+## TD refinements: portal reach, build zoom, missiles
+
+The tutorial's portal no longer sits on the heart — it spawns 20–30 hops
+down the corridor, so the fodder march in and you drive out to meet them.
+Build mode zooms: it opens closer (so cells are tappable), desktop keeps
+wheel-zoom, and mobile gets two-finger pinch (the board owns the gesture in
+build mode, so the page doesn't zoom) — the tap-to-place raycast stays
+pixel-accurate at any zoom. And the shell pickups are now missiles: a triad
+of the finned `missilePts` dot-cloud (ported from the Braille fun-shapes
+lab), still +3 per pickup. Fired tower tracers keep the bullet shape.
