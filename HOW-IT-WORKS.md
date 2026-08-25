@@ -259,3 +259,14 @@ build mode, so the page doesn't zoom) — the tap-to-place raycast stays
 pixel-accurate at any zoom. And the shell pickups are now missiles: a triad
 of the finned `missilePts` dot-cloud (ported from the Braille fun-shapes
 lab), still +3 per pickup. Fired tower tracers keep the bullet shape.
+
+## TD onboarding, calmer auto-drive, and a roaming build camera
+
+The tutorial now opens with a choice — play it or skip straight to the
+briefing — and you can bail any time from the × on the tutorial banner.
+The tank's auto-driver waits longer before taking back the wheel (~10s
+idle), and picking an Auto directive hands command over at once. The old
+"TANK" mode is now "MANUAL": switching to it pops a card reminding you the
+tank fights on its own until you grab the controls. And the build camera
+is no longer bolted to the heart — flick to pan across the sphere (within
+reach of home) and pinch to zoom, so you can mount towers anywhere.
