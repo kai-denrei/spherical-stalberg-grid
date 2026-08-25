@@ -19,17 +19,17 @@
 
 import * as THREE from '../vendor/three.module.js';
 import GUI from '../vendor/lil-gui.esm.js';
-import { generateSphereMesh, relax } from './grid.js?v=19c3709c';
-import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=19c3709c';
-import { mulberry32, randomSeed } from './rng.js?v=19c3709c';
-import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3 } from './vec3.js?v=19c3709c';
-import { CREATURES, waveJelly } from './creatures.js?v=19c3709c';
-import { UNITS, UNIT_NAMES, buildUnit, makeOrbCloud, makeBulletCloud, makeMissileCloud, makeDebris, makeDotBurst, makePortalCloud, makeHeartCloud, makeTowerUnit, makeDotEnemy } from './units.js?v=19c3709c';
-import { LOOKS, LOOK_NAMES } from './looks.js?v=19c3709c';
-import { makeCellIndex } from './cellindex.js?v=19c3709c';
-import { CREATURE_TINTS, ENEMY_SPEC, INTROS, computeWavePlan } from './enemyspec.js?v=19c3709c';
-import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER } from './towers.js?v=19c3709c';
-import { makeEconomy, sellRefund } from './economy.js?v=19c3709c';
+import { generateSphereMesh, relax } from './grid.js?v=63a57906';
+import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=63a57906';
+import { mulberry32, randomSeed } from './rng.js?v=63a57906';
+import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3 } from './vec3.js?v=63a57906';
+import { CREATURES, waveJelly } from './creatures.js?v=63a57906';
+import { UNITS, UNIT_NAMES, buildUnit, makeOrbCloud, makeBulletCloud, makeMissileCloud, makeDebris, makeDotBurst, makePortalCloud, makeHeartCloud, makeTowerUnit, makeDotEnemy } from './units.js?v=63a57906';
+import { LOOKS, LOOK_NAMES } from './looks.js?v=63a57906';
+import { makeCellIndex } from './cellindex.js?v=63a57906';
+import { CREATURE_TINTS, ENEMY_SPEC, INTROS, computeWavePlan } from './enemyspec.js?v=63a57906';
+import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER } from './towers.js?v=63a57906';
+import { makeEconomy, sellRefund } from './economy.js?v=63a57906';
 
 export function initTdTab(root) {
   let active = false;
@@ -57,7 +57,8 @@ export function initTdTab(root) {
     orbs: 14,
     orbRespawn: 6, // seconds between respawns (0 = off)
     waveSize: 4,
-    waveEvery: 16, // seconds — TD tempo is relentless
+    waveGap: 7,   // seconds of anticipation between a cleared wave and the next
+    waveCap: 30,  // safety: force the next wave if the current isn't cleared in time
     friendlies: 0, // NO ally tanks in TD — new players read them as enemies
     rewards: 6,
   };
@@ -181,7 +182,9 @@ export function initTdTab(root) {
   const allyShots = [];    // infinite-ammo covering fire: { pos, dir, dist, mesh }
   const spawnPoints = [];  // { ci, hp, obj, alive, found, mapMarker } — type-agnostic gates
   let wave = 0;
-  let waveClock = 0;
+  let waveActive = false; // a wave's enemies are live/uncleared
+  let interClock = 0;     // anticipation countdown between waves
+  let waveAge = 0;        // seconds since the current wave spawned (safety cap)
   const seenTypes = new Set(); // headline types already revealed this run
   // roster data (tints/specs/intros) lives in enemyspec.js — one source
   // of truth shared with the TD tab (M0 extraction). See that module for
@@ -1632,6 +1635,7 @@ export function initTdTab(root) {
   }
   function endTutorial() {
     tutorialActive = false;
+    waveActive = enemies.some((e) => e.alive); waveAge = 0; interClock = 0;
     tutorial.teardown();
     if (orbMeshes.size === 0) spawnOrbs(); // restore the normal shell field
     try { localStorage.setItem('td.tutorialSeen', '1'); } catch (e) { /* private mode */ }
@@ -1949,8 +1953,10 @@ export function initTdTab(root) {
       return `<span class="nx-chip" style="color:${tint}">${mark} ${nm} ×${e.count}</span>`;
     }).join('');
     const frozen = buildFrozen() || revealLeft > 0;
-    const when = frozen ? 'ready · leave BUILD to engage'
-      : `in ${Math.max(0, Math.ceil(params.waveEvery - waveClock))}s`;
+    let when;
+    if (frozen) when = 'ready · leave BUILD to engage';
+    else if (waveActive && !enemies.every((e) => !e.alive)) when = 'clear the field';
+    else when = `in ${Math.max(0, Math.ceil(params.waveGap - interClock))}s`;
     nextEl.innerHTML = `<div class="nx-head">NEXT WAVE ${n} · ${when}</div><div class="nx-row">${chips}</div>`;
     nextEl.classList.remove('hidden');
   }
@@ -2194,7 +2200,7 @@ export function initTdTab(root) {
     }
     spawnPoints.length = 0;
     wave = 0;
-    waveClock = params.waveEvery * 0.6; // first wave arrives sooner
+    waveActive = false; waveAge = 0; interClock = params.waveGap * 0.5;
     portalDist = null;
     clearTimeout(waveTimer);
     waveEl.classList.add('hidden');
@@ -2245,6 +2251,7 @@ export function initTdTab(root) {
 
   function spawnWave() {
     wave++;
+    waveActive = true; waveAge = 0;
     const plan = computeWavePlan(wave, round, params.waveSize);
     // NEW THREAT reveal the first time a headline type appears
     if (!seenTypes.has(plan.headline)) {
@@ -3476,7 +3483,7 @@ export function initTdTab(root) {
     spawnRewards();
     seedPortals(2); // fresh neutral gates in the new band
     recomputePortalDist();
-    waveClock = params.waveEvery * 0.5;
+    waveActive = false; interClock = 0;
     player.won = false;
     paused = false;
     msgEl.classList.add('hidden');
@@ -3506,7 +3513,8 @@ export function initTdTab(root) {
   const directiveCtrl = gui.add(params, 'directive', DIRECTIVES).name('auto directive').onChange(syncDirectiveChip);
   gui.add(params, 'recoil', 0, 8, 0.1).name('shell recoil');
   gui.add(params, 'waveSize', 1, 6, 1).name('wave size').onFinishChange(regenerate);
-  gui.add(params, 'waveEvery', 6, 40, 1).name('wave every (s)');
+  gui.add(params, 'waveGap', 3, 20, 1).name('wave gap (s)');
+  gui.add(params, 'waveCap', 15, 60, 1).name('wave cap (s)');
   gui.add(params, 'obstacles', 0.05, 0.4, 0.05).onFinishChange(regenerate);
   gui.add(params, 'rewards', 0, 12, 1).onFinishChange(regenerate);
   gui.add(params, 'orbs', 0, 40, 1).name('missile triads').onFinishChange(regenerate);
@@ -3598,12 +3606,18 @@ export function initTdTab(root) {
       }
     }
     if (!player.won && !frozen && !tutorialActive) {
-      waveClock += dt;
-      // waves keep coming while introductions remain, even if the player
-      // has razed every spawn point standing — the next threat still lands
-      if (waveClock >= params.waveEvery && spawnPoints.some((s) => s.alive)) {
-        waveClock = 0;
-        spawnWave();
+      if (waveActive) {
+        waveAge += dt;
+        if (enemies.every((e) => !e.alive)) {
+          waveActive = false; interClock = 0;
+          showToast(`<div class="wave-num">WAVE ${wave} CLEARED</div>` +
+            `<div class="wave-role">brace — the next wave is coming</div>`, 2200);
+        } else if (waveAge >= params.waveCap && spawnPoints.some((s) => s.alive)) {
+          spawnWave(); // safety: the field is stalled — send the next wave anyway
+        }
+      } else if (spawnPoints.some((s) => s.alive)) {
+        interClock += dt;
+        if (interClock >= params.waveGap) spawnWave();
       }
     }
     if (tutorialActive) tutorial.tick(dt);
