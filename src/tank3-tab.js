@@ -4,11 +4,12 @@
 import * as THREE from '../vendor/three.module.js';
 import GUI from '../vendor/lil-gui.esm.js';
 import { OrbitControls } from '../vendor/OrbitControls.js';
-import { createPlanetTankGame, DYING_T } from './tanks2.js?v=d474c3d9';
-import { buildUnit, makeBulletCloud, makeDebris } from './units.js?v=d474c3d9';
-import { LOOKS } from './looks.js?v=d474c3d9';
-import { mulberry32 } from './rng.js?v=d474c3d9';
-import { norm3, scale3 } from './vec3.js?v=d474c3d9';
+import { createPlanetTankGame, DYING_T } from './tanks2.js?v=855e1a84';
+import { buildUnit, makeBulletCloud, makeDebris } from './units.js?v=855e1a84';
+import { LOOKS } from './looks.js?v=855e1a84';
+import { mulberry32 } from './rng.js?v=855e1a84';
+import { norm3, scale3 } from './vec3.js?v=855e1a84';
+import { makeBloom } from './postfx.js?v=855e1a84';
 
 const DT = 1 / 60;
 const TANK_SCALE = 0.09;    // world radius of each tank
@@ -41,10 +42,13 @@ export function initTank3Tab(root) {
   const cam = new THREE.PerspectiveCamera(55, 1, 0.005, 50);
   cam.position.set(0, 0, 3);
 
+  const postfx = makeBloom(renderer, scene, cam, {});
+
   function resize() {
     const w = container.clientWidth || 1;
     const h = container.clientHeight || 1;
     renderer.setSize(w, h);
+    postfx.setSize(w, h);
     cam.aspect = w / h;
     cam.updateProjectionMatrix();
   }
@@ -437,7 +441,7 @@ export function initTank3Tab(root) {
     input.forward = heldFwd;
     syncScene();
     updateCamera();
-    renderer.render(scene, cam);
+    postfx.render();
   }
 
   // --- panel ---------------------------------------------------------------
@@ -463,6 +467,11 @@ export function initTank3Tab(root) {
   }
   rebuildAiCtrl();
   gui.add(params, 'view', VIEWS).name('camera (C)').listen().onChange(applyView);
+  const bloomF = gui.addFolder('bloom');
+  bloomF.add(postfx.params, 'enabled').name('enabled').onChange((v) => postfx.setEnabled(v));
+  bloomF.add(postfx.params, 'strength', 0, 3, 0.05).onChange((v) => postfx.setParams({ strength: v }));
+  bloomF.add(postfx.params, 'radius', 0, 1, 0.01).onChange((v) => postfx.setParams({ radius: v }));
+  bloomF.add(postfx.params, 'threshold', 0, 1, 0.01).onChange((v) => postfx.setParams({ threshold: v }));
 
   // --- URL hooks -----------------------------------------------------------
   const urlParams = new URLSearchParams(location.search);
