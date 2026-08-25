@@ -6,6 +6,18 @@ Demo links assume `npm run serve` (port 8144) or the
 
 ---
 
+## `6f955b9` — Onboarding, patience, and a camera that roams
+
+Four TD tweaks. The tutorial greets you with a real choice — play or skip —
+and wears a × so you're never trapped in it. The auto-driver got patient:
+~10 seconds of idle before it retakes the wheel, or instantly when you pick
+a directive. "TANK" became "MANUAL", and taking manual drive now says so —
+a card explaining the tank fights autonomously until you grab the controls.
+And build mode unbolted its camera from the heart: flick to pan across the
+planet (elastic within a radius of home), pinch to zoom, tap to place.
+
+---
+
 ## `16b5be1` — Reach, zoom, and missiles
 
 Three TD tweaks. The tutorial portal moved off the heart's doorstep to
