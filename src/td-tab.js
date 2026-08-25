@@ -19,17 +19,17 @@
 
 import * as THREE from '../vendor/three.module.js';
 import GUI from '../vendor/lil-gui.esm.js';
-import { generateSphereMesh, relax } from './grid.js?v=09d257d8';
-import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=09d257d8';
-import { mulberry32, randomSeed } from './rng.js?v=09d257d8';
-import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3 } from './vec3.js?v=09d257d8';
-import { CREATURES, waveJelly } from './creatures.js?v=09d257d8';
-import { UNITS, UNIT_NAMES, buildUnit, makeOrbCloud, makeBulletCloud, makeMissileCloud, makeDebris, makeDotBurst, makePortalCloud, makeHeartCloud, makeTowerUnit, makeDotEnemy } from './units.js?v=09d257d8';
-import { LOOKS, LOOK_NAMES } from './looks.js?v=09d257d8';
-import { makeCellIndex } from './cellindex.js?v=09d257d8';
-import { CREATURE_TINTS, ENEMY_SPEC, INTROS, computeWavePlan } from './enemyspec.js?v=09d257d8';
-import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER } from './towers.js?v=09d257d8';
-import { makeEconomy, sellRefund } from './economy.js?v=09d257d8';
+import { generateSphereMesh, relax } from './grid.js?v=955d9b5c';
+import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=955d9b5c';
+import { mulberry32, randomSeed } from './rng.js?v=955d9b5c';
+import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3 } from './vec3.js?v=955d9b5c';
+import { CREATURES, waveJelly } from './creatures.js?v=955d9b5c';
+import { UNITS, UNIT_NAMES, buildUnit, makeOrbCloud, makeBulletCloud, makeMissileCloud, makeDebris, makeDotBurst, makePortalCloud, makeHeartCloud, makeTowerUnit, makeDotEnemy } from './units.js?v=955d9b5c';
+import { LOOKS, LOOK_NAMES } from './looks.js?v=955d9b5c';
+import { makeCellIndex } from './cellindex.js?v=955d9b5c';
+import { CREATURE_TINTS, ENEMY_SPEC, INTROS, computeWavePlan } from './enemyspec.js?v=955d9b5c';
+import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER } from './towers.js?v=955d9b5c';
+import { makeEconomy, sellRefund } from './economy.js?v=955d9b5c';
 
 export function initTdTab(root) {
   let active = false;
@@ -1578,7 +1578,11 @@ export function initTdTab(root) {
     },
     startBuild() {
       this.phase = 'build';
-      spawnWave(); // a real 2nd wave: new portal + normal enemies (war is live)
+      // the wave engine spawns only from LIVE gates and no longer self-seeds
+      // one per wave — the scripted gate is dead by now, so raise a fresh gate
+      // before the 2nd wave or the field is empty and checkVictory false-fires
+      seedPortals(1);
+      spawnWave(); // a real 2nd wave: fresh gate + normal enemies (war is live)
       tutBanner('Build Towers. Towers go on HIGH GROUND, near the edge.',
         { skip: !!safeSeen() });
       pulseButton('#td-pad-build');
@@ -3450,7 +3454,7 @@ export function initTdTab(root) {
   }
 
   function checkVictory() {
-    if (player.won) return;
+    if (player.won || tutorialActive) return; // the tutorial is failure/win-proof
     if (spawnPoints.length > 0 && spawnPoints.every((s) => !s.alive) && enemies.every((e) => !e.alive)) {
       player.won = true;
       msgEl.innerHTML = `<div class="msg-head">transmission · combat log</div>` +
