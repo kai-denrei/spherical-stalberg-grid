@@ -19,17 +19,17 @@
 
 import * as THREE from '../vendor/three.module.js';
 import GUI from '../vendor/lil-gui.esm.js';
-import { generateSphereMesh, relax } from './grid.js?v=4c630d12';
-import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=4c630d12';
-import { mulberry32, randomSeed } from './rng.js?v=4c630d12';
-import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3 } from './vec3.js?v=4c630d12';
-import { CREATURES, waveJelly } from './creatures.js?v=4c630d12';
-import { UNITS, UNIT_NAMES, buildUnit, makeOrbCloud, makeBulletCloud, makeMissileCloud, makeDebris, makeDotBurst, makePortalCloud, makeHeartCloud, makeTowerUnit, makeDotEnemy } from './units.js?v=4c630d12';
-import { LOOKS, LOOK_NAMES } from './looks.js?v=4c630d12';
-import { makeCellIndex } from './cellindex.js?v=4c630d12';
-import { CREATURE_TINTS, ENEMY_SPEC, INTROS } from './enemyspec.js?v=4c630d12';
-import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockRound } from './towers.js?v=4c630d12';
-import { makeEconomy, sellRefund } from './economy.js?v=4c630d12';
+import { generateSphereMesh, relax } from './grid.js?v=c272e082';
+import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=c272e082';
+import { mulberry32, randomSeed } from './rng.js?v=c272e082';
+import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3 } from './vec3.js?v=c272e082';
+import { CREATURES, waveJelly } from './creatures.js?v=c272e082';
+import { UNITS, UNIT_NAMES, buildUnit, makeOrbCloud, makeBulletCloud, makeMissileCloud, makeDebris, makeDotBurst, makePortalCloud, makeHeartCloud, makeTowerUnit, makeDotEnemy } from './units.js?v=c272e082';
+import { LOOKS, LOOK_NAMES } from './looks.js?v=c272e082';
+import { makeCellIndex } from './cellindex.js?v=c272e082';
+import { CREATURE_TINTS, ENEMY_SPEC, INTROS } from './enemyspec.js?v=c272e082';
+import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockRound } from './towers.js?v=c272e082';
+import { makeEconomy, sellRefund } from './economy.js?v=c272e082';
 
 export function initTdTab(root) {
   let active = false;
@@ -1414,11 +1414,13 @@ export function initTdTab(root) {
   // non-freezing tutorial callout; flash = big centred, skip = show Skip
   function tutBanner(html, opts = {}) {
     tutEl.className = opts.flash ? 'tut-flash' : '';
-    tutEl.innerHTML = html + (opts.skip
+    tutEl.innerHTML = '<button class="tut-x">×</button>' + html + (opts.skip
       ? '<div><button class="tut-skip">skip tutorial</button></div>' : '');
     tutEl.classList.remove('hidden');
     const sk = tutEl.querySelector('.tut-skip');
     if (sk) sk.addEventListener('click', skipTutorial);
+    const x = tutEl.querySelector('.tut-x');
+    if (x) x.addEventListener('click', skipTutorial);
   }
   function hideTutBanner() { tutEl.classList.add('hidden'); }
   // pulse ONE hud button; pass null to clear all pulses
@@ -1635,6 +1637,11 @@ export function initTdTab(root) {
     else if (cl.contains('msg-glfriend')) showFriendGlossary();
     else if (cl.contains('msg-back')) showBriefing();
     else if (cl.contains('msg-ovr-ok')) { paused = false; msgEl.classList.add('hidden'); }
+    else if (cl.contains('msg-tut-play')) { paused = false; msgEl.classList.add('hidden'); startTutorial(); }
+    else if (cl.contains('msg-tut-skip') || cl.contains('msg-tut-x')) {
+      try { localStorage.setItem('td.tutorialSeen', '1'); } catch (e) { /* private mode */ }
+      showBriefing(); // the tutorial world was never set up — go to the normal briefing
+    }
   });
 
   // card icons are the ACTUAL half-dotted representations: build the real
@@ -1757,6 +1764,22 @@ export function initTdTab(root) {
   // switching into manual drive: remind the player the tank is autonomous
   // until they take the wheel. Shown on EVERY build→manual switch (pauses
   // the war so it can be read un-rammed).
+  // shown in place of the tutorial auto-start: choose to play it or skip
+  // straight into the normal briefing. The × is a skip.
+  function showTutorialChoice() {
+    paused = true;
+    msgEl.innerHTML = `<button class="msg-tut-x msg-x">×</button>` +
+      `<div class="msg-head">transmission · tutorial</div>` +
+      `<div class="msg-scroll"><div class="gcards">` +
+      glossCard('#9fdcff', spriteShot('tank', unitIcon('tank', look().walker)), 'first time?',
+        'a quick run: ram the fodder, grab shells, kill the portal, build a tower') +
+      `</div></div>` +
+      `<div class="msg-foot">` +
+      `<button class="msg-tut-play">&rsaquo; play tutorial</button> ` +
+      `<button class="msg-tut-skip">skip</button>` +
+      `</div>`;
+    msgEl.classList.remove('hidden');
+  }
   function showOverrideModal() {
     paused = true;
     msgEl.innerHTML = `<button class="msg-ovr-ok msg-x">×</button>` +
@@ -3793,7 +3816,7 @@ export function initTdTab(root) {
     .some((k) => urlParams.get(k));
   const tutParam = urlParams.get('tutorial');
   runTutorial = tutParam === '1' || (tutParam !== '0' && !debugging);
-  if (runTutorial) maybeStartTutorial();
+  if (runTutorial) showTutorialChoice();
   else if (!debugging) showBriefing();
 
   resize();
