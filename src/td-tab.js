@@ -19,18 +19,18 @@
 
 import * as THREE from '../vendor/three.module.js';
 import GUI from '../vendor/lil-gui.esm.js';
-import { generateSphereMesh, relax } from './grid.js?v=bc8f64f6';
-import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=bc8f64f6';
-import { mulberry32, randomSeed } from './rng.js?v=bc8f64f6';
-import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3 } from './vec3.js?v=bc8f64f6';
-import { CREATURES, waveJelly } from './creatures.js?v=bc8f64f6';
-import { UNITS, UNIT_NAMES, buildUnit, makeOrbCloud, makeBulletCloud, makeMissileCloud, makeDebris, makeDotBurst, makePortalCloud, makeHeartCloud, makeTowerUnit, makeDotEnemy } from './units.js?v=bc8f64f6';
-import { LOOKS, LOOK_NAMES } from './looks.js?v=bc8f64f6';
-import { makeCellIndex } from './cellindex.js?v=bc8f64f6';
-import { CREATURE_TINTS, ENEMY_SPEC, INTROS, computeWavePlan } from './enemyspec.js?v=bc8f64f6';
-import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER } from './towers.js?v=bc8f64f6';
-import { makeEconomy, sellRefund } from './economy.js?v=bc8f64f6';
-import { makeBloom } from './postfx.js?v=bc8f64f6';
+import { generateSphereMesh, relax } from './grid.js?v=595073f9';
+import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=595073f9';
+import { mulberry32, randomSeed } from './rng.js?v=595073f9';
+import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3 } from './vec3.js?v=595073f9';
+import { CREATURES, waveJelly } from './creatures.js?v=595073f9';
+import { UNITS, UNIT_NAMES, buildUnit, makeOrbCloud, makeBulletCloud, makeMissileCloud, makeDebris, makeDotBurst, makePortalCloud, makeHeartCloud, makeTowerUnit, makeDotEnemy } from './units.js?v=595073f9';
+import { LOOKS, LOOK_NAMES } from './looks.js?v=595073f9';
+import { makeCellIndex } from './cellindex.js?v=595073f9';
+import { CREATURE_TINTS, ENEMY_SPEC, INTROS, computeWavePlan } from './enemyspec.js?v=595073f9';
+import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER } from './towers.js?v=595073f9';
+import { makeEconomy, sellRefund } from './economy.js?v=595073f9';
+import { makeBloom } from './postfx.js?v=595073f9';
 
 export function initTdTab(root) {
   let active = false;

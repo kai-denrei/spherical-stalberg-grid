@@ -298,9 +298,11 @@ wave — with a safety timer so a stalled field can't freeze the war.
 
 The looks arc built additive, vertex-coloured edges and then stopped short of
 the thing that makes them glow — a post-processing chain was judged too
-expensive until a look earned it. It had. Every neon tab (td, battle, heart,
-tank3) now renders through an EffectComposer: the scene, then UnrealBloom,
+expensive until a look earned it. It had. The four combat tabs (td, battle,
+heart, tank3) now render through an EffectComposer: the scene, then UnrealBloom,
 then an output pass that puts the colour back where it belongs. The bloom
-runs at half resolution on phones, because the mip chain is the expensive
+runs at reduced resolution on phones, because the mip chain is the expensive
 part, and each tab carries live sliders for strength, radius and threshold so
-the look can be dialled in while you watch it.
+the look can be dialled in while you watch it. Compositing costs you the
+renderer's own antialiasing, so the composer asks for MSAA back — on a board
+made of glowing wireframe, that edge quality is the whole picture.
