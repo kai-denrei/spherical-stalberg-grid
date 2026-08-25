@@ -19,17 +19,17 @@
 
 import * as THREE from '../vendor/three.module.js';
 import GUI from '../vendor/lil-gui.esm.js';
-import { generateSphereMesh, relax } from './grid.js?v=7e83bfd8';
-import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=7e83bfd8';
-import { mulberry32, randomSeed } from './rng.js?v=7e83bfd8';
-import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3 } from './vec3.js?v=7e83bfd8';
-import { CREATURES, waveJelly } from './creatures.js?v=7e83bfd8';
-import { UNITS, UNIT_NAMES, buildUnit, makeOrbCloud, makeBulletCloud, makeDebris, makeDotBurst, makePortalCloud, makeHeartCloud, makeTowerUnit, makeDotEnemy } from './units.js?v=7e83bfd8';
-import { LOOKS, LOOK_NAMES } from './looks.js?v=7e83bfd8';
-import { makeCellIndex } from './cellindex.js?v=7e83bfd8';
-import { CREATURE_TINTS, ENEMY_SPEC, INTROS } from './enemyspec.js?v=7e83bfd8';
-import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockRound } from './towers.js?v=7e83bfd8';
-import { makeEconomy, sellRefund } from './economy.js?v=7e83bfd8';
+import { generateSphereMesh, relax } from './grid.js?v=d8df6616';
+import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=d8df6616';
+import { mulberry32, randomSeed } from './rng.js?v=d8df6616';
+import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3 } from './vec3.js?v=d8df6616';
+import { CREATURES, waveJelly } from './creatures.js?v=d8df6616';
+import { UNITS, UNIT_NAMES, buildUnit, makeOrbCloud, makeBulletCloud, makeDebris, makeDotBurst, makePortalCloud, makeHeartCloud, makeTowerUnit, makeDotEnemy } from './units.js?v=d8df6616';
+import { LOOKS, LOOK_NAMES } from './looks.js?v=d8df6616';
+import { makeCellIndex } from './cellindex.js?v=d8df6616';
+import { CREATURE_TINTS, ENEMY_SPEC, INTROS } from './enemyspec.js?v=d8df6616';
+import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockRound } from './towers.js?v=d8df6616';
+import { makeEconomy, sellRefund } from './economy.js?v=d8df6616';
 
 export function initTdTab(root) {
   let active = false;
@@ -1507,8 +1507,44 @@ export function initTdTab(root) {
         this.tickBuild(dt); // task 5
       }
     },
-    startBuild() { /* task 5 */ },
-    tickBuild() { /* task 5 */ },
+    startBuild() {
+      this.phase = 'build';
+      spawnWave(); // a real 2nd wave: new portal + normal enemies (war is live)
+      tutBanner('Build Towers. Towers go on HIGH GROUND, near the edge.',
+        { skip: !!safeSeen() });
+      pulseButton('#td-pad-build');
+      this.animateLegalSpots();
+    },
+    animateLegalSpots() {
+      const legal = [];
+      for (let ci = 0; ci < dungeon.tags.length; ci++) {
+        if (!placeError(ci)) legal.push(ci);
+      }
+      // pulse a bounded set near the player so it reads on a small planet
+      legal.sort((a, b) =>
+        dist3(graph.centers[a], player.pos) - dist3(graph.centers[b], player.pos));
+      const show = legal.slice(0, 24);
+      let pulses = 0;
+      const beat = () => {
+        const on = pulses % 2 === 0;
+        for (const ci of show) paintCell(ci, on ? COL.hintFlash : floorColorOf(ci));
+        pulses++;
+        if (pulses < 6) setTimeout(beat, 420);
+        else for (const ci of show) paintCell(ci, floorColorOf(ci));
+      };
+      beat();
+    },
+    tickBuild() {
+      // handoff on the first tower built OR when wave-2 enemies are cleared
+      if (this.phase !== 'build') return;
+      if (towerByCell.size > 0
+        || (spawnPoints.every((s) => !s.alive) && enemies.every((e) => !e.alive))) {
+        this.phase = 'done';
+        hideTutBanner();
+        pulseButton(null);
+        endTutorial(); // normal wave clock + orbs resume, heart guard lifts
+      }
+    },
     teardown() { pulseButton(null); hideTutBanner(); },
   };
 
@@ -1520,6 +1556,7 @@ export function initTdTab(root) {
   function endTutorial() {
     tutorialActive = false;
     tutorial.teardown();
+    if (orbMeshes.size === 0) spawnOrbs(); // restore the normal shell field
     try { localStorage.setItem('td.tutorialSeen', '1'); } catch (e) { /* private mode */ }
   }
   function skipTutorial() {
