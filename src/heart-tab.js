@@ -15,15 +15,15 @@
 
 import * as THREE from '../vendor/three.module.js';
 import GUI from '../vendor/lil-gui.esm.js';
-import { generateSphereMesh, relax } from './grid.js?v=ac8bc3cd';
-import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=ac8bc3cd';
-import { mulberry32, randomSeed } from './rng.js?v=ac8bc3cd';
-import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3 } from './vec3.js?v=ac8bc3cd';
-import { CREATURES, waveJelly } from './creatures.js?v=ac8bc3cd';
-import { UNITS, UNIT_NAMES, buildUnit, makeOrbCloud, makeBulletCloud, makeDebris, makeDotBurst, makePortalCloud, makeHeartCloud } from './units.js?v=ac8bc3cd';
-import { LOOKS, LOOK_NAMES } from './looks.js?v=ac8bc3cd';
-import { makeCellIndex } from './cellindex.js?v=ac8bc3cd';
-import { CREATURE_TINTS, ENEMY_SPEC, INTROS } from './enemyspec.js?v=ac8bc3cd';
+import { generateSphereMesh, relax } from './grid.js?v=0528a2c8';
+import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=0528a2c8';
+import { mulberry32, randomSeed } from './rng.js?v=0528a2c8';
+import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3 } from './vec3.js?v=0528a2c8';
+import { CREATURES, waveJelly } from './creatures.js?v=0528a2c8';
+import { UNITS, UNIT_NAMES, buildUnit, makeOrbCloud, makeBulletCloud, makeDebris, makeDotBurst, makePortalCloud, makeHeartCloud } from './units.js?v=0528a2c8';
+import { LOOKS, LOOK_NAMES } from './looks.js?v=0528a2c8';
+import { makeCellIndex } from './cellindex.js?v=0528a2c8';
+import { CREATURE_TINTS, ENEMY_SPEC, INTROS } from './enemyspec.js?v=0528a2c8';
 
 export function initHeartTab(root) {
   let active = false;

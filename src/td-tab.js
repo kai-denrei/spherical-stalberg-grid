@@ -19,17 +19,17 @@
 
 import * as THREE from '../vendor/three.module.js';
 import GUI from '../vendor/lil-gui.esm.js';
-import { generateSphereMesh, relax } from './grid.js?v=ac8bc3cd';
-import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=ac8bc3cd';
-import { mulberry32, randomSeed } from './rng.js?v=ac8bc3cd';
-import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3 } from './vec3.js?v=ac8bc3cd';
-import { CREATURES, waveJelly } from './creatures.js?v=ac8bc3cd';
-import { UNITS, UNIT_NAMES, buildUnit, makeOrbCloud, makeBulletCloud, makeMissileCloud, makeDebris, makeDotBurst, makePortalCloud, makeHeartCloud, makeTowerUnit, makeDotEnemy } from './units.js?v=ac8bc3cd';
-import { LOOKS, LOOK_NAMES } from './looks.js?v=ac8bc3cd';
-import { makeCellIndex } from './cellindex.js?v=ac8bc3cd';
-import { CREATURE_TINTS, ENEMY_SPEC, INTROS, computeWavePlan } from './enemyspec.js?v=ac8bc3cd';
-import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER } from './towers.js?v=ac8bc3cd';
-import { makeEconomy, sellRefund } from './economy.js?v=ac8bc3cd';
+import { generateSphereMesh, relax } from './grid.js?v=0528a2c8';
+import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=0528a2c8';
+import { mulberry32, randomSeed } from './rng.js?v=0528a2c8';
+import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3 } from './vec3.js?v=0528a2c8';
+import { CREATURES, waveJelly } from './creatures.js?v=0528a2c8';
+import { UNITS, UNIT_NAMES, buildUnit, makeOrbCloud, makeBulletCloud, makeMissileCloud, makeDebris, makeDotBurst, makePortalCloud, makeHeartCloud, makeTowerUnit, makeDotEnemy } from './units.js?v=0528a2c8';
+import { LOOKS, LOOK_NAMES } from './looks.js?v=0528a2c8';
+import { makeCellIndex } from './cellindex.js?v=0528a2c8';
+import { CREATURE_TINTS, ENEMY_SPEC, INTROS, computeWavePlan } from './enemyspec.js?v=0528a2c8';
+import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER } from './towers.js?v=0528a2c8';
+import { makeEconomy, sellRefund } from './economy.js?v=0528a2c8';
 
 export function initTdTab(root) {
   let active = false;
@@ -1463,6 +1463,8 @@ export function initTdTab(root) {
     portal: null,   // the scripted spawn point
     fodder: [],     // the 3 scripted enemies
     tShown: 0,
+    frozen: false,
+    frozenT: 0,
     setup() {
       // wipe any seeded neutral gates so the tutorial has exactly its one
       // scripted portal (the plan-driven wave engine seeds these at run-start;
@@ -1472,9 +1474,9 @@ export function initTdTab(root) {
         if (sp.mapMarker) { scene.remove(sp.mapMarker); disposeObj(sp.mapMarker); }
       }
       spawnPoints.length = 0;
-      // player starts a few hops from the heart (distToHeart 2..3)
+      // player starts very close to the heart (distToHeart 1..2)
       let startCi = dungeon.heart;
-      for (let d = 2; d <= 4 && startCi === dungeon.heart; d++) {
+      for (let d = 1; d <= 2 && startCi === dungeon.heart; d++) {
         for (let i = 0; i < dungeon.tags.length; i++) {
           if (dungeon.tags[i] !== BLOCKED && dungeon.distToHeart[i] === d) { startCi = i; break; }
         }
@@ -1525,35 +1527,40 @@ export function initTdTab(root) {
       wave = 1; // the scripted wave counts as wave 1, so the BUILD-phase
                 // spawnWave() (task 5) introduces the wave-2 enemy type
 
-      // 3 phage fodder from the portal
+      // 2 phage a couple hops out in the lane ahead, marching toward the heart
       this.fodder = [];
       const spec = ENEMY_SPEC.phage;
-      for (let k = 0; k < 3; k++) {
+      const sd = dungeon.distToHeart[startCi];
+      const ahead = [];
+      for (let i = 0; i < dungeon.tags.length && ahead.length < 2; i++) {
+        if (dungeon.tags[i] === BLOCKED) continue;
+        const d = dungeon.distToHeart[i];
+        if (d >= sd + 2 && d <= sd + 4) ahead.push(i);
+      }
+      while (ahead.length < 2) ahead.push(this.portal.ci); // degenerate fallback
+      for (let k = 0; k < 2; k++) {
+        const ci = ahead[k];
         const eObj = makeDotEnemy('phage', { walker: CREATURE_TINTS.phage, walkerHi: 0xffffff });
-        const size = spec.size * 0.7;
-        const scale0 = cellSide * size;
+        const size = spec.size * 0.7; const scale0 = cellSide * size;
         eObj.scale.setScalar(scale0); eObj.userData.s0 = scale0; scene.add(eObj);
-        const nx = openNeighbors(portalCi);
+        const nx = openNeighbors(ci);
         const e = {
           type: 'phage', spec, scale0, size,
-          cur: portalCi, prev: -1,
-          next: nx.length ? nx[Math.floor(whim() * nx.length)] : portalCi,
-          prog: whim() * 0.4, pos: graph.centers[portalCi].slice(), dir: [0, 1, 0],
+          cur: ci, prev: -1,
+          next: nx.length ? nx[Math.floor(whim() * nx.length)] : ci,
+          prog: whim() * 0.4, pos: graph.centers[ci].slice(), dir: [0, 1, 0],
           obj: eObj, alive: true, phase: whim() * 6.283,
           hp: spec.hp, behMult: 1, behUntil: -1, touchCd: -1, slowFactor: 1, slowUntil: -1,
         };
         enemies.push(e); this.fodder.push(e);
       }
-      tutBanner('PROTECT THE HEART!', { flash: true, skip: !!safeSeen() });
+      this.frozen = true; this.frozenT = 0;
+      tutBanner('SHOOT TO DEFEND THE HEART', { flash: true, hold: true, skip: !!safeSeen() });
+      pulseButton('#td-pad-laser');
       this.tShown = 0; this.phase = 'ram';
-      // after the flash, swap to the action prompt + pulse fire
-      setTimeout(() => {
-        if (this.phase !== 'ram') return;
-        tutBanner('Shoot or RAM the enemies!', { skip: !!safeSeen() });
-        pulseButton('#td-pad-fire');
-      }, 1800);
     },
     tick(dt) {
+      if (this.frozen) { this.frozenT += dt; if (this.frozenT > 4) { this.frozen = false; hideTutBanner(); } return; }
       if (this.phase === 'ram') {
         if (this.fodder.every((e) => !e.alive)) {
           // fodder cleared → shells appear beside the player
@@ -2451,6 +2458,7 @@ export function initTdTab(root) {
   function updateLasers(dt, tNow) {
     const guns = playerMesh && playerMesh.userData.laserGuns;
     const wantFire = keys.laser && guns && !player.won;
+    if (wantFire && tutorial.frozen) { tutorial.frozen = false; hideTutBanner(); }
     // heat: build while firing, shed otherwise; overheat locks the trigger
     // until the tubes are fully cold (no feathering the cap)
     if (laserOverheat) {
@@ -3570,7 +3578,7 @@ export function initTdTab(root) {
         updateHud();
       }
     }
-    const frozen = buildFrozen() || revealLeft > 0;
+    const frozen = buildFrozen() || revealLeft > 0 || tutorial.frozen;
 
     bumpLeft = Math.max(0, bumpLeft - dt);
     recoilLeft = Math.max(0, recoilLeft - dt);
