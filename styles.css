@@ -482,9 +482,6 @@ html, body {
 }
 .msg-regen:hover { background: rgba(53, 255, 208, 0.22); color: #fff; }
 
-/* shared close-button for any modal that needs an × (Task 2+: override modal, tutorial modal) */
-#td-msg .msg-x { position: absolute; top: 8px; right: 12px; width: 30px; height: 30px;
-  padding: 0; line-height: 28px; text-align: center; font-size: 20px; border-radius: 6px; }
 
 #maze-msg.hidden, #o-msg.hidden, #b-msg.hidden, #h-msg.hidden, #td-msg.hidden {
   display: none;
@@ -936,6 +933,25 @@ html, body {
   pointer-events: none;
 }
 #td-tut.hidden { display: none; }
+#td-toast {
+  position: absolute;
+  top: 8%;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 10;
+  max-width: min(80vw, 480px);
+  text-align: center;
+  font: 13px ui-monospace, Menlo, monospace;
+  line-height: 1.5;
+  color: #cfe9ff;
+  background: rgba(6, 14, 22, 0.82);
+  border: 1px solid #35ffd0;
+  border-radius: 12px;
+  padding: 10px 18px;
+  text-shadow: 0 0 8px rgba(53, 255, 208, 0.4);
+  pointer-events: none;
+}
+#td-toast.hidden { display: none; }
 #td-tut .tut-skip {
   pointer-events: auto;
   margin-top: 10px;
@@ -947,9 +963,6 @@ html, body {
   border-radius: 8px;
   cursor: pointer;
 }
-#td-tut .tut-x { position: absolute; top: 4px; right: 8px; width: 24px; height: 24px;
-  padding: 0; line-height: 22px; text-align: center; font-size: 16px; border-radius: 5px;
-  background: rgba(0,0,0,0.3); pointer-events: auto; }
 #td-tut.tut-flash {
   top: 42%;
   font: 700 30px ui-monospace, monospace;
