@@ -20,7 +20,11 @@ Public: https://kai-denrei.github.io/spherical-stalberg-grid/ (Pages,
   (rewrites `?v=` tokens incl. ES-module imports). NEVER put `?v=` on
   `../vendor/` imports — a tokened vendor URL loads a second copy of three.js.
   Bust output commits ATOMICALLY: stage everything it touched, never just
-  your own files — a partial commit ships stale import tokens.
+  your own files — a partial commit ships stale import tokens. A pre-push
+  guard enforces this: `scripts/check-tokens.sh` fails on split tokens or a
+  tokened vendor import, wired via `.githooks/pre-push`. Enable it once per
+  clone with `git config core.hooksPath .githooks` (it's local config, not
+  committed); run `./scripts/check-tokens.sh` by hand anytime.
 - `npm test` = Node invariant suites (grid topology, dungeon, creatures,
   units). Keep green; they don't cover the render layer.
 - Headless verification: Chrome with `--use-angle=swiftshader

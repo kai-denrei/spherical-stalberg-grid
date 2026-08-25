@@ -1,0 +1,5 @@
+#!/bin/sh
+# Block a push that would ship drifted/split cache-bust tokens or a tokened
+# vendor import. Enable once per clone with:
+#   git config core.hooksPath .githooks
+exec "$(git rev-parse --show-toplevel)/scripts/check-tokens.sh"
