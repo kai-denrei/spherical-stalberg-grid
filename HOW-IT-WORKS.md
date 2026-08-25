@@ -234,3 +234,17 @@ edge outlines (barrel along +Z, turret locked forward because aim is
 manual), shells are `makeBulletCloud` Braille dot-clouds, and a hit scatters
 the struck tank into its own polygons via `makeDebris`. No core changes —
 Tank3 is a skin over proven rules.
+
+## TD tutorial + tower unlocks
+
+New TD games open on a scripted tutorial (skippable once seen, or
+`?tutorial=0`): it starts you a few hops from the heart with no shells,
+spawns one phage portal and three fodder — "PROTECT THE HEART!" — and you
+ram them; then three shell pickups appear to teach that the portal takes
+three shots; then a second wave arrives and the BUILD button pulses with
+"towers go on high ground, near the edge," the legal cells flashing so you
+see where. It's failure-proof (the heart can't fall) and drives every
+spawn itself (the normal wave clock is paused) until you place your first
+tower, then hands off to normal play. Tower availability is a by-round
+ladder (`towers.js` `unlockedTowerKeys`): normal+rapid at round 1, up to
+the laser at round 5; the shop dims locked towers with the round they open.
