@@ -97,3 +97,30 @@ export function pickTarget(towerPos, range, enemies, dist) {
 
 // cooldown helper: seconds between shots at a rate
 export const shotInterval = (rate) => 1 / rate;
+
+// --- progressive unlock ladder -------------------------------------------
+// Towers unlock by ROUND (sector). Cheap → capstone; the laser is earned.
+// Cumulative: reaching a round keeps everything from earlier rounds.
+export const TOWER_UNLOCKS = [
+  { round: 1, keys: ['single', 'rapid'] },
+  { round: 2, keys: ['spread', 'slow'] },
+  { round: 3, keys: ['homing', 'aoe'] },
+  { round: 4, keys: ['sniper'] },
+  { round: 5, keys: ['laser'] },
+];
+
+export function unlockedTowerKeys(round) {
+  const r = Math.max(1, Math.floor(round) || 1);
+  const out = [];
+  for (const u of TOWER_UNLOCKS) {
+    if (u.round <= r) out.push(...u.keys);
+  }
+  return out;
+}
+
+const UNLOCK_ROUND = Object.fromEntries(
+  TOWER_UNLOCKS.flatMap((u) => u.keys.map((k) => [k, u.round])));
+
+export function towerUnlockRound(key) {
+  return UNLOCK_ROUND[key] ?? 1;
+}

@@ -3,7 +3,7 @@
 // (credits/streak math). All pure modules; no DOM, no three.js.
 
 import { CREATURE_TINTS, ENEMY_SPEC, INTROS } from '../src/enemyspec.js';
-import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval } from '../src/towers.js';
+import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockRound, TOWER_UNLOCKS } from '../src/towers.js';
 import { makeEconomy, sellRefund, waveClearBonus, earlyCallBonus, START_CREDIT, RAM_PREMIUM } from '../src/economy.js';
 
 let failures = 0;
@@ -98,6 +98,35 @@ console.log('economy:');
   check('wave-clear bonus grows', waveClearBonus(5) === 40 && waveClearBonus(1) === 24);
   check('early-call bonus caps', earlyCallBonus(120) === 40 && earlyCallBonus(12) === 12);
 }
+
+// --- tower-unlock ladder -------------------------------------------------
+console.log('tower unlocks:');
+check('R1 is exactly single + rapid',
+  JSON.stringify(unlockedTowerKeys(1)) === JSON.stringify(['single', 'rapid']));
+check('round clamps below 1 to R1',
+  JSON.stringify(unlockedTowerKeys(0)) === JSON.stringify(['single', 'rapid'])
+  && JSON.stringify(unlockedTowerKeys(-3)) === JSON.stringify(['single', 'rapid']));
+check('set grows monotonically each round', (() => {
+  for (let r = 2; r <= 6; r++) {
+    const prev = unlockedTowerKeys(r - 1), cur = unlockedTowerKeys(r);
+    if (cur.length < prev.length) return false;
+    if (!prev.every((k) => cur.includes(k))) return false; // never loses a tower
+  }
+  return true;
+})());
+check('all 8 towers unlocked by R5',
+  unlockedTowerKeys(5).length === 8 && unlockedTowerKeys(99).length === 8);
+check('every unlocked key is a real tower',
+  unlockedTowerKeys(5).every((k) => TOWER_BY_KEY[k]));
+check('laser unlocks last (R5), single/rapid first (R1)',
+  towerUnlockRound('laser') === 5 && towerUnlockRound('single') === 1 && towerUnlockRound('rapid') === 1);
+check('every tower appears in the schedule exactly once',
+  TOWERS.every((t) => towerUnlockRound(t.key) >= 1)
+  && TOWER_UNLOCKS.reduce((n, u) => n + u.keys.length, 0) === TOWERS.length);
+check('schedule matches spec (R2 spread+slow, R3 homing+aoe, R4 sniper)',
+  towerUnlockRound('spread') === 2 && towerUnlockRound('slow') === 2
+  && towerUnlockRound('homing') === 3 && towerUnlockRound('aoe') === 3
+  && towerUnlockRound('sniper') === 4);
 
 if (failures > 0) { console.error(`\n${failures} failure(s)`); process.exit(1); }
 console.log('\ntd-core invariants hold');
