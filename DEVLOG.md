@@ -6,6 +6,20 @@ Demo links assume `npm run serve` (port 8144) or the
 
 ---
 
+## `a306ce8` — The first five minutes of TD, taught
+
+TD now opens on a hand-held tutorial instead of a wall of glossary. You
+start beside the heart with empty hands as three phage crawl in —
+"PROTECT THE HEART!" — and you learn ramming is free. Shells appear; the
+portal wants three of them. Then the drums pick up, a second wave lands,
+and the BUILD button glows while the buildable high-ground flashes across
+the shell. It can't be lost and it drives its own spawns until you plant a
+tower, then steps aside. Under it, a by-round unlock ladder now paces the
+arsenal — normal and rapid to begin, the laser five sectors deep — with
+the shop showing locked towers dimmed behind the round that opens them.
+
+---
+
 ## `41cf984` — Dimmer walls, and a planet that can grow
 
 Two tank3 tweaks. The wall tops were pure black — occluders that read as
