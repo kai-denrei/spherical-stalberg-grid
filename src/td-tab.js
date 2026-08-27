@@ -19,20 +19,20 @@
 
 import * as THREE from '../vendor/three.module.js';
 import GUI from '../vendor/lil-gui.esm.js';
-import { generateSphereMesh, relax } from './grid.js?v=91d8f58f';
-import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=91d8f58f';
-import { mulberry32, randomSeed } from './rng.js?v=91d8f58f';
-import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3 } from './vec3.js?v=91d8f58f';
-import { CREATURES, waveJelly } from './creatures.js?v=91d8f58f';
-import { UNITS, UNIT_NAMES, buildUnit, makeOrbCloud, makeBulletCloud, makeMissileCloud, makeDebris, makeDotBurst, makePortalCloud, makeHeartCloud, makeTowerUnit, makeDotEnemy } from './units.js?v=91d8f58f';
-import { LOOKS, LOOK_NAMES } from './looks.js?v=91d8f58f';
-import { makeCellIndex } from './cellindex.js?v=91d8f58f';
-import { CREATURE_TINTS, ENEMY_SPEC, INTROS, computeWavePlan } from './enemyspec.js?v=91d8f58f';
-import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER } from './towers.js?v=91d8f58f';
-import { makeEconomy, sellRefund } from './economy.js?v=91d8f58f';
-import { makeBloom } from './postfx.js?v=91d8f58f';
-import { makeAudio } from './audio.js?v=91d8f58f';
-import { DEATH_KEYS } from './audiomanifest.js?v=91d8f58f';
+import { generateSphereMesh, relax } from './grid.js?v=f829942a';
+import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=f829942a';
+import { mulberry32, randomSeed } from './rng.js?v=f829942a';
+import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3 } from './vec3.js?v=f829942a';
+import { CREATURES, waveJelly } from './creatures.js?v=f829942a';
+import { UNITS, UNIT_NAMES, buildUnit, makeOrbCloud, makeBulletCloud, makeMissileCloud, makeDebris, makeDotBurst, makePortalCloud, makeHeartCloud, makeTowerUnit, makeDotEnemy } from './units.js?v=f829942a';
+import { LOOKS, LOOK_NAMES } from './looks.js?v=f829942a';
+import { makeCellIndex } from './cellindex.js?v=f829942a';
+import { CREATURE_TINTS, ENEMY_SPEC, INTROS, computeWavePlan } from './enemyspec.js?v=f829942a';
+import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER } from './towers.js?v=f829942a';
+import { makeEconomy, sellRefund } from './economy.js?v=f829942a';
+import { makeBloom } from './postfx.js?v=f829942a';
+import { makeAudio } from './audio.js?v=f829942a';
+import { DEATH_KEYS } from './audiomanifest.js?v=f829942a';
 
 export function initTdTab(root) {
   let active = false;
@@ -3582,6 +3582,62 @@ export function initTdTab(root) {
   const mapBg = new THREE.Color(0x080a10);
   let t = 0;
   let lastFrame = performance.now();
+  // --- engine bed ---------------------------------------------------------
+  // A continuous loop under everything, gain and pitch both tracking
+  // speed: slow crawl reads quiet and low, full drive louder and higher.
+  //
+  // Speed comes from the ACTUAL per-frame position delta rather than from
+  // the drive inputs. One site then covers manual driving, auto
+  // navigation, and the handoff eased through virtualStart -- and it
+  // follows the house rule of deriving render-coupled values from the
+  // render state instead of re-deriving them with a second set of
+  // conventions.
+  let engineHandle = null;
+  let enginePrev = null;    // last frame's position
+  let engineLevel = 0;      // smoothed 0..1
+  let engineIdle = 0;       // s since the tank last moved
+  const ENGINE_STOP = 0.25; // s of stillness before the bed fades out
+
+  function stopEngine(fade = ENGINE_STOP) {
+    if (!engineHandle) return;
+    engineHandle.stop(fade);
+    engineHandle = null;
+    engineLevel = 0;
+  }
+
+  function updateEngine(dt) {
+    if (!playerMesh || dt <= 0) return;
+    const p = player.pos;
+    if (!enginePrev) { enginePrev = p.slice(); return; }
+
+    // cells/s, normalized against the fastest the tank can legally go
+    const moved = dist3(p, enginePrev);
+    enginePrev = p.slice();
+    const cellsPerSec = moved / dt / cellSide;
+    const top = Math.max(0.001, params.speed * speedBonus * 1.6 * 1.45); // cruise+boost
+    const target = Math.min(1, cellsPerSec / top);
+
+    // asymmetric smoothing: spin up fast, spool down slow, like an engine
+    const k = target > engineLevel ? 6 : 2.5;
+    engineLevel += (target - engineLevel) * Math.min(1, k * dt);
+
+    const moving = engineLevel > 0.03 && !paused && !player.won;
+    engineIdle = moving ? 0 : engineIdle + dt;
+
+    if (moving && !engineHandle) {
+      engineHandle = sfx.loop('tank_engine', { gain: 0.001, rate: 0.85 });
+    }
+    if (engineHandle) {
+      if (engineIdle >= ENGINE_STOP) {
+        stopEngine();
+      } else {
+        // gain is nearly linear in level; pitch spans 0.85..1.18 so the
+        // bed is felt as effort rather than heard as a repeating clip
+        engineHandle.set(0.15 + 0.85 * engineLevel, 0.85 + 0.33 * engineLevel);
+      }
+    }
+  }
+
   function animate() {
     requestAnimationFrame(animate);
     if (!active || !mesh) return;
@@ -3594,6 +3650,7 @@ export function initTdTab(root) {
     }
     const now = performance.now();
     const dt = Math.min((now - lastFrame) / 1000, 0.1); // clamp tab-switch gaps
+    updateEngine(dt);
     lastFrame = now;
 
     // paused: keep presenting the frozen frame (both views), zero sim.
@@ -3913,6 +3970,7 @@ export function initTdTab(root) {
   return {
     setActive(on) {
       active = on;
+      if (!on) stopEngine(0.1); // or the bed drones on while another tab is up
       if (on) { resize(); snapCamera(); }
       else if (wasPlaying) {
         wasPlaying = false;
