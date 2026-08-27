@@ -15,16 +15,16 @@
 
 import * as THREE from '../vendor/three.module.js';
 import GUI from '../vendor/lil-gui.esm.js';
-import { generateSphereMesh, relax } from './grid.js?v=8dbc1fb6';
-import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=8dbc1fb6';
-import { mulberry32, randomSeed } from './rng.js?v=8dbc1fb6';
-import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3 } from './vec3.js?v=8dbc1fb6';
-import { CREATURES, waveJelly } from './creatures.js?v=8dbc1fb6';
-import { UNITS, UNIT_NAMES, buildUnit, makeOrbCloud, makeBulletCloud, makeDebris, makeDotBurst, makePortalCloud, makeHeartCloud } from './units.js?v=8dbc1fb6';
-import { LOOKS, LOOK_NAMES } from './looks.js?v=8dbc1fb6';
-import { makeCellIndex } from './cellindex.js?v=8dbc1fb6';
-import { CREATURE_TINTS, ENEMY_SPEC, INTROS } from './enemyspec.js?v=8dbc1fb6';
-import { makeBloom } from './postfx.js?v=8dbc1fb6';
+import { generateSphereMesh, relax } from './grid.js?v=2a1e3825';
+import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=2a1e3825';
+import { mulberry32, randomSeed } from './rng.js?v=2a1e3825';
+import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3 } from './vec3.js?v=2a1e3825';
+import { CREATURES, waveJelly } from './creatures.js?v=2a1e3825';
+import { UNITS, UNIT_NAMES, buildUnit, makeOrbCloud, makeBulletCloud, makeDebris, makeDotBurst, makePortalCloud, makeHeartCloud } from './units.js?v=2a1e3825';
+import { LOOKS, LOOK_NAMES } from './looks.js?v=2a1e3825';
+import { makeCellIndex } from './cellindex.js?v=2a1e3825';
+import { CREATURE_TINTS, ENEMY_SPEC, INTROS } from './enemyspec.js?v=2a1e3825';
+import { makeBloom } from './postfx.js?v=2a1e3825';
 
 export function initHeartTab(root) {
   let active = false;

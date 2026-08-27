@@ -30,3 +30,23 @@ export function tangentBasis(n) {
   const v = cross3(n, u); // already unit: n ⊥ u, both unit
   return [u, v];
 }
+
+// Order-independent key for an UNDIRECTED segment, for de-duplicating
+// coincident line geometry.
+//
+// Why this exists: a quad grid's interior edges belong to two cells, and
+// if each cell emits its own four boundary edges, every interior edge is
+// drawn twice. Under AdditiveBlending those duplicates sum, and at a
+// vertex — where several already-doubled edges converge on one pixel —
+// brightness stacks far past the bloom threshold that the edge midspans
+// stay under. The result is a bloomed blob on every vertex.
+//
+// ORDER INDEPENDENCE IS THE WHOLE POINT: twin edges are wound opposite
+// ways (a→b in one cell, b→a in its neighbour), so a key that respects
+// direction dedupes nothing at all, and does it silently.
+const Q = 1e6; // quantize: absorbs float dust, keeps genuinely distinct points apart
+const ptKey = (p) => `${Math.round(p[0] * Q)},${Math.round(p[1] * Q)},${Math.round(p[2] * Q)}`;
+export function segKey(p, q) {
+  const a = ptKey(p), b = ptKey(q);
+  return a < b ? `${a}|${b}` : `${b}|${a}`;
+}

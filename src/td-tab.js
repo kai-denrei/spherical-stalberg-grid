@@ -19,20 +19,20 @@
 
 import * as THREE from '../vendor/three.module.js';
 import GUI from '../vendor/lil-gui.esm.js';
-import { generateSphereMesh, relax } from './grid.js?v=8dbc1fb6';
-import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=8dbc1fb6';
-import { mulberry32, randomSeed } from './rng.js?v=8dbc1fb6';
-import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3 } from './vec3.js?v=8dbc1fb6';
-import { CREATURES, waveJelly } from './creatures.js?v=8dbc1fb6';
-import { UNITS, UNIT_NAMES, buildUnit, makeOrbCloud, makeBulletCloud, makeMissileCloud, makeDebris, makeDotBurst, makePortalCloud, makeHeartCloud, makeTowerUnit, makeDotEnemy } from './units.js?v=8dbc1fb6';
-import { LOOKS, LOOK_NAMES } from './looks.js?v=8dbc1fb6';
-import { makeCellIndex } from './cellindex.js?v=8dbc1fb6';
-import { CREATURE_TINTS, ENEMY_SPEC, INTROS, computeWavePlan } from './enemyspec.js?v=8dbc1fb6';
-import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER } from './towers.js?v=8dbc1fb6';
-import { makeEconomy, sellRefund } from './economy.js?v=8dbc1fb6';
-import { makeBloom } from './postfx.js?v=8dbc1fb6';
-import { makeAudio } from './audio.js?v=8dbc1fb6';
-import { DEATH_KEYS } from './audiomanifest.js?v=8dbc1fb6';
+import { generateSphereMesh, relax } from './grid.js?v=2a1e3825';
+import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=2a1e3825';
+import { mulberry32, randomSeed } from './rng.js?v=2a1e3825';
+import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3, segKey } from './vec3.js?v=2a1e3825';
+import { CREATURES, waveJelly } from './creatures.js?v=2a1e3825';
+import { UNITS, UNIT_NAMES, buildUnit, makeOrbCloud, makeBulletCloud, makeMissileCloud, makeDebris, makeDotBurst, makePortalCloud, makeHeartCloud, makeTowerUnit, makeDotEnemy } from './units.js?v=2a1e3825';
+import { LOOKS, LOOK_NAMES } from './looks.js?v=2a1e3825';
+import { makeCellIndex } from './cellindex.js?v=2a1e3825';
+import { CREATURE_TINTS, ENEMY_SPEC, INTROS, computeWavePlan } from './enemyspec.js?v=2a1e3825';
+import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER } from './towers.js?v=2a1e3825';
+import { makeEconomy, sellRefund } from './economy.js?v=2a1e3825';
+import { makeBloom } from './postfx.js?v=2a1e3825';
+import { makeAudio } from './audio.js?v=2a1e3825';
+import { DEATH_KEYS } from './audiomanifest.js?v=2a1e3825';
 
 export function initTdTab(root) {
   let active = false;
@@ -583,12 +583,30 @@ export function initTdTab(root) {
     const topJitter = mode === 'black' ? 0 : 1;
     // floors: open cells at the surface
     const fPos = [], fCol = [], ePos = [], eColA = [], tPos = [], tColA = [];
+    // Every interior edge belongs to TWO cells, and each cell emits its own
+    // four boundary edges — so without this, half the segments are drawn
+    // twice. The edge material is ADDITIVE, so duplicates SUM: a shared
+    // edge renders at 2x, and at a vertex, where several already-doubled
+    // edges converge on one pixel, brightness stacked up to 14x. That blew
+    // past the bloom threshold the edge midspans stayed under, which is
+    // what put a bloomed square on every vertex of the floor.
+    // One Set for both meshes: a rim segment must not be re-drawn as a
+    // wall-top wire either.
+    const seenSeg = new Set();
+    const firstTime = (p, q2) => {
+      const k = segKey(p, q2);
+      if (seenSeg.has(k)) return false;
+      seenSeg.add(k);
+      return true;
+    };
     const pushEdge = (p, q2, ci) => {
+      if (!firstTime(p, q2)) return;
       ePos.push(p[0], p[1], p[2], q2[0], q2[1], q2[2]);
       const c = edgeTint(ci);
       eColA.push(c[0], c[1], c[2], c[0], c[1], c[2]);
     };
     const pushTopEdge = (p, q2, ci) => {
+      if (!firstTime(p, q2)) return;
       tPos.push(p[0], p[1], p[2], q2[0], q2[1], q2[2]);
       const c = edgeTint(ci);
       tColA.push(c[0], c[1], c[2], c[0], c[1], c[2]);
