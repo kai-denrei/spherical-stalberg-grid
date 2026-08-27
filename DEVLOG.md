@@ -6,6 +6,53 @@ Demo links assume `npm run serve` (port 8144) or the
 
 ---
 
+## `bfb7a2f` — The vertex blobs, and cutting the build camera loose
+
+Two fixes and one of them was not where it looked.
+
+The squarish glow beads on floor vertices read like a bloom setting. They
+weren't. Every open cell emitted all four of its own boundary edges, so
+every interior edge — which belongs to two cells — was drawn **twice**.
+On seed 7: 4019 distinct undirected edges, 6016 segments emitted, and up
+to **14 segment endpoints landing on a single vertex**. The edge material
+is `AdditiveBlending`, so those overlaps sum. A vertex ran up to 14× the
+base edge brightness while the midspans sat near 1–2×, so with
+`threshold: 0.85` the bloom picked out vertices specifically and left the
+lines alone. On the vertices, in every camera, worst top-down where the
+most vertices are in frame — which is exactly how it was reported.
+
+Fixed at the emission point with an order-independent segment key. Order
+independence is the whole trick and is what `test/segkey.mjs` guards:
+twin edges are wound opposite ways, so a direction-respecting key would
+dedupe nothing and do it silently.
+
+There was a real second defect underneath, found first and fixed in
+`a1ca152`. `EffectComposer.setSize()` sizes every pass in device pixels;
+`postfx.js` re-applied the bloom's size afterwards — to protect the phone
+half-res path — but re-applied it in *CSS* pixels. At dpr 2 the bloom ran
+on a quarter of the frame's linear resolution (composer 1600×914, mip0
+400×229). That didn't create the blobs, it made them blockier. Both are
+now tested: `bloomTargetSize` is pure and Node-checked, because a bug
+that is invisible at dpr 1 and only bites on Retina is one that comes
+back.
+
+Build mode also got cut loose. It used to re-centre on the Heart every
+single entry and hold you there on a 0.6 rad elastic tether. Now it
+frames the Heart the first time and then stays put, and the drag rolls
+the sphere all the way round. That needed more than deleting the clamps:
+the camera's up was re-derived each frame as the Heart pole projected
+into the tangent plane at the view centre, which collapses to zero at the
+antipode — the ceiling was the only thing keeping us away from it. The
+frame is carried as a quaternion now and rotated incrementally, so it is
+well-conditioned everywhere. Double-tap anywhere rides the view home,
+using the camera loop's existing slerp for the easing.
+
+One worth recording: putting the first-entry centring in `toggleBuild()`
+shipped a black screen, because `?mode=build` and the tutorial set
+`buildMode` directly and the old `if (!buildCenter)` fallback that had
+been covering them was gone. Nine passing unit tests didn't catch it; the
+first screenshot did.
+
 ## `31a582b` — Sound
 
 The game had no audio at all. It has seventeen sounds now, all in the TD
