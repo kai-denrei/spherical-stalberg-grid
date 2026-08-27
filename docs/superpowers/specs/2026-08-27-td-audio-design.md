@@ -64,9 +64,16 @@ against the tier-2 interval, not the base.
    to a 23 MB `.git`) so the build is reproducible without the Downloads
    folder. No build step at serve time — the MP3s are committed too, and
    GitHub Pages serves them directly.
-2. **Peak-normalize, don't loudness-normalize.** `-1 dBTP` peak preserves
-   the transients that make a blast read as a blast. Artistic level-setting
+2. **Peak-normalize, don't loudness-normalize.** Peak preserves the
+   transients that make a blast read as a blast. Artistic level-setting
    lives in the manifest's per-sound `gain`, not in the encode.
+   Verified during planning: this needs **two passes** measured with
+   `astats` over float, not `volumedetect`. `volumedetect` saturates its
+   report at 0.0 dB, hiding the thing being measured; and MP3 decoding
+   genuinely reconstructs peaks *above* the encoded sample peak — by
+   +0.9 to +4.3 dB across this set, worst on `Tower_upgrade` — which Web
+   Audio would clip at the output device. Pass 1 lifts to -1.5 dBFS,
+   pass 2 subtracts the measured decoder overshoot.
 3. **Trim every sample to fit its tier-2 fire interval.** Overlap is
    solved at the source, in the build script, rather than papered over at
    runtime. Sizing against tier 2 rather than base rate matters: a fully
@@ -88,8 +95,8 @@ against the tier-2 interval, not the base.
 ## Asset build table
 
 `scripts/audio-build.sh` drives this table. Pipeline per file:
-trim -> pitch (where baked) -> fade-out -> peak-normalize -1 dBTP ->
-mono 96 kbps MP3.
+trim -> pitch (where baked) -> fade-out -> two-pass peak-normalize to
+-1.5 dBFS decoded -> mono 96 kbps MP3.
 
 **Trims are sized against the tier-2 interval**, computed from
 `effectiveStats`: `rate * (1 + 0.1 * tier)` = `x1.2` at tier 2, and the
