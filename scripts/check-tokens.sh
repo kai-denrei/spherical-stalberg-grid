@@ -18,7 +18,8 @@ cd "$root" || exit 2
 fail=0
 
 # 1. no ?v= on any vendor/ import
-vend=$(grep -rnE "vendor/[^'\"]*\?v=" --include='*.js' --include='*.html' --exclude-dir=.git . 2>/dev/null)
+vend=$(grep -rnE "vendor/[^'\"]*\?v=" --include='*.js' --include='*.html' \
+  --exclude-dir=.git --exclude-dir=.claude . 2>/dev/null)
 if [ -n "$vend" ]; then
   echo "✗ tokened vendor import (a ?v= on vendor/ loads a 2nd copy of three.js):"
   echo "$vend"
@@ -26,8 +27,12 @@ if [ -n "$vend" ]; then
 fi
 
 # 2. every ?v= cache-bust token must agree
+# .claude/worktrees holds SEPARATE checkouts, each legitimately stamped with
+# its own token — scanning them reports a split that isn't one, and would
+# block a push on the state of an unrelated worktree.
 toks=$(grep -rhoE "\?v=[0-9a-f]+" --include='*.js' --include='*.html' \
-  --exclude-dir=vendor --exclude-dir=docs --exclude-dir=.git . 2>/dev/null | sort -u)
+  --exclude-dir=vendor --exclude-dir=docs --exclude-dir=.git --exclude-dir=.claude \
+  . 2>/dev/null | sort -u)
 n=$(printf '%s\n' "$toks" | grep -c .)
 if [ "$n" -gt 1 ]; then
   echo "✗ split cache-bust tokens — $n distinct values in the tree:"
