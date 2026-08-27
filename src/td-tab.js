@@ -19,20 +19,20 @@
 
 import * as THREE from '../vendor/three.module.js';
 import GUI from '../vendor/lil-gui.esm.js';
-import { generateSphereMesh, relax } from './grid.js?v=f829942a';
-import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=f829942a';
-import { mulberry32, randomSeed } from './rng.js?v=f829942a';
-import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3 } from './vec3.js?v=f829942a';
-import { CREATURES, waveJelly } from './creatures.js?v=f829942a';
-import { UNITS, UNIT_NAMES, buildUnit, makeOrbCloud, makeBulletCloud, makeMissileCloud, makeDebris, makeDotBurst, makePortalCloud, makeHeartCloud, makeTowerUnit, makeDotEnemy } from './units.js?v=f829942a';
-import { LOOKS, LOOK_NAMES } from './looks.js?v=f829942a';
-import { makeCellIndex } from './cellindex.js?v=f829942a';
-import { CREATURE_TINTS, ENEMY_SPEC, INTROS, computeWavePlan } from './enemyspec.js?v=f829942a';
-import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER } from './towers.js?v=f829942a';
-import { makeEconomy, sellRefund } from './economy.js?v=f829942a';
-import { makeBloom } from './postfx.js?v=f829942a';
-import { makeAudio } from './audio.js?v=f829942a';
-import { DEATH_KEYS } from './audiomanifest.js?v=f829942a';
+import { generateSphereMesh, relax } from './grid.js?v=affdd10d';
+import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=affdd10d';
+import { mulberry32, randomSeed } from './rng.js?v=affdd10d';
+import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3 } from './vec3.js?v=affdd10d';
+import { CREATURES, waveJelly } from './creatures.js?v=affdd10d';
+import { UNITS, UNIT_NAMES, buildUnit, makeOrbCloud, makeBulletCloud, makeMissileCloud, makeDebris, makeDotBurst, makePortalCloud, makeHeartCloud, makeTowerUnit, makeDotEnemy } from './units.js?v=affdd10d';
+import { LOOKS, LOOK_NAMES } from './looks.js?v=affdd10d';
+import { makeCellIndex } from './cellindex.js?v=affdd10d';
+import { CREATURE_TINTS, ENEMY_SPEC, INTROS, computeWavePlan } from './enemyspec.js?v=affdd10d';
+import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER } from './towers.js?v=affdd10d';
+import { makeEconomy, sellRefund } from './economy.js?v=affdd10d';
+import { makeBloom } from './postfx.js?v=affdd10d';
+import { makeAudio } from './audio.js?v=affdd10d';
+import { DEATH_KEYS } from './audiomanifest.js?v=affdd10d';
 
 export function initTdTab(root) {
   let active = false;
@@ -3574,6 +3574,37 @@ export function initTdTab(root) {
   bloomF.add(postfx.params, 'strength', 0, 3, 0.05).onChange((v) => postfx.setParams({ strength: v }));
   bloomF.add(postfx.params, 'radius', 0, 1, 0.01).onChange((v) => postfx.setParams({ radius: v }));
   bloomF.add(postfx.params, 'threshold', 0, 1, 0.01).onChange((v) => postfx.setParams({ threshold: v }));
+
+  // sound. The encode is peak-normalized and the manifest carries each
+  // sound's trim gain, so these are the coarse balance -- and the tuning
+  // surface, since the levels shipped were derived from durations and
+  // fire rates rather than heard.
+  const soundF = gui.addFolder('sound');
+  const soundState = { ...sfx.levels, mute: sfx.muted };
+  soundF.add(soundState, 'master', 0, 1, 0.01).onChange((v) => sfx.setMaster(v));
+  soundF.add(soundState, 'towers', 0, 1, 0.01).onChange((v) => sfx.setBus('towers', v));
+  soundF.add(soundState, 'tank', 0, 1, 0.01).onChange((v) => sfx.setBus('tank', v));
+  soundF.add(soundState, 'enemies', 0, 1, 0.01).onChange((v) => sfx.setBus('enemies', v));
+  soundF.add(soundState, 'ui', 0, 1, 0.01).onChange((v) => sfx.setBus('ui', v));
+  const muteCtrl = soundF.add(soundState, 'mute').onChange((v) => { sfx.setMute(v); syncSoundChip(); });
+
+  // the pad button and the panel toggle are one state, two surfaces
+  const soundBtn = root.querySelector('#td-pad-sound');
+  function syncSoundChip() {
+    if (soundBtn) {
+      soundBtn.textContent = sfx.muted ? '\u{1F507}' : '\u{1F50A}';
+      soundBtn.classList.toggle('on', !sfx.muted);
+    }
+  }
+  if (soundBtn) {
+    soundBtn.addEventListener('click', () => {
+      sfx.setMute(!sfx.muted);
+      soundState.mute = sfx.muted;
+      muteCtrl.updateDisplay();
+      syncSoundChip();
+    });
+  }
+  syncSoundChip();
 
   // phones: start with the panel folded so the maze isn't buried
   if (matchMedia('(pointer: coarse), (max-width: 700px)').matches) gui.close();
