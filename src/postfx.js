@@ -10,6 +10,19 @@ import * as THREE from '../vendor/three.module.js';
 const COARSE = typeof matchMedia === 'function'
   && matchMedia('(pointer: coarse)').matches;
 
+// The bloom's target size, in DEVICE pixels. EffectComposer sizes every
+// pass at device pixels (it multiplies by the renderer's pixelRatio);
+// anything that RE-APPLIES a pass size afterwards has to do the same, or
+// it silently drops the ratio. Getting this wrong is invisible on a
+// dpr-1 display and blocky on every Retina one, so it is pure and tested.
+export function bloomTargetSize(cssW, cssH, pixelRatio, scale) {
+  const f = (pixelRatio || 1) * (scale || 1);
+  return {
+    w: Math.max(1, Math.round(cssW * f)),
+    h: Math.max(1, Math.round(cssH * f)),
+  };
+}
+
 export function makeBloom(renderer, scene, camera, opts = {}) {
   const o = {
     strength: 0.9, radius: 0.4, threshold: 0.85, enabled: true,
@@ -27,9 +40,9 @@ export function makeBloom(renderer, scene, camera, opts = {}) {
   composer.renderTarget1.samples = 4;
   composer.renderTarget2.samples = 4;
   composer.addPass(new RenderPass(scene, camera));
+  const b0 = bloomTargetSize(size.x, size.y, renderer.getPixelRatio(), o.scale);
   const bloom = new UnrealBloomPass(
-    new THREE.Vector2(Math.max(1, size.x * o.scale), Math.max(1, size.y * o.scale)),
-    o.strength, o.radius, o.threshold);
+    new THREE.Vector2(b0.w, b0.h), o.strength, o.radius, o.threshold);
   composer.addPass(bloom);
   // linear render targets -> without OutputPass the whole scene washes out
   composer.addPass(new OutputPass());
@@ -44,8 +57,14 @@ export function makeBloom(renderer, scene, camera, opts = {}) {
       // ORDER MATTERS: composer.setSize() re-sizes EVERY pass (at device
       // pixels), which would clobber the bloom's scaled target — re-apply
       // the scaled bloom size AFTER it or the half-res path dies silently.
+      // The re-apply must ALSO be in device pixels. It wasn't: it used the
+      // CSS size, so on a dpr-2 display the bloom ran at a quarter of the
+      // frame's linear resolution (composer 1600x914, bloom mip0 400x229)
+      // and upsampling that blur beaded every thin bright edge into
+      // blocky squares.
       composer.setSize(w, h);
-      bloom.setSize(Math.max(1, w * o.scale), Math.max(1, h * o.scale));
+      const b = bloomTargetSize(w, h, renderer.getPixelRatio(), o.scale);
+      bloom.setSize(b.w, b.h);
     },
     setParams({ strength, radius, threshold } = {}) {
       if (strength !== undefined) bloom.strength = strength;
