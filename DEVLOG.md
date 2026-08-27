@@ -6,6 +6,55 @@ Demo links assume `npm run serve` (port 8144) or the
 
 ---
 
+## `b6a76c3` — The build camera comes off its leash
+
+Build mode's overhead camera was only half free. A drag panned its
+center across the sphere, but `BUILD_CEIL` (0.9 rad) stopped the gesture
+dead and, the moment you let go, an elastic term slid the center back
+inside `BUILD_MAXR` (0.6 rad) of the Heart. You could look *around* the
+Heart. You could not go anywhere else, and the map always crept home.
+
+Both terms are deleted. The pan reaches any point on the planet and
+stays where you released it.
+
+The leash was doing real work, though, and it had to be replaced rather
+than simply cut. The camera's up-vector used to be re-derived every
+frame as the Heart pole projected into the tangent plane at the center:
+
+```js
+let up = add3(scale3(hn, 1), scale3(c, -dot3(hn, c)));
+```
+
+That expression goes to **zero** at the antipode of the Heart — which is
+precisely where an unleashed camera is now allowed to fly. So the frame
+is carried instead of re-derived. `buildUp` is a unit tangent that moves
+*with* the center: each drag step nudges the center along the tangent
+plane, then re-orthogonalizes up against the new center.
+
+```js
+buildCenter = norm3(add3(c, add3(scale3(right, -dx * k), scale3(up, dy * k))));
+reframeBuildUp(buildCenter); // up -= c * (up·c), renormalize
+```
+
+At the size of a drag step that Gram-Schmidt *is* parallel transport, so
+the map never spins under your finger. Twenty thousand simulated steps
+carried straight past the antipode hold `|up·c|` at 1.7e-16 and both
+vector lengths at 3.3e-16 — no degeneracy, no NaN, no accumulated roll.
+
+Removing the leash removed two things it was quietly providing, so both
+came back explicitly. **R** flies the camera home (`resetBuildFrame`) —
+the far side of the planet is empty black, and the elastic used to be
+the only way back. And when the sector-reveal cinematic hands off to
+build mode, `aimBuildFrame(revealDir)` points the camera at the freshly
+unsealed band instead of dumping you wherever the last drag ended.
+
+Verified headless over CDP with synthetic pointer events: drag to the
+far side, screenshot, wait 3.5s, screenshot again — identical framing,
+where the old build would have eased back. Then R, and the Heart is
+centered again. No console errors either pass.
+
+---
+
 ## `31a582b` — Sound
 
 The game had no audio at all. It has seventeen sounds now, all in the TD
