@@ -1,0 +1,162 @@
+#!/usr/bin/env bash
+# audio-build.sh — turn the WAV masters in assets/audio/src/ into the
+# trimmed, peak-normalized mono MP3s the game actually loads.
+#
+# Pipeline per file: trim -> pitch (where baked) -> fade-out ->
+# peak-normalize to -1 dBTP -> mono 96 kbps MP3.
+#
+# Two things this script exists to enforce:
+#
+# 1. NO SAMPLE OUTLIVES ITS TOWER'S TIER-2 SHOT INTERVAL. towers.js
+#    effectiveStats gives rate * 1.2 at tier 2, and the 'single' attack
+#    family takes another * 1.2 -- so a fully upgraded rapid tower fires
+#    at 4.32/s (0.231s apart) against a 1.54s source. Trimming here is
+#    cheaper and more predictable than fighting the pile-up at runtime.
+#
+# 2. PITCH CHANGES DURATION. asetrate at 0.70 makes a slice ~1.43x
+#    longer, so source trim = output duration * rate. tower_slow wants
+#    0.80s out at 0.70, so it trims 0.56s of source.
+#
+# Peak-normalize rather than loudnorm: peak preserves the transients that
+# make a blast read as a blast. Artistic level-setting lives in the
+# manifest's per-sound gain, not in the encode.
+
+set -euo pipefail
+cd "$(dirname "${BASH_SOURCE[0]}")/.."
+
+SRC="assets/audio/src"
+OUT="assets/audio"
+SR=44100
+BR=96k
+FADE=0.04      # tail fade so a hard trim never clicks
+TARGET=-1.5    # dBFS peak of the DECODED output
+
+command -v ffmpeg >/dev/null || { echo "ffmpeg not found" >&2; exit 1; }
+command -v ffprobe >/dev/null || { echo "ffprobe not found" >&2; exit 1; }
+
+# True float peak. NOT volumedetect: that saturates its report at 0.0 dB,
+# which hides exactly the overshoot we are here to remove. astats over
+# fltp measures past full scale, which is the whole point -- MP3 decoding
+# genuinely reconstructs peaks ABOVE the encoded sample peak (measured:
+# Tower_upgrade came back at +4.3 dB), and Web Audio clips those at the
+# output device.
+apeak () {
+  ffmpeg -hide_banner -nostats -i "$1" \
+    -af "aformat=sample_fmts=fltp,astats=measure_overall=Peak_level:measure_perchannel=none" \
+    -f null - 2>&1 | awk -F': ' '/Peak level dB/{print $2}'
+}
+
+# key|source wav|output duration (s)|playback rate
+TABLE=$(cat <<'EOF'
+tower_single|Tower_Single_shot_muffled.wav|0.45|1.00
+tower_rapid|Tower_Rapid_Ice_casting_55.wav|0.22|1.00
+tower_spread|Tower_Spread_light-blast-07.wav|0.78|1.00
+tower_homing|Tower_Homing_heavy-blast-14.wav|0.66|1.00
+tower_slow|Tower_Slow_beam-05.wav|0.80|0.70
+tower_laser|Tower_Laser_beam-05.wav|0.45|1.00
+tower_aoe|Tower_AoE_heavy-blast-03.wav|0.90|1.00
+tower_sniper|Tower_Sniper_heavy-blast-05.wav|0.95|1.00
+tower_upgrade|Tower_upgrade.wav|0.79|1.00
+tank_main|Tank_MainWeapon_heavy-blast-15.wav|1.20|1.00
+tank_secondary|Tank_Secondary_light-blast-09.wav|0.14|1.00
+tank_pickup|Tank_PickUpItem_handling-26.wav|0.45|1.00
+tank_shells|Tank_PickUpNewShells_reload-02.wav|0.91|1.00
+enemy_die_a|slime-pop.wav|0.50|1.00
+enemy_die_b|slime-organic.wav|0.57|1.00
+enemy_die_c|splat_quick.wav|0.33|1.00
+EOF
+)
+
+echo "building $OUT/"
+worst=-99
+
+while IFS='|' read -r key src dur rate; do
+  [[ -z "$key" ]] && continue
+  in="$SRC/$src"
+  [[ -f "$in" ]] || { echo "missing source: $in" >&2; exit 1; }
+
+  # pitch changes duration: trim the source by dur*rate so the OUTPUT is dur
+  trim=$(awk -v d="$dur" -v r="$rate" 'BEGIN{printf "%.4f", d*r}')
+
+  if [[ "$rate" == "1.00" ]]; then
+    pitch=""
+  else
+    # asetrate resamples (pitch and speed together), aresample restores
+    # the nominal rate so the container stays 44.1k
+    newsr=$(awk -v s="$SR" -v r="$rate" 'BEGIN{printf "%d", s*r}')
+    pitch="asetrate=${newsr},aresample=${SR},"
+  fi
+
+  fadest=$(awk -v d="$dur" -v f="$FADE" 'BEGIN{printf "%.4f", (d-f<0?0:d-f)}')
+  chain="atrim=0:${trim},asetpts=N/SR/TB,${pitch}afade=t=out:st=${fadest}:d=${FADE}"
+
+  # PEAK-normalize in two passes. Peak, not loudnorm and not a compressor:
+  # peak is the only normalization that leaves the transient intact, and
+  # the transient is what makes a blast read as a blast. Balance is the
+  # manifest's job, not the encode's.
+  #
+  # Pass 1 lifts the source peak to TARGET. Pass 2 exists because lossy
+  # encoding overshoots by an amount that varies per file (measured:
+  # +0.9 to +4.3 dB) -- so measure what the DECODER actually produces and
+  # pull the gain back by the excess. One correction converges.
+  src_peak=$(ffmpeg -hide_banner -nostats -i "$in" \
+    -af "${chain},aformat=sample_fmts=fltp,astats=measure_overall=Peak_level:measure_perchannel=none" \
+    -f null - 2>&1 | awk -F': ' '/Peak level dB/{print $2}')
+  [[ -z "$src_peak" ]] && { echo "peak detect failed: $key" >&2; exit 1; }
+
+  vol=$(awk -v p="$src_peak" -v t="$TARGET" 'BEGIN{printf "%.2f", t-p}')
+  ffmpeg -v error -y -i "$in" -af "${chain},volume=${vol}dB" \
+    -ac 1 -ar "$SR" -b:a "$BR" "$OUT/${key}.mp3"
+
+  got1=$(apeak "$OUT/${key}.mp3")
+  vol2=$(awk -v v="$vol" -v p="$got1" -v t="$TARGET" 'BEGIN{printf "%.2f", v-(p-t)}')
+  ffmpeg -v error -y -i "$in" -af "${chain},volume=${vol2}dB" \
+    -ac 1 -ar "$SR" -b:a "$BR" "$OUT/${key}.mp3"
+
+  final=$(apeak "$OUT/${key}.mp3")
+  gotdur=$(ffprobe -v error -show_entries format=duration -of csv=p=0 "$OUT/${key}.mp3")
+  worst=$(awk -v w="$worst" -v f="$final" 'BEGIN{print (f>w)?f:w}')
+  printf "  %-15s %5.2fs (want %.2f)  peak %7.2f dBFS\n" "$key" "$gotdur" "$dur" "$final"
+done <<< "$TABLE"
+
+# --- the engine loop is special: an inner slice, crossfaded to hide the seam
+#
+# Tank_Engine_teleport is a swell-then-decay whoosh, but its RMS body holds
+# within ~2.5 dB from 0.35s to 1.45s -- steady enough to loop from. Take that
+# 1.10s body and crossfade its tail back over its head so the loop point is
+# inaudible. Output is 1.10 - XF = 1.04s of seamless loop.
+XF=0.06
+ENG_IN="$SRC/Tank_Engine_teleport.wav"
+[[ -f "$ENG_IN" ]] || { echo "missing source: $ENG_IN" >&2; exit 1; }
+
+ffmpeg -v error -y -i "$ENG_IN" \
+  -filter_complex "\
+[0:a]atrim=0.35:1.45,asetpts=N/SR/TB,aformat=channel_layouts=mono[body];\
+[body]asplit[b1][b2];\
+[b1]atrim=0:$(awk -v x="$XF" 'BEGIN{printf "%.4f", 1.10-x}'),asetpts=N/SR/TB[head];\
+[b2]atrim=$(awk -v x="$XF" 'BEGIN{printf "%.4f", 1.10-x}'),asetpts=N/SR/TB[tail];\
+[head][tail]acrossfade=d=${XF}:c1=tri:c2=tri[out]" \
+  -map "[out]" -ac 1 -ar "$SR" -y "$OUT/.engine_raw.wav"
+
+# same two-pass peak normalize, on the assembled loop
+eraw=$(apeak "$OUT/.engine_raw.wav")
+evol=$(awk -v p="$eraw" -v t="$TARGET" 'BEGIN{printf "%.2f", t-p}')
+ffmpeg -v error -y -i "$OUT/.engine_raw.wav" -af "volume=${evol}dB" -ac 1 -ar "$SR" -b:a "$BR" "$OUT/tank_engine.mp3"
+e1=$(apeak "$OUT/tank_engine.mp3")
+evol2=$(awk -v v="$evol" -v p="$e1" -v t="$TARGET" 'BEGIN{printf "%.2f", v-(p-t)}')
+ffmpeg -v error -y -i "$OUT/.engine_raw.wav" -af "volume=${evol2}dB" -ac 1 -ar "$SR" -b:a "$BR" "$OUT/tank_engine.mp3"
+rm -f "$OUT/.engine_raw.wav"
+
+efinal=$(apeak "$OUT/tank_engine.mp3")
+gotdur=$(ffprobe -v error -show_entries format=duration -of csv=p=0 "$OUT/tank_engine.mp3")
+worst=$(awk -v w="$worst" -v f="$efinal" 'BEGIN{print (f>w)?f:w}')
+printf "  %-15s %5.2fs (crossfaded loop)  peak %7.2f dBFS\n" "tank_engine" "$gotdur" "$efinal"
+
+# nothing may decode above full scale: Web Audio clips that at the device
+if awk -v w="$worst" 'BEGIN{exit !(w >= 0)}'; then
+  echo "FAIL: worst decoded peak ${worst} dBFS is at or above full scale" >&2
+  exit 1
+fi
+echo "worst decoded peak: ${worst} dBFS (must stay below 0)"
+
+echo "done: $(ls "$OUT"/*.mp3 | wc -l | tr -d ' ') files, $(du -sh "$OUT"/*.mp3 | awk '{s+=$1}END{print s}')K total"
