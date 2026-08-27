@@ -6,6 +6,60 @@ Demo links assume `npm run serve` (port 8144) or the
 
 ---
 
+## `31a582b` — Sound
+
+The game had no audio at all. It has seventeen sounds now, all in the TD
+tab: one voice per tower, the tank's shell, twin lasers, both pickups and
+a speed-driven engine bed, and three enemy deaths picked at random. A
+`sound` folder sits next to `bloom` with master and four bus faders, plus
+a mute chip in the touch row.
+
+Most of the work was in the assets, not the code. An audit of the
+shortlist against the actual fire rates in `towers.js` turned up three
+things worth designing around. Laser and Slow shipped the *same*
+`beam-05` file — identical size, identical 4.683900s duration — so the
+two towers would have been indistinguishable; they're now two variants
+cut from it, the laser a 0.45s head at pitch and the slow 0.80s at
+`asetrate` 0.70 so it drags. Most samples outlived their own tower's
+shot interval, badly at tier 2 where the `single` attack family
+compounds to ×1.44: a fully upgraded rapid tower fires at 4.32/s against
+a 1.54s source, 6.7× self-overlap. And the engine sample turned out to
+be loopable — its RMS body holds within ~2.5 dB from 0.35s to 1.45s —
+so the tank got a real bed instead of one-shots per cell crossing.
+
+`scripts/audio-build.sh` solves the overlap at the source, trimming
+every sample to fit its *tier-2* interval, then peak-normalizing in two
+passes. Two traps there cost real time. `volumedetect` saturates its
+report at 0.0 dB, so it structurally cannot see the overshoot it's being
+used to measure — four files read "0.0 dB" and looked fine. `astats`
+over float shows the truth: MP3 decoding reconstructs peaks *above* the
+encoded sample peak, by +0.9 to +4.3 dB across this set, which Web Audio
+clips at the output device. Pass one lifts to −1.5 dBFS, pass two
+subtracts the measured overshoot; the script hard-fails if anything
+lands at or above full scale. 176K for the set.
+
+The code splits along a testability line. Every decision about *whether*
+a sound may play is pure and lives in `audiomix.js` — per-key
+min-interval, per-key voice caps, a global 24-voice ceiling, and
+inverse-distance falloff — so it's Node-tested with no `AudioContext`
+and no DOM. `audio.js` only carries those decisions out. `admit()`
+returns an id to *steal* rather than stopping anything itself, because
+the caller has to ramp it down over ~30ms first; a hard cut mid-waveform
+clicks. The manifest cross-checks `TOWERS`, so adding a tower without a
+sound is a test failure rather than a silent gap.
+
+Two details worth knowing. The context is created on the first user
+*gesture*, never at init — browsers reject one made earlier, and a
+suspended context swallows everything silently, which reads as a bug in
+the game rather than as policy. And audio URLs take their `?v=` from the
+`<meta name="cb">` tag at runtime, because `fingerprint-urls.py`
+rewrites HTML attributes and CSS `url()` but never JS string literals.
+
+Levels were derived from durations, fire rates and RMS envelopes — not
+heard. The faders are there partly to fix that.
+
+---
+
 ## `0de457f` — The glow we owed the neon
 
 The original looks arc ended on a deliberate deferral: additive Tron edges

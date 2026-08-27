@@ -306,3 +306,60 @@ part, and each tab carries live sliders for strength, radius and threshold so
 the look can be dialled in while you watch it. Compositing costs you the
 renderer's own antialiasing, so the composer asks for MSAA back — on a board
 made of glowing wireframe, that edge quality is the whole picture.
+
+## Sound, and keeping it from becoming noise
+
+Seventeen sounds, TD only for now. The interesting problem isn't playing
+them — it's stopping them piling up.
+
+A tower defense fires *a lot*. Eight tower kinds, several of each on the
+board, all shooting at once, and a cleared wave is a dozen deaths inside
+a second. Play every event naively and you get a smear. So the budget is
+handled in four layers, cheapest first, and all four are pure functions
+in `audiomix.js` with no `AudioContext` anywhere near them — which is
+why they're Node-tested:
+
+1. **Per-key min-interval.** A retrigger inside the window is dropped
+   outright. Each window sits *below* that tower's tier-2 shot interval
+   on purpose, so one upgraded tower is never gated — the window only
+   bites when several towers of the same kind fire together, which is
+   exactly the pile-up worth culling.
+2. **Per-key voice caps.** Over the cap, the oldest copy of that sound is
+   stolen. `admit()` only *names* the voice to steal; the caller ramps it
+   down over ~30ms before stopping it, because a hard cut mid-waveform is
+   an audible click.
+3. **A global 24-voice ceiling**, a backstop independent of any one key —
+   it bites when many *different* sounds are live at once.
+4. **Distance attenuation**, `1/(1+d/k)`, measured from the *active
+   camera's* world position rather than the player's. In bastion view the
+   two are far apart, and what you hear should follow what you're looking
+   through. It's plain gain, deliberately not a `PannerNode`: true 3D
+   panning on a sphere you orbit is disorienting, and a panner per voice
+   is real cost for a cue you already read visually.
+
+The trims matter as much as the caps. Every sample is cut in
+`scripts/audio-build.sh` to fit its tower's **tier-2** fire interval, not
+its base rate — `effectiveStats` gives ×1.2 at tier 2 and another ×1.2
+for the `single` attack family, so a fully upgraded rapid tower fires at
+4.32/s. Solving overlap in the encode is cheaper and far more
+predictable than fighting it at runtime.
+
+Normalization is peak, never loudness or compression: peak is the only
+one that leaves the transient intact, and the transient is what makes a
+blast read as a blast. It runs in two passes, because MP3 *decoding*
+reconstructs peaks above the encoded sample peak and Web Audio clips
+those at the output device.
+
+The engine bed is the one continuous sound. Its speed comes from the
+actual per-frame position delta rather than from the drive inputs — one
+call site then covers manual driving, auto navigation and the
+`virtualStart` handoff between them, and it obeys the house rule about
+deriving render-coupled values from the render state instead of
+re-deriving them with a second set of conventions.
+
+**Where to change things.** Live, by ear: the `sound` folder in the TD
+panel (master + four buses + mute), which persists to `localStorage`.
+Permanently: `src/audiomanifest.js`, where each sound carries its own
+gain, voice cap, min-interval and pitch-jitter width. The levels that
+shipped were derived from durations and fire rates, not heard, so expect
+to move them.
