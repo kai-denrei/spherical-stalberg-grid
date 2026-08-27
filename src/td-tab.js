@@ -19,20 +19,20 @@
 
 import * as THREE from '../vendor/three.module.js';
 import GUI from '../vendor/lil-gui.esm.js';
-import { generateSphereMesh, relax } from './grid.js?v=2a1e3825';
-import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=2a1e3825';
-import { mulberry32, randomSeed } from './rng.js?v=2a1e3825';
-import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3, segKey } from './vec3.js?v=2a1e3825';
-import { CREATURES, waveJelly } from './creatures.js?v=2a1e3825';
-import { UNITS, UNIT_NAMES, buildUnit, makeOrbCloud, makeBulletCloud, makeMissileCloud, makeDebris, makeDotBurst, makePortalCloud, makeHeartCloud, makeTowerUnit, makeDotEnemy } from './units.js?v=2a1e3825';
-import { LOOKS, LOOK_NAMES } from './looks.js?v=2a1e3825';
-import { makeCellIndex } from './cellindex.js?v=2a1e3825';
-import { CREATURE_TINTS, ENEMY_SPEC, INTROS, computeWavePlan } from './enemyspec.js?v=2a1e3825';
-import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER } from './towers.js?v=2a1e3825';
-import { makeEconomy, sellRefund } from './economy.js?v=2a1e3825';
-import { makeBloom } from './postfx.js?v=2a1e3825';
-import { makeAudio } from './audio.js?v=2a1e3825';
-import { DEATH_KEYS } from './audiomanifest.js?v=2a1e3825';
+import { generateSphereMesh, relax } from './grid.js?v=d7f7f97b';
+import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=d7f7f97b';
+import { mulberry32, randomSeed } from './rng.js?v=d7f7f97b';
+import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3, segKey } from './vec3.js?v=d7f7f97b';
+import { CREATURES, waveJelly } from './creatures.js?v=d7f7f97b';
+import { UNITS, UNIT_NAMES, buildUnit, makeOrbCloud, makeBulletCloud, makeMissileCloud, makeDebris, makeDotBurst, makePortalCloud, makeHeartCloud, makeTowerUnit, makeDotEnemy } from './units.js?v=d7f7f97b';
+import { LOOKS, LOOK_NAMES } from './looks.js?v=d7f7f97b';
+import { makeCellIndex } from './cellindex.js?v=d7f7f97b';
+import { CREATURE_TINTS, ENEMY_SPEC, INTROS, computeWavePlan } from './enemyspec.js?v=d7f7f97b';
+import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER } from './towers.js?v=d7f7f97b';
+import { makeEconomy, sellRefund } from './economy.js?v=d7f7f97b';
+import { makeBloom } from './postfx.js?v=d7f7f97b';
+import { makeAudio } from './audio.js?v=d7f7f97b';
+import { DEATH_KEYS } from './audiomanifest.js?v=d7f7f97b';
 
 export function initTdTab(root) {
   let active = false;
@@ -857,14 +857,18 @@ export function initTdTab(root) {
   let watchTower = null;
   let mapMode = 'player'; // 'player' | 'heart'
   let buildDist = 2.0;      // wheel/pinch zooms
+  // FREE build camera: the overhead eye is a unit vec you can fly ANYWHERE
+  // on the sphere — no leash to the heart, no snap-back. Its up-vector is
+  // CARRIED with the pan (parallel transport) instead of re-derived from
+  // the heart pole: pole-derived up degenerates on the far side of the
+  // planet, which is exactly where a free camera is allowed to go.
   let buildCenter = null;   // unit vec: the surface point under the overhead cam (pan)
-  const BUILD_MAXR = 0.6;   // max resting pan angle off the heart (rad)
-  const BUILD_CEIL = 0.9;   // hard ceiling while dragging
+  let buildUp = null;       // unit tangent at buildCenter: the map's screen-up
   const anyHostiles = () => enemies.some((e) => e.alive);
   const buildFrozen = () => buildMode && !anyHostiles();
   function toggleBuild() {
     buildMode = !buildMode;
-    if (buildMode) buildCenter = poleFrame().hn.slice(); // start centered on the heart
+    if (buildMode) resetBuildFrame(); // start centered on the heart
     syncBuildUi();
     updateHud();
     if (!buildMode) showOverrideModal(); // just switched INTO manual drive
@@ -889,6 +893,32 @@ export function initTdTab(root) {
     const t1 = norm3(cross3(hn, ref));
     const t2 = cross3(hn, t1);
     return { hn, t1, t2 };
+  }
+
+  // point the free-cam at a surface direction, screen-up = the heart pole
+  // side (falls back to any tangent when aimed at the pole itself)
+  function aimBuildFrame(dir) {
+    buildCenter = norm3(dir.slice());
+    const { hn, t1 } = poleFrame();
+    let up = sub3(hn, scale3(buildCenter, dot3(hn, buildCenter)));
+    if (dot3(up, up) < 1e-6) up = t1.slice(); // aimed AT the pole: any tangent
+    buildUp = norm3(up);
+  }
+  // seed the free-cam frame at the heart pole (center + a stable screen-up)
+  function resetBuildFrame() {
+    const { hn, t1 } = poleFrame();
+    buildCenter = hn.slice();
+    buildUp = t1.slice(); // t1 = the pre-free-cam default orientation, kept
+  }
+  // keep up a unit tangent at c after the center moves (Gram-Schmidt =
+  // parallel transport for the small per-frame steps a drag produces)
+  function reframeBuildUp(c) {
+    let up = sub3(buildUp, scale3(c, dot3(buildUp, c)));
+    if (dot3(up, up) < 1e-9) { // degenerate only if up ended up parallel to c
+      const ref = Math.abs(c[1]) < 0.9 ? [0, 1, 0] : [1, 0, 0];
+      up = cross3(cross3(c, ref), c);
+    }
+    buildUp = norm3(up);
   }
 
   function updateCameraGoal() {
@@ -941,21 +971,9 @@ export function initTdTab(root) {
       return;
     }
     if (buildMode) {
-      const { hn, t1 } = poleFrame();
-      if (!buildCenter) buildCenter = hn.slice();
-      let c = buildCenter;
-      // elastic return: when NOT dragging, ease the center back inside the radius
-      const ang = Math.acos(Math.max(-1, Math.min(1, dot3(c, hn))));
-      if (buildPointers.size === 0 && ang > BUILD_MAXR) {
-        const f = BUILD_MAXR / ang;
-        const b = norm3(add3(scale3(hn, 1 - f), scale3(c, f))); // boundary point toward hn
-        buildCenter = norm3(add3(scale3(c, 0.85), scale3(b, 0.15)));
-        c = buildCenter;
-      }
-      // stable up: heart pole projected into the tangent plane at c (no spin)
-      let up = add3(scale3(hn, 1), scale3(c, -dot3(hn, c)));
-      if (dot3(up, up) < 1e-6) up = t1.slice(); // degenerate at the start (c≈hn)
-      up = norm3(up);
+      if (!buildCenter || !buildUp) resetBuildFrame();
+      const c = buildCenter;
+      const up = buildUp; // carried, not re-derived — valid on the far side too
       const eye = scale3(c, buildDist);
       camGoal.pos.set(eye[0], eye[1], eye[2]);
       tmpCam.position.copy(camGoal.pos);
@@ -1327,6 +1345,8 @@ export function initTdTab(root) {
     if (down && k === 'v') toggleView();
     if (down && k === 'b') toggleBuild(); // BUILD ↔ ACTION
     if (down && k === 'm') toggleMap();   // minimap ↔ threat view
+    // the free build cam can fly to the empty far side — R flies it home
+    if (down && k === 'r' && buildMode) resetBuildFrame();
   }
   addEventListener('keydown', (ev) => onKeyEvent(ev, true));
   addEventListener('keyup', (ev) => onKeyEvent(ev, false));
@@ -1419,19 +1439,16 @@ export function initTdTab(root) {
     if (tapStart && Math.hypot(ev.clientX - tapStart[0], ev.clientY - tapStart[1]) > 8) {
       tapStart = null; // it's a pan now
     }
-    // flick-to-pan: grab the map — nudge the overhead center across the sphere
-    if (buildCenter) {
-      const { hn, t1 } = poleFrame();
+    // flick-to-pan: grab the map — fly the overhead center anywhere on the
+    // sphere. No ceiling and no ease-back: the whole planet is reachable,
+    // and where you let go is where it stays.
+    if (buildCenter && buildUp) {
       const c = buildCenter;
-      let up = add3(scale3(hn, 1), scale3(c, -dot3(hn, c)));
-      if (dot3(up, up) < 1e-6) up = t1.slice();
-      up = norm3(up);
+      const up = buildUp;
       const right = norm3(cross3(up, c));
       const k = buildDist * 0.0016; // px → tangent nudge, zoom-aware
-      let nc = norm3(add3(c, add3(scale3(right, -dx * k), scale3(up, dy * k))));
-      const a = Math.acos(Math.max(-1, Math.min(1, dot3(nc, hn))));
-      if (a > BUILD_CEIL) { const f = BUILD_CEIL / a; nc = norm3(add3(scale3(hn, 1 - f), scale3(nc, f))); }
-      buildCenter = nc;
+      buildCenter = norm3(add3(c, add3(scale3(right, -dx * k), scale3(up, dy * k))));
+      reframeBuildUp(buildCenter); // carry screen-up along the great circle
     }
   });
   function endBuildPointer(ev) {
@@ -3732,6 +3749,9 @@ export function initTdTab(root) {
         // the new ground cools back to its true colors; planning begins
         for (const ci of revealCells) paintCell(ci, floorColorOf(ci));
         revealCells = [];
+        // the cinematic hands the free build cam over the NEW sector —
+        // without the old leash there is nothing else pulling it home
+        if (revealDir) aimBuildFrame(revealDir);
         if (!buildMode) { buildMode = true; syncBuildUi(); }
         updateHud();
       }
