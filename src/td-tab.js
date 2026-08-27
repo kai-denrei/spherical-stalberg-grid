@@ -19,18 +19,20 @@
 
 import * as THREE from '../vendor/three.module.js';
 import GUI from '../vendor/lil-gui.esm.js';
-import { generateSphereMesh, relax } from './grid.js?v=9e6def41';
-import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=9e6def41';
-import { mulberry32, randomSeed } from './rng.js?v=9e6def41';
-import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3 } from './vec3.js?v=9e6def41';
-import { CREATURES, waveJelly } from './creatures.js?v=9e6def41';
-import { UNITS, UNIT_NAMES, buildUnit, makeOrbCloud, makeBulletCloud, makeMissileCloud, makeDebris, makeDotBurst, makePortalCloud, makeHeartCloud, makeTowerUnit, makeDotEnemy } from './units.js?v=9e6def41';
-import { LOOKS, LOOK_NAMES } from './looks.js?v=9e6def41';
-import { makeCellIndex } from './cellindex.js?v=9e6def41';
-import { CREATURE_TINTS, ENEMY_SPEC, INTROS, computeWavePlan } from './enemyspec.js?v=9e6def41';
-import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER } from './towers.js?v=9e6def41';
-import { makeEconomy, sellRefund } from './economy.js?v=9e6def41';
-import { makeBloom } from './postfx.js?v=9e6def41';
+import { generateSphereMesh, relax } from './grid.js?v=91d8f58f';
+import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=91d8f58f';
+import { mulberry32, randomSeed } from './rng.js?v=91d8f58f';
+import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3 } from './vec3.js?v=91d8f58f';
+import { CREATURES, waveJelly } from './creatures.js?v=91d8f58f';
+import { UNITS, UNIT_NAMES, buildUnit, makeOrbCloud, makeBulletCloud, makeMissileCloud, makeDebris, makeDotBurst, makePortalCloud, makeHeartCloud, makeTowerUnit, makeDotEnemy } from './units.js?v=91d8f58f';
+import { LOOKS, LOOK_NAMES } from './looks.js?v=91d8f58f';
+import { makeCellIndex } from './cellindex.js?v=91d8f58f';
+import { CREATURE_TINTS, ENEMY_SPEC, INTROS, computeWavePlan } from './enemyspec.js?v=91d8f58f';
+import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER } from './towers.js?v=91d8f58f';
+import { makeEconomy, sellRefund } from './economy.js?v=91d8f58f';
+import { makeBloom } from './postfx.js?v=91d8f58f';
+import { makeAudio } from './audio.js?v=91d8f58f';
+import { DEATH_KEYS } from './audiomanifest.js?v=91d8f58f';
 
 export function initTdTab(root) {
   let active = false;
@@ -123,6 +125,11 @@ export function initTdTab(root) {
   const camera = new THREE.PerspectiveCamera(68, 1, 0.004, 50);
   const mapCamera = new THREE.PerspectiveCamera(42, 1, 0.1, 50);
   const postfx = makeBloom(renderer, scene, camera, {});
+  // sound. The context can only be born on a user gesture, so arm() wires
+  // one-shot listeners and the first tap/keypress creates it. Until then
+  // every play() is a silent no-op -- the game never waits on audio.
+  const sfx = makeAudio({ seed: 1 });
+  sfx.arm();
 
   // circular minimap: its own small renderer on a round-clipped canvas —
   // scissored insets on the main canvas can only ever be rectangles
@@ -173,6 +180,9 @@ export function initTdTab(root) {
   let absorbed = 0;
   const orbMeshes = new Map(); // open-cell index -> orb mesh
   let orbRng = mulberry32(1);  // reseeded per maze
+  // which of the three death sounds plays is deterministic per seed, so a
+  // replayed board sounds identical (mulberry32, house convention)
+  let deathPick = mulberry32(1);
   let respawnClock = 0;
 
   // --- battle state --------------------------------------------------------
@@ -335,6 +345,7 @@ export function initTdTab(root) {
     orbMeshes.delete(ci);
     absorbed++;
     ammo = Math.min(AMMO_MAX, ammo + 3); // a triad is three shells
+    sfx.play('tank_shells');
     updateHud();
   }
 
@@ -2103,6 +2114,8 @@ export function initTdTab(root) {
     baseUnitScale = cellSide * 0.5;
     unitScale = baseUnitScale;
     ammo = 3;
+    sfx.reseed(params.seed); // pitch jitter is deterministic per seed
+    deathPick = mulberry32((params.seed >>> 0) ^ 0x9e3779b9);
     heartHP = HEART_MAX;
     playerHP = PLAYER_MAX;
     carryingRegen = false;
@@ -2395,6 +2408,13 @@ export function initTdTab(root) {
 
   function killCreature(e, fx = false) {
     e.alive = false;
+    // gated on fx: killCreature is ALSO called with fx=false to tear the
+    // board down (tutorial clear, wave reset, regenerate). Ungated, a
+    // regenerate would fire a death-sound storm.
+    if (fx) {
+      sfx.play(DEATH_KEYS[Math.floor(deathPick() * DEATH_KEYS.length) % DEATH_KEYS.length],
+        { dist: camDist(e.pos) });
+    }
     // mesh enemies blow apart; dot-clouds burst into tinted dots
     if (fx && e.obj.userData.kind === 'mesh') {
       const d = makeDebris(e.obj, norm3(e.pos));
@@ -2488,6 +2508,7 @@ export function initTdTab(root) {
       laserClock += dt;
       if (laserClock >= LASER_RATE) {
         laserClock = 0;
+        sfx.play('tank_secondary'); // 7/s — a tick, not a blast
         const gun = guns[laserSide ^= 1];
         gun.getWorldPosition(tmpV);
         const pos = norm3([tmpV.x, tmpV.y, tmpV.z]); // down to the unit sphere
@@ -2540,6 +2561,7 @@ export function initTdTab(root) {
   function fire(aimDir = null) {
     if (player.won || paused || ammo <= 0 || cannonHeat > 0) return;
     ammo--;
+    sfx.play('tank_main'); // the player's own act — always at full presence
     cannonHeat = CANNON_COOL; // the sleeve glows red-hot, cools over 3 s
     recoilLeft = RECOIL_LEN;
     bumpLeft = Math.max(bumpLeft, BUMP_LEN * 0.4); // the shot rocks the hull too
@@ -2820,6 +2842,7 @@ export function initTdTab(root) {
       scene.remove(r.obj);
       r.obj.geometry.dispose();
       rewardMeshes.delete(player.cur);
+      sfx.play('tank_pickup');
       if (r.type === 'power') speedBonus *= 1.08;
       else if (r.type === 'health') playerHP = Math.min(PLAYER_MAX, playerHP + 1);
       else if (r.type === 'regen') carryingRegen = true;
@@ -3007,6 +3030,7 @@ export function initTdTab(root) {
     tower.obj.scale.multiplyScalar(1.12); // a tier reads as bulk
     showRangeRing(tower.ci, effectiveStats(tower.def, tower.tier).range, tower.def.color, 1.4);
     updateHud();
+    sfx.play('tower_upgrade');
     return true;
   }
 
@@ -3049,6 +3073,16 @@ export function initTdTab(root) {
 
   // --- firing ------------------------------------------------------------
   const chord = (a, b) => dist3(a, b);
+  // distance from the ACTIVE camera to a world point, for audio falloff.
+  // Derived from the camera's world position rather than the player's --
+  // in bastion view the two are far apart, and what you hear should
+  // follow what you're looking through.
+  const camDistV = new THREE.Vector3();
+  function camDist(p) {
+    camera.getWorldPosition(camDistV);
+    return Math.hypot(camDistV.x - p[0], camDistV.y - p[1], camDistV.z - p[2]);
+  }
+
   function stepTowers(dt, tNow) {
     for (const tw of towers) {
       if (tw.obj.userData.tick) tw.obj.userData.tick(tNow + tw.ci);
@@ -3060,6 +3094,8 @@ export function initTdTab(root) {
       const target = pickTarget(tp, range, enemies, chord);
       if (!target) continue;
       tw.cooldown = shotInterval(eff.rate);
+      // one line, eight towers: the key IS the def key
+      sfx.play(`tower_${tw.def.key}`, { dist: camDist(tp) });
       const n = graph.normals[tw.ci];
       const muzzle = add3(tp, scale3(n, cellSide * 0.55));
       const raw = sub3(target.pos, tp);
