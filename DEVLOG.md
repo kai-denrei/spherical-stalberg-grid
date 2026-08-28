@@ -6,6 +6,54 @@ Demo links assume `npm run serve` (port 8144) or the
 
 ---
 
+## `8f58801` — A smaller tutorial board, and a spider that became a tower
+
+Two things, plus a loader.
+
+The board first. The whole unlock run — every wave until the last tower
+unlocks — is a guided tutorial, and it was being played on a sprawling
+map. `points` went 3000 → 500. That knob is less direct than it looks, so
+it was measured rather than guessed: `points` sets the sphere's
+resolution, not the arena, and the room carve produces a roughly fixed
+number of open cells regardless. The opening sector goes 146 cells at
+3000, 118 at 600, **84 at 500**, 73 at 400 — so 600 would have been barely
+a change and 500 is a real one. Cells come out ~2.4× wider too, so the
+board reads chunky and legible instead of finely sprawling. The thing that
+could have broken didn't: the world unseals by sector across rounds, and
+round 2 still opens 278 cells against round 1's 84.
+
+Then the GLB. `GLTFLoader` and `BufferGeometryUtils` are vendored at
+r160 from the same 0.160.1 tree as the bloom chain, their bare `'three'`
+specifiers rewritten to our single copy — the dual-instance trap that arc
+already documented. The heptapod walker is now a third tower look.
+
+The registry's `preload`/`lookReady` hook, added speculatively last commit,
+earns itself here: choosing `heptapod` builds the braille fallback
+immediately and re-applies once the bytes arrive, so the choice is instant
+and a tower is never invisible. Both phases were caught in one run —
+`meshes=6 points=2`, then `meshes=216 points=0` with `Heptapod_Root` in
+the tree.
+
+Three problems the feasibility pass had missed, because it measured local
+accessor bounds and ignored node transforms. **Scale**: true world size is
+4.83 × 2.51 × 5.34, nearly twice as wide as tall — fitting by footprint
+made a squat smear that read as debris, fitting by height alone sprawled
+it across neighbouring cells, so it fits to a target height with a span
+cap. **Visibility**: a dark grey machine vanishes against a black board of
+neon wire, so the def's colour goes on as emissive — full on the parts the
+artist named "glow", a low wash elsewhere. **Draw calls**: the model is 109
+separate meshes; eight towers would be ~870 draw calls, doubled again by
+the bloom's second scene render. Merging per material takes it to 6 per
+tower (216 → 12 for two), triangles intact. That costs the rig — a merged
+mesh is one rigid body, so the turret can't turn. For a walker that has
+dug in to be a tower, holding still is in character.
+
+Also fixed: `?towerlook=` set the param without refreshing the lil-gui
+controller, so the panel said `braille` while heptapods were on screen. A
+panel that lies about what is rendering is worse than no panel.
+
+---
+
 ## `3a762cf` — Towers get a look you can change
 
 The tower visual was welded into `makeTowerUnit`, so trying a different

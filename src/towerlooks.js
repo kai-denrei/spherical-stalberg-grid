@@ -21,7 +21,7 @@
 import * as THREE from '../vendor/three.module.js';
 import { GLTFLoader } from '../vendor/GLTFLoader.js';
 import { mergeGeometries } from '../vendor/BufferGeometryUtils.js';
-import { makeTowerMast, makeTowerUnit } from './units.js?v=21e3a718';
+import { makeTowerMast, makeTowerUnit } from './units.js?v=fdba023e';
 
 // def.shape -> a solid primitive, so the SOLID look keeps each tower's
 // silhouette identity from towers.js rather than inventing its own.
