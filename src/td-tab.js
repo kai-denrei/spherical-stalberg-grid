@@ -19,22 +19,22 @@
 
 import * as THREE from '../vendor/three.module.js';
 import GUI from '../vendor/lil-gui.esm.js';
-import { generateSphereMesh, relax } from './grid.js?v=612ac388';
-import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=612ac388';
-import { mulberry32, randomSeed } from './rng.js?v=612ac388';
-import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3, segKey } from './vec3.js?v=612ac388';
-import { CREATURES, waveJelly } from './creatures.js?v=612ac388';
-import { UNITS, UNIT_NAMES, buildUnit, makeOrbCloud, makeBulletCloud, makeMissileCloud, makeDebris, makeDotBurst, makePortalCloud, makeHeartCloud, makeDotEnemy } from './units.js?v=612ac388';
-import { LOOKS, LOOK_NAMES } from './looks.js?v=612ac388';
-import { makeCellIndex } from './cellindex.js?v=612ac388';
-import { CREATURE_TINTS, ENEMY_SPEC, INTROS, computeWavePlan } from './enemyspec.js?v=612ac388';
-import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER } from './towers.js?v=612ac388';
-import { makeEconomy, sellRefund } from './economy.js?v=612ac388';
-import { makeBloom } from './postfx.js?v=612ac388';
-import { BLOOM_GROUPS } from './bloomweights.js?v=612ac388';
-import { TOWER_LOOK_NAMES, DEFAULT_TOWER_LOOK, buildTowerLook } from './towerlooks.js?v=612ac388';
-import { makeAudio } from './audio.js?v=612ac388';
-import { DEATH_KEYS } from './audiomanifest.js?v=612ac388';
+import { generateSphereMesh, relax } from './grid.js?v=80e2e6c9';
+import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=80e2e6c9';
+import { mulberry32, randomSeed } from './rng.js?v=80e2e6c9';
+import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3, segKey } from './vec3.js?v=80e2e6c9';
+import { CREATURES, waveJelly } from './creatures.js?v=80e2e6c9';
+import { UNITS, UNIT_NAMES, buildUnit, makeOrbCloud, makeBulletCloud, makeMissileCloud, makeDebris, makeDotBurst, makePortalCloud, makeHeartCloud, makeDotEnemy } from './units.js?v=80e2e6c9';
+import { LOOKS, LOOK_NAMES } from './looks.js?v=80e2e6c9';
+import { makeCellIndex } from './cellindex.js?v=80e2e6c9';
+import { CREATURE_TINTS, ENEMY_SPEC, INTROS, computeWavePlan } from './enemyspec.js?v=80e2e6c9';
+import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER } from './towers.js?v=80e2e6c9';
+import { makeEconomy, sellRefund } from './economy.js?v=80e2e6c9';
+import { makeBloom } from './postfx.js?v=80e2e6c9';
+import { BLOOM_GROUPS } from './bloomweights.js?v=80e2e6c9';
+import { TOWER_LOOK_NAMES, DEFAULT_TOWER_LOOK, buildTowerLook } from './towerlooks.js?v=80e2e6c9';
+import { makeAudio } from './audio.js?v=80e2e6c9';
+import { DEATH_KEYS } from './audiomanifest.js?v=80e2e6c9';
 
 export function initTdTab(root) {
   let active = false;
@@ -43,7 +43,13 @@ export function initTdTab(root) {
   const params = {
     towerLook: DEFAULT_TOWER_LOOK,
     seed: 7,
-    points: 3000, // ONE big pre-decided lane world; sectors unseal it in bands
+    // The whole unlock run — every wave until the last tower unlocks — is
+    // a guided tutorial, and it should be played on a TIGHT board: at 3000
+    // the opening sector was 146 open cells, at 500 it is 84. Cells are
+    // also ~2.4x wider, so the board reads chunky and legible rather than
+    // sprawling. Sector expansion is unaffected — round 2 still opens 278.
+    // Larger maps for the post-tutorial game are a separate, later change.
+    points: 500, // ONE pre-decided lane world; sectors unseal it in bands
     rooms: 16,          // lane structure: rooms joined by wide corridors
     roomRadius: 4,
     extraCorridors: 8,
