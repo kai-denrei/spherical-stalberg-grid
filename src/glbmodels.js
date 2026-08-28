@@ -34,6 +34,16 @@ export function bustToken() {
 const loads = new Map();
 export function loadGlb(url) {
   if (loads.has(url)) return loads.get(url);
+  // No DOM means no document base for a relative URL, so GLTFLoader throws
+  // rather than fetching. That is the Node test environment: resolve to null
+  // and let callers keep their procedural fallback. Guarding HERE rather
+  // than at each call site, because any caller can now trigger a load —
+  // buildUnit('mkcx') starts one by itself.
+  if (typeof document === 'undefined') {
+    const none = Promise.resolve(null);
+    loads.set(url, none);
+    return none;
+  }
   const p = new Promise((resolve) => {
     new GLTFLoader().load(`${url}${bustToken()}`,
       (gltf) => resolve(gltf.scene),
