@@ -362,19 +362,49 @@ html, body {
 
 /* touch devices: 44pt+ hit targets (Apple HIG), roomier gaps */
 @media (pointer: coarse) {
-  .tzone-side { width: 96px; }
-  .tzone-drive { width: 144px; height: 66px; }
+  /* COMPACT + FAINT. The controls were eating the board: the side strips ran
+     26vh, the fire buttons were 78px, and every surface sat at 0.28-0.5
+     alpha. They are the frame, not the picture — small enough to leave the
+     sphere room, faint enough to read as glass, and they brighten on touch
+     (.pressed / :active) which is when feedback actually matters. */
+  .tzone-side { width: 62px; height: min(19vh, 168px); }
+  .tzone-drive { width: 104px; height: 46px; }
+  .tzone { background: rgba(28, 38, 58, 0.13); border-color: rgba(120, 150, 210, 0.13); }
+  .tzone > span { font-size: 20px; color: rgba(213, 226, 245, 0.26); }
   .dpad button {
-    width: 58px;
-    height: 50px;
-    font-size: 20px;
+    width: 44px;
+    height: 38px;
+    font-size: 16px;
   }
   .dpad {
-    gap: 6px;
+    gap: 5px;
   }
   .dpad .dpad-row {
-    gap: 6px;
+    gap: 5px;
   }
+  /* the fire buttons ride above the side strips, so their offset has to
+     track the strip height above or they float away from the thumb */
+  .tfire-primary {
+    width: 58px; height: 58px; font-size: 23px;
+    bottom: calc(max(12px, env(safe-area-inset-bottom)) + min(19vh, 168px) + 12px);
+    background: rgba(24, 52, 48, 0.28);
+    border-color: rgba(53, 255, 208, 0.34);
+  }
+  .tfire-secondary {
+    width: 42px; height: 42px; font-size: 16px;
+    bottom: calc(max(12px, env(safe-area-inset-bottom)) + min(19vh, 168px) + 12px);
+    background: rgba(22, 46, 58, 0.28);
+    border-color: rgba(125, 249, 255, 0.3);
+  }
+  .tc-util { bottom: calc(max(12px, env(safe-area-inset-bottom)) + 104px); gap: 6px; }
+  .tc-util button {
+    padding: 5px 9px;
+    font-size: 10px;
+    background: rgba(30, 40, 60, 0.24);
+    border-color: rgba(120, 150, 210, 0.18);
+    opacity: 0.62;
+  }
+  .tc-util button:active { opacity: 1; }
   #hint, #maze-hint, #o-hint, #b-hint, #h-hint, #td-hint {
     display: none; /* collides with the cb badge on narrow screens; hints are in button titles */
   }
@@ -839,21 +869,43 @@ html, body {
     padding: 8px;
     z-index: 60;
   }
+  #tabbar {
+    /* the roster outgrew a phone's height once `units` joined it */
+    max-height: calc(100dvh - 96px);
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain;
+    box-shadow: 0 12px 40px rgba(0, 0, 0, .6);
+  }
   #tabbar button {
     text-align: left;
     padding: 11px 18px;
     font-size: 14px;
   }
+  /* the mode you are in should be obvious in a list you scroll */
+  #tabbar button.active {
+    background: rgba(111, 230, 255, .16);
+    border-color: #6fe6ff;
+    color: #cdf3ff;
+  }
   /* the badge shares the top edge with ☰ — shove it right of the button */
   body.chrome-open #cb-badge { left: 60px !important; }
-  /* ACTIVE PLAY hides everything non-essential, the ☰ included — it
-     comes back at the briefing, on pause (ESC), and on win/lose */
-  body.playing #chrome-toggle,
+  /* ACTIVE PLAY hides the panels and the badge — but NOT the ☰. Hiding it
+     left a phone with no way to change mode, reach the unit viewer, or get
+     back to the menu without first pausing. It stays, shrunk and faded, and
+     goes solid the moment the drawer is open. */
   body.playing #tabbar,
   body.playing #cb-badge,
   body.playing .tab .lil-gui.root {
     display: none !important;
   }
+  body.playing.chrome-open #tabbar { display: flex !important; }
+  body.playing #chrome-toggle {
+    opacity: 0.32;
+    transform: scale(0.82);
+    transform-origin: top left;
+  }
+  body.playing.chrome-open #chrome-toggle { opacity: 1; transform: none; }
   /* the hint line fights the thumb clusters for the bottom edge, and the
      briefing already teaches everything it says */
   #h-hint, #td-hint { display: none !important; }

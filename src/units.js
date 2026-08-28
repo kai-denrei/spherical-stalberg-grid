@@ -16,8 +16,8 @@
 
 import * as THREE from '../vendor/three.module.js';
 import { loadGlb, mergeByMaterial, fitModel, tintModel, makeShellRack,
-  addEdgeOutlines, makeHeatSleeve } from './glbmodels.js?v=e369113b';
-import { CREATURES, waveJelly, spherePts, bulletPts, missilePts, heartPts, torusPts, towerHeadPts, enemyDotPts, portalPts } from './creatures.js?v=e369113b';
+  addEdgeOutlines, makeHeatSleeve } from './glbmodels.js?v=d0c1d2f8';
+import { CREATURES, waveJelly, spherePts, bulletPts, missilePts, heartPts, torusPts, towerHeadPts, enemyDotPts, portalPts } from './creatures.js?v=d0c1d2f8';
 
 function normalizeToUnit(group) {
   group.updateMatrixWorld(true);
@@ -912,6 +912,17 @@ const MKCX_PIVOTS = ['Turret_Pivot', 'Secondary_L_Gun_Pivot', 'Secondary_R_Gun_P
 const MKCX_DROP = ['Hull_Collision', 'Barrel_Glow_1', 'Barrel_Glow_2'];
 let mkcxProto = null;
 
+// Anyone who asks for the mkcx gets its load started for them, and can
+// subscribe to know when the real model has replaced the fallback. Without
+// this, every tab has to remember to preload, and one that forgets shows
+// the procedural tank forever with nothing to say why.
+const mkcxReadyCbs = [];
+export function onMkcxReady(cb) {
+  if (mkcxProto) { cb(); return; }
+  mkcxReadyCbs.push(cb);
+  preloadMkcx();
+}
+
 export function preloadMkcx() {
   return loadGlb(MKCX_URL).then((scene) => {
     if (!scene) return false;
@@ -932,6 +943,7 @@ export function preloadMkcx() {
     // to the procedural units. Built on the PROTOTYPE so EdgesGeometry runs
     // once and every clone shares it.
     addEdgeOutlines(mkcxProto, { angle: 28, opacity: 0.85 });
+    while (mkcxReadyCbs.length) mkcxReadyCbs.shift()();
     return true;
   });
 }
@@ -939,7 +951,8 @@ export function preloadMkcx() {
 export function mkcxReady() { return !!mkcxProto; }
 
 function makeMkcx(cols) {
-  if (!mkcxProto) return makeTank(cols); // bytes not in yet — never nothing
+  // self-starting: asking for it is enough to begin the load
+  if (!mkcxProto) { preloadMkcx(); return makeTank(cols); } // never nothing
   const g = mkcxProto.clone(true);
   // A shade LADDER, not a flat wash. The model's four structural materials
   // sit within 0.05 luminance of each other — all muddy olive-grey — so one
@@ -1009,7 +1022,15 @@ function makeMkcx(cols) {
   }
   g.userData.tick = (t) => { if (turret) turret.rotation.y = Math.sin(t * 0.6) * 0.7; };
   g.userData.lift = 0.02;
-  g.userData.baseScale = 1;
+  // Rendered size, NOT model normalization. fitModel already fixed the
+  // model's proportions; this is what td-tab multiplies by, so it decides
+  // how much of the screen the tank eats. The procedural tank renders 0.73
+  // long (1.47 local x 0.497); at baseScale 1 the mkcx rendered 1.95 — 2.7x
+  // — and the third-person camera, tuned for 0.73, ended up inside it. 0.54
+  // puts it at ~1.05: still visibly the bigger machine, still leaves the
+  // board on screen. The unit viewer divides this out, so its look is
+  // unaffected either way.
+  g.userData.baseScale = 0.54;
   g.userData.kind = 'mesh';
   return g;
 }

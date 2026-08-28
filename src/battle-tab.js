@@ -8,15 +8,15 @@
 
 import * as THREE from '../vendor/three.module.js';
 import GUI from '../vendor/lil-gui.esm.js';
-import { generateSphereMesh, relax } from './grid.js?v=e369113b';
-import { generateDungeon, BLOCKED, PATH, ROOM } from './dungeon.js?v=e369113b';
-import { mulberry32, randomSeed } from './rng.js?v=e369113b';
-import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3 } from './vec3.js?v=e369113b';
-import { CREATURES, waveJelly } from './creatures.js?v=e369113b';
-import { UNITS, UNIT_NAMES, buildUnit, makeOrbCloud, makeBulletCloud, makeDebris, ORB_FX, makeHeartCloud } from './units.js?v=e369113b';
-import { LOOKS, LOOK_NAMES } from './looks.js?v=e369113b';
-import { makeCellIndex } from './cellindex.js?v=e369113b';
-import { makeBloom } from './postfx.js?v=e369113b';
+import { generateSphereMesh, relax } from './grid.js?v=d0c1d2f8';
+import { generateDungeon, BLOCKED, PATH, ROOM } from './dungeon.js?v=d0c1d2f8';
+import { mulberry32, randomSeed } from './rng.js?v=d0c1d2f8';
+import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3 } from './vec3.js?v=d0c1d2f8';
+import { CREATURES, waveJelly } from './creatures.js?v=d0c1d2f8';
+import { UNITS, UNIT_NAMES, buildUnit, onMkcxReady, makeOrbCloud, makeBulletCloud, makeDebris, ORB_FX, makeHeartCloud } from './units.js?v=d0c1d2f8';
+import { LOOKS, LOOK_NAMES } from './looks.js?v=d0c1d2f8';
+import { makeCellIndex } from './cellindex.js?v=d0c1d2f8';
+import { makeBloom } from './postfx.js?v=d0c1d2f8';
 
 export function initBattleTab(root) {
   let active = false;
@@ -35,7 +35,10 @@ export function initBattleTab(root) {
     wallTops: 'dim', // auto | bright | dim | black — wall-top wires & fill
     speed: 1.1, // cells per second, wanderer pace
     autoResume: 3, // seconds idle before auto-wander resumes
-    creature: 'tank', // any roster unit; the tank has the sweeping turret
+    // mkcx by default: the authored hover tank. Async — buildUnit falls
+    // back to the procedural tank until the bytes land, then
+    // onMkcxReady swaps it in.
+    creature: 'mkcx',
     orbs: 10,
     orbRespawn: 8, // seconds between respawns (0 = off)
     enemies: 4,
@@ -1289,6 +1292,8 @@ export function initBattleTab(root) {
     snapCamera();
   }
 
+  // the default unit's model loads async; swap it in when it lands
+  onMkcxReady(() => { buildActors(); placeActors(); });
   resize();
   animate();
 

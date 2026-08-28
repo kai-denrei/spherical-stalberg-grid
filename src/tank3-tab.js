@@ -4,12 +4,12 @@
 import * as THREE from '../vendor/three.module.js';
 import GUI from '../vendor/lil-gui.esm.js';
 import { OrbitControls } from '../vendor/OrbitControls.js';
-import { createPlanetTankGame, DYING_T } from './tanks2.js?v=e369113b';
-import { buildUnit, makeBulletCloud, makeDebris } from './units.js?v=e369113b';
-import { LOOKS } from './looks.js?v=e369113b';
-import { mulberry32 } from './rng.js?v=e369113b';
-import { norm3, scale3 } from './vec3.js?v=e369113b';
-import { makeBloom } from './postfx.js?v=e369113b';
+import { createPlanetTankGame, DYING_T } from './tanks2.js?v=d0c1d2f8';
+import { buildUnit, onMkcxReady, makeBulletCloud, makeDebris } from './units.js?v=d0c1d2f8';
+import { LOOKS } from './looks.js?v=d0c1d2f8';
+import { mulberry32 } from './rng.js?v=d0c1d2f8';
+import { norm3, scale3 } from './vec3.js?v=d0c1d2f8';
+import { makeBloom } from './postfx.js?v=d0c1d2f8';
 
 const DT = 1 / 60;
 const TANK_SCALE = 0.09;    // world radius of each tank
@@ -65,15 +65,28 @@ export function initTank3Tab(root) {
   // battle mesh tank; barrel is local +Z. Disable the sweep tick (manual
   // aim). Scale so the normalized-to-unit group renders at TANK_SCALE.
   function makeTankMesh(cols) {
-    const g = buildUnit('tank', cols);
+    const g = buildUnit('mkcx', cols); // authored hover tank, procedural fallback
     g.userData.tick = null;                                  // no turret sweep
     g.scale.setScalar((g.userData.baseScale ?? 1) * TANK_SCALE);
     return g;
   }
-  const tankMeshes = [
-    makeTankMesh({ walker: LOOK.walker, walkerHi: LOOK.walkerHi }), // player = cyan
-    makeTankMesh({ walker: LOOK.enemy, walkerHi: LOOK.enemyHi }),   // AI = magenta
+  const TANK_COLS = [
+    { walker: LOOK.walker, walkerHi: LOOK.walkerHi }, // player = cyan
+    { walker: LOOK.enemy, walkerHi: LOOK.enemyHi },   // AI = magenta
   ];
+  const tankMeshes = TANK_COLS.map(makeTankMesh);
+  // the mkcx model loads async: rebuild both hulls in place when it lands,
+  // keeping each tank's parent, transform and visibility exactly as they are
+  onMkcxReady(() => {
+    tankMeshes.forEach((old, i) => {
+      const next = makeTankMesh(TANK_COLS[i]);
+      next.position.copy(old.position);
+      next.quaternion.copy(old.quaternion);
+      next.visible = old.visible;
+      if (old.parent) { old.parent.add(next); old.parent.remove(old); }
+      tankMeshes[i] = next;
+    });
+  });
   const shellMeshes = [0, 1].map((i) => {
     const m = makeBulletCloud({ body: i === 0 ? LOOK.walkerHi : LOOK.enemyHi, hi: 0xffffff });
     m.scale.setScalar(0.02);
