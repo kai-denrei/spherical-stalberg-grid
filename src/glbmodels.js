@@ -53,8 +53,14 @@ export function loadGlb(url) {
 // intact, so a preserved pivot still sits exactly where the artist put it.
 //
 // With no pivots this is a full flatten, which is what a static prop wants.
-export function mergeByMaterial(root, pivotNames = []) {
+export function mergeByMaterial(root, pivotNames = [], exclude = []) {
   root.updateMatrixWorld(true);
+  // Drop unwanted parts BEFORE merging — afterwards they are welded into a
+  // shared mesh and can no longer be addressed individually.
+  for (const name of exclude) {
+    let o;
+    while ((o = root.getObjectByName(name))) o.parent.remove(o);
+  }
   const pivots = pivotNames
     .map((n) => root.getObjectByName(n))
     .filter(Boolean);
@@ -208,7 +214,29 @@ export function tintModel(root, color, opts = {}) {
 
 // A 3x3 shell rack, matching the procedural tank's: row-major, index < ammo
 // lit. Returned so the caller can hand it to td-tab as userData.ammoDots.
-export function makeShellRack(parent, { x = 0, y = 0, z = 0, dot = 0.05, gapX = 0.24, gapZ = 0.28 } = {}) {
+export function makeShellRack(parent, { x = 0, y = 0, z = 0, dot = 0.05, gapX = 0.24, gapZ = 0.28,
+  plate = null } = {}) {
+  // Optional backing plate, sized to hold the whole 3x3. An imported model's
+  // own roof panel is whatever the artist drew and will not fit a rack that
+  // wasn't designed for it, so the rack brings its own.
+  if (plate) {
+    const w = gapX * 2 + dot * 2 + (plate.pad ?? dot * 1.6);
+    const d = gapZ * 2 + dot * 2 + (plate.pad ?? dot * 1.6);
+    const h = plate.thickness ?? dot * 0.9;
+    const slab = new THREE.Mesh(
+      new THREE.BoxGeometry(w, h, d),
+      new THREE.MeshLambertMaterial({ color: plate.color ?? 0x2b3240 }));
+    slab.position.set(x, y - dot - h * 0.5, z);
+    parent.add(slab);
+    if (plate.outline) {
+      slab.add(new THREE.LineSegments(
+        new THREE.EdgesGeometry(slab.geometry),
+        new THREE.LineBasicMaterial({
+          color: plate.outline, transparent: true, opacity: 0.8,
+          blending: THREE.AdditiveBlending, depthWrite: false,
+        })));
+    }
+  }
   const geo = new THREE.SphereGeometry(dot, 6, 6);
   const dots = [];
   for (let r = 0; r < 3; r++) {

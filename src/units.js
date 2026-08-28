@@ -16,8 +16,8 @@
 
 import * as THREE from '../vendor/three.module.js';
 import { loadGlb, mergeByMaterial, fitModel, tintModel, makeShellRack,
-  addEdgeOutlines, makeHeatSleeve, addGunTubes } from './glbmodels.js?v=bea52969';
-import { CREATURES, waveJelly, spherePts, bulletPts, missilePts, heartPts, torusPts, towerHeadPts, enemyDotPts, portalPts } from './creatures.js?v=bea52969';
+  addEdgeOutlines, makeHeatSleeve } from './glbmodels.js?v=acd37bb8';
+import { CREATURES, waveJelly, spherePts, bulletPts, missilePts, heartPts, torusPts, towerHeadPts, enemyDotPts, portalPts } from './creatures.js?v=acd37bb8';
 
 function normalizeToUnit(group) {
   group.updateMatrixWorld(true);
@@ -901,12 +901,17 @@ export function makeHeartCloud(bodyHex) {
 // Everything else merges. 58 meshes becomes roughly a dozen.
 const MKCX_URL = 'assets/models/mkcx.glb';
 const MKCX_PIVOTS = ['Turret_Pivot', 'Secondary_L_Gun_Pivot', 'Secondary_R_Gun_Pivot'];
+// The barrel glow strips are authored floating +0.20 above the barrel axis.
+// At our scale they don't read as strips ON the gun — they read as a stray
+// bright line hanging in front of the tank. Dropped before the merge, since
+// afterwards they'd be welded into a shared mesh and unaddressable.
+const MKCX_DROP = ['Barrel_Glow_1', 'Barrel_Glow_2'];
 let mkcxProto = null;
 
 export function preloadMkcx() {
   return loadGlb(MKCX_URL).then((scene) => {
     if (!scene) return false;
-    mkcxProto = fitModel(mergeByMaterial(scene, MKCX_PIVOTS), {
+    mkcxProto = fitModel(mergeByMaterial(scene, MKCX_PIVOTS, MKCX_DROP), {
       // NOTE which of these actually binds. The model is 10.82 long (the
       // barrel juts far forward) against 2.86 tall, so maxSpan decides the
       // scale and height never gets a say. Raising span is what makes the
@@ -962,8 +967,16 @@ function makeMkcx(cols) {
   // the turret so it sweeps with the gun exactly as the original does.
   // Turret_Pivot's local bounds are y 0.07..1.34, so the roof is ~1.34.
   if (turret) {
+    // The turret roof the artist drew is a small hexagon; a 3x3 rack sized
+    // to be readable overhangs it. So the rack brings its own dark plate,
+    // sized to hold all nine — the same read as the procedural tank's.
     g.userData.ammoDots = makeShellRack(turret, {
-      y: 1.5, z: -0.75, dot: 0.16, gapX: 0.62, gapZ: 0.66,
+      // y clears the turret's own hexagonal roof, which peaks at ~1.34 in
+      // this local space. At 1.52 the plate sat at 1.30 and was half buried
+      // in it, so only two of the three rows appeared to be on the plate.
+      y: 1.74, z: -0.72, dot: 0.15, gapX: 0.46, gapZ: 0.50,
+      plate: { pad: 0.34, thickness: 0.14, color: 0x232a38,
+        outline: cols.walkerHi ?? 0x7df9ff },
     });
   }
   // The pieces the model doesn't have but our tank does, so the two feel
@@ -975,8 +988,13 @@ function makeMkcx(cols) {
       radius: 0.34, len: 0.55, z: 1.5, color: cols.walkerHi ?? 0x7df9ff,
     });
   }
-  if (guns.length) {
-    addGunTubes(guns, { radius: 0.13, len: 1.1, z: 0.55, color: cols.walkerHi ?? 0x7df9ff });
+  // No added gun tubes: the model already HAS secondary gun barrels, and
+  // laying ours over them read as glowing bars stuck through the deck. The
+  // merged gun mesh is children[0] of each pivot, which is exactly where
+  // td-tab looks for the heat gauge — so the model's own gun glows instead.
+  // Both share one material so they heat together, as makeTank's do.
+  if (guns.length === 2 && guns[0].children[0] && guns[1].children[0]) {
+    guns[1].children[0].material = guns[0].children[0].material;
   }
   g.userData.tick = (t) => { if (turret) turret.rotation.y = Math.sin(t * 0.6) * 0.7; };
   g.userData.lift = 0.02;
