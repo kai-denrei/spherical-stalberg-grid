@@ -15,8 +15,8 @@
 // tick(t) (idle animation) }.
 
 import * as THREE from '../vendor/three.module.js';
-import { loadGlb, mergeByMaterial, fitModel, tintModel } from './glbmodels.js?v=10403bfa';
-import { CREATURES, waveJelly, spherePts, bulletPts, missilePts, heartPts, torusPts, towerHeadPts, enemyDotPts, portalPts } from './creatures.js?v=10403bfa';
+import { loadGlb, mergeByMaterial, fitModel, tintModel, makeShellRack } from './glbmodels.js?v=c13865b3';
+import { CREATURES, waveJelly, spherePts, bulletPts, missilePts, heartPts, torusPts, towerHeadPts, enemyDotPts, portalPts } from './creatures.js?v=c13865b3';
 
 function normalizeToUnit(group) {
   group.updateMatrixWorld(true);
@@ -906,8 +906,12 @@ export function preloadMkcx() {
   return loadGlb(MKCX_URL).then((scene) => {
     if (!scene) return false;
     mkcxProto = fitModel(mergeByMaterial(scene, MKCX_PIVOTS), {
-      height: 0.95,
-      maxSpan: 1.25,
+      // NOTE which of these actually binds. The model is 10.82 long (the
+      // barrel juts far forward) against 2.86 tall, so maxSpan decides the
+      // scale and height never gets a say. Raising span is what makes the
+      // tank bigger; the height stays as an upper guard.
+      height: 1.3,
+      maxSpan: 1.95,
       // The bounding box is skewed +1.46 in Z by the gun barrel while the
       // hull sits at the origin. Centring on the box would make the tank
       // pivot around a point out in FRONT of itself; centre on the hull.
@@ -922,9 +926,18 @@ export function mkcxReady() { return !!mkcxProto; }
 function makeMkcx(cols) {
   if (!mkcxProto) return makeTank(cols); // bytes not in yet — never nothing
   const g = mkcxProto.clone(true);
-  // a heavier wash than the towers get: the player unit is the thing you
-  // track constantly, and a grey machine loses itself against the board
-  tintModel(g, cols.walkerHi ?? 0x7df9ff, 0.45);
+  // A shade LADDER, not a flat wash. The model's four structural materials
+  // sit within 0.05 luminance of each other — all muddy olive-grey — so one
+  // uniform tint turned the whole tank into a single coloured mass. Giving
+  // each material its own lightness rung is what makes armour, turret,
+  // detail and steel read as separate plates.
+  tintModel(g, cols.walkerHi ?? 0x7df9ff, {
+    wash: 0.45,
+    shades: { armour: 1.0, turret: 0.74, detail: 0.52, steel: 0.32 },
+    sat: 0.5,
+    lightFrom: 0.20,
+    lightTo: 0.66,
+  });
 
   // The contract td-tab reads off a player unit. turret and laserGuns are
   // the load-bearing ones: aim is derived from their WORLD quaternions, per
@@ -938,8 +951,17 @@ function makeMkcx(cols) {
     .map((n) => g.getObjectByName(n))
     .filter(Boolean);
   if (guns.length) g.userData.laserGuns = guns;
-  // no ammoDots and no heatSleeve: the model has no shell rack or gun
-  // sleeve to drive, and td-tab guards both. The HUD still shows ammo.
+  // The model has no shell rack of its own, so build the procedural tank's
+  // one onto the turret roof: 3x3, row-major, index < ammo lit. Parented to
+  // the turret so it sweeps with the gun exactly as the original does.
+  // Turret_Pivot's local bounds are y 0.07..1.34, so the roof is ~1.34.
+  if (turret) {
+    g.userData.ammoDots = makeShellRack(turret, {
+      y: 1.5, z: -0.75, dot: 0.16, gapX: 0.62, gapZ: 0.66,
+    });
+  }
+  // still no heatSleeve: there is no gun sleeve to recolour, and td-tab
+  // guards it.
   g.userData.tick = (t) => { if (turret) turret.rotation.y = Math.sin(t * 0.6) * 0.7; };
   g.userData.lift = 0.02;
   g.userData.baseScale = 1;

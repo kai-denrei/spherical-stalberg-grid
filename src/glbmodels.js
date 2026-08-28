@@ -134,28 +134,82 @@ export function fitModel(obj, { height, maxSpan, recentreOn = null }) {
   return g;
 }
 
-// Put the game colour on as EMISSIVE — full strength on the parts the
-// artist named "glow", a low wash elsewhere — so the piece reads as its
-// type without losing the model's own material identity. Unlit materials
-// (KHR_materials_unlit) have no emissive channel and take the colour direct.
+// Tint an authored model so it reads as a shaded machine rather than a
+// single coloured mass.
+//
+// The naive version — one emissive wash over every material — is what
+// produced the mass. Measured on mkcx, its four structural materials sit at
+// luminance 0.061 to 0.113: a span of 0.05, all muddy olive-grey. Adding an
+// identical wash to each compressed even that away.
+//
+// So each material gets its own rung on a lightness LADDER, keyed by name.
+// Same hue, clearly different values — armour bright, steel dark — which is
+// what makes panels, plates and mantlets read as separate surfaces. The
+// parts the artist named "glow" keep full emissive colour and sit above the
+// ladder entirely.
 const GLOW = /glow/i;
-export function tintModel(root, color, wash = 0.28) {
+const DEFAULT_SHADES = { armour: 1.0, turret: 0.72, detail: 0.5, steel: 0.34 };
+
+function rungFor(name, shades) {
+  const n = (name || '').toLowerCase();
+  for (const key of Object.keys(shades)) if (n.includes(key)) return shades[key];
+  return 0.6; // unnamed / unknown: mid-ladder
+}
+
+export function tintModel(root, color, opts = {}) {
+  // number = the old wash-only form, kept so the towers keep their look
+  const o = typeof opts === 'number' ? { wash: opts } : opts;
+  const wash = o.wash ?? 0.28;
+  const shades = o.shades ?? null;      // null = wash only, no ladder
+  const sat = o.sat ?? 0.55;
+  const loFrom = o.lightFrom ?? 0.20;
+  const loTo = o.lightTo ?? 0.62;
+
   const c = new THREE.Color(color);
   const dim = c.clone().multiplyScalar(wash);
-  root.traverse((o) => {
-    if (!o.isMesh || !o.material) return;
-    const mats = Array.isArray(o.material) ? o.material : [o.material];
-    o.material = mats.map((m) => {
+  const hsl = {}; c.getHSL(hsl);
+
+  root.traverse((obj) => {
+    if (!obj.isMesh || !obj.material) return;
+    const mats = Array.isArray(obj.material) ? obj.material : [obj.material];
+    obj.material = mats.map((m) => {
       const cl = m.clone(); // clone: prototypes are shared between instances
       const hot = GLOW.test(m.name || '');
-      if (cl.emissive) {
-        cl.emissive.copy(hot ? c : dim);
-        if ('emissiveIntensity' in cl) cl.emissiveIntensity = hot ? 1.6 : 1.0;
-      } else if (cl.color && hot) {
-        cl.color.copy(c);
+      if (hot) {
+        if (cl.emissive) {
+          cl.emissive.copy(c);
+          if ('emissiveIntensity' in cl) cl.emissiveIntensity = 1.6;
+        } else if (cl.color) {
+          cl.color.copy(c); // unlit: no emissive channel to use
+        }
+        return cl;
+      }
+      if (shades && cl.color) {
+        const rung = rungFor(m.name, shades);
+        // same hue, desaturated toward metal, LIGHTNESS carrying the rung
+        cl.color.setHSL(hsl.h, hsl.s * sat, loFrom + (loTo - loFrom) * rung);
+        if (cl.emissive) cl.emissive.copy(c).multiplyScalar(wash * 0.45 * rung);
+      } else if (cl.emissive) {
+        cl.emissive.copy(dim);
       }
       return cl;
     });
-    if (o.material.length === 1) o.material = o.material[0];
+    if (obj.material.length === 1) obj.material = obj.material[0];
   });
+}
+
+// A 3x3 shell rack, matching the procedural tank's: row-major, index < ammo
+// lit. Returned so the caller can hand it to td-tab as userData.ammoDots.
+export function makeShellRack(parent, { x = 0, y = 0, z = 0, dot = 0.05, gapX = 0.24, gapZ = 0.28 } = {}) {
+  const geo = new THREE.SphereGeometry(dot, 6, 6);
+  const dots = [];
+  for (let r = 0; r < 3; r++) {
+    for (let col = 0; col < 3; col++) {
+      const d = new THREE.Mesh(geo, new THREE.MeshBasicMaterial({ color: 0xffffff }));
+      d.position.set(x + (col - 1) * gapX, y, z + (r - 1) * gapZ);
+      parent.add(d);
+      dots.push(d);
+    }
+  }
+  return dots;
 }
