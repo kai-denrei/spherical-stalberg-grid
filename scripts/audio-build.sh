@@ -61,6 +61,7 @@ tank_main|Tank_MainWeapon_heavy-blast-15.wav|1.20|1.00
 tank_secondary|Tank_Secondary_light-blast-09.wav|0.14|1.00
 tank_spool_up|hydraulic_up.wav|1.10|1.00
 tank_spool_down|hydraulic_down.wav|0.92|1.00
+tank_destroyed|Tower_AoE_heavy-blast-03.wav|1.55|0.72
 tank_pickup|Tank_PickUpItem_handling-26.wav|0.45|1.00
 tank_shells|Tank_PickUpNewShells_reload-02.wav|0.91|1.00
 enemy_die_a|slime-pop.wav|0.50|1.00

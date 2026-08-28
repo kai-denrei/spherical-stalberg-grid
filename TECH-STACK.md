@@ -1,10 +1,10 @@
 # Tech Stack
 
-For a developer deciding whether some library, tool or technique will fit here.
-The short version: **this project has no build step, and that is the constraint
-everything else follows from.**
+For a developer holding a library, a tool or a technique, and asking whether
+it will fit here.
 
----
+> This project has no build step. Every other choice on this page follows
+> from that one.
 
 ## What it is
 
@@ -16,32 +16,36 @@ everything else follows from.**
 | Audio | Web Audio API directly | No audio library |
 | Models | glTF 2.0 `.glb` via vendored `GLTFLoader` | Supports `KHR_materials_unlit`, `KHR_materials_emissive_strength`, `EXT_mesh_gpu_instancing` |
 | Build | **None.** Files are served as authored | No bundler, no minifier, no dev server with HMR |
-| Package manager | npm, but **dev-only** | `package.json` has zero runtime dependencies. Nothing from `node_modules` reaches the browser |
+| Packages | npm, but **dev-only** | `package.json` has zero runtime dependencies. Nothing from `node_modules` reaches the browser |
 | Tests | Plain `.mjs` run by `node`, a house `check()` helper | No jest/vitest/mocha. `npm test` chains suites with `&&` |
 | Hosting | Static files, GitHub Pages | No server, no API, no database, no auth, no SSR |
 | Cache busting | `?v=<token>` rewritten by `scripts/bust.sh` | A new module's relative imports must be stamped once by hand |
 
----
+## Will it fit?
 
-## Will it fit? — decide by these
+### Fits without discussion
 
-**Fits without discussion:** anything that is a plain ES module, has no
-dependencies, and can be dropped into `src/` or vendored into `vendor/`.
+Anything that is a plain ES module, has no dependencies, and can be dropped
+into `src/` or vendored into `vendor/`.
 
-**Fits with vendoring:** a library shipped as ESM whose imports you can rewrite
-to relative paths. That is how the postprocessing chain and `GLTFLoader` got
-here — copy the files in, rewrite `from 'three'` to `from './three.module.js'`,
-keep the version identical to `vendor/three.module.js`.
+### Fits with vendoring
 
-**Does not fit:** anything requiring a compile, bundle or transform step to run
-— TypeScript, JSX, SCSS, npm packages that assume a bundler resolves bare
-specifiers, or anything published only as CommonJS.
+A library shipped as ESM whose imports you can rewrite to relative paths.
+That is how the postprocessing chain and `GLTFLoader` got here — copy the
+files in, rewrite `from 'three'` to `from './three.module.js'`, keep the
+version identical to `vendor/three.module.js`.
 
-**Needs a real decision first:** anything that would introduce a build step at
-all. That is a project-shape change, not a dependency choice — say so up front
-rather than adding a tool that quietly requires one.
+### Does not fit
 
----
+Anything requiring a compile, bundle or transform step to run — TypeScript,
+JSX, SCSS, npm packages that assume a bundler resolves bare specifiers, or
+anything published only as CommonJS.
+
+### Needs a real decision first
+
+Anything that would introduce a build step at all. That is a project-shape
+change, not a dependency choice — say so up front rather than adding a tool
+that quietly requires one.
 
 ## Rules that will bite you
 
@@ -60,23 +64,19 @@ rather than adding a tool that quietly requires one.
   — are derived FROM the render transforms (`getWorldQuaternion`), never
   recomputed with a second set of conventions.
 
----
-
-## Environment it is verified against
+## Verified against
 
 - **Desktop Chrome / Safari** on macOS, and **iOS Safari**.
 - **WebGL2** through three.js r160. No WebGPU — r160 predates its stable path.
 - **Node 18+** for the test suites only.
-- Headless verification uses Chrome with
-  `--use-angle=swiftshader --enable-unsafe-swiftshader`. Not `--disable-gpu`,
-  which kills WebGL entirely.
+- Headless checks run Chrome with `--use-angle=swiftshader
+  --enable-unsafe-swiftshader`. Not `--disable-gpu`, which kills WebGL
+  entirely.
 
-Two browser limits shape the code: **audio cannot start without a user
+Two browser limits shape the code. **Audio cannot start without a user
 gesture**, so the `AudioContext` is created on first input and every call is a
-silent no-op before that; and **iOS mutes Web Audio on the hardware silent
+silent no-op before that. And **iOS mutes Web Audio on the hardware silent
 switch**, which is deliberately not worked around.
-
----
 
 ## Where things live
 

@@ -3,9 +3,10 @@
 // overwritten on reinstall, so we hook it from outside (capture phase)
 // rather than editing cb-badge.js. The markdown renderer below covers
 // exactly what these docs use: h1/h2/h3, hr, paragraphs, bullet lists,
-// pipe tables, `code`, **bold**, *italic*, [links](…) — not general
-// markdown. Lists and tables were added for TECH-STACK.md, which has to be
-// SCANNED rather than read.
+// pipe tables, blockquotes, `code`, **bold**, *italic*, [links](…) — not
+// general markdown. Lists and tables were added for TECH-STACK.md, which
+// has to be SCANNED rather than read; the blockquote is how a doc marks
+// its one load-bearing sentence, which the styles set as a pull-quote.
 
 export function mdToHtml(md) {
   const esc = (s) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
@@ -19,6 +20,7 @@ export function mdToHtml(md) {
   let para = [];
   let list = null;   // open <ul> item buffer
   let table = null;  // open table: { head, rows }
+  let quote = null;  // open blockquote line buffer
 
   const flushPara = () => {
     if (para.length) { out.push(`<p>${inline(para.join(' '))}</p>`); para = []; }
@@ -37,13 +39,21 @@ export function mdToHtml(md) {
     out.push(`<table><thead><tr>${th}</tr></thead><tbody>${tr}</tbody></table>`);
     table = null;
   };
-  const flush = () => { flushPara(); flushList(); flushTable(); };
+  const flushQuote = () => {
+    if (!quote) return;
+    out.push(`<blockquote>${inline(quote.join(' '))}</blockquote>`);
+    quote = null;
+  };
+  const flush = () => { flushPara(); flushList(); flushTable(); flushQuote(); };
 
   // a pipe row -> cells, tolerating optional leading/trailing pipes
   const cells = (line) => line.replace(/^\||\|$/g, '').split('|').map((c) => c.trim());
 
   for (const line of md.split('\n')) {
     const t = line.trim();
+    // a run of "> " lines is one blockquote, wrapped lines rejoined
+    if (t.startsWith('> ')) { flushPara(); flushList(); flushTable(); (quote ||= []).push(t.slice(2)); continue; }
+    flushQuote();
     if (t.startsWith('|')) {
       // the |---|---| separator only marks the header; it draws nothing
       if (/^\|[\s:|-]+\|?$/.test(t)) continue;
@@ -54,6 +64,10 @@ export function mdToHtml(md) {
     }
     flushTable();
     if (/^[-*] /.test(t)) { flushPara(); (list ||= []).push(t.slice(2)); continue; }
+    // an INDENTED line under an open list continues that item. without this a
+    // wrapped bullet used to break into a one-line <li> plus an orphan <p>,
+    // splitting any *emphasis* that straddled the wrap.
+    if (list && t && /^\s/.test(line)) { list[list.length - 1] += ` ${t}`; continue; }
     flushList();
     if (t.startsWith('### ')) { flush(); out.push(`<h3>${inline(t.slice(4))}</h3>`); }
     else if (t.startsWith('## ')) { flush(); out.push(`<h2>${inline(t.slice(3))}</h2>`); }

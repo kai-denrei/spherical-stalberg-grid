@@ -19,22 +19,22 @@
 
 import * as THREE from '../vendor/three.module.js';
 import GUI from '../vendor/lil-gui.esm.js';
-import { generateSphereMesh, relax } from './grid.js?v=4ebcb505';
-import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=4ebcb505';
-import { mulberry32, randomSeed } from './rng.js?v=4ebcb505';
-import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3, segKey } from './vec3.js?v=4ebcb505';
-import { CREATURES, waveJelly } from './creatures.js?v=4ebcb505';
-import { UNITS, UNIT_NAMES, buildUnit, preloadMkcx, makeBulletCloud, makeRewardSolid, makeShellSolid, makeDebris, makeDotBurst, makePortalCloud, makeHeartCloud, makeDotEnemy } from './units.js?v=4ebcb505';
-import { LOOKS, LOOK_NAMES } from './looks.js?v=4ebcb505';
-import { makeCellIndex } from './cellindex.js?v=4ebcb505';
-import { CREATURE_TINTS, ENEMY_SPEC, INTROS, computeWavePlan } from './enemyspec.js?v=4ebcb505';
-import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER } from './towers.js?v=4ebcb505';
-import { makeEconomy, sellRefund } from './economy.js?v=4ebcb505';
-import { makeBloom } from './postfx.js?v=4ebcb505';
-import { BLOOM_GROUPS } from './bloomweights.js?v=4ebcb505';
-import { TOWER_LOOK_NAMES, DEFAULT_TOWER_LOOK, buildTowerLook, preloadLook } from './towerlooks.js?v=4ebcb505';
-import { makeAudio } from './audio.js?v=4ebcb505';
-import { DEATH_KEYS } from './audiomanifest.js?v=4ebcb505';
+import { generateSphereMesh, relax } from './grid.js?v=392ebbe3';
+import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=392ebbe3';
+import { mulberry32, randomSeed } from './rng.js?v=392ebbe3';
+import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3, segKey } from './vec3.js?v=392ebbe3';
+import { CREATURES, waveJelly } from './creatures.js?v=392ebbe3';
+import { UNITS, UNIT_NAMES, buildUnit, preloadMkcx, makeBulletCloud, makeRewardSolid, makeShellSolid, makeDebris, makeDotBurst, makePortalCloud, makeHeartCloud, makeDotEnemy } from './units.js?v=392ebbe3';
+import { LOOKS, LOOK_NAMES } from './looks.js?v=392ebbe3';
+import { makeCellIndex } from './cellindex.js?v=392ebbe3';
+import { CREATURE_TINTS, ENEMY_SPEC, INTROS, computeWavePlan } from './enemyspec.js?v=392ebbe3';
+import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER } from './towers.js?v=392ebbe3';
+import { makeEconomy, sellRefund } from './economy.js?v=392ebbe3';
+import { makeBloom } from './postfx.js?v=392ebbe3';
+import { BLOOM_GROUPS } from './bloomweights.js?v=392ebbe3';
+import { TOWER_LOOK_NAMES, DEFAULT_TOWER_LOOK, buildTowerLook, preloadLook } from './towerlooks.js?v=392ebbe3';
+import { makeAudio } from './audio.js?v=392ebbe3';
+import { DEATH_KEYS } from './audiomanifest.js?v=392ebbe3';
 
 export function initTdTab(root) {
   let active = false;
@@ -209,6 +209,14 @@ export function initTdTab(root) {
   // which of the three death sounds plays is deterministic per seed, so a
   // replayed board sounds identical (mulberry32, house convention)
   let deathPick = mulberry32(1);
+
+  // Hydraulics you can SEE. The pneumatics already sound like they lift the
+  // hull; hoverT is the same gesture in the geometry, so the sound explains
+  // a movement instead of decorating one. settleT drives a damped rock as
+  // the tank sets back down — it starts high so a fresh spawn doesn't rock.
+  let hoverT = 0;
+  let settleT = 99;
+  const HOVER_RISE = 0.75;   // extra lift at full hover, in unitScale units
   let respawnClock = 0;
 
   // --- battle state --------------------------------------------------------
@@ -823,7 +831,8 @@ export function initTdTab(root) {
     // lift: the unit's own floor offset plus its hover profile
     const prof = MOVES[params.creature];
     const baseLift = creatureGeo ? 0.85 : (playerMesh.userData.lift ?? 0.05);
-    const lift = unitScale * (baseLift + (prof ? prof.hover(simTime) : 0));
+    const lift = unitScale * (baseLift + (prof ? prof.hover(simTime) : 0)
+      + HOVER_RISE * hoverT);
     let p = add3(player.pos, scale3(n, lift));
     // recoil, reworked: the TURRET takes the kick — it slams back with a
     // high-frequency shudder — while the hull only rocks (pitch below) and
@@ -851,6 +860,13 @@ export function initTdTab(root) {
     // no extra rotation: lookAt with up=n already leaves body +Y ≈ normal
     // — except the recoil rock: a nose-up pitch that eases back down
     if (rf > 0) playerMesh.rotateX(-0.05 * rk);
+    // touchdown: a damped rock on two axes, ~0.9s. Two different frequencies
+    // so it reads as suspension settling rather than a single clean wobble.
+    if (settleT < 1.4) {
+      const d = Math.exp(-settleT * 4.2);
+      playerMesh.rotateX(Math.sin(settleT * 17) * 0.06 * d);
+      playerMesh.rotateZ(Math.cos(settleT * 12.5) * 0.04 * d);
+    }
     markerMesh.quaternion.copy(tmpObj.quaternion); // arrow nose = heading
   }
 
@@ -2821,15 +2837,41 @@ export function initTdTab(root) {
   }
 
   // --- enemy fire ------------------------------------------------------------
+  // The tank dying should be an EVENT. Losing hover is the throughline: the
+  // hull drops, the wreck rocks hard on its suspension, and the body bursts.
+  // The modal is held back until that has played, or the death reads as a
+  // dialog box rather than a destruction.
+  const DEATH_HOLD = 1.15; // s of wreck before the modal
+  function destroyPlayer() {
+    if (!playerMesh) return;
+    stopEngine(0.12, true);   // quiet: the hydraulics don't get to set it down
+    hoverT = 0;               // hover fails instantly — it DROPS
+    settleT = 0;              // and rocks hard as it lands
+    sfx.play('tank_destroyed');
+    const nrm = norm3(player.pos);
+    const fx = makeDebris(playerMesh, nrm);
+    scene.add(fx);
+    debris.push(fx);
+    const burst = makeDotBurst(look().walkerHi, nrm, 54);
+    burst.scale.setScalar(cellSide * 0.9);
+    const bp = add3(player.pos, scale3(nrm, cellSide * 0.25));
+    burst.position.set(bp[0], bp[1], bp[2]);
+    scene.add(burst);
+    debris.push(burst);
+    playerMesh.visible = false;
+  }
+
   function loseGame(reason) {
     if (player.won) return;
     player.won = true; // stops motion; same flag, sadder modal
+    destroyPlayer();
     msgEl.innerHTML = `<div class="msg-head">transmission · last light</div>` +
       `× ${reason}<br>` +
       `${enemies.filter((e) => !e.alive).length}/${enemies.length} enemies destroyed · ` +
       `heart ${Math.max(0, heartHP)}/${HEART_MAX}<br>` +
       `<button class="msg-regen">⟲ new sector</button>`;
-    msgEl.classList.remove('hidden');
+    // let the wreck play before the modal covers it
+    setTimeout(() => msgEl.classList.remove('hidden'), DEATH_HOLD * 1000);
   }
 
   function playerHit() {
@@ -3592,7 +3634,8 @@ export function initTdTab(root) {
     if (engineHandle) engineHandle.stop(fade);
     engineHandle = null;
     engineLevel = 0;
-    if (engineRunning && !quiet) sfx.play('tank_spool_down');
+    // the rock belongs to SETTING DOWN, not to leaving the tab
+    if (engineRunning && !quiet) { sfx.play('tank_spool_down'); settleT = 0; }
     engineRunning = false;
   }
 
@@ -3614,6 +3657,12 @@ export function initTdTab(root) {
 
     const moving = engineLevel > 0.03 && !paused && !player.won;
     engineIdle = moving ? 0 : engineIdle + dt;
+
+    // rises faster than it falls: the pneumatics snap the hull up and let it
+    // down, which is what the two hydraulic samples sound like
+    const hoverTarget = engineRunning ? 1 : 0;
+    hoverT += (hoverTarget - hoverT) * Math.min(1, (hoverTarget > hoverT ? 3.4 : 5.0) * dt);
+    if (settleT < 4) settleT += dt;
 
     if (moving && !engineRunning) {
       sfx.play('tank_spool_up'); // hydraulics lift it off the deck
@@ -3937,6 +3986,8 @@ export function initTdTab(root) {
 
   // ?blast=N breaches the N wall cells nearest the player — exercises the
   // carve + debris + rebuild path without needing a live shot
+  // ?lose=1 kills the tank on the spot, so the wreck can be screenshot
+  if (urlParams.get('lose') === '1') loseGame('debug');
   const blastN = parseInt(urlParams.get('blast') || '0', 10);
   for (let i = 0; i < blastN; i++) {
     let best = -1, bd = Infinity;
@@ -3964,7 +4015,7 @@ export function initTdTab(root) {
 
   // opening briefing on a clean load; any debug hook means headless/demo,
   // where a frozen sim would break the verification flow
-  const debugging = ['walk', 'tick', 'wave', 'blast', 'laser', 'found', 'recoil', 'mode', 'map', 'tower', 'credit', 'shop', 'sector', 'reveal', 'portal']
+  const debugging = ['walk', 'tick', 'wave', 'blast', 'laser', 'found', 'recoil', 'mode', 'map', 'tower', 'credit', 'shop', 'sector', 'reveal', 'portal', 'lose']
     .some((k) => urlParams.get(k));
   const tutParam = urlParams.get('tutorial');
   runTutorial = tutParam === '1' || (tutParam !== '0' && !debugging);

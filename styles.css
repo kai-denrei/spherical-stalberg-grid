@@ -742,58 +742,15 @@ html, body {
   background: #2d3a5e;
 }
 
-.mdview h1 {
-  font-size: 20px;
-  color: #e8edf8;
-  margin: 0 0 4px;
-}
-
-.mdview h2 {
-  font-size: 15px;
-  color: #dbe4ff;
-  margin: 26px 0 6px;
-  line-height: 1.45;
-}
-
-.mdview p {
-  margin: 10px 0;
-}
-
-.mdview hr {
-  border: none;
-  border-top: 1px solid #2a3350;
-  margin: 22px 0;
-}
-
-.mdview code {
-  background: #1d2434;
-  border-radius: 4px;
-  padding: 1px 5px;
-  color: #9fd6c8;
-  font-size: 13px;
-}
-
-.mdview strong {
-  color: #e8edf8;
-}
-
-.mdview a {
-  color: #7fb2ff;
-}
-
-/* --- how-it-works tab: full-page article --- */
-#how-scroll {
+/* --- doc tabs (how it works / tech stack): full-page article --- */
+/* both scrollers, both articles — the .mdview block near the end of this
+   file owns every typographic decision for all three documents */
+#how-scroll, #stack-scroll {
   position: absolute;
   inset: 0;
   overflow-y: auto;
-  padding: 64px 24px 80px;
-}
-
-#how-content {
-  max-width: 72ch;
-  margin: 0 auto;
-  color: #c3cde2;
-  font: 14px/1.65 ui-monospace, "SF Mono", Menlo, monospace;
+  overflow-x: hidden;   /* the reading column never pans; wide tables scroll themselves */
+  padding: 64px 24px 96px;
 }
 
 /* --- circular minimap (dedicated canvas; CSS clips the square to a disc) --- */
@@ -1131,30 +1088,366 @@ html, body {
 #units-sounds button.on { color: #061018; background: #6fe6ff; border-color: #6fe6ff; }
 #units-sounds.hidden { display: none; }
 
-/* mdview: lists and tables, added with TECH-STACK.md — it is scanned, not read */
-.mdview h3 {
-  margin: 22px 0 8px;
-  font: 600 14px/1.4 ui-monospace, SFMono-Regular, Menlo, monospace;
-  letter-spacing: .1em; text-transform: uppercase; color: #9fdcff;
+/* ============================================================
+   .mdview — the reading surface for DEVLOG.md, HOW-IT-WORKS.md
+   and TECH-STACK.md.
+
+   Direction: a spec plate. The type is split by what the words
+   ARE, not for decoration — prose runs in the system's
+   proportional face because it is meant to be read, and
+   monospace is reserved for things that are machine-shaped
+   (identifiers, table cells, labels, headings). When everything
+   was monospace the distinction was free-floating and nothing
+   stood out; now the face itself says "this is a literal".
+
+   No webfont on purpose: a Google Fonts request would contradict
+   the one thing TECH-STACK.md claims about this project.
+
+   Layout is a prose column with the table breaking out wide —
+   the third column used to wrap to shreds inside a 72ch measure.
+   ============================================================ */
+
+.mdview {
+  --md-ink: #c9d6ec;          /* body */
+  --md-dim: #8fa0be;          /* secondary, table prose */
+  --md-bright: #eef4ff;       /* headings, strong */
+  --md-neon: #6fe6ff;         /* structure: spines, bars, chips */
+  --md-soft: #9fdcff;         /* labels, table heads */
+  --md-code: #9fd6c8;         /* literals */
+  --md-rule: rgba(159, 220, 255, .15);
+  --md-mono: ui-monospace, "SF Mono", SFMono-Regular, Menlo, monospace;
+  /* measure for anything read line by line. em, not ch: the sans fallback's
+     "0" is far wider than its average letter, so 66ch measured out at 83
+     characters a line — well past the point where the eye loses the return. */
+  --md-prose: 35em;
+
+  color: var(--md-ink);
+  font: 400 16px/1.7 ui-sans-serif, -apple-system, BlinkMacSystemFont,
+        "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
 }
-.mdview ul { margin: 10px 0 14px; padding-left: 20px; }
-.mdview li { margin: 5px 0; line-height: 1.7; }
+
+/* wider than the prose measure on purpose: the prose column sits at the left
+   of this box and the table breaks out across the whole of it */
+#how-content, #stack-content {
+  display: block;
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+/* --- title block --- */
+.mdview h1 {
+  margin: 0 0 10px;
+  font: 600 30px/1.15 var(--md-mono);
+  letter-spacing: -.01em;
+  color: var(--md-bright);
+}
+/* the sentence under the title is a dek, not a paragraph */
+.mdview h1 + p {
+  max-width: var(--md-prose);
+  margin: 0 0 6px;
+  font-size: 17px;
+  color: var(--md-dim);
+}
+
+/* --- sections. the short cyan bar is the section mark; DEVLOG's own
+   "---" rules sit above it and the two read as one divider --- */
+.mdview h2 {
+  max-width: var(--md-prose);
+  margin: 46px 0 14px;
+  font: 600 18px/1.45 var(--md-mono);
+  letter-spacing: -.005em;
+  color: var(--md-bright);
+}
+.mdview h2::before {
+  content: "";
+  display: block;
+  width: 26px;
+  height: 2px;
+  margin-bottom: 14px;
+  background: var(--md-neon);
+  box-shadow: 0 0 10px rgba(111, 230, 255, .55);
+}
+.mdview h1 + p + h2 { margin-top: 34px; }
+
+/* --- verdict chips. TECH-STACK's "will it fit?" answers are a
+   classification, not a sequence, so they are labelled, not numbered --- */
+.mdview h3 {
+  display: inline-block;
+  margin: 34px 0 0;
+  padding: 6px 13px;
+  font: 600 11.5px/1 var(--md-mono);
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  color: var(--md-neon);
+  background: rgba(111, 230, 255, .07);
+  border: 1px solid rgba(111, 230, 255, .38);
+  border-radius: 999px;
+}
+.mdview h3 + p { margin-top: 12px; }
+
+/* --- the one load-bearing sentence, stamped --- */
+.mdview blockquote {
+  position: relative;
+  max-width: 30em;       /* its own, in its own larger em */
+  margin: 30px 0 40px;
+  padding: 14px 0 14px 26px;
+  font: 600 20px/1.5 var(--md-mono);
+  letter-spacing: -.01em;
+  color: var(--md-bright);
+  text-wrap: balance;
+}
+/* the spine glows outward, the way everything else in this project does */
+.mdview blockquote::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background: var(--md-neon);
+  box-shadow: 0 0 14px rgba(111, 230, 255, .7);
+}
+
+.mdview p {
+  max-width: var(--md-prose);
+  margin: 14px 0;
+}
+
+.mdview ul {
+  max-width: var(--md-prose);
+  margin: 16px 0 22px;
+  padding: 0;
+  list-style: none;
+}
+.mdview li {
+  position: relative;
+  margin: 12px 0;
+  padding-left: 20px;
+}
+.mdview li::before {
+  content: "";
+  position: absolute;
+  left: 2px;
+  top: .62em;
+  width: 5px;
+  height: 5px;
+  background: var(--md-soft);
+  opacity: .75;
+}
+
+.mdview hr {
+  max-width: var(--md-prose);
+  margin: 40px 0;
+  border: none;
+  border-top: 1px solid var(--md-rule);
+}
+
+/* --- the plate. breaks out of the prose measure; column 3 is prose so it
+   is set in the prose face, columns 1-2 are literals so they are not --- */
 .mdview table {
-  width: 100%; margin: 14px 0 18px;
+  width: 100%;
+  table-layout: fixed;   /* so the column widths below are exact */
+  margin: 20px 0 30px;
   border-collapse: collapse;
-  font-size: 13px; line-height: 1.55;
-  display: block; overflow-x: auto; /* wide tables scroll, the page never does */
+  border-top: 1px solid rgba(159, 220, 255, .28);
+  border-bottom: 1px solid rgba(159, 220, 255, .28);
+  background: rgba(140, 190, 255, .022);
 }
 .mdview thead th {
-  text-align: left; padding: 8px 12px;
-  font-weight: 600; letter-spacing: .06em; text-transform: uppercase;
-  font-size: 11px; color: #9fdcff;
-  border-bottom: 1px solid rgba(159, 220, 255, .3);
+  padding: 11px 14px;
+  text-align: left;
+  vertical-align: bottom;
+  font: 600 10.5px/1.3 var(--md-mono);
+  letter-spacing: .16em;
+  text-transform: uppercase;
+  color: var(--md-soft);
+  border-bottom: 1px solid var(--md-rule);
   white-space: nowrap;
 }
 .mdview tbody td {
-  padding: 8px 12px; vertical-align: top;
-  border-bottom: 1px solid rgba(120, 150, 210, .12);
+  padding: 13px 14px;
+  vertical-align: top;
+  border-bottom: 1px solid rgba(120, 150, 210, .1);
+  font-size: 14.5px;
+  line-height: 1.55;
+  color: var(--md-ink);
 }
 .mdview tbody tr:last-child td { border-bottom: 0; }
-.mdview tbody td:first-child { color: #cfe4ff; white-space: nowrap; }
+.mdview tbody td:nth-child(1) {
+  font: 600 13px/1.5 var(--md-mono);
+  letter-spacing: -.01em;
+  color: var(--md-soft);
+}
+.mdview tbody td:nth-child(2) {
+  font: 400 13px/1.6 var(--md-mono);
+  color: var(--md-ink);
+}
+.mdview th:nth-child(1) { width: 16%; }
+.mdview th:nth-child(2) { width: 33%; }
+.mdview th:nth-child(3) { width: 51%; }
+
+/* --- inline --- */
+.mdview code {
+  padding: 1.5px 5px;
+  font-family: var(--md-mono);
+  font-size: .875em;
+  color: var(--md-code);
+  background: rgba(120, 200, 190, .08);
+  border: 1px solid rgba(120, 200, 190, .16);
+  border-radius: 4px;
+  white-space: nowrap;   /* an identifier split over two lines is unreadable */
+}
+.mdview td code, .mdview h2 code, .mdview blockquote code {
+  border: none;
+  background: rgba(120, 200, 190, .1);
+}
+.mdview strong { font-weight: 600; color: var(--md-bright); }
+/* italics stay in the body ink — tinted, they read as links in dense prose */
+.mdview em { font-style: italic; }
+.mdview a { color: #7fc7ff; text-underline-offset: 3px; }
+.mdview a:hover { color: var(--md-neon); }
+
+@media (max-width: 700px) {
+  #how-scroll, #stack-scroll { padding: 60px 18px 96px; }
+  .mdview { font-size: 15.5px; }
+  .mdview h1 { font-size: 25px; }
+  .mdview h2 { font-size: 16.5px; margin-top: 38px; }
+  .mdview blockquote { font-size: 17px; padding-left: 18px; }
+
+  /* The plate keeps its shape and scrolls sideways instead of collapsing to
+     three shredded columns. The scroll has to come from the CELLS being wider
+     than the box — a min-width on the <table> would size the box itself, and
+     then the whole article pans sideways instead of just the table. */
+  .mdview table {
+    display: block;
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    -webkit-overflow-scrolling: touch;
+    table-layout: auto;
+  }
+  .mdview th:nth-child(1), .mdview td:nth-child(1) { width: auto; min-width: 88px; }
+  .mdview th:nth-child(2), .mdview td:nth-child(2) { width: auto; min-width: 172px; }
+  .mdview th:nth-child(3), .mdview td:nth-child(3) { width: auto; min-width: 232px; }
+}
+
+/* --- copy the whole stack: top-right of the tech-stack tab, parked
+   against the fixed tab so the article scrolls under it --- */
+#stack-copy {
+  position: absolute;
+  top: max(12px, env(safe-area-inset-top));
+  right: max(12px, env(safe-area-inset-right));
+  z-index: 12;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 14px 9px 12px;
+  font: 600 11px/1 ui-monospace, "SF Mono", Menlo, monospace;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  color: #cfe4ff;
+  background: rgba(10, 16, 26, .84);
+  border: 1px solid rgba(159, 220, 255, .26);
+  border-radius: 999px;
+  cursor: pointer;
+  -webkit-backdrop-filter: blur(6px);
+  backdrop-filter: blur(6px);
+  transition: color .15s, background .15s, border-color .15s;
+}
+#stack-copy .glyph { font-size: 15px; line-height: 1; }
+#stack-copy:hover { color: #eaf6ff; border-color: rgba(159, 220, 255, .6); }
+#stack-copy:focus-visible { outline: 2px solid #6fe6ff; outline-offset: 3px; }
+#stack-copy.ok {
+  color: #061018;
+  background: #6fe6ff;
+  border-color: #6fe6ff;
+  box-shadow: 0 0 16px rgba(111, 230, 255, .45);
+}
+#stack-copy.fail { color: #ffcfa2; border-color: rgba(255, 176, 102, .6); }
+
+@media (prefers-reduced-motion: reduce) {
+  #stack-copy { transition: none; }
+}
+
+/* ── HOME LAUNCHER ───────────────────────────────────────────────────────
+   Twelve modes in a flat bar told a visitor nothing — "tank2" is not a
+   description. The bar now shows only HOME and where you are; the full list
+   is still one tap away behind ☰, and the launcher explains what each mode
+   demonstrates. The buttons all stay in the DOM (hidden, not removed) because
+   the launcher navigates by clicking them — one code path for changing mode. */
+/* The collapsed bar is HOME + where you are. Both the desktop and mobile
+   rules above hide #tabbar ENTIRELY until ☰ is open, which would have taken
+   the home button with it — so the container is forced back and the buttons
+   are hidden individually instead. ☰ still reveals the full list. */
+body:not(.chrome-open) #tabbar {
+  display: flex !important;
+  /* sits right of the badge + ☰, which own the top-left corner */
+  left: calc(max(12px, env(safe-area-inset-left)) + 316px);
+  background: none; border: 0; padding: 0; width: auto;
+  flex-direction: row; max-height: none; overflow: visible; box-shadow: none;
+}
+body:not(.chrome-open) #tabbar button:not(.nav-home):not(.active) { display: none; }
+#tabbar button.nav-home { color: #6fe6ff; border-color: rgba(111, 230, 255, .45); }
+/* active mode reads as a label here, not a button you press to stay put */
+body:not(.chrome-open) #tabbar button.active {
+  background: none; border-color: transparent; color: #7f93ab; cursor: default;
+}
+/* active play still owns the whole screen on a phone */
+body.playing:not(.chrome-open) #tabbar { display: none !important; }
+
+#home-scroll {
+  position: absolute; inset: 0;
+  overflow-y: auto; -webkit-overflow-scrolling: touch;
+  padding: 76px max(20px, env(safe-area-inset-left)) 60px;
+}
+#home-head { max-width: 720px; margin: 0 auto 34px; }
+#home-head h1 {
+  margin: 0 0 10px;
+  font: 600 26px/1.15 ui-monospace, SFMono-Regular, Menlo, monospace;
+  letter-spacing: .04em; color: #eaf6ff;
+}
+#home-head p {
+  margin: 0; max-width: 46em;
+  font: 14px/1.7 -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+  color: #8ea3bb;
+}
+#home-grid { max-width: 720px; margin: 0 auto; }
+
+.home-group { margin: 0 0 30px; }
+.home-group-head {
+  display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap;
+  padding-bottom: 8px; margin-bottom: 14px;
+  border-bottom: 1px solid rgba(120, 150, 210, .16);
+}
+.home-group-head h2 {
+  margin: 0;
+  font: 600 11px/1 ui-monospace, SFMono-Regular, Menlo, monospace;
+  letter-spacing: .18em; text-transform: uppercase; color: #6fe6ff;
+}
+.home-group-head span {
+  font: 12px/1.4 -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+  color: #667e99;
+}
+.home-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(216px, 1fr)); gap: 10px; }
+.home-card {
+  display: flex; flex-direction: column; gap: 7px;
+  padding: 14px 15px; text-align: left; cursor: pointer;
+  background: rgba(14, 20, 32, .72);
+  border: 1px solid rgba(120, 150, 210, .18);
+  border-radius: 12px;
+  transition: border-color .12s, background .12s, transform .12s;
+}
+.home-card:hover { border-color: rgba(111, 230, 255, .55); background: rgba(18, 27, 42, .9); transform: translateY(-1px); }
+.home-card:active { transform: translateY(0); }
+.home-card-title {
+  font: 600 14px/1.2 ui-monospace, SFMono-Regular, Menlo, monospace;
+  letter-spacing: .06em; color: #cdf3ff;
+}
+.home-card-line {
+  font: 12.5px/1.6 -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+  color: #8296ad;
+}
+@media (pointer: coarse), (max-width: 700px) {
+  #home-scroll { padding-top: 66px; }
+  .home-cards { grid-template-columns: 1fr; }
+}
