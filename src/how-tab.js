@@ -2,7 +2,7 @@
 // full-page article. Static content; no renderer, no loop. Shares the
 // markdown converter and .mdview styles with the devlog overlay.
 
-import { mdToHtml } from './devlog.js?v=15cf6de5';
+import { mdToHtml } from './devlog.js?v=7bab9a2a';
 
 export function initHowTab(root) {
   const el = root.querySelector('#how-content');

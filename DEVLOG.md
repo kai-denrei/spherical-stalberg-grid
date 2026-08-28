@@ -6,6 +6,46 @@ Demo links assume `npm run serve` (port 8144) or the
 
 ---
 
+## `75cdd2d` — Three sounds for one engine, and a viewer that plays units
+
+The tank's engine bed had never worked, and the cause was a design mistake
+rather than a tuning one. `loop()` in audio.js returned a stub handle —
+`{set(){},stop(){}}` — when it couldn't start. A stub *looks* successful,
+so the caller stored it and never asked again. The tank's first move
+reliably lands in the window where the AudioContext exists (the keypress
+created it) but the mp3 hasn't decoded yet, so one latched stub silenced
+the bed for the whole session. It returns `null` now and the caller retries
+every frame, which is free: `start()` bails before touching the voice
+budget when there's no buffer. Worth remembering as a general shape —
+a failure that returns something truthy is worse than one that throws.
+
+The engine is three sounds instead of one: hydraulics lift the tank as it
+starts, a thruster bed carries it while it moves, hydraulics set it back
+down when it stops. A single looping sample gave starting and stopping no
+weight at all. `thruster.wav` is also a much better loop source than the
+old teleport whoosh — its RMS holds within ~1 dB across the body against
+2.5 dB for the old one — so the 2.90 s loop has no audible seam. The
+build script grew a LOOPS table, since it now builds two crossfaded beds
+rather than one hardcoded case. The old bed stays in the manifest to
+compare against.
+
+The heat sleeve is 3× longer at the same radius, pushed forward so the
+longer band still sits on the barrel rather than starting inside the
+mantlet. It's the most legible thing on the tank and it was too short a
+band to read at gameplay distance.
+
+And the units tab plays sound now, which makes it genuinely dual-use: a
+tuning aid and a lore panel in the same control. Each catalogue entry
+carries its own sounds, so a tank offers start/moving/stop/shell/lasers/
+reload/pickup, a tower offers fire and upgrade, and every hostile offers
+all three death sounds — hearing all three is the point, since the game
+picks between them from the deterministic stream. `moving` is a loop and
+its button toggles. The viewer builds its own mixer instance so nothing
+there can disturb the game tab's levels or voice budget, and it latches a
+loop handle only when `loop()` returns a real one. Same trap, not repeated.
+
+---
+
 ## `8f9cb7f` — The tank you can drive is now a model
 
 `mkcx` joins the unit roster, so it sits in the creature dropdown beside
