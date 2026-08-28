@@ -16,8 +16,8 @@
 
 import * as THREE from '../vendor/three.module.js';
 import { loadGlb, mergeByMaterial, fitModel, tintModel, makeShellRack,
-  addEdgeOutlines, makeHeatSleeve } from './glbmodels.js?v=5c260ff0';
-import { CREATURES, waveJelly, spherePts, bulletPts, missilePts, heartPts, torusPts, towerHeadPts, enemyDotPts, portalPts } from './creatures.js?v=5c260ff0';
+  addEdgeOutlines, makeHeatSleeve } from './glbmodels.js?v=8c8b4f29';
+import { CREATURES, waveJelly, spherePts, bulletPts, missilePts, heartPts, torusPts, towerHeadPts, enemyDotPts, portalPts } from './creatures.js?v=8c8b4f29';
 
 function normalizeToUnit(group) {
   group.updateMatrixWorld(true);
@@ -1022,15 +1022,18 @@ function makeMkcx(cols) {
   }
   g.userData.tick = (t) => { if (turret) turret.rotation.y = Math.sin(t * 0.6) * 0.7; };
   g.userData.lift = 0.02;
-  // Rendered size, NOT model normalization. fitModel already fixed the
-  // model's proportions; this is what td-tab multiplies by, so it decides
-  // how much of the screen the tank eats. The procedural tank renders 0.73
-  // long (1.47 local x 0.497); at baseScale 1 the mkcx rendered 1.95 — 2.7x
-  // — and the third-person camera, tuned for 0.73, ended up inside it. 0.54
-  // puts it at ~1.05: still visibly the bigger machine, still leaves the
-  // board on screen. The unit viewer divides this out, so its look is
-  // unaffected either way.
-  g.userData.baseScale = 0.54;
+  // Rendered size, NOT model normalization — fitModel already fixed the
+  // model's proportions; this is what td-tab multiplies by.
+  //
+  // MEASURED IN THE RUNNING GAME, because deriving it from the viewer's
+  // numbers gave the wrong answer twice. The test that matters is whether
+  // the tank fits a corridor, so compare its widest dimension against the
+  // mean distance between adjacent open cell centres — that IS a one-cell
+  // hallway. The procedural tank sits at 0.85 of a hallway. At baseScale
+  // 0.54 the mkcx measured 3.11 — three times too wide to fit anything.
+  // 0.147 puts it back at 0.85, exactly the footprint the board was built
+  // around. The unit viewer divides this out, so its look is unaffected.
+  g.userData.baseScale = 0.147;
   g.userData.kind = 'mesh';
   return g;
 }
