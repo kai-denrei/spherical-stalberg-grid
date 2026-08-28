@@ -6,6 +6,43 @@ Demo links assume `npm run serve` (port 8144) or the
 
 ---
 
+## `8f9cb7f` — The tank you can drive is now a model
+
+`mkcx` joins the unit roster, so it sits in the creature dropdown beside
+the procedural tank rather than replacing it.
+
+The interesting part is that the tank is the **opposite** case from the GLB
+tower, and the difference is the whole design. A tower can be flattened to
+about six draw calls because it holds still. A tank has to *aim* — so the
+nodes that move have to survive the merge. `mergeByMaterial()` now takes a
+list of pivots to preserve: meshes under one of them merge into *that*
+node's local space and stay attached to it, everything else merges into
+the root. `Turret_Pivot` and both `Secondary_*_Gun_Pivot`s come through
+articulated, so aim still derives from their world quaternions and the
+house rule about never re-deriving a render-coupled direction holds. 58
+meshes becomes 13. The empty `Object3D`s left behind cost nothing and keep
+the artist's transforms exact.
+
+It's recentred on `Hull_Mesh`, not on its bounding box. That sounds fussy
+until you measure it: the box centre is (0, 1.69, **1.46**) because the gun
+barrel juts 6.87 units forward while the hull sits at the origin. Centring
+on the box would have had the tank pivoting around a point out in front of
+itself — the kind of bug that reads as "the controls feel wrong" rather
+than as a transform error.
+
+The GLB machinery moved into `glbmodels.js` — `loadGlb` (one cached
+in-flight load per URL, resolving `null` rather than rejecting, so callers
+always have a fallback), `mergeByMaterial`, `fitModel`, `tintModel` — with
+`towerlooks.js` refactored onto it rather than keeping a second copy.
+
+Verified the loaded state rather than merely that something built:
+`loaded=true meshes=13 turret=true guns=2 baseScale=1.0`. The fallback
+reports 17 meshes and 0.497, so those numbers are the real model with its
+articulation intact — worth checking, because an earlier probe of mine sat
+in the wrong function and would have reported success either way.
+
+---
+
 ## `8f58801` — A smaller tutorial board, and a spider that became a tower
 
 Two things, plus a loader.

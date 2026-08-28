@@ -15,8 +15,8 @@
 // tick(t) (idle animation) }.
 
 import * as THREE from '../vendor/three.module.js';
-import { loadGlb, mergeByMaterial, fitModel, tintModel } from './glbmodels.js?v=c61d2993';
-import { CREATURES, waveJelly, spherePts, bulletPts, missilePts, heartPts, torusPts, towerHeadPts, enemyDotPts, portalPts } from './creatures.js?v=c61d2993';
+import { loadGlb, mergeByMaterial, fitModel, tintModel } from './glbmodels.js?v=10403bfa';
+import { CREATURES, waveJelly, spherePts, bulletPts, missilePts, heartPts, torusPts, towerHeadPts, enemyDotPts, portalPts } from './creatures.js?v=10403bfa';
 
 function normalizeToUnit(group) {
   group.updateMatrixWorld(true);

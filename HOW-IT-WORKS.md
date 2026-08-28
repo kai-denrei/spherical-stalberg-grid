@@ -444,3 +444,48 @@ refactor; it's computed from `tower.tier` now.
 Looks can also declare a `preload()` returning a promise, for assets that
 arrive asynchronously. Nothing uses it yet — it exists so a loaded model
 can become a look without the registry changing shape.
+
+## Putting an authored 3D model into a game made of wireframe
+
+Everything in this project is generated — dot clouds, extruded quads,
+primitives. Dropping in a model somebody built in a 3D package raises
+three problems that have nothing to do with loading the file, and all
+three are handled in `glbmodels.js`.
+
+**It's the wrong size, in the wrong place.** Exported models carry
+whatever units the artist worked in. Fitting matters in a specific way
+here: these models are much wider than they are tall, so fitting by
+footprint makes a squat smear you read as debris, and fitting by height
+alone sprawls them over neighbouring cells. They're fitted to a target
+height with a cap on span. Position is worse — a tank's bounding box is
+dragged forward by its gun barrel, so its box centre sits well in front of
+its hull. Centre on the box and the tank pivots around a point in mid-air
+ahead of itself. So a model can name a node to centre on instead.
+
+**It disappears.** The board is black with neon wire; a dark grey machine
+is invisible on it. Rather than replacing the model's materials, the game
+colour goes on as *emissive* — full strength on parts the artist named
+"glow", a low wash elsewhere — so the piece reads as its type while
+keeping its own material identity. Unlit materials have no emissive
+channel, so they take the colour directly.
+
+**It costs too much to draw.** These models are 60–110 separate meshes.
+Eight of them on the board would be several hundred draw calls, and the
+bloom pass renders the scene twice, so double it. Merging by material cuts
+that by roughly an order of magnitude.
+
+Merging is where the interesting trade lives, because it destroys
+articulation — a merged mesh is one rigid body. So the merge takes a list
+of nodes to **preserve**: meshes underneath one of those merge into *that*
+node's space and stay attached to it, everything else collapses into the
+root. That's why the same function serves two opposite cases. The tower is
+a walker that has dug in, so nothing needs to move and it flattens
+completely. The tank has to aim, so its turret and both secondary guns
+stay articulated and everything else merges around them. Aim still reads
+those pivots' world quaternions, which is the same rule the procedural
+tank follows.
+
+Models load asynchronously, which the game cannot wait for. Every
+model-backed piece therefore has a procedural fallback it renders
+immediately, and swaps itself when the bytes arrive. A failed load
+resolves to `null` rather than throwing, so the fallback simply stays.
