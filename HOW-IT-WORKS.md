@@ -363,3 +363,50 @@ Permanently: `src/audiomanifest.js`, where each sound carries its own
 gain, voice cap, min-interval and pitch-jitter width. The levels that
 shipped were derived from durations and fire rates, not heard, so expect
 to move them.
+
+## Making different things glow by different amounts
+
+A bloom pass is a full-screen effect. It receives a finished image and
+knows nothing about objects — which is why "make the enemies glow more
+than the floor" is not a setting you can turn up. It's a decision about
+how you *render*.
+
+The cheap-looking option is to dim the floor. It doesn't work: glow and
+brightness would move together, so calming the board's halo would also
+grey out its lines, and the board is meant to read as bright cyan wire.
+
+So the scene is rendered **twice**. Once weighted — every object's colour
+scaled by its group's weight — which is what the bloom pass sees. Once
+normally, which is what you see. Then the pure bloom from the first is
+added to the second:
+
+```
+output = scene + bloom(scene × weights)
+```
+
+A weight now changes only how hard a thing glows. The board can sit at
+0.35 and stay exactly as bright as before while its halo nearly vanishes.
+
+One subtlety makes that add clean. `UnrealBloomPass` blends its result
+additively over its own input, so its output is `input + bloom` — feed it
+the weighted scene and you'd get the weighted scene back in the mix,
+brightening everything you meant only to make glow. But the pass leaves
+the pure bloom in an intermediate target just before that final blend,
+and reading *that* gives the glow with no scene attached.
+
+Groups are `map`, `enemies`, `tank`, `towers` and `effects`. Membership
+isn't tagged onto objects at creation — it's read each frame from the
+collections the game already keeps (`enemies`, `spawnPoints`, `towers`,
+and the four board meshes). Enemies get built in several different
+places, and tagging would have meant every future spawn site remembering
+to opt in; reading the collections can't be forgotten. Anything not
+listed falls through to `effects`, so a new kind of particle glows
+normally rather than vanishing.
+
+The cost is the second scene render. The mip chain — the expensive half —
+runs once either way. Phones are the thing to watch: they already halve
+the bloom resolution, and this adds a full geometry pass.
+
+**Where to change things.** Live, by eye: `bloom > weights` in the TD
+panel, which persists to `localStorage`. Permanently:
+`DEFAULT_BLOOM_WEIGHTS` in `src/bloomweights.js`.

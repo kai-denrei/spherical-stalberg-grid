@@ -6,6 +6,59 @@ Demo links assume `npm run serve` (port 8144) or the
 
 ---
 
+## `e8b70d2` — Per-group bloom, and the ally tanks that weren't there
+
+The bloom was one dial for a scene full of different things. Turning it
+down to calm the board flattened the enemies; turning it up to make
+enemies pop smeared the board. There are five dials now — map, enemies,
+tank, towers, effects — under `bloom > weights`, persisted so a tuning
+session survives a reload.
+
+The catch is that `UnrealBloomPass` is a full-screen post-process. It has
+no idea what an object is, so "bloom per group" isn't a parameter you can
+add; it's a render path you have to choose. Three chains, one per group,
+would buy fully independent strength/radius/threshold for about 4 scene
+renders and 3 mip chains. Scaling each group's material brightness would
+be free but welds glow to brightness — you could never have a bright line
+that barely blooms, which is exactly what the board needs.
+
+So: one chain, fed a **weighted** render. Each object's colour is scaled
+by its group's weight before the bloom pass, and the result is added to a
+normal, unweighted render — `scene + bloom(scene × weights)`. A weight
+changes how hard something *glows* without changing how brightly it
+*draws*. Two scene renders instead of one; the mip chain, the expensive
+half, is unchanged.
+
+What makes the composite clean is where the bloom is read from. r160's
+`UnrealBloomPass` blends its result additively over its input and ignores
+`this.clear` at that step, so the pass output is always `input + bloom`
+and can't be made bloom-only. But it leaves the *pure* bloom in
+`renderTargetsHorizontal[0]` just before that blend, and that texture is
+readable — so no scene term leaks into the add. That detail was checked in
+the vendored source before the approach was settled, not after.
+
+Group membership is read fresh each frame from the collections that
+already exist — `enemies`, `spawnPoints`, `towers`, the four board meshes
+— rather than tagged at creation. Enemies are built in several places, and
+a tagging scheme would have meant every future spawn site remembering to
+opt in. Anything unlisted falls through to `effects`.
+
+Verified by A/B at a fixed seed: forcing `map` to 2.5 against the shipped
+0.35 makes the board's halo appear and vanish while the lines stay equally
+bright, and the enemy cluster is pixel-identical in both. Glow moved,
+brightness didn't, nothing else was touched.
+
+Also in here: ally tanks are gone from TD. Worth recording *why* that was
+cheap — `params.friendlies` was already `0` and never exposed in the GUI,
+so none had spawned in a long time. The array was permanently empty, which
+meant `playerHit`'s "command jumps to the nearest ally" branch was
+unreachable and death already fell through to `loseGame`. 207 lines of a
+subsystem carrying full weight while doing nothing. The `C` key and the
+"friendlies & pickups" glossary went with it.
+
+The weights themselves have not been *seen*, only reasoned about. That's
+what the sliders are for.
+
 ## `bfb7a2f` — The vertex blobs, and cutting the build camera loose
 
 Two fixes and one of them was not where it looked.
