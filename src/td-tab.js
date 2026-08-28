@@ -19,27 +19,29 @@
 
 import * as THREE from '../vendor/three.module.js';
 import GUI from '../vendor/lil-gui.esm.js';
-import { generateSphereMesh, relax } from './grid.js?v=4eafd9ae';
-import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=4eafd9ae';
-import { mulberry32, randomSeed } from './rng.js?v=4eafd9ae';
-import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3, segKey } from './vec3.js?v=4eafd9ae';
-import { CREATURES, waveJelly } from './creatures.js?v=4eafd9ae';
-import { UNITS, UNIT_NAMES, buildUnit, makeOrbCloud, makeBulletCloud, makeMissileCloud, makeDebris, makeDotBurst, makePortalCloud, makeHeartCloud, makeTowerUnit, makeDotEnemy } from './units.js?v=4eafd9ae';
-import { LOOKS, LOOK_NAMES } from './looks.js?v=4eafd9ae';
-import { makeCellIndex } from './cellindex.js?v=4eafd9ae';
-import { CREATURE_TINTS, ENEMY_SPEC, INTROS, computeWavePlan } from './enemyspec.js?v=4eafd9ae';
-import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER } from './towers.js?v=4eafd9ae';
-import { makeEconomy, sellRefund } from './economy.js?v=4eafd9ae';
-import { makeBloom } from './postfx.js?v=4eafd9ae';
-import { BLOOM_GROUPS } from './bloomweights.js?v=4eafd9ae';
-import { makeAudio } from './audio.js?v=4eafd9ae';
-import { DEATH_KEYS } from './audiomanifest.js?v=4eafd9ae';
+import { generateSphereMesh, relax } from './grid.js?v=84bfe64f';
+import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=84bfe64f';
+import { mulberry32, randomSeed } from './rng.js?v=84bfe64f';
+import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3, segKey } from './vec3.js?v=84bfe64f';
+import { CREATURES, waveJelly } from './creatures.js?v=84bfe64f';
+import { UNITS, UNIT_NAMES, buildUnit, makeOrbCloud, makeBulletCloud, makeMissileCloud, makeDebris, makeDotBurst, makePortalCloud, makeHeartCloud, makeDotEnemy } from './units.js?v=84bfe64f';
+import { LOOKS, LOOK_NAMES } from './looks.js?v=84bfe64f';
+import { makeCellIndex } from './cellindex.js?v=84bfe64f';
+import { CREATURE_TINTS, ENEMY_SPEC, INTROS, computeWavePlan } from './enemyspec.js?v=84bfe64f';
+import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER } from './towers.js?v=84bfe64f';
+import { makeEconomy, sellRefund } from './economy.js?v=84bfe64f';
+import { makeBloom } from './postfx.js?v=84bfe64f';
+import { BLOOM_GROUPS } from './bloomweights.js?v=84bfe64f';
+import { TOWER_LOOK_NAMES, DEFAULT_TOWER_LOOK, buildTowerLook } from './towerlooks.js?v=84bfe64f';
+import { makeAudio } from './audio.js?v=84bfe64f';
+import { DEATH_KEYS } from './audiomanifest.js?v=84bfe64f';
 
 export function initTdTab(root) {
   let active = false;
   let wasPlaying = false; // drives body.playing (mobile hides ALL chrome)
 
   const params = {
+    towerLook: DEFAULT_TOWER_LOOK,
     seed: 7,
     points: 3000, // ONE big pre-decided lane world; sectors unseal it in bands
     rooms: 16,          // lane structure: rooms joined by wide corridors
@@ -1838,7 +1840,7 @@ export function initTdTab(root) {
       `<div class="gcards">` +
       glossCard('#ff6a88', spriteShot('heart', heartIcon), 'the heart', 'at the pole — its fall is the only defeat') +
       glossCard('#9fdcff', spriteShot('tank', unitIcon('tank', look().walker)), 'your tank', 'hold W drive · double-tap W cruise · A/D steer · SPACE shell · SHIFT lasers · ESC pause') +
-      glossCard('#9fdcff', spriteShot('tower', () => makeTowerUnit(TOWER_BY_KEY.single)), 'towers', 'your army — build them on the HIGH GROUND (walls) in BUILD mode') +
+      glossCard('#9fdcff', spriteShot('tower-' + params.towerLook, () => buildTowerLook(params.towerLook, TOWER_BY_KEY.single)), 'towers', 'your army — build them on the HIGH GROUND (walls) in BUILD mode') +
       glossCard('#ffb000', spriteShot('triad', makeTriadIcon), 'missile triads', 'drive over = +3 shells · shells also blast walls open') +
       glossCard('#66ff88', spriteShot('phage', unitIcon('phage', CREATURE_TINTS.phage)), 'fodder', 'soft creatures — RAM them, it’s free') +
       glossCard('#ff5340', spriteShot('barbed', unitIcon('barbed', CREATURE_TINTS.barbed)), 'spiked reds', 'armored — ramming hurts YOU · shells only') +
@@ -1879,7 +1881,7 @@ export function initTdTab(root) {
     msgEl.innerHTML = `<div class="msg-head">glossary · pickups</div>` +
       `<div class="gcards">` +
       glossCard('#ff6a88', spriteShot('heart', heartIcon), 'the heart', `${HEART_MAX} hp · enemy contact drains it · regen charges heal it`) +
-      glossCard('#9fdcff', spriteShot('tower', () => makeTowerUnit(TOWER_BY_KEY.single)), 'towers', 'mount on walls only · tap high ground in BUILD mode · upgrade twice · sell 75%') +
+      glossCard('#9fdcff', spriteShot('tower-' + params.towerLook, () => buildTowerLook(params.towerLook, TOWER_BY_KEY.single)), 'towers', 'mount on walls only · tap high ground in BUILD mode · upgrade twice · sell 75%') +
       glossCard('#ffb000', spriteShot('triad', makeTriadIcon), 'missile triad', '+3 shells on touch (rack caps at 9) — the ONLY ammo pickup') +
       glossCard('#9ff8ff', spriteShot('orb-power', orbIcon('scatter', 0x9ff8ff)), 'power sphere', 'far-field reward · +8% speed, permanent') +
       glossCard('#3dff6e', spriteShot('orb-health', orbIcon('wave', 0x3dff6e)), 'health sphere', 'far-field reward · +1 your hp') +
@@ -2060,7 +2062,7 @@ export function initTdTab(root) {
     // clear any stale icon before inserting the new one
     const old = towerEl.querySelector('.wave-icon');
     if (old) old.remove();
-    const icon = spriteShot('tower-' + key, () => makeTowerUnit(def));
+    const icon = spriteShot(`tower-${params.towerLook}-${key}`, () => buildTowerLook(params.towerLook, def));
     const img = new Image(); img.src = icon; img.className = 'wave-icon';
     towerEl.insertBefore(img, towerEl.querySelector('.wave-name'));
     towerEl.classList.remove('hidden');
@@ -2861,23 +2863,47 @@ export function initTdTab(root) {
     return null;
   }
 
+  // One placement recipe, used by placement, upgrade and look-swap alike.
+  // Tier bulk is DERIVED from tower.tier here rather than accumulated onto
+  // the object with multiplyScalar — otherwise the visual silently carries
+  // tier state, and any rebuild (a look swap) would quietly lose it.
+  const TIER_BULK = 1.12;
+  function placeTowerObj(tower) {
+    const obj = tower.obj;
+    const s = (obj.userData.baseScale ?? 1) * cellSide * 0.62
+      * Math.pow(TIER_BULK, tower.tier);
+    obj.scale.setScalar(s);
+    const c = graph.centers[tower.ci];
+    const nrm = graph.normals[tower.ci];
+    const top = 1 + params.wallHeight; // mounted on the wall's roof
+    obj.position.set(c[0] * top, c[1] * top, c[2] * top);
+    tmpN.set(nrm[0], nrm[1], nrm[2]);
+    obj.quaternion.setFromUnitVectors(Y_AXIS, tmpN);
+  }
+
+  // Swap every tower's VISUAL in place. Game state — key, def, tier, cell,
+  // cooldown, spend — is untouched; only `obj` is rebuilt. That is the
+  // whole point of the registry.
+  function applyTowerLook() {
+    for (const tower of towers) {
+      scene.remove(tower.obj);
+      disposeObj(tower.obj);
+      tower.obj = buildTowerLook(params.towerLook, tower.def);
+      placeTowerObj(tower);
+      scene.add(tower.obj);
+    }
+  }
+
   function placeTower(key, ci) {
     const def = TOWER_BY_KEY[key];
     if (!def) return false;
     const err = placeError(ci);
     if (err) { flashShopNote(err); return false; }
     if (!eco.spend(def.cost)) { flashShopNote('not enough credit'); return false; }
-    const obj = makeTowerUnit(def);
-    const s = (obj.userData.baseScale ?? 1) * cellSide * 0.62;
-    obj.scale.setScalar(s);
-    const c = graph.centers[ci];
-    const n = graph.normals[ci];
-    const top = 1 + params.wallHeight; // mounted on the wall's roof
-    obj.position.set(c[0] * top, c[1] * top, c[2] * top);
-    tmpN.set(n[0], n[1], n[2]);
-    obj.quaternion.setFromUnitVectors(Y_AXIS, tmpN);
-    scene.add(obj);
+    const obj = buildTowerLook(params.towerLook, def);
     const tower = { key, def, tier: 0, ci, obj, cooldown: 0, spent: def.cost };
+    placeTowerObj(tower);
+    scene.add(obj);
     towers.push(tower);
     towerByCell.set(ci, tower);
     towerCells.add(ci);
@@ -2902,7 +2928,7 @@ export function initTdTab(root) {
     if (cost === null || !eco.spend(cost)) return false;
     tower.tier++;
     tower.spent += cost;
-    tower.obj.scale.multiplyScalar(1.12); // a tier reads as bulk
+    placeTowerObj(tower); // a tier reads as bulk — derived from tier, not accumulated
     showRangeRing(tower.ci, effectiveStats(tower.def, tower.tier).range, tower.def.color, 1.4);
     updateHud();
     sfx.play('tower_upgrade');
@@ -3444,6 +3470,7 @@ export function initTdTab(root) {
   gui.add(params, 'randomize').name('🎲 random seed');
   gui.add(params, 'regenerate').name('↻ regenerate');
 
+  gui.add(params, 'towerLook', TOWER_LOOK_NAMES).name('tower look').onChange(applyTowerLook);
   const bloomF = gui.addFolder('bloom');
   bloomF.add(postfx.params, 'enabled').name('enabled').onChange((v) => postfx.setEnabled(v));
   bloomF.add(postfx.params, 'strength', 0, 3, 0.05).onChange((v) => postfx.setParams({ strength: v }));
@@ -3833,6 +3860,14 @@ export function initTdTab(root) {
         if (!placeError(ci)) { placeTower(key, ci); break; }
       }
     }
+  }
+
+  // AFTER ?tower= on purpose: this then exercises the live applyTowerLook()
+  // swap over existing towers, not just build-time selection.
+  const towerLookOv = urlParams.get('towerlook');
+  if (TOWER_LOOK_NAMES.includes(towerLookOv)) {
+    params.towerLook = towerLookOv;
+    applyTowerLook();
   }
 
   // ?reveal=1 fires a sector-2 expansion immediately (headless check of

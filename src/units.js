@@ -15,7 +15,7 @@
 // tick(t) (idle animation) }.
 
 import * as THREE from '../vendor/three.module.js';
-import { CREATURES, waveJelly, spherePts, bulletPts, missilePts, heartPts, torusPts, towerHeadPts, enemyDotPts, portalPts } from './creatures.js?v=4eafd9ae';
+import { CREATURES, waveJelly, spherePts, bulletPts, missilePts, heartPts, torusPts, towerHeadPts, enemyDotPts, portalPts } from './creatures.js?v=84bfe64f';
 
 function normalizeToUnit(group) {
   group.updateMatrixWorld(true);
@@ -512,7 +512,10 @@ export function makeDebris(obj, outwardN) {
 // STATIC: idle animation is transform-only (spin + bob on the head
 // group), so ~190 dots per tower cost nothing per frame — cheaper than
 // one portal. userData.head is the aim/emit point.
-export function makeTowerUnit(def) {
+// The tower MAST — base, column, collar — shared by every tower look so
+// they all read as the same family of machine. A look supplies only the
+// head; see towerlooks.js.
+export function makeTowerMast(def) {
   const steel = new THREE.MeshLambertMaterial({ color: 0x27303f });
   const tintM = new THREE.MeshLambertMaterial({ color: def.color });
   const edge = new THREE.LineBasicMaterial({
@@ -533,10 +536,23 @@ export function makeTowerUnit(def) {
   collar.position.y = 0.8;
   outline(collar);
   g.add(collar);
-  // the half-dotted head, floating above the mast
+  // the head floats above the mast; a look fills this group
   const head = new THREE.Group();
   head.position.y = 1.12;
   g.add(head);
+  // hand-normalized: total height ~1.55 (head top), footprint 0.8 —
+  // normalizeToUnit only measures meshes and would ignore a dot cloud
+  g.scale.setScalar(1 / 1.55);
+  g.userData.baseScale = 1 / 1.55;
+  g.userData.head = head;
+  g.userData.lift = 0.02;
+  g.userData.kind = 'mesh';
+  return { g, head, tintM, edge, outline };
+}
+
+export function makeTowerUnit(def) {
+  const { g, head } = makeTowerMast(def);
+  // the half-dotted head, floating above the mast
   const pts = towerHeadPts(def.shape || 'sphere');
   const pos = new Float32Array(pts.length * 3);
   const col = new Float32Array(pts.length * 3);
@@ -562,13 +578,6 @@ export function makeTowerUnit(def) {
     head.rotation.y = t * spin;
     head.position.y = 1.12 + 0.045 * Math.sin(t * 1.9);
   };
-  g.userData.head = head;
-  g.userData.lift = 0.02;
-  // hand-normalized: total height ~1.55 (head top), footprint 0.8 —
-  // normalizeToUnit only measures meshes and would ignore the cloud
-  g.scale.setScalar(1 / 1.55);
-  g.userData.baseScale = 1 / 1.55;
-  g.userData.kind = 'mesh';
   return g;
 }
 
