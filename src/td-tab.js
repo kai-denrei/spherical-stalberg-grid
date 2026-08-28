@@ -19,22 +19,22 @@
 
 import * as THREE from '../vendor/three.module.js';
 import GUI from '../vendor/lil-gui.esm.js';
-import { generateSphereMesh, relax } from './grid.js?v=ec55fd9a';
-import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=ec55fd9a';
-import { mulberry32, randomSeed } from './rng.js?v=ec55fd9a';
-import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3, segKey } from './vec3.js?v=ec55fd9a';
-import { CREATURES, waveJelly } from './creatures.js?v=ec55fd9a';
-import { UNITS, UNIT_NAMES, buildUnit, preloadMkcx, makeBulletCloud, makeRewardSolid, makeShellSolid, makeDebris, makeDotBurst, makePortalCloud, makeHeartCloud, makeDotEnemy } from './units.js?v=ec55fd9a';
-import { LOOKS, LOOK_NAMES } from './looks.js?v=ec55fd9a';
-import { makeCellIndex } from './cellindex.js?v=ec55fd9a';
-import { CREATURE_TINTS, ENEMY_SPEC, INTROS, computeWavePlan } from './enemyspec.js?v=ec55fd9a';
-import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER } from './towers.js?v=ec55fd9a';
-import { makeEconomy, sellRefund } from './economy.js?v=ec55fd9a';
-import { makeBloom } from './postfx.js?v=ec55fd9a';
-import { BLOOM_GROUPS } from './bloomweights.js?v=ec55fd9a';
-import { TOWER_LOOK_NAMES, DEFAULT_TOWER_LOOK, buildTowerLook, preloadLook } from './towerlooks.js?v=ec55fd9a';
-import { makeAudio } from './audio.js?v=ec55fd9a';
-import { DEATH_KEYS } from './audiomanifest.js?v=ec55fd9a';
+import { generateSphereMesh, relax } from './grid.js?v=cda5f764';
+import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=cda5f764';
+import { mulberry32, randomSeed } from './rng.js?v=cda5f764';
+import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3, segKey } from './vec3.js?v=cda5f764';
+import { CREATURES, waveJelly } from './creatures.js?v=cda5f764';
+import { UNITS, UNIT_NAMES, buildUnit, preloadMkcx, makeBulletCloud, makeRewardSolid, makeShellSolid, makeDebris, makeDotBurst, makePortalCloud, makeHeartCloud, makeDotEnemy } from './units.js?v=cda5f764';
+import { LOOKS, LOOK_NAMES } from './looks.js?v=cda5f764';
+import { makeCellIndex } from './cellindex.js?v=cda5f764';
+import { CREATURE_TINTS, ENEMY_SPEC, INTROS, computeWavePlan } from './enemyspec.js?v=cda5f764';
+import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER } from './towers.js?v=cda5f764';
+import { makeEconomy, sellRefund } from './economy.js?v=cda5f764';
+import { makeBloom } from './postfx.js?v=cda5f764';
+import { BLOOM_GROUPS } from './bloomweights.js?v=cda5f764';
+import { TOWER_LOOK_NAMES, DEFAULT_TOWER_LOOK, buildTowerLook, preloadLook } from './towerlooks.js?v=cda5f764';
+import { makeAudio } from './audio.js?v=cda5f764';
+import { DEATH_KEYS } from './audiomanifest.js?v=cda5f764';
 
 export function initTdTab(root) {
   let active = false;
@@ -63,6 +63,15 @@ export function initTdTab(root) {
     speed: 1.1, // cells per second, wanderer pace
     recoil: 8, // shell-recoil intensity, dialed to MAX per operator
     directive: 'wander', // auto-mode order: wander/avoid/ram/conserve/home/portal
+    // Hover feel, all live-tunable — these were guessed wrong twice, so they
+    // are knobs rather than constants. Units: `hoverRise` is in MODEL units
+    // (the tank is ~3.24 tall there), because it moves the body group inside
+    // the model, not the unit on the sphere.
+    hoverRise: 0.14,
+    hoverUp: 1.9,     // spool-up rate
+    hoverDown: 2.4,   // settle rate
+    hoverRock: 0.016, // touchdown tilt, radians
+    hoverDecay: 5.0,  // how fast the rock dies
     // mkcx by default: the authored hover tank. Async — buildUnit falls
     // back to the procedural tank until the bytes land, then
     // onMkcxReady swaps it in.
@@ -216,12 +225,10 @@ export function initTdTab(root) {
   // the tank sets back down — it starts high so a fresh spawn doesn't rock.
   let hoverT = 0;
   let settleT = 99;
-  // MEASURED, because the first value was wildly wrong. lift is in unitScale
-  // units and the tank stands 0.0311 world tall at unitScale 0.0375 — so
-  // 0.75 raised it by 0.028, i.e. 90% of its own height. It took off. This is
-  // an engine idling, not a jump jet: 0.09 lifts it ~11% of its height, which
-  // you notice as the machine coming alive and not as flight.
-  const HOVER_RISE = 0.09;
+  // The whole-unit lift is gone: on a model with a hover skirt the body
+  // rises and the skirt stays planted (see units.js). Units without that
+  // split simply do not hover, which is correct — a dot-cloud creature has
+  // no suspension to compress.
   let respawnClock = 0;
 
   // --- battle state --------------------------------------------------------
@@ -522,6 +529,14 @@ export function initTdTab(root) {
   // CRUISE: player-triggered auto-forward. A quick double-tap of the
   // forward control (W / ▲) toggles it; S/▼ always kills it.
   let cruise = false;
+  // THROTTLE — one lever replacing the ▲/▼ pair. It HOLDS where you put it,
+  // so setting it IS cruise; there is no separate mode to engage. Reverse is
+  // the same lever continued below zero and capped: backing up cannot match
+  // going forward. The zero detent sits proportionally, so the shorter
+  // reverse travel shows you that before you try it.
+  const THROTTLE_REV = 0.4;                       // reverse ceiling vs forward
+  const THROTTLE_ZERO = 1 / (1 + THROTTLE_REV);   // where 0 sits down the track
+  let throttle = 0;
   let lastFastTap = -9; // seconds
   function noteFastTap() {
     const s = performance.now() / 1000;
@@ -836,8 +851,7 @@ export function initTdTab(root) {
     // lift: the unit's own floor offset plus its hover profile
     const prof = MOVES[params.creature];
     const baseLift = creatureGeo ? 0.85 : (playerMesh.userData.lift ?? 0.05);
-    const lift = unitScale * (baseLift + (prof ? prof.hover(simTime) : 0)
-      + HOVER_RISE * hoverT);
+    const lift = unitScale * (baseLift + (prof ? prof.hover(simTime) : 0));
     let p = add3(player.pos, scale3(n, lift));
     // recoil, reworked: the TURRET takes the kick — it slams back with a
     // high-frequency shudder — while the hull only rocks (pitch below) and
@@ -867,11 +881,19 @@ export function initTdTab(root) {
     if (rf > 0) playerMesh.rotateX(-0.05 * rk);
     // touchdown: a damped rock on two axes, ~0.9s. Two different frequencies
     // so it reads as suspension settling rather than a single clean wobble.
-    // a hint of weight transferring, not a bounce
-    if (settleT < 1.1) {
-      const d = Math.exp(-settleT * 5.0);
-      playerMesh.rotateX(Math.sin(settleT * 15) * 0.016 * d);
-      playerMesh.rotateZ(Math.cos(settleT * 11) * 0.010 * d);
+    // Hover and touchdown live on the BODY, not the unit: the hull lifts off
+    // a planted skirt and rocks on it. Applied here rather than in
+    // updateEngine so it survives every rebuild of playerMesh.
+    const body = playerMesh.userData.hoverBody;
+    if (body) {
+      body.position.y = params.hoverRise * hoverT;
+      if (settleT < 1.1) {
+        const d = Math.exp(-settleT * params.hoverDecay);
+        body.rotation.x = Math.sin(settleT * 15) * params.hoverRock * d;
+        body.rotation.z = Math.cos(settleT * 11) * params.hoverRock * 0.62 * d;
+      } else if (body.rotation.x || body.rotation.z) {
+        body.rotation.x = 0; body.rotation.z = 0;
+      }
     }
     markerMesh.quaternion.copy(tmpObj.quaternion); // arrow nose = heading
   }
@@ -1178,9 +1200,11 @@ export function initTdTab(root) {
       // forward is PLAYER-TRIGGERED: hold W to drive, or double-tap W/▲
       // to engage CRUISE (rolls on its own; W boosts, S kills it). The
       // old always-rolls-forward manual proved too aggressive.
+      // keys still override (a held key is an explicit act); otherwise the
+      // lever's resting position is the speed
       const drive = keys.slow ? -0.55
         : keys.fast ? (cruise ? 1.45 : 1)
-        : cruise ? 1 : 0;
+        : (throttle !== 0 ? throttle : (cruise ? 1 : 0));
       if (drive !== 0) {
         const v = params.speed * speedBonus * cellSide * 1.6 * drive
           * (1 - 0.65 * bumpFactor()); // the run-over drag
@@ -1391,7 +1415,8 @@ export function initTdTab(root) {
       shift: 'laser' }[k];
     if (m) {
       if (down && m === 'fast' && !keys.fast) noteFastTap(); // double-tap → cruise
-      if (down && m === 'slow') cruise = false;              // brake kills cruise
+      // the brake kills BOTH holds, or releasing S would drive off again
+      if (down && m === 'slow') { cruise = false; throttle = 0; paintThrottle(); }
       keys[m] = down;
       ev.preventDefault();
       return;
@@ -1434,11 +1459,59 @@ export function initTdTab(root) {
       });
     }
   }
-  holdButton('#td-pad-up', 'fast', noteFastTap); // double-tap ▲ → cruise
+  // --- throttle lever -----------------------------------------------------
+  const throtEl = root.querySelector('#td-throttle');
+  const throtTrack = throtEl.querySelector('.throttle-track');
+  const throtFill = throtEl.querySelector('.throttle-fill');
+  const throtHandle = throtEl.querySelector('.throttle-handle');
+  const throtRead = throtEl.querySelector('.throttle-read');
+
+  function paintThrottle() {
+    const zeroPct = THROTTLE_ZERO * 100;
+    // handle position, measured down from the top of the track
+    const t = throttle >= 0
+      ? THROTTLE_ZERO * (1 - throttle)
+      : THROTTLE_ZERO + (-throttle / THROTTLE_REV) * (1 - THROTTLE_ZERO);
+    throtHandle.style.top = `${t * 100}%`;
+    // the fill grows from the zero line toward the handle, either way
+    const a = Math.min(t * 100, zeroPct);
+    const b = Math.max(t * 100, zeroPct);
+    throtFill.style.top = `${a}%`;
+    throtFill.style.height = `${b - a}%`;
+    throtEl.classList.toggle('rev', throttle < 0);
+    throtEl.classList.toggle('idle', throttle === 0);
+    throtRead.textContent = throttle === 0 ? '0' : `${Math.round(throttle * 100)}`;
+  }
+
+  function setThrottleFromY(clientY) {
+    const r = throtTrack.getBoundingClientRect();
+    const t = Math.min(1, Math.max(0, (clientY - r.top) / (r.height || 1)));
+    let v = t <= THROTTLE_ZERO
+      ? (THROTTLE_ZERO - t) / THROTTLE_ZERO
+      : -((t - THROTTLE_ZERO) / (1 - THROTTLE_ZERO)) * THROTTLE_REV;
+    if (Math.abs(v) < 0.07) v = 0;   // detent, so "stop" is findable by feel
+    throttle = Math.min(1, Math.max(-THROTTLE_REV, v));
+    if (throttle !== 0) { cruise = false; autoMode = false; }
+    paintThrottle();
+  }
+
+  throtEl.addEventListener('pointerdown', (ev) => {
+    ev.preventDefault();
+    throtEl.setPointerCapture(ev.pointerId);
+    throtEl.classList.add('pressed');
+    setThrottleFromY(ev.clientY);
+  });
+  throtEl.addEventListener('pointermove', (ev) => {
+    if (!throtEl.hasPointerCapture(ev.pointerId)) return;
+    setThrottleFromY(ev.clientY);
+  });
+  for (const evt of ['pointerup', 'pointercancel']) {
+    throtEl.addEventListener(evt, () => throtEl.classList.remove('pressed'));
+  }
+  paintThrottle();
   holdButton('#td-pad-laser', 'laser');
   holdButton('#td-pad-left', 'left');
   holdButton('#td-pad-right', 'right');
-  holdButton('#td-pad-down', 'slow', () => { cruise = false; });
   root.querySelector('#td-pad-view').addEventListener('click', () => toggleView());
   root.querySelector('#td-pad-build').addEventListener('click', () => toggleBuild());
   function syncDirectiveChip() {
@@ -1857,7 +1930,7 @@ export function initTdTab(root) {
   const GAMEPLAY_TIPS =
     `<div class="tips-head">gameplay</div>` +
     `<div class="tips">` +
-    `drive: hold &and; · double-tap &and; = cruise · &or; stops<br>` +
+    `drive: drag the throttle · flick up for full · below zero reverses<br>` +
     `steer: the side zones · fire: &#9673; shell · &#8767; laser (overheats)<br>` +
     `B = build/tank · M = map view · in BUILD tap HIGH GROUND to place towers<br>` +
     `ESC pause · RAM the small ones · shells breach walls</div>`;
@@ -3571,6 +3644,15 @@ export function initTdTab(root) {
 
   const towerLookCtrl = gui.add(params, 'towerLook', TOWER_LOOK_NAMES)
     .name('tower look').onChange(applyTowerLook);
+  // guessed wrong twice by eye; these exist so they can be dialled by hand
+  const hoverF = gui.addFolder('hover');
+  hoverF.add(params, 'hoverRise', 0, 0.6, 0.01).name('body rise');
+  hoverF.add(params, 'hoverUp', 0.4, 6, 0.1).name('spool up');
+  hoverF.add(params, 'hoverDown', 0.4, 6, 0.1).name('settle down');
+  hoverF.add(params, 'hoverRock', 0, 0.06, 0.002).name('touchdown rock');
+  hoverF.add(params, 'hoverDecay', 1.5, 10, 0.5).name('rock decay');
+  hoverF.close();
+
   const bloomF = gui.addFolder('bloom');
   bloomF.add(postfx.params, 'enabled').name('enabled').onChange((v) => postfx.setEnabled(v));
   bloomF.add(postfx.params, 'strength', 0, 3, 0.05).onChange((v) => postfx.setParams({ strength: v }));
@@ -3684,7 +3766,8 @@ export function initTdTab(root) {
     // slow both ways: an engine SPOOLS. Rising a touch slower than it falls
     // reads as taking up load, then setting the weight back down.
     const hoverTarget = engineRunning ? 1 : 0;
-    hoverT += (hoverTarget - hoverT) * Math.min(1, (hoverTarget > hoverT ? 1.9 : 2.4) * dt);
+    hoverT += (hoverTarget - hoverT)
+      * Math.min(1, (hoverTarget > hoverT ? params.hoverUp : params.hoverDown) * dt);
     if (settleT < 4) settleT += dt;
 
     if (moving && !engineRunning) {

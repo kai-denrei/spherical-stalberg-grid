@@ -16,8 +16,8 @@
 
 import * as THREE from '../vendor/three.module.js';
 import { loadGlb, mergeByMaterial, fitModel, tintModel, makeShellRack,
-  addEdgeOutlines, makeHeatSleeve } from './glbmodels.js?v=ec55fd9a';
-import { CREATURES, waveJelly, spherePts, bulletPts, missilePts, heartPts, torusPts, towerHeadPts, enemyDotPts, portalPts } from './creatures.js?v=ec55fd9a';
+  addEdgeOutlines, makeHeatSleeve } from './glbmodels.js?v=cda5f764';
+import { CREATURES, waveJelly, spherePts, bulletPts, missilePts, heartPts, torusPts, towerHeadPts, enemyDotPts, portalPts } from './creatures.js?v=cda5f764';
 
 function normalizeToUnit(group) {
   group.updateMatrixWorld(true);
@@ -900,7 +900,10 @@ export function makeHeartCloud(bodyHex) {
 //   Secondary_L/R_Gun_Pivot — the twin mini-lasers
 // Everything else merges. 58 meshes becomes roughly a dozen.
 const MKCX_URL = 'assets/models/mkcx.glb';
-const MKCX_PIVOTS = ['Turret_Pivot', 'Secondary_L_Gun_Pivot', 'Secondary_R_Gun_Pivot'];
+// Hover_Gear is the nacelle/lift-emitter skirt — the part that should stay
+// planted while the body rises off it. Preserved through the merge for that
+// reason, not because it animates on its own.
+const MKCX_PIVOTS = ['Turret_Pivot', 'Secondary_L_Gun_Pivot', 'Secondary_R_Gun_Pivot', 'Hover_Gear'];
 // The barrel glow strips are authored floating +0.20 above the barrel axis.
 // At our scale they don't read as strips ON the gun — they read as a stray
 // bright line hanging in front of the tank. Dropped before the merge, since
@@ -975,9 +978,24 @@ function makeMkcx(cols) {
     g.userData.turret = turret;
     turret.userData.baseZ = turret.position.z; // recoil slides back from here
   }
-  const guns = MKCX_PIVOTS.slice(1)
+  const guns = ['Secondary_L_Gun_Pivot', 'Secondary_R_Gun_Pivot']
     .map((n) => g.getObjectByName(n))
     .filter(Boolean);
+
+  // Split the tank in two so the hull can lift while the skirt stays down.
+  // Raising the WHOLE unit reads as flight; raising only the body off a
+  // planted skirt reads as weight on suspension. Everything that is not the
+  // hover gear becomes one body group — hull, turret, secondaries, details.
+  const gear = g.getObjectByName('Hover_Gear');
+  const modelRoot = gear && gear.parent;
+  if (modelRoot) {
+    const body = new THREE.Group();
+    body.name = 'HoverBody';
+    for (const c of [...modelRoot.children]) if (c !== gear) body.add(c);
+    modelRoot.add(body);
+    g.userData.hoverBody = body;   // td-tab lifts THIS, not the unit
+    g.userData.hoverGear = gear;
+  }
   if (guns.length) g.userData.laserGuns = guns;
   // The model has no shell rack of its own, so build the procedural tank's
   // one onto the turret roof: 3x3, row-major, index < ammo lit. Parented to

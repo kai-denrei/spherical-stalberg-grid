@@ -5,18 +5,18 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
   <title>spherical stålberg grid</title>
   <meta name="theme-color" content="#10131a">
-  <link rel="manifest" href="./manifest.webmanifest?v=ec55fd9a">
-  <link rel="apple-touch-icon" href="./icons/apple-touch-icon.png?v=ec55fd9a">
+  <link rel="manifest" href="./manifest.webmanifest?v=cda5f764">
+  <link rel="apple-touch-icon" href="./icons/apple-touch-icon.png?v=cda5f764">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="SphereGrid">
-  <link rel="stylesheet" href="./styles.css?v=ec55fd9a">
+  <link rel="stylesheet" href="./styles.css?v=cda5f764">
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
-  <meta name="cb" content="ec55fd9a">
-  <link rel="icon" type="image/svg+xml" href="./cb-shapes/44.svg?v=ec55fd9a">
-  <script src="./cb-badge.js?v=ec55fd9a" defer></script>
+  <meta name="cb" content="cda5f764">
+  <link rel="icon" type="image/svg+xml" href="./cb-shapes/13.svg?v=cda5f764">
+  <script src="./cb-badge.js?v=cda5f764" defer></script>
 </head>
 <body>
   <nav id="tabbar">
@@ -145,9 +145,13 @@
     <div id="td-toast" class="hidden"></div>
     <div id="td-pad-left" class="tzone tzone-side tzone-l"><span>&lsaquo;</span></div>
     <div id="td-pad-right" class="tzone tzone-side tzone-r"><span>&rsaquo;</span></div>
-    <div class="tzone-mid">
-      <div id="td-pad-up" class="tzone tzone-drive"><span>&and;</span></div>
-      <div id="td-pad-down" class="tzone tzone-drive"><span>&or;</span></div>
+    <div id="td-throttle" class="throttle" title="throttle — drag to set speed, flick up for full">
+      <div class="throttle-track">
+        <div class="throttle-fill"></div>
+        <div class="throttle-zero"></div>
+        <div class="throttle-handle"></div>
+      </div>
+      <div class="throttle-read">0</div>
     </div>
     <button id="td-pad-fire" class="tfire tfire-primary" title="FIRE shell (Space)">&#9673;</button>
     <button id="td-pad-laser" class="tfire tfire-secondary" title="hold: lasers (Shift)">&#8767;</button>
@@ -237,6 +241,6 @@
     </div>
   </div>
 
-  <script type="module" src="./src/main.js?v=ec55fd9a"></script>
+  <script type="module" src="./src/main.js?v=cda5f764"></script>
 </body>
 </html>

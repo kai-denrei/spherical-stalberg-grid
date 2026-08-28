@@ -225,7 +225,10 @@ html, body {
 /* utility pair: small text buttons, centered above the drive zones */
 .tc-util {
   position: absolute;
-  bottom: calc(max(12px, env(safe-area-inset-bottom)) + 138px);
+  /* clears the throttle, which is taller than the two drive zones it
+     replaced — this offset is derived from the lever's height, so the two
+     move together */
+  bottom: calc(max(12px, env(safe-area-inset-bottom)) + min(30vh, 210px) + 46px);
   left: 50%;
   transform: translateX(-50%);
   z-index: 6;
@@ -396,7 +399,7 @@ html, body {
     background: rgba(22, 46, 58, 0.28);
     border-color: rgba(125, 249, 255, 0.3);
   }
-  .tc-util { bottom: calc(max(12px, env(safe-area-inset-bottom)) + 104px); gap: 6px; }
+  .tc-util { bottom: calc(max(12px, env(safe-area-inset-bottom)) + min(18vh, 148px) + 42px); gap: 6px; }
   .tc-util button {
     padding: 5px 9px;
     font-size: 10px;
@@ -1450,4 +1453,71 @@ body.playing:not(.chrome-open) #tabbar { display: none !important; }
 @media (pointer: coarse), (max-width: 700px) {
   #home-scroll { padding-top: 66px; }
   .home-cards { grid-template-columns: 1fr; }
+}
+
+/* ── THROTTLE ────────────────────────────────────────────────────────────
+   One lever in place of the ▲/▼ pair. It HOLDS where you leave it, so
+   setting it is what cruise used to be — there is no mode to engage.
+   Reverse is the same lever continued below zero, and its travel is
+   deliberately SHORTER than forward's: the control tells you that backing
+   up is slower before you try it. */
+.throttle {
+  position: absolute;
+  bottom: max(12px, env(safe-area-inset-bottom));
+  left: 50%; transform: translateX(-50%);
+  z-index: 6;
+  display: flex; flex-direction: column; align-items: center; gap: 6px;
+  padding: 8px 10px 6px;
+  border-radius: 20px;
+  background: rgba(28, 38, 58, 0.16);
+  border: 1px solid rgba(120, 150, 210, 0.16);
+  backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px);
+  touch-action: none;           /* we own the drag; no scroll hijack */
+  -webkit-user-select: none; user-select: none;
+  cursor: ns-resize;
+}
+.throttle-track {
+  position: relative;
+  width: 34px; height: min(30vh, 210px);
+  border-radius: 17px;
+  background: rgba(10, 16, 26, 0.5);
+  border: 1px solid rgba(120, 150, 210, 0.18);
+  overflow: hidden;
+}
+.throttle-fill {
+  position: absolute; left: 0; right: 0;
+  background: linear-gradient(180deg, rgba(111, 230, 255, .5), rgba(111, 230, 255, .22));
+}
+.throttle.rev .throttle-fill {
+  background: linear-gradient(180deg, rgba(255, 176, 0, .22), rgba(255, 176, 0, .5));
+}
+/* the zero detent, drawn where the lever rests */
+.throttle-zero {
+  position: absolute; left: 4px; right: 4px;
+  top: calc(100% / 1.4);        /* 1 / (1 + reverse ceiling) */
+  height: 1px; margin-top: -0.5px;
+  background: rgba(200, 220, 255, .35);
+}
+.throttle-handle {
+  position: absolute; left: -3px; right: -3px;
+  height: 12px; margin-top: -6px;
+  border-radius: 6px;
+  background: rgba(207, 228, 255, .92);
+  box-shadow: 0 0 10px rgba(111, 230, 255, .5);
+}
+.throttle.rev .throttle-handle { box-shadow: 0 0 10px rgba(255, 176, 0, .55); }
+.throttle.idle .throttle-handle { background: rgba(160, 180, 205, .7); box-shadow: none; }
+.throttle.pressed { border-color: rgba(140, 180, 250, 0.5); }
+.throttle-read {
+  font: 11px/1 ui-monospace, SFMono-Regular, Menlo, monospace;
+  color: rgba(213, 226, 245, .55); letter-spacing: .06em;
+  min-height: 12px;
+}
+.throttle.rev .throttle-read { color: rgba(255, 200, 120, .8); }
+
+@media (pointer: coarse) {
+  /* same compaction as the rest of the touch chrome */
+  .throttle { padding: 6px 8px 5px; background: rgba(28, 38, 58, 0.13); }
+  .throttle-track { width: 30px; height: min(18vh, 148px); }
+  .throttle-read { font-size: 10px; }
 }
