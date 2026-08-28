@@ -59,6 +59,8 @@ subsystem carrying full weight while doing nothing. The `C` key and the
 The weights themselves have not been *seen*, only reasoned about. That's
 what the sliders are for.
 
+---
+
 ## `bfb7a2f` — The vertex blobs, and cutting the build camera loose
 
 Two fixes and one of them was not where it looked.
