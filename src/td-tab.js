@@ -19,22 +19,22 @@
 
 import * as THREE from '../vendor/three.module.js';
 import GUI from '../vendor/lil-gui.esm.js';
-import { generateSphereMesh, relax } from './grid.js?v=fdba023e';
-import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=fdba023e';
-import { mulberry32, randomSeed } from './rng.js?v=fdba023e';
-import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3, segKey } from './vec3.js?v=fdba023e';
-import { CREATURES, waveJelly } from './creatures.js?v=fdba023e';
-import { UNITS, UNIT_NAMES, buildUnit, makeOrbCloud, makeBulletCloud, makeMissileCloud, makeDebris, makeDotBurst, makePortalCloud, makeHeartCloud, makeDotEnemy } from './units.js?v=fdba023e';
-import { LOOKS, LOOK_NAMES } from './looks.js?v=fdba023e';
-import { makeCellIndex } from './cellindex.js?v=fdba023e';
-import { CREATURE_TINTS, ENEMY_SPEC, INTROS, computeWavePlan } from './enemyspec.js?v=fdba023e';
-import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER } from './towers.js?v=fdba023e';
-import { makeEconomy, sellRefund } from './economy.js?v=fdba023e';
-import { makeBloom } from './postfx.js?v=fdba023e';
-import { BLOOM_GROUPS } from './bloomweights.js?v=fdba023e';
-import { TOWER_LOOK_NAMES, DEFAULT_TOWER_LOOK, buildTowerLook, preloadLook } from './towerlooks.js?v=fdba023e';
-import { makeAudio } from './audio.js?v=fdba023e';
-import { DEATH_KEYS } from './audiomanifest.js?v=fdba023e';
+import { generateSphereMesh, relax } from './grid.js?v=c61d2993';
+import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=c61d2993';
+import { mulberry32, randomSeed } from './rng.js?v=c61d2993';
+import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3, segKey } from './vec3.js?v=c61d2993';
+import { CREATURES, waveJelly } from './creatures.js?v=c61d2993';
+import { UNITS, UNIT_NAMES, buildUnit, preloadMkcx, makeOrbCloud, makeBulletCloud, makeMissileCloud, makeDebris, makeDotBurst, makePortalCloud, makeHeartCloud, makeDotEnemy } from './units.js?v=c61d2993';
+import { LOOKS, LOOK_NAMES } from './looks.js?v=c61d2993';
+import { makeCellIndex } from './cellindex.js?v=c61d2993';
+import { CREATURE_TINTS, ENEMY_SPEC, INTROS, computeWavePlan } from './enemyspec.js?v=c61d2993';
+import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER } from './towers.js?v=c61d2993';
+import { makeEconomy, sellRefund } from './economy.js?v=c61d2993';
+import { makeBloom } from './postfx.js?v=c61d2993';
+import { BLOOM_GROUPS } from './bloomweights.js?v=c61d2993';
+import { TOWER_LOOK_NAMES, DEFAULT_TOWER_LOOK, buildTowerLook, preloadLook } from './towerlooks.js?v=c61d2993';
+import { makeAudio } from './audio.js?v=c61d2993';
+import { DEATH_KEYS } from './audiomanifest.js?v=c61d2993';
 
 export function initTdTab(root) {
   let active = false;
@@ -2890,6 +2890,20 @@ export function initTdTab(root) {
   // Swap every tower's VISUAL in place. Game state — key, def, tier, cell,
   // cooldown, spend — is untouched; only `obj` is rebuilt. That is the
   // whole point of the registry.
+  // Choosing a player unit. Units whose model loads asynchronously build
+  // their procedural fallback right now and swap in when the bytes land, so
+  // the choice is instant and the tank is never missing.
+  function applyCreature() {
+    const chosen = params.creature;
+    if (chosen === 'mkcx') {
+      preloadMkcx().then((ok) => {
+        if (ok && params.creature === chosen) { buildActors(); placeActors(); }
+      });
+    }
+    buildActors();
+    placeActors();
+  }
+
   function applyTowerLook() {
     // A look with async assets builds as the fallback right now and gets
     // re-applied once loaded — so choosing it is instant and never blank.
@@ -3458,8 +3472,7 @@ export function initTdTab(root) {
   const gui = new GUI({ title: 'TD', container: root });
   // hero + portal styling swap IN PLACE — cosmetics never reset a run
   gui.add(params, 'creature', UNIT_NAMES).onChange(() => {
-    buildActors();
-    placeActors();
+    applyCreature();
   });
   gui.add(params, 'look', LOOK_NAMES).onChange(applyLook);
   gui.add(params, 'wallTops', ['auto', 'bright', 'dim', 'black'])
@@ -3815,6 +3828,9 @@ export function initTdTab(root) {
 
   regenerate();
   applyLook();
+  // a unit whose model loads asynchronously needs its bytes kicked off; it
+  // renders the procedural fallback until they arrive
+  if (params.creature === 'mkcx') applyCreature();
 
   // ?walk=N teleports the wanderer N hops along the shortest route (demo)
   const walkN = parseInt(urlParams.get('walk') || '0', 10);

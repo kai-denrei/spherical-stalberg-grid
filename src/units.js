@@ -15,7 +15,8 @@
 // tick(t) (idle animation) }.
 
 import * as THREE from '../vendor/three.module.js';
-import { CREATURES, waveJelly, spherePts, bulletPts, missilePts, heartPts, torusPts, towerHeadPts, enemyDotPts, portalPts } from './creatures.js?v=fdba023e';
+import { loadGlb, mergeByMaterial, fitModel, tintModel } from './glbmodels.js?v=c61d2993';
+import { CREATURES, waveJelly, spherePts, bulletPts, missilePts, heartPts, torusPts, towerHeadPts, enemyDotPts, portalPts } from './creatures.js?v=c61d2993';
 
 function normalizeToUnit(group) {
   group.updateMatrixWorld(true);
@@ -889,11 +890,69 @@ export function makeHeartCloud(bodyHex) {
   return pts;
 }
 
+// --- mkcx: an authored hover tank, as a selectable player unit ----------
+//
+// The tank is the opposite case from a GLB TOWER. A tower can be flattened
+// to a handful of draw calls because it holds still; the tank has to AIM,
+// so the nodes that move must survive the merge. These four do:
+//   Turret_Pivot            — the main gun; aiming reads its world +Z
+//   Secondary_L/R_Gun_Pivot — the twin mini-lasers
+// Everything else merges. 58 meshes becomes roughly a dozen.
+const MKCX_URL = 'assets/models/mkcx.glb';
+const MKCX_PIVOTS = ['Turret_Pivot', 'Secondary_L_Gun_Pivot', 'Secondary_R_Gun_Pivot'];
+let mkcxProto = null;
+
+export function preloadMkcx() {
+  return loadGlb(MKCX_URL).then((scene) => {
+    if (!scene) return false;
+    mkcxProto = fitModel(mergeByMaterial(scene, MKCX_PIVOTS), {
+      height: 0.95,
+      maxSpan: 1.25,
+      // The bounding box is skewed +1.46 in Z by the gun barrel while the
+      // hull sits at the origin. Centring on the box would make the tank
+      // pivot around a point out in FRONT of itself; centre on the hull.
+      recentreOn: 'Hull_Mesh',
+    });
+    return true;
+  });
+}
+
+export function mkcxReady() { return !!mkcxProto; }
+
+function makeMkcx(cols) {
+  if (!mkcxProto) return makeTank(cols); // bytes not in yet — never nothing
+  const g = mkcxProto.clone(true);
+  // a heavier wash than the towers get: the player unit is the thing you
+  // track constantly, and a grey machine loses itself against the board
+  tintModel(g, cols.walkerHi ?? 0x7df9ff, 0.45);
+
+  // The contract td-tab reads off a player unit. turret and laserGuns are
+  // the load-bearing ones: aim is derived from their WORLD quaternions, per
+  // the house rule about never re-deriving a render-coupled direction.
+  const turret = g.getObjectByName('Turret_Pivot');
+  if (turret) {
+    g.userData.turret = turret;
+    turret.userData.baseZ = turret.position.z; // recoil slides back from here
+  }
+  const guns = MKCX_PIVOTS.slice(1)
+    .map((n) => g.getObjectByName(n))
+    .filter(Boolean);
+  if (guns.length) g.userData.laserGuns = guns;
+  // no ammoDots and no heatSleeve: the model has no shell rack or gun
+  // sleeve to drive, and td-tab guards both. The HUD still shows ammo.
+  g.userData.tick = (t) => { if (turret) turret.rotation.y = Math.sin(t * 0.6) * 0.7; };
+  g.userData.lift = 0.02;
+  g.userData.baseScale = 1;
+  g.userData.kind = 'mesh';
+  return g;
+}
+
 export const UNITS = {
   amoeba: { kind: 'cloud' },
   phage: { kind: 'cloud' },
   jellyfish: { kind: 'cloud' },
   tank: { kind: 'mesh', make: makeTank },
+  mkcx: { kind: 'mesh', make: makeMkcx },
   drone: { kind: 'mesh', make: makeDrone },
   ghost: { kind: 'mesh', make: makeGhost },
   scoutufo: { kind: 'mesh', make: makeUfo },
