@@ -19,20 +19,21 @@
 
 import * as THREE from '../vendor/three.module.js';
 import GUI from '../vendor/lil-gui.esm.js';
-import { generateSphereMesh, relax } from './grid.js?v=9cc44640';
-import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=9cc44640';
-import { mulberry32, randomSeed } from './rng.js?v=9cc44640';
-import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3, segKey } from './vec3.js?v=9cc44640';
-import { CREATURES, waveJelly } from './creatures.js?v=9cc44640';
-import { UNITS, UNIT_NAMES, buildUnit, makeOrbCloud, makeBulletCloud, makeMissileCloud, makeDebris, makeDotBurst, makePortalCloud, makeHeartCloud, makeTowerUnit, makeDotEnemy } from './units.js?v=9cc44640';
-import { LOOKS, LOOK_NAMES } from './looks.js?v=9cc44640';
-import { makeCellIndex } from './cellindex.js?v=9cc44640';
-import { CREATURE_TINTS, ENEMY_SPEC, INTROS, computeWavePlan } from './enemyspec.js?v=9cc44640';
-import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER } from './towers.js?v=9cc44640';
-import { makeEconomy, sellRefund } from './economy.js?v=9cc44640';
-import { makeBloom } from './postfx.js?v=9cc44640';
-import { makeAudio } from './audio.js?v=9cc44640';
-import { DEATH_KEYS } from './audiomanifest.js?v=9cc44640';
+import { generateSphereMesh, relax } from './grid.js?v=f3fbe675';
+import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=f3fbe675';
+import { mulberry32, randomSeed } from './rng.js?v=f3fbe675';
+import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3, segKey } from './vec3.js?v=f3fbe675';
+import { CREATURES, waveJelly } from './creatures.js?v=f3fbe675';
+import { UNITS, UNIT_NAMES, buildUnit, makeOrbCloud, makeBulletCloud, makeMissileCloud, makeDebris, makeDotBurst, makePortalCloud, makeHeartCloud, makeTowerUnit, makeDotEnemy } from './units.js?v=f3fbe675';
+import { LOOKS, LOOK_NAMES } from './looks.js?v=f3fbe675';
+import { makeCellIndex } from './cellindex.js?v=f3fbe675';
+import { CREATURE_TINTS, ENEMY_SPEC, INTROS, computeWavePlan } from './enemyspec.js?v=f3fbe675';
+import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER } from './towers.js?v=f3fbe675';
+import { makeEconomy, sellRefund } from './economy.js?v=f3fbe675';
+import { makeBloom } from './postfx.js?v=f3fbe675';
+import { BLOOM_GROUPS } from './bloomweights.js?v=f3fbe675';
+import { makeAudio } from './audio.js?v=f3fbe675';
+import { DEATH_KEYS } from './audiomanifest.js?v=f3fbe675';
 
 export function initTdTab(root) {
   let active = false;
@@ -129,6 +130,21 @@ export function initTdTab(root) {
   // every play() is a silent no-op -- the game never waits on audio.
   const sfx = makeAudio({ seed: 1 });
   sfx.arm();
+
+  // Which things bloom how much. Read fresh every frame from the live
+  // collections, so nothing has to be tagged at creation and no new
+  // spawn site can silently miss out. Anything not listed here — tracers,
+  // debris, bursts, orbs, rewards, the Heart, the range ring — falls
+  // through to the `effects` weight.
+  postfx.setGroups(() => [
+    ['map', [floorMesh, wallMesh, edgeMesh, topMesh]],
+    ['tank', [playerMesh]],
+    ['enemies', [
+      ...enemies.filter((e) => e.alive).map((e) => e.obj),
+      ...spawnPoints.filter((sp) => sp.alive).map((sp) => sp.obj),
+    ]],
+    ['towers', towers.map((tw) => tw.obj)],
+  ]);
 
   // circular minimap: its own small renderer on a round-clipped canvas —
   // scissored insets on the main canvas can only ever be rectangles
@@ -3433,6 +3449,27 @@ export function initTdTab(root) {
   bloomF.add(postfx.params, 'strength', 0, 3, 0.05).onChange((v) => postfx.setParams({ strength: v }));
   bloomF.add(postfx.params, 'radius', 0, 1, 0.01).onChange((v) => postfx.setParams({ radius: v }));
   bloomF.add(postfx.params, 'threshold', 0, 1, 0.01).onChange((v) => postfx.setParams({ threshold: v }));
+
+  // per-group glow. These are AMOUNTS, not brightness: the map can stay a
+  // bright cyan wireframe while barely blooming at all.
+  const weightsF = bloomF.addFolder('weights');
+  for (const g of BLOOM_GROUPS) {
+    weightsF.add(postfx.weights, g, 0, 3, 0.05).name(g);
+  }
+  // a tuning session must survive a reload
+  const BW_KEY = 'ssg.td.bloomWeights';
+  try {
+    const savedW = JSON.parse(localStorage.getItem(BW_KEY) || 'null');
+    if (savedW && typeof savedW === 'object') {
+      for (const g of BLOOM_GROUPS) {
+        if (typeof savedW[g] === 'number') postfx.weights[g] = savedW[g];
+      }
+      weightsF.controllers.forEach((c) => c.updateDisplay());
+    }
+  } catch { /* private mode or corrupt value — defaults are fine */ }
+  weightsF.onChange(() => {
+    try { localStorage.setItem(BW_KEY, JSON.stringify(postfx.weights)); } catch { /* ignore */ }
+  });
 
   // sound. The encode is peak-normalized and the manifest carries each
   // sound's trim gain, so these are the coarse balance -- and the tuning
