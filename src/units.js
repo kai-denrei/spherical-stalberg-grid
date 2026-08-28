@@ -15,8 +15,9 @@
 // tick(t) (idle animation) }.
 
 import * as THREE from '../vendor/three.module.js';
-import { loadGlb, mergeByMaterial, fitModel, tintModel, makeShellRack } from './glbmodels.js?v=c13865b3';
-import { CREATURES, waveJelly, spherePts, bulletPts, missilePts, heartPts, torusPts, towerHeadPts, enemyDotPts, portalPts } from './creatures.js?v=c13865b3';
+import { loadGlb, mergeByMaterial, fitModel, tintModel, makeShellRack,
+  addEdgeOutlines, makeHeatSleeve, addGunTubes } from './glbmodels.js?v=bea52969';
+import { CREATURES, waveJelly, spherePts, bulletPts, missilePts, heartPts, torusPts, towerHeadPts, enemyDotPts, portalPts } from './creatures.js?v=bea52969';
 
 function normalizeToUnit(group) {
   group.updateMatrixWorld(true);
@@ -917,6 +918,11 @@ export function preloadMkcx() {
       // pivot around a point out in FRONT of itself; centre on the hull.
       recentreOn: 'Hull_Mesh',
     });
+    // The house look is a dark body wearing bright additive edges. An
+    // imported model has none, which is most of why it read as a lump next
+    // to the procedural units. Built on the PROTOTYPE so EdgesGeometry runs
+    // once and every clone shares it.
+    addEdgeOutlines(mkcxProto, { angle: 28, opacity: 0.85 });
     return true;
   });
 }
@@ -960,8 +966,18 @@ function makeMkcx(cols) {
       y: 1.5, z: -0.75, dot: 0.16, gapX: 0.62, gapZ: 0.66,
     });
   }
-  // still no heatSleeve: there is no gun sleeve to recolour, and td-tab
-  // guards it.
+  // The pieces the model doesn't have but our tank does, so the two feel
+  // like the same machine shop. Barrel_Pivot survives the merge as an empty
+  // at (0, 0.54, 1.05) — a clean anchor for the sleeve.
+  const barrel = g.getObjectByName('Barrel_Pivot');
+  if (barrel) {
+    g.userData.heatSleeve = makeHeatSleeve(barrel, {
+      radius: 0.34, len: 0.55, z: 1.5, color: cols.walkerHi ?? 0x7df9ff,
+    });
+  }
+  if (guns.length) {
+    addGunTubes(guns, { radius: 0.13, len: 1.1, z: 0.55, color: cols.walkerHi ?? 0x7df9ff });
+  }
   g.userData.tick = (t) => { if (turret) turret.rotation.y = Math.sin(t * 0.6) * 0.7; };
   g.userData.lift = 0.02;
   g.userData.baseScale = 1;

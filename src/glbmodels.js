@@ -170,6 +170,14 @@ export function tintModel(root, color, opts = {}) {
   const hsl = {}; c.getHSL(hsl);
 
   root.traverse((obj) => {
+    // outlines are LineSegments, not meshes — they take the tint at full
+    // strength, because the bright edge IS the read
+    if (obj.isLineSegments && obj.material) {
+      const lm = obj.material.clone();
+      if (lm.color) lm.color.copy(c);
+      obj.material = lm;
+      return;
+    }
     if (!obj.isMesh || !obj.material) return;
     const mats = Array.isArray(obj.material) ? obj.material : [obj.material];
     obj.material = mats.map((m) => {
@@ -212,4 +220,61 @@ export function makeShellRack(parent, { x = 0, y = 0, z = 0, dot = 0.05, gapX = 
     }
   }
   return dots;
+}
+
+// --- the house Tron kit ---------------------------------------------------
+// Our procedural units are dark bodies wearing bright additive edges; an
+// imported model arrives as shaded surfaces with no edges at all, which is
+// most of why it reads as a lump next to them. These give a model the same
+// language.
+
+// Bright creases on every merged mesh. `angle` is what keeps this from
+// becoming a wireframe: EdgesGeometry defaults to 1 degree and would draw
+// every triangle boundary. ~28 degrees keeps only the real panel lines.
+//
+// Built on the PROTOTYPE so the geometry is computed once and every clone
+// shares it; tintModel recolours the material per instance.
+export function addEdgeOutlines(root, { angle = 28, opacity = 0.85, color = 0xffffff } = {}) {
+  const mat = new THREE.LineBasicMaterial({
+    color, transparent: true, opacity,
+    blending: THREE.AdditiveBlending, depthWrite: false,
+  });
+  const meshes = [];
+  root.traverse((o) => { if (o.isMesh && o.geometry) meshes.push(o); });
+  for (const m of meshes) {
+    m.add(new THREE.LineSegments(new THREE.EdgesGeometry(m.geometry, angle), mat));
+  }
+  return root;
+}
+
+// A heat sleeve around a gun: the diegetic gauge our tank already uses,
+// cool cyan to red as the cannon heats. Returned so the caller can hand it
+// over as userData.heatSleeve — td-tab lerps its material colour directly.
+export function makeHeatSleeve(parent, { radius = 0.32, len = 0.5, z = 1.4, color = 0x7df9ff } = {}) {
+  const geo = new THREE.CylinderGeometry(radius, radius, len, 12, 1, true)
+    .rotateX(Math.PI / 2); // barrels run along +Z, cylinders are born along +Y
+  const sleeve = new THREE.Mesh(geo, new THREE.MeshBasicMaterial({
+    color, transparent: true, opacity: 0.9, side: THREE.DoubleSide,
+  }));
+  sleeve.position.z = z;
+  parent.add(sleeve);
+  return sleeve;
+}
+
+// Glowing tubes for a pair of guns, matching the procedural tank's
+// mini-guns. Inserted at child index 0 because td-tab reads the heat gauge
+// off guns[0].children[0] — appending would leave it recolouring a chunk of
+// the model instead. One shared material, so both tubes heat together.
+export function addGunTubes(guns, { radius = 0.12, len = 1.0, z = 0.5, color = 0x7df9ff } = {}) {
+  const geo = new THREE.CylinderGeometry(radius, radius * 1.25, len, 8)
+    .rotateX(Math.PI / 2);
+  const mat = new THREE.MeshBasicMaterial({ color });
+  for (const gun of guns) {
+    const tube = new THREE.Mesh(geo, mat);
+    tube.position.z = z;
+    gun.add(tube);
+    gun.children.splice(gun.children.indexOf(tube), 1);
+    gun.children.unshift(tube); // index 0: the gauge td-tab drives
+  }
+  return mat;
 }
