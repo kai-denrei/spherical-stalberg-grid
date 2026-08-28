@@ -16,8 +16,8 @@
 
 import * as THREE from '../vendor/three.module.js';
 import { loadGlb, mergeByMaterial, fitModel, tintModel, makeShellRack,
-  addEdgeOutlines, makeHeatSleeve } from './glbmodels.js?v=acd37bb8';
-import { CREATURES, waveJelly, spherePts, bulletPts, missilePts, heartPts, torusPts, towerHeadPts, enemyDotPts, portalPts } from './creatures.js?v=acd37bb8';
+  addEdgeOutlines, makeHeatSleeve } from './glbmodels.js?v=fdca17eb';
+import { CREATURES, waveJelly, spherePts, bulletPts, missilePts, heartPts, torusPts, towerHeadPts, enemyDotPts, portalPts } from './creatures.js?v=fdca17eb';
 
 function normalizeToUnit(group) {
   group.updateMatrixWorld(true);
@@ -905,7 +905,11 @@ const MKCX_PIVOTS = ['Turret_Pivot', 'Secondary_L_Gun_Pivot', 'Secondary_R_Gun_P
 // At our scale they don't read as strips ON the gun — they read as a stray
 // bright line hanging in front of the tank. Dropped before the merge, since
 // afterwards they'd be welded into a shared mesh and unaddressable.
-const MKCX_DROP = ['Barrel_Glow_1', 'Barrel_Glow_2'];
+// Hull_Collision is a 12-triangle BOX — a physics proxy the exporter left
+// visible, not something meant to be drawn. Rendered, its top face reads as
+// two big triangles laid over the hull with its corners poking out at the
+// front and back. Never render a collision proxy.
+const MKCX_DROP = ['Hull_Collision', 'Barrel_Glow_1', 'Barrel_Glow_2'];
 let mkcxProto = null;
 
 export function preloadMkcx() {

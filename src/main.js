@@ -1,17 +1,18 @@
 // main.js — tab shell. Each tab lazily initializes its own renderer/scene the
 // first time it's shown and pauses (skips its loop body) while hidden.
 
-import { wireDevlogBadge } from './devlog.js?v=acd37bb8';
-import { initGridTab } from './grid-tab.js?v=acd37bb8';
-import { initMazeTab } from './maze-tab.js?v=acd37bb8';
-import { initOrganicTab } from './organic-tab.js?v=acd37bb8';
-import { initBattleTab } from './battle-tab.js?v=acd37bb8';
-import { initHeartTab } from './heart-tab.js?v=acd37bb8';
-import { initTdTab } from './td-tab.js?v=acd37bb8';
-import { initTankTab } from './tank-tab.js?v=acd37bb8';
-import { initTank2Tab } from './tank2-tab.js?v=acd37bb8';
-import { initTank3Tab } from './tank3-tab.js?v=acd37bb8';
-import { initHowTab } from './how-tab.js?v=acd37bb8';
+import { wireDevlogBadge } from './devlog.js?v=fdca17eb';
+import { initGridTab } from './grid-tab.js?v=fdca17eb';
+import { initMazeTab } from './maze-tab.js?v=fdca17eb';
+import { initOrganicTab } from './organic-tab.js?v=fdca17eb';
+import { initBattleTab } from './battle-tab.js?v=fdca17eb';
+import { initHeartTab } from './heart-tab.js?v=fdca17eb';
+import { initTdTab } from './td-tab.js?v=fdca17eb';
+import { initTankTab } from './tank-tab.js?v=fdca17eb';
+import { initTank2Tab } from './tank2-tab.js?v=fdca17eb';
+import { initTank3Tab } from './tank3-tab.js?v=fdca17eb';
+import { initUnitsTab } from './units-tab.js?v=fdca17eb';
+import { initHowTab } from './how-tab.js?v=fdca17eb';
 
 const tabs = {
   grid: { root: document.getElementById('tab-grid'), init: initGridTab, api: null },
@@ -23,6 +24,7 @@ const tabs = {
   tank: { root: document.getElementById('tab-tank'), init: initTankTab, api: null },
   tank2: { root: document.getElementById('tab-tank2'), init: initTank2Tab, api: null },
   tank3: { root: document.getElementById('tab-tank3'), init: initTank3Tab, api: null },
+  units: { root: document.getElementById('tab-units'), init: initUnitsTab, api: null },
   how: { root: document.getElementById('tab-how'), init: initHowTab, api: null },
 };
 

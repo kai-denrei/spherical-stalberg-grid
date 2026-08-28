@@ -1020,3 +1020,48 @@ html, body {
   height: 48px;
   margin: 4px auto;
 }
+
+/* --- units tab: one unit at a time, big, turnable ----------------------- */
+/* NOTE: no position override here — .tab is already `position: fixed;
+   inset: 0`, and re-declaring it as relative collapses the tab to zero
+   height, which renders a perfectly black screen with no error. */
+#units-app { position: absolute; inset: 0; }
+#units-app canvas { display: block; width: 100%; height: 100%; }
+#units-chrome {
+  position: absolute; left: 0; right: 0; bottom: 0;
+  display: flex; flex-direction: column; align-items: center; gap: 8px;
+  padding: 12px 12px 16px; pointer-events: none;
+}
+#units-chrome > * { pointer-events: auto; }
+#units-groups { display: flex; gap: 6px; }
+#units-groups button, #units-opts button, #units-stage button {
+  font: 12px/1 ui-monospace, SFMono-Regular, Menlo, monospace;
+  letter-spacing: .08em; text-transform: uppercase;
+  color: #9fdcff; background: rgba(10, 16, 26, .72);
+  border: 1px solid rgba(159, 220, 255, .28); border-radius: 8px;
+  padding: 7px 12px; cursor: pointer;
+}
+#units-groups button.on, #units-opts button.on {
+  color: #061018; background: #6fe6ff; border-color: #6fe6ff;
+}
+#units-stage { display: flex; align-items: center; gap: 14px; }
+#units-stage button { font-size: 20px; padding: 2px 14px; line-height: 1.1; }
+#units-id { text-align: center; min-width: 220px; }
+#units-name {
+  font: 600 15px/1.2 ui-monospace, SFMono-Regular, Menlo, monospace;
+  letter-spacing: .12em; text-transform: uppercase; color: #eaf6ff;
+}
+#units-note { font: 11px/1.4 ui-monospace, monospace; color: #7f93ab; margin-top: 3px; }
+#units-count { font: 11px/1.4 ui-monospace, monospace; color: #4d6076; margin-top: 2px; }
+#units-opts { display: flex; align-items: center; gap: 10px; }
+#units-opts label {
+  font: 11px/1 ui-monospace, monospace; color: #7f93ab;
+  display: flex; align-items: center; gap: 6px;
+}
+#units-opts select {
+  font: 11px/1 ui-monospace, monospace; color: #9fdcff;
+  background: rgba(10, 16, 26, .72);
+  border: 1px solid rgba(159, 220, 255, .28); border-radius: 6px; padding: 5px 6px;
+}
+#units-hint { font: 10px/1 ui-monospace, monospace; color: #43566b; letter-spacing: .06em; }
+#units-look-wrap.hidden { display: none; }

@@ -19,8 +19,8 @@
 // without reshaping this interface. A look with no preload is ready
 // immediately; a look whose preload has not resolved falls back.
 import * as THREE from '../vendor/three.module.js';
-import { loadGlb, mergeByMaterial, fitModel, tintModel } from './glbmodels.js?v=acd37bb8';
-import { makeTowerMast, makeTowerUnit } from './units.js?v=acd37bb8';
+import { loadGlb, mergeByMaterial, fitModel, tintModel } from './glbmodels.js?v=fdca17eb';
+import { makeTowerMast, makeTowerUnit } from './units.js?v=fdca17eb';
 
 // def.shape -> a solid primitive, so the SOLID look keeps each tower's
 // silhouette identity from towers.js rather than inventing its own.
@@ -62,7 +62,7 @@ function makeTowerSolid(def) {
 // preload/lookReady: until the bytes land, build() falls back to braille so
 // a tower is never invisible.
 
-function makeGlbLook({ label, url, height, maxSpan }) {
+function makeGlbLook({ label, url, height, maxSpan, drop = [] }) {
   let proto = null;
   const look = {
     label,
@@ -73,7 +73,7 @@ function makeGlbLook({ label, url, height, maxSpan }) {
         if (!scene) return false;
         // no pivots preserved: a tower that has dug in holds still, and a
         // fully merged model is ~6 draw calls instead of ~109
-        proto = fitModel(mergeByMaterial(scene), { height, maxSpan });
+        proto = fitModel(mergeByMaterial(scene, [], drop), { height, maxSpan });
         look.loaded = true;
         return true;
       });
@@ -100,6 +100,9 @@ export const TOWER_LOOKS = {
     url: 'assets/models/heptapod.glb',
     height: 1.35,  // mast units — the braille mast is 1.55 tall
     maxSpan: 2.2,  // but never sprawl wider than this over its neighbours
+    // a 12-triangle physics proxy the exporter left visible — drawing it
+    // lays two big triangles over the model with corners poking out
+    drop: ['Hull_Collision'],
   }),
 };
 
