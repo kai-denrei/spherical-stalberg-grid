@@ -410,3 +410,37 @@ the bloom resolution, and this adds a full geometry pass.
 **Where to change things.** Live, by eye: `bloom > weights` in the TD
 panel, which persists to `localStorage`. Permanently:
 `DEFAULT_BLOOM_WEIGHTS` in `src/bloomweights.js`.
+
+## Changing how a tower looks without touching what it does
+
+A tower is two separate things wearing one name: a set of numbers (range,
+damage, rate, cost, upgrade curve) and a thing you can see. The numbers
+live in `towers.js` and are the game. The appearance is taste, and taste
+changes often.
+
+So they're kept apart. `towerlooks.js` holds a registry of named
+*builders* — give one a tower def, get back an Object3D. Switching looks
+rebuilds only `tower.obj`; the tower's key, def, tier, cell, cooldown and
+accumulated spend are untouched. You can swap the look of a fully upgraded
+board mid-game and lose nothing.
+
+Every look must satisfy a small contract, because the tab reads specific
+things off whatever it's handed: an Object3D containing meshes (tap-to-
+select raycasts against it), a `userData.baseScale` that placement divides
+by, and an optional `userData.tick(t)` for idle animation. All the looks
+share one `makeTowerMast()` — base, column, collar — so they read as
+variants of the same machine rather than unrelated objects, and a look
+only supplies the head.
+
+There's a trap worth knowing about here, because it nearly bit. Upgrading
+a tower used to make it bigger with
+`obj.scale.multiplyScalar(1.12)` — the size was *accumulated onto the
+object*, which meant the visual was quietly storing tier state that
+existed nowhere else. Rebuild the object for any reason and a
+twice-upgraded tower would snap back to its original size. Derived state
+that lives only in a render object is a bug waiting for the first
+refactor; it's computed from `tower.tier` now.
+
+Looks can also declare a `preload()` returning a promise, for assets that
+arrive asynchronously. Nothing uses it yet — it exists so a loaded model
+can become a look without the registry changing shape.

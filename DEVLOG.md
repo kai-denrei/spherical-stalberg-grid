@@ -6,6 +6,45 @@ Demo links assume `npm run serve` (port 8144) or the
 
 ---
 
+## `3a762cf` — Towers get a look you can change
+
+The tower visual was welded into `makeTowerUnit`, so trying a different
+look meant editing the thing that also knows about mounting, scaling and
+the head animation. `towerlooks.js` is the seam: a look is a named builder
+that turns a tower def into an Object3D, and swapping one rebuilds only
+`tower.obj` — key, def, tier, cell, cooldown and spend are game state and
+never move. There's a `tower look` dropdown and a `?towerlook=` hook.
+
+It ships with two looks, because a registry with one entry proves nothing.
+Alongside the existing `braille` dot-cloud head there's `solid`: the same
+mast, but a faceted tinted head with bright edges and a slower spin, so it
+reads as machined mass rather than a hovering swarm. Both call a shared
+`makeTowerMast()` split out of `makeTowerUnit()`, so every look is the same
+family of machine and only the head differs — and `solid` maps each
+`def.shape` to a primitive, so a tower keeps its silhouette identity when
+you switch.
+
+One latent coupling got fixed on the way. Tier bulk was applied as
+`obj.scale.multiplyScalar(1.12)` — accumulated *onto the object*. That
+meant the visual silently carried tier state, and the first look swap
+would have quietly reset every upgraded tower to tier-0 size. It's derived
+now, `baseScale × 1.12^tier`, inside a shared `placeTowerObj()` used by
+placement, upgrade and swap alike.
+
+The swap was verified live rather than at the builder: with two towers on
+the board, `braille` renders 2 Points heads and 6 meshes, `solid` renders
+0 Points and 8. The `?towerlook=` hook was deliberately moved to run
+*after* `?tower=` so it exercises `applyTowerLook()` over existing towers
+instead of only choosing at build time — the earlier ordering would have
+left that path untested.
+
+`buildTowerLook()` never returns null: an unknown name falls back to the
+default rather than leaving an invisible tower on the board. The unused
+`preload`/`lookReady` pair is the hook for looks whose assets load
+asynchronously, so the heptapod GLB can arrive without reshaping this.
+
+---
+
 ## `e8b70d2` — Per-group bloom, and the ally tanks that weren't there
 
 The bloom was one dial for a scene full of different things. Turning it
