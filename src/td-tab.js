@@ -12,27 +12,27 @@
 // borrowed from HokorobiTawaa and can NOT be rammed: corona (armored,
 // slows itself when shot), barbed (accelerates when shot), knot (BOSS).
 // Shells also blast walls open — clear your own path to the sources.
-// Allies hold the line; C / ⇄ commandeers. Pickups: bullet triads (+3
-// shells), speed, health, regen charges carried home.
+// Pickups: bullet triads (+3 shells), speed, health, regen charges
+// carried home.
 // Win: all types introduced, all spawn points dead, field clear.
 // Lose: the Heart falls.
 
 import * as THREE from '../vendor/three.module.js';
 import GUI from '../vendor/lil-gui.esm.js';
-import { generateSphereMesh, relax } from './grid.js?v=0446dee1';
-import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=0446dee1';
-import { mulberry32, randomSeed } from './rng.js?v=0446dee1';
-import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3, segKey } from './vec3.js?v=0446dee1';
-import { CREATURES, waveJelly } from './creatures.js?v=0446dee1';
-import { UNITS, UNIT_NAMES, buildUnit, makeOrbCloud, makeBulletCloud, makeMissileCloud, makeDebris, makeDotBurst, makePortalCloud, makeHeartCloud, makeTowerUnit, makeDotEnemy } from './units.js?v=0446dee1';
-import { LOOKS, LOOK_NAMES } from './looks.js?v=0446dee1';
-import { makeCellIndex } from './cellindex.js?v=0446dee1';
-import { CREATURE_TINTS, ENEMY_SPEC, INTROS, computeWavePlan } from './enemyspec.js?v=0446dee1';
-import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER } from './towers.js?v=0446dee1';
-import { makeEconomy, sellRefund } from './economy.js?v=0446dee1';
-import { makeBloom } from './postfx.js?v=0446dee1';
-import { makeAudio } from './audio.js?v=0446dee1';
-import { DEATH_KEYS } from './audiomanifest.js?v=0446dee1';
+import { generateSphereMesh, relax } from './grid.js?v=0abec420';
+import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=0abec420';
+import { mulberry32, randomSeed } from './rng.js?v=0abec420';
+import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3, segKey } from './vec3.js?v=0abec420';
+import { CREATURES, waveJelly } from './creatures.js?v=0abec420';
+import { UNITS, UNIT_NAMES, buildUnit, makeOrbCloud, makeBulletCloud, makeMissileCloud, makeDebris, makeDotBurst, makePortalCloud, makeHeartCloud, makeTowerUnit, makeDotEnemy } from './units.js?v=0abec420';
+import { LOOKS, LOOK_NAMES } from './looks.js?v=0abec420';
+import { makeCellIndex } from './cellindex.js?v=0abec420';
+import { CREATURE_TINTS, ENEMY_SPEC, INTROS, computeWavePlan } from './enemyspec.js?v=0abec420';
+import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER } from './towers.js?v=0abec420';
+import { makeEconomy, sellRefund } from './economy.js?v=0abec420';
+import { makeBloom } from './postfx.js?v=0abec420';
+import { makeAudio } from './audio.js?v=0abec420';
+import { DEATH_KEYS } from './audiomanifest.js?v=0abec420';
 
 export function initTdTab(root) {
   let active = false;
@@ -62,7 +62,6 @@ export function initTdTab(root) {
     waveSize: 4,
     waveGap: 7,   // seconds of anticipation between a cleared wave and the next
     waveCap: 30,  // safety: force the next wave if the current isn't cleared in time
-    friendlies: 0, // NO ally tanks in TD — new players read them as enemies
     rewards: 6,
   };
 
@@ -191,8 +190,6 @@ export function initTdTab(root) {
   const enemies = [];      // { cur, prev, next, prog, pos, dir, obj, alive }
   const projectiles = [];  // { pos, dir, dist, mesh }
   const debris = [];       // scatter effects, tick(dt) -> alive
-  const friendlies = [];   // ally tanks: { cur, prev, next, prog, pos, dir, obj, alive, hp }
-  const allyShots = [];    // infinite-ammo covering fire: { pos, dir, dist, mesh }
   const spawnPoints = [];  // { ci, hp, obj, alive, found, mapMarker } — type-agnostic gates
   let wave = 0;
   let waveActive = false; // a wave's enemies are live/uncleared
@@ -1354,7 +1351,6 @@ export function initTdTab(root) {
     if (paused) return; // frozen: only ESC gets through
     if (down && (k === ' ' || k === 'spacebar')) { fire(); ev.preventDefault(); return; }
     if (down && k === 'h') pulseHint();
-    if (down && k === 'c') commandeer();
     if (down && k === 'v') toggleView();
     if (down && k === 'b') toggleBuild(); // BUILD ↔ ACTION
     if (down && k === 'm') toggleMap();   // minimap ↔ threat view
@@ -1394,7 +1390,6 @@ export function initTdTab(root) {
   holdButton('#td-pad-left', 'left');
   holdButton('#td-pad-right', 'right');
   holdButton('#td-pad-down', 'slow', () => { cruise = false; });
-  // (no ally tanks in TD — the commandeer button is gone from the markup)
   root.querySelector('#td-pad-view').addEventListener('click', () => toggleView());
   root.querySelector('#td-pad-build').addEventListener('click', () => toggleBuild());
   function syncDirectiveChip() {
@@ -1838,7 +1833,7 @@ export function initTdTab(root) {
       `</div>` +
       `<div class="msg-foot">` +
       `<button class="msg-glenemy">enemy glossary</button> ` +
-      `<button class="msg-glfriend">friendlies &amp; pickups</button><br>` +
+      `<button class="msg-glfriend">pickups</button><br>` +
       `<button class="msg-begin">&rsaquo; begin round ${round}</button>` +
       `</div>`;
     msgEl.classList.remove('hidden');
@@ -1865,7 +1860,7 @@ export function initTdTab(root) {
   function showFriendGlossary() {
     paused = true;
     const orbIcon = (fx, body) => () => makeOrbCloud(fx, { body, hi: 0xffffff }, 1.7);
-    msgEl.innerHTML = `<div class="msg-head">glossary · friendlies &amp; pickups</div>` +
+    msgEl.innerHTML = `<div class="msg-head">glossary · pickups</div>` +
       `<div class="gcards">` +
       glossCard('#ff6a88', spriteShot('heart', heartIcon), 'the heart', `${HEART_MAX} hp · enemy contact drains it · regen charges heal it`) +
       glossCard('#9fdcff', spriteShot('tower', () => makeTowerUnit(TOWER_BY_KEY.single)), 'towers', 'mount on walls only · tap high ground in BUILD mode · upgrade twice · sell 75%') +
@@ -1893,7 +1888,6 @@ export function initTdTab(root) {
   }
   function updateHud() {
     const alive = enemies.filter((e) => e.alive).length;
-    const allies = friendlies.filter((f) => f.alive).length;
     const spAlive = spawnPoints.filter((s) => s.alive).length;
     // compact HUD: the shells row is GONE — the turret rack is the ammo
     // counter (a small ✦n remains for PoV, where the turret isn't visible).
@@ -2181,11 +2175,6 @@ export function initTdTab(root) {
     carryingRegen = false;
     speedBonus = 1;
     for (let i = projectiles.length - 1; i >= 0; i--) killProjectile(i);
-    for (let i = allyShots.length - 1; i >= 0; i--) {
-      scene.remove(allyShots[i].mesh);
-      allyShots[i].mesh.geometry.dispose();
-      allyShots.splice(i, 1);
-    }
     for (let i = laserShots.length - 1; i >= 0; i--) killLaser(i);
     laserClock = 0;
     orbRng = mulberry32((params.seed ^ 0x0b0b5) >>> 0);
@@ -2196,7 +2185,6 @@ export function initTdTab(root) {
     buildActors();
     spawnOrbs();
     spawnEnemies();
-    spawnFriendlies();
     spawnRewards();
     placeActors();
     // a fresh board earns a fresh framing — the first-entry courtesy resets
@@ -2237,7 +2225,6 @@ export function initTdTab(root) {
     buildActors();
     spawnOrbs(); // orbs bake look colors at spawn
     spawnEnemies();
-    spawnFriendlies();
     spawnRewards();
     placeActors();
   }
@@ -2446,25 +2433,6 @@ export function initTdTab(root) {
           continue;
         }
         if (tNow > e.touchCd) { e.touchCd = tNow + 1.2; playerHit(); }
-      }
-      // allies are tanks too: same ram rule (standard bounty, no premium)
-      for (const fr of friendlies) {
-        if (!fr.alive) continue;
-        if (dist3(e.pos, fr.pos) < touchR) {
-          if (spec.rammable) { eco.award(spec.bounty); killCreature(e, true); }
-          else if (tNow > e.touchCd) {
-            e.touchCd = tNow + 1.2;
-            fr.hp--;
-            if (fr.hp <= 0) {
-              fr.alive = false;
-              const fx = makeDebris(fr.obj, norm3(fr.pos));
-              scene.add(fx);
-              debris.push(fx);
-              scene.remove(fr.obj);
-            }
-          }
-          break;
-        }
       }
     }
   }
@@ -2760,103 +2728,6 @@ export function initTdTab(root) {
   }
 
 
-  // --- friendlies: patrol near the Heart, commandeerable -------------------
-  function clearFriendlies() {
-    for (const f of friendlies) scene.remove(f.obj);
-    friendlies.length = 0;
-  }
-
-  function spawnFriendlies() {
-    clearFriendlies();
-    const near = [];
-    for (let i = 0; i < dungeon.tags.length; i++) {
-      const d = dungeon.distToHeart[i];
-      if (dungeon.tags[i] !== BLOCKED && d >= 2 && d <= 10) near.push(i);
-    }
-    for (let k = 0; k < params.friendlies && near.length > 0; k++) {
-      const ci = near.splice(Math.floor(whim() * near.length), 1)[0];
-      const obj = buildUnit('tank', { walker: look().walker, walkerHi: look().walkerHi });
-      obj.scale.setScalar((obj.userData.baseScale ?? 1) * cellSide * 0.55);
-      scene.add(obj);
-      const exits = openNeighbors(ci);
-      friendlies.push({
-        cur: ci, prev: -1,
-        next: exits.length ? exits[Math.floor(whim() * exits.length)] : ci,
-        prog: 0, pos: graph.centers[ci].slice(), dir: [0, 1, 0],
-        obj, alive: true, hp: 2,
-      });
-    }
-  }
-
-  const FRIENDLY_SPEED = 0.4;
-  function updateFriendlies(dt, tNow) {
-    for (const f of friendlies) {
-      if (!f.alive) continue;
-      f.prog += FRIENDLY_SPEED * dt;
-      while (f.prog >= 1) {
-        f.prog -= 1;
-        f.prev = f.cur;
-        f.cur = f.next;
-        // patrol: stay within ~10 hops of the Heart, otherwise drift home
-        let exits = openNeighbors(f.cur).filter((c) => c !== f.prev);
-        if (!exits.length) exits = openNeighbors(f.cur);
-        const near = exits.filter((c) => dungeon.distToHeart[c] <= 10);
-        const pool = near.length ? near : exits;
-        f.next = pool.length ? pool[Math.floor(whim() * pool.length)] : f.prev;
-      }
-      const a = graph.centers[f.cur];
-      const b = graph.centers[f.next];
-      const ff = Math.min(f.prog, 1);
-      f.pos = norm3([a[0] + (b[0] - a[0]) * ff, a[1] + (b[1] - a[1]) * ff, a[2] + (b[2] - a[2]) * ff]);
-      const n = f.pos;
-      const raw = sub3(b, f.pos);
-      const flat = sub3(raw, scale3(n, dot3(raw, n)));
-      const l = Math.hypot(flat[0], flat[1], flat[2]);
-      if (l > 1e-9) f.dir = scale3(flat, 1 / l);
-      const s = cellSide * 0.55;
-      const lift = s * (f.obj.userData.lift ?? 0.05);
-      f.obj.position.set(f.pos[0] + n[0] * lift, f.pos[1] + n[1] * lift, f.pos[2] + n[2] * lift);
-      tmpObj.position.copy(f.obj.position);
-      tmpObj.up.set(n[0], n[1], n[2]);
-      tmpObj.lookAt(f.obj.position.x + f.dir[0], f.obj.position.y + f.dir[1], f.obj.position.z + f.dir[2]);
-      f.obj.quaternion.copy(tmpObj.quaternion);
-      if (f.obj.userData.tick) f.obj.userData.tick(tNow + f.cur);
-    }
-  }
-
-  // commandeer: possession swap with the nearest living ally — the old body
-  // becomes a friendly where you stood, you continue from theirs
-  function commandeer() {
-    let best = null, bd = Infinity;
-    for (const f of friendlies) {
-      if (!f.alive) continue;
-      const d = dist3(player.pos, f.pos);
-      if (d < bd) { bd = d; best = f; }
-    }
-    if (!best) return;
-    const oldCi = player.cur;
-    const oldPos = player.pos.slice();
-    player.pos = best.pos.slice();
-    player.cur = best.cur;
-    player.prev = -1;
-    player.next = best.next;
-    player.prog = best.prog;
-    player.segLen = Math.max(1e-9, dist3(graph.centers[player.cur], graph.centers[player.next]));
-    player.virtualStart = null;
-    player.heading = best.dir.slice();
-    player.smoothDir = best.dir.slice();
-    playerHP = Math.max(playerHP, best.hp + 1);
-    // the abandoned body joins the patrol
-    best.cur = oldCi;
-    best.prev = -1;
-    const exits = openNeighbors(oldCi);
-    best.next = exits.length ? exits[Math.floor(whim() * exits.length)] : oldCi;
-    best.prog = 0;
-    best.pos = oldPos;
-    snapCamera();
-    updateHud();
-  }
-
   // --- far-field rewards ----------------------------------------------------
   // no ammo sphere: the bullet triad already IS the ammo pickup — two
   // shapes meaning the same thing taught nothing (operator cut)
@@ -2936,19 +2807,7 @@ export function initTdTab(root) {
     playerHP--;
     updateHud();
     if (playerHP > 0) return;
-    const alive = friendlies.filter((f) => f.alive);
-    if (alive.length > 0) {
-      // your tank dies; command jumps to the nearest ally
-      const fx = makeDebris(playerMesh, norm3(player.pos));
-      scene.add(fx);
-      debris.push(fx);
-      playerHP = 2;
-      // commandeer() is a swap, so the ally's body takes over where you died
-      // and keeps patrolling as wreckage-adjacent irony; command moves on
-      commandeer();
-    } else {
-      loseGame('your last tank is gone');
-    }
+    loseGame('your last tank is gone');
   }
 
   function heartHit(dmg = 1) {
@@ -2957,69 +2816,6 @@ export function initTdTab(root) {
     heartSprite.userData.hit(); // orange/red Wave flare
     updateHud();
     if (heartHP <= 0) loseGame('the heart is lost');
-  }
-
-  // --- ally covering fire: infinite ammo, holds the line ------------------
-  const ALLY_FIRE_RANGE = 3.0; // cells
-  function updateAllyFire(dt) {
-    const range = ALLY_FIRE_RANGE * cellSide;
-    for (const f of friendlies) {
-      if (!f.alive) continue;
-      f.fireClock = (f.fireClock ?? whim() * 1.4) + dt;
-      if (f.fireClock < 1.4) continue;
-      let best = null, bd = Infinity;
-      for (const e of enemies) {
-        if (!e.alive) continue;
-        const d = dist3(f.pos, e.pos);
-        if (d < bd) { bd = d; best = e; }
-      }
-      if (!best || bd > range) continue;
-      f.fireClock = 0;
-      const n = norm3(f.pos);
-      const raw = sub3(best.pos, f.pos);
-      const flat = sub3(raw, scale3(n, dot3(raw, n)));
-      const l = Math.hypot(flat[0], flat[1], flat[2]);
-      if (l < 1e-9) continue;
-      const mesh = makeBulletCloud({ body: look().walkerHi, hi: 0xffffff });
-      mesh.scale.setScalar(cellSide * 0.13);
-      scene.add(mesh);
-      allyShots.push({ pos: f.pos.slice(), dir: scale3(flat, 1 / l), dist: 0, mesh });
-    }
-  }
-
-  function updateAllyShots(dt, tNow) {
-    const v = 3.0 * cellSide;
-    const maxDist = 4.5 * cellSide;
-    for (let i = allyShots.length - 1; i >= 0; i--) {
-      const p = allyShots[i];
-      p.pos = norm3(add3(p.pos, scale3(p.dir, v * dt)));
-      const n = p.pos;
-      p.dir = norm3(sub3(p.dir, scale3(n, dot3(p.dir, n))));
-      p.dist += v * dt;
-      const lift = 1 + params.wallHeight * 0.5;
-      p.mesh.position.set(p.pos[0] * lift, p.pos[1] * lift, p.pos[2] * lift);
-      tmpV.set(p.dir[0], p.dir[1], p.dir[2]);
-      p.mesh.quaternion.setFromUnitVectors(Y_AXIS, tmpV);
-      p.mesh.rotateY(p.dist * 60);
-      let dead = false;
-      for (const e of enemies) {
-        if (!e.alive) continue;
-        if (dist3(p.pos, e.pos) < cellSide * Math.max(0.4, (e.size ?? e.spec.size) * 0.8)) {
-          damageEnemy(e, tNow);
-          dead = true;
-          break;
-        }
-      }
-      if (!dead) {
-        const ci = cellIndex(p.pos);
-        if ((ci !== -1 && dungeon.tags[ci] === BLOCKED) || p.dist > maxDist) dead = true;
-      }
-      if (dead) {
-        scene.remove(p.mesh);
-        p.mesh.geometry.dispose();
-        allyShots.splice(i, 1);
-      }
-    }
   }
 
   // ======================= TOWERS (TD M2) ==================================
@@ -3819,9 +3615,6 @@ export function initTdTab(root) {
     if (tutorialActive) tutorial.tick(dt);
     if (!frozen) {
       updateEnemies(dt, t);
-      updateFriendlies(dt, t);
-      updateAllyFire(dt);
-      updateAllyShots(dt, t);
       checkRewards();
       updateProjectiles(dt, t);
       updateLasers(dt, t);
