@@ -52,7 +52,7 @@ export const SOUNDS = {
   tank_spool_up:   { file: `${A}/tank_spool_up.mp3`,   bus: 'tank', gain: 0.55, maxVoices: 1, minInterval: 0.25, rateJitter: 0.03 },
   tank_spool_down: { file: `${A}/tank_spool_down.mp3`, bus: 'tank', gain: 0.50, maxVoices: 1, minInterval: 0.25, rateJitter: 0.03 },
   // "quite low sound when it moves" -- the bed sits under everything
-  tank_thruster:   { file: `${A}/tank_thruster.mp3`,   bus: 'tank', gain: 0.20, maxVoices: 1, minInterval: 0, rateJitter: 0 },
+  tank_thruster:   { file: `${A}/tank_thruster.mp3`,   bus: 'tank', gain: 0.34, maxVoices: 1, minInterval: 0, rateJitter: 0 },
   // the original single-sample bed, kept for comparison
   tank_engine:    { file: `${A}/tank_engine.mp3`,    bus: 'tank', gain: 0.22, maxVoices: 1, minInterval: 0, rateJitter: 0 },
 

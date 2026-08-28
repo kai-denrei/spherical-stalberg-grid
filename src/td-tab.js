@@ -19,22 +19,22 @@
 
 import * as THREE from '../vendor/three.module.js';
 import GUI from '../vendor/lil-gui.esm.js';
-import { generateSphereMesh, relax } from './grid.js?v=7bab9a2a';
-import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=7bab9a2a';
-import { mulberry32, randomSeed } from './rng.js?v=7bab9a2a';
-import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3, segKey } from './vec3.js?v=7bab9a2a';
-import { CREATURES, waveJelly } from './creatures.js?v=7bab9a2a';
-import { UNITS, UNIT_NAMES, buildUnit, preloadMkcx, makeOrbCloud, makeBulletCloud, makeMissileCloud, makeDebris, makeDotBurst, makePortalCloud, makeHeartCloud, makeDotEnemy } from './units.js?v=7bab9a2a';
-import { LOOKS, LOOK_NAMES } from './looks.js?v=7bab9a2a';
-import { makeCellIndex } from './cellindex.js?v=7bab9a2a';
-import { CREATURE_TINTS, ENEMY_SPEC, INTROS, computeWavePlan } from './enemyspec.js?v=7bab9a2a';
-import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER } from './towers.js?v=7bab9a2a';
-import { makeEconomy, sellRefund } from './economy.js?v=7bab9a2a';
-import { makeBloom } from './postfx.js?v=7bab9a2a';
-import { BLOOM_GROUPS } from './bloomweights.js?v=7bab9a2a';
-import { TOWER_LOOK_NAMES, DEFAULT_TOWER_LOOK, buildTowerLook, preloadLook } from './towerlooks.js?v=7bab9a2a';
-import { makeAudio } from './audio.js?v=7bab9a2a';
-import { DEATH_KEYS } from './audiomanifest.js?v=7bab9a2a';
+import { generateSphereMesh, relax } from './grid.js?v=e369113b';
+import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=e369113b';
+import { mulberry32, randomSeed } from './rng.js?v=e369113b';
+import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3, segKey } from './vec3.js?v=e369113b';
+import { CREATURES, waveJelly } from './creatures.js?v=e369113b';
+import { UNITS, UNIT_NAMES, buildUnit, preloadMkcx, makeBulletCloud, makeRewardSolid, makeShellSolid, makeDebris, makeDotBurst, makePortalCloud, makeHeartCloud, makeDotEnemy } from './units.js?v=e369113b';
+import { LOOKS, LOOK_NAMES } from './looks.js?v=e369113b';
+import { makeCellIndex } from './cellindex.js?v=e369113b';
+import { CREATURE_TINTS, ENEMY_SPEC, INTROS, computeWavePlan } from './enemyspec.js?v=e369113b';
+import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER } from './towers.js?v=e369113b';
+import { makeEconomy, sellRefund } from './economy.js?v=e369113b';
+import { makeBloom } from './postfx.js?v=e369113b';
+import { BLOOM_GROUPS } from './bloomweights.js?v=e369113b';
+import { TOWER_LOOK_NAMES, DEFAULT_TOWER_LOOK, buildTowerLook, preloadLook } from './towerlooks.js?v=e369113b';
+import { makeAudio } from './audio.js?v=e369113b';
+import { DEATH_KEYS } from './audiomanifest.js?v=e369113b';
 
 export function initTdTab(root) {
   let active = false;
@@ -323,8 +323,8 @@ export function initTdTab(root) {
     const phase = orbRng() * 6.283;
     const shells = [];
     for (let k = -1; k <= 1; k++) {
-      const b = makeMissileCloud({ body: look().orb.color, hi: 0xffffff });
-      b.scale.setScalar(r);
+      const b = makeShellSolid({ body: look().orb.color, hi: 0xffffff });
+      b.scale.setScalar(r * 0.62);
       b.position.set(k * r * 1.7, r * 1.1, 0); // side-by-side, noses up
       group.add(b);
       shells.push(b);
@@ -1804,8 +1804,8 @@ export function initTdTab(root) {
   function makeTriadIcon() {
     const g = new THREE.Group();
     for (let k = -1; k <= 1; k++) {
-      const b = makeMissileCloud({ body: 0xffb000, hi: 0xffffff });
-      b.scale.setScalar(0.3);
+      const b = makeShellSolid({ body: 0xffb000, hi: 0xffffff });
+      b.scale.setScalar(0.19);
       b.position.set(k * 0.52, 0, 0);
       g.add(b);
     }
@@ -1883,15 +1883,15 @@ export function initTdTab(root) {
 
   function showFriendGlossary() {
     paused = true;
-    const orbIcon = (fx, body) => () => makeOrbCloud(fx, { body, hi: 0xffffff }, 1.7);
+    const orbIcon = (shape, body) => () => makeRewardSolid(shape, { body, hi: 0xffffff }, 1.7);
     msgEl.innerHTML = `<div class="msg-head">glossary · pickups</div>` +
       `<div class="gcards">` +
       glossCard('#ff6a88', spriteShot('heart', heartIcon), 'the heart', `${HEART_MAX} hp · enemy contact drains it · regen charges heal it`) +
       glossCard('#9fdcff', spriteShot('tower-' + params.towerLook, () => buildTowerLook(params.towerLook, TOWER_BY_KEY.single)), 'towers', 'mount on walls only · tap high ground in BUILD mode · upgrade twice · sell 75%') +
       glossCard('#ffb000', spriteShot('triad', makeTriadIcon), 'missile triad', '+3 shells on touch (rack caps at 9) — the ONLY ammo pickup') +
-      glossCard('#9ff8ff', spriteShot('orb-power', orbIcon('scatter', 0x9ff8ff)), 'power sphere', 'far-field reward · +8% speed, permanent') +
-      glossCard('#3dff6e', spriteShot('orb-health', orbIcon('wave', 0x3dff6e)), 'health sphere', 'far-field reward · +1 your hp') +
-      glossCard('#ff2df0', spriteShot('orb-regen', orbIcon('breathe', 0xff2df0)), 'regen charge', 'CARRY it back near the heart: +4 heart hp') +
+      glossCard('#9ff8ff', spriteShot('orb-power', orbIcon('star', 0x9ff8ff)), 'power sphere', 'far-field reward · +8% speed, permanent') +
+      glossCard('#3dff6e', spriteShot('orb-health', orbIcon('cell', 0x3dff6e)), 'health sphere', 'far-field reward · +1 your hp') +
+      glossCard('#ff2df0', spriteShot('orb-regen', orbIcon('ring', 0xff2df0)), 'regen charge', 'CARRY it back near the heart: +4 heart hp') +
       `</div><button class="msg-back">← back to briefing</button>`;
     msgEl.classList.remove('hidden');
   }
@@ -2756,15 +2756,17 @@ export function initTdTab(root) {
   // no ammo sphere: the bullet triad already IS the ammo pickup — two
   // shapes meaning the same thing taught nothing (operator cut)
   const REWARD_TYPES = [
-    { type: 'power', body: 0x9ff8ff, fx: 'scatter' },  // permanent +8% speed
-    { type: 'health', body: 0x3dff6e, fx: 'wave' },    // you +1 — GREEN = health
-    { type: 'regen', body: 0xff2df0, fx: 'breathe' },  // carry home: heart +4
+    // shape, not just colour: a spiked star for speed, a rounded cell for
+    // health, a ring for the charge you carry home
+    { type: 'power', body: 0x9ff8ff, shape: 'star' },  // permanent +8% speed
+    { type: 'health', body: 0x3dff6e, shape: 'cell' }, // you +1 — GREEN = health
+    { type: 'regen', body: 0xff2df0, shape: 'ring' },  // carry home: heart +4
   ];
 
   function clearRewards() {
     for (const r of rewardMeshes.values()) {
       scene.remove(r.obj);
-      r.obj.geometry.dispose();
+      disposeObj(r.obj); // a solid reward is a GROUP: it has no .geometry
     }
     rewardMeshes.clear();
   }
@@ -2783,7 +2785,7 @@ export function initTdTab(root) {
       const ci = far.splice(Math.floor(whim() * far.length), 1)[0];
       const spec = REWARD_TYPES[k % REWARD_TYPES.length];
       const r = cellSide * 0.24;
-      const obj = makeOrbCloud(spec.fx, { body: spec.body, hi: 0xffffff }, whim() * 6.283);
+      const obj = makeRewardSolid(spec.shape, { body: spec.body, hi: 0xffffff }, whim() * 6.283);
       obj.scale.setScalar(r);
       obj.userData.sizeScale = r;
       const c = graph.centers[ci];
@@ -2798,7 +2800,7 @@ export function initTdTab(root) {
     const r = rewardMeshes.get(player.cur);
     if (r) {
       scene.remove(r.obj);
-      r.obj.geometry.dispose();
+      disposeObj(r.obj); // a solid is a GROUP — .geometry.dispose() would throw
       rewardMeshes.delete(player.cur);
       sfx.play('tank_pickup');
       if (r.type === 'power') speedBonus *= 1.08;
@@ -3625,7 +3627,9 @@ export function initTdTab(root) {
     } else if (engineHandle) {
       // gain is nearly linear in level; pitch spans 0.92..1.14 so the bed is
       // felt as effort rather than heard as a repeating clip
-      engineHandle.set(0.18 + 0.82 * engineLevel, 0.92 + 0.22 * engineLevel);
+      // floor raised from 0.18: the bed was inaudible at a crawl, so it only
+      // registered at full speed — which read as "the thruster isn't there"
+      engineHandle.set(0.34 + 0.66 * engineLevel, 0.92 + 0.22 * engineLevel);
     }
   }
 

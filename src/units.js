@@ -16,8 +16,8 @@
 
 import * as THREE from '../vendor/three.module.js';
 import { loadGlb, mergeByMaterial, fitModel, tintModel, makeShellRack,
-  addEdgeOutlines, makeHeatSleeve } from './glbmodels.js?v=7bab9a2a';
-import { CREATURES, waveJelly, spherePts, bulletPts, missilePts, heartPts, torusPts, towerHeadPts, enemyDotPts, portalPts } from './creatures.js?v=7bab9a2a';
+  addEdgeOutlines, makeHeatSleeve } from './glbmodels.js?v=e369113b';
+import { CREATURES, waveJelly, spherePts, bulletPts, missilePts, heartPts, torusPts, towerHeadPts, enemyDotPts, portalPts } from './creatures.js?v=e369113b';
 
 function normalizeToUnit(group) {
   group.updateMatrixWorld(true);
@@ -975,10 +975,13 @@ function makeMkcx(cols) {
     // to be readable overhangs it. So the rack brings its own dark plate,
     // sized to hold all nine — the same read as the procedural tank's.
     g.userData.ammoDots = makeShellRack(turret, {
-      // y clears the turret's own hexagonal roof, which peaks at ~1.34 in
-      // this local space. At 1.52 the plate sat at 1.30 and was half buried
-      // in it, so only two of the three rows appeared to be on the plate.
-      y: 1.74, z: -0.72, dot: 0.15, gapX: 0.46, gapZ: 0.50,
+      // Sampled the turret's roof height across z (|x|<1.2, turret-local):
+      // it PEAKS at z=-1.0, y=1.71 and falls away both ways — 1.46 at
+      // z=-1.5 and -0.5, 0.96 by z=0. So the rack centres on that crown at
+      // z=-1.0, and y=1.98 puts the plate's underside at 1.76, clearing the
+      // peak. Earlier values sat the plate BELOW the crown, which is why it
+      // clipped through.
+      y: 1.98, z: -1.0, dot: 0.15, gapX: 0.46, gapZ: 0.50,
       plate: { pad: 0.34, thickness: 0.14, color: 0x232a38,
         outline: cols.walkerHi ?? 0x7df9ff },
     });
@@ -1007,6 +1010,60 @@ function makeMkcx(cols) {
   g.userData.tick = (t) => { if (turret) turret.rotation.y = Math.sin(t * 0.6) * 0.7; };
   g.userData.lift = 0.02;
   g.userData.baseScale = 1;
+  g.userData.kind = 'mesh';
+  return g;
+}
+
+// --- pickups, as SOLIDS ---------------------------------------------------
+// Half-dotted clouds are the ENEMY language in this game. Pickups were
+// speaking it too, so a power-up on the ground read as something to shoot.
+// Solid bodies with bright additive edges put them firmly on the player's
+// side of the visual grammar, and shape alone tells the three apart before
+// colour does.
+
+// Bright edges, the house Tron read, without the dot cloud.
+function solidWithEdges(geo, body, hi) {
+  const mesh = new THREE.Mesh(geo, new THREE.MeshLambertMaterial({
+    color: body, emissive: new THREE.Color(body).multiplyScalar(0.55),
+  }));
+  mesh.add(new THREE.LineSegments(new THREE.EdgesGeometry(geo), new THREE.LineBasicMaterial({
+    color: hi, transparent: true, opacity: 0.9,
+    blending: THREE.AdditiveBlending, depthWrite: false,
+  })));
+  return mesh;
+}
+
+// Shape carries the meaning: a spiked star for speed, a rounded cell for
+// health, a ring for the regen charge you carry home.
+const REWARD_GEO = {
+  star: () => new THREE.OctahedronGeometry(1, 0),
+  cell: () => new THREE.IcosahedronGeometry(0.92, 0),
+  ring: () => new THREE.TorusGeometry(0.72, 0.3, 8, 14),
+};
+
+export function makeRewardSolid(shape, cols, phase = 0) {
+  const g = new THREE.Group();
+  const geo = (REWARD_GEO[shape] || REWARD_GEO.star)();
+  const core = solidWithEdges(geo, cols.body, cols.hi ?? 0xffffff);
+  g.add(core);
+  // hovers and turns, so it reads as a thing placed there rather than debris
+  g.userData.tick = (t) => {
+    core.rotation.y = t * 0.9 + phase;
+    core.rotation.x = Math.sin(t * 0.7 + phase) * 0.25;
+    core.position.y = Math.sin(t * 1.6 + phase) * 0.18;
+  };
+  g.userData.kind = 'mesh';
+  return g;
+}
+
+// One solid shell: a cone nose on a short body. Three of these make a triad.
+export function makeShellSolid(cols) {
+  const g = new THREE.Group();
+  const body = solidWithEdges(new THREE.CylinderGeometry(0.34, 0.34, 1.0, 8), cols.body, cols.hi ?? 0xffffff);
+  g.add(body);
+  const nose = solidWithEdges(new THREE.ConeGeometry(0.34, 0.62, 8), cols.body, cols.hi ?? 0xffffff);
+  nose.position.y = 0.81;
+  g.add(nose);
   g.userData.kind = 'mesh';
   return g;
 }
