@@ -19,22 +19,22 @@
 
 import * as THREE from '../vendor/three.module.js';
 import GUI from '../vendor/lil-gui.esm.js';
-import { generateSphereMesh, relax } from './grid.js?v=392ebbe3';
-import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=392ebbe3';
-import { mulberry32, randomSeed } from './rng.js?v=392ebbe3';
-import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3, segKey } from './vec3.js?v=392ebbe3';
-import { CREATURES, waveJelly } from './creatures.js?v=392ebbe3';
-import { UNITS, UNIT_NAMES, buildUnit, preloadMkcx, makeBulletCloud, makeRewardSolid, makeShellSolid, makeDebris, makeDotBurst, makePortalCloud, makeHeartCloud, makeDotEnemy } from './units.js?v=392ebbe3';
-import { LOOKS, LOOK_NAMES } from './looks.js?v=392ebbe3';
-import { makeCellIndex } from './cellindex.js?v=392ebbe3';
-import { CREATURE_TINTS, ENEMY_SPEC, INTROS, computeWavePlan } from './enemyspec.js?v=392ebbe3';
-import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER } from './towers.js?v=392ebbe3';
-import { makeEconomy, sellRefund } from './economy.js?v=392ebbe3';
-import { makeBloom } from './postfx.js?v=392ebbe3';
-import { BLOOM_GROUPS } from './bloomweights.js?v=392ebbe3';
-import { TOWER_LOOK_NAMES, DEFAULT_TOWER_LOOK, buildTowerLook, preloadLook } from './towerlooks.js?v=392ebbe3';
-import { makeAudio } from './audio.js?v=392ebbe3';
-import { DEATH_KEYS } from './audiomanifest.js?v=392ebbe3';
+import { generateSphereMesh, relax } from './grid.js?v=ec55fd9a';
+import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=ec55fd9a';
+import { mulberry32, randomSeed } from './rng.js?v=ec55fd9a';
+import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3, segKey } from './vec3.js?v=ec55fd9a';
+import { CREATURES, waveJelly } from './creatures.js?v=ec55fd9a';
+import { UNITS, UNIT_NAMES, buildUnit, preloadMkcx, makeBulletCloud, makeRewardSolid, makeShellSolid, makeDebris, makeDotBurst, makePortalCloud, makeHeartCloud, makeDotEnemy } from './units.js?v=ec55fd9a';
+import { LOOKS, LOOK_NAMES } from './looks.js?v=ec55fd9a';
+import { makeCellIndex } from './cellindex.js?v=ec55fd9a';
+import { CREATURE_TINTS, ENEMY_SPEC, INTROS, computeWavePlan } from './enemyspec.js?v=ec55fd9a';
+import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER } from './towers.js?v=ec55fd9a';
+import { makeEconomy, sellRefund } from './economy.js?v=ec55fd9a';
+import { makeBloom } from './postfx.js?v=ec55fd9a';
+import { BLOOM_GROUPS } from './bloomweights.js?v=ec55fd9a';
+import { TOWER_LOOK_NAMES, DEFAULT_TOWER_LOOK, buildTowerLook, preloadLook } from './towerlooks.js?v=ec55fd9a';
+import { makeAudio } from './audio.js?v=ec55fd9a';
+import { DEATH_KEYS } from './audiomanifest.js?v=ec55fd9a';
 
 export function initTdTab(root) {
   let active = false;
@@ -216,7 +216,12 @@ export function initTdTab(root) {
   // the tank sets back down — it starts high so a fresh spawn doesn't rock.
   let hoverT = 0;
   let settleT = 99;
-  const HOVER_RISE = 0.75;   // extra lift at full hover, in unitScale units
+  // MEASURED, because the first value was wildly wrong. lift is in unitScale
+  // units and the tank stands 0.0311 world tall at unitScale 0.0375 — so
+  // 0.75 raised it by 0.028, i.e. 90% of its own height. It took off. This is
+  // an engine idling, not a jump jet: 0.09 lifts it ~11% of its height, which
+  // you notice as the machine coming alive and not as flight.
+  const HOVER_RISE = 0.09;
   let respawnClock = 0;
 
   // --- battle state --------------------------------------------------------
@@ -862,10 +867,11 @@ export function initTdTab(root) {
     if (rf > 0) playerMesh.rotateX(-0.05 * rk);
     // touchdown: a damped rock on two axes, ~0.9s. Two different frequencies
     // so it reads as suspension settling rather than a single clean wobble.
-    if (settleT < 1.4) {
-      const d = Math.exp(-settleT * 4.2);
-      playerMesh.rotateX(Math.sin(settleT * 17) * 0.06 * d);
-      playerMesh.rotateZ(Math.cos(settleT * 12.5) * 0.04 * d);
+    // a hint of weight transferring, not a bounce
+    if (settleT < 1.1) {
+      const d = Math.exp(-settleT * 5.0);
+      playerMesh.rotateX(Math.sin(settleT * 15) * 0.016 * d);
+      playerMesh.rotateZ(Math.cos(settleT * 11) * 0.010 * d);
     }
     markerMesh.quaternion.copy(tmpObj.quaternion); // arrow nose = heading
   }
@@ -2244,6 +2250,7 @@ export function initTdTab(root) {
   }
 
   params.regenerate = regenerate;
+  params.previewDestruction = previewDestruction;
   params.randomize = () => {
     params.seed = randomSeed() % 100000;
     seedCtrl.updateDisplay();
@@ -2859,6 +2866,21 @@ export function initTdTab(root) {
     scene.add(burst);
     debris.push(burst);
     playerMesh.visible = false;
+  }
+
+  // Watching the wreck should not cost a round. This plays the destruction
+  // and then puts the tank back, so it can be run over and over from the
+  // panel while tuning. It deliberately does NOT touch game state — nothing
+  // here ends the run.
+  function previewDestruction() {
+    if (player.won || !playerMesh) return;
+    destroyPlayer();
+    setTimeout(() => {
+      if (player.won || !playerMesh) return; // a real death happened meanwhile
+      playerMesh.visible = true;
+      settleT = 0;   // it drops back in and settles
+      hoverT = 0;
+    }, DEATH_HOLD * 1000);
   }
 
   function loseGame(reason) {
@@ -3545,6 +3567,7 @@ export function initTdTab(root) {
   gui.add(params, 'relaxIters', 0, 200, 10).name('relax iters').onFinishChange(regenerate);
   gui.add(params, 'randomize').name('🎲 random seed');
   gui.add(params, 'regenerate').name('↻ regenerate');
+  gui.add(params, 'previewDestruction').name('💥 destroy tank (preview)');
 
   const towerLookCtrl = gui.add(params, 'towerLook', TOWER_LOOK_NAMES)
     .name('tower look').onChange(applyTowerLook);
@@ -3658,10 +3681,10 @@ export function initTdTab(root) {
     const moving = engineLevel > 0.03 && !paused && !player.won;
     engineIdle = moving ? 0 : engineIdle + dt;
 
-    // rises faster than it falls: the pneumatics snap the hull up and let it
-    // down, which is what the two hydraulic samples sound like
+    // slow both ways: an engine SPOOLS. Rising a touch slower than it falls
+    // reads as taking up load, then setting the weight back down.
     const hoverTarget = engineRunning ? 1 : 0;
-    hoverT += (hoverTarget - hoverT) * Math.min(1, (hoverTarget > hoverT ? 3.4 : 5.0) * dt);
+    hoverT += (hoverTarget - hoverT) * Math.min(1, (hoverTarget > hoverT ? 1.9 : 2.4) * dt);
     if (settleT < 4) settleT += dt;
 
     if (moving && !engineRunning) {
