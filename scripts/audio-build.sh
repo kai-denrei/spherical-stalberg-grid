@@ -59,6 +59,8 @@ tower_sniper|Tower_Sniper_heavy-blast-05.wav|0.95|1.00
 tower_upgrade|Tower_upgrade.wav|0.79|1.00
 tank_main|Tank_MainWeapon_heavy-blast-15.wav|1.20|1.00
 tank_secondary|Tank_Secondary_light-blast-09.wav|0.14|1.00
+tank_spool_up|hydraulic_up.wav|1.10|1.00
+tank_spool_down|hydraulic_down.wav|0.92|1.00
 tank_pickup|Tank_PickUpItem_handling-26.wav|0.45|1.00
 tank_shells|Tank_PickUpNewShells_reload-02.wav|0.91|1.00
 enemy_die_a|slime-pop.wav|0.50|1.00
@@ -119,38 +121,51 @@ while IFS='|' read -r key src dur rate; do
   printf "  %-15s %5.2fs (want %.2f)  peak %7.2f dBFS\n" "$key" "$gotdur" "$dur" "$final"
 done <<< "$TABLE"
 
-# --- the engine loop is special: an inner slice, crossfaded to hide the seam
+# --- looped beds: an inner slice, crossfaded to hide the seam ---------------
+# A loop cannot just be trimmed: the join has to be inaudible. Take a steady
+# inner slice and crossfade its tail back over its head.
 #
 # Tank_Engine_teleport is a swell-then-decay whoosh, but its RMS body holds
 # within ~2.5 dB from 0.35s to 1.45s -- steady enough to loop from. Take that
 # 1.10s body and crossfade its tail back over its head so the loop point is
 # inaudible. Output is 1.10 - XF = 1.04s of seamless loop.
-XF=0.06
-ENG_IN="$SRC/Tank_Engine_teleport.wav"
-[[ -f "$ENG_IN" ]] || { echo "missing source: $ENG_IN" >&2; exit 1; }
+# key|source wav|slice start|slice end|crossfade
+LOOPS=$(cat <<'EOF'
+tank_engine|Tank_Engine_teleport.wav|0.35|1.45|0.06
+tank_thruster|thruster.wav|0.50|3.50|0.10
+EOF
+)
 
-ffmpeg -v error -y -i "$ENG_IN" \
-  -filter_complex "\
-[0:a]atrim=0.35:1.45,asetpts=N/SR/TB,aformat=channel_layouts=mono[body];\
+while IFS='|' read -r key src lo hi xf; do
+  [[ -z "$key" ]] && continue
+  in="$SRC/$src"
+  [[ -f "$in" ]] || { echo "missing source: $in" >&2; exit 1; }
+  body=$(awk -v a="$lo" -v b="$hi" 'BEGIN{printf "%.4f", b-a}')
+  head_end=$(awk -v b="$body" -v x="$xf" 'BEGIN{printf "%.4f", b-x}')
+
+  ffmpeg -v error -y -i "$in" \
+    -filter_complex "\
+[0:a]atrim=${lo}:${hi},asetpts=N/SR/TB,aformat=channel_layouts=mono[body];\
 [body]asplit[b1][b2];\
-[b1]atrim=0:$(awk -v x="$XF" 'BEGIN{printf "%.4f", 1.10-x}'),asetpts=N/SR/TB[head];\
-[b2]atrim=$(awk -v x="$XF" 'BEGIN{printf "%.4f", 1.10-x}'),asetpts=N/SR/TB[tail];\
-[head][tail]acrossfade=d=${XF}:c1=tri:c2=tri[out]" \
-  -map "[out]" -ac 1 -ar "$SR" -y "$OUT/.engine_raw.wav"
+[b1]atrim=0:${head_end},asetpts=N/SR/TB[head];\
+[b2]atrim=${head_end},asetpts=N/SR/TB[tail];\
+[head][tail]acrossfade=d=${xf}:c1=tri:c2=tri[out]" \
+    -map "[out]" -ac 1 -ar "$SR" -y "$OUT/.loop_raw.wav"
 
-# same two-pass peak normalize, on the assembled loop
-eraw=$(apeak "$OUT/.engine_raw.wav")
-evol=$(awk -v p="$eraw" -v t="$TARGET" 'BEGIN{printf "%.2f", t-p}')
-ffmpeg -v error -y -i "$OUT/.engine_raw.wav" -af "volume=${evol}dB" -ac 1 -ar "$SR" -b:a "$BR" "$OUT/tank_engine.mp3"
-e1=$(apeak "$OUT/tank_engine.mp3")
-evol2=$(awk -v v="$evol" -v p="$e1" -v t="$TARGET" 'BEGIN{printf "%.2f", v-(p-t)}')
-ffmpeg -v error -y -i "$OUT/.engine_raw.wav" -af "volume=${evol2}dB" -ac 1 -ar "$SR" -b:a "$BR" "$OUT/tank_engine.mp3"
-rm -f "$OUT/.engine_raw.wav"
+  # same two-pass peak normalize as the one-shots
+  lraw=$(apeak "$OUT/.loop_raw.wav")
+  lvol=$(awk -v p="$lraw" -v t="$TARGET" 'BEGIN{printf "%.2f", t-p}')
+  ffmpeg -v error -y -i "$OUT/.loop_raw.wav" -af "volume=${lvol}dB" -ac 1 -ar "$SR" -b:a "$BR" "$OUT/${key}.mp3"
+  l1=$(apeak "$OUT/${key}.mp3")
+  lvol2=$(awk -v v="$lvol" -v p="$l1" -v t="$TARGET" 'BEGIN{printf "%.2f", v-(p-t)}')
+  ffmpeg -v error -y -i "$OUT/.loop_raw.wav" -af "volume=${lvol2}dB" -ac 1 -ar "$SR" -b:a "$BR" "$OUT/${key}.mp3"
+  rm -f "$OUT/.loop_raw.wav"
 
-efinal=$(apeak "$OUT/tank_engine.mp3")
-gotdur=$(ffprobe -v error -show_entries format=duration -of csv=p=0 "$OUT/tank_engine.mp3")
-worst=$(awk -v w="$worst" -v f="$efinal" 'BEGIN{print (f>w)?f:w}')
-printf "  %-15s %5.2fs (crossfaded loop)  peak %7.2f dBFS\n" "tank_engine" "$gotdur" "$efinal"
+  lfinal=$(apeak "$OUT/${key}.mp3")
+  gotdur=$(ffprobe -v error -show_entries format=duration -of csv=p=0 "$OUT/${key}.mp3")
+  worst=$(awk -v w="$worst" -v f="$lfinal" 'BEGIN{print (f>w)?f:w}')
+  printf "  %-15s %5.2fs (crossfaded loop)  peak %7.2f dBFS\n" "$key" "$gotdur" "$lfinal"
+done <<< "$LOOPS"
 
 # nothing may decode above full scale: Web Audio clips that at the device
 if awk -v w="$worst" 'BEGIN{exit !(w >= 0)}'; then

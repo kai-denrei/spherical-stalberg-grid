@@ -16,6 +16,7 @@ import { buildTowerLook, TOWER_LOOK_NAMES, DEFAULT_TOWER_LOOK, preloadLook } fro
 import { TOWER_BY_KEY } from './towers.js';
 import { LOOKS } from './looks.js';
 import { makeBloom } from './postfx.js';
+import { makeAudio } from './audio.js?v=15cf6de5';
 import { GROUPS, GROUP_LABELS, GROUP_EMPTY, entriesIn } from './unitcatalog.js';
 
 export function initUnitsTab(root) {
@@ -52,6 +53,43 @@ export function initUnitsTab(root) {
   const countEl = root.querySelector('#units-count');
   const groupRow = root.querySelector('#units-groups');
   const lookSel = root.querySelector('#units-look');
+  const soundRow = root.querySelector('#units-sounds');
+
+  // The viewer plays units as well as showing them — the same panel serves
+  // tuning and player lore. Its own mixer instance, so nothing here can
+  // disturb the game tab's levels or its voice budget.
+  const sfx = makeAudio({ seed: 1 });
+  sfx.arm();
+  let bed = null;          // the one looping sound a unit may have
+  let bedBtn = null;
+
+  function stopBed() {
+    if (bed) bed.stop(0.15);
+    bed = null;
+    if (bedBtn) bedBtn.classList.remove('on');
+    bedBtn = null;
+  }
+
+  function buildSoundRow(entry) {
+    stopBed();
+    soundRow.textContent = '';
+    const list = entry && entry.sounds ? entry.sounds : [];
+    soundRow.classList.toggle('hidden', list.length === 0);
+    for (const snd of list) {
+      const b = document.createElement('button');
+      b.textContent = snd.label;
+      b.addEventListener('click', () => {
+        if (!snd.loop) { sfx.play(snd.key); return; }
+        if (bedBtn === b) { stopBed(); return; }  // toggle off
+        stopBed();
+        // loop() returns null until the buffer decodes, so only latch a
+        // real handle — the same trap that silenced the game's engine bed
+        const h = sfx.loop(snd.key, { gain: 1 });
+        if (h) { bed = h; bedBtn = b; b.classList.add('on'); }
+      });
+      soundRow.appendChild(b);
+    }
+  }
 
   for (const name of TOWER_LOOK_NAMES) {
     const o = document.createElement('option');
@@ -108,6 +146,7 @@ export function initUnitsTab(root) {
       nameEl.textContent = '—';
       noteEl.textContent = GROUP_EMPTY[state.group];
       countEl.textContent = '0 / 0';
+      buildSoundRow(null);
       return;
     }
     state.index = ((state.index % list.length) + list.length) % list.length;
@@ -124,6 +163,7 @@ export function initUnitsTab(root) {
     frame(current);
     nameEl.textContent = e.label;
     noteEl.textContent = e.note || '';
+    buildSoundRow(e);
     countEl.textContent = `${state.index + 1} / ${list.length}`;
     lookSel.parentElement.classList.toggle('hidden', e.kind !== 'tower');
   }
@@ -200,6 +240,7 @@ export function initUnitsTab(root) {
     setActive(on) {
       active = on;
       if (on) { resize(); show(); }
+      else stopBed(); // never leave a bed running on a tab you have left
     },
   };
 }

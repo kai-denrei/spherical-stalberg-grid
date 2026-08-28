@@ -19,22 +19,22 @@
 
 import * as THREE from '../vendor/three.module.js';
 import GUI from '../vendor/lil-gui.esm.js';
-import { generateSphereMesh, relax } from './grid.js?v=fdca17eb';
-import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=fdca17eb';
-import { mulberry32, randomSeed } from './rng.js?v=fdca17eb';
-import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3, segKey } from './vec3.js?v=fdca17eb';
-import { CREATURES, waveJelly } from './creatures.js?v=fdca17eb';
-import { UNITS, UNIT_NAMES, buildUnit, preloadMkcx, makeOrbCloud, makeBulletCloud, makeMissileCloud, makeDebris, makeDotBurst, makePortalCloud, makeHeartCloud, makeDotEnemy } from './units.js?v=fdca17eb';
-import { LOOKS, LOOK_NAMES } from './looks.js?v=fdca17eb';
-import { makeCellIndex } from './cellindex.js?v=fdca17eb';
-import { CREATURE_TINTS, ENEMY_SPEC, INTROS, computeWavePlan } from './enemyspec.js?v=fdca17eb';
-import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER } from './towers.js?v=fdca17eb';
-import { makeEconomy, sellRefund } from './economy.js?v=fdca17eb';
-import { makeBloom } from './postfx.js?v=fdca17eb';
-import { BLOOM_GROUPS } from './bloomweights.js?v=fdca17eb';
-import { TOWER_LOOK_NAMES, DEFAULT_TOWER_LOOK, buildTowerLook, preloadLook } from './towerlooks.js?v=fdca17eb';
-import { makeAudio } from './audio.js?v=fdca17eb';
-import { DEATH_KEYS } from './audiomanifest.js?v=fdca17eb';
+import { generateSphereMesh, relax } from './grid.js?v=15cf6de5';
+import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=15cf6de5';
+import { mulberry32, randomSeed } from './rng.js?v=15cf6de5';
+import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3, segKey } from './vec3.js?v=15cf6de5';
+import { CREATURES, waveJelly } from './creatures.js?v=15cf6de5';
+import { UNITS, UNIT_NAMES, buildUnit, preloadMkcx, makeOrbCloud, makeBulletCloud, makeMissileCloud, makeDebris, makeDotBurst, makePortalCloud, makeHeartCloud, makeDotEnemy } from './units.js?v=15cf6de5';
+import { LOOKS, LOOK_NAMES } from './looks.js?v=15cf6de5';
+import { makeCellIndex } from './cellindex.js?v=15cf6de5';
+import { CREATURE_TINTS, ENEMY_SPEC, INTROS, computeWavePlan } from './enemyspec.js?v=15cf6de5';
+import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER } from './towers.js?v=15cf6de5';
+import { makeEconomy, sellRefund } from './economy.js?v=15cf6de5';
+import { makeBloom } from './postfx.js?v=15cf6de5';
+import { BLOOM_GROUPS } from './bloomweights.js?v=15cf6de5';
+import { TOWER_LOOK_NAMES, DEFAULT_TOWER_LOOK, buildTowerLook, preloadLook } from './towerlooks.js?v=15cf6de5';
+import { makeAudio } from './audio.js?v=15cf6de5';
+import { DEATH_KEYS } from './audiomanifest.js?v=15cf6de5';
 
 export function initTdTab(root) {
   let active = false;
@@ -3566,27 +3566,29 @@ export function initTdTab(root) {
   const mapBg = new THREE.Color(0x080a10);
   let t = 0;
   let lastFrame = performance.now();
-  // --- engine bed ---------------------------------------------------------
-  // A continuous loop under everything, gain and pitch both tracking
-  // speed: slow crawl reads quiet and low, full drive louder and higher.
+  // --- engine: hydraulics up, thruster bed, hydraulics down ---------------
+  // Three sounds, not one. A single looping sample gave starting and
+  // stopping no weight at all; the hydraulics do that work and the thruster
+  // just carries the middle.
   //
   // Speed comes from the ACTUAL per-frame position delta rather than from
-  // the drive inputs. One site then covers manual driving, auto
-  // navigation, and the handoff eased through virtualStart -- and it
-  // follows the house rule of deriving render-coupled values from the
-  // render state instead of re-deriving them with a second set of
-  // conventions.
+  // the drive inputs. One site then covers manual driving, auto navigation,
+  // and the handoff eased through virtualStart -- and it follows the house
+  // rule of deriving render-coupled values from the render state instead of
+  // re-deriving them with a second set of conventions.
   let engineHandle = null;
   let enginePrev = null;    // last frame's position
   let engineLevel = 0;      // smoothed 0..1
   let engineIdle = 0;       // s since the tank last moved
-  const ENGINE_STOP = 0.25; // s of stillness before the bed fades out
+  let engineRunning = false; // has the spool-up played and not been undone?
+  const ENGINE_STOP = 0.25;  // s of stillness before the bed fades out
 
-  function stopEngine(fade = ENGINE_STOP) {
-    if (!engineHandle) return;
-    engineHandle.stop(fade);
+  function stopEngine(fade = ENGINE_STOP, quiet = false) {
+    if (engineHandle) engineHandle.stop(fade);
     engineHandle = null;
     engineLevel = 0;
+    if (engineRunning && !quiet) sfx.play('tank_spool_down');
+    engineRunning = false;
   }
 
   function updateEngine(dt) {
@@ -3608,17 +3610,22 @@ export function initTdTab(root) {
     const moving = engineLevel > 0.03 && !paused && !player.won;
     engineIdle = moving ? 0 : engineIdle + dt;
 
-    if (moving && !engineHandle) {
-      engineHandle = sfx.loop('tank_engine', { gain: 0.001, rate: 0.85 });
+    if (moving && !engineRunning) {
+      sfx.play('tank_spool_up'); // hydraulics lift it off the deck
+      engineRunning = true;
     }
-    if (engineHandle) {
-      if (engineIdle >= ENGINE_STOP) {
-        stopEngine();
-      } else {
-        // gain is nearly linear in level; pitch spans 0.85..1.18 so the
-        // bed is felt as effort rather than heard as a repeating clip
-        engineHandle.set(0.15 + 0.85 * engineLevel, 0.85 + 0.33 * engineLevel);
-      }
+    // RETRY every frame while moving: sfx.loop returns null until the buffer
+    // has decoded, and latching a failed handle is what silenced this bed
+    // for whole sessions.
+    if (moving && !engineHandle) {
+      engineHandle = sfx.loop('tank_thruster', { gain: 0.001, rate: 0.92 });
+    }
+    if (!moving && engineIdle >= ENGINE_STOP) {
+      stopEngine();
+    } else if (engineHandle) {
+      // gain is nearly linear in level; pitch spans 0.92..1.14 so the bed is
+      // felt as effort rather than heard as a repeating clip
+      engineHandle.set(0.18 + 0.82 * engineLevel, 0.92 + 0.22 * engineLevel);
     }
   }
 
@@ -3963,7 +3970,7 @@ export function initTdTab(root) {
   return {
     setActive(on) {
       active = on;
-      if (!on) stopEngine(0.1); // or the bed drones on while another tab is up
+      if (!on) stopEngine(0.1, true); // quiet: leaving the tab is not a landing
       if (on) { resize(); snapCamera(); }
       else if (wasPlaying) {
         wasPlaying = false;

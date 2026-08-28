@@ -45,7 +45,15 @@ export const SOUNDS = {
   tank_secondary: { file: `${A}/tank_secondary.mp3`, bus: 'tank', gain: 0.30, maxVoices: 3, minInterval: 0.11, rateJitter: 0.10 },
   tank_pickup:    { file: `${A}/tank_pickup.mp3`,    bus: 'tank', gain: 0.65, maxVoices: 2, minInterval: 0.05, rateJitter: 0.04 },
   tank_shells:    { file: `${A}/tank_shells.mp3`,    bus: 'tank', gain: 0.70, maxVoices: 2, minInterval: 0.05, rateJitter: 0.04 },
-  // "lower sound, almost background" -- the bed sits under everything
+  // The engine is THREE sounds, not one: hydraulics lift the tank as it
+  // starts, a thruster bed carries it while moving, hydraulics set it back
+  // down when it stops. A single looping sample could never give the start
+  // and stop any weight.
+  tank_spool_up:   { file: `${A}/tank_spool_up.mp3`,   bus: 'tank', gain: 0.55, maxVoices: 1, minInterval: 0.25, rateJitter: 0.03 },
+  tank_spool_down: { file: `${A}/tank_spool_down.mp3`, bus: 'tank', gain: 0.50, maxVoices: 1, minInterval: 0.25, rateJitter: 0.03 },
+  // "quite low sound when it moves" -- the bed sits under everything
+  tank_thruster:   { file: `${A}/tank_thruster.mp3`,   bus: 'tank', gain: 0.20, maxVoices: 1, minInterval: 0, rateJitter: 0 },
+  // the original single-sample bed, kept for comparison
   tank_engine:    { file: `${A}/tank_engine.mp3`,    bus: 'tank', gain: 0.22, maxVoices: 1, minInterval: 0, rateJitter: 0 },
 
   // --- enemies -----------------------------------------------------------

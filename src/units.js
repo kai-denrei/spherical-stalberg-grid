@@ -16,8 +16,8 @@
 
 import * as THREE from '../vendor/three.module.js';
 import { loadGlb, mergeByMaterial, fitModel, tintModel, makeShellRack,
-  addEdgeOutlines, makeHeatSleeve } from './glbmodels.js?v=fdca17eb';
-import { CREATURES, waveJelly, spherePts, bulletPts, missilePts, heartPts, torusPts, towerHeadPts, enemyDotPts, portalPts } from './creatures.js?v=fdca17eb';
+  addEdgeOutlines, makeHeatSleeve } from './glbmodels.js?v=15cf6de5';
+import { CREATURES, waveJelly, spherePts, bulletPts, missilePts, heartPts, torusPts, towerHeadPts, enemyDotPts, portalPts } from './creatures.js?v=15cf6de5';
 
 function normalizeToUnit(group) {
   group.updateMatrixWorld(true);
@@ -989,7 +989,11 @@ function makeMkcx(cols) {
   const barrel = g.getObjectByName('Barrel_Pivot');
   if (barrel) {
     g.userData.heatSleeve = makeHeatSleeve(barrel, {
-      radius: 0.34, len: 0.55, z: 1.5, color: cols.walkerHi ?? 0x7df9ff,
+      // 3x longer than it was, same radius: the cool->hot gauge is the most
+      // legible thing on the tank and it was too short a band to read at
+      // gameplay distance. Pushed forward so the longer sleeve still sits on
+      // the barrel rather than starting inside the mantlet.
+      radius: 0.34, len: 1.65, z: 2.05, color: cols.walkerHi ?? 0x7df9ff,
     });
   }
   // No added gun tubes: the model already HAS secondary gun barrels, and

@@ -17,9 +17,9 @@
 //    total. A failed fetch or decode logs once and that key becomes a
 //    permanent no-op for the session; the game keeps running silent.
 
-import { makeMixState, distanceGain, admit, addVoice, dropVoice } from './audiomix.js?v=fdca17eb';
-import { SOUNDS, BUSES, DEFAULT_LEVELS, GLOBAL_VOICE_CAP, DISTANCE_K } from './audiomanifest.js?v=fdca17eb';
-import { mulberry32 } from './rng.js?v=fdca17eb';
+import { makeMixState, distanceGain, admit, addVoice, dropVoice } from './audiomix.js?v=15cf6de5';
+import { SOUNDS, BUSES, DEFAULT_LEVELS, GLOBAL_VOICE_CAP, DISTANCE_K } from './audiomanifest.js?v=15cf6de5';
+import { mulberry32 } from './rng.js?v=15cf6de5';
 
 const STORE_KEY = 'ssg.audio.levels';
 const STEAL_FADE = 0.03; // s — a hard cut mid-waveform is an audible click
@@ -193,9 +193,15 @@ export function makeAudio(opts = {}) {
 
     // a handle rather than a key, because the bed is continuous: the
     // caller nudges gain and rate every frame from the tank's speed
+    // Returns NULL when it cannot start — deliberately, not a silent stub.
+    // A stub handle looks successful to the caller, who stores it and never
+    // asks again; that is exactly how the engine bed went silent for a whole
+    // session when the first attempt landed before the buffers had decoded.
+    // Null makes the caller retry next frame, which costs nothing: start()
+    // bails before touching the voice budget when there is no buffer.
     loop(key, o = {}) {
       const v = start(key, o, true);
-      if (!v) return { set() {}, stop() {} };
+      if (!v) return null;
       return {
         set(gain, rate) {
           try {

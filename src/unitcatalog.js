@@ -24,9 +24,25 @@ export const GROUP_EMPTY = {
   hostile: 'no hostiles',
 };
 
+// What each thing SOUNDS like, so the viewer can play a unit as well as
+// show it. `loop: true` marks a bed the button toggles rather than triggers.
+const TANK_SOUNDS = [
+  { key: 'tank_spool_up', label: 'start' },
+  { key: 'tank_thruster', label: 'moving', loop: true },
+  { key: 'tank_spool_down', label: 'stop' },
+  { key: 'tank_main', label: 'shell' },
+  { key: 'tank_secondary', label: 'lasers' },
+  { key: 'tank_shells', label: 'reload' },
+  { key: 'tank_pickup', label: 'pickup' },
+];
+
 const PLAYER_UNITS = [
-  { id: 'tank', kind: 'unit', label: 'tank', note: 'the procedural tank — turret sweeps, 9-shell rack, twin mini-guns' },
-  { id: 'mkcx', kind: 'unit', label: 'mkcx', note: 'authored hover tank; turret and both secondary guns stay articulated' },
+  { id: 'tank', kind: 'unit', label: 'tank',
+    note: 'the procedural tank — turret sweeps, 9-shell rack, twin mini-guns',
+    sounds: TANK_SOUNDS },
+  { id: 'mkcx', kind: 'unit', label: 'mkcx',
+    note: 'authored hover tank; turret and both secondary guns stay articulated',
+    sounds: TANK_SOUNDS },
 ];
 
 // Towers are the player's army too, so they belong on the friendly side.
@@ -34,11 +50,24 @@ const PLAYER_UNITS = [
 const TOWER_UNITS = TOWERS.map((t) => ({
   id: t.key, kind: 'tower', label: t.label,
   note: `tower · ${t.cost}c · range ${t.range} · ${t.attack}`,
+  sounds: [
+    { key: `tower_${t.key}`, label: 'fire' },
+    { key: 'tower_upgrade', label: 'upgrade' },
+  ],
 }));
+
+// Every hostile shares the three death sounds; which one plays in game is
+// picked from the deterministic stream, so hearing all three is the point.
+const DEATH_SOUNDS = [
+  { key: 'enemy_die_a', label: 'death 1' },
+  { key: 'enemy_die_b', label: 'death 2' },
+  { key: 'enemy_die_c', label: 'death 3' },
+];
 
 const HOSTILE_UNITS = Object.keys(ENEMY_SPEC).map((key) => ({
   id: key, kind: 'unit', label: key,
   note: `${ENEMY_SPEC[key].role || 'hostile'} · ${ENEMY_SPEC[key].hp} hp`,
+  sounds: DEATH_SOUNDS,
 }));
 
 export const UNIT_CATALOG = {
