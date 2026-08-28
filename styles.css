@@ -1130,3 +1130,31 @@ html, body {
 #units-sounds button:hover { border-color: rgba(159, 220, 255, .5); }
 #units-sounds button.on { color: #061018; background: #6fe6ff; border-color: #6fe6ff; }
 #units-sounds.hidden { display: none; }
+
+/* mdview: lists and tables, added with TECH-STACK.md — it is scanned, not read */
+.mdview h3 {
+  margin: 22px 0 8px;
+  font: 600 14px/1.4 ui-monospace, SFMono-Regular, Menlo, monospace;
+  letter-spacing: .1em; text-transform: uppercase; color: #9fdcff;
+}
+.mdview ul { margin: 10px 0 14px; padding-left: 20px; }
+.mdview li { margin: 5px 0; line-height: 1.7; }
+.mdview table {
+  width: 100%; margin: 14px 0 18px;
+  border-collapse: collapse;
+  font-size: 13px; line-height: 1.55;
+  display: block; overflow-x: auto; /* wide tables scroll, the page never does */
+}
+.mdview thead th {
+  text-align: left; padding: 8px 12px;
+  font-weight: 600; letter-spacing: .06em; text-transform: uppercase;
+  font-size: 11px; color: #9fdcff;
+  border-bottom: 1px solid rgba(159, 220, 255, .3);
+  white-space: nowrap;
+}
+.mdview tbody td {
+  padding: 8px 12px; vertical-align: top;
+  border-bottom: 1px solid rgba(120, 150, 210, .12);
+}
+.mdview tbody tr:last-child td { border-bottom: 0; }
+.mdview tbody td:first-child { color: #cfe4ff; white-space: nowrap; }

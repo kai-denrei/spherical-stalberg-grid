@@ -2,8 +2,10 @@
 // The badge (#cb-badge) belongs to the cache-busting toolkit and gets
 // overwritten on reinstall, so we hook it from outside (capture phase)
 // rather than editing cb-badge.js. The markdown renderer below covers
-// exactly what DEVLOG.md uses: h1/h2, hr, paragraphs, `code`, **bold**,
-// *italic*, [links](…) — not general markdown.
+// exactly what these docs use: h1/h2/h3, hr, paragraphs, bullet lists,
+// pipe tables, `code`, **bold**, *italic*, [links](…) — not general
+// markdown. Lists and tables were added for TECH-STACK.md, which has to be
+// SCANNED rather than read.
 
 export function mdToHtml(md) {
   const esc = (s) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
@@ -15,15 +17,50 @@ export function mdToHtml(md) {
 
   const out = [];
   let para = [];
-  const flush = () => {
+  let list = null;   // open <ul> item buffer
+  let table = null;  // open table: { head, rows }
+
+  const flushPara = () => {
     if (para.length) { out.push(`<p>${inline(para.join(' '))}</p>`); para = []; }
   };
+  const flushList = () => {
+    if (!list) return;
+    out.push(`<ul>${list.map((t) => `<li>${inline(t)}</li>`).join('')}</ul>`);
+    list = null;
+  };
+  const flushTable = () => {
+    if (!table) return;
+    const th = table.head.map((c) => `<th>${inline(c)}</th>`).join('');
+    const tr = table.rows
+      .map((r) => `<tr>${r.map((c) => `<td>${inline(c)}</td>`).join('')}</tr>`)
+      .join('');
+    out.push(`<table><thead><tr>${th}</tr></thead><tbody>${tr}</tbody></table>`);
+    table = null;
+  };
+  const flush = () => { flushPara(); flushList(); flushTable(); };
+
+  // a pipe row -> cells, tolerating optional leading/trailing pipes
+  const cells = (line) => line.replace(/^\||\|$/g, '').split('|').map((c) => c.trim());
+
   for (const line of md.split('\n')) {
-    if (line.startsWith('## ')) { flush(); out.push(`<h2>${inline(line.slice(3))}</h2>`); }
-    else if (line.startsWith('# ')) { flush(); out.push(`<h1>${inline(line.slice(2))}</h1>`); }
-    else if (/^---\s*$/.test(line)) { flush(); out.push('<hr>'); }
-    else if (/^\s*$/.test(line)) flush();
-    else para.push(line.trim());
+    const t = line.trim();
+    if (t.startsWith('|')) {
+      // the |---|---| separator only marks the header; it draws nothing
+      if (/^\|[\s:|-]+\|?$/.test(t)) continue;
+      if (!table) table = { head: cells(t), rows: [] };
+      else table.rows.push(cells(t));
+      flushPara(); flushList();
+      continue;
+    }
+    flushTable();
+    if (/^[-*] /.test(t)) { flushPara(); (list ||= []).push(t.slice(2)); continue; }
+    flushList();
+    if (t.startsWith('### ')) { flush(); out.push(`<h3>${inline(t.slice(4))}</h3>`); }
+    else if (t.startsWith('## ')) { flush(); out.push(`<h2>${inline(t.slice(3))}</h2>`); }
+    else if (t.startsWith('# ')) { flush(); out.push(`<h1>${inline(t.slice(2))}</h1>`); }
+    else if (/^---\s*$/.test(t)) { flush(); out.push('<hr>'); }
+    else if (t === '') flush();
+    else para.push(t);
   }
   flush();
   return out.join('\n');

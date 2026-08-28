@@ -1,18 +1,18 @@
 // main.js — tab shell. Each tab lazily initializes its own renderer/scene the
 // first time it's shown and pauses (skips its loop body) while hidden.
 
-import { wireDevlogBadge } from './devlog.js?v=8c8b4f29';
-import { initGridTab } from './grid-tab.js?v=8c8b4f29';
-import { initMazeTab } from './maze-tab.js?v=8c8b4f29';
-import { initOrganicTab } from './organic-tab.js?v=8c8b4f29';
-import { initBattleTab } from './battle-tab.js?v=8c8b4f29';
-import { initHeartTab } from './heart-tab.js?v=8c8b4f29';
-import { initTdTab } from './td-tab.js?v=8c8b4f29';
-import { initTankTab } from './tank-tab.js?v=8c8b4f29';
-import { initTank2Tab } from './tank2-tab.js?v=8c8b4f29';
-import { initTank3Tab } from './tank3-tab.js?v=8c8b4f29';
-import { initUnitsTab } from './units-tab.js?v=8c8b4f29';
-import { initHowTab } from './how-tab.js?v=8c8b4f29';
+import { wireDevlogBadge } from './devlog.js?v=4ebcb505';
+import { initGridTab } from './grid-tab.js?v=4ebcb505';
+import { initMazeTab } from './maze-tab.js?v=4ebcb505';
+import { initOrganicTab } from './organic-tab.js?v=4ebcb505';
+import { initBattleTab } from './battle-tab.js?v=4ebcb505';
+import { initHeartTab } from './heart-tab.js?v=4ebcb505';
+import { initTdTab } from './td-tab.js?v=4ebcb505';
+import { initTankTab } from './tank-tab.js?v=4ebcb505';
+import { initTank2Tab } from './tank2-tab.js?v=4ebcb505';
+import { initTank3Tab } from './tank3-tab.js?v=4ebcb505';
+import { initUnitsTab } from './units-tab.js?v=4ebcb505';
+import { initHowTab, initStackTab } from './how-tab.js?v=4ebcb505';
 
 const tabs = {
   grid: { root: document.getElementById('tab-grid'), init: initGridTab, api: null },
@@ -26,6 +26,7 @@ const tabs = {
   tank3: { root: document.getElementById('tab-tank3'), init: initTank3Tab, api: null },
   units: { root: document.getElementById('tab-units'), init: initUnitsTab, api: null },
   how: { root: document.getElementById('tab-how'), init: initHowTab, api: null },
+  stack: { root: document.getElementById('tab-stack'), init: initStackTab, api: null },
 };
 
 let current = null;
