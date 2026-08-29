@@ -6,6 +6,60 @@ Demo links assume `npm run serve` (port 8144) or the
 
 ---
 
+## `18f1cda` — Dot count was never the budget
+
+The question was whether the dot granularity is a limit we impose for
+efficiency, and whether towers should be solid instead. It deserved numbers.
+`?perf=N` reports `renderer.info` across one whole frame:
+
+| | wave 4 | wave 8 | wave 4 + 8 towers |
+| --- | --- | --- | --- |
+| draw calls | 1022 | 1448 | 1026 |
+| triangles | 36,654 | 48,494 | 36,654 |
+| points drawn | 49,744 | 67,252 | 50,032 |
+| scene objects | 437 | 586 | 454 |
+
+**Eight towers cost four draw calls and 0.6% more points.** Going from wave 4
+to wave 8 — more enemies, more projectiles, more *objects* — costs 426 calls.
+
+A frame here is priced in draw calls; draw calls scale with object count, not
+with detail inside an object. 50k points is nothing to any GPU made this
+decade. So raising a head from 190 to 480 dots adds vertices to a call that
+already exists: free. 190 was an arbitrary default, never a measured limit.
+Default 480 now, ceiling 1200.
+
+Measuring it needs care: `info` resets on every `render()` and postfx runs
+several passes, so a naive read reports the bloom's final fullscreen quad —
+`calls=1` — and nothing else. Set `info.autoReset = false`, reset, and let one
+frame accumulate.
+
+**Decision, recorded in ROADMAP:** dot clouds stay, shapes carry their
+authored detail, and the effects layer must be *pooled* — because "lots of
+fireworks and explosions" is exactly the thing that adds objects. One `Points`
+cloud with a rewritten buffer serves a thousand particles in one call.
+
+### Heads sit on the pedestal now
+
+`fitUnit` normalises by distance from the origin. That keeps a shape inside
+the unit sphere and says nothing about where its **mass** sits — and several
+lab shapes are deliberately off-origin, because an arm reaches forward from
+its base. Mounted on a mast, the head hung off to one side of the collar
+instead of standing on it. Ported shapes are recentred on their own bounding
+box before resampling.
+
+### FIRE draws what the tower does
+
+Each attack shows its own pattern — a spread fans, a homing shot curves, a
+mortar lobs on gravity and bursts where it lands, a beam arrives whole and
+fades, a slow field pulses outward. It fires at the tower's **own rate** for
+four seconds, because cadence is half of what you are judging, and the range
+ring is scaled from `def.range` so reach is to scale rather than decorative.
+
+Built as one pooled `Points` cloud rewritten in place — the same arithmetic as
+above, and the reference shape for the effects layer.
+
+---
+
 ## `36145b4` — Eight silhouettes, and arrows that hold still
 
 Every tower now wears a distinct head from the Braille lab, matched to what

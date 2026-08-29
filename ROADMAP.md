@@ -28,6 +28,41 @@ not advanced.
 
 ---
 
+## The rendering direction (decided)
+
+**Dot clouds stay. Density is not the constraint; object count is.** Measured
+on a live wave-4 board, across one whole frame:
+
+| | wave 4 | wave 8 | +8 towers |
+| --- | --- | --- | --- |
+| draw calls | 1022 | 1448 | 1026 |
+| triangles | 36,654 | 48,494 | 36,654 |
+| points drawn | 49,744 | 67,252 | 50,032 |
+| scene objects | 437 | 586 | 454 |
+
+Eight towers cost **four draw calls and 0.6% more points**. Meanwhile going
+from wave 4 to wave 8 — more enemies, more projectiles, more objects — costs
+**426 calls**. That is the whole picture: a frame here is priced in draw
+calls, and draw calls scale with the number of *objects*, not with the
+detail inside any one of them.
+
+So:
+
+- **Do not** switch towers to solid meshes for performance. It would not buy
+  anything measurable, and it would cost the visual language.
+- **Do** let shapes carry their authored detail. A head at 480 or 1200 dots
+  is vertices added to a draw call that already exists.
+- **The effects layer must be pooled.** "Lots of activity, fireworks,
+  explosions" is precisely the thing that adds objects. One `Points` cloud
+  with a rewritten buffer serves a thousand particles in one call; a thousand
+  objects is a thousand calls and would end the frame budget on its own. The
+  unit viewer's firing preview is built this way as the reference.
+- **Worth knowing:** the minimap re-renders the whole scene, so every object
+  is drawn roughly twice. Culling it to a marker layer is the single biggest
+  saving available if the budget ever gets tight.
+
+---
+
 ## Committed
 
 ### Tank feel, tuned rather than derived
