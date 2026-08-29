@@ -6,6 +6,54 @@ Demo links assume `npm run serve` (port 8144) or the
 
 ---
 
+## `155e08c` — Recoil moves into the feel driver, so the bench stops lying
+
+The unit viewer exists so the tank can be judged in isolation instead of
+mid-firefight. It could play the shell **sound** but never showed the
+turret flinch, because the kick was written inline in `td-tab.js`'s frame
+loop. A bench that shows a different tank than the game ships is worse
+than no bench.
+
+`src/tankfeel.js` now owns recoil next to hover and rock:
+
+| call | does |
+| --- | --- |
+| `fireTankFeel(st)` | arms the kick (`st.recoil = recoilLen`) |
+| `stepTankFeel(st, dt, running)` | decays it toward 0 |
+| `applyTankFeel(unit, st)` | draws it onto `userData.turret` / `hoverBody` |
+
+The slide is `baseZ - recoilSlide * rk`, where `rk = rf²` — squared so the
+hit lands hard and lets go fast — plus a 70 Hz shudder scaled by the same
+factor. It is applied **before** the `hoverBody` early return, so the
+procedural tank (a turret, no suspension) still kicks.
+
+Two traps are load-bearing here:
+
+- **`td-tab` keeps the recoil clock.** It drives the camera shake and the
+  shell's own flight, so it stays authoritative and hands `recoilLeft` to
+  the driver each frame. Two independent clocks would drift.
+- **Pitch goes on the body group, not the unit.** The unit's orientation
+  comes from `lookAt`; `playerMesh.rotateX` *composes* onto that
+  quaternion, but writing `.rotation.x` would *replace* it. tankfeel only
+  ever writes rotation on `hoverBody`, a child group with no such
+  constraint — and `td-tab`'s own `rotateX` is now gated to units that
+  have no hover split.
+
+Rock and recoil pitch are summed into `rx`/`rz` and assigned once. Firing
+mid-landing should read as both; two writes to `rotation.x` would silently
+keep only the second.
+
+`test/tankfeel.mjs` (30 checks, wired into `npm test`) pins the gestures
+rather than the numbers: the rise is gradual (no frame delivers >5% of it),
+the *gap* between body and skirt opens rather than the tank levitating as
+one lump, the turret returns to `baseZ`, a hover-less unit still kicks, and
+recoil composes with rock instead of overwriting it. It also caught a real
+wrinkle — the red health stop's blue channel sat *above* orange's, so the
+beam dipped fractionally warmer before ramping cool. Two hundredths and
+invisible, but the ramp now moves one way on every channel.
+
+---
+
 ## `75cdd2d` — Three sounds for one engine, and a viewer that plays units
 
 The tank's engine bed had never worked, and the cause was a design mistake
