@@ -19,11 +19,15 @@ const ang=parseFloat(q.get('ang')||'0.6');
 async function go(){
   // dev tool: dynamic import with a time key, so it never serves a stale
   // module and never carries a ?v= token for check-tokens.sh to trip over
-  const { buildUnit, preloadMkcx } = await import('/src/units.js?dev=' + Date.now());
+  const { buildUnit, preloadMkcx, makeDotEnemy } = await import('/src/units.js?dev=' + Date.now());
   const TF = await import('/src/tankfeel.js?dev=' + Date.now());
   const { applyTankHealth } = TF;
   if(which==='mkcx') await preloadMkcx();
-  const g=buildUnit(which,{walker:0x2a3550,walkerHi:0x7df9ff});
+  // ?dot=1 builds the TD cloud form (makeDotEnemy) rather than the mesh
+  // form in UNITS — the two are different objects and only the cloud ships
+  // in the tower-defence tab.
+  const cols={walker:q.get('dim')?0x2a3550:0x6f9cff,walkerHi:0x7df9ff};
+  const g=q.get('dot')?makeDotEnemy(which,cols):buildUnit(which,cols);
   sc.add(g);
   const box=new THREE.Box3().setFromObject(g); const s=new THREE.Vector3(); box.getSize(s);
   const c=new THREE.Vector3(); box.getCenter(c);

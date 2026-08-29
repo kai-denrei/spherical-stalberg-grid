@@ -19,24 +19,24 @@
 
 import * as THREE from '../vendor/three.module.js';
 import GUI from '../vendor/lil-gui.esm.js';
-import { generateSphereMesh, relax } from './grid.js?v=443b5fe4';
-import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=443b5fe4';
-import { mulberry32, randomSeed } from './rng.js?v=443b5fe4';
-import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3, segKey } from './vec3.js?v=443b5fe4';
-import { CREATURES, waveJelly } from './creatures.js?v=443b5fe4';
-import { UNITS, UNIT_NAMES, buildUnit, preloadMkcx, makeBulletCloud, makeRewardSolid, makeShellSolid, makeDebris, makeDotBurst, makePortalCloud, makeHeartCloud, makeDotEnemy } from './units.js?v=443b5fe4';
-import { LOOKS, LOOK_NAMES } from './looks.js?v=443b5fe4';
-import { makeCellIndex } from './cellindex.js?v=443b5fe4';
-import { CREATURE_TINTS, ENEMY_SPEC, INTROS, computeWavePlan } from './enemyspec.js?v=443b5fe4';
-import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER } from './towers.js?v=443b5fe4';
-import { makeEconomy, sellRefund } from './economy.js?v=443b5fe4';
-import { makeBloom } from './postfx.js?v=443b5fe4';
-import { TANK_FEEL, TANK_FEEL_KNOBS, makeTankFeel, stepTankFeel, landTankFeel, fireTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js?v=443b5fe4';
-import { FEEL, loadFeel, saveFeel } from './feelstore.js?v=443b5fe4';
-import { BLOOM_GROUPS } from './bloomweights.js?v=443b5fe4';
-import { TOWER_LOOK_NAMES, DEFAULT_TOWER_LOOK, buildTowerLook, preloadLook } from './towerlooks.js?v=443b5fe4';
-import { makeAudio } from './audio.js?v=443b5fe4';
-import { DEATH_KEYS } from './audiomanifest.js?v=443b5fe4';
+import { generateSphereMesh, relax } from './grid.js?v=79b4e6bd';
+import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=79b4e6bd';
+import { mulberry32, randomSeed } from './rng.js?v=79b4e6bd';
+import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3, segKey } from './vec3.js?v=79b4e6bd';
+import { CREATURES, waveJelly } from './creatures.js?v=79b4e6bd';
+import { UNITS, UNIT_NAMES, buildUnit, preloadMkcx, makeBulletCloud, makeRewardSolid, makeShellSolid, makeDebris, makeDotBurst, makePortalCloud, makeHeartCloud, makeDotEnemy } from './units.js?v=79b4e6bd';
+import { LOOKS, LOOK_NAMES } from './looks.js?v=79b4e6bd';
+import { makeCellIndex } from './cellindex.js?v=79b4e6bd';
+import { CREATURE_TINTS, ENEMY_SPEC, INTROS, computeWavePlan } from './enemyspec.js?v=79b4e6bd';
+import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER } from './towers.js?v=79b4e6bd';
+import { makeEconomy, sellRefund } from './economy.js?v=79b4e6bd';
+import { makeBloom } from './postfx.js?v=79b4e6bd';
+import { TANK_FEEL, TANK_FEEL_KNOBS, makeTankFeel, stepTankFeel, landTankFeel, fireTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js?v=79b4e6bd';
+import { FEEL, loadFeel, saveFeel } from './feelstore.js?v=79b4e6bd';
+import { BLOOM_GROUPS } from './bloomweights.js?v=79b4e6bd';
+import { TOWER_LOOK_NAMES, DEFAULT_TOWER_LOOK, buildTowerLook, preloadLook } from './towerlooks.js?v=79b4e6bd';
+import { makeAudio } from './audio.js?v=79b4e6bd';
+import { DEATH_KEYS } from './audiomanifest.js?v=79b4e6bd';
 
 export function initTdTab(root) {
   let active = false;
@@ -2450,7 +2450,9 @@ export function initTdTab(root) {
   function clearEnemies() {
     for (const e of enemies) {
       scene.remove(e.obj);
-      if (e.obj.geometry) e.obj.geometry.dispose();
+      // traverse, not e.obj.geometry: a non-rammable enemy carries a solid
+      // core as a CHILD, and disposing only the root leaks it every wipe
+      disposeObj(e.obj);
     }
     enemies.length = 0;
   }
@@ -2587,9 +2589,16 @@ export function initTdTab(root) {
       let pace = ENEMY_SPEED * spec.speed;
       if (tNow < e.behUntil) pace *= e.behMult; // on-hit reaction window
       if (tNow < e.slowUntil) pace *= e.slowFactor; // slow-tower debuff
-      // the slow READS for its full duration: the whole cloud tints ice
-      if (e.obj.material) {
-        e.obj.material.color.setHex(tNow < e.slowUntil ? 0x8fd4ff : 0xffffff);
+      // the slow READS for its full duration: the whole cloud tints ice —
+      // and so does the solid core, or a slowed drifter would show a frozen
+      // cloud around a body still in its own colour
+      const slowed = tNow < e.slowUntil;
+      // white clears the tint on the CLOUD (vertexColors multiply), but a
+      // solid has to be restored to the colour it was built with
+      if (e.obj.material) e.obj.material.color.setHex(slowed ? 0x8fd4ff : 0xffffff);
+      const solid = e.obj.userData.solid;
+      if (solid && solid.material) {
+        solid.material.color.setHex(slowed ? 0x8fd4ff : (solid.userData.baseColor ?? 0xffffff));
       }
       // erratic (phage): HokorobiTawaa velocity bursts, 0.7×–1.3×
       if (spec.erratic) pace *= 0.7 + 0.6 * (0.5 + 0.5 * Math.sin(tNow * 3.1 + e.phase * 7));

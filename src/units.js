@@ -16,8 +16,9 @@
 
 import * as THREE from '../vendor/three.module.js';
 import { loadGlb, mergeByMaterial, fitModel, tintModel, makeShellRack,
-  addEdgeOutlines, makeHeatSleeve } from './glbmodels.js?v=443b5fe4';
-import { CREATURES, waveJelly, spherePts, bulletPts, missilePts, heartPts, torusPts, towerHeadPts, enemyDotPts, portalPts } from './creatures.js?v=443b5fe4';
+  addEdgeOutlines, makeHeatSleeve } from './glbmodels.js?v=79b4e6bd';
+import { CREATURES, waveJelly, spherePts, bulletPts, missilePts, heartPts, torusPts, towerHeadPts, enemyDotPts, portalPts } from './creatures.js?v=79b4e6bd';
+import { ENEMY_SPEC } from './enemyspec.js?v=79b4e6bd';
 
 function normalizeToUnit(group) {
   group.updateMatrixWorld(true);
@@ -603,6 +604,25 @@ const DOT_SHAPES = {
   knot: () => enemyDotPts('knot'),
 };
 
+// The solid core a NON-RAMMABLE enemy wears. Half-dotted is this game's
+// word for "enemy", and it stays that — but a player has to be able to tell,
+// before committing the tank at it, which ones will go under the treads and
+// which ones will stop them dead. So the ones that will not give way carry
+// one piece of SOLID geometry inside the cloud. Solid means "this has mass",
+// which is exactly the thing being communicated.
+//
+// Shaped per family rather than one generic lump, so it also reads as part
+// of that creature: the drifter's core, the corona's ring, the mine's shell.
+// Sized to roughly a THIRD of the cloud's span, not half. The cloud is still
+// the creature; the core is the part of it that will not give way. At 0.46
+// the octahedron reached the drifter's own ring and the dots stopped reading
+// as the body at all.
+const HARD_CORE = {
+  drifter: () => new THREE.OctahedronGeometry(0.34),
+  corona: () => new THREE.TorusGeometry(0.42, 0.12, 8, 16).rotateX(Math.PI / 2),
+  barbed: () => new THREE.IcosahedronGeometry(0.32),
+};
+
 export function makeDotEnemy(type, cols) {
   const base = (DOT_SHAPES[type] || (() => spherePts(140)))();
   const pos = new Float32Array(base.length * 3);
@@ -643,6 +663,24 @@ export function makeDotEnemy(type, cols) {
   pts.userData.lift = { ghost: 0.9, scoutufo: 0.95, drifter: 0.85, knot: 0.8 }[type] ?? 0.6;
   pts.userData.kind = 'cloud';
   pts.userData.baseScale = 1;
+
+  // The core is a CHILD of the Points, not a Group wrapping both. Callers
+  // reach for `obj.geometry` and `obj.material` on the enemy directly, and
+  // wrapping would have silently broken the hit flash and the disposal —
+  // the same trap the pickups fell into. As a child, every existing call
+  // site keeps working and the core just comes along.
+  const spec = ENEMY_SPEC[type];
+  if (spec && spec.rammable === false) {
+    const geo = (HARD_CORE[type] || (() => new THREE.OctahedronGeometry(0.32)))();
+    const core = solidWithEdges(geo, cols.walker, cols.walkerHi ?? 0xffffff);
+    // The cloud's material is vertexColors, so white is NEUTRAL there and the
+    // slow tint can just set white to clear itself. A solid has no vertex
+    // colours, so white would erase its body colour instead of clearing a
+    // tint — it needs to be told what to go back to.
+    core.userData.baseColor = core.material.color.getHex();
+    pts.add(core);
+    pts.userData.solid = core;   // td-tab tints this alongside the cloud
+  }
   return pts;
 }
 

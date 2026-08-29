@@ -24,7 +24,7 @@ import { ShaderPass } from '../vendor/ShaderPass.js';
 import { OutputPass } from '../vendor/OutputPass.js';
 import * as THREE from '../vendor/three.module.js';
 import { buildWeightMap, materialConflicts, clampWeight, DEFAULT_BLOOM_WEIGHTS }
-  from './bloomweights.js?v=443b5fe4';
+  from './bloomweights.js?v=79b4e6bd';
 
 const COARSE = typeof matchMedia === 'function'
   && matchMedia('(pointer: coarse)').matches;
@@ -60,7 +60,12 @@ const AddBloomShader = {
 
 export function makeBloom(renderer, scene, camera, opts = {}) {
   const o = {
-    strength: 0.9, radius: 0.4, threshold: 0.85, enabled: true,
+    // Softer and WIDER than it was, and biting much lower: a 0.85
+    // threshold only ever caught the near-white highlights, so bloom read
+    // as a rim on a few bright edges. At 0.2 it catches the body colours
+    // too, which is why the strength has to come down to 0.3 — the same
+    // total light, spread over far more of the frame.
+    strength: 0.3, radius: 0.5, threshold: 0.2, enabled: true,
     // UnrealBloomPass builds a mip chain — halve it on phones
     scale: COARSE ? 0.5 : 1.0,
     ...opts,
