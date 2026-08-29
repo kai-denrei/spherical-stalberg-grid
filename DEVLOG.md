@@ -6,6 +6,77 @@ Demo links assume `npm run serve` (port 8144) or the
 
 ---
 
+## `7da0712` — The beam was square all along; the sweep was not
+
+Five asks. The most persistent one turned out to be a measurement problem
+rather than a modelling one.
+
+### "The beam in the back is still tilted"
+
+It is not, and has not been since the yaw fix. The **viewer's own idle tick**
+sweeps the turret ~45 deg, and the stowage bin — the beam — goes round with
+it. Dead-astern with the tick frozen, the tank is symmetric:
+
+| turret | reads as |
+| --- | --- |
+| swept (default) | barrel out to one side, beam skewed |
+| frozen (`sweep` off) | dome, bin and rack all on the hull centreline |
+
+So the fix for the complaint IS the other request in the same message: a
+`sweep` toggle (and `?sweep=0`) that stops the turret and returns it to rest.
+That rest pose is the only state in which the model can be judged against the
+hull axis at all — three separate "it looks tilted" reports were all this.
+
+### The emitters were k² of their size
+
+`attach()` preserves world transform. I attached them into a group that was
+**not yet in the scene graph**, so its world matrix was identity — which
+means the whole ancestor chain, including `fitModel`'s scale `k`, got baked
+into each child's local matrix. Adding the group to the model afterwards
+applied `k` a second time.
+
+```js
+modelRoot.add(emitters);            // parent FIRST
+for (const n of MKCX_LIFTERS) emitters.attach(gear.getObjectByName(n));
+```
+
+They were present and correctly placed the whole time, at roughly a tenth
+scale. The general rule: `attach()` is only meaningful once the destination
+is where it will finally live.
+
+They are six separate objects again rather than one welded batch, so they can
+be spaced — the authored z values (−2.35, −0.40, 1.70) bunch at the rear and
+overhang at the front. Now at 18/50/82% of the nacelle's span, measured off
+the nacelle **batch**: `Nacelle_L` stops existing at the merge, so a lookup by
+name finds nothing and quietly leaves the spacing untouched. A dead lookup
+that returns `null` and skips is the failure mode to design against here —
+nothing throws, the feature just does not happen.
+
+### Labels were splitting on the wrong centre
+
+Left/right was decided against the **canvas** centre. The tank is rarely
+centred in frame, so nearly every part fell on one side and the greedy
+declutter marched that column off downscreen. They now split on the model's
+own projected centre and sit in two columns *outside* its projected
+silhouette. Labels drawn over the tank hide the thing they are naming.
+
+### Tuned values are the defaults
+
+The operator's block replaces the derived guesses. Two knob ranges had to
+grow to contain them (`rock` 0.06 was the old ceiling; `recoilPitch` 0.125
+over the old 0.2) — caught by the schema test that asserts no default sits
+outside its own slider, which is exactly the trap it was written for.
+
+Three tests failed on the new values, and all three were **my assertions
+encoding the old tuning as an invariant**: a rise rate, a slide distance, and
+the secondaries' default share. Rewritten to assert shape rather than value —
+the rise must ease over several frames (not at a stated rate), the slide is
+measured from its own rest, and each share is tested by naming it explicitly
+instead of leaning on the current default. A test that pins a tunable is a
+test that fights tuning.
+
+---
+
 ## `92597ef` — Three-tier hover, a whole shot in the bench, blueprint labels
 
 Six asks. The first one explained three of the others.
