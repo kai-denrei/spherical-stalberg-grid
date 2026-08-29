@@ -6,6 +6,63 @@ Demo links assume `npm run serve` (port 8144) or the
 
 ---
 
+## `eaa446a` — One way to ask for a creature
+
+The viewer was fixed last commit; the tabs it documents were still building
+the other thing. `heart` spawned mesh drifters, announced a mesh drifter on
+its wave card, and drew mesh drifters as briefing icons — while `td` spawned
+clouds and the viewer documented clouds.
+
+`buildCreature(name, cols)` is now the single entry point:
+
+```js
+export function buildCreature(name, cols) {
+  return ENEMY_SPEC[name] ? makeDotEnemy(name, cols) : buildUnit(name, cols);
+}
+```
+
+The choice comes from the spec table, not a list at the call site, so adding
+a creature does not mean remembering a second place.
+
+| file | sites | what |
+| --- | --- | --- |
+| heart-tab | 4 | avatar, HUD icon, wave-intro unit, spawned hostiles |
+| td-tab | 3 | avatar, HUD icon, wave-intro unit |
+| battle-tab | 1 | avatar |
+| organic-tab | 1 | avatar |
+| maze-tab | 2 | spawn-at-walker, respawn |
+
+Left alone deliberately: `buildUnit('tank')` in battle (the enemy tank) and
+heart (the ally), and `buildUnit('mkcx')` in tank3. Those name machines, not
+creatures, and have no cloud form to migrate to.
+
+### The field that was one rename from being a trap
+
+`battle` and `organic` branch on `UNITS[x].kind === 'cloud'` to pick the live
+Wave × Jelly deform with phagocytosis. That flag selects an **animation
+path**, not a representation. A `'mesh'` entry like `drifter` is now built as
+a dot cloud and still — correctly — takes the transform-only idle path,
+because what it needs is `userData.tick`, which the cloud has.
+
+Read as "how does it move", it is right. Read as "what is it made of", it is
+now wrong, and the next person to touch it would have read it the second way.
+It says so in the source now.
+
+The hostiles' `make` functions are kept, not deleted: the roster and its
+dropdowns still name them, and removing them is a separate decision from
+migrating to the form the game ships.
+
+### Batch-patching the siblings
+
+Per the house rule, anchored on code lines rather than comments, with each
+file asserting its own match count before writing — so a mid-script abort
+leaves earlier files committed and later ones untouched, which is the
+designed outcome rather than a mess to unpick. The import rewrite was
+asserted too: every file that gained a `buildCreature` call had to already
+import `buildUnit`, or the script stops.
+
+---
+
 ## `e4b8c53` — The reference screen was showing units the game never spawns
 
 ### Two representations, and the viewer picked the wrong one
