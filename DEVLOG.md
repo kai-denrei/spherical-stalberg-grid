@@ -6,6 +6,76 @@ Demo links assume `npm run serve` (port 8144) or the
 
 ---
 
+## `101726b` — A bench for towers, and one machinery behind both
+
+Towers get what the tank got: a knob table, a panel generated from it, and
+values that *are* what the game builds.
+
+### One machinery, not two
+
+The tank tuner had already proved the shape — params object, clamp-on-restore,
+copy-as-source — so rather than a second copy that drifts, `knobs.js` owns it
+and each side declares a table:
+
+```js
+export const TOWER_FEEL_KNOBS = [
+  { key: 'headShape', label: 'head shape', group: 'head', choices: HEAD_CHOICES },
+  { key: 'headScale', label: 'head size',  group: 'head', min: 0.15, max: 0.9, step: 0.01 },
+  …
+];
+```
+
+`tankfeel` keeps its exported names — three files import them — but no longer
+its own implementation. `knobProblems()` is new: it reports every way a table
+can disagree with the constants it names (duplicate key, knob naming nothing,
+tunable with no knob, default outside its own slider). That last one is the
+trap — a slider whose range excludes the shipped value means the first drag
+jumps you somewhere else.
+
+### `headShape` is a choice, not a range
+
+A slider over shape names would interpolate between things that do not.
+`'per tower'` keeps each tower's own silhouette from `towers.js`, which is the
+shipping behaviour; anything else overrides **every** tower with that head,
+which is what a bench wants — the question there is "does this shape work at
+all", not "does it suit the mortar".
+
+### Five new heads, and the density bug
+
+`lattice` (a guyed truss), `dish`, `arm` (shoulder, elbow, forearm,
+three-finger gripper), `claw`, `sentry`. The arm is the only head in the set
+with a **front**, which is what makes its rotation legible.
+
+The first cut of the line-built ones ignored `n` entirely — their point count
+fell out of their own structure. So the dot-count knob did nothing for exactly
+the shapes that needed density most, and long members came out sparse while
+short ones clotted. They now share a segment walker that spreads `n`
+proportional to member **length**:
+
+```js
+const cnt = Math.max(2, Math.round((len[k] / total) * n));
+```
+
+### The panel serves both subjects
+
+Which table it shows follows the selection. Tower knobs rebuild the head in
+place — shape, dot count and highlight spacing are baked at build time — but
+**without re-framing the camera**, because re-framing mid-drag throws away the
+view you are judging in.
+
+### What the test caught
+
+`hiEvery` was decorative for the sphere head. `towerHeadPts` returned
+`spherePts()` early, and that helper carries its own fixed highlight rule — so
+the knob did nothing on the default head of the spread tower, the one shape
+where it mattered most. It is re-emitted through the highlight rule now.
+
+That is the second time in this file a knob has been wired to a panel and not
+to the thing it names. Both times a test that asked "does changing it change
+anything" found it, and looking at the panel did not.
+
+---
+
 ## `eaa446a` — One way to ask for a creature
 
 The viewer was fixed last commit; the tabs it documents were still building
