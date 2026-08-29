@@ -6,6 +6,68 @@ Demo links assume `npm run serve` (port 8144) or the
 
 ---
 
+## `1980e32` — The orbital strike
+
+DeepWatch's system (`~/Documents/Dev/centroid-defense`), carried over by its
+design and not its code. The part worth carrying is the **ritual**:
+
+```
+cannot arm an empty tube
+cannot paint unarmed
+cannot launch without a lock
+the safety re-engages on every launch   <- the design, in one line
+```
+
+All of it lives in `src/strike.js` — pure, no DOM — and was pinned in
+`test/strike.mjs` **before any pixel existed**. The system's value is in its
+refusals, and refusals are cheap to test headlessly and expensive to debug by
+eye. The suite also pins the subtler rules: the window pauses at the ready
+cap (hoarded time is not banked), and a second launch while one falls is
+refused.
+
+### Rationing
+
+Budget arrives with the sector's gates — one strike per two portals, minimum
+one — promoting one at a time through a 40 s window. DeepWatch grants per
+*wave*, but its wave is the big battle unit, which for us is the **round**.
+Later sectors have more gates and therefore more strikes, which is the point:
+**one strike kills one gate.** Unspent strikes carry across sectors; a new
+game empties the magazine.
+
+### One button, three states
+
+safe (count) → armed (amber, pulsing) → locked (solid: LAUNCH). One control
+because the ritual is linear — a second would let the eye skip a step.
+Arming promotes the minimap to a radar (same culled layer, more screen), and
+while armed a board tap is a targeting act that outranks every other tap.
+
+### The fall
+
+The camera rides the munition down the target's normal, altitude easing on a
+smoothstep — slow, then fast, which is what falling feels like — with shake
+escalating hard past 85%. It **replaces** the main view rather than rendering
+beside it, so it costs nothing: a corner panel would have been the
+second-render trap the minimap culling just removed. A tap skips to impact;
+the launching tap cannot skip its own cam (0.25 s grace).
+
+### The blast
+
+Gates die whole through `killPortal` — extracted so there is one place a gate
+dies, however it died (shells ground it down before; the strike vaporises
+it). Enemies take squared falloff through the existing `damageEnemy`, so
+bounties and shrink-steps come free.
+
+### The hook tests the honest path
+
+`?strikefall=1` arms, paints the first live gate, launches — and then
+**skips**, because under a virtual-time budget the fall clock barely moves
+(the `performance.now` trap, again). The skip is also the path a pressed
+player takes, so the headless run exercises the one that matters. Verified in
+a single frame: `portals 2/2 → 1/2`, blast rings in flight, camera snapped
+home, magazine spent.
+
+---
+
 ## `59966ba` — Two routes to a wave, one of them silent
 
 ### The cues really did drift
