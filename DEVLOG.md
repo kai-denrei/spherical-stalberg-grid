@@ -6,6 +6,94 @@ Demo links assume `npm run serve` (port 8144) or the
 
 ---
 
+## `92597ef` — Three-tier hover, a whole shot in the bench, blueprint labels
+
+Six asks. The first one explained three of the others.
+
+### The hull was never in the body group
+
+`mergeByMaterial` parents each batch to its **owner**, and anything outside a
+preserved pivot is owned by the root it is handed — which was the glTF
+**scene**, a *sibling* of `MKCX_Root` rather than its parent:
+
+```
+G (fit wrapper)
+└ scene
+  ├ MKCX_Root
+  │ ├ Hover_Gear      ← pivot, owns its batches
+  │ └ Turret_Pivot    ← pivot, owns its batches
+  └ Mesh(root batches) ← hull, nacelles, details… OUTSIDE the model
+```
+
+The hover split walks `MKCX_Root`'s children, so it lifted only the
+articulated pivots. "Body rise" raised the turret and secondaries off a
+stationary hull, which is exactly what it looked like. `inner.attach(c)`
+re-parents the batches without moving them.
+
+### Three tiers, not two
+
+Two tiers left nothing to measure the lift against — the whole thing rose in
+one piece. The lore settles it: the machine levitates **on** the emitters, so
+the emitters are the ground.
+
+| group | motion | holds |
+| --- | --- | --- |
+| `HoverEmitters` | none, ever | the six lift emitters |
+| `HoverGear` | settles by `gearDrop` | nacelles + pylons (the skirt) |
+| `HoverBody` | rises by `rise` | everything above |
+| ` HullVib` | vibration ×1 | hull and its furniture |
+| ` Weapons` | vibration ×`vibWeapons` | turret + secondaries |
+
+Splitting the emitters out of the gear needed no name list. The merge batches
+per material and they are the only `M_Glow` parts down there — nacelles are
+`M_Armour`, pylons `M_Steel`.
+
+Vibration moved off the body and onto the hull because shaking the body shook
+the guns just as hard, which read as the guns being **loose in their mounts**
+rather than bolted to an idling machine. `vibWeapons` (0.3) is the share they
+keep.
+
+### Recoil immunity is spent, not withheld
+
+The secondaries fire nothing when the main gun does, so the kick should not
+read on them — but they sit inside the body that noses up. Immunity has to be
+*spent*: their mount counters the body's pitch, and `recoilSecondary` is how
+much of it they keep. This cancels their orientation, not the small arc the
+body's rotation swings them through; at 0.05 rad that arc is sub-pixel.
+
+### A whole shot in the bench
+
+It had the kick and neither of the other two thirds. The barrel now takes the
+same cool→hot lerp the game runs, on the same sleeve; the shell leaves the
+muzzle **anchor** along the barrel's own world +Z, so it stays right once the
+turret has swept. `?fire=N` fires one N seconds in, for stills.
+
+### Blueprint callouts
+
+Nineteen parts, named by the model's own node names, toggled with `labels`
+(or `?labels=1`). Markers are dropped **before** the merge welds those nodes
+away, and hung on the nearest surviving pivot, so a turret label sweeps with
+the turret. Leader lines plus a one-pass vertical declutter per side; the
+usable band stops above the control row.
+
+This exists because "the bit at the back that looks tilted" cost a fortnight.
+It was a 6 deg slew on `Turret_Pivot`, and neither of us could name the piece
+we were each looking at.
+
+### Two bugs only the browser probe could see
+
+- **`preloadMkcx` was not idempotent.** `loadGlb` caches the *scene*, but
+  every caller still ran the body against it — re-merging an already-merged
+  scene and re-marking it. Every part whose node is a **Group** (and so
+  survives a merge) collected one label per call: three of each. The promise
+  is the guard now, not the scene.
+- **The secondaries handle was looked up on the unit** while the body group
+  was still detached from it, so it came back `undefined` and the recoil
+  immunity silently did nothing. Unit tests passed throughout — they use
+  stand-ins, and a stand-in cannot have the wrong parent.
+
+---
+
 ## `77f2e5d` — One knob schema, a squared turret, and a roadmap tab
 
 Three strands, all about the same thing: making what you judge and what
