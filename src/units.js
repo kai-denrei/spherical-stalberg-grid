@@ -16,10 +16,11 @@
 
 import * as THREE from '../vendor/three.module.js';
 import { loadGlb, mergeByMaterial, fitModel, tintModel, makeShellRack,
-  addEdgeOutlines, makeHeatSleeve } from './glbmodels.js?v=10d86907';
-import { CREATURES, waveJelly, spherePts, bulletPts, missilePts, heartPts, torusPts, towerHeadPts, enemyDotPts, portalPts } from './creatures.js?v=10d86907';
-import { TOWER_FEEL, TOWER_HEADS, headKindFor } from './towerfeel.js?v=10d86907';
-import { ENEMY_SPEC } from './enemyspec.js?v=10d86907';
+  addEdgeOutlines, makeHeatSleeve } from './glbmodels.js?v=f6733ea6';
+import { CREATURES, waveJelly, swimWave, spherePts, bulletPts, missilePts, heartPts, torusPts, towerHeadPts, enemyDotPts, portalPts } from './creatures.js?v=f6733ea6';
+import { TOWER_FEEL, TOWER_HEADS, headKindFor } from './towerfeel.js?v=f6733ea6';
+import { STARGATE_PTS, STARGATE_STROKE } from './stargate.js?v=f6733ea6';
+import { ENEMY_SPEC } from './enemyspec.js?v=f6733ea6';
 
 function normalizeToUnit(group) {
   group.updateMatrixWorld(true);
@@ -626,7 +627,14 @@ const DOT_SHAPES = {
   ghost: () => enemyDotPts('ghost'),
   // The flying saucer, replaced by the lab's bacterium — a rod body with
   // flagella. Reverting is this one line: enemyDotPts('ufo').
-  scoutufo: () => towerHeadPts('bacterium', 170),
+  //
+  // Turned onto its travel axis at BUILD time, not at render time: enemies
+  // are oriented every frame by lookAt, which overwrites the object's
+  // quaternion, so a rotation set on the object would be thrown away. The
+  // model runs along X with the flagella at -X; enemies face +Z; so
+  // (x, y, z) -> (-z, y, x) puts the head forward and the tail behind.
+  scoutufo: () => towerHeadPts('bacterium', 170)
+    .map((p) => (p.length > 3 ? [-p[2], p[1], p[0], p[3]] : [-p[2], p[1], p[0]])),
   gslime: () => enemyDotPts('slime'),
   drifter: () => enemyDotPts('saturn'),
   corona: () => enemyDotPts('corona'),
@@ -673,6 +681,23 @@ export function makeDotEnemy(type, cols) {
     size: 2.1, sizeAttenuation: false, vertexColors: true,
     transparent: true, opacity: 0.95,
   }));
+  // Swimmers deform their POINTS rather than their transform. It costs a
+  // pass over the cloud each frame — 170 points, nothing — and it is the only
+  // way a body can flex: a transform can turn a creature but cannot make it
+  // beat. Everything else keeps the cheaper transform-only idle below.
+  const SWIM = { scoutufo: { amp: 0.26, beat: 7.0, along: 4.0, jelly: 0.10 } };
+  const swim = SWIM[type];
+  if (swim) {
+    let zMin = Infinity, zMax = -Infinity;
+    for (const p of base) { if (p[2] < zMin) zMin = p[2]; if (p[2] > zMax) zMax = p[2]; }
+    const opts = { ...swim, zMin, zMax };
+    // no rotation of any kind: it holds its heading and beats
+    pts.userData.tick = (t) => {
+      swimWave(base, t, pos, opts);
+      geo.getAttribute('position').needsUpdate = true;
+    };
+  }
+
   // transform-only idles, one flavor per family
   const TICKS = {
     ghost: (t) => { pts.position.y = 0; pts.rotation.y = Math.sin(t * 1.2) * 0.4; },
@@ -689,9 +714,11 @@ export function makeDotEnemy(type, cols) {
     prime: (t) => { pts.rotation.y = t * 0.5; },
     knot: (t) => { pts.rotation.y = t * 0.7; pts.rotation.x = Math.sin(t * 0.8) * 0.3; },
   };
-  const tick = TICKS[type] || ((t) => { pts.rotation.y = Math.sin(t) * 0.25; });
+  // a swimmer already has its tick; the table would put the spin back
+  if (!swim) {
+    pts.userData.tick = TICKS[type] || ((t) => { pts.rotation.y = Math.sin(t) * 0.25; });
+  }
   pts.userData.s0 = 1; // scale captured by the game after sizing
-  pts.userData.tick = tick;
   pts.userData.lift = { ghost: 0.9, scoutufo: 0.95, drifter: 0.85, knot: 0.8 }[type] ?? 0.6;
   pts.userData.kind = 'cloud';
   pts.userData.baseScale = 1;
@@ -723,7 +750,11 @@ export function makeDotEnemy(type, cols) {
 // it takes damage. Ring lies in local X-Y: align +Y to the surface
 // normal and it stands like a gate.
 export function makePortalCloud(cols, phase = 0) {
-  const base = portalPts(1150); // dense — the gates are set pieces
+  // The authored lab gate rather than our own generated one. Fewer points
+  // (435 against 1150) and far better ones: the chevrons are placed, not
+  // derived, and the point ORDER is a drawing order — which is what lets the
+  // gate dial itself in with nothing more than a draw range.
+  const base = STARGATE_PTS;
   const pos = new Float32Array(base.length * 3);
   const col = new Float32Array(base.length * 3);
   const baseCol = new Float32Array(base.length * 3);
@@ -765,6 +796,35 @@ export function makePortalCloud(cols, phase = 0) {
   // dim rides the MATERIAL color (multiplies vertex colors), so every
   // treatment — color- or position-based — dims the same way
   pts.userData.setDim = (f) => { pts.material.color.setScalar(f); };
+
+  // --- dialling in ---------------------------------------------------------
+  // A gate used to simply be there. Now it DRAWS: the stroke sweeps round the
+  // ring, then the nine chevrons lock one after another, and the leading dots
+  // burn brighter than the settled ones so the eye follows the head.
+  //
+  // No keyframes and no second geometry — the lab's own point order already
+  // describes the motion, so this is a draw range and a gradient behind it.
+  let form = 1;
+  const HEAD = 26;   // dots behind the head that still glow hot
+  pts.userData.setForm = (f) => {
+    form = Math.max(0, Math.min(1, f));
+    const shown = Math.max(1, Math.round(form * base.length));
+    geo.setDrawRange(0, shown);
+    if (form >= 1) return;
+    // repaint only the head; the tail keeps whatever twinkle last wrote
+    const attr = geo.getAttribute('color');
+    for (let i = Math.max(0, shown - HEAD); i < shown; i++) {
+      const heat = 1 - (shown - i) / HEAD;          // 0 at the tail, 1 at the tip
+      const b = 1 + 2.4 * heat * heat;
+      attr.setXYZ(i, Math.min(1, baseCol[i * 3] * b),
+        Math.min(1, baseCol[i * 3 + 1] * b), Math.min(1, baseCol[i * 3 + 2] * b));
+    }
+    attr.needsUpdate = true;
+  };
+  pts.userData.formed = () => form >= 1;
+  // the chevrons are the last 28 points: a gate is only OPEN once they lock
+  pts.userData.chevronAt = STARGATE_STROKE / base.length;
+
   pts.userData.kind = 'portal';
   pts.userData.sizeScale = 1;
   return pts;

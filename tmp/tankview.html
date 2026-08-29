@@ -19,7 +19,7 @@ const ang=parseFloat(q.get('ang')||'0.6');
 async function go(){
   // dev tool: dynamic import with a time key, so it never serves a stale
   // module and never carries a ?v= token for check-tokens.sh to trip over
-  const { buildUnit, preloadMkcx, makeDotEnemy } = await import('/src/units.js?dev=' + Date.now());
+  const { buildUnit, preloadMkcx, makeDotEnemy, makePortalCloud } = await import('/src/units.js?dev=' + Date.now());
   const TF = await import('/src/tankfeel.js?dev=' + Date.now());
   const { applyTankHealth } = TF;
   if(which==='mkcx') await preloadMkcx();
@@ -27,7 +27,14 @@ async function go(){
   // form in UNITS — the two are different objects and only the cloud ships
   // in the tower-defence tab.
   const cols={walker:q.get('dim')?0x2a3550:0x6f9cff,walkerHi:0x7df9ff};
-  const g=q.get('dot')?makeDotEnemy(which,cols):buildUnit(which,cols);
+  // ?portal=<0..1> builds the gate at a given dial-in, so the draw-on can
+  // be seen mid-stroke instead of only in its finished state
+  let g;
+  if(q.get('portal')!==null){
+    g=makePortalCloud({body:0xcfd8ff,hi:0xffffff},0);
+    g.userData.tick(1.1);
+    g.userData.setForm(parseFloat(q.get('portal')||'1'));
+  } else g=q.get('dot')?makeDotEnemy(which,cols):buildUnit(which,cols);
   sc.add(g);
   const box=new THREE.Box3().setFromObject(g); const s=new THREE.Vector3(); box.getSize(s);
   const c=new THREE.Vector3(); box.getCenter(c);

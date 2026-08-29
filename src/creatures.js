@@ -1,4 +1,4 @@
-import { BRAILLE_SHAPES, BRAILLE_SHAPE_KINDS } from './braillelab.js?v=10d86907';
+import { BRAILLE_SHAPES, BRAILLE_SHAPE_KINDS } from './braillelab.js?v=f6733ea6';
 // creatures.js — organic dot-cloud units, ported from ~/Dev/Braille
 // fun-shapes (half-dotted > organic): amoeba, bacteriophage, jellyfish.
 // Each generator returns unit-radius points [x,y,z,(hi)] where hi===1 marks a
@@ -632,6 +632,39 @@ export const CREATURES = {
 // opts.reachDir + opts.reachAmt: phagocytosis — points whose direction aligns
 // with reachDir (FINAL local frame, post-spin) stretch outward, so the
 // membrane extends a pseudopod toward the target. Amt 0..1.
+// swimWave — how a flagellate MOVES, as opposed to how a blob idles.
+//
+// waveJelly was the obvious thing to reach for and is wrong here twice: it
+// carries a spin (t * 0.3 about the body axis), and its squash is on Y, which
+// for a rod lying along Z means the creature lengthens and shortens instead
+// of flexing. A bacterium does neither. It holds its heading and beats.
+//
+// So: a travelling sine ALONG the body — the wave — with amplitude growing
+// toward the tail so the head stays steady and the flagella do the work; plus
+// a volume-preserving radial pulse — the jelly — around the axis. No rotation
+// of any kind. Body runs along +Z with the tail at -Z, which is the
+// orientation enemies are already given by lookAt.
+export function swimWave(base, t, out, o = {}) {
+  const amp = o.amp ?? 0.22;      // lateral throw at the very tail
+  const beat = o.beat ?? 7.5;     // beats per second-ish
+  const along = o.along ?? 4.2;   // wavelengths down the body
+  const jelly = o.jelly ?? 0.09;  // radial breathe
+  const zMin = o.zMin ?? -1, zMax = o.zMax ?? 1;
+  const span = (zMax - zMin) || 1;
+  const pulse = 1 + jelly * Math.sin(t * 2.6);
+  const inv = 1 / Math.sqrt(pulse);   // thicker across means shorter along
+  for (let i = 0; i < base.length; i++) {
+    const p = base[i];
+    const u = (p[2] - zMin) / span;             // 0 at the tail, 1 at the head
+    const tailward = (1 - u) * (1 - u);         // the head barely moves
+    const lateral = amp * tailward * Math.sin(t * beat + p[2] * along);
+    out[i * 3] = p[0] * pulse + lateral;
+    out[i * 3 + 1] = p[1] * pulse;
+    out[i * 3 + 2] = p[2] * inv;
+  }
+  return out;
+}
+
 export function waveJelly(base, t, out, opts = null) {
   const sy = 1 + 0.18 * Math.sin(t * 3);
   const sx = 1 / Math.sqrt(sy);
