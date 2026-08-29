@@ -19,25 +19,28 @@
 
 import * as THREE from '../vendor/three.module.js';
 import GUI from '../vendor/lil-gui.esm.js';
-import { generateSphereMesh, relax } from './grid.js?v=ff36a647';
-import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=ff36a647';
-import { mulberry32, randomSeed } from './rng.js?v=ff36a647';
-import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3, segKey } from './vec3.js?v=ff36a647';
-import { CREATURES, waveJelly } from './creatures.js?v=ff36a647';
-import { UNITS, UNIT_NAMES, buildUnit, buildCreature, preloadMkcx, makeBulletCloud, makeRewardSolid, makeShellSolid, makeDebris, makeDotBurst, makePortalCloud, makeHeartCloud, makeDotEnemy } from './units.js?v=ff36a647';
-import { LOOKS, LOOK_NAMES } from './looks.js?v=ff36a647';
-import { makeCellIndex } from './cellindex.js?v=ff36a647';
-import { CREATURE_TINTS, ENEMY_SPEC, INTROS, computeWavePlan } from './enemyspec.js?v=ff36a647';
-import { PICKUPS } from './pickups.js?v=ff36a647';
-import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER } from './towers.js?v=ff36a647';
-import { makeEconomy, sellRefund } from './economy.js?v=ff36a647';
-import { makeBloom } from './postfx.js?v=ff36a647';
-import { TANK_FEEL, TANK_FEEL_KNOBS, makeTankFeel, stepTankFeel, landTankFeel, fireTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js?v=ff36a647';
-import { FEEL, loadFeel, saveFeel } from './feelstore.js?v=ff36a647';
-import { BLOOM_GROUPS } from './bloomweights.js?v=ff36a647';
-import { TOWER_LOOK_NAMES, DEFAULT_TOWER_LOOK, buildTowerLook, preloadLook } from './towerlooks.js?v=ff36a647';
-import { makeAudio } from './audio.js?v=ff36a647';
-import { DEATH_KEYS } from './audiomanifest.js?v=ff36a647';
+import { generateSphereMesh, relax } from './grid.js?v=e4df0637';
+import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=e4df0637';
+import { mulberry32, randomSeed } from './rng.js?v=e4df0637';
+import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3, segKey } from './vec3.js?v=e4df0637';
+import { CREATURES, waveJelly } from './creatures.js?v=e4df0637';
+import { UNITS, UNIT_NAMES, buildUnit, buildCreature, preloadMkcx, makeBulletCloud, makeRewardSolid, makeShellSolid, makeDebris, makeDotBurst, makePortalCloud, makeHeartCloud, makeDotEnemy } from './units.js?v=e4df0637';
+import { LOOKS, LOOK_NAMES } from './looks.js?v=e4df0637';
+import { makeCellIndex } from './cellindex.js?v=e4df0637';
+import { CREATURE_TINTS, ENEMY_SPEC, INTROS, computeWavePlan } from './enemyspec.js?v=e4df0637';
+import { PICKUPS } from './pickups.js?v=e4df0637';
+import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER } from './towers.js?v=e4df0637';
+import { makeEconomy, sellRefund } from './economy.js?v=e4df0637';
+import { makeBloom } from './postfx.js?v=e4df0637';
+import { TANK_FEEL, TANK_FEEL_KNOBS, makeTankFeel, stepTankFeel, landTankFeel, fireTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js?v=e4df0637';
+import { FEEL, loadFeel, saveFeel } from './feelstore.js?v=e4df0637';
+import { STRIKE_KNOBS, makeStrike, makeStrikeParams, grantStrikes, stepStrike,
+  toggleArm, paintTarget, launchStrike, stepFall, skipFall, fallProgress,
+  strikeDamage } from './strike.js?v=e4df0637';
+import { BLOOM_GROUPS } from './bloomweights.js?v=e4df0637';
+import { TOWER_LOOK_NAMES, DEFAULT_TOWER_LOOK, buildTowerLook, preloadLook } from './towerlooks.js?v=e4df0637';
+import { makeAudio } from './audio.js?v=e4df0637';
+import { DEATH_KEYS } from './audiomanifest.js?v=e4df0637';
 
 export function initTdTab(root) {
   let active = false;
@@ -229,6 +232,13 @@ export function initTdTab(root) {
   // goes through this, so a wave cannot arrive without its lead-in.
   let waveIn = -1;
 
+  // --- orbital strike -------------------------------------------------------
+  // All logic lives in strike.js (pure, tested); this file owns only what it
+  // looks and sounds like. strikeTune is the live knob object the GUI writes.
+  const strike = makeStrike();
+  const strikeTune = makeStrikeParams();
+  let strikeGrace = 0;   // s after launch during which a tap cannot skip
+
   // One pooled cloud for every ring, main view only — the map has its blips.
   const WARN_MAX = 1200;   // ~4 rings alive per gate at the fastest cadence
   const warnPos = new Float32Array(WARN_MAX * 3);
@@ -313,7 +323,11 @@ export function initTdTab(root) {
     postfx.setSize(w, h);
     camera.aspect = w / h;
     camera.updateProjectionMatrix();
-    const m = Math.min(240, Math.floor(Math.min(w, h) * 0.32));
+    // armed promotes the corner disc to a RADAR: same scene, same culled
+    // layer, just more of the screen — the targeting view is the map
+    const mScale = strike.armed ? 0.52 : 0.32;
+    const mCap = strike.armed ? 430 : 240;
+    const m = Math.min(mCap, Math.floor(Math.min(w, h) * mScale));
     mapRenderer.setSize(m, m);
   }
   addEventListener('resize', resize);
@@ -1122,6 +1136,32 @@ export function initTdTab(root) {
   }
 
   function updateCameraGoal() {
+    if (strike.falling > 0) {
+      // riding the munition down: straight along the target cell's normal,
+      // altitude easing on a smoothstep — slow at first, fast near impact,
+      // which is what falling feels like. Shake is two incommensurate sines
+      // (deterministic; render-only) escalating hard past 85%.
+      const ci = strike.fallCi;
+      const c = graph.centers[ci];
+      const nrm = graph.normals[ci];
+      const pr = fallProgress(strike);
+      const ez = pr * pr * (3 - 2 * pr);
+      const alt = 2.6 - (2.6 - params.wallHeight * 3 - cellSide * 0.8) * ez;
+      const shakeAmt = (0.004 + 0.012 * pr + (pr > 0.85 ? (pr - 0.85) * 0.25 : 0)) * cellSide * 8;
+      const st = performance.now() * 0.001;
+      const ref = Math.abs(nrm[1]) < 0.9 ? [0, 1, 0] : [1, 0, 0];
+      const t1 = norm3(cross3(nrm, ref));
+      const t2 = cross3(nrm, t1);
+      const sx = Math.sin(st * 47.0) * shakeAmt;
+      const sy = Math.sin(st * 31.7) * shakeAmt;
+      const eye = add3(scale3(nrm, 1 + alt), add3(scale3(t1, sx), scale3(t2, sy)));
+      camGoal.pos.set(eye[0], eye[1], eye[2]);
+      tmpCam.position.copy(camGoal.pos);
+      tmpCam.up.set(t1[0], t1[1], t1[2]);
+      tmpCam.lookAt(c[0], c[1], c[2]);
+      camGoal.quat.copy(tmpCam.quaternion);
+      return;
+    }
     if (revealLeft > 0 && revealDir) {
       // cinematic: whole planet in frame, the new band centered
       const ref = Math.abs(revealDir[1]) < 0.9 ? [0, 1, 0] : [1, 0, 0];
@@ -1704,7 +1744,16 @@ export function initTdTab(root) {
       && Math.hypot(ev.clientX - tapStart[0], ev.clientY - tapStart[1]) <= 8;
     buildPointers.delete(ev.pointerId);
     if (buildPointers.size < 2) pinchPrev = null;
-    if (buildMode && wasTap) {
+    if (strike.armed && wasTap) {
+      // painting outranks every other tap while armed: the board is a
+      // targeting surface until the safety goes back on
+      const ci = cellAtScreen(ev.clientX, ev.clientY);
+      if (ci !== -1 && paintTarget(strike, ci) === 'locked') {
+        sfx.play('tank_shells');
+        showRangeRing(ci, strikeTune.blastCells, 0xffb347, 30);
+        syncArmUi();
+      }
+    } else if (buildMode && wasTap) {
       // double-tap anywhere rides the view home. Checked BEFORE the shop
       // opens, and it closes whatever the first tap of the pair opened —
       // so the gesture works over a cell, not only over empty board.
@@ -1738,12 +1787,88 @@ export function initTdTab(root) {
   }
   addEventListener('pointerup', endBuildPointer);
   addEventListener('pointercancel', endBuildPointer);
+  container.addEventListener('pointerdown', () => {
+    if (strike.falling > 0 && strikeGrace <= 0) skipFall(strike);
+  });
   container.addEventListener('wheel', (ev) => {
     if (!buildMode) return;
     buildDist = Math.min(4, Math.max(1.4, buildDist + ev.deltaY * 0.002));
     ev.preventDefault();
   }, { passive: false });
   root.querySelector('#td-pad-fire').addEventListener('click', () => fire());
+
+  // --- the strike button: one control, three states ------------------------
+  // safe (dim) -> ARMED (pulsing) -> LOCKED (launch). One button because the
+  // ritual is linear; a separate launch control would let the eye skip a step.
+  const armBtn = root.querySelector('#td-pad-arm');
+  function refuseArm() {
+    // DeepWatch's flickerOrdnance: the button says no, briefly
+    armBtn.classList.remove('flicker');
+    void armBtn.offsetWidth;
+    armBtn.classList.add('flicker');
+  }
+  function syncArmUi() {
+    const total = strike.ready + strike.reserved;
+    armBtn.classList.toggle('armed', strike.armed);
+    armBtn.classList.toggle('locked', strike.armed && strike.target >= 0);
+    armBtn.classList.toggle('idle', total === 0 && strike.falling <= 0);
+    armBtn.textContent = strike.armed
+      ? (strike.target >= 0 ? '☄ LAUNCH' : '☄ armed')
+      : `☄ ${strike.ready}`;
+    armBtn.title = strike.armed
+      ? (strike.target >= 0 ? 'launch at the painted cell' : 'tap the board to paint a target')
+      : `orbital strikes ready ${strike.ready} · reserved ${strike.reserved}`
+        + (strike.reserved > 0 ? ` · next in ${Math.ceil((1 - strike.gauge) * strikeTune.windowTime)}s` : '');
+  }
+  armBtn.addEventListener('click', () => {
+    // locked -> this IS the launch control
+    if (strike.armed && strike.target >= 0) {
+      const ci = launchStrike(strike, strikeTune);
+      if (ci >= 0) {
+        strikeGrace = 0.25;   // the launching tap must not skip its own cam
+        hideRangeRing();
+        sfx.play('tank_main');
+        showToast('<div class="wave-num">MUNITION RELEASED</div>'
+          + '<div class="wave-role">tap to skip to impact</div>', 1400);
+      } else refuseArm();
+      syncArmUi();
+      resize();   // the radar stands down with the safety
+      return;
+    }
+    const r = toggleArm(strike);
+    if (r === 'refused') { refuseArm(); return; }
+    sfx.play('tank_pickup');
+    if (r === 'safe') hideRangeRing();
+    syncArmUi();
+    resize();   // armed promotes the minimap to a radar; safe demotes it
+  });
+
+  // The blast itself. Portals inside the radius are not damaged — they are
+  // DESTROYED, which is the reason the weapon exists. Enemies take squared
+  // falloff. The world does the announcing: rings, a kick of the same shock
+  // cloud the wave telegraph uses, and the loudest sample in the manifest.
+  function executeStrike(ci, tNow) {
+    console.log(`STRIKE impact ci=${ci} portalsBefore=${spawnPoints.filter((q) => q.alive).length}`);
+    const c = graph.centers[ci];
+    const radius = cellSide * strikeTune.blastCells;
+    sfx.play('tank_destroyed', { dist: camDist(c) });
+    warnRing(ci, 0xfff2c0, 0.9, radius * 2.2);
+    warnRing(ci, 0xffb347, 0.6, radius * 1.4);
+    warnRing(ci, 0xffffff, 0.4, radius * 0.8);
+    for (const sp of spawnPoints) {
+      if (sp.alive && dist3(c, graph.centers[sp.ci]) < radius) {
+        sp.found = true;
+        killPortal(sp);
+      }
+    }
+    for (const e of enemies) {
+      if (!e.alive) continue;
+      const dmg = strikeDamage(dist3(c, e.pos), radius, strikeTune);
+      if (dmg > 0) damageEnemy(e, tNow, dmg, false);
+    }
+    updateHud();
+    checkVictory();
+  }
 
   // ☆ flash the neighbouring cell that is one hop closer to the heart
   let hintTimer = null;
@@ -2626,6 +2751,10 @@ export function initTdTab(root) {
     waveEl.classList.add('hidden');
     seenTypes.clear();
     seedPortals(2);
+    // a new game means a new magazine: leftovers do not survive regenerate
+    strike.reserved = 0; strike.ready = 0; strike.gauge = 0;
+    strike.armed = false; strike.target = -1; strike.falling = -1;
+    grantStrikes(strike, spawnPoints.filter((sp2) => sp2.alive).length, strikeTune);
   }
 
   // cheap hop estimate for spreading spawn points (chord distance in cells)
@@ -2669,6 +2798,17 @@ export function initTdTab(root) {
   // a sector's gates are spatial sources, not type-bound — seed a small
   // fixed set; the wave plan decides what pours out of them
   function seedPortals(n) { for (let i = 0; i < n; i++) addSpawnPoint(); }
+
+  // One place a gate dies, however it died — shells ground it down before,
+  // and now a strike vaporises it whole. Both end here.
+  function killPortal(sp) {
+    sp.alive = false;
+    scene.remove(sp.obj);
+    disposeObj(sp.obj);
+    if (sp.mapMarker) { scene.remove(sp.mapMarker); disposeObj(sp.mapMarker); }
+    sp.mapMarker = null;
+    recomputePortalDist();
+  }
 
   // Arm the next wave: one entry point, so nothing can spawn unannounced.
   // Idempotent — a stalled field re-asks every frame and must not re-fire the
@@ -3079,13 +3219,7 @@ export function initTdTab(root) {
             sp.found = true;
             hit = true;
             if (sp.hp <= 0) {
-              sp.alive = false;
-              scene.remove(sp.obj);
-              disposeObj(sp.obj);
-              scene.remove(sp.mapMarker);
-              disposeObj(sp.mapMarker);
-              sp.mapMarker = null;
-              recomputePortalDist();
+              killPortal(sp);
             } else {
               // wounded: the portal shrinks a step AND its light dims —
               // a dying gate fades before it falls
@@ -3954,6 +4088,9 @@ export function initTdTab(root) {
     spawnOrbs();
     spawnRewards();
     seedPortals(2); // fresh neutral gates in the new band
+    // the new sector's budget arrives with its gates; unspent strikes carry —
+    // hoarding one for the next sector is a legitimate play
+    grantStrikes(strike, spawnPoints.filter((sp2) => sp2.alive).length, strikeTune);
     recomputePortalDist();
     waveActive = false; interClock = 0;
     player.won = false;
@@ -4019,6 +4156,13 @@ export function initTdTab(root) {
     feelFolders.get(k.group).add(FEEL, k.key, k.min, k.max, k.step)
       .name(k.label).onFinishChange(saveFeel);
   }
+
+  // strike knobs share the schema machinery with the feel folders
+  const strikeF = gui.addFolder('orbital strike');
+  for (const k of STRIKE_KNOBS) {
+    strikeF.add(strikeTune, k.key, k.min, k.max, k.step).name(k.label);
+  }
+  strikeF.close();
 
   const bloomF = gui.addFolder('bloom');
   bloomF.add(postfx.params, 'enabled').name('enabled').onChange((v) => postfx.setEnabled(v));
@@ -4239,6 +4383,12 @@ export function initTdTab(root) {
       // no charge, no rings and no sound at all. Later rounds hit that path
       // more and more often as waves take longer to clear, which is exactly
       // what "the cues drift in later rounds" looks like from the outside.
+      // the orbital window fills in game time, like everything else here
+      if (stepStrike(strike, dt, strikeTune) === 'armed') {
+        sfx.play('tower_upgrade');
+        showToast('<div class="wave-num">ORBITAL ASSET ARMED</div>'
+          + '<div class="wave-role">☄ ready — arm, paint, launch</div>', 2200);
+      }
       if (waveIn >= 0) {
         waveIn -= dt;
         waveCharge = Math.max(0, Math.min(1, 1 - waveIn / WAVE_WARN));
@@ -4286,6 +4436,12 @@ export function initTdTab(root) {
       rangeRingTtl -= dt;
       if (rangeRingTtl <= 0) { rangeRingTtl = 0; hideRangeRing(); }
     }
+    if (strikeGrace > 0) strikeGrace -= dt;
+    {
+      const impactCi = stepFall(strike, dt);
+      if (impactCi >= 0) { executeStrike(impactCi, t); snapCamera(); }
+    }
+    if (armBtn) syncArmUi();
     stepWarnFx(dt);
     for (const sp of spawnPoints) {
       if (!sp.alive) continue;
@@ -4538,7 +4694,7 @@ export function initTdTab(root) {
 
   // opening briefing on a clean load; any debug hook means headless/demo,
   // where a frozen sim would break the verification flow
-  const debugging = ['walk', 'tick', 'wave', 'blast', 'laser', 'found', 'recoil', 'mode', 'map', 'tower', 'credit', 'shop', 'sector', 'reveal', 'portal', 'lose', 'charge', 'layout', 'perf']
+  const debugging = ['walk', 'tick', 'wave', 'blast', 'laser', 'found', 'recoil', 'mode', 'map', 'tower', 'credit', 'shop', 'sector', 'reveal', 'portal', 'lose', 'charge', 'layout', 'perf', 'strike', 'strikefall']
     .some((k) => urlParams.get(k));
   const tutParam = urlParams.get('tutorial');
   runTutorial = tutParam === '1' || (tutParam !== '0' && !debugging);
@@ -4659,6 +4815,27 @@ export function initTdTab(root) {
       console.log(`CHARGE want=${c} charge=${waveCharge.toFixed(2)} waveIn=${waveIn.toFixed(2)}`
         + ` ringParticles=${warnFx.length} beatIn=${warnBeat.toFixed(2)}s`
         + ` gateScale=${sp ? (sp.obj.scale.x / (sp.obj.userData.sizeScale ?? 1)).toFixed(3) : 'n/a'}`);
+    }, 1200);
+  }
+
+  // ?strike=N — N strikes ready at once, skipping the window; the ritual
+  // still applies. ?strikefall=1 — arm, paint the first live gate and launch
+  // after 1.2s, so the fall camera and the blast can be screenshotted.
+  const strikeReady = parseInt(urlParams.get('strike') || '0', 10);
+  if (strikeReady > 0) { strike.ready = strikeReady; strike.reserved = 0; }
+  if (urlParams.get('strikefall')) {
+    strike.ready = Math.max(1, strike.ready);
+    setTimeout(() => {
+      const sp = spawnPoints.find((q) => q.alive);
+      if (!sp) return;
+      toggleArm(strike);
+      paintTarget(strike, sp.ci);
+      launchStrike(strike, strikeTune);
+      strikeGrace = 0.25;
+      // under a virtual-time budget the fall clock (frame dt) barely moves,
+      // so the hook exercises the skip — which is also the code path a
+      // pressed player takes, and so worth exercising anyway
+      setTimeout(() => skipFall(strike), 900);
     }, 1200);
   }
 

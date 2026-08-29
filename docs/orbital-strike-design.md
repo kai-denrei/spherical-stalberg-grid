@@ -1,6 +1,14 @@
 # Orbital strike — design
 
-Status: **plan only, nothing built.** Three design calls settled 2026-08-30 — see Decided. Adapted from DeepWatch
+Status: **v1 built 2026-08-30.** Logic in `src/strike.js` (pure, tested in
+`test/strike.mjs`); presentation in `td-tab.js`. Hooks: `?strike=N` readies
+N, `?strikefall=1` runs the whole loop headlessly. Numbers live in the
+`orbital strike` GUI folder, generated from `STRIKE_KNOBS`.
+
+One deliberate translation: DeepWatch grants its budget per *wave*, but its
+wave is the big battle unit — ours is the ROUND. The budget scales with the
+sector's gates (one per two, minimum one), which is the user's own framing:
+strong but limited, and later rounds have more portals. Adapted from DeepWatch
 (`~/Documents/Dev/centroid-defense`).
 
 ---

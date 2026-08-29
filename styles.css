@@ -1861,3 +1861,25 @@ body.playing:not(.chrome-open) #tabbar { display: none !important; }
     max-width: min(92vw, 420px);
   }
 }
+
+/* --- orbital strike button: one control, three states ---------------------
+   safe (count shown) -> armed (amber, pulsing) -> locked (solid: LAUNCH).
+   The refusal flicker is DeepWatch's flickerOrdnance: the button says no. */
+#td-pad-arm.idle { opacity: 0.35; }
+#td-pad-arm.armed {
+  color: #ffb347;
+  border-color: rgba(255, 179, 71, 0.75);
+  animation: tutorial-pulse 1.1s ease-in-out infinite;
+}
+#td-pad-arm.locked {
+  color: #081018;
+  background: #ffb347;
+  border-color: #ffb347;
+  animation: none;
+}
+@keyframes strike-refuse {
+  0%, 100% { opacity: 1; }
+  25%, 75% { opacity: 0.15; }
+  50% { opacity: 1; }
+}
+#td-pad-arm.flicker { animation: strike-refuse 0.36s linear; }

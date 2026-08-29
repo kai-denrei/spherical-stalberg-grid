@@ -23,6 +23,7 @@ not advanced.
 | tank (mkcx), feel, sound | done; tuned against the unit viewer |
 | towers, looks registry | done; swapping a tower's visual is non-destructive |
 | tower silhouettes | done; all eight wear a distinct Braille-lab head matched to what they do |
+| orbital strike | v1 done; ritual + rationing from DeepWatch, one strike kills one gate |
 | waves, economy | wired but **untuned** — see Pacing below |
 | tutorial | runs on a deliberately small board (400–600 points) |
 
@@ -129,11 +130,6 @@ per-pixel cost per portal. Affordable precisely because there are never more
 than a few gates open at once. Parked deliberately: the gate already got its
 horizon, and this is the next thing to try on it rather than the next thing
 to build.
-
-### Orbital strike
-
-Adapted from DeepWatch (`~/Documents/Dev/centroid-defense`). Design written
-up in `docs/orbital-strike-design.md`; not started.
 
 ### Attract mode
 
