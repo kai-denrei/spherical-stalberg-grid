@@ -11,15 +11,15 @@
 // one context no matter how long the roster grows.
 import * as THREE from '../vendor/three.module.js';
 import { OrbitControls } from '../vendor/OrbitControls.js';
-import { buildUnit, preloadMkcx, makeDebris, makeDotBurst, makeBulletCloud } from './units.js?v=57e8bd97';
+import { buildUnit, preloadMkcx, makeDebris, makeDotBurst, makeBulletCloud } from './units.js?v=5f9ffe81';
 import { TANK_FEEL, TANK_FEEL_KNOBS, formatFeelCode, makeTankFeel, stepTankFeel,
-  landTankFeel, fireTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js?v=57e8bd97';
-import { FEEL, loadFeel, saveFeel, resetFeel } from './feelstore.js?v=57e8bd97';
+  landTankFeel, fireTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js?v=5f9ffe81';
+import { FEEL, loadFeel, saveFeel, resetFeel } from './feelstore.js?v=5f9ffe81';
 import { buildTowerLook, TOWER_LOOK_NAMES, DEFAULT_TOWER_LOOK, preloadLook } from './towerlooks.js';
 import { TOWER_BY_KEY } from './towers.js';
 import { LOOKS } from './looks.js';
 import { makeBloom } from './postfx.js';
-import { makeAudio } from './audio.js?v=57e8bd97';
+import { makeAudio } from './audio.js?v=5f9ffe81';
 import { GROUPS, GROUP_LABELS, GROUP_EMPTY, entriesIn } from './unitcatalog.js';
 
 export function initUnitsTab(root) {
@@ -47,7 +47,7 @@ export function initUnitsTab(root) {
   controls.dampingFactor = 0.08;
   controls.enablePan = false; // the unit stays centred; orbit and zoom only
 
-  const state = { group: 'friendly', index: 0, towerLook: DEFAULT_TOWER_LOOK, spin: true };
+  const state = { group: 'friendly', index: 0, towerLook: DEFAULT_TOWER_LOOK, spin: true, sweep: true };
   // the test bench: the SAME feel driver the game runs, so what you tune here
   // is what ships. `running` is the engine's own notion of running.
   const feel = makeTankFeel();
@@ -59,6 +59,7 @@ export function initUnitsTab(root) {
   const healthEl = root.querySelector('#units-health');
   let wreckT = 0;   // >0 while the wreck is playing
   let current = null;
+  let sweepBtn = null;
   let clock = 0;
   const wreckFx = [];   // debris/burst objects, ticked and reaped
   // A shot is three things — the kick, the shell, and the barrel going
@@ -289,8 +290,11 @@ export function initUnitsTab(root) {
     const dt = Math.min((now - last) / 1000, 0.1);
     last = now;
     clock += dt;
-    // drive the unit's own idle animation, so a turret sweeps here as in game
-    if (current && current.userData.tick) current.userData.tick(clock);
+    // Drive the unit's own idle animation, so a turret sweeps here as in game.
+    // Switchable off: a sweeping turret cannot be judged against the hull
+    // axis, and every "the beam looks tilted" report so far has been the
+    // sweep rather than the model. Frozen, it returns to its rest pose.
+    if (current && current.userData.tick && state.sweep) current.userData.tick(clock);
     if (current && state.spin) current.rotation.y += dt * 0.35;
     // barrel heat: the same cool->hot lerp the game runs, on the same sleeve
     if (heat > 0) heat = Math.max(0, heat - dt);
@@ -382,21 +386,36 @@ export function initUnitsTab(root) {
     const w = renderer.domElement.clientWidth;
     const h = renderer.domElement.clientHeight;
 
-    // 1. project, and split by which side of the model each part is on, so
-    //    the labels fan outwards instead of stacking over the tank.
+    // 1. project every anchor, and measure the model's own screen extent as
+    //    we go. Splitting on the CANVAS centre was wrong: the tank is rarely
+    //    centred in frame, so nearly every part landed on one side and the
+    //    labels piled into a single column far from their parts.
     const sides = { l: [], r: [] };
+    let minX = Infinity, maxX = -Infinity, midX = 0, seen = 0;
     for (const t of callTags) {
       t.m.getWorldPosition(callProj).project(camera);
       // a point behind the camera projects to a MIRRORED point in front of it
-      if (callProj.z > 1) { t.tag.style.opacity = '0'; t.dot.style.opacity = '0'; continue; }
+      if (callProj.z > 1) { t.tag.style.opacity = '0'; t.dot.style.opacity = '0'; t.off = true; continue; }
+      t.off = false;
       t.tag.style.opacity = '';
       t.dot.style.opacity = '';
       t.ax = (callProj.x * 0.5 + 0.5) * w;
       t.ay = (-callProj.y * 0.5 + 0.5) * h;
-      sides[t.ax < w * 0.5 ? 'l' : 'r'].push(t);
+      minX = Math.min(minX, t.ax); maxX = Math.max(maxX, t.ax);
+      midX += t.ax; seen++;
     }
+    if (!seen) return;
+    midX /= seen;
+    for (const t of callTags) if (!t.off) sides[t.ax < midX ? 'l' : 'r'].push(t);
 
-    // 2. declutter each column: sort by height, then walk down enforcing a
+    // 2. the two columns sit OUTSIDE the model's silhouette, clamped into the
+    //    frame. Labels over the tank hide the thing they are naming.
+    const colX = {
+      l: Math.max(90, minX - OUT),
+      r: Math.min(w - 12, maxX + OUT),
+    };
+
+    // 3. declutter each column: sort by height, then walk down enforcing a
     //    minimum gap. Greedy and one-pass — with ~20 labels the cost of
     //    anything cleverer is not repaid, and the leader lines carry the
     //    association anyway once a label has been nudged off its part.
@@ -412,9 +431,8 @@ export function initUnitsTab(root) {
       // the buttons is a label you cannot read, which defeats the point.
       const over = y - (h - FOOT);
       if (over > 0) for (const t of col) t.ly = Math.max(ROW * 0.5, t.ly - over);
-      const dir = key === 'l' ? -1 : 1;
       for (const t of col) {
-        t.lx = t.ax + OUT * dir;
+        t.lx = colX[key];
         t.tag.classList.toggle('left', key === 'l');
         // left-hand labels are pulled back by their OWN width, which only a
         // transform percentage knows — a percentage margin would resolve
@@ -429,6 +447,17 @@ export function initUnitsTab(root) {
         t.lead.style.transform = `rotate(${Math.atan2(dy, dx)}rad)`;
       }
     }
+  }
+
+  sweepBtn = root.querySelector('#units-sweep');
+  if (sweepBtn) {
+    sweepBtn.addEventListener('click', () => {
+      state.sweep = !state.sweep;
+      sweepBtn.classList.toggle('on', state.sweep);
+      // freezing snaps the turret back to rest, which is the point of it
+      if (!state.sweep && current && current.userData.tick) current.userData.tick(0);
+    });
+    if (new URLSearchParams(location.search).get('sweep') === '0') sweepBtn.click();
   }
 
   const labelsBtn = root.querySelector('#units-labels');

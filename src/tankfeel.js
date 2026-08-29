@@ -10,19 +10,19 @@
 // handed to it, so it is Node-testable against plain stand-ins.
 
 export const TANK_FEEL = {
-  rise: 0.14,      // body lifts this far, in MODEL units
-  gearDrop: 0.05,  // and the skirt settles the other way — the GAP is the read
-  up: 1.9,         // spool-up rate
-  down: 2.6,       // settle rate; a touch quicker, so it drops rather than sinks
-  rock: 0.016,     // touchdown tilt, radians
-  decay: 5.0,      // how fast that rock dies
-  vib: 0.008,      // running vibration, model units — a weak cousin of recoil
-  vibWeapons: 0.3, // ...of which the guns take this share: MOUNTED, not loose
-  recoilLen: 0.35,     // seconds a shot's kick lasts
-  recoilSlide: 0.18,   // turret slides back this far, model units
-  recoilShudder: 0.03, // high-frequency judder on the slide
-  recoilPitch: 0.05,   // body noses up, radians
-  recoilSecondary: 0,  // share of that pitch the small secondaries take
+  rise: 0.095,      // body lifts this far, in MODEL units
+  gearDrop: 0.15,  // and the skirt settles the other way — the GAP is the read
+  up: 6,         // spool-up rate
+  down: 6,       // settle rate; a touch quicker, so it drops rather than sinks
+  rock: 0.06,     // touchdown tilt, radians
+  decay: 6,      // how fast that rock dies
+  vib: 0.01,      // running vibration, model units — a weak cousin of recoil
+  vibWeapons: 0.75, // ...of which the guns take this share: MOUNTED, not loose
+  recoilLen: 0.8,     // seconds a shot's kick lasts
+  recoilSlide: 0.5,   // turret slides back this far, model units
+  recoilShudder: 0, // high-frequency judder on the slide
+  recoilPitch: 0.125,   // body noses up, radians
+  recoilSecondary: 1,  // share of that pitch the small secondaries take
 };
 
 // --- the knob schema -------------------------------------------------------
@@ -40,14 +40,14 @@ export const TANK_FEEL_KNOBS = [
   { key: 'gearDrop',      label: 'skirt drop',     group: 'hover',  min: 0,    max: 0.3,  step: 0.005 },
   { key: 'up',            label: 'spool up',       group: 'hover',  min: 0.4,  max: 6,    step: 0.1 },
   { key: 'down',          label: 'settle down',    group: 'hover',  min: 0.4,  max: 6,    step: 0.1 },
-  { key: 'rock',          label: 'touchdown rock', group: 'hover',  min: 0,    max: 0.06, step: 0.002 },
+  { key: 'rock',          label: 'touchdown rock', group: 'hover',  min: 0,    max: 0.12, step: 0.002 },
   { key: 'decay',         label: 'rock decay',     group: 'hover',  min: 1.5,  max: 10,   step: 0.5 },
   { key: 'vib',           label: 'idle vibration', group: 'hover',  min: 0,    max: 0.04, step: 0.001 },
   { key: 'vibWeapons',    label: 'guns share',     group: 'hover',  min: 0,    max: 1,    step: 0.05 },
   { key: 'recoilLen',     label: 'kick length',    group: 'recoil', min: 0.05, max: 1,    step: 0.01 },
   { key: 'recoilSlide',   label: 'turret slide',   group: 'recoil', min: 0,    max: 0.6,  step: 0.01 },
   { key: 'recoilShudder', label: 'shudder',        group: 'recoil', min: 0,    max: 0.12, step: 0.005 },
-  { key: 'recoilPitch',   label: 'nose-up pitch',  group: 'recoil', min: 0,    max: 0.2,  step: 0.005 },
+  { key: 'recoilPitch',   label: 'nose-up pitch',  group: 'recoil', min: 0,    max: 0.3,  step: 0.005 },
   { key: 'recoilSecondary', label: 'secondaries take', group: 'recoil', min: 0,  max: 1,    step: 0.05 },
 ];
 

@@ -16,8 +16,8 @@
 
 import * as THREE from '../vendor/three.module.js';
 import { loadGlb, mergeByMaterial, fitModel, tintModel, makeShellRack,
-  addEdgeOutlines, makeHeatSleeve } from './glbmodels.js?v=57e8bd97';
-import { CREATURES, waveJelly, spherePts, bulletPts, missilePts, heartPts, torusPts, towerHeadPts, enemyDotPts, portalPts } from './creatures.js?v=57e8bd97';
+  addEdgeOutlines, makeHeatSleeve } from './glbmodels.js?v=5f9ffe81';
+import { CREATURES, waveJelly, spherePts, bulletPts, missilePts, heartPts, torusPts, towerHeadPts, enemyDotPts, portalPts } from './creatures.js?v=5f9ffe81';
 
 function normalizeToUnit(group) {
   group.updateMatrixWorld(true);
@@ -906,8 +906,10 @@ const MKCX_URL = 'assets/models/mkcx.glb';
 // Nodes that must survive the merge as addressable objects: the things that
 // articulate. Everything else is welded into per-material batches — including
 // the glow accents, which is exactly what makes the health tint cheap.
+const MKCX_LIFTERS = ['LiftEmitter_L1', 'LiftEmitter_L2', 'LiftEmitter_L3',
+  'LiftEmitter_R1', 'LiftEmitter_R2', 'LiftEmitter_R3'];
 const MKCX_PIVOTS = ['Turret_Pivot', 'Secondary_L_Gun_Pivot', 'Secondary_R_Gun_Pivot',
-  'Hover_Gear'];
+  'Hover_Gear', ...MKCX_LIFTERS];
 // The barrel glow strips are authored floating +0.20 above the barrel axis.
 // At our scale they don't read as strips ON the gun — they read as a stray
 // bright line hanging in front of the tank. Dropped before the merge, since
@@ -1121,14 +1123,50 @@ function makeMkcx(cols) {
     // there — the nacelles are M_Armour and the pylons M_Steel.
     const emitters = new THREE.Group();
     emitters.name = 'HoverEmitters';
-    for (const c of [...gear.children]) {
+    // Added to the model BEFORE anything is attached to it. attach() preserves
+    // world transform, so attaching into a group that is not yet in the graph
+    // bakes the whole ancestor chain — including fitModel's scale — into the
+    // child's local matrix, and adding the group afterwards applies that scale
+    // a second time. The emitters came out at k^2: present, correct, and a
+    // tenth of the size they should be.
+    modelRoot.add(emitters);
+    for (const name of MKCX_LIFTERS) {
+      const e = gear.getObjectByName(name);
+      if (e) emitters.attach(e);
+    }
+
+    // Spaced evenly along the nacelle they sit under. The authored z values
+    // (-2.35, -0.40, 1.70) are neither centred on the nacelle nor evenly
+    // spread — the rear pair bunch and the front one overhangs its end.
+    //
+    // The span is read off the nacelle BATCH, not a node: `Nacelle_L` stopped
+    // existing at the merge, so looking it up by name would quietly find
+    // nothing and leave the spacing untouched. The nacelles are the only
+    // M_Armour geometry inside the gear, and geometry bounds are already in
+    // the space these positions are written in, so no conversion is needed.
+    const armour = gear.children.find((c) => {
       const m = Array.isArray(c.material) ? c.material[0] : c.material;
-      if (m && m.name === 'M_Glow') emitters.attach(c);
+      return c.isMesh && m && m.name === 'M_Armour';
+    });
+    if (armour && armour.geometry) {
+      armour.geometry.computeBoundingBox();
+      const nb = armour.geometry.boundingBox;
+      const zs = [0.18, 0.5, 0.82];
+      for (const e of emitters.children) {
+        const i = Number(e.name.slice(-1)) - 1;
+        if (i >= 0 && i < zs.length) e.position.z = nb.min.z + (nb.max.z - nb.min.z) * zs[i];
+      }
     }
 
     const body = new THREE.Group();
     body.name = 'HoverBody';
-    for (const c of [...modelRoot.children]) if (c !== gear) body.add(c);
+    // Skip the gear AND the emitters: both are ground-side, and the emitters
+    // are already parented here. Without the explicit skip they would be
+    // swept into the body and only pulled back out by the re-add below —
+    // correct by accident, which is not a thing to leave in a rig.
+    for (const c of [...modelRoot.children]) {
+      if (c !== gear && c !== emitters) body.add(c);
+    }
 
     // The weapons ride the body but shake less than it does. Both mounts go
     // in together — the primary turret and the secondaries' shared parent.
@@ -1151,7 +1189,6 @@ function makeMkcx(cols) {
     body.add(weapons);
 
     modelRoot.add(body);
-    if (emitters.children.length) modelRoot.add(emitters);
 
     g.userData.hoverEmitters = emitters;
     g.userData.hoverBody = body;   // td-tab lifts THIS, not the unit

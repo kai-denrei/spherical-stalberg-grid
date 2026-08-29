@@ -42,10 +42,15 @@ console.log('hover:');
   run(st, 4, false);
   check('spools back down', st.hoverT < 0.01, `hoverT=${st.hoverT}`);
 
-  // Rise is a GESTURE, not a jump: no single frame may deliver most of it.
+  // Rise is a GESTURE, not a jump. The bound is on the SHAPE — no single
+  // frame may deliver a large fraction, and getting there must take several
+  // frames — not on a particular rate, which is the operator's to choose.
   const s2 = makeTankFeel();
   stepTankFeel(s2, 1 / 60, true);
-  check('one frame moves only a sliver', s2.hoverT < 0.05, `hoverT=${s2.hoverT}`);
+  check('one frame delivers a fraction, not the move', s2.hoverT < 0.25, `hoverT=${s2.hoverT}`);
+  let frames = 1;
+  while (s2.hoverT < 0.9 && frames < 600) { stepTankFeel(s2, 1 / 60, true); frames++; }
+  check('and it eases in over several frames', frames >= 5 && frames < 600, `frames=${frames}`);
 
   // Down must not be slower than up, or the tank sinks rather than drops.
   check('settle is at least as quick as spool-up', TANK_FEEL.down >= TANK_FEEL.up);
@@ -97,9 +102,13 @@ console.log('recoil without a hover split:');
   const st = makeTankFeel();
   fireTankFeel(st);
   applyTankFeel(u, st);
-  check('turret still slides', u.userData.turret.position.z < -0.1,
+  check('turret still slides', u.userData.turret.position.z < 0,
         `z=${u.userData.turret.position.z}`);
-  check('missing baseZ reads as 0', u.userData.turret.position.z > -0.3);
+  // With no baseZ recorded the rest position is 0, so the slide is the whole
+  // of the displacement — not offset from somewhere else.
+  check('missing baseZ reads as 0',
+        approx(u.userData.turret.position.z, -TANK_FEEL.recoilSlide, 1e-9),
+        `z=${u.userData.turret.position.z}`);
 }
 
 console.log('rock + recoil compose:');
@@ -182,10 +191,14 @@ console.log('the three-tier rig:');
   applyTankFeel(u2, s2);
   const bodyPitch = u2.userData.hoverBody.rotation.x;
   check('the body noses up on firing', bodyPitch < 0, `rx=${bodyPitch}`);
-  check('the secondaries cancel it', approx(u2.userData.secondaries.rotation.x, -bodyPitch, 1e-9),
+  // The share is a knob, so every assertion here names the share it tests
+  // rather than leaning on whatever the current default happens to be.
+  applyTankFeel(u2, s2, { ...TANK_FEEL, recoilSecondary: 0 });
+  check('share 0 cancels the pitch entirely',
+        approx(u2.userData.secondaries.rotation.x, -bodyPitch, 1e-9),
         `${u2.userData.secondaries.rotation.x} vs ${-bodyPitch}`);
   applyTankFeel(u2, s2, { ...TANK_FEEL, recoilSecondary: 1 });
-  check('and take it fully at share 1', approx(u2.userData.secondaries.rotation.x, 0, 1e-9));
+  check('share 1 lets them ride it', approx(u2.userData.secondaries.rotation.x, 0, 1e-9));
   applyTankFeel(u2, s2, { ...TANK_FEEL, recoilSecondary: 0.5 });
   check('half share is half the cancel',
         approx(u2.userData.secondaries.rotation.x, -bodyPitch * 0.5, 1e-9));

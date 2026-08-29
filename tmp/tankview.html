@@ -38,7 +38,7 @@ async function go(){
   if(q.get('nosleeve') && g.userData.heatSleeve) g.userData.heatSleeve.parent.remove(g.userData.heatSleeve);
   if(q.get('nodots')) (g.userData.ammoDots||[]).forEach(d=>d.parent.remove(d));
   if(q.get('noedges')) { const rm=[]; g.traverse(o=>{if(o.isLineSegments) rm.push(o);}); rm.forEach(o=>o.parent.remove(o)); }
-  if(g.userData.tick) g.userData.tick(1.2);
+  if(g.userData.tick && q.get('sweep')!=='0') g.userData.tick(1.2);
   // light the ammo rack like the game does: 4 of 9 lit
   const dots=g.userData.ammoDots||[];
   dots.forEach((dd,i)=>dd.material.color.setHex(i<4?0xffffff:0x4a505c));
