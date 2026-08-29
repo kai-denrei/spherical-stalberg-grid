@@ -6,6 +6,48 @@ Demo links assume `npm run serve` (port 8144) or the
 
 ---
 
+## `e4b8c53` — The reference screen was showing units the game never spawns
+
+### Two representations, and the viewer picked the wrong one
+
+`UNITS` still carries a **mesh** form for every creature — `makeSaturn`,
+`makeCorona`, `makeMine` — that predates the dot clouds. `buildUnit()`
+returns that. The tower-defence tab spawns `makeDotEnemy()` instead.
+
+So the drifter on the reference screen was a torus and a sphere, while the
+drifter on the board is a dot cloud — and none of the rammable/not tells were
+visible there at all, because those live only on the cloud form. A reference
+screen that describes something the player will never meet is worse than not
+having one: it is confidently wrong.
+
+Catalogue entries now carry `kind: 'enemy'` and the viewer dispatches to
+`makeDotEnemy` in the creature's real `CREATURE_TINTS` colour, not the
+player's. The caption leads with the tell:
+
+| unit | caption |
+| --- | --- |
+| phage | RAMMABLE · 1 hp · speed 1.15 |
+| drifter | solid core — will NOT ram · 2 hp · speed 0.85 |
+
+### Neutral is no longer empty
+
+The three reward pickups plus the shell rack, each with what it does and why
+it matters — including the one thing about the regen charge that cannot be
+read off its shape, which is that you have to **carry it home**. The rack is
+built as three shells, the way it sits on the ground, and every entry plays
+its own collect sound.
+
+### One table, not two
+
+`REWARD_TYPES` moves out of `td-tab.js` into `src/pickups.js`, read by both.
+A second copy drifts the first time a colour or an effect changes, and then
+the viewer teaches the player something that is not true — which is exactly
+the failure this commit fixes, one level down. The pure-data module was
+already the house pattern for `enemyspec` and `towers`; pickups just had not
+been pulled out yet.
+
+---
+
 ## `50d2f05` — Solid means it will stop you
 
 ### Bloom, softer and wider
