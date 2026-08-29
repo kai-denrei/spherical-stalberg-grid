@@ -6,6 +6,75 @@ Demo links assume `npm run serve` (port 8144) or the
 
 ---
 
+## `1cb7da6` — Nine shapes from the Braille lab
+
+Source: `~/Dev/Braille`, `fun-shapes/index.html`. The lab and this project
+already speak the same language — a generator returns `[x, y, z]` points, a
+fourth element marks a half-dot highlight, `fitUnit()` normalises — which is
+why `creatures.js` has said "ported from ~/Dev/Braille" at the top since day
+one. A port is therefore the generator plus whatever primitives it stands on.
+
+| wanted | generator | note |
+| --- | --- | --- |
+| six-axis arm | `armSixAxisPts` | asked for: single shot |
+| delta robot | `armDeltaPts` | |
+| gripper arm | `armGripperPts` | |
+| guyed mast | `twGuyedPts` | |
+| broadcast antenna | `twBroadcastPts` | asked for: slow |
+| ripple ring | `wvRipplePts` | |
+| egyptian obelisk | `obEgyptianPts` | |
+| rocket launcher | `launcherPts` | |
+| bacterium | `bacteriumPts` | an **enemy** candidate |
+
+### Copied verbatim, on purpose
+
+`src/braillelab.js` holds them unaltered, with the transitive closure of
+their primitives — struts, joint balls, lattice and guy helpers, a
+height-field surface: 17 in all. Rewriting them in our own hand would mean
+maintaining a divergent second version of something the lab will keep
+improving. Re-porting has to stay mechanical, not a merge.
+
+Taking the closure by hand would have been guesswork; a script walked the
+call graph from the nine and stopped when nothing new appeared. The four
+names it could not resolve (`dir`, `fn`, `hi`, `prof`) are callback
+parameters, not missing helpers.
+
+### Resampled on the way in
+
+They arrive at whatever density their author chose — **506 to 2689 points**
+across the nine — and three carry no highlights at all. Left alone, the
+dot-count knob would do nothing for them and several would read as flat dust
+rather than half-dotted:
+
+```js
+const step = src.length / Math.max(1, n);
+for (let i = 0; i < n; i++) emit(...src[Math.round(i * step)], i);
+```
+
+The authored highlight flags are dropped in the process. That is a real
+trade — the lab marked a mast tip deliberately — but `hiEvery` is a knob, and
+a knob that three of nine shapes ignore is the failure this file has now
+recorded twice.
+
+Adding another lab shape usually needs no new primitive: copy the generator,
+add one line to `BRAILLE_SHAPES`.
+
+### The flying saucer is a bacterium
+
+Suggested tentatively, so it is wired the only way that lets it actually be
+judged — seen in play. Reverting is one line in `units.js`
+(`enemyDotPts('ufo')`).
+
+### Both outside resources are now written down
+
+`CLAUDE.md` records `~/Dev/Braille` and `~/Dev/blueprint-to-life`, including
+that the latter has a **solved** service-worker + cache-bust pattern. The
+ROADMAP lists our PWA item as blocked on exactly that problem — a SW must key
+its cache names off the build token or it serves stale modules and defeats
+the badge. Copy it; do not re-derive it.
+
+---
+
 ## `101726b` — A bench for towers, and one machinery behind both
 
 Towers get what the tank got: a knob table, a panel generated from it, and
