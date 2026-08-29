@@ -111,3 +111,48 @@ export const STARGATE_PTS = [
 
 // where the continuous stroke ends and the chevrons begin
 export const STARGATE_STROKE = 407;
+
+// --- the event horizon ------------------------------------------------------
+// Ported from the lab's `stargateFeatures`, which the JSON export could not
+// carry: the export is the resting POINT SET, and the horizon is a function
+// of time. The gallery card calls the pair "chevrons + horizon" — the export
+// was only the first half, which is why the gate came out as a bare ring.
+//
+// Six concentric rings inside the throat, each shimmering on its own phase,
+// the whole disc turning slowly on Y so it reads as a surface rather than a
+// pattern. The lab's own note is worth keeping: stargatePts deliberately
+// skips fitUnit so the horizon can share its exact coordinates.
+export const HORIZON_R = 0.58;
+export const HORIZON_RINGS = 6;
+
+// how many dots the horizon needs — counted the same way it is generated, so
+// the buffer and the writer cannot disagree
+export const HORIZON_N = (() => {
+  let n = 0;
+  for (let ir = 1; ir <= HORIZON_RINGS; ir++) n += Math.round(5 + 21 * ir / HORIZON_RINGS);
+  return n;
+})();
+
+// Writes positions into `pos` and per-dot brightness into `bri`, starting at
+// index `i0`. Brightness rather than colour: the caller owns the tint, and a
+// portal that has been dimmed should dim its horizon with everything else.
+export function stargateHorizon(t, pos, bri, i0) {
+  let k = i0;
+  const c = Math.cos(t * 0.45), s = Math.sin(t * 0.45);
+  for (let ir = 1; ir <= HORIZON_RINGS; ir++) {
+    const rr = HORIZON_R * ir / HORIZON_RINGS;
+    const n = Math.round(5 + 21 * ir / HORIZON_RINGS);
+    for (let a = 0; a < n; a++, k++) {
+      const ang = (a / n) * 2 * Math.PI;
+      const sh = 0.5 + 0.5 * Math.sin(t * 2 + rr * 5 + ang * 3);
+      const x = rr * Math.cos(ang), y = rr * Math.sin(ang);
+      const z = 0.02 * Math.sin(t * 3 + rr * 9);
+      // rotY: the disc turns while the ring stays put
+      pos[k * 3] = x * c + z * s;
+      pos[k * 3 + 1] = y;
+      pos[k * 3 + 2] = -x * s + z * c;
+      bri[k] = (0.3 + 0.7 * sh) * (sh > 0.75 ? 1.8 : 1);
+    }
+  }
+  return k;
+}

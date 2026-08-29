@@ -19,25 +19,25 @@
 
 import * as THREE from '../vendor/three.module.js';
 import GUI from '../vendor/lil-gui.esm.js';
-import { generateSphereMesh, relax } from './grid.js?v=8cb0c974';
-import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=8cb0c974';
-import { mulberry32, randomSeed } from './rng.js?v=8cb0c974';
-import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3, segKey } from './vec3.js?v=8cb0c974';
-import { CREATURES, waveJelly } from './creatures.js?v=8cb0c974';
-import { UNITS, UNIT_NAMES, buildUnit, buildCreature, preloadMkcx, makeBulletCloud, makeRewardSolid, makeShellSolid, makeDebris, makeDotBurst, makePortalCloud, makeHeartCloud, makeDotEnemy } from './units.js?v=8cb0c974';
-import { LOOKS, LOOK_NAMES } from './looks.js?v=8cb0c974';
-import { makeCellIndex } from './cellindex.js?v=8cb0c974';
-import { CREATURE_TINTS, ENEMY_SPEC, INTROS, computeWavePlan } from './enemyspec.js?v=8cb0c974';
-import { PICKUPS } from './pickups.js?v=8cb0c974';
-import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER } from './towers.js?v=8cb0c974';
-import { makeEconomy, sellRefund } from './economy.js?v=8cb0c974';
-import { makeBloom } from './postfx.js?v=8cb0c974';
-import { TANK_FEEL, TANK_FEEL_KNOBS, makeTankFeel, stepTankFeel, landTankFeel, fireTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js?v=8cb0c974';
-import { FEEL, loadFeel, saveFeel } from './feelstore.js?v=8cb0c974';
-import { BLOOM_GROUPS } from './bloomweights.js?v=8cb0c974';
-import { TOWER_LOOK_NAMES, DEFAULT_TOWER_LOOK, buildTowerLook, preloadLook } from './towerlooks.js?v=8cb0c974';
-import { makeAudio } from './audio.js?v=8cb0c974';
-import { DEATH_KEYS } from './audiomanifest.js?v=8cb0c974';
+import { generateSphereMesh, relax } from './grid.js?v=4d76651a';
+import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=4d76651a';
+import { mulberry32, randomSeed } from './rng.js?v=4d76651a';
+import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3, segKey } from './vec3.js?v=4d76651a';
+import { CREATURES, waveJelly } from './creatures.js?v=4d76651a';
+import { UNITS, UNIT_NAMES, buildUnit, buildCreature, preloadMkcx, makeBulletCloud, makeRewardSolid, makeShellSolid, makeDebris, makeDotBurst, makePortalCloud, makeHeartCloud, makeDotEnemy } from './units.js?v=4d76651a';
+import { LOOKS, LOOK_NAMES } from './looks.js?v=4d76651a';
+import { makeCellIndex } from './cellindex.js?v=4d76651a';
+import { CREATURE_TINTS, ENEMY_SPEC, INTROS, computeWavePlan } from './enemyspec.js?v=4d76651a';
+import { PICKUPS } from './pickups.js?v=4d76651a';
+import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER } from './towers.js?v=4d76651a';
+import { makeEconomy, sellRefund } from './economy.js?v=4d76651a';
+import { makeBloom } from './postfx.js?v=4d76651a';
+import { TANK_FEEL, TANK_FEEL_KNOBS, makeTankFeel, stepTankFeel, landTankFeel, fireTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js?v=4d76651a';
+import { FEEL, loadFeel, saveFeel } from './feelstore.js?v=4d76651a';
+import { BLOOM_GROUPS } from './bloomweights.js?v=4d76651a';
+import { TOWER_LOOK_NAMES, DEFAULT_TOWER_LOOK, buildTowerLook, preloadLook } from './towerlooks.js?v=4d76651a';
+import { makeAudio } from './audio.js?v=4d76651a';
+import { DEATH_KEYS } from './audiomanifest.js?v=4d76651a';
 
 export function initTdTab(root) {
   let active = false;
@@ -225,6 +225,9 @@ export function initTdTab(root) {
   const WAVE_WARN = 3.0;      // seconds of charge before the wave lands
   let waveCharge = 0;         // 0..1 over that window
   let warnBeat = 0;           // seconds until the next shock ring
+  // >= 0 means a wave is ARMED and counting down. Every route to spawnWave
+  // goes through this, so a wave cannot arrive without its lead-in.
+  let waveIn = -1;
 
   // One pooled cloud for every ring, main view only — the map has its blips.
   const WARN_MAX = 1200;   // ~4 rings alive per gate at the fastest cadence
@@ -2369,6 +2372,9 @@ export function initTdTab(root) {
     let when;
     if (frozen) when = 'ready · leave BUILD to engage';
     else if (waveActive && !enemies.every((e) => !e.alive)) when = 'clear the field';
+    // the armed countdown is the truth once it is running — during a stall
+    // the gap clock is not what decides when the wave lands
+    else if (waveIn >= 0) when = `in ${Math.max(0, Math.ceil(waveIn))}s`;
     else when = `in ${Math.max(0, Math.ceil(params.waveGap - interClock))}s`;
     nextEl.innerHTML = `<div class="nx-head">NEXT WAVE ${n} · ${when}</div><div class="nx-row">${chips}</div>`;
     nextEl.classList.remove('hidden');
@@ -2664,7 +2670,25 @@ export function initTdTab(root) {
   // fixed set; the wave plan decides what pours out of them
   function seedPortals(n) { for (let i = 0; i < n; i++) addSpawnPoint(); }
 
+  // Arm the next wave: one entry point, so nothing can spawn unannounced.
+  // Idempotent — a stalled field re-asks every frame and must not re-fire the
+  // cue or reset the countdown it is already running.
+  function armWave() {
+    if (waveIn >= 0) return;
+    waveIn = WAVE_WARN;
+    warnBeat = 0;
+    waveCharge = 0;
+    // one cue, at the nearest opening gate, so it carries a distance and two
+    // gates do not announce twice
+    let near = Infinity;
+    for (const sp of spawnPoints) {
+      if (sp.alive) near = Math.min(near, camDist(graph.centers[sp.ci]));
+    }
+    if (near < Infinity) sfx.play('portal_warn', { dist: near });
+  }
+
   function spawnWave() {
+    waveIn = -1;
     // the release — a wide, brief ring from every gate that is opening
     for (const sp of spawnPoints) {
       if (sp.alive) warnRing(sp.ci, CREATURE_TINTS[sp.type] ?? 0xffffff, 0.75, cellSide * 5.5);
@@ -3212,8 +3236,57 @@ export function initTdTab(root) {
   function playerHit() {
     playerHP--;
     updateHud();
-    if (playerHP > 0) return;
+    if (playerHP > 0) { loseTank(); return; }
     loseGame('your last tank is gone');
+  }
+
+  // Losing a tank is an EVENT, not a subtraction. It used to be neither: the
+  // hull counter ticked down and the machine carried on driving, so the most
+  // consequential thing that can happen to you was invisible.
+  //
+  // Now it explodes, and you come back in BUILD — pulled up and out, looking
+  // at the whole board, with the wall you did not have time to buy still
+  // unbought. That is the decision the loss should hand you, and it is the
+  // one place the game can make you take it.
+  function loseTank() {
+    destroyPlayer();
+    setTimeout(() => {
+      if (player.won || !playerMesh) return;   // a real death happened meanwhile
+      // back to the entry point, facing the heart, engine cold
+      respawnPlayerAtSpawn();
+      playerMesh.visible = true;
+      feel.hoverT = 0;
+      landTankFeel(feel);
+      applyTankHealth(playerMesh, playerHP / PLAYER_MAX);
+      if (!buildMode) { buildMode = true; syncBuildUi(); snapCamera(); }
+      showToast(`<div class="wave-num">TANK LOST</div>`
+        + `<div class="wave-role">${playerHP} left — regroup, then drive out</div>`, 2600);
+    }, DEATH_HOLD * 1000);
+  }
+
+  // Put the tank back where the round started it: at the spawn gate, aimed
+  // down the hall toward the heart. Free-movement state is cleared, or it
+  // would resume from wherever the wreck stopped.
+  function respawnPlayerAtSpawn() {
+    const ci = dungeon.spawn;
+    player.freeMode = false;
+    player.virtualStart = null;
+    player.cur = ci;
+    player.prev = -1;
+    player.pos = graph.centers[ci].slice();
+    player.prog = 0;
+    const exits = openNeighbors(ci);
+    let e0 = exits[0] ?? ci;
+    for (const e of exits) {
+      if (dungeon.distToHeart[e] === dungeon.distToHeart[ci] - 1) { e0 = e; break; }
+    }
+    player.next = e0;
+    player.heading = tangentDirTo(ci, e0);
+    player.travelDir = player.heading.slice();
+    player.smoothDir = player.travelDir.slice();
+    player.segLen = Math.max(1e-9, dist3(graph.centers[ci], graph.centers[e0]));
+    throttle = 0; cruise = false; paintThrottle();
+    stopEngine(0.1, true);
   }
 
   function heartHit(dmg = 1) {
@@ -4160,6 +4233,27 @@ export function initTdTab(root) {
       }
     }
     if (!player.won && !frozen && !tutorialActive) {
+      // An armed wave always gets its full lead-in, whoever asked for it.
+      // This used to live inside the between-waves branch, so the stall
+      // safety below — which fires while a wave is STILL live — spawned with
+      // no charge, no rings and no sound at all. Later rounds hit that path
+      // more and more often as waves take longer to clear, which is exactly
+      // what "the cues drift in later rounds" looks like from the outside.
+      if (waveIn >= 0) {
+        waveIn -= dt;
+        waveCharge = Math.max(0, Math.min(1, 1 - waveIn / WAVE_WARN));
+        warnBeat -= dt;
+        if (warnBeat <= 0) {
+          // beats accelerate from ~0.7s apart to ~0.18s: the cadence IS
+          // the countdown, and it is legible without reading anything
+          warnBeat = 0.72 - 0.54 * waveCharge;
+          for (const sp of spawnPoints) {
+            if (sp.alive) warnRing(sp.ci, CREATURE_TINTS[sp.type] ?? 0xffffff,
+              0.55, cellSide * (1.6 + 1.4 * waveCharge));
+          }
+        }
+        if (waveIn <= 0) { waveIn = -1; spawnWave(); }
+      }
       if (waveActive) {
         waveAge += dt;
         if (enemies.every((e) => !e.alive)) {
@@ -4167,38 +4261,14 @@ export function initTdTab(root) {
           showToast(`<div class="wave-num">WAVE ${wave} CLEARED</div>` +
             `<div class="wave-role">brace — the next wave is coming</div>`, 2200);
         } else if (waveAge >= params.waveCap && spawnPoints.some((s) => s.alive)) {
-          spawnWave(); // safety: the field is stalled — send the next wave anyway
+          armWave(); // safety: the field is stalled — but it still announces
         }
       } else if (spawnPoints.some((s) => s.alive)) {
         interClock += dt;
-        // Read off the SAME clock that spawns the wave, so the warning can
-        // never promise a moment the spawn does not keep.
-        const wasCharging = waveCharge > 0;
-        waveCharge = Math.max(0, Math.min(1,
-          (interClock - (params.waveGap - WAVE_WARN)) / WAVE_WARN));
-        // Fire the cue on the EDGE, once, at the nearest opening gate — so it
-        // carries a distance, and so two gates do not announce twice.
-        if (!wasCharging && waveCharge > 0) {
-          let near = Infinity;
-          for (const sp of spawnPoints) {
-            if (sp.alive) near = Math.min(near, camDist(graph.centers[sp.ci]));
-          }
-          if (near < Infinity) sfx.play('portal_warn', { dist: near });
-        }
-        if (waveCharge > 0) {
-          warnBeat -= dt;
-          if (warnBeat <= 0) {
-            // beats accelerate from ~0.7s apart to ~0.18s: the cadence IS
-            // the countdown, and it is legible without reading anything
-            warnBeat = 0.72 - 0.54 * waveCharge;
-            for (const sp of spawnPoints) {
-              if (sp.alive) warnRing(sp.ci, CREATURE_TINTS[sp.type] ?? 0xffffff,
-                0.55, cellSide * (1.6 + 1.4 * waveCharge));
-            }
-          }
-        }
-        if (interClock >= params.waveGap) spawnWave();
-      } else {
+        // arm early enough that the countdown consumes the last WAVE_WARN of
+        // the gap — the total wait from cleared to spawned is unchanged
+        if (interClock >= params.waveGap - WAVE_WARN) armWave();
+      } else if (waveIn < 0) {
         waveCharge = 0;
       }
     }
@@ -4576,14 +4646,17 @@ export function initTdTab(root) {
     const c = Math.min(1, chargeAt);
     // stop just short of the gap: at exactly waveGap it spawns and the
     // charge you asked to look at is over before the first frame
-    interClock = Math.min(params.waveGap - 0.05,
-      params.waveGap - WAVE_WARN + WAVE_WARN * c);
+    // arm directly and wind the countdown to the requested point: the clock
+    // that matters is the armed one now, not the gap
     waveActive = false;
+    interClock = params.waveGap - WAVE_WARN;
+    armWave();
+    waveIn = Math.max(0.05, WAVE_WARN * (1 - c));
     // report what the telegraph is actually doing: a ring a few hundred
     // pixels wide on a distant gate is not something a screenshot settles
     setTimeout(() => {
       const sp = spawnPoints.find((p2) => p2.alive);
-      console.log(`CHARGE want=${c} charge=${waveCharge.toFixed(2)}`
+      console.log(`CHARGE want=${c} charge=${waveCharge.toFixed(2)} waveIn=${waveIn.toFixed(2)}`
         + ` ringParticles=${warnFx.length} beatIn=${warnBeat.toFixed(2)}s`
         + ` gateScale=${sp ? (sp.obj.scale.x / (sp.obj.userData.sizeScale ?? 1)).toFixed(3) : 'n/a'}`);
     }, 1200);

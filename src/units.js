@@ -16,11 +16,12 @@
 
 import * as THREE from '../vendor/three.module.js';
 import { loadGlb, mergeByMaterial, fitModel, tintModel, makeShellRack,
-  addEdgeOutlines, makeHeatSleeve } from './glbmodels.js?v=8cb0c974';
-import { CREATURES, waveJelly, swimWave, spherePts, bulletPts, missilePts, heartPts, torusPts, towerHeadPts, enemyDotPts, portalPts } from './creatures.js?v=8cb0c974';
-import { TOWER_FEEL, TOWER_HEADS, headKindFor } from './towerfeel.js?v=8cb0c974';
-import { STARGATE_PTS, STARGATE_STROKE } from './stargate.js?v=8cb0c974';
-import { ENEMY_SPEC } from './enemyspec.js?v=8cb0c974';
+  addEdgeOutlines, makeHeatSleeve } from './glbmodels.js?v=4d76651a';
+import { CREATURES, waveJelly, swimWave, spherePts, bulletPts, missilePts, heartPts, torusPts, towerHeadPts, enemyDotPts, portalPts } from './creatures.js?v=4d76651a';
+import { TOWER_FEEL, TOWER_HEADS, headKindFor } from './towerfeel.js?v=4d76651a';
+import { STARGATE_PTS, STARGATE_STROKE,
+  HORIZON_N, stargateHorizon } from './stargate.js?v=4d76651a';
+import { ENEMY_SPEC } from './enemyspec.js?v=4d76651a';
 
 function normalizeToUnit(group) {
   group.updateMatrixWorld(true);
@@ -755,15 +756,25 @@ export function makePortalCloud(cols, phase = 0) {
   // derived, and the point ORDER is a drawing order — which is what lets the
   // gate dial itself in with nothing more than a draw range.
   const base = STARGATE_PTS;
-  const pos = new Float32Array(base.length * 3);
-  const col = new Float32Array(base.length * 3);
-  const baseCol = new Float32Array(base.length * 3);
+  // ring + chevrons first, then the event horizon. The order is deliberate:
+  // revealed by index the gate draws its ring, locks its chevrons, and only
+  // then does the throat light up — which is the sequence the thing is
+  // named for, and it costs nothing but the ordering.
+  const N = base.length + HORIZON_N;
+  const H0 = base.length;
+  const pos = new Float32Array(N * 3);
+  const col = new Float32Array(N * 3);
+  const baseCol = new Float32Array(N * 3);
+  const hBri = new Float32Array(HORIZON_N);   // per-dot shimmer, written per frame
   const cBody = new THREE.Color(cols.body);
   const cHi = new THREE.Color(cols.hi);
   for (let i = 0; i < base.length; i++) {
     const c = base[i][3] === 1 ? cHi : cBody;
     baseCol[i * 3] = c.r; baseCol[i * 3 + 1] = c.g; baseCol[i * 3 + 2] = c.b;
     pos[i * 3] = base[i][0]; pos[i * 3 + 1] = base[i][1]; pos[i * 3 + 2] = base[i][2];
+  }
+  for (let i = H0; i < N; i++) {
+    baseCol[i * 3] = cBody.r; baseCol[i * 3 + 1] = cBody.g; baseCol[i * 3 + 2] = cBody.b;
   }
   col.set(baseCol);
   const geo = new THREE.BufferGeometry();
@@ -783,6 +794,14 @@ export function makePortalCloud(cols, phase = 0) {
   };
   const twinkle = (t) => {
     const attr = geo.getAttribute('color');
+    // the horizon is a surface in motion: its dots are placed and lit every
+    // frame, where the ring's only ever change brightness
+    stargateHorizon(t, pos, hBri, H0);
+    for (let i = 0; i < HORIZON_N; i++) {
+      const k = H0 + i, b = hBri[i];
+      attr.setXYZ(k, Math.min(1, cBody.r * b), Math.min(1, cBody.g * b), Math.min(1, cBody.b * b));
+    }
+    geo.getAttribute('position').needsUpdate = true;
     for (let i = 0; i < base.length; i++) {
       const slow = 0.5 + 0.5 * Math.sin(t * 4.2 + phase + hshf(i) * 6.283);
       const fast = 0.65 + 0.35 * Math.sin(t * 9.7 + hshf(i + 71) * 6.283);
@@ -808,12 +827,12 @@ export function makePortalCloud(cols, phase = 0) {
   const HEAD = 26;   // dots behind the head that still glow hot
   pts.userData.setForm = (f) => {
     form = Math.max(0, Math.min(1, f));
-    const shown = Math.max(1, Math.round(form * base.length));
+    const shown = Math.max(1, Math.round(form * N));
     geo.setDrawRange(0, shown);
     if (form >= 1) return;
     // repaint only the head; the tail keeps whatever twinkle last wrote
     const attr = geo.getAttribute('color');
-    for (let i = Math.max(0, shown - HEAD); i < shown; i++) {
+    for (let i = Math.max(0, shown - HEAD); i < Math.min(shown, base.length); i++) {
       const heat = 1 - (shown - i) / HEAD;          // 0 at the tail, 1 at the tip
       const b = 1 + 2.4 * heat * heat;
       attr.setXYZ(i, Math.min(1, baseCol[i * 3] * b),
@@ -823,7 +842,7 @@ export function makePortalCloud(cols, phase = 0) {
   };
   pts.userData.formed = () => form >= 1;
   // the chevrons are the last 28 points: a gate is only OPEN once they lock
-  pts.userData.chevronAt = STARGATE_STROKE / base.length;
+  pts.userData.chevronAt = STARGATE_STROKE / N;
 
   pts.userData.kind = 'portal';
   pts.userData.sizeScale = 1;
