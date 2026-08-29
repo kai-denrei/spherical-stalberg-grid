@@ -6,6 +6,58 @@ Demo links assume `npm run serve` (port 8144) or the
 
 ---
 
+## `38d0dc9` — A global override that persisted, masking what it was meant to show
+
+The report: the two new tower assignments were not showing in the viewer.
+They resolve correctly — `single` → `sixaxis`, `slow` → `broadcast` — so the
+bug was upstream of the shapes, in the panel I had shipped one commit before.
+
+Its head picker was a **global** override, and it saved to localStorage.
+Choose any shape once, and from then on every tower wears it — including two
+that had just been assigned in `towers.js`. The tool built to judge the
+shapes was hiding them.
+
+### The control was wrong twice over
+
+It could only ever answer *"does this shape work at all"*, never *"which
+tower should wear it"* — and the second is the actual question. And a
+per-tower map is the artefact you want to walk away with, because it pastes
+straight back as `shape:`.
+
+So the picker is scoped to the selected tower and labelled with it
+(`HEAD · SINGLE SHOT`), with a default that reads `as shipped (sixaxis)`
+rather than concealing what it would replace. Stepping to the next tower
+rebuilds the row — the subject is still `'tower'`, but a row left standing
+would assign to the tower you just left.
+
+`copy code` emits both halves now, the second doubling as a checklist:
+
+```
+{
+  single: "sixaxis",
+  aoe:    "launcher",   // <- changed
+  …
+}
+```
+
+### Retiring the old blobs rather than migrating them
+
+Storage moves to `towerfeel.v2` plus a separate `towerheads.v1`. A v1 blob
+holds a global `headShape` whose meaning has changed entirely, so reading one
+would silently reinstate the masking. `cleanHeads()` vets what comes back: an
+assignment equal to the shipped shape is noise, an unknown tower or shape is
+dropped.
+
+### The test had a stale literal
+
+`cleanHeads({ single: 'cone', … })` asserted that an assignment matching the
+shipped shape is dropped — and passed only while `single` shipped as a cone.
+It derives the shipped shape now. The assertion is about the **rule**;
+hardcoding the data made it fail the moment a tower was reassigned, which is
+precisely the operation it exists to permit.
+
+---
+
 ## `d3aa228a` — The shape says what the tower does
 
 `single` wears the six-axis arm, `slow` wears the broadcast antenna. Both
