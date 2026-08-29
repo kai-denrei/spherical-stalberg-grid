@@ -1,6 +1,6 @@
 # Orbital strike — design
 
-Status: **plan only, nothing built.** Adapted from DeepWatch
+Status: **plan only, nothing built.** Three design calls settled 2026-08-30 — see Decided. Adapted from DeepWatch
 (`~/Documents/Dev/centroid-defense`).
 
 ---
@@ -116,11 +116,39 @@ tuning question, and the tuning bench pattern already in the repo
 
 ---
 
-## Open questions
+## Decided (2026-08-30)
 
-1. Does arming **pause** the game, slow it, or leave it running? DeepWatch
-   leaves it running. Ours is faster.
-2. Are strikes **per wave** (DeepWatch) or a **run-wide** resource earned
-   with credits — which would tie it into the economy already in the game?
-3. Is the missile cam a **takeover**, a **corner panel**, or player's choice?
-4. Does a strike cost **credits** as well as a slot?
+**Time runs on while you arm and paint.** As DeepWatch does. Arming under
+pressure is the cost, and it stops a strike doubling as a free pause button —
+which is what any of the slow/pause options would have made it.
+
+**Per-wave budget plus the orbital window.** DeepWatch's model unchanged: N
+per wave, promoting one at a time on a timer. The tension worth having is
+"spend the one I have, or wait for the next" — a credit purchase would have
+replaced that with a shop decision the game already has eight of.
+
+Consequence: a strike costs a **slot, not credits**. The budget is the price.
+
+**Fullscreen takeover, skippable.** It swaps for the main view rather than
+rendering beside it, so it costs nothing extra — the second-render trap the
+minimap culling just removed. Tap to skip to impact when a wave is on top of
+you, which is the release valve that makes an unskippable 2.5s blind spot
+survivable in a game that moves faster than DeepWatch's.
+
+## Still open
+
+- Numbers: strikes per wave, window length, blast radius in cells. Tuning,
+  and it belongs in a knob table (`knobs.js`) rather than in constants.
+- Whether the skip should cost anything (skip = no cam, but the strike still
+  lands) or be free.
+
+## Build order, when it starts
+
+1. Strike state + rationing, headless-testable, no UI. The budget and window
+   are pure logic and want a test suite before a single pixel.
+2. The ARM switch and the refusals. Wrong-state feedback first, because that
+   is what the ritual is made of.
+3. Radar promotion — the minimap is already the right object.
+4. Paint a cell, reusing build-mode picking. Blast ring.
+5. The fall camera, and the skip.
+6. Portal one-shot, damage falloff, and the tuning pass.
