@@ -19,25 +19,25 @@
 
 import * as THREE from '../vendor/three.module.js';
 import GUI from '../vendor/lil-gui.esm.js';
-import { generateSphereMesh, relax } from './grid.js?v=3d93e74b';
-import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=3d93e74b';
-import { mulberry32, randomSeed } from './rng.js?v=3d93e74b';
-import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3, segKey } from './vec3.js?v=3d93e74b';
-import { CREATURES, waveJelly } from './creatures.js?v=3d93e74b';
-import { UNITS, UNIT_NAMES, buildUnit, buildCreature, preloadMkcx, makeBulletCloud, makeRewardSolid, makeShellSolid, makeDebris, makeDotBurst, makePortalCloud, makeHeartCloud, makeDotEnemy } from './units.js?v=3d93e74b';
-import { LOOKS, LOOK_NAMES } from './looks.js?v=3d93e74b';
-import { makeCellIndex } from './cellindex.js?v=3d93e74b';
-import { CREATURE_TINTS, ENEMY_SPEC, INTROS, computeWavePlan } from './enemyspec.js?v=3d93e74b';
-import { PICKUPS } from './pickups.js?v=3d93e74b';
-import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER } from './towers.js?v=3d93e74b';
-import { makeEconomy, sellRefund } from './economy.js?v=3d93e74b';
-import { makeBloom } from './postfx.js?v=3d93e74b';
-import { TANK_FEEL, TANK_FEEL_KNOBS, makeTankFeel, stepTankFeel, landTankFeel, fireTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js?v=3d93e74b';
-import { FEEL, loadFeel, saveFeel } from './feelstore.js?v=3d93e74b';
-import { BLOOM_GROUPS } from './bloomweights.js?v=3d93e74b';
-import { TOWER_LOOK_NAMES, DEFAULT_TOWER_LOOK, buildTowerLook, preloadLook } from './towerlooks.js?v=3d93e74b';
-import { makeAudio } from './audio.js?v=3d93e74b';
-import { DEATH_KEYS } from './audiomanifest.js?v=3d93e74b';
+import { generateSphereMesh, relax } from './grid.js?v=08749c2c';
+import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=08749c2c';
+import { mulberry32, randomSeed } from './rng.js?v=08749c2c';
+import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3, segKey } from './vec3.js?v=08749c2c';
+import { CREATURES, waveJelly } from './creatures.js?v=08749c2c';
+import { UNITS, UNIT_NAMES, buildUnit, buildCreature, preloadMkcx, makeBulletCloud, makeRewardSolid, makeShellSolid, makeDebris, makeDotBurst, makePortalCloud, makeHeartCloud, makeDotEnemy } from './units.js?v=08749c2c';
+import { LOOKS, LOOK_NAMES } from './looks.js?v=08749c2c';
+import { makeCellIndex } from './cellindex.js?v=08749c2c';
+import { CREATURE_TINTS, ENEMY_SPEC, INTROS, computeWavePlan } from './enemyspec.js?v=08749c2c';
+import { PICKUPS } from './pickups.js?v=08749c2c';
+import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER } from './towers.js?v=08749c2c';
+import { makeEconomy, sellRefund } from './economy.js?v=08749c2c';
+import { makeBloom } from './postfx.js?v=08749c2c';
+import { TANK_FEEL, TANK_FEEL_KNOBS, makeTankFeel, stepTankFeel, landTankFeel, fireTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js?v=08749c2c';
+import { FEEL, loadFeel, saveFeel } from './feelstore.js?v=08749c2c';
+import { BLOOM_GROUPS } from './bloomweights.js?v=08749c2c';
+import { TOWER_LOOK_NAMES, DEFAULT_TOWER_LOOK, buildTowerLook, preloadLook } from './towerlooks.js?v=08749c2c';
+import { makeAudio } from './audio.js?v=08749c2c';
+import { DEATH_KEYS } from './audiomanifest.js?v=08749c2c';
 
 export function initTdTab(root) {
   let active = false;
@@ -208,6 +208,78 @@ export function initTdTab(root) {
     blipGeo.setDrawRange(0, k);
     blipGeo.attributes.position.needsUpdate = true;
     blipGeo.attributes.color.needsUpdate = true;
+  }
+
+  // --- wave telegraph -------------------------------------------------------
+  // A wave used to simply appear. The countdown said so in the corner, but
+  // the corner is not where you are looking — so the first you knew of it was
+  // enemies already on the board, and the gates themselves gave nothing away.
+  //
+  // Now the gate CHARGES: it swells, brightens and beats faster over the last
+  // few seconds, throwing a shock ring across the floor each beat, quicker as
+  // the moment comes. The warning is on the thing the enemies come out of,
+  // which is the thing worth watching.
+  const WAVE_WARN = 3.2;      // seconds of charge before the wave lands
+  let waveCharge = 0;         // 0..1 over that window
+  let warnBeat = 0;           // seconds until the next shock ring
+
+  // One pooled cloud for every ring, main view only — the map has its blips.
+  const WARN_MAX = 1200;   // ~4 rings alive per gate at the fastest cadence
+  const warnPos = new Float32Array(WARN_MAX * 3);
+  const warnCol = new Float32Array(WARN_MAX * 3);
+  const warnGeo = new THREE.BufferGeometry();
+  warnGeo.setAttribute('position', new THREE.BufferAttribute(warnPos, 3));
+  warnGeo.setAttribute('color', new THREE.BufferAttribute(warnCol, 3));
+  warnGeo.setDrawRange(0, 0);
+  const warnMesh = new THREE.Points(warnGeo, new THREE.PointsMaterial({
+    size: 3.6, sizeAttenuation: false, vertexColors: true,
+    transparent: true, opacity: 0.9,
+  }));
+  warnMesh.frustumCulled = false;   // the buffer is rewritten; its bounds lie
+  scene.add(warnMesh);
+  const warnFx = [];   // { c, t1, t2, a, r0, r1, t, life, col }
+
+  // A ring lying ON the surface, so it reads as a shock across the floor
+  // rather than a sphere hanging in the air. The basis comes from the cell's
+  // own normal; a fixed up-vector degenerates wherever the sphere faces it.
+  function warnRing(ci, hex, life, r1) {
+    const nrm = graph.normals[ci];
+    let t1 = cross3(nrm, [0, 1, 0]);
+    if (len3(t1) < 1e-3) t1 = cross3(nrm, [1, 0, 0]);
+    t1 = norm3(t1);
+    const t2 = norm3(cross3(nrm, t1));
+    const c = add3(graph.centers[ci], scale3(nrm, cellSide * 0.12));
+    // dense enough to read as a RING and not as scattered dots: the radius
+    // grows to several cells, and 34 points across that is just confetti
+    const N = 72;
+    for (let i = 0; i < N && warnFx.length < WARN_MAX; i++) {
+      warnFx.push({ c, t1, t2, a: (i / N) * Math.PI * 2, r0: cellSide * 0.3, r1,
+        t: 0, life, col: new THREE.Color(hex) });
+    }
+  }
+
+  function stepWarnFx(dt) {
+    let k = 0;
+    for (let i = warnFx.length - 1; i >= 0; i--) {
+      warnFx[i].t += dt;
+      if (warnFx[i].t >= warnFx[i].life) warnFx.splice(i, 1);
+    }
+    for (const f of warnFx) {
+      const u = f.t / f.life;
+      const r = f.r0 + (f.r1 - f.r0) * u;
+      const ca = Math.cos(f.a) * r, sa = Math.sin(f.a) * r;
+      warnPos[k * 3] = f.c[0] + f.t1[0] * ca + f.t2[0] * sa;
+      warnPos[k * 3 + 1] = f.c[1] + f.t1[1] * ca + f.t2[1] * sa;
+      warnPos[k * 3 + 2] = f.c[2] + f.t1[2] * ca + f.t2[2] * sa;
+      const fade = 1 - u;
+      warnCol[k * 3] = f.col.r * fade;
+      warnCol[k * 3 + 1] = f.col.g * fade;
+      warnCol[k * 3 + 2] = f.col.b * fade;
+      k++;
+    }
+    warnGeo.setDrawRange(0, k);
+    warnGeo.attributes.position.needsUpdate = true;
+    warnGeo.attributes.color.needsUpdate = true;
   }
 
   // circular minimap: its own small renderer on a round-clipped canvas —
@@ -2588,6 +2660,16 @@ export function initTdTab(root) {
   function seedPortals(n) { for (let i = 0; i < n; i++) addSpawnPoint(); }
 
   function spawnWave() {
+    // the release — a wide, brief ring from every gate that is opening
+    for (const sp of spawnPoints) {
+      if (sp.alive) warnRing(sp.ci, CREATURE_TINTS[sp.type] ?? 0xffffff, 0.75, cellSide * 5.5);
+      if (sp.alive) {
+        sp.obj.scale.setScalar(sp.obj.userData.sizeScale ?? 1);
+        if (sp.obj.userData.setDim) sp.obj.userData.setDim(1);
+      }
+    }
+    waveCharge = 0;
+    warnBeat = 0;
     wave++;
     waveActive = true; waveAge = 0;
     const plan = computeWavePlan(wave, round, params.waveSize);
@@ -4062,7 +4144,7 @@ export function initTdTab(root) {
       if (waveActive) {
         waveAge += dt;
         if (enemies.every((e) => !e.alive)) {
-          waveActive = false; interClock = 0;
+          waveActive = false; interClock = 0; waveCharge = 0;
           showToast(`<div class="wave-num">WAVE ${wave} CLEARED</div>` +
             `<div class="wave-role">brace — the next wave is coming</div>`, 2200);
         } else if (waveAge >= params.waveCap && spawnPoints.some((s) => s.alive)) {
@@ -4070,7 +4152,25 @@ export function initTdTab(root) {
         }
       } else if (spawnPoints.some((s) => s.alive)) {
         interClock += dt;
+        // Read off the SAME clock that spawns the wave, so the warning can
+        // never promise a moment the spawn does not keep.
+        waveCharge = Math.max(0, Math.min(1,
+          (interClock - (params.waveGap - WAVE_WARN)) / WAVE_WARN));
+        if (waveCharge > 0) {
+          warnBeat -= dt;
+          if (warnBeat <= 0) {
+            // beats accelerate from ~0.7s apart to ~0.18s: the cadence IS
+            // the countdown, and it is legible without reading anything
+            warnBeat = 0.72 - 0.54 * waveCharge;
+            for (const sp of spawnPoints) {
+              if (sp.alive) warnRing(sp.ci, CREATURE_TINTS[sp.type] ?? 0xffffff,
+                0.55, cellSide * (1.6 + 1.4 * waveCharge));
+            }
+          }
+        }
         if (interClock >= params.waveGap) spawnWave();
+      } else {
+        waveCharge = 0;
       }
     }
     if (tutorialActive) tutorial.tick(dt);
@@ -4087,9 +4187,17 @@ export function initTdTab(root) {
       rangeRingTtl -= dt;
       if (rangeRingTtl <= 0) { rangeRingTtl = 0; hideRangeRing(); }
     }
+    stepWarnFx(dt);
     for (const sp of spawnPoints) {
       if (!sp.alive) continue;
-      sp.obj.userData.tick(t);
+      // the charge runs the gate's own idle FASTER, rather than adding a
+      // second animation on top of it — one thing accelerating reads as
+      // building pressure; two things moving reads as noise
+      sp.obj.userData.tick(t * (1 + 2.2 * waveCharge));
+      if (sp.obj.userData.setDim) sp.obj.userData.setDim(1 + 1.5 * waveCharge);
+      const s0 = sp.obj.userData.sizeScale ?? 1;
+      const beat = 1 + waveCharge * (0.18 + 0.12 * Math.sin(t * (9 + 22 * waveCharge)));
+      sp.obj.scale.setScalar(s0 * beat);
       // proximity discovers the source: the minimap beacon lights up
       if (!sp.found && dist3(player.pos, graph.centers[sp.ci]) < cellSide * 5) sp.found = true;
     }
@@ -4320,7 +4428,7 @@ export function initTdTab(root) {
 
   // opening briefing on a clean load; any debug hook means headless/demo,
   // where a frozen sim would break the verification flow
-  const debugging = ['walk', 'tick', 'wave', 'blast', 'laser', 'found', 'recoil', 'mode', 'map', 'tower', 'credit', 'shop', 'sector', 'reveal', 'portal', 'lose']
+  const debugging = ['walk', 'tick', 'wave', 'blast', 'laser', 'found', 'recoil', 'mode', 'map', 'tower', 'credit', 'shop', 'sector', 'reveal', 'portal', 'lose', 'charge', 'layout', 'perf']
     .some((k) => urlParams.get(k));
   const tutParam = urlParams.get('tutorial');
   runTutorial = tutParam === '1' || (tutParam !== '0' && !debugging);
@@ -4413,6 +4521,28 @@ export function initTdTab(root) {
       }
       console.log(`LAYOUT viewport ${innerWidth}x${innerHeight} — ${clashes} overlaps`);
     }, layoutAt * 1000);
+  }
+
+  // ?charge=0..1 — park the wave clock inside the warning window, so the
+  // telegraph can be seen at a chosen intensity. ?tick does not advance this
+  // clock (it drives motion, not the wave scheduler), which is why the
+  // countdown sat at the same value however far it was wound forward.
+  const chargeAt = parseFloat(urlParams.get('charge') || '-1');
+  if (chargeAt >= 0) {
+    const c = Math.min(1, chargeAt);
+    // stop just short of the gap: at exactly waveGap it spawns and the
+    // charge you asked to look at is over before the first frame
+    interClock = Math.min(params.waveGap - 0.05,
+      params.waveGap - WAVE_WARN + WAVE_WARN * c);
+    waveActive = false;
+    // report what the telegraph is actually doing: a ring a few hundred
+    // pixels wide on a distant gate is not something a screenshot settles
+    setTimeout(() => {
+      const sp = spawnPoints.find((p2) => p2.alive);
+      console.log(`CHARGE want=${c} charge=${waveCharge.toFixed(2)}`
+        + ` ringParticles=${warnFx.length} beatIn=${warnBeat.toFixed(2)}s`
+        + ` gateScale=${sp ? (sp.obj.scale.x / (sp.obj.userData.sizeScale ?? 1)).toFixed(3) : 'n/a'}`);
+    }, 1200);
   }
 
   const tutSteps = parseInt(urlParams.get('tutstep') || '0', 10);

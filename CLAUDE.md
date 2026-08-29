@@ -41,6 +41,9 @@ Public: https://kai-denrei.github.io/spherical-stalberg-grid/ (Pages,
   has its own), `?layout=N` (TD: print every HUD box and every overlap —
   headless will not lay out below ~500px, it lays out wide and CROPS, so
   rectangles are the only trustworthy way to check a phone layout),
+  `?charge=0..1` (TD: park the wave clock inside the warning window —
+  `?tick` drives motion, NOT the wave scheduler, so winding it forward
+  leaves the countdown where it was),
   `#tabname`.
   Headless clamps windows to ~500px wide and CROPS screenshots — for
   layout bugs, log `innerWidth` from the page before touching CSS.
