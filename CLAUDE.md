@@ -34,7 +34,9 @@ Public: https://kai-denrei.github.io/spherical-stalberg-grid/ (Pages,
   Virtual time does not advance `performance.now()` → use the URL hooks:
   `?tick=N` (simulate N seconds), `?walk=N`, `?points=`, `?look=`,
   `?walltops=`, `?creature=`, `?spawn=`, `?view=`, `?devlog=1`, `?unit=`,
-  `?tune=1` (opens the unit viewer's feel tuner), `#tabname`.
+  `?tune=1` (opens the unit viewer's feel tuner), `?labels=1`, `?sweep=0`,
+  `?fire=N`, `?tutstep=N` (clear N scripted tutorial pairs), `?log=roadmap`,
+  `#tabname`.
   Headless clamps windows to ~500px wide and CROPS screenshots — for
   layout bugs, log `innerWidth` from the page before touching CSS.
 - maze/organic/battle/heart tabs are ~900-line siblings (cp+sed lineage).

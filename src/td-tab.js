@@ -19,24 +19,24 @@
 
 import * as THREE from '../vendor/three.module.js';
 import GUI from '../vendor/lil-gui.esm.js';
-import { generateSphereMesh, relax } from './grid.js?v=8028e7b1';
-import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=8028e7b1';
-import { mulberry32, randomSeed } from './rng.js?v=8028e7b1';
-import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3, segKey } from './vec3.js?v=8028e7b1';
-import { CREATURES, waveJelly } from './creatures.js?v=8028e7b1';
-import { UNITS, UNIT_NAMES, buildUnit, preloadMkcx, makeBulletCloud, makeRewardSolid, makeShellSolid, makeDebris, makeDotBurst, makePortalCloud, makeHeartCloud, makeDotEnemy } from './units.js?v=8028e7b1';
-import { LOOKS, LOOK_NAMES } from './looks.js?v=8028e7b1';
-import { makeCellIndex } from './cellindex.js?v=8028e7b1';
-import { CREATURE_TINTS, ENEMY_SPEC, INTROS, computeWavePlan } from './enemyspec.js?v=8028e7b1';
-import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER } from './towers.js?v=8028e7b1';
-import { makeEconomy, sellRefund } from './economy.js?v=8028e7b1';
-import { makeBloom } from './postfx.js?v=8028e7b1';
-import { TANK_FEEL, TANK_FEEL_KNOBS, makeTankFeel, stepTankFeel, landTankFeel, fireTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js?v=8028e7b1';
-import { FEEL, loadFeel, saveFeel } from './feelstore.js?v=8028e7b1';
-import { BLOOM_GROUPS } from './bloomweights.js?v=8028e7b1';
-import { TOWER_LOOK_NAMES, DEFAULT_TOWER_LOOK, buildTowerLook, preloadLook } from './towerlooks.js?v=8028e7b1';
-import { makeAudio } from './audio.js?v=8028e7b1';
-import { DEATH_KEYS } from './audiomanifest.js?v=8028e7b1';
+import { generateSphereMesh, relax } from './grid.js?v=ecff1dca';
+import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=ecff1dca';
+import { mulberry32, randomSeed } from './rng.js?v=ecff1dca';
+import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3, segKey } from './vec3.js?v=ecff1dca';
+import { CREATURES, waveJelly } from './creatures.js?v=ecff1dca';
+import { UNITS, UNIT_NAMES, buildUnit, preloadMkcx, makeBulletCloud, makeRewardSolid, makeShellSolid, makeDebris, makeDotBurst, makePortalCloud, makeHeartCloud, makeDotEnemy } from './units.js?v=ecff1dca';
+import { LOOKS, LOOK_NAMES } from './looks.js?v=ecff1dca';
+import { makeCellIndex } from './cellindex.js?v=ecff1dca';
+import { CREATURE_TINTS, ENEMY_SPEC, INTROS, computeWavePlan } from './enemyspec.js?v=ecff1dca';
+import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER } from './towers.js?v=ecff1dca';
+import { makeEconomy, sellRefund } from './economy.js?v=ecff1dca';
+import { makeBloom } from './postfx.js?v=ecff1dca';
+import { TANK_FEEL, TANK_FEEL_KNOBS, makeTankFeel, stepTankFeel, landTankFeel, fireTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js?v=ecff1dca';
+import { FEEL, loadFeel, saveFeel } from './feelstore.js?v=ecff1dca';
+import { BLOOM_GROUPS } from './bloomweights.js?v=ecff1dca';
+import { TOWER_LOOK_NAMES, DEFAULT_TOWER_LOOK, buildTowerLook, preloadLook } from './towerlooks.js?v=ecff1dca';
+import { makeAudio } from './audio.js?v=ecff1dca';
+import { DEATH_KEYS } from './audiomanifest.js?v=ecff1dca';
 
 export function initTdTab(root) {
   let active = false;
@@ -1709,18 +1709,40 @@ export function initTdTab(root) {
       wave = 1; // the scripted wave counts as wave 1, so the BUILD-phase
                 // spawnWave() (task 5) introduces the wave-2 enemy type
 
-      // 2 phage a couple hops out in the lane ahead, marching toward the heart
+      // The first pair comes in FAR down the lane. They walk to you, and the
+      // walk is the lesson: a pair arriving at arm's length teaches nothing
+      // but panic, while eight hops of empty corridor is long enough to look
+      // around, find the throttle and decide what to do about them.
+      this.startCi = startCi;
       this.fodder = [];
+      this.spawnFodder(2, 7, 11);
+      this.frozen = true; this.frozenT = 0;
+      tutBanner('RAM THEM · drive straight through', { flash: true, hold: true, skip: !!safeSeen() });
+      pulseButton('#td-throttle');
+      this.tShown = 0; this.phase = 'ram';
+    },
+
+    // A pair of phage in the lane ahead, `dMin`..`dMax` hops FURTHER from the
+    // heart than the player — so they march back down the corridor toward
+    // both the player and the thing being defended.
+    spawnFodder(count, dMin, dMax) {
       const spec = ENEMY_SPEC.phage;
-      const sd = dungeon.distToHeart[startCi];
+      const sd = dungeon.distToHeart[this.startCi];
       const ahead = [];
-      for (let i = 0; i < dungeon.tags.length && ahead.length < 2; i++) {
-        if (dungeon.tags[i] === BLOCKED) continue;
-        const d = dungeon.distToHeart[i];
-        if (d >= sd + 2 && d <= sd + 4) ahead.push(i);
+      for (let pass = 0; pass < 2 && ahead.length < count; pass++) {
+        // second pass widens the band: a small board may not have cells at
+        // the preferred distance at all, and an empty wave stalls the phase
+        const lo = sd + (pass ? Math.max(2, dMin - 4) : dMin);
+        const hi = sd + (pass ? dMax + 8 : dMax);
+        for (let i = 0; i < dungeon.tags.length && ahead.length < count; i++) {
+          if (dungeon.tags[i] === BLOCKED || ahead.includes(i)) continue;
+          const d = dungeon.distToHeart[i];
+          if (d >= lo && d <= hi) ahead.push(i);
+        }
       }
-      while (ahead.length < 2) ahead.push(this.portal.ci); // degenerate fallback
-      for (let k = 0; k < 2; k++) {
+      while (ahead.length < count) ahead.push(this.portal ? this.portal.ci : this.startCi);
+      const made = [];
+      for (let k = 0; k < count; k++) {
         const ci = ahead[k];
         const eObj = makeDotEnemy('phage', { walker: CREATURE_TINTS.phage, walkerHi: 0xffffff });
         const size = spec.size * 0.7; const scale0 = cellSide * size;
@@ -1734,33 +1756,80 @@ export function initTdTab(root) {
           obj: eObj, alive: true, phase: whim() * 6.283,
           hp: spec.hp, behMult: 1, behUntil: -1, touchCd: -1, slowFactor: 1, slowUntil: -1,
         };
-        enemies.push(e); this.fodder.push(e);
+        enemies.push(e); this.fodder.push(e); made.push(e);
       }
-      this.frozen = true; this.frozenT = 0;
-      tutBanner('SHOOT TO DEFEND THE HEART', { flash: true, hold: true, skip: !!safeSeen() });
-      pulseButton('#td-pad-laser');
-      this.tShown = 0; this.phase = 'ram';
+      return made;
     },
+    // a phase is cleared when every enemy it spawned is down
+    fodderClear() { return this.fodder.every((e) => !e.alive); },
+    // One weapon per pair, in order of how much they cost you: the treads are
+    // free, the lasers are free but need aim, the shell is scarce and heats
+    // the barrel for three seconds. Two enemies each, so the lesson is a
+    // rehearsal rather than a fight — the player is never learning a control
+    // and losing at the same time.
     tick(dt) {
       if (this.frozen) { this.frozenT += dt; if (this.frozenT > 4) { this.frozen = false; hideTutBanner(); } return; }
+
       if (this.phase === 'ram') {
-        if (this.fodder.every((e) => !e.alive)) {
-          // fodder cleared → shells appear beside the player
-          const near = openNeighbors(player.cur).slice(0, 3);
-          const cells = near.length ? near : [player.cur];
-          for (const ci of cells) spawnOrbAt(ci);
-          tutBanner('Pick up the shells to destroy the portal — it takes 3 shots.',
+        if (this.fodderClear()) {
+          this.spawnFodder(2, 4, 7);
+          tutBanner('Now the SECONDARIES · hold to sweep them with the lasers',
+            { skip: !!safeSeen() });
+          pulseButton('#td-pad-laser');
+          this.phase = 'laser';
+        }
+      } else if (this.phase === 'laser') {
+        if (this.fodderClear()) {
+          // Shells are scarce, so the lesson hands you some rather than
+          // hoping you find a pickup: a tutorial step you can fail to even
+          // ATTEMPT is not a tutorial step. Orbs go down beside you as well,
+          // because where shells come from is the other half of the lesson.
+          ammo = Math.max(ammo, 3); updateHud();
+          const near = openNeighbors(player.cur).slice(0, 2);
+          for (const ci of (near.length ? near : [player.cur])) spawnOrbAt(ci);
+          this.spawnFodder(2, 4, 7);
+          tutBanner('And the SHELL · overkill on these two, but it is how you '
+            + 'breach a wall. Shells come from the glowing pickups.',
             { skip: !!safeSeen() });
           pulseButton('#td-pad-fire');
-          this.phase = 'portal';
+          this.phase = 'shell';
         }
-      } else if (this.phase === 'portal') {
-        if (this.portal && !this.portal.alive) {
-          this.startBuild(); // task 5
+      } else if (this.phase === 'shell') {
+        if (this.fodderClear()) {
+          this.collapsePortal();   // clear the field: the next beat has no enemies
+          tutBanner('THROTTLE · drag to set your speed, flick up for full. '
+            + 'Below zero reverses — slower than forward, and it is the same lever.',
+            { hold: true, skip: !!safeSeen() });
+          pulseButton('#td-throttle');
+          this.speedT = 0;
+          this.speedFrom = throttle;
+          this.phase = 'speed';
+        }
+      } else if (this.phase === 'speed') {
+        // Advance on USE, not on a timer — the point is that they touch it.
+        // The timer is only there so a player who will not is not stranded.
+        this.speedT += dt;
+        if (Math.abs(throttle - this.speedFrom) > 0.15 || this.speedT > 16) {
+          hideTutBanner();
+          this.startBuild();
         }
       } else if (this.phase === 'build' || this.phase === 'done') {
-        this.tickBuild(dt); // task 5
+        this.tickBuild(dt);
       }
+    },
+
+    // The scripted gate has done its job once the three pairs are down. It
+    // collapses rather than being shot: destroying it was the old shell
+    // lesson, and that lesson now lives on the enemies instead.
+    collapsePortal() {
+      const p = this.portal;
+      if (!p || !p.alive) return;
+      p.alive = false;
+      scene.remove(p.obj); disposeObj(p.obj);
+      if (p.mapMarker) { scene.remove(p.mapMarker); disposeObj(p.mapMarker); }
+      const idx = spawnPoints.indexOf(p);
+      if (idx >= 0) spawnPoints.splice(idx, 1);
+      recomputePortalDist();
     },
     startBuild() {
       this.phase = 'build';
@@ -4121,6 +4190,35 @@ export function initTdTab(root) {
   runTutorial = tutParam === '1' || (tutParam !== '0' && !debugging);
   if (runTutorial) startTutorial();
   else if (!debugging) showBriefing();
+
+  // ?tutstep=N — clear N scripted pairs, so the later tutorial beats can be
+  // reached without a pair of hands. Every other phase here is gated on
+  // killing something, which headless verification cannot do, and a beat you
+  // cannot screenshot is a beat nobody checks.
+  const tutSteps = parseInt(urlParams.get('tutstep') || '0', 10);
+  if (runTutorial && tutSteps > 0) {
+    let left = tutSteps;
+    // Wait for the PHASE to change before clearing the next pair. A fixed
+    // delay looks right and is not: under a virtual-time budget the timer
+    // chain runs far faster than the render loop, so two clears land between
+    // one pair of ticks, the phase advances once, and the run silently ends
+    // up short. Poll the thing being driven, never a clock.
+    const step = () => {
+      if (left-- <= 0) return;
+      tutorial.frozen = false;   // the opening hold would swallow the first
+      for (const e of tutorial.fodder) {
+        if (e.alive) { e.alive = false; scene.remove(e.obj); }
+      }
+      // Drive the phase machine DIRECTLY rather than waiting for animate()
+      // to notice. Under a virtual-time budget, timers run on virtual time
+      // while requestAnimationFrame is throttled, so a wait-for-the-loop
+      // poll times out and the run silently ends up a phase or two short —
+      // which is exactly how this hook failed the first two times.
+      tutorial.tick(1 / 60);
+      setTimeout(step, 120);
+    };
+    setTimeout(step, 900);
+  }
 
   resize();
   animate();
