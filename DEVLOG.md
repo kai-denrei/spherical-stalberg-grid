@@ -6,6 +6,85 @@ Demo links assume `npm run serve` (port 8144) or the
 
 ---
 
+## `f08eed8` — One weapon per pair, a lever with its own beat, and the log tab
+
+### The tank was 4.9x too narrow
+
+The old `baseScale = 0.147` came from comparing the mkcx's **length** against
+a corridor's **width**. The mkcx is 2.75:1 where the procedural tank is
+1.44:1, so that mistake shrank it by most of that ratio and it read as a toy.
+
+Re-measured against the procedural tank — the unit the board was actually
+built around, and the only honest reference available. Both are multiplied by
+the same `unitScale`, so `baseScale x raw size` compares world footprints
+directly, with no board-density term to get wrong:
+
+| unit | width | length |
+| --- | --- | --- |
+| tank (reference) | 0.508 | 0.729 |
+| mkcx @ 0.147 | 0.104 | 0.286 |
+| mkcx @ 0.54 | 0.382 | 1.051 |
+
+A tank may be longer than a lane is wide. It may not be **wider**.
+
+### The tutorial
+
+Three scripted pairs, ordered by what each weapon costs you — treads free,
+lasers free but needing aim, shell scarce and heating the barrel for three
+seconds. Two enemies each, so a beat is a rehearsal and not a fight: the
+player is never learning a control and losing at the same time.
+
+The first pair comes in 7–11 hops out. **The walk is the lesson.** A pair
+arriving at arm's length teaches nothing but panic; eight hops of empty
+corridor is long enough to look around, find the lever, and decide.
+
+The shell beat *hands over* three rounds as well as dropping pickups. A
+tutorial step you can fail to even attempt is not a tutorial step — where
+shells come from is the other half of the lesson, not the gate on it.
+
+Then the field empties (the scripted gate collapses rather than being shot,
+which was the old shell lesson) and the throttle gets a beat with nothing
+else on screen. It advances when the lever is **moved**, not on a timer; the
+16 s timeout only exists so a player who will not touch it is not stranded.
+
+### The verification hook that failed twice
+
+`?tutstep=N` clears N scripted pairs so the later beats can be screenshotted
+without a pair of hands. The first two versions were wrong in the same way:
+
+```js
+setTimeout(step, 900);            // v1: fixed delay
+if (phase !== before) next();     // v2: poll the loop
+```
+
+Under `--virtual-time-budget`, **timers run on virtual time while
+`requestAnimationFrame` is throttled.** So v1's clears outran the ticks — two
+landed between one pair of ticks, the phase advanced once, and the run ended
+up short. v2 polled for a phase change that the starved loop never made, hit
+its timeout, and ended up short in the same way, silently. Only a trace
+showed step 3 firing while the phase was still where step 2 had left it.
+
+The fix is to call `tutorial.tick()` directly. Poll the thing being driven,
+never a clock — and when the loop is not reliable, drive it yourself.
+
+### Furniture
+
+The throttle moves to the left edge, stacked above the minimap, using the
+minimap's own sizing expression so the two travel together — it had been
+sitting in the centre, on top of the road ahead. BUILD/MAP/WANDER/CAM/sound
+go to the top: they are mode switches, not thumb controls.
+
+The dev log and the roadmap now share one tab as two panes — the same
+document read in two directions — with the build token in the header,
+because "which build am I looking at" is the first question anyone opening a
+change log has. The corner badge remains the shortcut to it.
+
+Worth knowing: **there is no global `.hidden` in this stylesheet.** Every use
+is scoped, so a new one silently does nothing until it declares itself. The
+roadmap pane showed through behind the dev log for exactly that reason.
+
+---
+
 ## `7da0712` — The beam was square all along; the sweep was not
 
 Five asks. The most persistent one turned out to be a measurement problem
