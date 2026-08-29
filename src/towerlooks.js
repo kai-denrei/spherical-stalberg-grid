@@ -19,9 +19,9 @@
 // without reshaping this interface. A look with no preload is ready
 // immediately; a look whose preload has not resolved falls back.
 import * as THREE from '../vendor/three.module.js';
-import { loadGlb, mergeByMaterial, fitModel, tintModel } from './glbmodels.js?v=8163013e';
-import { makeTowerMast, makeTowerUnit } from './units.js?v=8163013e';
-import { TOWER, loadTower } from './feelstore.js?v=8163013e';
+import { loadGlb, mergeByMaterial, fitModel, tintModel } from './glbmodels.js?v=4960ebd9';
+import { makeTowerMast, makeTowerUnit } from './units.js?v=4960ebd9';
+import { TOWER, HEADS, loadTower } from './feelstore.js?v=4960ebd9';
 
 // def.shape -> a solid primitive, so the SOLID look keeps each tower's
 // silhouette identity from towers.js rather than inventing its own.
@@ -96,7 +96,7 @@ function makeGlbLook({ label, url, height, maxSpan, drop = [] }) {
 export const TOWER_LOOKS = {
   // built against the LIVE tuning object, so what the viewer's tower panel
   // shows is what the board raises — no apply step, nothing to sync
-  braille: { label: 'braille', build: (def) => makeTowerUnit(def, loadTower()) },
+  braille: { label: 'braille', build: (def) => makeTowerUnit(def, loadTower(), HEADS) },
   solid:   { label: 'solid',   build: makeTowerSolid },
   heptapod: makeGlbLook({
     label: 'heptapod',

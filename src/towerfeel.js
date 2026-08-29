@@ -8,18 +8,23 @@
 //
 // Pure: no DOM, no three.js.
 
-import { TOWER_HEAD_KINDS } from './creatures.js?v=8163013e';
-import { makeParams, clampParams, formatKnobs, knobProblems } from './knobs.js?v=8163013e';
+import { TOWER_HEAD_KINDS } from './creatures.js?v=4960ebd9';
+import { makeParams, clampParams, formatKnobs, knobProblems } from './knobs.js?v=4960ebd9';
 
-// 'per tower' means "use whatever shape towers.js gave this one", which is
-// the shipping behaviour. Any other value overrides EVERY tower with that
-// head — which is what you want on a bench, where the question is "does this
-// shape work at all", not "does it suit the splash tower".
-export const HEAD_PER_TOWER = 'per tower';
-export const HEAD_CHOICES = [HEAD_PER_TOWER, ...TOWER_HEAD_KINDS];
+// 'as shipped' means "use whatever shape towers.js gave this one".
+export const HEAD_AS_SHIPPED = 'as shipped';
+export const HEAD_CHOICES = [HEAD_AS_SHIPPED, ...TOWER_HEAD_KINDS];
+
+// Which head each tower wears, BY TOWER KEY. This used to be one global
+// override on TOWER_FEEL, and that was wrong twice over: it could only ever
+// answer "does this shape work at all", never "which tower should wear it",
+// and because it persisted, picking any shape once silently masked every
+// tower's own head from then on — including two that had just been assigned
+// in towers.js. A per-tower map is both the honest model and the thing you
+// actually want to end up with, since it pastes straight back as `shape:`.
+export const TOWER_HEADS = {};
 
 export const TOWER_FEEL = {
-  headShape: HEAD_PER_TOWER,
   headScale: 0.42,   // cloud scale inside the head group
   headLift: 1.12,    // how far the head floats above the mast
   dots: 190,         // points in the cloud — density IS the read at distance
@@ -31,7 +36,6 @@ export const TOWER_FEEL = {
 };
 
 export const TOWER_FEEL_KNOBS = [
-  { key: 'headShape', label: 'head shape', group: 'head', choices: HEAD_CHOICES },
   { key: 'headScale', label: 'head size', group: 'head', min: 0.15, max: 0.9, step: 0.01 },
   { key: 'headLift', label: 'head height', group: 'head', min: 0.6, max: 1.8, step: 0.02 },
   { key: 'dots', label: 'dot count', group: 'dots', min: 60, max: 400, step: 10 },
@@ -47,9 +51,36 @@ export const clampTowerParams = (p, src) => clampParams(TOWER_FEEL_KNOBS, p, src
 export const formatTowerFeel = (p) => formatKnobs('TOWER_FEEL', TOWER_FEEL_KNOBS, p);
 export const towerKnobProblems = () => knobProblems(TOWER_FEEL_KNOBS, TOWER_FEEL);
 
-// Which head a given tower should wear under the current settings.
-export function headKindFor(def, feel = TOWER_FEEL) {
-  const want = feel.headShape;
-  if (!want || want === HEAD_PER_TOWER) return def.shape || 'sphere';
-  return want;
+// Which head a given tower should wear: its assignment if it has one, else
+// the shape towers.js gave it.
+export function headKindFor(def, heads = TOWER_HEADS) {
+  const want = heads && heads[def.key];
+  if (want && want !== HEAD_AS_SHIPPED && TOWER_HEAD_KINDS.includes(want)) return want;
+  return def.shape || 'sphere';
+}
+
+// Only real overrides survive: an assignment equal to the shipped shape is
+// noise, and an unknown name would ask the generator for a shape it does not
+// have and quietly get a sphere back.
+export function cleanHeads(raw, defs) {
+  const out = {};
+  if (!raw) return out;
+  for (const def of defs) {
+    const want = raw[def.key];
+    if (want && want !== def.shape && TOWER_HEAD_KINDS.includes(want)) out[def.key] = want;
+  }
+  return out;
+}
+
+// The assignments as source, ready to paste back into towers.js — which is
+// where they belong once chosen. Emitting the whole roster (not just the
+// overrides) makes it a checklist of what is settled and what is not.
+export function formatTowerHeads(heads, defs) {
+  const w = Math.max(...defs.map((d) => d.key.length));
+  const body = defs.map((d) => {
+    const want = (heads && heads[d.key]) || d.shape;
+    const mark = want === d.shape ? '' : '   // <- changed';
+    return `  ${(d.key + ':').padEnd(w + 1)} ${JSON.stringify(want)},${mark}`;
+  }).join('\n');
+  return `// paste each into its tower's \`shape:\` in towers.js\n{\n${body}\n}`;
 }

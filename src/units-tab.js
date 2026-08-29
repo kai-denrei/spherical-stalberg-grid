@@ -12,18 +12,19 @@
 import * as THREE from '../vendor/three.module.js';
 import { OrbitControls } from '../vendor/OrbitControls.js';
 import { buildUnit, preloadMkcx, makeDebris, makeDotBurst, makeBulletCloud,
-  makeDotEnemy, makeRewardSolid, makeShellSolid } from './units.js?v=8163013e';
+  makeDotEnemy, makeRewardSolid, makeShellSolid } from './units.js?v=4960ebd9';
 import { TANK_FEEL, TANK_FEEL_KNOBS, formatFeelCode, makeTankFeel, stepTankFeel,
-  landTankFeel, fireTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js?v=8163013e';
+  landTankFeel, fireTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js?v=4960ebd9';
 import { FEEL, loadFeel, saveFeel, resetFeel,
-  TOWER, loadTower, saveTower, resetTower } from './feelstore.js?v=8163013e';
-import { TOWER_FEEL_KNOBS, formatTowerFeel, clampTowerParams } from './towerfeel.js?v=8163013e';
-import { CREATURE_TINTS } from './enemyspec.js?v=8163013e';
+  TOWER, HEADS, loadTower, saveTower, resetTower } from './feelstore.js?v=4960ebd9';
+import { TOWER_FEEL_KNOBS, formatTowerFeel, clampTowerParams,
+  formatTowerHeads, HEAD_CHOICES, HEAD_AS_SHIPPED } from './towerfeel.js?v=4960ebd9';
+import { CREATURE_TINTS } from './enemyspec.js?v=4960ebd9';
 import { buildTowerLook, TOWER_LOOK_NAMES, DEFAULT_TOWER_LOOK, preloadLook } from './towerlooks.js';
-import { TOWER_BY_KEY } from './towers.js';
+import { TOWER_BY_KEY, TOWERS } from './towers.js';
 import { LOOKS } from './looks.js';
 import { makeBloom } from './postfx.js';
-import { makeAudio } from './audio.js?v=8163013e';
+import { makeAudio } from './audio.js?v=4960ebd9';
 import { GROUPS, GROUP_LABELS, GROUP_EMPTY, entriesIn } from './unitcatalog.js';
 
 export function initUnitsTab(root) {
@@ -558,9 +559,12 @@ export function initUnitsTab(root) {
     // choices — an unknown name would ask the generator for a shape it does
     // not have and quietly get a sphere back.
     const q = new URLSearchParams(location.search);
+    // ?head=<kind> assigns to the tower named by ?unit=, so a candidate can be
+    // screenshotted without a pointer. Scoped to that one tower now, like the
+    // control it stands in for.
     const wantHead = q.get('head');
-    const headKnob = TOWER_FEEL_KNOBS.find((k) => k.key === 'headShape');
-    if (wantHead && headKnob.choices.includes(wantHead)) TOWER.headShape = wantHead;
+    const wantUnit = q.get('unit');
+    if (wantHead && wantUnit && HEAD_CHOICES.includes(wantHead)) HEADS[wantUnit] = wantHead;
     // ?towerknobs=dots=380,headScale=0.66 — presets the numeric knobs so a
     // candidate can be judged at a chosen density without a pointer. Folded
     // through the same clamp storage uses: unknown keys and out-of-range
@@ -580,7 +584,9 @@ export function initUnitsTab(root) {
       },
       tower: {
         title: 'tower look', knobs: TOWER_FEEL_KNOBS, values: TOWER,
-        save: saveTower, reset: resetTower, format: () => formatTowerFeel(TOWER),
+        save: saveTower, reset: resetTower,
+        // both halves: the look, and which tower wears which head
+        format: () => `${formatTowerFeel(TOWER)}\n\n${formatTowerHeads(HEADS, TOWERS)}`,
         // dot count, head shape and highlight spacing are baked at BUILD
         // time, so the head has to be remade. Cheap — one Points cloud — and
         // rebuilding unconditionally beats a per-knob rule that goes stale.
@@ -590,10 +596,45 @@ export function initUnitsTab(root) {
     let subject = SUBJECTS.tank;
     let rows = [];
 
+    // The head picker is not a knob: it belongs to ONE tower, not to the
+    // look as a whole, and it is the thing you are actually choosing when you
+    // use this panel. Built separately, above the sliders, and labelled with
+    // the tower it will change so an assignment is never made by accident.
+    function buildHeadRow() {
+      if (subject !== SUBJECTS.tower || !currentEntry) return;
+      const def = TOWER_BY_KEY[currentEntry.id];
+      if (!def) return;
+      const h = document.createElement('div');
+      h.className = 'tuner-group';
+      h.textContent = `head · ${currentEntry.label}`;
+      const row = document.createElement('label');
+      row.className = 'tuner-row choice';
+      const name = document.createElement('span');
+      name.className = 'tuner-name';
+      name.textContent = 'shape';
+      const sel = document.createElement('select');
+      for (const c of HEAD_CHOICES) {
+        const o = document.createElement('option');
+        o.value = c;
+        o.textContent = c === HEAD_AS_SHIPPED ? `${HEAD_AS_SHIPPED} (${def.shape})` : c;
+        sel.appendChild(o);
+      }
+      sel.value = HEADS[def.key] || HEAD_AS_SHIPPED;
+      sel.addEventListener('change', () => {
+        if (sel.value === HEAD_AS_SHIPPED) delete HEADS[def.key];
+        else HEADS[def.key] = sel.value;
+        saveTower();
+        rebuildCurrent();
+      });
+      row.append(name, sel);
+      list.append(h, row);
+    }
+
     function build() {
       list.textContent = '';
       rows = [];
       titleEl.textContent = subject.title;
+      buildHeadRow();
       let group = null;
       for (const k of subject.knobs) {
         if (k.group !== group) {
@@ -691,7 +732,9 @@ export function initUnitsTab(root) {
     return {
       setSubject(which) {
         const next = SUBJECTS[which] || SUBJECTS.tank;
-        if (next === subject) return;
+        // rebuild even when the subject is unchanged: stepping from one tower
+        // to the next keeps the subject 'tower' but the head row belongs to a
+        // different tower now, and a stale row would assign to the wrong one
         subject = next;
         build();
       },

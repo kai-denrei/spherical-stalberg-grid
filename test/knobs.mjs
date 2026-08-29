@@ -5,7 +5,9 @@
 import { makeParams, clampParams, formatKnobs, roundToStep, knobProblems } from '../src/knobs.js';
 import { TANK_FEEL, TANK_FEEL_KNOBS, tankKnobProblems, formatFeelCode, makeFeelParams } from '../src/tankfeel.js';
 import { TOWER_FEEL, TOWER_FEEL_KNOBS, towerKnobProblems, formatTowerFeel,
-  makeTowerParams, headKindFor, HEAD_PER_TOWER } from '../src/towerfeel.js';
+  makeTowerParams, headKindFor, cleanHeads, formatTowerHeads,
+  HEAD_CHOICES, HEAD_AS_SHIPPED } from '../src/towerfeel.js';
+import { TOWERS } from '../src/towers.js';
 import { TOWER_HEAD_KINDS, towerHeadPts } from '../src/creatures.js';
 
 let failures = 0;
@@ -76,10 +78,9 @@ console.log('tower heads:');
 {
   // Every choice the picker offers must actually build, or selecting it
   // silently hands back a sphere and the picker is lying.
-  const head = TOWER_FEEL_KNOBS.find((k) => k.key === 'headShape');
-  check('picker offers per-tower plus every kind',
-        head.choices.length === TOWER_HEAD_KINDS.length + 1
-        && head.choices[0] === HEAD_PER_TOWER);
+  check('picker offers as-shipped plus every kind',
+        HEAD_CHOICES.length === TOWER_HEAD_KINDS.length + 1
+        && HEAD_CHOICES[0] === HEAD_AS_SHIPPED);
   let allOk = true;
   for (const kind of TOWER_HEAD_KINDS) {
     const pts = towerHeadPts(kind, 190);
@@ -105,9 +106,33 @@ console.log('tower heads:');
   check('a smaller spacing means more highlights', hiCount(6) > hiCount(18));
   check('a degenerate spacing is refused', hiCount(0) < 240 && hiCount(1) < 240);
 
-  check('per-tower keeps the tower shape', headKindFor({ shape: 'gear' }, TOWER_FEEL) === 'gear');
-  check('an override wins', headKindFor({ shape: 'gear' }, { headShape: 'arm' }) === 'arm');
-  check('a shapeless tower falls back to sphere', headKindFor({}, TOWER_FEEL) === 'sphere');
+  // Head assignment is BY TOWER KEY. The global override this replaced could
+  // only ask "does this shape work at all", and because it persisted it also
+  // masked every tower's own head once set — including freshly assigned ones.
+  const def = { key: 'aoe', shape: 'gear' };
+  check('no assignment keeps the shipped shape', headKindFor(def, {}) === 'gear');
+  check('an assignment wins', headKindFor(def, { aoe: 'arm' }) === 'arm');
+  check('another tower is unaffected', headKindFor(def, { single: 'arm' }) === 'gear');
+  check('as-shipped is not an override', headKindFor(def, { aoe: HEAD_AS_SHIPPED }) === 'gear');
+  check('an unknown shape is refused', headKindFor(def, { aoe: 'nonesuch' }) === 'gear');
+  check('a shapeless tower falls back to sphere', headKindFor({ key: 'x' }, {}) === 'sphere');
+
+  // derived, not hardcoded: this assertion is about the RULE, and writing a
+  // literal shape here made it fail the moment a tower was reassigned
+  const asShipped = TOWERS.find((t) => t.key === 'single').shape;
+  const kept = cleanHeads({ aoe: 'arm', single: asShipped, slow: 'nonesuch', ghost: 'arm' }, TOWERS);
+  check('cleanHeads keeps a real override', kept.aoe === 'arm');
+  check('drops one equal to the shipped shape', !('single' in kept));
+  check('drops an unknown shape', !('slow' in kept));
+  check('drops an unknown tower', !('ghost' in kept));
+
+  const src = formatTowerHeads({ aoe: 'launcher' }, TOWERS);
+  check('emits every tower, not just overrides',
+        TOWERS.every((t) => src.includes(t.key + ':')));
+  check('marks what changed', src.includes('<- changed') && src.split('<- changed').length === 2);
+  const raw = { aoe: 'arm' };
+  cleanHeads(raw, TOWERS);
+  check('cleanHeads does not mutate its input', Object.keys(raw).length === 1);
 }
 
 console.log(failures ? `\n${failures} FAILURES` : '\nall knob invariants hold');

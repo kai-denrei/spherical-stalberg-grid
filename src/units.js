@@ -16,10 +16,10 @@
 
 import * as THREE from '../vendor/three.module.js';
 import { loadGlb, mergeByMaterial, fitModel, tintModel, makeShellRack,
-  addEdgeOutlines, makeHeatSleeve } from './glbmodels.js?v=8163013e';
-import { CREATURES, waveJelly, spherePts, bulletPts, missilePts, heartPts, torusPts, towerHeadPts, enemyDotPts, portalPts } from './creatures.js?v=8163013e';
-import { TOWER_FEEL, headKindFor } from './towerfeel.js?v=8163013e';
-import { ENEMY_SPEC } from './enemyspec.js?v=8163013e';
+  addEdgeOutlines, makeHeatSleeve } from './glbmodels.js?v=4960ebd9';
+import { CREATURES, waveJelly, spherePts, bulletPts, missilePts, heartPts, torusPts, towerHeadPts, enemyDotPts, portalPts } from './creatures.js?v=4960ebd9';
+import { TOWER_FEEL, TOWER_HEADS, headKindFor } from './towerfeel.js?v=4960ebd9';
+import { ENEMY_SPEC } from './enemyspec.js?v=4960ebd9';
 
 function normalizeToUnit(group) {
   group.updateMatrixWorld(true);
@@ -557,10 +557,10 @@ export function makeTowerMast(def) {
 // `feel` is the live tuning object when one is passed, and the shipped
 // defaults otherwise — so this function is equally usable from the game, the
 // bench, and a Node test with no store in sight.
-export function makeTowerUnit(def, feel = TOWER_FEEL) {
+export function makeTowerUnit(def, feel = TOWER_FEEL, heads = TOWER_HEADS) {
   const { g, head } = makeTowerMast(def);
   // the half-dotted head, floating above the mast
-  const kind = headKindFor(def, feel);
+  const kind = headKindFor(def, heads);
   const pts = towerHeadPts(kind, Math.round(feel.dots), feel.hiEvery);
   const pos = new Float32Array(pts.length * 3);
   const col = new Float32Array(pts.length * 3);

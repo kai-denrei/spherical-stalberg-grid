@@ -10,17 +10,25 @@
 // localStorage is not available there. The schema and the maths live in the
 // pure module; only the persistence lives here.
 
-import { TANK_FEEL_KNOBS, makeFeelParams, clampFeelParams } from './tankfeel.js?v=8163013e';
-import { TOWER_FEEL_KNOBS, makeTowerParams, clampTowerParams } from './towerfeel.js?v=8163013e';
+import { TANK_FEEL_KNOBS, makeFeelParams, clampFeelParams } from './tankfeel.js?v=4960ebd9';
+import { TOWER_FEEL_KNOBS, makeTowerParams, clampTowerParams,
+  TOWER_HEADS as TOWER_HEAD_DEFAULTS, cleanHeads } from './towerfeel.js?v=4960ebd9';
+import { TOWERS } from './towers.js?v=4960ebd9';
 
 const KEY = 'ssg.tankfeel.v1';    // versioned: a schema change must not inherit
-const TKEY = 'ssg.towerfeel.v1';
+// v2: v1 stored a GLOBAL headShape override that masked every tower's own
+// head. Bumping the key retires those blobs rather than trying to migrate
+// a setting whose whole meaning changed.
+const TKEY = 'ssg.towerfeel.v2';
+const HKEY = 'ssg.towerheads.v1';
 
 export const FEEL = makeFeelParams();
 // The live tower look. Same contract as FEEL: one object, mutated in place by
 // whichever surface is tuning, read by the builder — so a head dialled in the
 // viewer is the head the board raises.
 export const TOWER = makeTowerParams();
+// per-tower head assignments, by tower key — empty means "as shipped"
+export const HEADS = { ...TOWER_HEAD_DEFAULTS };
 
 // Restore, defensively. Stored values are untrusted input — the blob may
 // predate a knob's range, or a key may have been renamed — so it is folded on
@@ -51,25 +59,28 @@ export function loadTower() {
     if (raw) {
       const blob = JSON.parse(raw);
       clampTowerParams(TOWER, blob);
-      // headShape is a CHOICE, not a range, so the numeric clamp cannot vet
-      // it — an unknown value here would ask the generator for a shape that
-      // does not exist and quietly hand back a sphere.
-      const want = blob.headShape;
-      if (TOWER_FEEL_KNOBS.find((k) => k.key === 'headShape').choices.includes(want)) {
-        TOWER.headShape = want;
-      }
+    }
+    const rawHeads = localStorage.getItem(HKEY);
+    if (rawHeads) {
+      const kept = cleanHeads(JSON.parse(rawHeads), TOWERS);
+      for (const k of Object.keys(HEADS)) delete HEADS[k];
+      Object.assign(HEADS, kept);
     }
   } catch { /* no storage, private mode, or junk — defaults stand */ }
   return TOWER;
 }
 
 export function saveTower() {
-  try { localStorage.setItem(TKEY, JSON.stringify(TOWER)); } catch { /* ignore */ }
+  try {
+    localStorage.setItem(TKEY, JSON.stringify(TOWER));
+    localStorage.setItem(HKEY, JSON.stringify(cleanHeads(HEADS, TOWERS)));
+  } catch { /* ignore */ }
 }
 
 export function resetTower() {
   const d = makeTowerParams();
   for (const k of TOWER_FEEL_KNOBS) TOWER[k.key] = d[k.key];
-  try { localStorage.removeItem(TKEY); } catch { /* ignore */ }
+  for (const k of Object.keys(HEADS)) delete HEADS[k];
+  try { localStorage.removeItem(TKEY); localStorage.removeItem(HKEY); } catch { /* ignore */ }
   return TOWER;
 }
