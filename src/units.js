@@ -16,9 +16,9 @@
 
 import * as THREE from '../vendor/three.module.js';
 import { loadGlb, mergeByMaterial, fitModel, tintModel, makeShellRack,
-  addEdgeOutlines, makeHeatSleeve } from './glbmodels.js?v=d2dd9e33';
-import { CREATURES, waveJelly, spherePts, bulletPts, missilePts, heartPts, torusPts, towerHeadPts, enemyDotPts, portalPts } from './creatures.js?v=d2dd9e33';
-import { ENEMY_SPEC } from './enemyspec.js?v=d2dd9e33';
+  addEdgeOutlines, makeHeatSleeve } from './glbmodels.js?v=fd59cfe7';
+import { CREATURES, waveJelly, spherePts, bulletPts, missilePts, heartPts, torusPts, towerHeadPts, enemyDotPts, portalPts } from './creatures.js?v=fd59cfe7';
+import { ENEMY_SPEC } from './enemyspec.js?v=fd59cfe7';
 
 function normalizeToUnit(group) {
   group.updateMatrixWorld(true);
@@ -1396,6 +1396,19 @@ export function makeShellSolid(cols) {
   return g;
 }
 
+// The roster the tab dropdowns are built from, and the `kind` the board tabs
+// branch on. CAREFUL: `kind` here describes which ANIMATION PATH a unit takes
+// — 'cloud' means the live Wave x Jelly deform with phagocytosis, 'mesh'
+// means transform-only idle via userData.tick — NOT which builder produces
+// it. Since the migration to buildCreature, a 'mesh' entry like drifter is
+// built as a dot cloud and still takes the transform-only path, which is
+// correct. Read this field as "how does it move", never as "what is it made
+// of".
+//
+// The `make` functions for the hostiles (makeSaturn, makeCorona, makeMine and
+// friends) are no longer reached for those types — buildCreature routes them
+// to makeDotEnemy. They are kept because the roster and its dropdowns still
+// name them, and deleting them is a separate decision from migrating.
 export const UNITS = {
   amoeba: { kind: 'cloud' },
   phage: { kind: 'cloud' },
@@ -1415,6 +1428,22 @@ export const UNITS = {
 };
 
 export const UNIT_NAMES = Object.keys(UNITS);
+
+// The ONE way to ask for a creature, so no tab has to remember which of the
+// two representations is the real one.
+//
+// Every hostile has a mesh form in UNITS (makeSaturn, makeCorona, makeMine)
+// that predates the dot clouds, and buildUnit still returns it. The clouds
+// are what the tower-defence tab spawns, they carry the rammable/not tell,
+// and they are what the unit viewer documents — so they are the truth, and a
+// tab showing the mesh form is showing a creature the player never meets.
+//
+// The choice is made from ENEMY_SPEC rather than a list here: anything the
+// game has a creature spec for gets its cloud, anything else (the tank, the
+// mkcx, the drone) falls through to buildUnit unchanged.
+export function buildCreature(name, cols) {
+  return ENEMY_SPEC[name] ? makeDotEnemy(name, cols) : buildUnit(name, cols);
+}
 
 export function buildUnit(name, cols) {
   const u = UNITS[name] || UNITS.tank;

@@ -19,25 +19,25 @@
 
 import * as THREE from '../vendor/three.module.js';
 import GUI from '../vendor/lil-gui.esm.js';
-import { generateSphereMesh, relax } from './grid.js?v=d2dd9e33';
-import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=d2dd9e33';
-import { mulberry32, randomSeed } from './rng.js?v=d2dd9e33';
-import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3, segKey } from './vec3.js?v=d2dd9e33';
-import { CREATURES, waveJelly } from './creatures.js?v=d2dd9e33';
-import { UNITS, UNIT_NAMES, buildUnit, preloadMkcx, makeBulletCloud, makeRewardSolid, makeShellSolid, makeDebris, makeDotBurst, makePortalCloud, makeHeartCloud, makeDotEnemy } from './units.js?v=d2dd9e33';
-import { LOOKS, LOOK_NAMES } from './looks.js?v=d2dd9e33';
-import { makeCellIndex } from './cellindex.js?v=d2dd9e33';
-import { CREATURE_TINTS, ENEMY_SPEC, INTROS, computeWavePlan } from './enemyspec.js?v=d2dd9e33';
-import { PICKUPS } from './pickups.js?v=d2dd9e33';
-import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER } from './towers.js?v=d2dd9e33';
-import { makeEconomy, sellRefund } from './economy.js?v=d2dd9e33';
-import { makeBloom } from './postfx.js?v=d2dd9e33';
-import { TANK_FEEL, TANK_FEEL_KNOBS, makeTankFeel, stepTankFeel, landTankFeel, fireTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js?v=d2dd9e33';
-import { FEEL, loadFeel, saveFeel } from './feelstore.js?v=d2dd9e33';
-import { BLOOM_GROUPS } from './bloomweights.js?v=d2dd9e33';
-import { TOWER_LOOK_NAMES, DEFAULT_TOWER_LOOK, buildTowerLook, preloadLook } from './towerlooks.js?v=d2dd9e33';
-import { makeAudio } from './audio.js?v=d2dd9e33';
-import { DEATH_KEYS } from './audiomanifest.js?v=d2dd9e33';
+import { generateSphereMesh, relax } from './grid.js?v=fd59cfe7';
+import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=fd59cfe7';
+import { mulberry32, randomSeed } from './rng.js?v=fd59cfe7';
+import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3, segKey } from './vec3.js?v=fd59cfe7';
+import { CREATURES, waveJelly } from './creatures.js?v=fd59cfe7';
+import { UNITS, UNIT_NAMES, buildUnit, buildCreature, preloadMkcx, makeBulletCloud, makeRewardSolid, makeShellSolid, makeDebris, makeDotBurst, makePortalCloud, makeHeartCloud, makeDotEnemy } from './units.js?v=fd59cfe7';
+import { LOOKS, LOOK_NAMES } from './looks.js?v=fd59cfe7';
+import { makeCellIndex } from './cellindex.js?v=fd59cfe7';
+import { CREATURE_TINTS, ENEMY_SPEC, INTROS, computeWavePlan } from './enemyspec.js?v=fd59cfe7';
+import { PICKUPS } from './pickups.js?v=fd59cfe7';
+import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER } from './towers.js?v=fd59cfe7';
+import { makeEconomy, sellRefund } from './economy.js?v=fd59cfe7';
+import { makeBloom } from './postfx.js?v=fd59cfe7';
+import { TANK_FEEL, TANK_FEEL_KNOBS, makeTankFeel, stepTankFeel, landTankFeel, fireTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js?v=fd59cfe7';
+import { FEEL, loadFeel, saveFeel } from './feelstore.js?v=fd59cfe7';
+import { BLOOM_GROUPS } from './bloomweights.js?v=fd59cfe7';
+import { TOWER_LOOK_NAMES, DEFAULT_TOWER_LOOK, buildTowerLook, preloadLook } from './towerlooks.js?v=fd59cfe7';
+import { makeAudio } from './audio.js?v=fd59cfe7';
+import { DEATH_KEYS } from './audiomanifest.js?v=fd59cfe7';
 
 export function initTdTab(root) {
   let active = false;
@@ -818,7 +818,7 @@ export function initTdTab(root) {
       creatureBase = null;
       creaturePos = null;
       creatureGeo = null;
-      playerMesh = buildUnit(params.creature, { walker: look().walker, walkerHi: look().walkerHi });
+      playerMesh = buildCreature(params.creature, { walker: look().walker, walkerHi: look().walkerHi });
       playerMesh.scale.setScalar(playerMesh.userData.baseScale); // reset sizing
     }
     scene.add(playerMesh);
@@ -2011,7 +2011,7 @@ export function initTdTab(root) {
     h.userData.tick(1.2);
     return h;
   };
-  const unitIcon = (type, tint) => () => buildUnit(type, { walker: tint, walkerHi: 0xffffff });
+  const unitIcon = (type, tint) => () => buildCreature(type, { walker: tint, walkerHi: 0xffffff });
 
   // one element = one little card: real sprite · name · what it does
   const glossCard = (color, iconUrl, name, desc) =>
@@ -2216,7 +2216,7 @@ export function initTdTab(root) {
     // canvas must be re-inserted each announcement)
     waveEl.insertBefore(waveSpriteRenderer.domElement, waveEl.querySelector('.wave-name'));
     if (waveUnit) { waveScene.remove(waveUnit); disposeObj(waveUnit); }
-    waveUnit = buildUnit(intro.type, { walker: CREATURE_TINTS[intro.type], walkerHi: 0xffffff });
+    waveUnit = buildCreature(intro.type, { walker: CREATURE_TINTS[intro.type], walkerHi: 0xffffff });
     // mesh units stand on y=0, clouds center on the origin — lift clouds
     if (waveUnit.userData.kind === 'cloud') waveUnit.position.y = 0.3;
     waveScene.add(waveUnit);

@@ -6,13 +6,13 @@
 
 import * as THREE from '../vendor/three.module.js';
 import GUI from '../vendor/lil-gui.esm.js';
-import { generateSphereMesh, relax } from './grid.js?v=d2dd9e33';
-import { generateDungeon, BLOCKED, PATH, ROOM } from './dungeon.js?v=d2dd9e33';
-import { mulberry32, randomSeed } from './rng.js?v=d2dd9e33';
-import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3 } from './vec3.js?v=d2dd9e33';
-import { LOOKS, LOOK_NAMES } from './looks.js?v=d2dd9e33';
-import { makeCellIndex } from './cellindex.js?v=d2dd9e33';
-import { UNIT_NAMES, buildUnit, makeHeartCloud } from './units.js?v=d2dd9e33';
+import { generateSphereMesh, relax } from './grid.js?v=fd59cfe7';
+import { generateDungeon, BLOCKED, PATH, ROOM } from './dungeon.js?v=fd59cfe7';
+import { mulberry32, randomSeed } from './rng.js?v=fd59cfe7';
+import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3 } from './vec3.js?v=fd59cfe7';
+import { LOOKS, LOOK_NAMES } from './looks.js?v=fd59cfe7';
+import { makeCellIndex } from './cellindex.js?v=fd59cfe7';
+import { UNIT_NAMES, buildUnit, buildCreature, makeHeartCloud } from './units.js?v=fd59cfe7';
 
 export function initMazeTab(root) {
   let active = false;
@@ -808,7 +808,7 @@ export function initMazeTab(root) {
     const entry = {
       name: params.unit,
       ci,
-      obj: buildUnit(params.unit, { walker: look().walker, walkerHi: look().walkerHi }),
+      obj: buildCreature(params.unit, { walker: look().walker, walkerHi: look().walkerHi }),
     };
     placeSpawned(entry);
     scene.add(entry.obj);
@@ -825,7 +825,7 @@ export function initMazeTab(root) {
   function retintSpawned() {
     for (const entry of spawned) {
       scene.remove(entry.obj);
-      entry.obj = buildUnit(entry.name, { walker: look().walker, walkerHi: look().walkerHi });
+      entry.obj = buildCreature(entry.name, { walker: look().walker, walkerHi: look().walkerHi });
       placeSpawned(entry);
       scene.add(entry.obj);
     }
