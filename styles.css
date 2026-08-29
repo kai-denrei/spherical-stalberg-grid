@@ -362,7 +362,11 @@ html, body {
 }
 
 /* build mode is the planning instrument: driving controls step aside */
-#tab-td.build .tzone,
+/* The steering strips STAY in build mode — the tank is still yours while you
+   plan, and hiding them left the throttle visible with no way to aim it.
+   They are narrow edge strips, so the middle of the board is still free for
+   the drag that orbits the sphere. The fire buttons do go: building is not
+   shooting, and the auto gunner stands down here too. */
 #tab-td.build .tzone-mid,
 #tab-td.build .tfire,
 #tab-td.build #td-pad-hint,

@@ -19,25 +19,25 @@
 
 import * as THREE from '../vendor/three.module.js';
 import GUI from '../vendor/lil-gui.esm.js';
-import { generateSphereMesh, relax } from './grid.js?v=bddb0ba0';
-import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=bddb0ba0';
-import { mulberry32, randomSeed } from './rng.js?v=bddb0ba0';
-import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3, segKey } from './vec3.js?v=bddb0ba0';
-import { CREATURES, waveJelly } from './creatures.js?v=bddb0ba0';
-import { UNITS, UNIT_NAMES, buildUnit, buildCreature, preloadMkcx, makeBulletCloud, makeRewardSolid, makeShellSolid, makeDebris, makeDotBurst, makePortalCloud, makeHeartCloud, makeDotEnemy } from './units.js?v=bddb0ba0';
-import { LOOKS, LOOK_NAMES } from './looks.js?v=bddb0ba0';
-import { makeCellIndex } from './cellindex.js?v=bddb0ba0';
-import { CREATURE_TINTS, ENEMY_SPEC, INTROS, computeWavePlan } from './enemyspec.js?v=bddb0ba0';
-import { PICKUPS } from './pickups.js?v=bddb0ba0';
-import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER } from './towers.js?v=bddb0ba0';
-import { makeEconomy, sellRefund } from './economy.js?v=bddb0ba0';
-import { makeBloom } from './postfx.js?v=bddb0ba0';
-import { TANK_FEEL, TANK_FEEL_KNOBS, makeTankFeel, stepTankFeel, landTankFeel, fireTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js?v=bddb0ba0';
-import { FEEL, loadFeel, saveFeel } from './feelstore.js?v=bddb0ba0';
-import { BLOOM_GROUPS } from './bloomweights.js?v=bddb0ba0';
-import { TOWER_LOOK_NAMES, DEFAULT_TOWER_LOOK, buildTowerLook, preloadLook } from './towerlooks.js?v=bddb0ba0';
-import { makeAudio } from './audio.js?v=bddb0ba0';
-import { DEATH_KEYS } from './audiomanifest.js?v=bddb0ba0';
+import { generateSphereMesh, relax } from './grid.js?v=ac8d5421';
+import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=ac8d5421';
+import { mulberry32, randomSeed } from './rng.js?v=ac8d5421';
+import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3, segKey } from './vec3.js?v=ac8d5421';
+import { CREATURES, waveJelly } from './creatures.js?v=ac8d5421';
+import { UNITS, UNIT_NAMES, buildUnit, buildCreature, preloadMkcx, makeBulletCloud, makeRewardSolid, makeShellSolid, makeDebris, makeDotBurst, makePortalCloud, makeHeartCloud, makeDotEnemy } from './units.js?v=ac8d5421';
+import { LOOKS, LOOK_NAMES } from './looks.js?v=ac8d5421';
+import { makeCellIndex } from './cellindex.js?v=ac8d5421';
+import { CREATURE_TINTS, ENEMY_SPEC, INTROS, computeWavePlan } from './enemyspec.js?v=ac8d5421';
+import { PICKUPS } from './pickups.js?v=ac8d5421';
+import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER } from './towers.js?v=ac8d5421';
+import { makeEconomy, sellRefund } from './economy.js?v=ac8d5421';
+import { makeBloom } from './postfx.js?v=ac8d5421';
+import { TANK_FEEL, TANK_FEEL_KNOBS, makeTankFeel, stepTankFeel, landTankFeel, fireTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js?v=ac8d5421';
+import { FEEL, loadFeel, saveFeel } from './feelstore.js?v=ac8d5421';
+import { BLOOM_GROUPS } from './bloomweights.js?v=ac8d5421';
+import { TOWER_LOOK_NAMES, DEFAULT_TOWER_LOOK, buildTowerLook, preloadLook } from './towerlooks.js?v=ac8d5421';
+import { makeAudio } from './audio.js?v=ac8d5421';
+import { DEATH_KEYS } from './audiomanifest.js?v=ac8d5421';
 
 export function initTdTab(root) {
   let active = false;
@@ -2245,7 +2245,9 @@ export function initTdTab(root) {
       `<span class="hud-credit">${eco.credit}c ×${eco.multiplier().toFixed(2)}</span> · towers ${towers.length}\n` +
       `WAVE ${wave} · ${Math.min(8, Math.max(0, wave))}/8 towers · portals ${spAlive}/${spawnPoints.length} · R${round}${alerts}\n` +
       (buildMode
-        ? (anyHostiles() ? 'BUILD · war on' : 'BUILD · frozen')
+        // 'frozen' described the whole tab and is now only half true: the
+        // wave is held, the tank is not. Say which.
+        ? (anyHostiles() ? 'BUILD · war on' : 'BUILD · wave held · you can drive')
         : (manualActive() ? (cruise ? 'CRUISE' : 'MANUAL')
           : `AUTO · ${DIRECTIVE_LABEL[params.directive] || 'WANDER'}`));
     // diegetic shell rack: the 3×3 turret dots ARE the ammo counter —
@@ -4127,6 +4129,12 @@ export function initTdTab(root) {
     // frozen gate, since updateLasers itself is skipped while frozen
     if (tutorial.frozen && keys.laser) { tutorial.frozen = false; hideTutBanner(); }
     const frozen = buildFrozen() || revealLeft > 0 || tutorial.frozen;
+    // The BUILD pause holds the WORLD still, not the DRIVER. Planning with
+    // the tank parked where the last wave left it meant switching out of
+    // build, repositioning, and switching back — three actions for one
+    // intention. A reveal or a tutorial hold still stops everything, because
+    // those are the game speaking and it should not be driven over.
+    const driveFrozen = revealLeft > 0 || tutorial.frozen;
 
     bumpLeft = Math.max(0, bumpLeft - dt);
     recoilLeft = Math.max(0, recoilLeft - dt);
@@ -4134,7 +4142,7 @@ export function initTdTab(root) {
     // diegetic cannon gauge: the mid-barrel sleeve glows with the heat
     const sleeve = playerMesh && playerMesh.userData.heatSleeve;
     if (sleeve) sleeve.material.color.lerpColors(sleeveCool, sleeveHot, cannonHeat / CANNON_COOL);
-    if (!frozen) advanceMotion(dt);
+    if (!driveFrozen) advanceMotion(dt);
     for (const orb of orbMeshes.values()) orb.userData.tick(t);
     for (let i = debris.length - 1; i >= 0; i--) {
       if (!debris[i].userData.tick(dt)) {
@@ -4480,6 +4488,10 @@ export function initTdTab(root) {
       });
       const m = mapRenderer.info.render;
       console.log(`PERF viewport=${innerWidth}x${innerHeight} dpr=${devicePixelRatio}`);
+      // simTime only advances inside advanceMotion, so it is the honest
+      // answer to "is the driver live right now"
+      console.log(`PERF build=${buildMode} frozenWorld=${buildFrozen()}`
+        + ` simTime=${simTime.toFixed(2)}`);
       console.log(`PERF main calls=${r.calls} tris=${r.triangles} pts=${r.points}`
         + ` | MAP calls=${m.calls} tris=${m.triangles} pts=${m.points}`
         + ` | TOTAL calls=${r.calls + m.calls}`
