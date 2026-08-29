@@ -6,6 +6,63 @@ Demo links assume `npm run serve` (port 8144) or the
 
 ---
 
+## `1b3228a` — The gate dials itself in, and the bacterium swims
+
+### The point order was already the animation
+
+`half-dotted-stargate.json` exported whole into `src/stargate.js`: 435
+authored points against our generated 1150, and better ones — the chevrons
+are *placed* rather than derived, so it reads as a ring with nine locks
+instead of a bright blob.
+
+The order turned out to be the gift:
+
+| indices | what |
+| --- | --- |
+| 0–406 | one continuous stroke, mean gap 0.095 |
+| 407–434 | the nine chevrons, each arriving as a jump |
+
+Revealed in order it draws itself around the ring and then locks its
+chevrons. So the draw-on effect is a `setDrawRange` and a bright head behind
+it — no keyframes, no second geometry, no extra draw call. It dials over 1.6 s
+and swells as it draws.
+
+The head is the only part repainted each step (26 dots, brightest at the
+tip); the tail keeps whatever the idle twinkle last wrote, so the two
+animations do not fight over the colour buffer.
+
+### `waveJelly` was the obvious thing and was wrong twice
+
+It carries a spin about the body axis, and its squash is on **Y** — which for
+a rod lying along Z means the creature lengthens and shortens instead of
+flexing. A bacterium does neither.
+
+`swimWave` instead: a travelling sine **along** the body, amplitude growing
+toward the tail, plus a volume-preserving radial pulse. Measured:
+
+```
+max lateral swing — tail 0.450  head 0.042   (10.8x)
+```
+
+The flagella do the work and the head holds its heading, which is what it
+looks like when something swims.
+
+### Turned at build time, because lookAt wins
+
+Enemies are oriented every frame by `lookAt`, which overwrites the object's
+quaternion — so a rotation set on the object would be silently thrown away.
+The model runs along X with flagella at −X, enemies face +Z, so the points are
+remapped `(x, y, z) -> (-z, y, x)` **once, at birth**.
+
+It deforms its *points* rather than its transform: 170 points a frame. A
+transform can turn a creature; it cannot make one beat.
+
+`portalPts()` is now unreferenced. Left in place — same call as the mesh
+creature forms: removing it is a separate decision from replacing what uses
+it.
+
+---
+
 ## `e77f5b2` — The tank stays yours in BUILD mode
 
 Two things stopped it, and only one was obvious.

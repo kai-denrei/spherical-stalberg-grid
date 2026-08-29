@@ -19,25 +19,25 @@
 
 import * as THREE from '../vendor/three.module.js';
 import GUI from '../vendor/lil-gui.esm.js';
-import { generateSphereMesh, relax } from './grid.js?v=f6733ea6';
-import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=f6733ea6';
-import { mulberry32, randomSeed } from './rng.js?v=f6733ea6';
-import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3, segKey } from './vec3.js?v=f6733ea6';
-import { CREATURES, waveJelly } from './creatures.js?v=f6733ea6';
-import { UNITS, UNIT_NAMES, buildUnit, buildCreature, preloadMkcx, makeBulletCloud, makeRewardSolid, makeShellSolid, makeDebris, makeDotBurst, makePortalCloud, makeHeartCloud, makeDotEnemy } from './units.js?v=f6733ea6';
-import { LOOKS, LOOK_NAMES } from './looks.js?v=f6733ea6';
-import { makeCellIndex } from './cellindex.js?v=f6733ea6';
-import { CREATURE_TINTS, ENEMY_SPEC, INTROS, computeWavePlan } from './enemyspec.js?v=f6733ea6';
-import { PICKUPS } from './pickups.js?v=f6733ea6';
-import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER } from './towers.js?v=f6733ea6';
-import { makeEconomy, sellRefund } from './economy.js?v=f6733ea6';
-import { makeBloom } from './postfx.js?v=f6733ea6';
-import { TANK_FEEL, TANK_FEEL_KNOBS, makeTankFeel, stepTankFeel, landTankFeel, fireTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js?v=f6733ea6';
-import { FEEL, loadFeel, saveFeel } from './feelstore.js?v=f6733ea6';
-import { BLOOM_GROUPS } from './bloomweights.js?v=f6733ea6';
-import { TOWER_LOOK_NAMES, DEFAULT_TOWER_LOOK, buildTowerLook, preloadLook } from './towerlooks.js?v=f6733ea6';
-import { makeAudio } from './audio.js?v=f6733ea6';
-import { DEATH_KEYS } from './audiomanifest.js?v=f6733ea6';
+import { generateSphereMesh, relax } from './grid.js?v=8cb0c974';
+import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=8cb0c974';
+import { mulberry32, randomSeed } from './rng.js?v=8cb0c974';
+import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3, segKey } from './vec3.js?v=8cb0c974';
+import { CREATURES, waveJelly } from './creatures.js?v=8cb0c974';
+import { UNITS, UNIT_NAMES, buildUnit, buildCreature, preloadMkcx, makeBulletCloud, makeRewardSolid, makeShellSolid, makeDebris, makeDotBurst, makePortalCloud, makeHeartCloud, makeDotEnemy } from './units.js?v=8cb0c974';
+import { LOOKS, LOOK_NAMES } from './looks.js?v=8cb0c974';
+import { makeCellIndex } from './cellindex.js?v=8cb0c974';
+import { CREATURE_TINTS, ENEMY_SPEC, INTROS, computeWavePlan } from './enemyspec.js?v=8cb0c974';
+import { PICKUPS } from './pickups.js?v=8cb0c974';
+import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER } from './towers.js?v=8cb0c974';
+import { makeEconomy, sellRefund } from './economy.js?v=8cb0c974';
+import { makeBloom } from './postfx.js?v=8cb0c974';
+import { TANK_FEEL, TANK_FEEL_KNOBS, makeTankFeel, stepTankFeel, landTankFeel, fireTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js?v=8cb0c974';
+import { FEEL, loadFeel, saveFeel } from './feelstore.js?v=8cb0c974';
+import { BLOOM_GROUPS } from './bloomweights.js?v=8cb0c974';
+import { TOWER_LOOK_NAMES, DEFAULT_TOWER_LOOK, buildTowerLook, preloadLook } from './towerlooks.js?v=8cb0c974';
+import { makeAudio } from './audio.js?v=8cb0c974';
+import { DEATH_KEYS } from './audiomanifest.js?v=8cb0c974';
 
 export function initTdTab(root) {
   let active = false;
