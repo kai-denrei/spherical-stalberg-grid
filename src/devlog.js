@@ -131,7 +131,7 @@ export function wireDevlogBadge() {
     badge.addEventListener('click', (ev) => {
       ev.stopPropagation();
       ev.preventDefault();
-      show();
+      openLogTab();
     }, true);
     return true;
   };
@@ -145,5 +145,16 @@ export function wireDevlogBadge() {
   }
 
   // deep link (and headless-verification hook): ?devlog=1 opens it on load
-  if (new URLSearchParams(location.search).get('devlog')) show();
+  if (new URLSearchParams(location.search).get('devlog')) openLogTab();
+}
+
+// The log lives in a real tab now, alongside the roadmap and the build token,
+// rather than in an overlay of its own. The badge stays as the shortcut to it
+// — it is still the fastest answer to "which build am I looking at" — but the
+// detail it used to imply is on the page it opens. Navigating by clicking the
+// existing tab button keeps one code path owning tab switching.
+function openLogTab() {
+  const btn = document.querySelector('#tabbar button[data-tab="log"]');
+  if (btn) { btn.click(); return; }
+  show();   // no tab bar (a stripped page): fall back to the overlay
 }

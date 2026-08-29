@@ -225,10 +225,11 @@ html, body {
 /* utility pair: small text buttons, centered above the drive zones */
 .tc-util {
   position: absolute;
-  /* clears the throttle, which is taller than the two drive zones it
-     replaced — this offset is derived from the lever's height, so the two
-     move together */
-  bottom: calc(max(12px, env(safe-area-inset-bottom)) + min(30vh, 210px) + 46px);
+  /* Top of the screen: these are mode switches, not thumb controls, and at
+     the bottom they competed with the throttle and the fire buttons for the
+     same reach. Clear of the tab bar, which is the only other thing up here
+     when the chrome is showing. */
+  top: 52px;
   left: 50%;
   transform: translateX(-50%);
   z-index: 6;
@@ -399,7 +400,7 @@ html, body {
     background: rgba(22, 46, 58, 0.28);
     border-color: rgba(125, 249, 255, 0.3);
   }
-  .tc-util { bottom: calc(max(12px, env(safe-area-inset-bottom)) + min(18vh, 148px) + 42px); gap: 6px; }
+  .tc-util { top: 46px; gap: 6px; }
   .tc-util button {
     padding: 5px 9px;
     font-size: 10px;
@@ -748,7 +749,7 @@ html, body {
 /* --- doc tabs (how it works / tech stack): full-page article --- */
 /* both scrollers, both articles — the .mdview block near the end of this
    file owns every typographic decision for all three documents */
-#how-scroll, #stack-scroll, #roadmap-scroll {
+#how-scroll, #stack-scroll, #roadmap-scroll, #log-scroll {
   position: absolute;
   inset: 0;
   overflow-y: auto;
@@ -1132,7 +1133,7 @@ html, body {
 
 /* wider than the prose measure on purpose: the prose column sits at the left
    of this box and the table breaks out across the whole of it */
-#how-content, #stack-content, #roadmap-content {
+#how-content, #stack-content, #roadmap-content, #log-content {
   display: block;
   max-width: 800px;
   margin: 0 auto;
@@ -1312,7 +1313,7 @@ html, body {
 .mdview a:hover { color: var(--md-neon); }
 
 @media (max-width: 700px) {
-  #how-scroll, #stack-scroll, #roadmap-scroll { padding: 60px 18px 96px; }
+  #how-scroll, #stack-scroll, #roadmap-scroll, #log-scroll { padding: 92px 18px 96px; }
   .mdview { font-size: 15.5px; }
   .mdview h1 { font-size: 25px; }
   .mdview h2 { font-size: 16.5px; margin-top: 38px; }
@@ -1463,9 +1464,14 @@ body.playing:not(.chrome-open) #tabbar { display: none !important; }
    up is slower before you try it. */
 .throttle {
   position: absolute;
-  bottom: max(12px, env(safe-area-inset-bottom));
-  left: 50%; transform: translateX(-50%);
-  z-index: 6;
+  /* Left-aligned, stacked ABOVE the minimap. Three things want the bottom
+     left corner — minimap, left steering pad, throttle — so the lever takes
+     the space above the disc rather than the centre of the screen, where it
+     sat on top of the road ahead. The offset is the minimap's own sizing
+     expression (JS: min(240, min(w,h) * 0.32)) so the two move together. */
+  bottom: calc(max(14px, env(safe-area-inset-bottom)) + min(240px, 32vmin) + 14px);
+  left: max(14px, env(safe-area-inset-left));
+  z-index: 7;
   display: flex; flex-direction: column; align-items: center; gap: 6px;
   padding: 8px 10px 6px;
   border-radius: 20px;
@@ -1517,7 +1523,13 @@ body.playing:not(.chrome-open) #tabbar { display: none !important; }
 
 @media (pointer: coarse) {
   /* same compaction as the rest of the touch chrome */
-  .throttle { padding: 6px 8px 5px; background: rgba(28, 38, 58, 0.13); }
+  /* on narrow screens the minimap has already moved to the top-right, so
+     the lever takes the bottom-left corner outright */
+  .throttle {
+    padding: 6px 8px 5px; background: rgba(28, 38, 58, 0.13);
+    bottom: max(12px, env(safe-area-inset-bottom));
+    left: max(10px, env(safe-area-inset-left));
+  }
   .throttle-track { width: 30px; height: min(18vh, 148px); }
   .throttle-read { font-size: 10px; }
 }
@@ -1686,3 +1698,57 @@ body.playing:not(.chrome-open) #tabbar { display: none !important; }
   font-size: 9px;
 }
 #units-labels.on { color: #6fe6ff; border-color: rgba(111, 230, 255, .7); }
+
+/* --- dev log + roadmap, one slot ------------------------------------------
+   Two readings of the same document — what happened, and what is meant to —
+   so they sit behind one tab rather than lengthening a nav bar that is
+   already long. The build token rides along because "which build am I
+   looking at" is the first question anyone opening a change log has. */
+#log-bar {
+  position: absolute;
+  top: 46px;
+  left: 0;
+  right: 0;
+  z-index: 3;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  padding: 8px 14px;
+  background: linear-gradient(rgba(5, 8, 14, .92), rgba(5, 8, 14, .72) 70%, transparent);
+  pointer-events: none;
+}
+#log-tabs { display: flex; gap: 6px; pointer-events: auto; }
+#log-tabs button {
+  font: 12px/1 ui-monospace, SFMono-Regular, Menlo, monospace;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: #9fdcff;
+  background: rgba(10, 16, 26, .72);
+  border: 1px solid rgba(159, 220, 255, .28);
+  border-radius: 8px;
+  padding: 7px 14px;
+  cursor: pointer;
+}
+#log-tabs button:hover { color: #eaf6ff; border-color: rgba(159, 220, 255, .6); }
+#log-tabs button.active {
+  color: #061018;
+  background: #6fe6ff;
+  border-color: #6fe6ff;
+}
+#log-build {
+  font: 11px/1 ui-monospace, SFMono-Regular, Menlo, monospace;
+  letter-spacing: .06em;
+  color: #6fe6ff;
+  opacity: .62;
+}
+@media (max-width: 560px) {
+  #log-bar { top: 40px; gap: 8px; padding: 6px 10px; }
+  #log-tabs button { padding: 6px 10px; font-size: 11px; }
+  #log-build { font-size: 10px; }
+}
+
+/* There is no global .hidden in this sheet — every use is scoped, so a new
+   one has to declare itself or it silently does nothing. The roadmap pane
+   showed through behind the dev log for exactly that reason. */
+#log-scroll.hidden, #roadmap-scroll.hidden { display: none; }

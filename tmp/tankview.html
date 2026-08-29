@@ -64,8 +64,13 @@ async function go(){
     console.log('RIG emitter meshes', em);
   }
   r.render(sc,cam);
+  const bs=g.userData.baseScale ?? 1;
   document.getElementById('lbl').textContent =
     which+'  size '+s.toArray().map(v=>v.toFixed(2)).join(' x ')+'  dots '+dots.length;
+  console.log('FIT', which, 'baseScale', bs.toFixed(4),
+    'raw w/h/l', s.toArray().map(v=>v.toFixed(3)).join('/'),
+    '=> WORLD per unitScale w/h/l',
+    s.toArray().map(v=>(v*bs).toFixed(4)).join('/'));
 }
 go();
 </script>

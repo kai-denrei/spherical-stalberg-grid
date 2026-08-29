@@ -16,8 +16,8 @@
 
 import * as THREE from '../vendor/three.module.js';
 import { loadGlb, mergeByMaterial, fitModel, tintModel, makeShellRack,
-  addEdgeOutlines, makeHeatSleeve } from './glbmodels.js?v=5f9ffe81';
-import { CREATURES, waveJelly, spherePts, bulletPts, missilePts, heartPts, torusPts, towerHeadPts, enemyDotPts, portalPts } from './creatures.js?v=5f9ffe81';
+  addEdgeOutlines, makeHeatSleeve } from './glbmodels.js?v=8028e7b1';
+import { CREATURES, waveJelly, spherePts, bulletPts, missilePts, heartPts, torusPts, towerHeadPts, enemyDotPts, portalPts } from './creatures.js?v=8028e7b1';
 
 function normalizeToUnit(group) {
   group.updateMatrixWorld(true);
@@ -1252,15 +1252,24 @@ function makeMkcx(cols) {
   // Rendered size, NOT model normalization — fitModel already fixed the
   // model's proportions; this is what td-tab multiplies by.
   //
-  // MEASURED IN THE RUNNING GAME, because deriving it from the viewer's
-  // numbers gave the wrong answer twice. The test that matters is whether
-  // the tank fits a corridor, so compare its widest dimension against the
-  // mean distance between adjacent open cell centres — that IS a one-cell
-  // hallway. The procedural tank sits at 0.85 of a hallway. At baseScale
-  // 0.54 the mkcx measured 3.11 — three times too wide to fit anything.
-  // 0.147 puts it back at 0.85, exactly the footprint the board was built
-  // around. The unit viewer divides this out, so its look is unaffected.
-  g.userData.baseScale = 0.147;
+  // Measured against the PROCEDURAL TANK, which is the unit the board was
+  // actually built around — an absolute measurement needs a reference, and
+  // that is the only honest one available. Both units are multiplied by the
+  // same `unitScale`, so comparing `baseScale * raw size` compares world
+  // footprints directly and is free of any board-density term.
+  //
+  //            width    length   (world size per unit of unitScale)
+  //   tank     0.508    0.729
+  //   mkcx     0.382    1.051    at 0.54
+  //
+  // The previous 0.147 came from comparing the mkcx's LENGTH against a
+  // corridor's WIDTH. The mkcx is 2.75:1 where the procedural tank is
+  // 1.44:1, so that mistake shrank it by most of that ratio and it read as
+  // a toy on the board. A tank may be longer than a lane is wide; it may
+  // not be WIDER, and at 0.54 it is three quarters of the reference tank's
+  // width and half again its length, which is what an mkcx should look
+  // like. The unit viewer divides this out, so its look is unaffected.
+  g.userData.baseScale = 0.54;
   g.userData.kind = 'mesh';
   return g;
 }

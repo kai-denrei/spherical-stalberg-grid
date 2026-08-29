@@ -5,7 +5,7 @@
 // factory rather than three near-identical files. No renderer, no loop.
 // Shares the markdown converter and .mdview styles with the devlog overlay.
 
-import { mdToHtml } from './devlog.js?v=5f9ffe81';
+import { mdToHtml } from './devlog.js?v=8028e7b1';
 
 function makeDocTab(root, selector, file) {
   const el = root.querySelector(selector);
@@ -79,10 +79,53 @@ export function initStackTab(root) {
   return tab;
 }
 
-// The roadmap is the one page here meant to be argued with, so it gets the
-// copy button too — it pastes into an issue or a chat unchanged.
-export function initRoadmapTab(root) {
-  const tab = makeDocTab(root, '#roadmap-content', 'ROADMAP.md');
-  wireCopy(root, tab.getSource, '#roadmap-copy');
-  return tab;
+// The dev log and the roadmap are the same document read in two directions —
+// what happened, and what is meant to. They share a slot for that reason: two
+// panes behind one tab, rather than two entries in a nav bar that is already
+// long. The build token lives here too, because "which build am I looking at"
+// is the first question anyone reading a change log actually has.
+export function initLogTab(root) {
+  const panes = {
+    dev: makeDocTab(root, '#log-content', 'DEVLOG.md'),
+    roadmap: makeDocTab(root, '#roadmap-content', 'ROADMAP.md'),
+  };
+  let active = 'dev';
+
+  const build = root.querySelector('#log-build');
+  if (build) {
+    const meta = document.querySelector('meta[name="cb"]');
+    const raw = (meta && meta.getAttribute('content')) || '';
+    const token = raw.split('#')[0].trim();
+    build.textContent = token ? `build ${token}` : '';
+  }
+
+  const bar = root.querySelector('#log-tabs');
+  const show = (which) => {
+    active = which;
+    for (const b of bar.querySelectorAll('button')) {
+      b.classList.toggle('active', b.dataset.log === which);
+    }
+    for (const p of root.querySelectorAll('[data-log-pane]')) {
+      p.classList.toggle('hidden', p.dataset.logPane !== which);
+    }
+    panes[which].setActive(true);
+  };
+  if (bar) bar.addEventListener('click', (e) => {
+    const b = e.target.closest('button[data-log]');
+    if (b) show(b.dataset.log);
+  });
+
+  // the copy button follows the visible pane — copying the doc you are not
+  // reading is the kind of surprise that makes people stop trusting a button
+  wireCopy(root, () => panes[active].getSource(), '#roadmap-copy');
+
+  return {
+    setActive(on) {
+      if (!on) return;
+      panes[active].setActive(true);
+      // ?log=roadmap deep-links the pane, the same way ?unit= does in units
+      const want = new URLSearchParams(location.search).get('log');
+      if (want && panes[want] && want !== active) show(want);
+    },
+  };
 }

@@ -1,19 +1,19 @@
 // main.js — tab shell. Each tab lazily initializes its own renderer/scene the
 // first time it's shown and pauses (skips its loop body) while hidden.
 
-import { wireDevlogBadge } from './devlog.js?v=5f9ffe81';
-import { initHomeTab } from './home-tab.js?v=5f9ffe81';
-import { initGridTab } from './grid-tab.js?v=5f9ffe81';
-import { initMazeTab } from './maze-tab.js?v=5f9ffe81';
-import { initOrganicTab } from './organic-tab.js?v=5f9ffe81';
-import { initBattleTab } from './battle-tab.js?v=5f9ffe81';
-import { initHeartTab } from './heart-tab.js?v=5f9ffe81';
-import { initTdTab } from './td-tab.js?v=5f9ffe81';
-import { initTankTab } from './tank-tab.js?v=5f9ffe81';
-import { initTank2Tab } from './tank2-tab.js?v=5f9ffe81';
-import { initTank3Tab } from './tank3-tab.js?v=5f9ffe81';
-import { initUnitsTab } from './units-tab.js?v=5f9ffe81';
-import { initHowTab, initStackTab, initRoadmapTab } from './how-tab.js?v=5f9ffe81';
+import { wireDevlogBadge } from './devlog.js?v=8028e7b1';
+import { initHomeTab } from './home-tab.js?v=8028e7b1';
+import { initGridTab } from './grid-tab.js?v=8028e7b1';
+import { initMazeTab } from './maze-tab.js?v=8028e7b1';
+import { initOrganicTab } from './organic-tab.js?v=8028e7b1';
+import { initBattleTab } from './battle-tab.js?v=8028e7b1';
+import { initHeartTab } from './heart-tab.js?v=8028e7b1';
+import { initTdTab } from './td-tab.js?v=8028e7b1';
+import { initTankTab } from './tank-tab.js?v=8028e7b1';
+import { initTank2Tab } from './tank2-tab.js?v=8028e7b1';
+import { initTank3Tab } from './tank3-tab.js?v=8028e7b1';
+import { initUnitsTab } from './units-tab.js?v=8028e7b1';
+import { initHowTab, initStackTab, initLogTab } from './how-tab.js?v=8028e7b1';
 
 const tabs = {
   home: { root: document.getElementById('tab-home'), init: initHomeTab, api: null },
@@ -29,7 +29,7 @@ const tabs = {
   units: { root: document.getElementById('tab-units'), init: initUnitsTab, api: null },
   how: { root: document.getElementById('tab-how'), init: initHowTab, api: null },
   stack: { root: document.getElementById('tab-stack'), init: initStackTab, api: null },
-  roadmap: { root: document.getElementById('tab-roadmap'), init: initRoadmapTab, api: null },
+  log: { root: document.getElementById('tab-log'), init: initLogTab, api: null },
 };
 
 let current = null;

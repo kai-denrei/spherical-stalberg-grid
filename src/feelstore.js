@@ -10,7 +10,7 @@
 // localStorage is not available there. The schema and the maths live in the
 // pure module; only the persistence lives here.
 
-import { TANK_FEEL_KNOBS, makeFeelParams, clampFeelParams } from './tankfeel.js?v=5f9ffe81';
+import { TANK_FEEL_KNOBS, makeFeelParams, clampFeelParams } from './tankfeel.js?v=8028e7b1';
 
 const KEY = 'ssg.tankfeel.v1';   // versioned: a schema change must not inherit
 
