@@ -6,6 +6,69 @@ Demo links assume `npm run serve` (port 8144) or the
 
 ---
 
+## `50d2f05` — Solid means it will stop you
+
+### Bloom, softer and wider
+
+| | was | now |
+| --- | --- | --- |
+| strength | 0.9 | 0.3 |
+| radius | 0.4 | 0.5 |
+| threshold | 0.85 | 0.2 |
+
+A 0.85 threshold only ever caught near-white highlights, so bloom read as a
+rim on a few bright edges rather than as light in the scene. Biting at 0.2
+catches the body colours too — which is exactly why the strength has to come
+*down*: the same total light, spread over far more of the frame.
+
+This is the shared default in `postfx.js`, so td/battle/heart/tank3 take it.
+The unit viewer passes its own `{strength: 0.5, threshold: 0.9}` and is
+deliberately left alone — it is a lit studio on a near-black backdrop, not
+the board.
+
+### Rammable, at a glance
+
+Half-dotted is this game's word for "enemy" and it stays that. But a player
+has to know, *before* committing the tank, which ones go under the treads and
+which stop them dead. So the ones that will not give way carry one piece of
+**solid** geometry inside the cloud. Solid means mass, which is the thing
+being communicated.
+
+| type | core |
+| --- | --- |
+| drifter | octahedron |
+| corona | ring |
+| barbed | icosahedral shell |
+
+Shaped per family so it also reads as part of that creature, and sized to
+about a third of the cloud's span — the cloud is still the creature. The
+first pass at 0.46 reached the drifter's own ring and the dots stopped
+reading as the body at all. Driven off `ENEMY_SPEC.rammable` rather than a
+hardcoded list, so a spec change moves the visual with it.
+
+### Two traps worth naming
+
+**The core is a child of the `Points`, not a `Group` wrapping both.** Callers
+reach for `obj.geometry` and `obj.material` on the enemy directly:
+
+```js
+if (e.obj.material) e.obj.material.color.setHex(...)   // the slow tint
+if (e.obj.geometry) e.obj.geometry.dispose();          // the wipe
+```
+
+A wrapper turns both of those into silent no-ops — the tint stops working and
+the geometry leaks every wipe. This is the same trap the pickups fell into
+when they went from `Points` to `Group`. As a child, every existing call site
+keeps working and the core comes along for free.
+
+**White is not neutral on a solid.** The slow tint clears itself by setting
+white, which is correct on the cloud — its `PointsMaterial` uses
+`vertexColors`, so white multiplies to no change. A solid has no vertex
+colours to multiply, so white *erases* its body colour. The core records the
+colour it was built with (`userData.baseColor`) and is restored to that.
+
+---
+
 ## `cff89d2` — Beats between lessons, a bigger tank, leaders that point at it
 
 ### Three lessons in the time it takes to read one
