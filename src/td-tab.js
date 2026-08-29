@@ -19,23 +19,24 @@
 
 import * as THREE from '../vendor/three.module.js';
 import GUI from '../vendor/lil-gui.esm.js';
-import { generateSphereMesh, relax } from './grid.js?v=76e1f710';
-import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=76e1f710';
-import { mulberry32, randomSeed } from './rng.js?v=76e1f710';
-import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3, segKey } from './vec3.js?v=76e1f710';
-import { CREATURES, waveJelly } from './creatures.js?v=76e1f710';
-import { UNITS, UNIT_NAMES, buildUnit, preloadMkcx, makeBulletCloud, makeRewardSolid, makeShellSolid, makeDebris, makeDotBurst, makePortalCloud, makeHeartCloud, makeDotEnemy } from './units.js?v=76e1f710';
-import { LOOKS, LOOK_NAMES } from './looks.js?v=76e1f710';
-import { makeCellIndex } from './cellindex.js?v=76e1f710';
-import { CREATURE_TINTS, ENEMY_SPEC, INTROS, computeWavePlan } from './enemyspec.js?v=76e1f710';
-import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER } from './towers.js?v=76e1f710';
-import { makeEconomy, sellRefund } from './economy.js?v=76e1f710';
-import { makeBloom } from './postfx.js?v=76e1f710';
-import { TANK_FEEL, makeTankFeel, stepTankFeel, landTankFeel, fireTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js?v=76e1f710';
-import { BLOOM_GROUPS } from './bloomweights.js?v=76e1f710';
-import { TOWER_LOOK_NAMES, DEFAULT_TOWER_LOOK, buildTowerLook, preloadLook } from './towerlooks.js?v=76e1f710';
-import { makeAudio } from './audio.js?v=76e1f710';
-import { DEATH_KEYS } from './audiomanifest.js?v=76e1f710';
+import { generateSphereMesh, relax } from './grid.js?v=79d3e853';
+import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=79d3e853';
+import { mulberry32, randomSeed } from './rng.js?v=79d3e853';
+import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3, segKey } from './vec3.js?v=79d3e853';
+import { CREATURES, waveJelly } from './creatures.js?v=79d3e853';
+import { UNITS, UNIT_NAMES, buildUnit, preloadMkcx, makeBulletCloud, makeRewardSolid, makeShellSolid, makeDebris, makeDotBurst, makePortalCloud, makeHeartCloud, makeDotEnemy } from './units.js?v=79d3e853';
+import { LOOKS, LOOK_NAMES } from './looks.js?v=79d3e853';
+import { makeCellIndex } from './cellindex.js?v=79d3e853';
+import { CREATURE_TINTS, ENEMY_SPEC, INTROS, computeWavePlan } from './enemyspec.js?v=79d3e853';
+import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER } from './towers.js?v=79d3e853';
+import { makeEconomy, sellRefund } from './economy.js?v=79d3e853';
+import { makeBloom } from './postfx.js?v=79d3e853';
+import { TANK_FEEL, TANK_FEEL_KNOBS, makeTankFeel, stepTankFeel, landTankFeel, fireTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js?v=79d3e853';
+import { FEEL, loadFeel, saveFeel } from './feelstore.js?v=79d3e853';
+import { BLOOM_GROUPS } from './bloomweights.js?v=79d3e853';
+import { TOWER_LOOK_NAMES, DEFAULT_TOWER_LOOK, buildTowerLook, preloadLook } from './towerlooks.js?v=79d3e853';
+import { makeAudio } from './audio.js?v=79d3e853';
+import { DEATH_KEYS } from './audiomanifest.js?v=79d3e853';
 
 export function initTdTab(root) {
   let active = false;
@@ -68,13 +69,6 @@ export function initTdTab(root) {
     // are knobs rather than constants. Units: `hoverRise` is in MODEL units
     // (the tank is ~3.24 tall there), because it moves the body group inside
     // the model, not the unit on the sphere.
-    hoverRise: TANK_FEEL.rise,
-    hoverGearDrop: TANK_FEEL.gearDrop,
-    hoverVib: TANK_FEEL.vib,
-    hoverUp: TANK_FEEL.up,
-    hoverDown: TANK_FEEL.down,
-    hoverRock: TANK_FEEL.rock,
-    hoverDecay: TANK_FEEL.decay,
     // mkcx by default: the authored hover tank. Async — buildUnit falls
     // back to the procedural tank until the bytes land, then
     // onMkcxReady swaps it in.
@@ -886,7 +880,7 @@ export function initTdTab(root) {
     // hull lifts off a planted skirt. Applied here rather than in
     // updateEngine so it survives every rebuild of playerMesh.
     feel.recoil = recoilLeft;   // the game owns the clock; tankfeel draws it
-    applyTankFeel(playerMesh, feel, tankFeelParams());
+    applyTankFeel(playerMesh, feel, FEEL);
     applyTankHealth(playerMesh, playerHP / PLAYER_MAX);
     markerMesh.quaternion.copy(tmpObj.quaternion); // arrow nose = heading
   }
@@ -1345,10 +1339,11 @@ export function initTdTab(root) {
   // sleeve red-hot — no second shell until it cools over 3 s. The sleeve
   // IS the cooldown gauge; the HUD only echoes it.
   const CANNON_COOL = 3.0;
-  const RECOIL_LEN = 0.35;
+  // the kick's length is a tunable like the rest — read it, never copy it
+  const recoilLen = () => FEEL.recoilLen;
   let cannonHeat = 0;
   let recoilLeft = 0;
-  const recoilFactor = () => Math.max(0, recoilLeft / RECOIL_LEN);
+  const recoilFactor = () => Math.max(0, recoilLeft / recoilLen());
   const sleeveCool = new THREE.Color(0x232833);
   const sleeveHot = new THREE.Color(0xff2a10);
 
@@ -2710,7 +2705,7 @@ export function initTdTab(root) {
     ammo--;
     sfx.play('tank_main'); // the player's own act — always at full presence
     cannonHeat = CANNON_COOL; // the sleeve glows red-hot, cools over 3 s
-    recoilLeft = RECOIL_LEN;
+    recoilLeft = recoilLen();
     bumpLeft = Math.max(bumpLeft, BUMP_LEN * 0.4); // the shot rocks the hull too
     let dir = aimDir;
     const turret = playerMesh.userData.turret;
@@ -3637,16 +3632,21 @@ export function initTdTab(root) {
 
   const towerLookCtrl = gui.add(params, 'towerLook', TOWER_LOOK_NAMES)
     .name('tower look').onChange(applyTowerLook);
-  // guessed wrong twice by eye; these exist so they can be dialled by hand
-  const hoverF = gui.addFolder('hover');
-  hoverF.add(params, 'hoverRise', 0, 0.6, 0.01).name('body rise');
-  hoverF.add(params, 'hoverGearDrop', 0, 0.3, 0.01).name('skirt drop');
-  hoverF.add(params, 'hoverVib', 0, 0.04, 0.001).name('idle vibration');
-  hoverF.add(params, 'hoverUp', 0.4, 6, 0.1).name('spool up');
-  hoverF.add(params, 'hoverDown', 0.4, 6, 0.1).name('settle down');
-  hoverF.add(params, 'hoverRock', 0, 0.06, 0.002).name('touchdown rock');
-  hoverF.add(params, 'hoverDecay', 1.5, 10, 0.5).name('rock decay');
-  hoverF.close();
+  // Guessed wrong twice by eye, so they are dialled by hand — but the folder
+  // is GENERATED from the shared schema and writes to the shared object. The
+  // unit viewer's tuning modal is built from the same list over the same
+  // values, so a setting found on the bench is already in force here.
+  loadFeel();   // whatever was dialled in the viewer is already in force
+  const feelFolders = new Map();
+  for (const k of TANK_FEEL_KNOBS) {
+    if (!feelFolders.has(k.group)) {
+      const f = gui.addFolder(k.group);
+      f.close();
+      feelFolders.set(k.group, f);
+    }
+    feelFolders.get(k.group).add(FEEL, k.key, k.min, k.max, k.step)
+      .name(k.label).onFinishChange(saveFeel);
+  }
 
   const bloomF = gui.addFolder('bloom');
   bloomF.add(postfx.params, 'enabled').name('enabled').onChange((v) => postfx.setEnabled(v));
@@ -3731,15 +3731,6 @@ export function initTdTab(root) {
   // short: the hydraulics-down cue should answer the STOP, not trail it
   const ENGINE_STOP = 0.10;  // s of stillness before the bed fades out
 
-  const tankFeelParams = () => ({
-    rise: params.hoverRise, gearDrop: params.hoverGearDrop, vib: params.hoverVib,
-    up: params.hoverUp, down: params.hoverDown,
-    rock: params.hoverRock, decay: params.hoverDecay,
-    recoilLen: RECOIL_LEN,
-    recoilSlide: TANK_FEEL.recoilSlide,
-    recoilShudder: TANK_FEEL.recoilShudder,
-    recoilPitch: TANK_FEEL.recoilPitch,
-  });
 
   function stopEngine(fade = ENGINE_STOP, quiet = false) {
     if (engineHandle) engineHandle.stop(fade);
@@ -3771,7 +3762,7 @@ export function initTdTab(root) {
 
     // slow both ways: an engine SPOOLS. Rising a touch slower than it falls
     // reads as taking up load, then setting the weight back down.
-    stepTankFeel(feel, dt, engineRunning, tankFeelParams());
+    stepTankFeel(feel, dt, engineRunning, FEEL);
 
     if (moving && !engineRunning) {
       sfx.play('tank_spool_up'); // hydraulics lift it off the deck
@@ -4087,7 +4078,7 @@ export function initTdTab(root) {
   // ?recoil=1 freezes a mid-recoil pose (turret back, hull rocked) so the
   // kick can be screenshot; the sim pauses to hold it
   if (urlParams.get('recoil') === '1') {
-    recoilLeft = RECOIL_LEN * 0.75;
+    recoilLeft = recoilLen() * 0.75;
     cannonHeat = CANNON_COOL;
     placeActors();
     paused = true;

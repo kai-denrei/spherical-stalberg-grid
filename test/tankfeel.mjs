@@ -6,6 +6,7 @@
 import {
   TANK_FEEL, makeTankFeel, stepTankFeel, landTankFeel, fireTankFeel,
   applyTankFeel, applyTankHealth, healthColor,
+  TANK_FEEL_KNOBS, makeFeelParams, clampFeelParams, formatFeelCode,
 } from '../src/tankfeel.js';
 
 let failures = 0;
@@ -142,6 +143,51 @@ console.log('tolerates the units that have none of this:');
   applyTankHealth({ userData: {} }, 0.5);
   applyTankHealth(null, 0.5);
   check('no throw on bare units', true);
+}
+
+console.log('knob schema:');
+{
+  // The schema is the contract between the game's GUI and the viewer's modal.
+  // If a constant gains a knob but the schema does not, the bench silently
+  // stops covering it — so assert coverage in BOTH directions.
+  const tunable = Object.keys(TANK_FEEL).filter((k) => typeof TANK_FEEL[k] === 'number');
+  const keyed = TANK_FEEL_KNOBS.map((k) => k.key);
+  check('every tunable has a knob',
+        tunable.every((k) => keyed.includes(k)),
+        `missing: ${tunable.filter((k) => !keyed.includes(k)).join(',')}`);
+  check('every knob names a real constant',
+        keyed.every((k) => k in TANK_FEEL),
+        `stray: ${keyed.filter((k) => !(k in TANK_FEEL)).join(',')}`);
+  check('no duplicate keys', new Set(keyed).size === keyed.length);
+  check('every knob is fully described',
+        TANK_FEEL_KNOBS.every((k) => k.label && k.group
+          && Number.isFinite(k.min) && Number.isFinite(k.max) && k.step > 0));
+  // A slider whose range excludes the shipped value is a trap: the first drag
+  // would jump the tank to a different feel than the one you were judging.
+  check('defaults sit inside their own ranges',
+        TANK_FEEL_KNOBS.every((k) => TANK_FEEL[k.key] >= k.min && TANK_FEEL[k.key] <= k.max),
+        TANK_FEEL_KNOBS.filter((k) => TANK_FEEL[k.key] < k.min || TANK_FEEL[k.key] > k.max)
+          .map((k) => k.key).join(','));
+
+  const p = makeFeelParams();
+  check('makeFeelParams copies the defaults', TANK_FEEL_KNOBS.every((k) => p[k.key] === TANK_FEEL[k.key]));
+  p.rise = 99;
+  check('and is a copy, not a view', TANK_FEEL.rise !== 99);
+
+  // Restored state is untrusted: out of range, NaN, junk keys, wrong types.
+  const c = makeFeelParams();
+  clampFeelParams(c, { rise: 999, decay: -50, vib: 'nonsense', nonesuch: 1 });
+  check('clamps above max', c.rise === TANK_FEEL_KNOBS.find((k) => k.key === 'rise').max);
+  check('clamps below min', c.decay === TANK_FEEL_KNOBS.find((k) => k.key === 'decay').min);
+  check('ignores non-numeric', c.vib === TANK_FEEL.vib);
+  check('ignores unknown keys', !('nonesuch' in c));
+  clampFeelParams(c, {});
+  check('an empty blob changes nothing', c.rise === TANK_FEEL_KNOBS.find((k) => k.key === 'rise').max);
+
+  const code = formatFeelCode(makeFeelParams());
+  check('emits a pasteable block', code.startsWith('export const TANK_FEEL = {') && code.endsWith('};'));
+  check('emits every knob', TANK_FEEL_KNOBS.every((k) => code.includes(`${k.key}:`)));
+  check('rounds to slider precision', !/\d\.\d{6,}/.test(code), code);
 }
 
 console.log('health colour:');

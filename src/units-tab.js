@@ -12,12 +12,14 @@
 import * as THREE from '../vendor/three.module.js';
 import { OrbitControls } from '../vendor/OrbitControls.js';
 import { buildUnit, preloadMkcx, makeDebris, makeDotBurst } from './units.js';
-import { TANK_FEEL, makeTankFeel, stepTankFeel, landTankFeel, fireTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js';
+import { TANK_FEEL, TANK_FEEL_KNOBS, formatFeelCode, makeTankFeel, stepTankFeel,
+  landTankFeel, fireTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js?v=79d3e853';
+import { FEEL, loadFeel, saveFeel, resetFeel } from './feelstore.js?v=79d3e853';
 import { buildTowerLook, TOWER_LOOK_NAMES, DEFAULT_TOWER_LOOK, preloadLook } from './towerlooks.js';
 import { TOWER_BY_KEY } from './towers.js';
 import { LOOKS } from './looks.js';
 import { makeBloom } from './postfx.js';
-import { makeAudio } from './audio.js?v=76e1f710';
+import { makeAudio } from './audio.js?v=79d3e853';
 import { GROUPS, GROUP_LABELS, GROUP_EMPTY, entriesIn } from './unitcatalog.js';
 
 export function initUnitsTab(root) {
@@ -92,7 +94,7 @@ export function initUnitsTab(root) {
       b.textContent = snd.label;
       b.addEventListener('click', () => {
         // the shot is a gesture, not just a sample: kick the turret too
-        if (snd.key === 'tank_main') fireTankFeel(feel, TANK_FEEL);
+        if (snd.key === 'tank_main') fireTankFeel(feel, FEEL);
         if (!snd.loop) { sfx.play(snd.key); return; }
         if (bedBtn === b) { stopBed(); return; }  // toggle off
         stopBed();
@@ -278,9 +280,10 @@ export function initUnitsTab(root) {
     // drive the unit's own idle animation, so a turret sweeps here as in game
     if (current && current.userData.tick) current.userData.tick(clock);
     if (current && state.spin) current.rotation.y += dt * 0.35;
-    // the bench runs the shipping feel driver, not a copy of it
-    stepTankFeel(feel, dt, running, TANK_FEEL);
-    applyTankFeel(current, feel, TANK_FEEL);
+    // the bench runs the shipping feel driver over the shipping VALUES —
+    // FEEL is the same object the TD tab's folder writes to
+    stepTankFeel(feel, dt, running, FEEL);
+    applyTankFeel(current, feel, FEEL);
     for (let i = wreckFx.length - 1; i >= 0; i--) {
       const alive = wreckFx[i].userData.tick && wreckFx[i].userData.tick(dt);
       if (alive === false) { scene.remove(wreckFx[i]); wreckFx.splice(i, 1); }
@@ -292,6 +295,81 @@ export function initUnitsTab(root) {
     controls.update();
     postfx.render();
   }
+
+  // --- the tuning modal ----------------------------------------------------
+  // Sliders are generated from TANK_FEEL_KNOBS and write straight into FEEL,
+  // the object the game reads. There is no apply step and nothing to sync:
+  // the tank in front of you IS the tank that ships, mid-drag.
+  (function wireTuner() {
+    const panel = root.querySelector('#units-tuner');
+    const list = root.querySelector('#units-tuner-knobs');
+    const open = root.querySelector('#units-tune');
+    if (!panel || !list || !open) return;
+    loadFeel();
+
+    const rows = TANK_FEEL_KNOBS.map((k) => {
+      const row = document.createElement('label');
+      row.className = 'tuner-row';
+      const dp = Math.max(0, Math.ceil(-Math.log10(k.step)));
+      row.innerHTML = `<span class="tuner-name"></span>`
+        + `<input type="range" min="${k.min}" max="${k.max}" step="${k.step}">`
+        + '<output></output>';
+      row.querySelector('.tuner-name').textContent = k.label;
+      const slider = row.querySelector('input');
+      const out = row.querySelector('output');
+      const show = () => {
+        slider.value = FEEL[k.key];
+        out.textContent = Number(FEEL[k.key]).toFixed(dp);
+      };
+      slider.addEventListener('input', () => { FEEL[k.key] = Number(slider.value); show(); });
+      slider.addEventListener('change', saveFeel);
+      show();
+      return { k, row, show };
+    });
+
+    let group = null;
+    for (const r of rows) {
+      if (r.k.group !== group) {
+        group = r.k.group;
+        const h = document.createElement('div');
+        h.className = 'tuner-group';
+        h.textContent = group;
+        list.appendChild(h);
+      }
+      list.appendChild(r.row);
+    }
+    const refresh = () => { for (const r of rows) r.show(); };
+
+    const setOpen = (on) => {
+      panel.classList.toggle('tuner-hidden', !on);
+      open.classList.toggle('on', on);
+      if (on) refresh();
+    };
+    open.addEventListener('click', () => setOpen(panel.classList.contains('tuner-hidden')));
+    // ?tune=1 opens it on load — headless has no pointer, so without this the
+    // panel could only ever be verified by hand.
+    if (new URLSearchParams(location.search).get('tune')) setOpen(true);
+    root.querySelector('#units-tune-close').addEventListener('click', () => setOpen(false));
+    root.querySelector('#units-tune-reset').addEventListener('click', () => { resetFeel(); refresh(); });
+
+    // Copy as SOURCE, not as JSON: the destination is tankfeel.js, and a blob
+    // you have to hand-translate is a blob nobody transcribes.
+    const copy = root.querySelector('#units-tune-copy');
+    const label = copy.querySelector('.label');
+    let revert = 0;
+    copy.addEventListener('click', async () => {
+      clearTimeout(revert);
+      try {
+        await navigator.clipboard.writeText(formatFeelCode(FEEL));
+        copy.classList.add('ok'); label.textContent = 'copied';
+      } catch {
+        copy.classList.add('fail'); label.textContent = 'copy failed';
+      }
+      revert = setTimeout(() => {
+        copy.classList.remove('ok', 'fail'); label.textContent = 'copy code';
+      }, 1600);
+    });
+  })();
 
   resize();
   animate();

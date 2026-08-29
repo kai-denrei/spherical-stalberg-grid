@@ -23,6 +23,68 @@ export const TANK_FEEL = {
   recoilPitch: 0.05,   // body noses up, radians
 };
 
+// --- the knob schema -------------------------------------------------------
+// One description of every tunable, so the game's GUI folder and the unit
+// viewer's modal are built from the SAME list. They used to be two: the game
+// held a hand-written folder over its own `hover*` mirror while the viewer
+// read these defaults, which meant tuning in the viewer changed nothing that
+// shipped — the exact drift this module was extracted to prevent.
+//
+// Ranges are deliberately narrow. Every one of these was guessed wrong by eye
+// at least once (the first hover rise was 90% of the tank's height), so the
+// slider should not be able to reach a value that is obviously absurd.
+export const TANK_FEEL_KNOBS = [
+  { key: 'rise',          label: 'body rise',      group: 'hover',  min: 0,    max: 0.6,  step: 0.005 },
+  { key: 'gearDrop',      label: 'skirt drop',     group: 'hover',  min: 0,    max: 0.3,  step: 0.005 },
+  { key: 'up',            label: 'spool up',       group: 'hover',  min: 0.4,  max: 6,    step: 0.1 },
+  { key: 'down',          label: 'settle down',    group: 'hover',  min: 0.4,  max: 6,    step: 0.1 },
+  { key: 'rock',          label: 'touchdown rock', group: 'hover',  min: 0,    max: 0.06, step: 0.002 },
+  { key: 'decay',         label: 'rock decay',     group: 'hover',  min: 1.5,  max: 10,   step: 0.5 },
+  { key: 'vib',           label: 'idle vibration', group: 'hover',  min: 0,    max: 0.04, step: 0.001 },
+  { key: 'recoilLen',     label: 'kick length',    group: 'recoil', min: 0.05, max: 1,    step: 0.01 },
+  { key: 'recoilSlide',   label: 'turret slide',   group: 'recoil', min: 0,    max: 0.6,  step: 0.01 },
+  { key: 'recoilShudder', label: 'shudder',        group: 'recoil', min: 0,    max: 0.12, step: 0.005 },
+  { key: 'recoilPitch',   label: 'nose-up pitch',  group: 'recoil', min: 0,    max: 0.2,  step: 0.005 },
+];
+
+// A fresh, mutable set of values — what the sliders write to.
+export function makeFeelParams(src = TANK_FEEL) {
+  const p = {};
+  for (const k of TANK_FEEL_KNOBS) p[k.key] = src[k.key];
+  return p;
+}
+
+// Fold a loose object (a stored blob, a URL param) onto a params set, keeping
+// only known keys and only finite values inside their declared range. Anything
+// restored from outside the app is untrusted input, including our own
+// localStorage after a schema change.
+export function clampFeelParams(p, src = {}) {
+  for (const k of TANK_FEEL_KNOBS) {
+    const v = Number(src[k.key]);
+    if (Number.isFinite(v)) p[k.key] = Math.min(k.max, Math.max(k.min, v));
+  }
+  return p;
+}
+
+// The tuned values as a paste-ready source block. Without this, a good setting
+// lives in one browser and never reaches the repo, which makes the whole bench
+// a toy — you can find the right feel and still not be able to ship it.
+export function formatFeelCode(p) {
+  const groups = [...new Set(TANK_FEEL_KNOBS.map((k) => k.group))];
+  const w = Math.max(...TANK_FEEL_KNOBS.map((k) => k.key.length));
+  const body = groups.map((g) => TANK_FEEL_KNOBS.filter((k) => k.group === g)
+    .map((k) => `  ${(k.key + ':').padEnd(w + 1)} ${round(p[k.key], k.step)},`.padEnd(30)
+                + ` // ${k.label}`)
+    .join('\n')).join('\n\n');
+  return `export const TANK_FEEL = {\n${body}\n};`;
+}
+
+// Snap to the slider's own precision, so a drag never emits 0.13999999999.
+function round(v, step) {
+  const dp = Math.max(0, Math.ceil(-Math.log10(step)));
+  return Number(Number(v).toFixed(dp));
+}
+
 export function makeTankFeel() {
   return { hoverT: 0, settleT: 99, t: 0, recoil: 0 };
 }
