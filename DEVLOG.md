@@ -6,6 +6,61 @@ Demo links assume `npm run serve` (port 8144) or the
 
 ---
 
+## `32be0df` — The gates telegraph a wave before it lands
+
+A wave used to simply appear. The countdown said so in a corner, but the
+corner is not where you are looking — so the first you knew of it was enemies
+already on the board, and the gate they came out of gave nothing away.
+
+Over the last 3.2 seconds the gate now **charges**:
+
+| | |
+| --- | --- |
+| its own idle | runs faster — not a second animation layered on top |
+| scale + brightness | swell with the charge |
+| shock ring | thrown across the floor each beat |
+| beat spacing | closes from ~0.7 s to ~0.18 s |
+| on spawn | one wide ring per gate, charge spent |
+
+One thing accelerating reads as building pressure; two things moving reads as
+noise. And the cadence **is** the countdown — legible without reading
+anything.
+
+It runs off the same clock that calls `spawnWave`, so the warning cannot
+promise a moment the spawn does not keep.
+
+The rings lie **on** the surface: the basis comes from the cell's own normal,
+because a fixed up-vector degenerates wherever the sphere happens to face it.
+They are one pooled `Points` cloud rewritten each frame — 144 particles alive
+at mid-charge, one draw call. That is the effects direction recorded in
+`acc9e3a`, applied.
+
+72 points per ring, not the 34 I started with: the radius grows to several
+cells, and 34 points spread across that is confetti rather than a shock front.
+
+**No sound.** Nothing in the manifest belongs to a portal, and the nearest
+candidates are the tank's own hydraulics — a wave warning that sounds like
+your own vehicle is worse than silence. It wants a new asset.
+
+### `?tick` does not drive the wave scheduler
+
+Wound from 2 s to 10 s, the countdown read the same `in 4s` every time, which
+looks exactly like a dead feature. `?tick` advances motion, not the wave
+clock. `?charge=0..1` parks the clock inside the warning window instead, and
+reports what the telegraph is actually doing:
+
+```
+CHARGE want=0    charge=0.06 ringParticles=68  beatIn=0.60s gateScale=1.018
+CHARGE want=0.5  charge=0.56 ringParticles=68  beatIn=0.33s gateScale=1.040
+CHARGE want=0.95 charge=0.00 ringParticles=136 beatIn=0.00s gateScale=1.000
+```
+
+The third line is the wave landing mid-sample — charge spent, gate back to
+1.0, and the 136-particle release ring in the air. The whole cycle, in three
+lines, from a feature a screenshot could not settle.
+
+---
+
 ## `db3e3da` — Bands, and two reasons the first attempt did nothing
 
 Three controls had piled into the phone's bottom-left corner — the primary
