@@ -61,6 +61,11 @@ export const SOUNDS = {
   // --- enemies -----------------------------------------------------------
   // a cleared wave is a dozen deaths inside a second; caps and the window
   // turn that from a smear into a volley
+  // The wave warning. ONE voice however many gates are opening: two gates
+  // charging together would double the level of the loudest cue in the
+  // game. The 2.5s min-interval is longer than any legitimate re-trigger,
+  // so a stalled wave clock cannot stack it on itself.
+  portal_warn: { file: `${A}/portal_warn.mp3`, bus: 'enemies', gain: 0.75, maxVoices: 1, minInterval: 2.5, rateJitter: 0 },
   enemy_die_a: { file: `${A}/enemy_die_a.mp3`, bus: 'enemies', gain: 0.60, maxVoices: 3, minInterval: 0.04, rateJitter: 0.12 },
   enemy_die_b: { file: `${A}/enemy_die_b.mp3`, bus: 'enemies', gain: 0.60, maxVoices: 3, minInterval: 0.04, rateJitter: 0.12 },
   enemy_die_c: { file: `${A}/enemy_die_c.mp3`, bus: 'enemies', gain: 0.60, maxVoices: 3, minInterval: 0.04, rateJitter: 0.12 },

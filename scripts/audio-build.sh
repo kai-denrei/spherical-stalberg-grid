@@ -64,6 +64,11 @@ tank_spool_down|hydraulic_down.wav|0.92|1.00
 tank_destroyed|Tower_AoE_heavy-blast-03.wav|1.55|0.72
 tank_pickup|Tank_PickUpItem_handling-26.wav|0.45|1.00
 tank_shells|Tank_PickUpNewShells_reload-02.wav|0.91|1.00
+# The wave warning. Kept at nearly its full 3.76s rather than trimmed to
+# the 3.0s lead: the gush is meant to still be running as the first enemy
+# clears the gate, so the sound hands over to the thing it warned about
+# instead of stopping dead a frame before it.
+portal_warn|Portal_WaveWarning_freezing_gush_01.wav|3.70|1.00
 enemy_die_a|slime-pop.wav|0.50|1.00
 enemy_die_b|slime-organic.wav|0.57|1.00
 enemy_die_c|splat_quick.wav|0.33|1.00
@@ -74,7 +79,9 @@ echo "building $OUT/"
 worst=-99
 
 while IFS='|' read -r key src dur rate; do
-  [[ -z "$key" ]] && continue
+  # blank lines and comments: the table is worth annotating, and without
+  # this a comment row reads as a key with an empty source path
+  [[ -z "$key" || "$key" == \#* ]] && continue
   in="$SRC/$src"
   [[ -f "$in" ]] || { echo "missing source: $in" >&2; exit 1; }
 
@@ -138,7 +145,9 @@ EOF
 )
 
 while IFS='|' read -r key src lo hi xf; do
-  [[ -z "$key" ]] && continue
+  # blank lines and comments: the table is worth annotating, and without
+  # this a comment row reads as a key with an empty source path
+  [[ -z "$key" || "$key" == \#* ]] && continue
   in="$SRC/$src"
   [[ -f "$in" ]] || { echo "missing source: $in" >&2; exit 1; }
   body=$(awk -v a="$lo" -v b="$hi" 'BEGIN{printf "%.4f", b-a}')
