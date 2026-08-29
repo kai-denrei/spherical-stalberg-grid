@@ -16,8 +16,8 @@
 
 import * as THREE from '../vendor/three.module.js';
 import { loadGlb, mergeByMaterial, fitModel, tintModel, makeShellRack,
-  addEdgeOutlines, makeHeatSleeve } from './glbmodels.js?v=d04b3590';
-import { CREATURES, waveJelly, spherePts, bulletPts, missilePts, heartPts, torusPts, towerHeadPts, enemyDotPts, portalPts } from './creatures.js?v=d04b3590';
+  addEdgeOutlines, makeHeatSleeve } from './glbmodels.js?v=8483ae5f';
+import { CREATURES, waveJelly, spherePts, bulletPts, missilePts, heartPts, torusPts, towerHeadPts, enemyDotPts, portalPts } from './creatures.js?v=8483ae5f';
 
 function normalizeToUnit(group) {
   group.updateMatrixWorld(true);
@@ -903,8 +903,11 @@ const MKCX_URL = 'assets/models/mkcx.glb';
 // Hover_Gear is the nacelle/lift-emitter skirt — the part that should stay
 // planted while the body rises off it. Preserved through the merge for that
 // reason, not because it animates on its own.
+// Nodes that must survive the merge as addressable objects: the things that
+// articulate. Everything else is welded into per-material batches — including
+// the glow accents, which is exactly what makes the health tint cheap.
 const MKCX_PIVOTS = ['Turret_Pivot', 'Secondary_L_Gun_Pivot', 'Secondary_R_Gun_Pivot',
-  'Hover_Gear', 'Sensor_Mast'];
+  'Hover_Gear'];
 // The barrel glow strips are authored floating +0.20 above the barrel axis.
 // At our scale they don't read as strips ON the gun — they read as a stray
 // bright line hanging in front of the tank. Dropped before the merge, since
@@ -976,6 +979,13 @@ function makeMkcx(cols) {
   // the house rule about never re-deriving a render-coupled direction.
   const turret = g.getObjectByName('Turret_Pivot');
   if (turret) {
+    // The model ships the turret casually slewed 6 deg off the hull axis
+    // (quaternion y = -0.0523). That is fine as sculpture and wrong as a
+    // machine: this pivot is never rotated at runtime, and `fire()` derives
+    // the shell's heading from its WORLD +Z, so the baked yaw made the tank
+    // shoot six degrees off from where it visibly points. Zeroing the rest
+    // pose squares the beam AND the aim in one move.
+    turret.quaternion.identity();
     g.userData.turret = turret;
     turret.userData.baseZ = turret.position.z; // recoil slides back from here
   }
@@ -987,19 +997,32 @@ function makeMkcx(cols) {
   // Raising the WHOLE unit reads as flight; raising only the body off a
   // planted skirt reads as weight on suspension. Everything that is not the
   // hover gear becomes one body group — hull, turret, secondaries, details.
-  // The mast is the ONE fitting on this hull with no mirrored twin — every
-  // applique and glow strip comes in an L/R pair, but the mast sits alone at
-  // x=-1.30, z=-3.00, which reads as a beam out the back tilted to one side.
-  // Centred, and promoted: it is the health gauge now, so it wants to be
-  // symmetrical and tall enough to read at a glance.
-  const mast = g.getObjectByName('Sensor_Mast');
-  if (mast) {
-    mast.position.x = 0;
-    mast.scale.set(1.15, 2.4, 1.15);
-    let beam = null;
-    mast.traverse((o) => { if (!beam && o.isMesh) beam = o; });
-    g.userData.healthBeam = beam;
-  }
+  // Health is diegetic: the machine's own running lights read it out, instead
+  // of a gauge bolted on beside them. The model puts every accent — six lift
+  // emitters down the nacelles, the turret and hull glow strips, the secondary
+  // rings, the headlights — on ONE material, `M_Glow`. So the tint is a single
+  // material write that lands on all of them at once, wrapping the hull rather
+  // than facing one way, which is what makes it legible from every camera.
+  //
+  // The material is cloned first, and the clone is shared back across every
+  // batch that used it. The merge preserves material identity, so painting the
+  // loaded instance in place would tint every OTHER mkcx on the field too —
+  // they all descend from one cached prototype.
+  let glow = null;
+  g.traverse((o) => {
+    if (!o.isMesh) return;
+    const mats = Array.isArray(o.material) ? o.material : [o.material];
+    for (let i = 0; i < mats.length; i++) {
+      const m = mats[i];
+      if (!m || m.name !== 'M_Glow') continue;
+      if (!glow) {
+        glow = m.clone();
+        if (glow.emissive) glow.emissiveIntensity = 1; // lit, not painted
+      }
+      if (Array.isArray(o.material)) o.material[i] = glow; else o.material = glow;
+    }
+  });
+  if (glow) g.userData.healthBeam = glow;
 
   const gear = g.getObjectByName('Hover_Gear');
   const modelRoot = gear && gear.parent;

@@ -6,14 +6,14 @@
 
 import * as THREE from '../vendor/three.module.js';
 import GUI from '../vendor/lil-gui.esm.js';
-import { generateSphereMesh, relax } from './grid.js?v=d04b3590';
-import { generateDungeon, BLOCKED, PATH, ROOM } from './dungeon.js?v=d04b3590';
-import { mulberry32, randomSeed } from './rng.js?v=d04b3590';
-import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3 } from './vec3.js?v=d04b3590';
-import { CREATURES, waveJelly } from './creatures.js?v=d04b3590';
-import { UNITS, UNIT_NAMES, buildUnit, makeOrbCloud, makeDebris, ORB_FX, makeHeartCloud } from './units.js?v=d04b3590';
-import { LOOKS, LOOK_NAMES } from './looks.js?v=d04b3590';
-import { makeCellIndex } from './cellindex.js?v=d04b3590';
+import { generateSphereMesh, relax } from './grid.js?v=8483ae5f';
+import { generateDungeon, BLOCKED, PATH, ROOM } from './dungeon.js?v=8483ae5f';
+import { mulberry32, randomSeed } from './rng.js?v=8483ae5f';
+import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3 } from './vec3.js?v=8483ae5f';
+import { CREATURES, waveJelly } from './creatures.js?v=8483ae5f';
+import { UNITS, UNIT_NAMES, buildUnit, makeOrbCloud, makeDebris, ORB_FX, makeHeartCloud } from './units.js?v=8483ae5f';
+import { LOOKS, LOOK_NAMES } from './looks.js?v=8483ae5f';
+import { makeCellIndex } from './cellindex.js?v=8483ae5f';
 
 export function initOrganicTab(root) {
   let active = false;

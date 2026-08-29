@@ -167,12 +167,28 @@ console.log('health paint:');
   const u = { userData: { healthBeam: { material: mat } } };
   applyTankHealth(u, 1);
   check('paints colour', !!mat.color.v && mat.color.v[2] > mat.color.v[0]);
-  check('emissive trails colour', mat.emissive.v[2] < mat.color.v[2]);
+  // The hue lives in emissive; the diffuse is a dark tint of the same hue, so
+  // the strip reads as a light source rather than a painted panel.
+  check('emissive leads colour', mat.emissive.v[2] > mat.color.v[2]);
+  check('emissive is the full hue', approx(mat.emissive.v[2], healthColor(1)[2]));
+  check('diffuse keeps the hue', mat.color.v[2] > mat.color.v[0] && mat.color.v[2] < 0.4);
   // Multi-material beams (the merged GLB mast) must all get painted.
   const a = { color: { setRGB(r, g, b) { this.v = [r, g, b]; } } };
   const b = { color: { setRGB(r, g, b) { this.v = [r, g, b]; } } };
   applyTankHealth({ userData: { healthBeam: { material: [a, b] } } }, 0);
   check('paints every material', !!a.color.v && !!b.color.v);
+
+  // The mkcx hands over a bare MATERIAL — the one instance all its running
+  // lights share — not a mesh. Both shapes have to resolve.
+  const shared = { color: { setRGB(r, g, b) { this.v = [r, g, b]; } },
+                   emissive: { setRGB(r, g, b) { this.v = [r, g, b]; } } };
+  applyTankHealth({ userData: { healthBeam: shared } }, 1);
+  check('accepts a bare material', !!shared.emissive.v);
+  // ...and an array of meshes, for a unit whose accents did not merge.
+  const m1 = { color: { setRGB(r, g, b) { this.v = [r, g, b]; } } };
+  const m2 = { color: { setRGB(r, g, b) { this.v = [r, g, b]; } } };
+  applyTankHealth({ userData: { healthBeam: [{ material: m1 }, { material: m2 }] } }, 0.5);
+  check('accepts an array of meshes', !!m1.color.v && !!m2.color.v);
 }
 
 console.log(failures ? `\n${failures} FAILURES` : '\nall tankfeel invariants hold');

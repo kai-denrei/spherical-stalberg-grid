@@ -95,15 +95,20 @@ export function applyTankFeel(unit, st, p = TANK_FEEL) {
 }
 
 // --- health, as a diegetic readout -----------------------------------------
-// The mast on the tank's back is the health gauge: cool blue at full, through
+// The machine's own running lights are the gauge: cool blue at full, through
 // amber, to red. A number in a corner of the HUD tells you the same thing, but
-// this one is ON the machine you are watching.
+// this one is ON the thing you are watching, and it is legible from every
+// camera because the accents wrap the hull rather than facing one way.
+const DIFFUSE_FLOOR = 0.22;   // how much of the hue survives in the body colour
+
+// Saturated on purpose. These drive EMISSIVE, and a pale tint at full
+// emissive resolves to white — the earlier sky-blue full-health stop read as
+// "the lights are on", not "the lights are blue". Each channel also ramps one
+// way across the three stops, so no colour doubles back on its way down.
 const HEALTH_STOPS = [
-  [0.0, [1.00, 0.18, 0.10]],  // red — blue kept BELOW orange's so every
-                              // channel ramps one way; a dip here would read
-                              // as the beam cooling slightly as it dies.
-  [0.5, [1.00, 0.55, 0.10]],  // orange
-  [1.0, [0.55, 0.90, 1.00]],  // light blue
+  [0.0, [1.00, 0.10, 0.04]],  // red
+  [0.5, [1.00, 0.45, 0.05]],  // orange
+  [1.0, [0.20, 0.70, 1.00]],  // blue
 ];
 
 export function healthColor(frac) {
@@ -120,15 +125,31 @@ export function healthColor(frac) {
   return HEALTH_STOPS[HEALTH_STOPS.length - 1][1];
 }
 
-// Paint a unit's health beam. Safe on units that have none.
+// Resolve a health target down to the materials it paints. The target may be
+// a material, a mesh, or an array of either: the mkcx hands over the single
+// accent material its running lights all share, while a simpler unit might
+// hand over one mesh. Meshes are unwrapped first, since a mesh carrying a
+// `material` is not itself one.
+function healthMaterials(target, out = []) {
+  if (!target) return out;
+  if (Array.isArray(target)) { for (const t of target) healthMaterials(t, out); return out; }
+  if (target.material) return healthMaterials(target.material, out);
+  if (target.color || target.emissive) out.push(target);
+  return out;
+}
+
+// Paint a unit's health accents. Safe on units that have none.
 export function applyTankHealth(unit, frac) {
-  const beam = unit && unit.userData && unit.userData.healthBeam;
-  if (!beam) return;
+  const mats = healthMaterials(unit && unit.userData && unit.userData.healthBeam);
+  if (!mats.length) return;
   const [r, g, b] = healthColor(frac);
-  const mats = Array.isArray(beam.material) ? beam.material : [beam.material];
   for (const m of mats) {
-    if (!m) continue;
-    if (m.color) m.color.setRGB(r, g, b);
-    if (m.emissive) m.emissive.setRGB(r * 0.85, g * 0.85, b * 0.85);
+    // The hue goes in EMISSIVE and the diffuse stays dark. These are running
+    // lights: lit at full diffuse they wash toward white under the scene's
+    // key light, and a gauge that reads white at full health is not a gauge.
+    // Dark body + hot emissive keeps the strip saturated at every level, and
+    // it is the emissive that the bloom pass picks up.
+    if (m.color) m.color.setRGB(r * DIFFUSE_FLOOR, g * DIFFUSE_FLOOR, b * DIFFUSE_FLOOR);
+    if (m.emissive) m.emissive.setRGB(r, g, b);
   }
 }
