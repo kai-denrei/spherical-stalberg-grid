@@ -748,7 +748,7 @@ html, body {
 /* --- doc tabs (how it works / tech stack): full-page article --- */
 /* both scrollers, both articles — the .mdview block near the end of this
    file owns every typographic decision for all three documents */
-#how-scroll, #stack-scroll {
+#how-scroll, #stack-scroll, #roadmap-scroll {
   position: absolute;
   inset: 0;
   overflow-y: auto;
@@ -1132,7 +1132,7 @@ html, body {
 
 /* wider than the prose measure on purpose: the prose column sits at the left
    of this box and the table breaks out across the whole of it */
-#how-content, #stack-content {
+#how-content, #stack-content, #roadmap-content {
   display: block;
   max-width: 800px;
   margin: 0 auto;
@@ -1312,7 +1312,7 @@ html, body {
 .mdview a:hover { color: var(--md-neon); }
 
 @media (max-width: 700px) {
-  #how-scroll, #stack-scroll { padding: 60px 18px 96px; }
+  #how-scroll, #stack-scroll, #roadmap-scroll { padding: 60px 18px 96px; }
   .mdview { font-size: 15.5px; }
   .mdview h1 { font-size: 25px; }
   .mdview h2 { font-size: 16.5px; margin-top: 38px; }
@@ -1336,7 +1336,7 @@ html, body {
 
 /* --- copy the whole stack: top-right of the tech-stack tab, parked
    against the fixed tab so the article scrolls under it --- */
-#stack-copy {
+#stack-copy, #roadmap-copy {
   position: absolute;
   top: max(12px, env(safe-area-inset-top));
   right: max(12px, env(safe-area-inset-right));
@@ -1357,19 +1357,19 @@ html, body {
   backdrop-filter: blur(6px);
   transition: color .15s, background .15s, border-color .15s;
 }
-#stack-copy .glyph { font-size: 15px; line-height: 1; }
-#stack-copy:hover { color: #eaf6ff; border-color: rgba(159, 220, 255, .6); }
-#stack-copy:focus-visible { outline: 2px solid #6fe6ff; outline-offset: 3px; }
-#stack-copy.ok {
+#stack-copy .glyph, #roadmap-copy .glyph { font-size: 15px; line-height: 1; }
+#stack-copy:hover, #roadmap-copy:hover { color: #eaf6ff; border-color: rgba(159, 220, 255, .6); }
+#stack-copy:focus-visible, #roadmap-copy:focus-visible { outline: 2px solid #6fe6ff; outline-offset: 3px; }
+#stack-copy.ok, #roadmap-copy.ok {
   color: #061018;
   background: #6fe6ff;
   border-color: #6fe6ff;
   box-shadow: 0 0 16px rgba(111, 230, 255, .45);
 }
-#stack-copy.fail { color: #ffcfa2; border-color: rgba(255, 176, 102, .6); }
+#stack-copy.fail, #roadmap-copy.fail { color: #ffcfa2; border-color: rgba(255, 176, 102, .6); }
 
 @media (prefers-reduced-motion: reduce) {
-  #stack-copy { transition: none; }
+  #stack-copy, #roadmap-copy { transition: none; }
 }
 
 /* ── HOME LAUNCHER ───────────────────────────────────────────────────────

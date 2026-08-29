@@ -16,8 +16,8 @@
 
 import * as THREE from '../vendor/three.module.js';
 import { loadGlb, mergeByMaterial, fitModel, tintModel, makeShellRack,
-  addEdgeOutlines, makeHeatSleeve } from './glbmodels.js?v=8483ae5f';
-import { CREATURES, waveJelly, spherePts, bulletPts, missilePts, heartPts, torusPts, towerHeadPts, enemyDotPts, portalPts } from './creatures.js?v=8483ae5f';
+  addEdgeOutlines, makeHeatSleeve } from './glbmodels.js?v=76e1f710';
+import { CREATURES, waveJelly, spherePts, bulletPts, missilePts, heartPts, torusPts, towerHeadPts, enemyDotPts, portalPts } from './creatures.js?v=76e1f710';
 
 function normalizeToUnit(group) {
   group.updateMatrixWorld(true);

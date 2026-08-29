@@ -1,11 +1,11 @@
-// how-tab.js — the static markdown tabs: HOW-IT-WORKS.md (building blocks)
-// and TECH-STACK.md (what a visiting dev needs to judge compatibility).
-// Both are the same thing — fetch a file, render it, do nothing else — so
-// they share one factory rather than two near-identical files. No renderer,
-// no loop. Shares the markdown converter and .mdview styles with the devlog
-// overlay.
+// how-tab.js — the static markdown tabs. Three of them now: HOW-IT-WORKS.md
+// (building blocks), TECH-STACK.md (what a visiting dev needs to judge
+// compatibility), and ROADMAP.md (where this is going). All three are the
+// same thing — fetch a file, render it, do nothing else — so they share one
+// factory rather than three near-identical files. No renderer, no loop.
+// Shares the markdown converter and .mdview styles with the devlog overlay.
 
-import { mdToHtml } from './devlog.js?v=8483ae5f';
+import { mdToHtml } from './devlog.js?v=76e1f710';
 
 function makeDocTab(root, selector, file) {
   const el = root.querySelector(selector);
@@ -37,8 +37,8 @@ function makeDocTab(root, selector, file) {
 // doc is authored in and it pastes into an issue or a chat unchanged. The
 // clipboard API rejects on insecure origins and outside a user gesture, so
 // every failure path has to land on the button rather than in the console.
-function wireCopy(root, getSource) {
-  const btn = root.querySelector('#stack-copy');
+function wireCopy(root, getSource, selector) {
+  const btn = root.querySelector(selector);
   if (!btn) return;
   const label = btn.querySelector('.label');
   const glyph = btn.querySelector('.glyph');
@@ -75,6 +75,14 @@ export function initHowTab(root) {
 
 export function initStackTab(root) {
   const tab = makeDocTab(root, '#stack-content', 'TECH-STACK.md');
-  wireCopy(root, tab.getSource);
+  wireCopy(root, tab.getSource, '#stack-copy');
+  return tab;
+}
+
+// The roadmap is the one page here meant to be argued with, so it gets the
+// copy button too — it pastes into an issue or a chat unchanged.
+export function initRoadmapTab(root) {
+  const tab = makeDocTab(root, '#roadmap-content', 'ROADMAP.md');
+  wireCopy(root, tab.getSource, '#roadmap-copy');
   return tab;
 }
