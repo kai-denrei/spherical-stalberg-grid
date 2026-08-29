@@ -16,9 +16,10 @@
 
 import * as THREE from '../vendor/three.module.js';
 import { loadGlb, mergeByMaterial, fitModel, tintModel, makeShellRack,
-  addEdgeOutlines, makeHeatSleeve } from './glbmodels.js?v=fd59cfe7';
-import { CREATURES, waveJelly, spherePts, bulletPts, missilePts, heartPts, torusPts, towerHeadPts, enemyDotPts, portalPts } from './creatures.js?v=fd59cfe7';
-import { ENEMY_SPEC } from './enemyspec.js?v=fd59cfe7';
+  addEdgeOutlines, makeHeatSleeve } from './glbmodels.js?v=79aeb34e';
+import { CREATURES, waveJelly, spherePts, bulletPts, missilePts, heartPts, torusPts, towerHeadPts, enemyDotPts, portalPts } from './creatures.js?v=79aeb34e';
+import { TOWER_FEEL, headKindFor } from './towerfeel.js?v=79aeb34e';
+import { ENEMY_SPEC } from './enemyspec.js?v=79aeb34e';
 
 function normalizeToUnit(group) {
   group.updateMatrixWorld(true);
@@ -553,10 +554,14 @@ export function makeTowerMast(def) {
   return { g, head, tintM, edge, outline };
 }
 
-export function makeTowerUnit(def) {
+// `feel` is the live tuning object when one is passed, and the shipped
+// defaults otherwise — so this function is equally usable from the game, the
+// bench, and a Node test with no store in sight.
+export function makeTowerUnit(def, feel = TOWER_FEEL) {
   const { g, head } = makeTowerMast(def);
   // the half-dotted head, floating above the mast
-  const pts = towerHeadPts(def.shape || 'sphere');
+  const kind = headKindFor(def, feel);
+  const pts = towerHeadPts(kind, Math.round(feel.dots), feel.hiEvery);
   const pos = new Float32Array(pts.length * 3);
   const col = new Float32Array(pts.length * 3);
   const cBody = new THREE.Color(def.color);
@@ -570,17 +575,24 @@ export function makeTowerUnit(def) {
   geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
   geo.setAttribute('color', new THREE.BufferAttribute(col, 3));
   const cloud = new THREE.Points(geo, new THREE.PointsMaterial({
-    size: 2.1, sizeAttenuation: false, vertexColors: true,
+    size: feel.dotSize, sizeAttenuation: false, vertexColors: true,
     transparent: true, opacity: 0.95,
   }));
-  cloud.scale.setScalar(0.42);
-  if (def.shape === 'gear') cloud.rotation.x = 0.28; // show the cog face
+  cloud.scale.setScalar(feel.headScale);
+  // a flat cog seen edge-on is a line; tip it so the teeth read
+  if (kind === 'gear') cloud.rotation.x = 0.28;
   head.add(cloud);
-  const spin = def.spin ?? 0.6;
+  // A tower's own `spin` still wins where towers.js sets one — that is per
+  // tower character, not a global look setting. The knob is the default for
+  // everything that does not care.
+  const spin = def.spin ?? feel.spin;
+  const lift = feel.headLift;
   g.userData.tick = (t) => {
     head.rotation.y = t * spin;
-    head.position.y = 1.12 + 0.045 * Math.sin(t * 1.9);
+    head.position.y = lift + feel.bob * Math.sin(t * feel.bobRate);
   };
+  head.position.y = lift;
+  g.userData.headCloud = cloud;
   return g;
 }
 

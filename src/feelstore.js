@@ -10,11 +10,17 @@
 // localStorage is not available there. The schema and the maths live in the
 // pure module; only the persistence lives here.
 
-import { TANK_FEEL_KNOBS, makeFeelParams, clampFeelParams } from './tankfeel.js?v=fd59cfe7';
+import { TANK_FEEL_KNOBS, makeFeelParams, clampFeelParams } from './tankfeel.js?v=79aeb34e';
+import { TOWER_FEEL_KNOBS, makeTowerParams, clampTowerParams } from './towerfeel.js?v=79aeb34e';
 
-const KEY = 'ssg.tankfeel.v1';   // versioned: a schema change must not inherit
+const KEY = 'ssg.tankfeel.v1';    // versioned: a schema change must not inherit
+const TKEY = 'ssg.towerfeel.v1';
 
 export const FEEL = makeFeelParams();
+// The live tower look. Same contract as FEEL: one object, mutated in place by
+// whichever surface is tuning, read by the builder — so a head dialled in the
+// viewer is the head the board raises.
+export const TOWER = makeTowerParams();
 
 // Restore, defensively. Stored values are untrusted input — the blob may
 // predate a knob's range, or a key may have been renamed — so it is folded on
@@ -37,4 +43,33 @@ export function resetFeel() {
   for (const k of TANK_FEEL_KNOBS) FEEL[k.key] = d[k.key];
   try { localStorage.removeItem(KEY); } catch { /* ignore */ }
   return FEEL;
+}
+
+export function loadTower() {
+  try {
+    const raw = localStorage.getItem(TKEY);
+    if (raw) {
+      const blob = JSON.parse(raw);
+      clampTowerParams(TOWER, blob);
+      // headShape is a CHOICE, not a range, so the numeric clamp cannot vet
+      // it — an unknown value here would ask the generator for a shape that
+      // does not exist and quietly hand back a sphere.
+      const want = blob.headShape;
+      if (TOWER_FEEL_KNOBS.find((k) => k.key === 'headShape').choices.includes(want)) {
+        TOWER.headShape = want;
+      }
+    }
+  } catch { /* no storage, private mode, or junk — defaults stand */ }
+  return TOWER;
+}
+
+export function saveTower() {
+  try { localStorage.setItem(TKEY, JSON.stringify(TOWER)); } catch { /* ignore */ }
+}
+
+export function resetTower() {
+  const d = makeTowerParams();
+  for (const k of TOWER_FEEL_KNOBS) TOWER[k.key] = d[k.key];
+  try { localStorage.removeItem(TKEY); } catch { /* ignore */ }
+  return TOWER;
 }

@@ -12,16 +12,18 @@
 import * as THREE from '../vendor/three.module.js';
 import { OrbitControls } from '../vendor/OrbitControls.js';
 import { buildUnit, preloadMkcx, makeDebris, makeDotBurst, makeBulletCloud,
-  makeDotEnemy, makeRewardSolid, makeShellSolid } from './units.js?v=fd59cfe7';
+  makeDotEnemy, makeRewardSolid, makeShellSolid } from './units.js?v=79aeb34e';
 import { TANK_FEEL, TANK_FEEL_KNOBS, formatFeelCode, makeTankFeel, stepTankFeel,
-  landTankFeel, fireTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js?v=fd59cfe7';
-import { FEEL, loadFeel, saveFeel, resetFeel } from './feelstore.js?v=fd59cfe7';
-import { CREATURE_TINTS } from './enemyspec.js?v=fd59cfe7';
+  landTankFeel, fireTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js?v=79aeb34e';
+import { FEEL, loadFeel, saveFeel, resetFeel,
+  TOWER, loadTower, saveTower, resetTower } from './feelstore.js?v=79aeb34e';
+import { TOWER_FEEL_KNOBS, formatTowerFeel, clampTowerParams } from './towerfeel.js?v=79aeb34e';
+import { CREATURE_TINTS } from './enemyspec.js?v=79aeb34e';
 import { buildTowerLook, TOWER_LOOK_NAMES, DEFAULT_TOWER_LOOK, preloadLook } from './towerlooks.js';
 import { TOWER_BY_KEY } from './towers.js';
 import { LOOKS } from './looks.js';
 import { makeBloom } from './postfx.js';
-import { makeAudio } from './audio.js?v=fd59cfe7';
+import { makeAudio } from './audio.js?v=79aeb34e';
 import { GROUPS, GROUP_LABELS, GROUP_EMPTY, entriesIn } from './unitcatalog.js';
 
 export function initUnitsTab(root) {
@@ -61,7 +63,12 @@ export function initUnitsTab(root) {
   const healthEl = root.querySelector('#units-health');
   let wreckT = 0;   // >0 while the wreck is playing
   let current = null;
+  let currentEntry = null;
   let sweepBtn = null;
+  // assigned by the tuner IIFE further down. Declared HERE because show()
+  // runs during init and would hit the temporal dead zone of a `const`
+  // declared below it — a trap this file has fallen into before.
+  let tunerApi = null;
   let clock = 0;
   const wreckFx = [];   // debris/burst objects, ticked and reaped
   // A shot is three things — the kick, the shell, and the barrel going
@@ -210,6 +217,8 @@ export function initUnitsTab(root) {
     }
     state.index = ((state.index % list.length) + list.length) % list.length;
     const e = list[state.index];
+    currentEntry = e;
+    if (tunerApi) tunerApi.setSubject(e.kind === 'tower' ? 'tower' : 'tank');
     current = buildEntry(e);
     // units carry their own normalization; undo it so everything arrives at
     // a comparable size and the framing maths does the rest
@@ -229,6 +238,27 @@ export function initUnitsTab(root) {
     buildCallouts();   // labels belong to THIS unit's markers, not the last one's
     countEl.textContent = `${state.index + 1} / ${list.length}`;
     lookSel.parentElement.classList.toggle('hidden', e.kind !== 'tower');
+  }
+
+  // Rebuild the shown object without touching the camera. Head shape, dot
+  // count and highlight spacing are baked at build time, so those knobs need
+  // a new object — but re-framing mid-drag would throw away the very view
+  // you are judging it in.
+  function rebuildCurrent() {
+    if (!currentEntry || !current) return;
+    scene.remove(current);
+    current.traverse((o) => {
+      if (o.geometry) o.geometry.dispose();
+      if (o.material) {
+        for (const m of (Array.isArray(o.material) ? o.material : [o.material])) m.dispose();
+      }
+    });
+    current = buildEntry(currentEntry);
+    current.scale.setScalar(1 / (current.userData.baseScale || 1));
+    scene.add(current);
+    (current.userData.ammoDots || []).forEach((d) => d.material.color.setHex(0xffffff));
+    applyTankHealth(current, health);
+    buildCallouts();
   }
 
   function step(d) { state.index += d; show(); }
@@ -507,71 +537,148 @@ export function initUnitsTab(root) {
     if (Number.isFinite(at)) setTimeout(() => { setEngine(true); fireShell(); }, at * 1000);
   }
 
-  // --- the tuning modal ----------------------------------------------------
-  // Sliders are generated from TANK_FEEL_KNOBS and write straight into FEEL,
-  // the object the game reads. There is no apply step and nothing to sync:
-  // the tank in front of you IS the tank that ships, mid-drag.
-  (function wireTuner() {
+  // --- the tuning panel ----------------------------------------------------
+  // One panel, two subjects. Controls are generated from a knob table and
+  // write straight into the object the GAME reads, so there is no apply step
+  // and nothing to sync — what is in front of you is what ships, mid-drag.
+  //
+  // Which table it shows follows the selection: a tank gets TANK_FEEL_KNOBS,
+  // a tower gets TOWER_FEEL_KNOBS. Two panels would have been two sets of
+  // wiring to keep in step for no gain.
+  tunerApi = (function wireTuner() {
     const panel = root.querySelector('#units-tuner');
     const list = root.querySelector('#units-tuner-knobs');
+    const titleEl = root.querySelector('#units-tuner-title');
     const open = root.querySelector('#units-tune');
-    if (!panel || !list || !open) return;
+    if (!panel || !list || !open) return { setSubject() {}, isOpen: () => false };
     loadFeel();
-
-    const rows = TANK_FEEL_KNOBS.map((k) => {
-      const row = document.createElement('label');
-      row.className = 'tuner-row';
-      const dp = Math.max(0, Math.ceil(-Math.log10(k.step)));
-      row.innerHTML = `<span class="tuner-name"></span>`
-        + `<input type="range" min="${k.min}" max="${k.max}" step="${k.step}">`
-        + '<output></output>';
-      row.querySelector('.tuner-name').textContent = k.label;
-      const slider = row.querySelector('input');
-      const out = row.querySelector('output');
-      const show = () => {
-        slider.value = FEEL[k.key];
-        out.textContent = Number(FEEL[k.key]).toFixed(dp);
-      };
-      slider.addEventListener('input', () => { FEEL[k.key] = Number(slider.value); show(); });
-      slider.addEventListener('change', saveFeel);
-      show();
-      return { k, row, show };
-    });
-
-    let group = null;
-    for (const r of rows) {
-      if (r.k.group !== group) {
-        group = r.k.group;
-        const h = document.createElement('div');
-        h.className = 'tuner-group';
-        h.textContent = group;
-        list.appendChild(h);
-      }
-      list.appendChild(r.row);
+    loadTower();
+    // ?head=<kind> presets the head override, so a candidate shape can be
+    // screenshotted without a pointer. Validated against the knob's own
+    // choices — an unknown name would ask the generator for a shape it does
+    // not have and quietly get a sphere back.
+    const q = new URLSearchParams(location.search);
+    const wantHead = q.get('head');
+    const headKnob = TOWER_FEEL_KNOBS.find((k) => k.key === 'headShape');
+    if (wantHead && headKnob.choices.includes(wantHead)) TOWER.headShape = wantHead;
+    // ?towerknobs=dots=380,headScale=0.66 — presets the numeric knobs so a
+    // candidate can be judged at a chosen density without a pointer. Folded
+    // through the same clamp storage uses: unknown keys and out-of-range
+    // values are dropped rather than trusted.
+    const blob = {};
+    for (const kv of (q.get('towerknobs') || '').split(',')) {
+      const [k, v] = kv.split('=');
+      if (k && v !== undefined) blob[k.trim()] = v;
     }
-    const refresh = () => { for (const r of rows) r.show(); };
+    if (Object.keys(blob).length) clampTowerParams(TOWER, blob);
 
+    const SUBJECTS = {
+      tank: {
+        title: 'tank feel', knobs: TANK_FEEL_KNOBS, values: FEEL,
+        save: saveFeel, reset: resetFeel, format: () => formatFeelCode(FEEL),
+        onChange: null,   // the driver reads FEEL every frame; nothing to rebuild
+      },
+      tower: {
+        title: 'tower look', knobs: TOWER_FEEL_KNOBS, values: TOWER,
+        save: saveTower, reset: resetTower, format: () => formatTowerFeel(TOWER),
+        // dot count, head shape and highlight spacing are baked at BUILD
+        // time, so the head has to be remade. Cheap — one Points cloud — and
+        // rebuilding unconditionally beats a per-knob rule that goes stale.
+        onChange: () => rebuildCurrent(),
+      },
+    };
+    let subject = SUBJECTS.tank;
+    let rows = [];
+
+    function build() {
+      list.textContent = '';
+      rows = [];
+      titleEl.textContent = subject.title;
+      let group = null;
+      for (const k of subject.knobs) {
+        if (k.group !== group) {
+          group = k.group;
+          const h = document.createElement('div');
+          h.className = 'tuner-group';
+          h.textContent = group;
+          list.appendChild(h);
+        }
+        const row = document.createElement('label');
+        row.className = 'tuner-row' + (k.choices ? ' choice' : '');
+        const name = document.createElement('span');
+        name.className = 'tuner-name';
+        name.textContent = k.label;
+        row.appendChild(name);
+
+        let read;
+        if (k.choices) {
+          // a choice is a list, not a range — a slider over shape names would
+          // be unreadable and would interpolate between things that do not
+          const sel = document.createElement('select');
+          for (const c of k.choices) {
+            const o = document.createElement('option');
+            o.value = c; o.textContent = c;
+            sel.appendChild(o);
+          }
+          sel.addEventListener('change', () => {
+            subject.values[k.key] = sel.value;
+            subject.save();
+            if (subject.onChange) subject.onChange();
+          });
+          row.appendChild(sel);
+          read = () => { sel.value = subject.values[k.key]; };
+        } else {
+          const dp = Math.max(0, Math.ceil(-Math.log10(k.step)));
+          const slider = document.createElement('input');
+          slider.type = 'range';
+          slider.min = k.min; slider.max = k.max; slider.step = k.step;
+          const out = document.createElement('output');
+          slider.addEventListener('input', () => {
+            subject.values[k.key] = Number(slider.value);
+            out.textContent = Number(subject.values[k.key]).toFixed(dp);
+            if (subject.onChange) subject.onChange();
+          });
+          slider.addEventListener('change', subject.save);
+          row.append(slider, out);
+          read = () => {
+            slider.value = subject.values[k.key];
+            out.textContent = Number(subject.values[k.key]).toFixed(dp);
+          };
+        }
+        read();
+        rows.push(read);
+        list.appendChild(row);
+      }
+    }
+
+    const refresh = () => { for (const r of rows) r(); };
     const setOpen = (on) => {
       panel.classList.toggle('tuner-hidden', !on);
       open.classList.toggle('on', on);
       if (on) refresh();
     };
+
+    build();
     open.addEventListener('click', () => setOpen(panel.classList.contains('tuner-hidden')));
     // ?tune=1 opens it on load — headless has no pointer, so without this the
     // panel could only ever be verified by hand.
     if (new URLSearchParams(location.search).get('tune')) setOpen(true);
     root.querySelector('#units-tune-close').addEventListener('click', () => setOpen(false));
-    root.querySelector('#units-tune-reset').addEventListener('click', () => { resetFeel(); refresh(); });
+    root.querySelector('#units-tune-reset').addEventListener('click', () => {
+      subject.reset(); refresh();
+      if (subject.onChange) subject.onChange();
+    });
 
-    // Copy as SOURCE, not as JSON: the destination is tankfeel.js, and a blob
-    // you have to hand-translate is a blob nobody transcribes.
+    // Copy as SOURCE, not JSON: the destination is tankfeel.js or
+    // towerfeel.js, and a blob you have to hand-translate is a blob nobody
+    // transcribes.
     const copy = root.querySelector('#units-tune-copy');
     const label = copy.querySelector('.label');
     let revert = 0;
     copy.addEventListener('click', async () => {
       clearTimeout(revert);
       try {
-        await navigator.clipboard.writeText(formatFeelCode(FEEL));
+        await navigator.clipboard.writeText(subject.format());
         copy.classList.add('ok'); label.textContent = 'copied';
       } catch {
         copy.classList.add('fail'); label.textContent = 'copy failed';
@@ -580,6 +687,16 @@ export function initUnitsTab(root) {
         copy.classList.remove('ok', 'fail'); label.textContent = 'copy code';
       }, 1600);
     });
+
+    return {
+      setSubject(which) {
+        const next = SUBJECTS[which] || SUBJECTS.tank;
+        if (next === subject) return;
+        subject = next;
+        build();
+      },
+      isOpen: () => !panel.classList.contains('tuner-hidden'),
+    };
   })();
 
   resize();

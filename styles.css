@@ -1758,3 +1758,15 @@ body.playing:not(.chrome-open) #tabbar { display: none !important; }
    one has to declare itself or it silently does nothing. The roadmap pane
    showed through behind the dev log for exactly that reason. */
 #log-scroll.hidden, #roadmap-scroll.hidden { display: none; }
+
+/* a choice knob is a list, not a range: the select spans both control cells */
+.tuner-row.choice { grid-template-columns: 1fr 136px; }
+.tuner-row select {
+  width: 100%;
+  font: 11px/1.4 ui-monospace, SFMono-Regular, Menlo, monospace;
+  color: #cfe6f5;
+  background: rgba(20, 32, 44, .9);
+  border: 1px solid rgba(159, 220, 255, .3);
+  border-radius: 5px;
+  padding: 2px 4px;
+}

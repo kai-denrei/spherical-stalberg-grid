@@ -9,6 +9,8 @@
 // No three.js import: it only writes to `.position` / `.rotation` on objects
 // handed to it, so it is Node-testable against plain stand-ins.
 
+import { makeParams, clampParams, formatKnobs, knobProblems } from './knobs.js?v=79aeb34e';
+
 export const TANK_FEEL = {
   rise: 0.095,      // body lifts this far, in MODEL units
   gearDrop: 0.15,  // and the skirt settles the other way — the GAP is the read
@@ -51,43 +53,13 @@ export const TANK_FEEL_KNOBS = [
   { key: 'recoilSecondary', label: 'secondaries take', group: 'recoil', min: 0,  max: 1,    step: 0.05 },
 ];
 
-// A fresh, mutable set of values — what the sliders write to.
-export function makeFeelParams(src = TANK_FEEL) {
-  const p = {};
-  for (const k of TANK_FEEL_KNOBS) p[k.key] = src[k.key];
-  return p;
-}
-
-// Fold a loose object (a stored blob, a URL param) onto a params set, keeping
-// only known keys and only finite values inside their declared range. Anything
-// restored from outside the app is untrusted input, including our own
-// localStorage after a schema change.
-export function clampFeelParams(p, src = {}) {
-  for (const k of TANK_FEEL_KNOBS) {
-    const v = Number(src[k.key]);
-    if (Number.isFinite(v)) p[k.key] = Math.min(k.max, Math.max(k.min, v));
-  }
-  return p;
-}
-
-// The tuned values as a paste-ready source block. Without this, a good setting
-// lives in one browser and never reaches the repo, which makes the whole bench
-// a toy — you can find the right feel and still not be able to ship it.
-export function formatFeelCode(p) {
-  const groups = [...new Set(TANK_FEEL_KNOBS.map((k) => k.group))];
-  const w = Math.max(...TANK_FEEL_KNOBS.map((k) => k.key.length));
-  const body = groups.map((g) => TANK_FEEL_KNOBS.filter((k) => k.group === g)
-    .map((k) => `  ${(k.key + ':').padEnd(w + 1)} ${round(p[k.key], k.step)},`.padEnd(30)
-                + ` // ${k.label}`)
-    .join('\n')).join('\n\n');
-  return `export const TANK_FEEL = {\n${body}\n};`;
-}
-
-// Snap to the slider's own precision, so a drag never emits 0.13999999999.
-function round(v, step) {
-  const dp = Math.max(0, Math.ceil(-Math.log10(step)));
-  return Number(Number(v).toFixed(dp));
-}
+// The four schema operations are shared with towerfeel via knobs.js — this
+// module keeps the NAMES because three files import them, but not a second
+// implementation. That was the duplication the shared module exists to stop.
+export const makeFeelParams = (src = TANK_FEEL) => makeParams(TANK_FEEL_KNOBS, src);
+export const clampFeelParams = (p, src) => clampParams(TANK_FEEL_KNOBS, p, src);
+export const formatFeelCode = (p) => formatKnobs('TANK_FEEL', TANK_FEEL_KNOBS, p);
+export const tankKnobProblems = () => knobProblems(TANK_FEEL_KNOBS, TANK_FEEL);
 
 export function makeTankFeel() {
   return { hoverT: 0, settleT: 99, t: 0, recoil: 0 };
