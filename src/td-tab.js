@@ -19,22 +19,23 @@
 
 import * as THREE from '../vendor/three.module.js';
 import GUI from '../vendor/lil-gui.esm.js';
-import { generateSphereMesh, relax } from './grid.js?v=cda5f764';
-import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=cda5f764';
-import { mulberry32, randomSeed } from './rng.js?v=cda5f764';
-import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3, segKey } from './vec3.js?v=cda5f764';
-import { CREATURES, waveJelly } from './creatures.js?v=cda5f764';
-import { UNITS, UNIT_NAMES, buildUnit, preloadMkcx, makeBulletCloud, makeRewardSolid, makeShellSolid, makeDebris, makeDotBurst, makePortalCloud, makeHeartCloud, makeDotEnemy } from './units.js?v=cda5f764';
-import { LOOKS, LOOK_NAMES } from './looks.js?v=cda5f764';
-import { makeCellIndex } from './cellindex.js?v=cda5f764';
-import { CREATURE_TINTS, ENEMY_SPEC, INTROS, computeWavePlan } from './enemyspec.js?v=cda5f764';
-import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER } from './towers.js?v=cda5f764';
-import { makeEconomy, sellRefund } from './economy.js?v=cda5f764';
-import { makeBloom } from './postfx.js?v=cda5f764';
-import { BLOOM_GROUPS } from './bloomweights.js?v=cda5f764';
-import { TOWER_LOOK_NAMES, DEFAULT_TOWER_LOOK, buildTowerLook, preloadLook } from './towerlooks.js?v=cda5f764';
-import { makeAudio } from './audio.js?v=cda5f764';
-import { DEATH_KEYS } from './audiomanifest.js?v=cda5f764';
+import { generateSphereMesh, relax } from './grid.js?v=615301c0';
+import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=615301c0';
+import { mulberry32, randomSeed } from './rng.js?v=615301c0';
+import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3, segKey } from './vec3.js?v=615301c0';
+import { CREATURES, waveJelly } from './creatures.js?v=615301c0';
+import { UNITS, UNIT_NAMES, buildUnit, preloadMkcx, makeBulletCloud, makeRewardSolid, makeShellSolid, makeDebris, makeDotBurst, makePortalCloud, makeHeartCloud, makeDotEnemy } from './units.js?v=615301c0';
+import { LOOKS, LOOK_NAMES } from './looks.js?v=615301c0';
+import { makeCellIndex } from './cellindex.js?v=615301c0';
+import { CREATURE_TINTS, ENEMY_SPEC, INTROS, computeWavePlan } from './enemyspec.js?v=615301c0';
+import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER } from './towers.js?v=615301c0';
+import { makeEconomy, sellRefund } from './economy.js?v=615301c0';
+import { makeBloom } from './postfx.js?v=615301c0';
+import { TANK_FEEL, makeTankFeel, stepTankFeel, landTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js?v=615301c0';
+import { BLOOM_GROUPS } from './bloomweights.js?v=615301c0';
+import { TOWER_LOOK_NAMES, DEFAULT_TOWER_LOOK, buildTowerLook, preloadLook } from './towerlooks.js?v=615301c0';
+import { makeAudio } from './audio.js?v=615301c0';
+import { DEATH_KEYS } from './audiomanifest.js?v=615301c0';
 
 export function initTdTab(root) {
   let active = false;
@@ -67,11 +68,13 @@ export function initTdTab(root) {
     // are knobs rather than constants. Units: `hoverRise` is in MODEL units
     // (the tank is ~3.24 tall there), because it moves the body group inside
     // the model, not the unit on the sphere.
-    hoverRise: 0.14,
-    hoverUp: 1.9,     // spool-up rate
-    hoverDown: 2.4,   // settle rate
-    hoverRock: 0.016, // touchdown tilt, radians
-    hoverDecay: 5.0,  // how fast the rock dies
+    hoverRise: TANK_FEEL.rise,
+    hoverGearDrop: TANK_FEEL.gearDrop,
+    hoverVib: TANK_FEEL.vib,
+    hoverUp: TANK_FEEL.up,
+    hoverDown: TANK_FEEL.down,
+    hoverRock: TANK_FEEL.rock,
+    hoverDecay: TANK_FEEL.decay,
     // mkcx by default: the authored hover tank. Async — buildUnit falls
     // back to the procedural tank until the bytes land, then
     // onMkcxReady swaps it in.
@@ -223,8 +226,7 @@ export function initTdTab(root) {
   // hull; hoverT is the same gesture in the geometry, so the sound explains
   // a movement instead of decorating one. settleT drives a damped rock as
   // the tank sets back down — it starts high so a fresh spawn doesn't rock.
-  let hoverT = 0;
-  let settleT = 99;
+  const feel = makeTankFeel(); // hover / vibration / touchdown, shared with the viewer
   // The whole-unit lift is gone: on a model with a hover skirt the body
   // rises and the skirt stays planted (see units.js). Units without that
   // split simply do not hover, which is correct — a dot-cloud creature has
@@ -881,20 +883,11 @@ export function initTdTab(root) {
     if (rf > 0) playerMesh.rotateX(-0.05 * rk);
     // touchdown: a damped rock on two axes, ~0.9s. Two different frequencies
     // so it reads as suspension settling rather than a single clean wobble.
-    // Hover and touchdown live on the BODY, not the unit: the hull lifts off
-    // a planted skirt and rocks on it. Applied here rather than in
+    // Hover, vibration and touchdown live on the BODY, not the unit — the
+    // hull lifts off a planted skirt. Applied here rather than in
     // updateEngine so it survives every rebuild of playerMesh.
-    const body = playerMesh.userData.hoverBody;
-    if (body) {
-      body.position.y = params.hoverRise * hoverT;
-      if (settleT < 1.1) {
-        const d = Math.exp(-settleT * params.hoverDecay);
-        body.rotation.x = Math.sin(settleT * 15) * params.hoverRock * d;
-        body.rotation.z = Math.cos(settleT * 11) * params.hoverRock * 0.62 * d;
-      } else if (body.rotation.x || body.rotation.z) {
-        body.rotation.x = 0; body.rotation.z = 0;
-      }
-    }
+    applyTankFeel(playerMesh, feel, tankFeelParams());
+    applyTankHealth(playerMesh, playerHP / PLAYER_MAX);
     markerMesh.quaternion.copy(tmpObj.quaternion); // arrow nose = heading
   }
 
@@ -2925,8 +2918,8 @@ export function initTdTab(root) {
   function destroyPlayer() {
     if (!playerMesh) return;
     stopEngine(0.12, true);   // quiet: the hydraulics don't get to set it down
-    hoverT = 0;               // hover fails instantly — it DROPS
-    settleT = 0;              // and rocks hard as it lands
+    feel.hoverT = 0;          // hover fails instantly — it DROPS
+    landTankFeel(feel);       // and rocks hard as it lands
     sfx.play('tank_destroyed');
     const nrm = norm3(player.pos);
     const fx = makeDebris(playerMesh, nrm);
@@ -2951,8 +2944,8 @@ export function initTdTab(root) {
     setTimeout(() => {
       if (player.won || !playerMesh) return; // a real death happened meanwhile
       playerMesh.visible = true;
-      settleT = 0;   // it drops back in and settles
-      hoverT = 0;
+      feel.hoverT = 0;
+      landTankFeel(feel);   // it drops back in and settles
     }, DEATH_HOLD * 1000);
   }
 
@@ -3647,6 +3640,8 @@ export function initTdTab(root) {
   // guessed wrong twice by eye; these exist so they can be dialled by hand
   const hoverF = gui.addFolder('hover');
   hoverF.add(params, 'hoverRise', 0, 0.6, 0.01).name('body rise');
+  hoverF.add(params, 'hoverGearDrop', 0, 0.3, 0.01).name('skirt drop');
+  hoverF.add(params, 'hoverVib', 0, 0.04, 0.001).name('idle vibration');
   hoverF.add(params, 'hoverUp', 0.4, 6, 0.1).name('spool up');
   hoverF.add(params, 'hoverDown', 0.4, 6, 0.1).name('settle down');
   hoverF.add(params, 'hoverRock', 0, 0.06, 0.002).name('touchdown rock');
@@ -3733,14 +3728,21 @@ export function initTdTab(root) {
   let engineLevel = 0;      // smoothed 0..1
   let engineIdle = 0;       // s since the tank last moved
   let engineRunning = false; // has the spool-up played and not been undone?
-  const ENGINE_STOP = 0.25;  // s of stillness before the bed fades out
+  // short: the hydraulics-down cue should answer the STOP, not trail it
+  const ENGINE_STOP = 0.10;  // s of stillness before the bed fades out
+
+  const tankFeelParams = () => ({
+    rise: params.hoverRise, gearDrop: params.hoverGearDrop, vib: params.hoverVib,
+    up: params.hoverUp, down: params.hoverDown,
+    rock: params.hoverRock, decay: params.hoverDecay,
+  });
 
   function stopEngine(fade = ENGINE_STOP, quiet = false) {
     if (engineHandle) engineHandle.stop(fade);
     engineHandle = null;
     engineLevel = 0;
     // the rock belongs to SETTING DOWN, not to leaving the tab
-    if (engineRunning && !quiet) { sfx.play('tank_spool_down'); settleT = 0; }
+    if (engineRunning && !quiet) { sfx.play('tank_spool_down'); landTankFeel(feel); }
     engineRunning = false;
   }
 
@@ -3765,10 +3767,7 @@ export function initTdTab(root) {
 
     // slow both ways: an engine SPOOLS. Rising a touch slower than it falls
     // reads as taking up load, then setting the weight back down.
-    const hoverTarget = engineRunning ? 1 : 0;
-    hoverT += (hoverTarget - hoverT)
-      * Math.min(1, (hoverTarget > hoverT ? params.hoverUp : params.hoverDown) * dt);
-    if (settleT < 4) settleT += dt;
+    stepTankFeel(feel, dt, engineRunning, tankFeelParams());
 
     if (moving && !engineRunning) {
       sfx.play('tank_spool_up'); // hydraulics lift it off the deck

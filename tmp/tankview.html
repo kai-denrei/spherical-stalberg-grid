@@ -20,6 +20,7 @@ async function go(){
   // dev tool: dynamic import with a time key, so it never serves a stale
   // module and never carries a ?v= token for check-tokens.sh to trip over
   const { buildUnit, preloadMkcx } = await import('/src/units.js?dev=' + Date.now());
+  const { applyTankHealth } = await import('/src/tankfeel.js?dev=' + Date.now());
   if(which==='mkcx') await preloadMkcx();
   const g=buildUnit(which,{walker:0x2a3550,walkerHi:0x7df9ff});
   sc.add(g);
@@ -40,6 +41,7 @@ async function go(){
   // light the ammo rack like the game does: 4 of 9 lit
   const dots=g.userData.ammoDots||[];
   dots.forEach((dd,i)=>dd.material.color.setHex(i<4?0xffffff:0x4a505c));
+  applyTankHealth(g, parseFloat(q.get('hp') ?? '1'));
   r.render(sc,cam);
   document.getElementById('lbl').textContent =
     which+'  size '+s.toArray().map(v=>v.toFixed(2)).join(' x ')+'  dots '+dots.length;

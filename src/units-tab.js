@@ -11,12 +11,13 @@
 // one context no matter how long the roster grows.
 import * as THREE from '../vendor/three.module.js';
 import { OrbitControls } from '../vendor/OrbitControls.js';
-import { buildUnit, preloadMkcx } from './units.js';
+import { buildUnit, preloadMkcx, makeDebris, makeDotBurst } from './units.js';
+import { TANK_FEEL, makeTankFeel, stepTankFeel, landTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js';
 import { buildTowerLook, TOWER_LOOK_NAMES, DEFAULT_TOWER_LOOK, preloadLook } from './towerlooks.js';
 import { TOWER_BY_KEY } from './towers.js';
 import { LOOKS } from './looks.js';
 import { makeBloom } from './postfx.js';
-import { makeAudio } from './audio.js?v=cda5f764';
+import { makeAudio } from './audio.js?v=615301c0';
 import { GROUPS, GROUP_LABELS, GROUP_EMPTY, entriesIn } from './unitcatalog.js';
 
 export function initUnitsTab(root) {
@@ -45,8 +46,19 @@ export function initUnitsTab(root) {
   controls.enablePan = false; // the unit stays centred; orbit and zoom only
 
   const state = { group: 'friendly', index: 0, towerLook: DEFAULT_TOWER_LOOK, spin: true };
+  // the test bench: the SAME feel driver the game runs, so what you tune here
+  // is what ships. `running` is the engine's own notion of running.
+  const feel = makeTankFeel();
+  let running = false;
+  let health = 1;
+  const benchEl = root.querySelector('#units-bench');
+  const engineBtn = root.querySelector('#units-engine');
+  const destroyBtn = root.querySelector('#units-destroy');
+  const healthEl = root.querySelector('#units-health');
+  let wreckT = 0;   // >0 while the wreck is playing
   let current = null;
   let clock = 0;
+  const wreckFx = [];   // debris/burst objects, ticked and reaped
 
   const nameEl = root.querySelector('#units-name');
   const noteEl = root.querySelector('#units-note');
@@ -164,6 +176,11 @@ export function initUnitsTab(root) {
     nameEl.textContent = e.label;
     noteEl.textContent = e.note || '';
     buildSoundRow(e);
+    // the bench only means anything for a unit with a hover split
+    const bench = !!(current && current.userData.hoverBody);
+    benchEl.classList.toggle('hidden', !bench);
+    if (!bench) setEngine(false);
+    applyTankHealth(current, health);
     countEl.textContent = `${state.index + 1} / ${list.length}`;
     lookSel.parentElement.classList.toggle('hidden', e.kind !== 'tower');
   }
@@ -184,6 +201,51 @@ export function initUnitsTab(root) {
     b.addEventListener('click', () => setGroup(g));
     groupRow.appendChild(b);
   }
+
+  function setEngine(on) {
+    if (on === running) return;
+    running = on;
+    engineBtn.classList.toggle('on', running);
+    engineBtn.textContent = running ? 'engine on' : 'engine off';
+    if (running) {
+      sfx.play('tank_spool_up');
+      if (!bed) {
+        const h = sfx.loop('tank_thruster', { gain: 1 });
+        if (h) { bed = h; }
+      }
+    } else {
+      sfx.play('tank_spool_down');
+      landTankFeel(feel);
+      if (bed) { bed.stop(0.12); bed = null; }
+    }
+  }
+
+  // the wreck, previewable as often as you like — this is a bench, not a run
+  function previewWreck() {
+    if (!current || wreckT > 0) return;
+    setEngine(false);
+    feel.hoverT = 0;
+    landTankFeel(feel);
+    sfx.play('tank_destroyed');
+    const up = new THREE.Vector3(0, 1, 0);
+    const fx = makeDebris(current, [up.x, up.y, up.z]);
+    scene.add(fx); wreckFx.push(fx);
+    const burst = makeDotBurst(0xffffff, [0, 1, 0], 54);
+    const box = new THREE.Box3().setFromObject(current);
+    const c = new THREE.Vector3(); box.getCenter(c);
+    burst.scale.setScalar(Math.max(...box.getSize(new THREE.Vector3()).toArray()) * 0.45);
+    burst.position.copy(c);
+    scene.add(burst); wreckFx.push(burst);
+    current.visible = false;
+    wreckT = 1.25;
+  }
+
+  engineBtn.addEventListener('click', () => setEngine(!running));
+  destroyBtn.addEventListener('click', previewWreck);
+  healthEl.addEventListener('input', () => {
+    health = parseFloat(healthEl.value);
+    applyTankHealth(current, health);
+  });
 
   root.querySelector('#units-prev').addEventListener('click', () => step(-1));
   root.querySelector('#units-next').addEventListener('click', () => step(1));
@@ -214,6 +276,17 @@ export function initUnitsTab(root) {
     // drive the unit's own idle animation, so a turret sweeps here as in game
     if (current && current.userData.tick) current.userData.tick(clock);
     if (current && state.spin) current.rotation.y += dt * 0.35;
+    // the bench runs the shipping feel driver, not a copy of it
+    stepTankFeel(feel, dt, running, TANK_FEEL);
+    applyTankFeel(current, feel, TANK_FEEL);
+    for (let i = wreckFx.length - 1; i >= 0; i--) {
+      const alive = wreckFx[i].userData.tick && wreckFx[i].userData.tick(dt);
+      if (alive === false) { scene.remove(wreckFx[i]); wreckFx.splice(i, 1); }
+    }
+    if (wreckT > 0) {
+      wreckT -= dt;
+      if (wreckT <= 0 && current) { current.visible = true; feel.hoverT = 0; landTankFeel(feel); }
+    }
     controls.update();
     postfx.render();
   }
@@ -240,7 +313,7 @@ export function initUnitsTab(root) {
     setActive(on) {
       active = on;
       if (on) { resize(); show(); }
-      else stopBed(); // never leave a bed running on a tab you have left
+      else { stopBed(); setEngine(false); } // nothing runs on a tab you left
     },
   };
 }

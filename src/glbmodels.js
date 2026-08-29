@@ -84,6 +84,11 @@ export function mergeByMaterial(root, pivotNames = [], exclude = []) {
   const inv = new THREE.Matrix4();
   root.traverse((o) => {
     if (!o.isMesh || !o.geometry) return;
+    // A pivot that IS a mesh (a small indicator, say) stays exactly as
+    // authored: collecting it would merge it into itself and then remove it
+    // from the tree, so getObjectByName would stop finding it. Preserving a
+    // node has to mean preserving it whether it is a group or a mesh.
+    if (pivots.includes(o)) return;
     const owner = ownerOf(o);
     const g = o.geometry.clone();
     // express the geometry in the OWNER's local space, not the world's
