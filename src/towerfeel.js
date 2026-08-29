@@ -8,8 +8,8 @@
 //
 // Pure: no DOM, no three.js.
 
-import { TOWER_HEAD_KINDS } from './creatures.js?v=e4f52e17';
-import { makeParams, clampParams, formatKnobs, knobProblems } from './knobs.js?v=e4f52e17';
+import { TOWER_HEAD_KINDS } from './creatures.js?v=8163013e';
+import { makeParams, clampParams, formatKnobs, knobProblems } from './knobs.js?v=8163013e';
 
 // 'per tower' means "use whatever shape towers.js gave this one", which is
 // the shipping behaviour. Any other value overrides EVERY tower with that

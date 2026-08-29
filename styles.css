@@ -929,7 +929,11 @@ html, body {
 /* --- TD tutorial: non-freezing callouts + button pulse ------------------- */
 #td-tut {
   position: absolute;
-  top: 16%;
+  /* Top of the screen, below BOTH the mode row and the four-line HUD block.
+     At 16% it sat over the middle distance — exactly where the thing the
+     message is telling you to look at tends to be, so reading the instruction
+     meant not watching the board. */
+  top: 134px;
   left: 50%;
   transform: translateX(-50%);
   z-index: 9;
@@ -977,7 +981,7 @@ html, body {
   cursor: pointer;
 }
 #td-tut.tut-flash {
-  top: 42%;
+  top: 134px;
   font: 700 30px ui-monospace, monospace;
   letter-spacing: 0.08em;
   color: #ff6a88;
