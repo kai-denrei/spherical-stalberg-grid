@@ -6,6 +6,58 @@ Demo links assume `npm run serve` (port 8144) or the
 
 ---
 
+## `36145b4` — Eight silhouettes, and arrows that hold still
+
+Every tower now wears a distinct head from the Braille lab, matched to what
+the tower **does** rather than to what looks good:
+
+| tower | head | why |
+| --- | --- | --- |
+| single | six-axis arm | points at ONE thing, swings to the next |
+| rapid | delta robot | three arms in parallel — the fastest mechanism on any line |
+| spread | ripple ring | concentric rings travelling outward *is* a spread |
+| homing | gripper arm | reaches out and takes hold of a specific thing |
+| slow | broadcast antenna | emits over an area instead of aiming |
+| aoe | rocket launcher | lobbed ordnance landing on an area |
+| sniper | guyed mast | the tallest, thinnest thing here, built to reach |
+| laser | obelisk | a monolith with no moving parts: a beam does not traverse |
+
+Eight heads, eight towers, no repeats.
+
+### The arrows moved in both axes
+
+**Horizontally**: they flanked a caption block with only a `min-width`, so a
+long note pushed them apart and every unit put them somewhere new — you had
+to re-aim between clicks. Fixed by giving the stage a fixed width and letting
+the arrows sit at its edges, plus reserving two lines on the note so wrapping
+cannot change the block's height either.
+
+**Vertically** was subtler and survived that fix. The bench row exists only
+for units with a hover split, and `display: none` made the whole chrome stack
+shorter for towers and pickups — so the arrows were pinned horizontally and
+*still* landing somewhere new. `visibility: hidden` reserves the space.
+
+Measured rather than eyeballed: the left arrow's ink spans rows 20–534 on
+both a tank and a tower.
+
+### Third time on the same rake
+
+A test checked `formatTowerHeads({ aoe: 'launcher' })` for one "changed"
+marker — and `aoe` now *ships* as `launcher`, so nothing was marked and the
+suite went red on a correct change. That is the third assertion in this file
+broken by a hardcoded shape name (`single: 'cone'` was the second).
+
+The rule, written down properly this time: **assert the rule, derive the
+data.** Every one of these tests is about a rule — "an override equal to the
+shipped shape is dropped", "changed entries are marked" — and every failure
+came from pinning the *example* instead. They now read the roster:
+
+```js
+const other = TOWER_HEAD_KINDS.find((k) => k !== TOWERS.find((t) => t.key === 'aoe').shape);
+```
+
+---
+
 ## `38d0dc9` — A global override that persisted, masking what it was meant to show
 
 The report: the two new tower assignments were not showing in the viewer.
