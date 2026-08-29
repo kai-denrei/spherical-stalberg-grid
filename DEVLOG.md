@@ -6,6 +6,71 @@ Demo links assume `npm run serve` (port 8144) or the
 
 ---
 
+## `bb95ffe` — The minimap cost 686 draw calls, and it was invisible
+
+Last entry reported ~1020 calls on a wave-4 board and called that the frame.
+It was half the frame. The minimap owns a **separate `WebGLRenderer`**, so it
+has its own `info` — reading only the main one measured the main view and
+made the map look free.
+
+Measured properly, wave 4 with eight towers placed:
+
+| | main | map | total |
+| --- | --- | --- | --- |
+| before | 1026 | **686** | 1712 |
+| after | 1026 | **14** | 1040 |
+
+672 calls — 39% of the whole frame — for a map nobody can tell has changed.
+
+The map camera now sees only layer 1: the board's four merged meshes, the
+hand-placed markers, and **one pooled `Points` cloud** carrying every enemy
+and tower as a blip. A marker object per enemy would have reintroduced the
+exact cost being removed; one buffer rewritten each frame is one draw call
+for the lot, however many there are. Layers are per-object and not inherited
+in three.js, so each participant enables it explicitly.
+
+### Heads stand on their base, centred on their foot
+
+Two separate mistakes, one after the other:
+
+1. `fitUnit` normalises by *distance from the origin*. That keeps a shape
+   inside the unit sphere and says nothing about where its **mass** sits, so
+   off-origin shapes hung off the side of the collar.
+2. Centring on the bounding box fixed that and broke something else: an arm
+   reaches forward, so its silhouette's centre is well in front of its
+   pedestal. Centring the **body** hangs the **foot** off the mast.
+
+These are machines that stand on something. So the base is what gets centred,
+and the base is what sits at the anchor — `headLift` is now the height of the
+head's *foot* (0.86 rests it on the collar) rather than of its middle.
+
+### Directional towers track, and which ones is derived
+
+The arm, gripper and launcher swing onto the nearest target and ease round
+the short way. The five symmetric heads keep their idle spin.
+
+Crucially, *which heads have a direction* is read off the geometry — the
+horizontal offset of a head's upper points from the mast axis:
+
+| head | facing |
+| --- | --- |
+| sixaxis, gripper, launcher | ~90° (+X) |
+| delta, ripple, broadcast, guyed, obelisk | none |
+
+A hand-maintained list would be one more thing to forget when a shape is
+reassigned — and it would have been wrong immediately, because **every ported
+arm faces +X**. A tracker assuming +Z would aim ninety degrees off and look
+deliberate about it.
+
+The bearing itself comes from the render transform, per the house rule: put
+the target into the tower group's local space, take the yaw that aims +Z at
+it. No sphere trigonometry, so no sign convention to get wrong.
+
+Ordering matters: aiming runs **after** the idle tick, which writes
+`rotation.y` unconditionally and would otherwise win.
+
+---
+
 ## `18f1cda` — Dot count was never the budget
 
 The question was whether the dot granularity is a limit we impose for
