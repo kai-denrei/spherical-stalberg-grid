@@ -6,6 +6,98 @@ Demo links assume `npm run serve` (port 8144) or the
 
 ---
 
+## `77f2e5d` — One knob schema, a squared turret, and a roadmap tab
+
+Three strands, all about the same thing: making what you judge and what
+ships be the same object.
+
+### The turret was six degrees off, and so were the shells
+
+The beam out the back of the turret had read tilted since the mkcx landed.
+Centring the sensor mast last time did not fix it, because the mast was
+never the beam — it is a hull fitting at the rear-left deck corner. The tilt
+is baked into `Turret_Pivot`, which the model ships slewed **6.00 deg** off
+the hull axis (`rotation.y = -0.0523`).
+
+That was not only cosmetic. This pivot is never rotated at runtime, and
+`fire()` derives the shell's heading from its **world +Z**:
+
+```js
+turret.getWorldQuaternion(tmpQ);
+tmpV.set(0, 0, 1).applyQuaternion(tmpQ);
+```
+
+So the authored yaw made the tank shoot six degrees off from where it
+visibly points. `turret.quaternion.identity()` at build time squares the
+silhouette and the aim together. The lesson generalises: when aim is derived
+from a render transform — which is the house rule — the model's **rest pose
+is gameplay data**, not decoration.
+
+### Health moved onto the machine's own lights
+
+The stretched mast read as an extra piece stuck to the deck, which is the
+opposite of diegetic. The model puts every accent on ONE material, `M_Glow`:
+
+| accent | count |
+| --- | --- |
+| lift emitters (nacelles) | 6 |
+| hull glow strips | 4 |
+| turret glow strips | 2 |
+| secondary rings, headlights | 4 |
+
+So the tint is a **single material write** that lands on all of them at
+once, wrapping the hull instead of facing one way — legible from every
+camera, which the mast never was. The material is cloned per unit first:
+the merge preserves material identity and every mkcx descends from one
+cached prototype, so painting in place would tint the whole field.
+
+Two corrections the pixels forced. The hue belongs in **emissive** with the
+diffuse held at 0.22 — these are running lights, and lit at full diffuse
+they resolved to white under the key light. And the stops needed saturating:
+the old sky-blue full-health stop read as "the lights are on", not "the
+lights are blue", once emissive drove it.
+
+### The bench now tunes the build
+
+`units-tab` could show the tank but not change it in any way that shipped.
+`td-tab` held a `params.hover*` mirror behind a hand-written GUI folder;
+the viewer read the module defaults. Two sets of numbers that happened to
+start equal — the drift `tankfeel.js` exists to prevent, one layer up.
+
+`TANK_FEEL_KNOBS` describes each tunable once (key, label, group, range,
+step). Both surfaces are generated from it and both write into `FEEL`, a
+single live object in `feelstore.js`. No apply step, nothing to sync. The
+four recoil constants get sliders for free, and `RECOIL_LEN` stops being a
+second constant — it is a read of `FEEL.recoilLen` now.
+
+`feelstore` is separate because `tankfeel` is pure and Node-tested and
+`localStorage` is not available there. Restored blobs go through
+`clampFeelParams` as untrusted input: a stored entry can predate a range or
+a rename, and a corrupt one should cost the defaults, never a broken tab.
+
+The copy button emits **source**, not JSON — otherwise a good setting lives
+in one browser and never reaches the repo, which makes the bench a toy.
+
+Tests assert schema coverage in both directions, that no default sits
+outside its own slider range, and that the emitted block rounds to slider
+precision rather than `0.13999999999`.
+
+The panel is `position: fixed`. Its parent `#units-chrome` is a
+bottom-anchored absolute strip, so an absolute panel hung off the *controls*
+rather than the stage, and a percentage `max-height` resolved against that
+strip and collapsed the list to zero. Both of which it did, visibly.
+`?tune=1` opens it — headless has no pointer.
+
+### And a ROADMAP tab
+
+Three doc tabs now share one factory, so this cost a file and a
+registration. It lists the uncomfortable items too — the five board tabs are
+still copy-and-edit siblings, mobile has never been checked on a real
+device, nothing tests the render layer — because a roadmap that only lists
+wins is decoration.
+
+---
+
 ## `155e08c` — Recoil moves into the feel driver, so the bench stops lying
 
 The unit viewer exists so the tank can be judged in isolation instead of
