@@ -19,24 +19,25 @@
 
 import * as THREE from '../vendor/three.module.js';
 import GUI from '../vendor/lil-gui.esm.js';
-import { generateSphereMesh, relax } from './grid.js?v=79b4e6bd';
-import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=79b4e6bd';
-import { mulberry32, randomSeed } from './rng.js?v=79b4e6bd';
-import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3, segKey } from './vec3.js?v=79b4e6bd';
-import { CREATURES, waveJelly } from './creatures.js?v=79b4e6bd';
-import { UNITS, UNIT_NAMES, buildUnit, preloadMkcx, makeBulletCloud, makeRewardSolid, makeShellSolid, makeDebris, makeDotBurst, makePortalCloud, makeHeartCloud, makeDotEnemy } from './units.js?v=79b4e6bd';
-import { LOOKS, LOOK_NAMES } from './looks.js?v=79b4e6bd';
-import { makeCellIndex } from './cellindex.js?v=79b4e6bd';
-import { CREATURE_TINTS, ENEMY_SPEC, INTROS, computeWavePlan } from './enemyspec.js?v=79b4e6bd';
-import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER } from './towers.js?v=79b4e6bd';
-import { makeEconomy, sellRefund } from './economy.js?v=79b4e6bd';
-import { makeBloom } from './postfx.js?v=79b4e6bd';
-import { TANK_FEEL, TANK_FEEL_KNOBS, makeTankFeel, stepTankFeel, landTankFeel, fireTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js?v=79b4e6bd';
-import { FEEL, loadFeel, saveFeel } from './feelstore.js?v=79b4e6bd';
-import { BLOOM_GROUPS } from './bloomweights.js?v=79b4e6bd';
-import { TOWER_LOOK_NAMES, DEFAULT_TOWER_LOOK, buildTowerLook, preloadLook } from './towerlooks.js?v=79b4e6bd';
-import { makeAudio } from './audio.js?v=79b4e6bd';
-import { DEATH_KEYS } from './audiomanifest.js?v=79b4e6bd';
+import { generateSphereMesh, relax } from './grid.js?v=d2dd9e33';
+import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=d2dd9e33';
+import { mulberry32, randomSeed } from './rng.js?v=d2dd9e33';
+import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3, segKey } from './vec3.js?v=d2dd9e33';
+import { CREATURES, waveJelly } from './creatures.js?v=d2dd9e33';
+import { UNITS, UNIT_NAMES, buildUnit, preloadMkcx, makeBulletCloud, makeRewardSolid, makeShellSolid, makeDebris, makeDotBurst, makePortalCloud, makeHeartCloud, makeDotEnemy } from './units.js?v=d2dd9e33';
+import { LOOKS, LOOK_NAMES } from './looks.js?v=d2dd9e33';
+import { makeCellIndex } from './cellindex.js?v=d2dd9e33';
+import { CREATURE_TINTS, ENEMY_SPEC, INTROS, computeWavePlan } from './enemyspec.js?v=d2dd9e33';
+import { PICKUPS } from './pickups.js?v=d2dd9e33';
+import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER } from './towers.js?v=d2dd9e33';
+import { makeEconomy, sellRefund } from './economy.js?v=d2dd9e33';
+import { makeBloom } from './postfx.js?v=d2dd9e33';
+import { TANK_FEEL, TANK_FEEL_KNOBS, makeTankFeel, stepTankFeel, landTankFeel, fireTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js?v=d2dd9e33';
+import { FEEL, loadFeel, saveFeel } from './feelstore.js?v=d2dd9e33';
+import { BLOOM_GROUPS } from './bloomweights.js?v=d2dd9e33';
+import { TOWER_LOOK_NAMES, DEFAULT_TOWER_LOOK, buildTowerLook, preloadLook } from './towerlooks.js?v=d2dd9e33';
+import { makeAudio } from './audio.js?v=d2dd9e33';
+import { DEATH_KEYS } from './audiomanifest.js?v=d2dd9e33';
 
 export function initTdTab(root) {
   let active = false;
@@ -2956,13 +2957,10 @@ export function initTdTab(root) {
   // --- far-field rewards ----------------------------------------------------
   // no ammo sphere: the bullet triad already IS the ammo pickup — two
   // shapes meaning the same thing taught nothing (operator cut)
-  const REWARD_TYPES = [
-    // shape, not just colour: a spiked star for speed, a rounded cell for
-    // health, a ring for the charge you carry home
-    { type: 'power', body: 0x9ff8ff, shape: 'star' },  // permanent +8% speed
-    { type: 'health', body: 0x3dff6e, shape: 'cell' }, // you +1 — GREEN = health
-    { type: 'regen', body: 0xff2df0, shape: 'ring' },  // carry home: heart +4
-  ];
+  // one table, shared with the unit viewer — see src/pickups.js. A second
+  // copy would drift the first time a colour or an effect changed, and the
+  // viewer would start teaching the player something that is not true.
+  const REWARD_TYPES = PICKUPS;
 
   function clearRewards() {
     for (const r of rewardMeshes.values()) {

@@ -11,15 +11,17 @@
 // one context no matter how long the roster grows.
 import * as THREE from '../vendor/three.module.js';
 import { OrbitControls } from '../vendor/OrbitControls.js';
-import { buildUnit, preloadMkcx, makeDebris, makeDotBurst, makeBulletCloud } from './units.js?v=79b4e6bd';
+import { buildUnit, preloadMkcx, makeDebris, makeDotBurst, makeBulletCloud,
+  makeDotEnemy, makeRewardSolid, makeShellSolid } from './units.js?v=d2dd9e33';
 import { TANK_FEEL, TANK_FEEL_KNOBS, formatFeelCode, makeTankFeel, stepTankFeel,
-  landTankFeel, fireTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js?v=79b4e6bd';
-import { FEEL, loadFeel, saveFeel, resetFeel } from './feelstore.js?v=79b4e6bd';
+  landTankFeel, fireTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js?v=d2dd9e33';
+import { FEEL, loadFeel, saveFeel, resetFeel } from './feelstore.js?v=d2dd9e33';
+import { CREATURE_TINTS } from './enemyspec.js?v=d2dd9e33';
 import { buildTowerLook, TOWER_LOOK_NAMES, DEFAULT_TOWER_LOOK, preloadLook } from './towerlooks.js';
 import { TOWER_BY_KEY } from './towers.js';
 import { LOOKS } from './looks.js';
 import { makeBloom } from './postfx.js';
-import { makeAudio } from './audio.js?v=79b4e6bd';
+import { makeAudio } from './audio.js?v=d2dd9e33';
 import { GROUPS, GROUP_LABELS, GROUP_EMPTY, entriesIn } from './unitcatalog.js';
 
 export function initUnitsTab(root) {
@@ -167,6 +169,35 @@ export function initUnitsTab(root) {
     controls.update();
   }
 
+  // Build a catalogue entry the SAME way the game does. Hostiles in
+  // particular must come from makeDotEnemy: buildUnit still has an older
+  // mesh form for every creature, and showing that would be describing a
+  // unit the player never meets — without the rammable/not tell, which
+  // exists only on the cloud.
+  function buildEntry(e) {
+    if (e.kind === 'tower') return buildTowerLook(state.towerLook, TOWER_BY_KEY[e.id]);
+    if (e.kind === 'enemy') {
+      const hex = CREATURE_TINTS[e.id];
+      return makeDotEnemy(e.id, { walker: hex ?? cols.walker, walkerHi: 0xffffff });
+    }
+    if (e.kind === 'pickup') {
+      const p = e.pickup;
+      // shells arrive as a rack of three, exactly as they sit on the ground
+      if (!p.shape) {
+        const g = new THREE.Group();
+        for (let k = -1; k <= 1; k++) {
+          const b = makeShellSolid({ body: LOOKS.tronColors.orb.color, hi: 0xffffff });
+          b.position.set(k * 1.7, 0, 0);
+          g.add(b);
+        }
+        g.userData.baseScale = 1;
+        return g;
+      }
+      return makeRewardSolid(p.shape, { body: p.body, hi: 0xffffff }, 1.7);
+    }
+    return buildUnit(e.id, cols);
+  }
+
   function show() {
     clear();
     const list = entriesIn(state.group);
@@ -179,9 +210,7 @@ export function initUnitsTab(root) {
     }
     state.index = ((state.index % list.length) + list.length) % list.length;
     const e = list[state.index];
-    current = e.kind === 'tower'
-      ? buildTowerLook(state.towerLook, TOWER_BY_KEY[e.id])
-      : buildUnit(e.id, cols);
+    current = buildEntry(e);
     // units carry their own normalization; undo it so everything arrives at
     // a comparable size and the framing maths does the rest
     current.scale.setScalar(1 / (current.userData.baseScale || 1));

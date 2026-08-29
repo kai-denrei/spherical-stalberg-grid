@@ -2,11 +2,22 @@
 // it is on. Pure data: no three.js, no DOM, so the grouping is Node-testable
 // and the viewer stays a dumb renderer of whatever this says.
 //
-// `kind` tells a builder WHICH factory to call — units come from
-// units.js buildUnit(), towers from towerlooks.js buildTowerLook() — because
-// the two take different arguments and a viewer shouldn't have to guess.
+// `kind` tells a builder WHICH factory to call, because they take different
+// arguments and a viewer should not have to guess:
+//
+//   unit    units.js buildUnit()        — the player's machines
+//   tower   towerlooks.js buildTowerLook()
+//   enemy   units.js makeDotEnemy()     — the DOT-CLOUD form
+//   pickup  units.js makeRewardSolid() / makeShellSolid()
+//
+// `enemy` matters. UNITS has a mesh form for every creature (makeSaturn,
+// makeCorona, makeMine) that predates the dot clouds, and buildUnit returns
+// THAT. The tower-defence tab spawns the cloud form instead, so a viewer
+// built on buildUnit was showing a drifter the player will never meet — and
+// none of the rammable/not tells, which live only on the cloud.
 import { ENEMY_SPEC } from './enemyspec.js';
 import { TOWERS } from './towers.js';
+import { PICKUPS, SHELL_PICKUP } from './pickups.js';
 
 export const GROUPS = ['friendly', 'neutral', 'hostile'];
 
@@ -20,7 +31,7 @@ export const GROUP_LABELS = {
 // panel with no explanation.
 export const GROUP_EMPTY = {
   friendly: 'no friendly units',
-  neutral: 'nothing neutral yet — this side of the board is unwritten',
+  neutral: 'no pickups',
   hostile: 'no hostiles',
 };
 
@@ -64,15 +75,37 @@ const DEATH_SOUNDS = [
   { key: 'enemy_die_c', label: 'death 3' },
 ];
 
-const HOSTILE_UNITS = Object.keys(ENEMY_SPEC).map((key) => ({
-  id: key, kind: 'unit', label: key,
-  note: `${ENEMY_SPEC[key].role || 'hostile'} · ${ENEMY_SPEC[key].hp} hp`,
-  sounds: DEATH_SOUNDS,
-}));
+// Whether it goes under the treads is the first thing a player needs from
+// this screen, so it leads the description rather than trailing it.
+const HOSTILE_UNITS = Object.keys(ENEMY_SPEC).map((key) => {
+  const spec = ENEMY_SPEC[key];
+  const ram = spec.rammable ? 'RAMMABLE' : 'solid core — will NOT ram';
+  return {
+    id: key, kind: 'enemy', label: key,
+    note: `${ram} · ${spec.hp} hp · speed ${spec.speed}`,
+    sounds: DEATH_SOUNDS,
+  };
+});
+
+// The neutral side of the board: things on the ground worth driving over.
+// Shells get their own entry because they are not a reward type — they spawn
+// on their own clock and reload rather than upgrade.
+const PICKUP_UNITS = [
+  ...PICKUPS.map((p) => ({
+    id: `pickup-${p.type}`, kind: 'pickup', pickup: p, label: p.label,
+    note: `${p.effect} — ${p.note}`,
+    sounds: [{ key: 'tank_pickup', label: 'collect' }],
+  })),
+  {
+    id: 'pickup-shells', kind: 'pickup', pickup: SHELL_PICKUP, label: SHELL_PICKUP.label,
+    note: `${SHELL_PICKUP.effect} — ${SHELL_PICKUP.note}`,
+    sounds: [{ key: 'tank_shells', label: 'reload' }],
+  },
+];
 
 export const UNIT_CATALOG = {
   friendly: [...PLAYER_UNITS, ...TOWER_UNITS],
-  neutral: [],
+  neutral: PICKUP_UNITS,
   hostile: HOSTILE_UNITS,
 };
 
