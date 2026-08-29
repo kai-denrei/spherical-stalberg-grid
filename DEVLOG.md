@@ -6,6 +6,27 @@ Demo links assume `npm run serve` (port 8144) or the
 
 ---
 
+## `d3aa228a` — The shape says what the tower does
+
+`single` wears the six-axis arm, `slow` wears the broadcast antenna. Both
+read as the mechanism doing the job rather than as decoration: an arm points
+at **one** thing and swings to the next, which is a single-shot tower's whole
+behaviour; an antenna emits over an area instead of aiming, which is what a
+slow *field* does. The silhouette now says what the tower does before the
+tooltip gets a chance to.
+
+The tutorial banner moves from `top: 16%` to a fixed `134px`. At 16% it sat
+over the middle distance — exactly where the thing it is telling you to look
+at tends to be, so reading the instruction meant not watching the board.
+
+134px clears both the mode row (`top: 52px`) and the four-line HUD block. The
+first pass at 96px cleared the buttons and then clipped the wave line
+underneath them, which is the sort of thing only a screenshot shows. The big
+`.tut-flash` variant carried its own `42%` offset — that is what put the
+opening RAM callout dead centre — so it moves too.
+
+---
+
 ## `1cb7da6` — Nine shapes from the Braille lab
 
 Source: `~/Dev/Braille`, `fun-shapes/index.html`. The lab and this project
