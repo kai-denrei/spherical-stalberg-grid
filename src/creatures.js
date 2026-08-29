@@ -1,4 +1,4 @@
-import { BRAILLE_SHAPES, BRAILLE_SHAPE_KINDS } from './braillelab.js?v=ce260d89';
+import { BRAILLE_SHAPES, BRAILLE_SHAPE_KINDS } from './braillelab.js?v=9e020e8d';
 // creatures.js — organic dot-cloud units, ported from ~/Dev/Braille
 // fun-shapes (half-dotted > organic): amoeba, bacteriophage, jellyfish.
 // Each generator returns unit-radius points [x,y,z,(hi)] where hi===1 marks a
@@ -280,10 +280,24 @@ export function enemyDotPts(kind, n = 150) {
 // have none, so honouring them would leave those shapes reading as flat dust
 // — and the whole point of `hiEvery` is that it is a knob.
 function resampleLab(src, n, emit) {
+  // RECENTRED on its own bounding box. fitUnit normalises by distance from
+  // the origin, which keeps a shape inside the unit sphere but does nothing
+  // about where its mass sits — and several lab shapes are deliberately
+  // off-origin (an arm reaches forward from its pedestal). Mounted on a mast
+  // that meant the head hung off to one side of the collar instead of
+  // standing on it.
+  let lo = [Infinity, Infinity, Infinity], hi = [-Infinity, -Infinity, -Infinity];
+  for (const p of src) {
+    for (let a = 0; a < 3; a++) {
+      if (p[a] < lo[a]) lo[a] = p[a];
+      if (p[a] > hi[a]) hi[a] = p[a];
+    }
+  }
+  const c = [0, 1, 2].map((a) => (lo[a] + hi[a]) / 2);
   const step = src.length / Math.max(1, n);
   for (let i = 0; i < n; i++) {
     const p = src[Math.min(src.length - 1, Math.round(i * step))];
-    emit(p[0], p[1], p[2], i);
+    emit(p[0] - c[0], p[1] - c[1], p[2] - c[2], i);
   }
 }
 

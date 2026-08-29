@@ -8,8 +8,8 @@
 //
 // Pure: no DOM, no three.js.
 
-import { TOWER_HEAD_KINDS } from './creatures.js?v=ce260d89';
-import { makeParams, clampParams, formatKnobs, knobProblems } from './knobs.js?v=ce260d89';
+import { TOWER_HEAD_KINDS } from './creatures.js?v=9e020e8d';
+import { makeParams, clampParams, formatKnobs, knobProblems } from './knobs.js?v=9e020e8d';
 
 // 'as shipped' means "use whatever shape towers.js gave this one".
 export const HEAD_AS_SHIPPED = 'as shipped';
@@ -27,7 +27,12 @@ export const TOWER_HEADS = {};
 export const TOWER_FEEL = {
   headScale: 0.42,   // cloud scale inside the head group
   headLift: 1.12,    // how far the head floats above the mast
-  dots: 190,         // points in the cloud — density IS the read at distance
+  // MEASURED, not guessed. At wave 4 the frame costs ~1020 draw calls and
+  // 50k points; the calls scale with OBJECT count, the points with density.
+  // Raising a head from 190 to 480 adds ~290 vertices to a draw call that
+  // already exists — under 1% of points drawn, and zero extra calls. The
+  // old 190 was an arbitrary default, never a budget.
+  dots: 480,         // points in the cloud — density IS the read at distance
   dotSize: 2.1,      // px, unattenuated: a dot is the same size at any range
   hiEvery: 12,       // every Nth dot is a white highlight
   spin: 0.6,         // radians/s
@@ -38,7 +43,7 @@ export const TOWER_FEEL = {
 export const TOWER_FEEL_KNOBS = [
   { key: 'headScale', label: 'head size', group: 'head', min: 0.15, max: 0.9, step: 0.01 },
   { key: 'headLift', label: 'head height', group: 'head', min: 0.6, max: 1.8, step: 0.02 },
-  { key: 'dots', label: 'dot count', group: 'dots', min: 60, max: 400, step: 10 },
+  { key: 'dots', label: 'dot count', group: 'dots', min: 60, max: 1200, step: 20 },
   { key: 'dotSize', label: 'dot size', group: 'dots', min: 1, max: 5, step: 0.1 },
   { key: 'hiEvery', label: 'highlight every', group: 'dots', min: 4, max: 24, step: 1 },
   { key: 'spin', label: 'spin', group: 'motion', min: 0, max: 2, step: 0.05 },

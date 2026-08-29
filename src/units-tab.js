@@ -12,19 +12,19 @@
 import * as THREE from '../vendor/three.module.js';
 import { OrbitControls } from '../vendor/OrbitControls.js';
 import { buildUnit, preloadMkcx, makeDebris, makeDotBurst, makeBulletCloud,
-  makeDotEnemy, makeRewardSolid, makeShellSolid } from './units.js?v=ce260d89';
+  makeDotEnemy, makeRewardSolid, makeShellSolid } from './units.js?v=9e020e8d';
 import { TANK_FEEL, TANK_FEEL_KNOBS, formatFeelCode, makeTankFeel, stepTankFeel,
-  landTankFeel, fireTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js?v=ce260d89';
+  landTankFeel, fireTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js?v=9e020e8d';
 import { FEEL, loadFeel, saveFeel, resetFeel,
-  TOWER, HEADS, loadTower, saveTower, resetTower } from './feelstore.js?v=ce260d89';
+  TOWER, HEADS, loadTower, saveTower, resetTower } from './feelstore.js?v=9e020e8d';
 import { TOWER_FEEL_KNOBS, formatTowerFeel, clampTowerParams,
-  formatTowerHeads, HEAD_CHOICES, HEAD_AS_SHIPPED } from './towerfeel.js?v=ce260d89';
-import { CREATURE_TINTS } from './enemyspec.js?v=ce260d89';
+  formatTowerHeads, HEAD_CHOICES, HEAD_AS_SHIPPED } from './towerfeel.js?v=9e020e8d';
+import { CREATURE_TINTS } from './enemyspec.js?v=9e020e8d';
 import { buildTowerLook, TOWER_LOOK_NAMES, DEFAULT_TOWER_LOOK, preloadLook } from './towerlooks.js';
 import { TOWER_BY_KEY, TOWERS } from './towers.js';
 import { LOOKS } from './looks.js';
 import { makeBloom } from './postfx.js';
-import { makeAudio } from './audio.js?v=ce260d89';
+import { makeAudio } from './audio.js?v=9e020e8d';
 import { GROUPS, GROUP_LABELS, GROUP_EMPTY, entriesIn } from './unitcatalog.js';
 
 export function initUnitsTab(root) {
@@ -72,6 +72,35 @@ export function initUnitsTab(root) {
   let tunerApi = null;
   let clock = 0;
   const wreckFx = [];   // debris/burst objects, ticked and reaped
+
+  // --- firing pattern preview -----------------------------------------------
+  // ONE pooled Points cloud for every preview particle, rewritten in place
+  // each frame. Not an object per projectile: a frame's cost in this engine
+  // is dominated by draw calls, not by vertices — measured at ~1020 calls and
+  // 50k points on a live wave-4 board — so a hundred particles in one buffer
+  // is one call, and a hundred objects is a hundred. Same reason the effects
+  // layer should be built this way when it lands.
+  const FX_MAX = 900;
+  const fxPos = new Float32Array(FX_MAX * 3);
+  const fxCol = new Float32Array(FX_MAX * 3);
+  const fxGeo = new THREE.BufferGeometry();
+  fxGeo.setAttribute('position', new THREE.BufferAttribute(fxPos, 3));
+  fxGeo.setAttribute('color', new THREE.BufferAttribute(fxCol, 3));
+  fxGeo.setDrawRange(0, 0);
+  const fxObj = new THREE.Points(fxGeo, new THREE.PointsMaterial({
+    size: 3.4, sizeAttenuation: false, vertexColors: true,
+    transparent: true, opacity: 0.95,
+  }));
+  fxObj.frustumCulled = false;   // the buffer is rewritten; its bounds lie
+  scene.add(fxObj);
+  const fx = [];              // live particles
+  let rangeRing = null;       // the reach, drawn while previewing
+  let fireLeft = 0;           // seconds of preview remaining
+  let fireGap = 0;            // seconds until the next shot in the burst
+  // One board cell IS the tower's footprint, so a range in cells converts by
+  // the mast's own base width. Without this the pattern would be pretty and
+  // tell you nothing about reach.
+  const CELL = 0.8;
   // A shot is three things — the kick, the shell, and the barrel going
   // red-hot — and the bench had only the kick. Judging "does firing feel
   // right" without the other two is judging a third of it.
@@ -114,6 +143,8 @@ export function initUnitsTab(root) {
       b.addEventListener('click', () => {
         // the shot is a gesture, not just a sample: kick the turret too
         if (snd.key === 'tank_main') fireShell();
+        // a tower's 'fire' button shows the PATTERN, not just the sound
+        if (snd.label === 'fire') firePattern();
         if (!snd.loop) { sfx.play(snd.key); return; }
         if (bedBtn === b) { stopBed(); return; }  // toggle off
         stopBed();
@@ -157,6 +188,11 @@ export function initUnitsTab(root) {
     for (const sh of shells) scene.remove(sh);
     shells.length = 0;
     heat = 0;
+    // a pattern belongs to the tower that fired it
+    fx.length = 0;
+    fireLeft = 0;
+    fxGeo.setDrawRange(0, 0);
+    if (rangeRing) rangeRing.visible = false;
   }
 
   // Frame whatever was built. Units differ in size by more than 10x, so the
@@ -356,6 +392,7 @@ export function initUnitsTab(root) {
     // sweep rather than the model. Frozen, it returns to its rest pose.
     if (current && current.userData.tick && state.sweep) current.userData.tick(clock);
     if (current && state.spin) current.rotation.y += dt * 0.35;
+    stepFire(dt);
     // barrel heat: the same cool->hot lerp the game runs, on the same sleeve
     if (heat > 0) heat = Math.max(0, heat - dt);
     const sleeve = current && current.userData.heatSleeve;
@@ -381,6 +418,142 @@ export function initUnitsTab(root) {
     controls.update();
     postfx.render();
     drawCallouts();   // after render, so it tracks the frame just drawn
+  }
+
+  // Where a tower's shots leave from: the head, read off the render transform
+  // rather than recomputed from the mast constants.
+  function towerMuzzle(unit) {
+    const head = unit && unit.userData.head;
+    const v = new THREE.Vector3();
+    if (head) head.getWorldPosition(v);
+    return v;
+  }
+
+  function addFx(p, vel, life, col, grav = 0) {
+    if (fx.length >= FX_MAX) return;
+    fx.push({ p: p.clone(), v: vel.clone(), t: 0, life, col, grav });
+  }
+
+  // The pattern each attack actually makes. This is the point of the preview:
+  // a spread that does not visibly fan, or a mortar whose arc lands short, is
+  // a tuning problem you can only see by watching it happen.
+  function towerShot(def, origin) {
+    const reach = (def.range || 3) * CELL;
+    const speed = (def.projSpeed || 12) * CELL;
+    const col = new THREE.Color(def.color || 0xffffff);
+    const dir = new THREE.Vector3(0, 0, 1);
+    const life = Math.max(0.25, reach / Math.max(0.001, speed));
+    switch (def.attack) {
+      case 'spread': {
+        for (let i = -2; i <= 2; i++) {
+          const a = i * 0.30;
+          addFx(origin, new THREE.Vector3(Math.sin(a), 0, Math.cos(a)).multiplyScalar(speed), life, col);
+        }
+        break;
+      }
+      case 'homing': {
+        // curves as it goes, which is the whole tell
+        const shot = { p: origin.clone(), v: dir.clone().multiplyScalar(speed * 0.8) };
+        addFx(shot.p, shot.v, life * 1.6, col);
+        fx[fx.length - 1].curve = 2.6;
+        break;
+      }
+      case 'mortar': {
+        // a lob: up and out, gravity brings it down, and it BURSTS
+        const t = life * 1.9;
+        addFx(origin, new THREE.Vector3(0, reach * 0.9 / t, reach / t), t, col, -2 * (reach * 0.9) / (t * t));
+        fx[fx.length - 1].burst = { n: 40, col, r: reach * 0.32 };
+        break;
+      }
+      case 'beam': {
+        // no travel time: the whole line arrives at once and fades
+        const N = 90;
+        for (let i = 0; i < N; i++) {
+          const p = origin.clone().addScaledVector(dir, (i / N) * reach);
+          addFx(p, new THREE.Vector3(), 0.22, col);
+        }
+        break;
+      }
+      case 'slowfield': {
+        // a pulse expanding to the edge of its reach
+        const N = 64;
+        for (let i = 0; i < N; i++) {
+          const a = (i / N) * Math.PI * 2;
+          addFx(origin, new THREE.Vector3(Math.cos(a), 0, Math.sin(a)).multiplyScalar(reach / 0.9), 0.9, col);
+        }
+        break;
+      }
+      default:
+        addFx(origin, dir.clone().multiplyScalar(speed), life, col);
+    }
+  }
+
+  function firePattern() {
+    if (!currentEntry || currentEntry.kind !== 'tower') return;
+    const def = TOWER_BY_KEY[currentEntry.id];
+    if (!def || !current) return;
+    fireLeft = 4;                       // watch the cadence, not one shot
+    fireGap = 0;
+    if (!rangeRing) {
+      const g = new THREE.BufferGeometry();
+      const pts = [];
+      for (let i = 0; i <= 96; i++) {
+        const a = (i / 96) * Math.PI * 2;
+        pts.push(Math.cos(a), 0, Math.sin(a));
+      }
+      g.setAttribute('position', new THREE.Float32BufferAttribute(pts, 3));
+      rangeRing = new THREE.LineLoop(g, new THREE.LineBasicMaterial({
+        color: 0x6fe6ff, transparent: true, opacity: 0.35,
+      }));
+      scene.add(rangeRing);
+    }
+    const o = towerMuzzle(current);
+    rangeRing.position.set(o.x, 0, o.z);
+    rangeRing.scale.setScalar((def.range || 3) * CELL);
+    rangeRing.visible = true;
+  }
+
+  function stepFire(dt) {
+    if (fireLeft > 0) {
+      fireLeft -= dt;
+      fireGap -= dt;
+      const def = currentEntry && TOWER_BY_KEY[currentEntry.id];
+      if (def && fireGap <= 0) {
+        fireGap = 1 / Math.max(0.2, def.rate || 1);
+        towerShot(def, towerMuzzle(current));
+      }
+      if (fireLeft <= 0 && rangeRing) rangeRing.visible = false;
+    }
+    let k = 0;
+    for (let i = fx.length - 1; i >= 0; i--) {
+      const f = fx[i];
+      f.t += dt;
+      if (f.curve) f.v.x += f.curve * dt * (f.v.z > 0 ? 1 : -1);
+      if (f.grav) f.v.y += f.grav * dt;
+      f.p.addScaledVector(f.v, dt);
+      if (f.t >= f.life) {
+        if (f.burst) {
+          const { n: bn, col, r } = f.burst;
+          for (let b = 0; b < bn; b++) {
+            const a = (b / bn) * Math.PI * 2, e = 0.3 + 0.7 * ((b * 7) % 5) / 5;
+            addFx(f.p, new THREE.Vector3(Math.cos(a) * e, 0.5 * e, Math.sin(a) * e)
+              .multiplyScalar(r / 0.5), 0.5, col, -2.2);
+          }
+        }
+        fx.splice(i, 1);
+        continue;
+      }
+    }
+    for (const f of fx) {
+      if (k >= FX_MAX) break;
+      fxPos[k * 3] = f.p.x; fxPos[k * 3 + 1] = f.p.y; fxPos[k * 3 + 2] = f.p.z;
+      const fade = 1 - f.t / f.life;
+      fxCol[k * 3] = f.col.r * fade; fxCol[k * 3 + 1] = f.col.g * fade; fxCol[k * 3 + 2] = f.col.b * fade;
+      k++;
+    }
+    fxGeo.setDrawRange(0, k);
+    fxGeo.attributes.position.needsUpdate = true;
+    fxGeo.attributes.color.needsUpdate = true;
   }
 
   // Fire everything a shot does. The shell leaves the muzzle ANCHOR and flies
@@ -535,7 +708,15 @@ export function initUnitsTab(root) {
   // the red-hot barrel can be caught in a still frame.
   {
     const at = parseFloat(new URLSearchParams(location.search).get('fire'));
-    if (Number.isFinite(at)) setTimeout(() => { setEngine(true); fireShell(); }, at * 1000);
+    if (Number.isFinite(at)) {
+      setTimeout(() => {
+        // whichever the selection is: a tank fires a shell, a tower shows
+        // its pattern. One hook, because it is one question — what happens
+        // when this thing shoots.
+        if (currentEntry && currentEntry.kind === 'tower') firePattern();
+        else { setEngine(true); fireShell(); }
+      }, at * 1000);
+    }
   }
 
   // --- the tuning panel ----------------------------------------------------

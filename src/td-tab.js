@@ -19,25 +19,25 @@
 
 import * as THREE from '../vendor/three.module.js';
 import GUI from '../vendor/lil-gui.esm.js';
-import { generateSphereMesh, relax } from './grid.js?v=ce260d89';
-import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=ce260d89';
-import { mulberry32, randomSeed } from './rng.js?v=ce260d89';
-import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3, segKey } from './vec3.js?v=ce260d89';
-import { CREATURES, waveJelly } from './creatures.js?v=ce260d89';
-import { UNITS, UNIT_NAMES, buildUnit, buildCreature, preloadMkcx, makeBulletCloud, makeRewardSolid, makeShellSolid, makeDebris, makeDotBurst, makePortalCloud, makeHeartCloud, makeDotEnemy } from './units.js?v=ce260d89';
-import { LOOKS, LOOK_NAMES } from './looks.js?v=ce260d89';
-import { makeCellIndex } from './cellindex.js?v=ce260d89';
-import { CREATURE_TINTS, ENEMY_SPEC, INTROS, computeWavePlan } from './enemyspec.js?v=ce260d89';
-import { PICKUPS } from './pickups.js?v=ce260d89';
-import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER } from './towers.js?v=ce260d89';
-import { makeEconomy, sellRefund } from './economy.js?v=ce260d89';
-import { makeBloom } from './postfx.js?v=ce260d89';
-import { TANK_FEEL, TANK_FEEL_KNOBS, makeTankFeel, stepTankFeel, landTankFeel, fireTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js?v=ce260d89';
-import { FEEL, loadFeel, saveFeel } from './feelstore.js?v=ce260d89';
-import { BLOOM_GROUPS } from './bloomweights.js?v=ce260d89';
-import { TOWER_LOOK_NAMES, DEFAULT_TOWER_LOOK, buildTowerLook, preloadLook } from './towerlooks.js?v=ce260d89';
-import { makeAudio } from './audio.js?v=ce260d89';
-import { DEATH_KEYS } from './audiomanifest.js?v=ce260d89';
+import { generateSphereMesh, relax } from './grid.js?v=9e020e8d';
+import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=9e020e8d';
+import { mulberry32, randomSeed } from './rng.js?v=9e020e8d';
+import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3, segKey } from './vec3.js?v=9e020e8d';
+import { CREATURES, waveJelly } from './creatures.js?v=9e020e8d';
+import { UNITS, UNIT_NAMES, buildUnit, buildCreature, preloadMkcx, makeBulletCloud, makeRewardSolid, makeShellSolid, makeDebris, makeDotBurst, makePortalCloud, makeHeartCloud, makeDotEnemy } from './units.js?v=9e020e8d';
+import { LOOKS, LOOK_NAMES } from './looks.js?v=9e020e8d';
+import { makeCellIndex } from './cellindex.js?v=9e020e8d';
+import { CREATURE_TINTS, ENEMY_SPEC, INTROS, computeWavePlan } from './enemyspec.js?v=9e020e8d';
+import { PICKUPS } from './pickups.js?v=9e020e8d';
+import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER } from './towers.js?v=9e020e8d';
+import { makeEconomy, sellRefund } from './economy.js?v=9e020e8d';
+import { makeBloom } from './postfx.js?v=9e020e8d';
+import { TANK_FEEL, TANK_FEEL_KNOBS, makeTankFeel, stepTankFeel, landTankFeel, fireTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js?v=9e020e8d';
+import { FEEL, loadFeel, saveFeel } from './feelstore.js?v=9e020e8d';
+import { BLOOM_GROUPS } from './bloomweights.js?v=9e020e8d';
+import { TOWER_LOOK_NAMES, DEFAULT_TOWER_LOOK, buildTowerLook, preloadLook } from './towerlooks.js?v=9e020e8d';
+import { makeAudio } from './audio.js?v=9e020e8d';
+import { DEATH_KEYS } from './audiomanifest.js?v=9e020e8d';
 
 export function initTdTab(root) {
   let active = false;
@@ -4238,6 +4238,36 @@ export function initTdTab(root) {
   // reached without a pair of hands. Every other phase here is gated on
   // killing something, which headless verification cannot do, and a beat you
   // cannot screenshot is a beat nobody checks.
+  // ?perf=N — after N seconds, report what the frame actually costs. Written
+  // because "is the dot count a performance limit?" is a question that should
+  // be answered with the renderer's own numbers, not with an instinct.
+  const perfAt = parseFloat(urlParams.get('perf') || '0');
+  if (perfAt > 0) {
+    setTimeout(() => {
+      // info resets on every render() and postfx runs several passes, so a
+      // naive read reports the bloom's final fullscreen quad and nothing
+      // else. Turn autoReset off and let ONE frame accumulate.
+      renderer.info.autoReset = false;
+      renderer.info.reset();
+      requestAnimationFrame(() => requestAnimationFrame(() => report()));
+    }, perfAt * 1000);
+    const report = () => {
+      const r = renderer.info.render;
+      const mem = renderer.info.memory;
+      let objs = 0, points = 0, clouds = 0;
+      scene.traverse((o) => {
+        objs++;
+        if (o.isPoints && o.geometry && o.geometry.attributes.position) {
+          clouds++; points += o.geometry.attributes.position.count;
+        }
+      });
+      console.log(`PERF calls=${r.calls} tris=${r.triangles} pointsDrawn=${r.points}`
+        + ` | scene objects=${objs} pointClouds=${clouds} cloudVerts=${points}`
+        + ` | geometries=${mem.geometries} textures=${mem.textures}`);
+      renderer.info.autoReset = true;
+    };
+  }
+
   const tutSteps = parseInt(urlParams.get('tutstep') || '0', 10);
   if (runTutorial && tutSteps > 0) {
     let left = tutSteps;

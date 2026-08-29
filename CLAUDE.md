@@ -36,6 +36,8 @@ Public: https://kai-denrei.github.io/spherical-stalberg-grid/ (Pages,
   `?walltops=`, `?creature=`, `?spawn=`, `?view=`, `?devlog=1`, `?unit=`,
   `?tune=1` (opens the unit viewer's feel tuner), `?labels=1`, `?sweep=0`,
   `?fire=N`, `?tutstep=N` (clear N scripted tutorial pairs), `?log=roadmap`,
+  `?perf=N` (TD: report draw calls / tris / points for one whole frame —
+  set `info.autoReset=false` first or you measure only the bloom's last pass),
   `#tabname`.
   Headless clamps windows to ~500px wide and CROPS screenshots — for
   layout bugs, log `innerWidth` from the page before touching CSS.
