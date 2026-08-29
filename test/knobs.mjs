@@ -120,16 +120,21 @@ console.log('tower heads:');
   // derived, not hardcoded: this assertion is about the RULE, and writing a
   // literal shape here made it fail the moment a tower was reassigned
   const asShipped = TOWERS.find((t) => t.key === 'single').shape;
-  const kept = cleanHeads({ aoe: 'arm', single: asShipped, slow: 'nonesuch', ghost: 'arm' }, TOWERS);
-  check('cleanHeads keeps a real override', kept.aoe === 'arm');
+  // pick a head that is NOT what this tower ships with, for the same reason
+  const other = TOWER_HEAD_KINDS.find((k) => k !== TOWERS.find((t) => t.key === 'aoe').shape);
+  const kept = cleanHeads({ aoe: other, single: asShipped, slow: 'nonesuch', ghost: 'arm' }, TOWERS);
+  check('cleanHeads keeps a real override', kept.aoe === other);
   check('drops one equal to the shipped shape', !('single' in kept));
   check('drops an unknown shape', !('slow' in kept));
   check('drops an unknown tower', !('ghost' in kept));
 
-  const src = formatTowerHeads({ aoe: 'launcher' }, TOWERS);
+  const src = formatTowerHeads({ aoe: other }, TOWERS);
   check('emits every tower, not just overrides',
         TOWERS.every((t) => src.includes(t.key + ':')));
-  check('marks what changed', src.includes('<- changed') && src.split('<- changed').length === 2);
+  check('marks the one that changed',
+        src.includes('<- changed') && src.split('<- changed').length === 2, src);
+  check('and marks nothing when nothing changed',
+        !formatTowerHeads({}, TOWERS).includes('<- changed'));
   const raw = { aoe: 'arm' };
   cleanHeads(raw, TOWERS);
   check('cleanHeads does not mutate its input', Object.keys(raw).length === 1);

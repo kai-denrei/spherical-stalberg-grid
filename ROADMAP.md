@@ -22,6 +22,7 @@ not advanced.
 | board + collision + nav | done; one grid serves all four roles |
 | tank (mkcx), feel, sound | done; tuned against the unit viewer |
 | towers, looks registry | done; swapping a tower's visual is non-destructive |
+| tower silhouettes | done; all eight wear a distinct Braille-lab head matched to what they do |
 | waves, economy | wired but **untuned** — see Pacing below |
 | tutorial | runs on a deliberately small board (400–600 points) |
 
@@ -45,15 +46,6 @@ module defaults, so tuning in the viewer changes nothing that ships. The
 knob *schema* moves into `tankfeel.js` and both surfaces build their UI from
 it, mutating one shared object — with a copy-as-code button so a good
 setting reaches the repo instead of dying in one browser.
-
-### A shape per tower role
-
-Nine shapes are ported from the Braille lab and selectable in the unit
-viewer's tower panel — six-axis arm, delta robot, gripper arm, guyed mast,
-broadcast antenna, concentric ripple, obelisk, rocket launcher. What is not
-decided is which tower wears which. Two hints exist already: the six-axis arm
-was called for **single** shot and the broadcast antenna for **slow**, both of
-which are existing tower keys. The rest is a looking pass with the bench.
 
 ### Wave pacing as a curve
 

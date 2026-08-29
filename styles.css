@@ -1061,14 +1061,26 @@ html, body {
 #units-groups button.on, #units-opts button.on {
   color: #061018; background: #6fe6ff; border-color: #6fe6ff;
 }
-#units-stage { display: flex; align-items: center; gap: 14px; }
+/* The arrows must not move as you step through units. They used to sit
+   either side of a block with only a min-width, so a long caption pushed
+   them apart and every unit put them somewhere new — you had to re-aim
+   between clicks. A fixed stage width pins both to its edges instead. */
+#units-stage {
+  display: flex; align-items: center; gap: 14px;
+  width: min(660px, 92vw); justify-content: space-between;
+}
 #units-stage button { font-size: 20px; padding: 2px 14px; line-height: 1.1; }
-#units-id { text-align: center; min-width: 220px; }
+#units-id { text-align: center; flex: 1; min-width: 0; }
 #units-name {
   font: 600 15px/1.2 ui-monospace, SFMono-Regular, Menlo, monospace;
   letter-spacing: .12em; text-transform: uppercase; color: #eaf6ff;
 }
-#units-note { font: 11px/1.4 ui-monospace, monospace; color: #7f93ab; margin-top: 3px; }
+/* two lines reserved: the longest captions wrap, and a block that changes
+   height would move the arrows vertically instead of horizontally */
+#units-note {
+  font: 11px/1.4 ui-monospace, monospace; color: #7f93ab; margin-top: 3px;
+  min-height: 2.8em;
+}
 #units-count { font: 11px/1.4 ui-monospace, monospace; color: #4d6076; margin-top: 2px; }
 #units-opts { display: flex; align-items: center; gap: 10px; }
 #units-opts label {
@@ -1540,7 +1552,12 @@ body.playing:not(.chrome-open) #tabbar { display: none !important; }
 
 /* the unit viewer's tank bench: engine, wreck and health in one row */
 #units-bench { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; justify-content: center; }
-#units-bench.hidden { display: none; }
+/* Reserved, not removed. The bench row only exists for units with a hover
+   split, so `display: none` made the whole chrome stack shorter for towers
+   and pickups — which moved the < > arrows UP. They were pinned
+   horizontally and still landing somewhere new. A little dead space below
+   the caption is the cheaper of the two. */
+#units-bench.hidden { visibility: hidden; pointer-events: none; }
 #units-bench button {
   font: 11px/1 ui-monospace, SFMono-Regular, Menlo, monospace;
   letter-spacing: .06em; color: #cfe4ff;

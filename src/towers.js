@@ -24,13 +24,19 @@ export const TOWERS = [
     shape: 'sixaxis', projPx: 5, trail: 0, projSpeed: 20 }, // HK 0.9 — fast, near-hitscan
   { key: 'rapid',  label: 'Rapid',       color: 0x6fe6ff, cost: 70,
     dmg: 7 / 90,  range: 3.5, rate: 3.0, attack: 'single',
-    shape: 'spiral', spin: 1.5, projPx: 4, trail: 3, projSpeed: 26 }, // HK 1.2
+    // a delta robot: three arms working in parallel, the fastest mechanism
+    // on any production line. Rapid fire, made visible.
+    shape: 'delta', spin: 1.5, projPx: 4, trail: 3, projSpeed: 26 }, // HK 1.2
   { key: 'spread', label: 'Spread',      color: 0x2fe6d0, cost: 80,
     dmg: 6 / 90,  range: 3.1, rate: 1.0, attack: 'spread', pellets: 5,
-    shape: 'sphere', projPx: 3.5, trail: 0, projSpeed: 15 }, // HK 0.7
+    // a struck-water ripple: concentric rings travelling outward. That IS
+    // a spread — one event reaching several places at once.
+    shape: 'ripple', projPx: 3.5, trail: 0, projSpeed: 15 }, // HK 0.7
   { key: 'homing', label: 'Homing',      color: 0x5a9bff, cost: 90,
     dmg: 9 / 90,  range: 3.5, rate: 1.2, attack: 'homing',
-    shape: 'dspiral', spin: 0.9, projPx: 5, trail: 6, projSpeed: 13 }, // HK 0.6 — guided, unhurried
+    // a gripper arm: it reaches out and takes hold of a specific thing,
+    // which is what a homing shot does once it has picked its target.
+    shape: 'gripper', spin: 0.9, projPx: 5, trail: 6, projSpeed: 13 }, // HK 0.6 — guided, unhurried
   { key: 'slow',   label: 'Slow',        color: 0xc4e6ff, cost: 100,
     dmg: 4 / 90,  range: 3.5, rate: 1.0, attack: 'slowfield',
     slowFactor: 0.45, slowDur: 1.6,
@@ -39,13 +45,19 @@ export const TOWERS = [
     shape: 'broadcast', spin: 0.3 },
   { key: 'aoe',    label: 'AoE',         color: 0x9fc4ff, cost: 110,
     dmg: 12 / 90, range: 3.5, rate: 0.9, attack: 'mortar', splash: 1.5,
-    shape: 'gear', spin: 0.7, projPx: 8, trail: 2, arc: true, projSpeed: 3.5 }, // a slow deliberate LOB
+    // a rocket launcher: boxed tubes lobbing ordnance over a distance and
+    // landing it on an area. The mortar arc is the tower's whole identity.
+    shape: 'launcher', spin: 0.7, projPx: 8, trail: 2, arc: true, projSpeed: 3.5 }, // a slow deliberate LOB
   { key: 'sniper', label: 'Sniper',      color: 0xffffff, cost: 130,
     dmg: 62 / 90, range: 7.0, rate: 0.7, attack: 'single',
-    shape: 'teardrop', projPx: 7, trail: 11, projSpeed: 42 }, // HK 1.9 — a streak
+    // a guyed mast: the tallest, thinnest thing here, built to reach. The
+    // longest range on the board should look like it out-reaches the rest.
+    shape: 'guyed', projPx: 7, trail: 11, projSpeed: 42 }, // HK 1.9 — a streak
   { key: 'laser',  label: 'Laser',       color: 0x9ff5ff, cost: 220,
     dmg: 18 / 90, range: 5.3, rate: 1.5, attack: 'beam',
-    shape: 'bipyramid', spin: 0.5 },
+    // an obelisk: a standing monolith, the one head with no moving parts.
+    // A beam weapon does not traverse or reload — it simply channels.
+    shape: 'obelisk', spin: 0.5 },
 ];
 
 export const TOWER_BY_KEY = Object.fromEntries(TOWERS.map((t) => [t.key, t]));
