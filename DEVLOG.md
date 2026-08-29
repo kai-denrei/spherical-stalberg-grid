@@ -6,6 +6,61 @@ Demo links assume `npm run serve` (port 8144) or the
 
 ---
 
+## `59966ba` — Two routes to a wave, one of them silent
+
+### The cues really did drift
+
+There were two routes to `spawnWave`, and only one announced:
+
+```js
+} else if (waveAge >= params.waveCap && spawnPoints.some(s => s.alive)) {
+  spawnWave();   // safety: the field is stalled
+}
+```
+
+That branch sits **inside** `if (waveActive)`, while the whole telegraph lived
+in the `else`. So a stalled field spawned with no charge, no rings and no
+sound — and later rounds hit it more and more often, because bigger waves
+take longer to clear. Exactly what "no 3 second delay before the wave
+appeared" looks like from the outside, and it gets worse the further you get,
+which is why it read as *drift*.
+
+`armWave()` is the single entry point now: it starts a countdown, the
+countdown drives the telegraph, and the countdown is the only caller of
+`spawnWave`. Idempotent, because a stalled field re-asks every frame. Arming
+happens `WAVE_WARN` early, so the total wait from cleared to spawned is
+unchanged.
+
+### The export was half the shape
+
+The lab's card calls it **"chevrons + horizon"** and the JSON carried only the
+chevrons — because the horizon is a separate `features` function, a function
+of *time*, which a point export cannot hold. Ported from `stargateFeatures`:
+six concentric rings inside the throat, each shimmering on its own phase, the
+whole disc turning slowly on Y so it reads as a surface rather than a pattern.
+
+435 ring points + 105 horizon dots. The horizon sits after the ring in the
+buffer, so the existing draw-on reveals them in the right order for nothing:
+ring sweeps, chevrons lock, throat lights up.
+
+Worth keeping the lab's own note — `stargatePts` deliberately skips `fitUnit`
+so the horizon can share its exact coordinates. Normalising the ring on import
+would have silently moved the disc out of it.
+
+### A lost tank is an event
+
+It used to be neither an event nor a loss you could see: the hull counter
+ticked down and the machine carried on driving. Now it explodes and you come
+back in **build** — pulled up and out, looking at the whole board, with the
+wall you did not have time to buy still unbought. That is the decision the
+loss should hand you.
+
+It returns to the spawn gate facing the heart, engine cold, throttle zeroed,
+free-movement state cleared — or it would resume from wherever the wreck
+stopped.
+
+---
+
 ## `1b3228a` — The gate dials itself in, and the bacterium swims
 
 ### The point order was already the animation
