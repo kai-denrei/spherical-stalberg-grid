@@ -6,6 +6,40 @@ Demo links assume `npm run serve` (port 8144) or the
 
 ---
 
+## `123d0ab` — The gates announce themselves three seconds out
+
+`freezing_gush_01` from the Frost Mage set, through the usual pipeline:
+trimmed to 3.70 s, peak-normalized to −1.5 dBFS, mono 96 kbps.
+
+Kept at nearly its full length rather than cut to the 3.0 s lead. The gush is
+meant to **still be running** as the first enemy clears the gate, so the cue
+hands over to the thing it warned about instead of stopping a frame before
+it. `WAVE_WARN` moves 3.2 → 3.0 so the sound starts exactly three seconds
+out — long enough to break off, turn, and put distance between you and the
+gate, which is the whole point of a warning.
+
+Fired on the **edge** of the charge, once, at the nearest opening gate: it
+carries a distance through the falloff, and two gates opening together
+announce once rather than twice. `maxVoices: 1` backs that up in the mixer,
+and a 2.5 s min-interval is longer than any legitimate re-trigger, so a
+stalled wave clock cannot stack the loudest cue in the game on itself.
+
+### The build table could not be annotated
+
+Adding a comment row made the script fail with:
+
+```
+missing source: assets/audio/src/
+```
+
+The `|`-delimited table loop skipped blank keys but not `#` lines, so a
+comment parsed as a key with an empty source path — and the error named the
+empty path rather than the line that caused it. Both table loops now skip
+comments (the LOOPS table had the same gap; fixing only the one that happened
+to break would have left the trap for the next person).
+
+---
+
 ## `32be0df` — The gates telegraph a wave before it lands
 
 A wave used to simply appear. The countdown said so in a corner, but the
