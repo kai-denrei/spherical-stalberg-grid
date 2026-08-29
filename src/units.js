@@ -16,10 +16,10 @@
 
 import * as THREE from '../vendor/three.module.js';
 import { loadGlb, mergeByMaterial, fitModel, tintModel, makeShellRack,
-  addEdgeOutlines, makeHeatSleeve } from './glbmodels.js?v=79aeb34e';
-import { CREATURES, waveJelly, spherePts, bulletPts, missilePts, heartPts, torusPts, towerHeadPts, enemyDotPts, portalPts } from './creatures.js?v=79aeb34e';
-import { TOWER_FEEL, headKindFor } from './towerfeel.js?v=79aeb34e';
-import { ENEMY_SPEC } from './enemyspec.js?v=79aeb34e';
+  addEdgeOutlines, makeHeatSleeve } from './glbmodels.js?v=e4f52e17';
+import { CREATURES, waveJelly, spherePts, bulletPts, missilePts, heartPts, torusPts, towerHeadPts, enemyDotPts, portalPts } from './creatures.js?v=e4f52e17';
+import { TOWER_FEEL, headKindFor } from './towerfeel.js?v=e4f52e17';
+import { ENEMY_SPEC } from './enemyspec.js?v=e4f52e17';
 
 function normalizeToUnit(group) {
   group.updateMatrixWorld(true);
@@ -606,7 +606,9 @@ const DOT_SHAPES = {
   amoeba: () => CREATURES.amoeba(),
   jellyfish: () => CREATURES.jellyfish(),
   ghost: () => enemyDotPts('ghost'),
-  scoutufo: () => enemyDotPts('ufo'),
+  // The flying saucer, replaced by the lab's bacterium — a rod body with
+  // flagella. Reverting is this one line: enemyDotPts('ufo').
+  scoutufo: () => towerHeadPts('bacterium', 170),
   gslime: () => enemyDotPts('slime'),
   drifter: () => enemyDotPts('saturn'),
   corona: () => enemyDotPts('corona'),

@@ -6,8 +6,8 @@ import { OrbitControls } from '../vendor/OrbitControls.js';
 import GUI from '../vendor/lil-gui.esm.js';
 import {
   generateSphereMesh, relaxStep, squarenessError, quadErrors, valences,
-} from './grid.js?v=79aeb34e';
-import { mulberry32, randomSeed } from './rng.js?v=79aeb34e';
+} from './grid.js?v=e4f52e17';
+import { mulberry32, randomSeed } from './rng.js?v=e4f52e17';
 
 export function initGridTab(root) {
   let active = true;

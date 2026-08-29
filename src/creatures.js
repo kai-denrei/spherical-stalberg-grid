@@ -1,3 +1,4 @@
+import { BRAILLE_SHAPES, BRAILLE_SHAPE_KINDS } from './braillelab.js?v=e4f52e17';
 // creatures.js — organic dot-cloud units, ported from ~/Dev/Braille
 // fun-shapes (half-dotted > organic): amoeba, bacteriophage, jellyfish.
 // Each generator returns unit-radius points [x,y,z,(hi)] where hi===1 marks a
@@ -270,6 +271,22 @@ export function enemyDotPts(kind, n = 150) {
 // per HokorobiTawaa tower shape. All fitUnit-normalized, every 12th dot
 // hi. These are STATIC clouds: the game animates them with transform
 // spin/bob only, so dot count costs nothing per frame.
+// Lab shapes arrive at whatever density their author chose (506 to 2689
+// points across the nine ported so far) and several carry no highlights at
+// all. Resampling on the way in gives them BOTH: the dot-count knob applies,
+// and they speak the half-dotted language the rest of the game does.
+//
+// The authored highlight flags are dropped deliberately. Three of the nine
+// have none, so honouring them would leave those shapes reading as flat dust
+// — and the whole point of `hiEvery` is that it is a knob.
+function resampleLab(src, n, emit) {
+  const step = src.length / Math.max(1, n);
+  for (let i = 0; i < n; i++) {
+    const p = src[Math.min(src.length - 1, Math.round(i * step))];
+    emit(p[0], p[1], p[2], i);
+  }
+}
+
 // Spread `n` points evenly along a list of 3D segments, proportional to
 // LENGTH. Line-built shapes (a lattice, an arm) otherwise get whatever count
 // their structure happens to imply — which ignores the dot-count knob and
@@ -308,6 +325,12 @@ export function towerHeadPts(kind, n = 190, hiEvery = 12) {
     return fitUnit(pts);
   };
   if (kind === 'sphere') return asSphere();
+  // ported lab shapes come first: they are whole authored models, not a case
+  // in the switch below
+  if (BRAILLE_SHAPES[kind]) {
+    resampleLab(BRAILLE_SHAPES[kind](), n, P);
+    return fitUnit(pts);
+  }
   if (kind === 'cone') {
     for (let i = 0; i < n; i++) {
       const f = i / n;
@@ -470,8 +493,11 @@ export function towerHeadPts(kind, n = 190, hiEvery = 12) {
 // Every head shape this generator knows, in one place so a picker can list
 // them without a second table drifting out of step with the switch above.
 export const TOWER_HEAD_KINDS = [
+  // grown here
   'sphere', 'cone', 'bipyramid', 'teardrop', 'pyramid', 'gear',
   'spiral', 'dspiral', 'lattice', 'dish', 'arm', 'claw', 'sentry',
+  // ported from the Braille lab — see src/braillelab.js
+  ...BRAILLE_SHAPE_KINDS,
 ];
 
 // portal shape — the Stargate: chevroned ring + event-horizon fill,

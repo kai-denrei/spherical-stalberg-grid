@@ -48,6 +48,19 @@ Public: https://kai-denrei.github.io/spherical-stalberg-grid/ (Pages,
   render transforms (`getWorldQuaternion`), never re-derive with your own
   sign conventions. three.js lookAt: plain Object3D faces +Z, cameras −Z.
 
+## Outside resources
+
+- `~/Dev/Braille` — the dot-cloud shape lab these models come from
+  (`fun-shapes/index.html`, ~200 generators). Same idiom as `creatures.js`:
+  a function returning `[x,y,z]` / `[x,y,z,1]` points ending in `fitUnit`.
+  Porting = copy the generator + its primitives into `src/braillelab.js`
+  and add the name to `BRAILLE_SHAPES`. Copy VERBATIM; the lab keeps
+  improving and re-porting should stay mechanical.
+- `~/Dev/blueprint-to-life` — sibling repo. Source of the `cb-badge`
+  cache-bust toolkit we share, the blueprint/callout idiom behind the unit
+  viewer's `labels`, and a **solved** service-worker + cache-bust pattern
+  (copy it rather than re-deriving when the PWA item comes up).
+
 ## Architecture in one breath
 
 Pure math modules (`grid.js` sphere pipeline, `dungeon.js` BFS carve +
