@@ -12,12 +12,12 @@
 import * as THREE from '../vendor/three.module.js';
 import { OrbitControls } from '../vendor/OrbitControls.js';
 import { buildUnit, preloadMkcx, makeDebris, makeDotBurst } from './units.js';
-import { TANK_FEEL, makeTankFeel, stepTankFeel, landTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js';
+import { TANK_FEEL, makeTankFeel, stepTankFeel, landTankFeel, fireTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js';
 import { buildTowerLook, TOWER_LOOK_NAMES, DEFAULT_TOWER_LOOK, preloadLook } from './towerlooks.js';
 import { TOWER_BY_KEY } from './towers.js';
 import { LOOKS } from './looks.js';
 import { makeBloom } from './postfx.js';
-import { makeAudio } from './audio.js?v=615301c0';
+import { makeAudio } from './audio.js?v=d04b3590';
 import { GROUPS, GROUP_LABELS, GROUP_EMPTY, entriesIn } from './unitcatalog.js';
 
 export function initUnitsTab(root) {
@@ -91,6 +91,8 @@ export function initUnitsTab(root) {
       const b = document.createElement('button');
       b.textContent = snd.label;
       b.addEventListener('click', () => {
+        // the shot is a gesture, not just a sample: kick the turret too
+        if (snd.key === 'tank_main') fireTankFeel(feel, TANK_FEEL);
         if (!snd.loop) { sfx.play(snd.key); return; }
         if (bedBtn === b) { stopBed(); return; }  // toggle off
         stopBed();

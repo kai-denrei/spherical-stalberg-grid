@@ -19,23 +19,23 @@
 
 import * as THREE from '../vendor/three.module.js';
 import GUI from '../vendor/lil-gui.esm.js';
-import { generateSphereMesh, relax } from './grid.js?v=615301c0';
-import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=615301c0';
-import { mulberry32, randomSeed } from './rng.js?v=615301c0';
-import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3, segKey } from './vec3.js?v=615301c0';
-import { CREATURES, waveJelly } from './creatures.js?v=615301c0';
-import { UNITS, UNIT_NAMES, buildUnit, preloadMkcx, makeBulletCloud, makeRewardSolid, makeShellSolid, makeDebris, makeDotBurst, makePortalCloud, makeHeartCloud, makeDotEnemy } from './units.js?v=615301c0';
-import { LOOKS, LOOK_NAMES } from './looks.js?v=615301c0';
-import { makeCellIndex } from './cellindex.js?v=615301c0';
-import { CREATURE_TINTS, ENEMY_SPEC, INTROS, computeWavePlan } from './enemyspec.js?v=615301c0';
-import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER } from './towers.js?v=615301c0';
-import { makeEconomy, sellRefund } from './economy.js?v=615301c0';
-import { makeBloom } from './postfx.js?v=615301c0';
-import { TANK_FEEL, makeTankFeel, stepTankFeel, landTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js?v=615301c0';
-import { BLOOM_GROUPS } from './bloomweights.js?v=615301c0';
-import { TOWER_LOOK_NAMES, DEFAULT_TOWER_LOOK, buildTowerLook, preloadLook } from './towerlooks.js?v=615301c0';
-import { makeAudio } from './audio.js?v=615301c0';
-import { DEATH_KEYS } from './audiomanifest.js?v=615301c0';
+import { generateSphereMesh, relax } from './grid.js?v=d04b3590';
+import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=d04b3590';
+import { mulberry32, randomSeed } from './rng.js?v=d04b3590';
+import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3, segKey } from './vec3.js?v=d04b3590';
+import { CREATURES, waveJelly } from './creatures.js?v=d04b3590';
+import { UNITS, UNIT_NAMES, buildUnit, preloadMkcx, makeBulletCloud, makeRewardSolid, makeShellSolid, makeDebris, makeDotBurst, makePortalCloud, makeHeartCloud, makeDotEnemy } from './units.js?v=d04b3590';
+import { LOOKS, LOOK_NAMES } from './looks.js?v=d04b3590';
+import { makeCellIndex } from './cellindex.js?v=d04b3590';
+import { CREATURE_TINTS, ENEMY_SPEC, INTROS, computeWavePlan } from './enemyspec.js?v=d04b3590';
+import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER } from './towers.js?v=d04b3590';
+import { makeEconomy, sellRefund } from './economy.js?v=d04b3590';
+import { makeBloom } from './postfx.js?v=d04b3590';
+import { TANK_FEEL, makeTankFeel, stepTankFeel, landTankFeel, fireTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js?v=d04b3590';
+import { BLOOM_GROUPS } from './bloomweights.js?v=d04b3590';
+import { TOWER_LOOK_NAMES, DEFAULT_TOWER_LOOK, buildTowerLook, preloadLook } from './towerlooks.js?v=d04b3590';
+import { makeAudio } from './audio.js?v=d04b3590';
+import { DEATH_KEYS } from './audiomanifest.js?v=d04b3590';
 
 export function initTdTab(root) {
   let active = false;
@@ -864,11 +864,6 @@ export function initTdTab(root) {
     if (rf > 0) p = add3(p, scale3(player.smoothDir, -unitScale * 0.06 * rk));
     playerMesh.position.set(p[0], p[1], p[2]);
     playerMesh.scale.setScalar(unitScale * (playerMesh.userData.baseScale ?? 1));
-    const turret = playerMesh.userData.turret;
-    if (turret) {
-      const shudder = rf > 0 ? Math.sin((RECOIL_LEN - recoilLeft) * 70) * 0.03 * rk : 0;
-      turret.position.z = (turret.userData.baseZ ?? -0.12) - 0.18 * rk + shudder;
-    }
     // marker floats above the wall tops so nothing on the map occludes it
     const mp = scale3(player.pos, 1 + params.wallHeight * 1.6);
     markerMesh.position.set(mp[0], mp[1], mp[2]);
@@ -880,12 +875,17 @@ export function initTdTab(root) {
     playerMesh.quaternion.copy(tmpObj.quaternion);
     // no extra rotation: lookAt with up=n already leaves body +Y ≈ normal
     // — except the recoil rock: a nose-up pitch that eases back down
-    if (rf > 0) playerMesh.rotateX(-0.05 * rk);
+    // Units with a hover body get their pitch from tankfeel (on the body, a
+    // child group, where writing rotation is safe). For the rest, compose it
+    // onto the unit — rotateX composes, an Euler write would REPLACE the
+    // lookAt quaternion set two lines above.
+    if (rf > 0 && !playerMesh.userData.hoverBody) playerMesh.rotateX(-0.05 * rk);
     // touchdown: a damped rock on two axes, ~0.9s. Two different frequencies
     // so it reads as suspension settling rather than a single clean wobble.
     // Hover, vibration and touchdown live on the BODY, not the unit — the
     // hull lifts off a planted skirt. Applied here rather than in
     // updateEngine so it survives every rebuild of playerMesh.
+    feel.recoil = recoilLeft;   // the game owns the clock; tankfeel draws it
     applyTankFeel(playerMesh, feel, tankFeelParams());
     applyTankHealth(playerMesh, playerHP / PLAYER_MAX);
     markerMesh.quaternion.copy(tmpObj.quaternion); // arrow nose = heading
@@ -3735,6 +3735,10 @@ export function initTdTab(root) {
     rise: params.hoverRise, gearDrop: params.hoverGearDrop, vib: params.hoverVib,
     up: params.hoverUp, down: params.hoverDown,
     rock: params.hoverRock, decay: params.hoverDecay,
+    recoilLen: RECOIL_LEN,
+    recoilSlide: TANK_FEEL.recoilSlide,
+    recoilShudder: TANK_FEEL.recoilShudder,
+    recoilPitch: TANK_FEEL.recoilPitch,
   });
 
   function stopEngine(fade = ENGINE_STOP, quiet = false) {
