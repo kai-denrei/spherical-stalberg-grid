@@ -120,6 +120,21 @@ drip are already wired but no UI uses them.
 The tutorial's small board is a deliberate choice. Post-tutorial scale is
 named but not designed, and it runs into the generation cost below.
 
+### Coronal shader for the portals
+
+A raymarched corona around the gate, from a golfed GLSL sketch the operator
+supplied. It would need a `ShaderMaterial` on a shell or quad — a different
+rendering path from everything else here, and one real draw call plus
+per-pixel cost per portal. Affordable precisely because there are never more
+than a few gates open at once. Parked deliberately: the gate already got its
+horizon, and this is the next thing to try on it rather than the next thing
+to build.
+
+### Orbital strike
+
+Adapted from DeepWatch (`~/Documents/Dev/centroid-defense`). Design written
+up in `docs/orbital-strike-design.md`; not started.
+
 ### Attract mode
 
 A lock-screen cinematic flythrough of the sphere. Deferred until the TD
