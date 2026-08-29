@@ -6,6 +6,50 @@ Demo links assume `npm run serve` (port 8144) or the
 
 ---
 
+## `e77f5b2` — The tank stays yours in BUILD mode
+
+Two things stopped it, and only one was obvious.
+
+**The build pause froze the whole tab**, driver included:
+
+```js
+const frozen = buildFrozen() || revealLeft > 0 || tutorial.frozen;
+if (!frozen) advanceMotion(dt);
+```
+
+That pause exists to hold the *wave* still while you plan, so the world keeps
+it and the driver no longer answers to it. A reveal or a tutorial hold still
+stops everything, because those are the game speaking and should not be
+driven over.
+
+**The steering strips were hidden by CSS** in build mode. So even with the
+driver live, the throttle sat there visible with no way to aim it — the
+asymmetry was the real bug. They stay now; they are narrow edge strips, and
+the middle of the board is still free for the drag that orbits the sphere.
+
+The fire buttons stay hidden and the auto gunner still stands down: building
+is not shooting. That is the line the mode draws, and it is a different line
+from "you may not move".
+
+The HUD said `BUILD · frozen`, which described the tab and became half true.
+It now says what is actually held: `BUILD · wave held · you can drive`.
+
+### Proving it, rather than looking at it
+
+A screenshot cannot show that a thing *would* move. `simTime` only advances
+inside `advanceMotion`, so it is the honest answer to "is the driver live":
+
+```
+build=true   frozenWorld=true   simTime=0.31
+build=false  frozenWorld=false  simTime=0.31
+```
+
+Identical — with the world explicitly frozen. The equality is the proof; the
+absolute value is small only because virtual time does not advance
+`performance.now()`.
+
+---
+
 ## `123d0ab` — The gates announce themselves three seconds out
 
 `freezing_gush_01` from the Frost Mage set, through the usual pipeline:
