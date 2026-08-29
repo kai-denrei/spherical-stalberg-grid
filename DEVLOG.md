@@ -6,6 +6,67 @@ Demo links assume `npm run serve` (port 8144) or the
 
 ---
 
+## `db3e3da` — Bands, and two reasons the first attempt did nothing
+
+Three controls had piled into the phone's bottom-left corner — the primary
+fire button, the left steering strip, and the throttle — so the lever sat on
+top of the control it was meant to sit beside.
+
+**Left side moves, right side shoots.** Both fire buttons go right, which is
+where the hand that is not driving already is:
+
+```
+left edge   throttle
+beside it   < steer
+right edge  > steer, with both fire buttons above it
+```
+
+The top had the same problem horizontally: mode row centred, HUD left, map
+right, all on one line of a 390 px screen. They stack now — modes on the
+first band, HUD and map sharing the second — with the HUD's width capped by
+the **map's own sizing expression**, so the wave line stops instead of running
+underneath it. The callout clears all three.
+
+Desktop had quietly acquired the same pile-up when the throttle moved left:
+it was sitting on the fire button, and the left steering strip on the
+minimap. Same reasoning, applied to the base rules.
+
+### `@media (pointer: coarse)` is untestable
+
+No desktop browser reports a coarse pointer, headless included. The entire
+first round of fixes went into that block and **did nothing** — and looked
+fine, because the screenshot showed rules that had never applied. The
+rectangles said `fire x 16..94`: still on the left.
+
+It now reads `@media (pointer: coarse), (max-width: 560px)`. A touch-only
+query is a rule nobody can check.
+
+Source order bit too: `#td-tut`'s base rule is declared *after* the mobile
+blocks, so at equal specificity an override up there loses. That one moved to
+the end of the file.
+
+### Headless will not lay out below ~500px
+
+It lays out wide and **crops**. `--window-size=390,844` produced a 390-wide
+image of a 500-wide layout — `innerWidth` said 500 while the screenshot
+measured 390 across. Every phone screenshot in this project has been showing
+phone-sized pixels of a tablet-sized layout.
+
+So `?layout=N` prints the box of every HUD element and every overlap between
+them:
+
+```
+LAYOUT throttle  x 14..72   y 283..529
+LAYOUT steerL    x 10..94   y 517..705
+LAYOUT OVERLAP throttle x steerL — 58x12px
+LAYOUT OVERLAP throttle x fire   — 56x78px
+```
+
+Rectangles do not lie. They found four collisions that three screenshots had
+not, and they confirmed zero overlaps at 1400, 1000 and phone widths after.
+
+---
+
 ## `bb95ffe` — The minimap cost 686 draw calls, and it was invisible
 
 Last entry reported ~1020 calls on a wave-4 board and called that the frame.
