@@ -168,7 +168,9 @@ html, body {
   width: 82px;
   height: min(26vh, 230px);
 }
-.tzone-l { left: max(10px, env(safe-area-inset-left)); }
+/* clears the minimap, which owns the bottom-left corner; the offset is the
+   map's own sizing expression so the two travel together */
+.tzone-l { left: calc(max(10px, env(safe-area-inset-left)) + min(240px, 32vmin) + 18px); }
 .tzone-r { right: max(10px, env(safe-area-inset-right)); }
 /* drive zones: forward over back, centered between the sides */
 .tzone-mid {
@@ -198,8 +200,12 @@ html, body {
   backdrop-filter: blur(5px);
   -webkit-backdrop-filter: blur(5px);
 }
+/* RIGHT-hand side, both of them: the left edge belongs to the throttle and
+   the left steering strip, and three controls in one corner is how the lever
+   ended up sitting on top of the fire button. Left side moves, right side
+   shoots. */
 .tfire-primary {
-  left: max(16px, env(safe-area-inset-left));
+  right: max(16px, env(safe-area-inset-right));
   bottom: calc(max(12px, env(safe-area-inset-bottom)) + min(26vh, 230px) + 18px);
   width: 78px;
   height: 78px;
@@ -209,7 +215,7 @@ html, body {
   border: 1px solid rgba(53, 255, 208, 0.5);
 }
 .tfire-secondary {
-  right: max(16px, env(safe-area-inset-right));
+  right: calc(max(16px, env(safe-area-inset-right)) + 92px);
   bottom: calc(max(12px, env(safe-area-inset-bottom)) + min(26vh, 230px) + 18px);
   width: 54px;
   height: 54px;
@@ -365,7 +371,11 @@ html, body {
 }
 
 /* touch devices: 44pt+ hit targets (Apple HIG), roomier gaps */
-@media (pointer: coarse) {
+/* Thumb-sized controls: a coarse pointer OR a phone-shaped viewport. The
+   width clause is not cosmetic — a touch-only query cannot be exercised
+   by any desktop browser, so every rule in here was unverifiable and one
+   round of mobile layout fixes silently did nothing. */
+@media (pointer: coarse), (max-width: 560px) {
   /* COMPACT + FAINT. The controls were eating the board: the side strips ran
      26vh, the fire buttons were 78px, and every surface sat at 0.28-0.5
      alpha. They are the frame, not the picture — small enough to leave the
@@ -386,8 +396,16 @@ html, body {
   .dpad .dpad-row {
     gap: 5px;
   }
-  /* the fire buttons ride above the side strips, so their offset has to
-     track the strip height above or they float away from the thumb */
+  /* --- phone thumb layout ------------------------------------------------
+     LEFT THUMB MOVES, RIGHT THUMB SHOOTS. Three controls had piled into the
+     bottom-left corner — the primary fire button, the left steering strip,
+     and the throttle — so the lever sat on top of the control it was meant
+     to sit beside. Both fire buttons move right, which is where the hand
+     that is not driving already is.
+
+       left edge   throttle
+       next to it  < steer
+       right edge  > steer, with both fire buttons above it            */
   .tfire-primary {
     width: 58px; height: 58px; font-size: 23px;
     bottom: calc(max(12px, env(safe-area-inset-bottom)) + min(19vh, 168px) + 12px);
@@ -396,11 +414,30 @@ html, body {
   }
   .tfire-secondary {
     width: 42px; height: 42px; font-size: 16px;
-    bottom: calc(max(12px, env(safe-area-inset-bottom)) + min(19vh, 168px) + 12px);
+    right: calc(max(14px, env(safe-area-inset-right)) + 68px);
+    bottom: calc(max(12px, env(safe-area-inset-bottom)) + min(19vh, 168px) + 20px);
     background: rgba(22, 46, 58, 0.28);
     border-color: rgba(125, 249, 255, 0.3);
   }
-  .tc-util { top: 46px; gap: 6px; }
+  /* the left strip steps aside for the lever rather than sitting under it */
+  /* clears the lever's full width (26px track + padding = ~58px) with a
+     gap, rather than sitting exactly against it */
+  .tzone-l { left: calc(max(8px, env(safe-area-inset-left)) + 68px); }
+  .throttle {
+    left: max(8px, env(safe-area-inset-left));
+    bottom: max(12px, env(safe-area-inset-bottom));
+  }
+  .throttle-track { width: 26px; }
+
+  /* --- phone top bands ---------------------------------------------------
+     The top was three things fighting for one line: the mode row centred,
+     the HUD block left, the minimap right. They now STACK — modes on the
+     first line, HUD and map sharing the second — so nothing is written over
+     anything else on a 390px screen. */
+  .tc-util {
+    top: max(8px, env(safe-area-inset-top));
+    gap: 5px;
+  }
   .tc-util button {
     padding: 5px 9px;
     font-size: 10px;
@@ -870,18 +907,25 @@ html, body {
   /* the hint line fights the thumb clusters for the bottom edge, and the
      briefing already teaches everything it says */
   #h-hint, #td-hint { display: none !important; }
-  /* minimap top-right: bottom corners belong to thumbs */
+  /* minimap top-right: bottom corners belong to thumbs. Second band, level
+     with the HUD, so it clears the mode row above it. */
   .minimap {
     left: auto;
     bottom: auto;
     right: max(12px, env(safe-area-inset-right));
-    top: max(12px, env(safe-area-inset-top));
+    top: calc(max(8px, env(safe-area-inset-top)) + 42px);
   }
-  /* stats clear the ☰ button */
+  /* HUD sits in the second band, beside the map and never under it. The
+     width cap is what keeps the wave line — the longest — out of the map's
+     corner instead of running beneath it. */
   #stats, #maze-stats, #o-stats, #b-stats, #h-stats, #td-stats {
-    top: max(54px, calc(env(safe-area-inset-top) + 44px));
+    top: calc(max(8px, env(safe-area-inset-top)) + 42px);
     left: max(12px, env(safe-area-inset-left));
     font-size: 11px;
+    line-height: 1.45;
+    /* the map is min(240px, 32vmin) wide plus its 12px inset; leave that
+       and a gap, so the wave line stops rather than running underneath */
+    max-width: calc(100vw - min(240px, 32vmin) - 36px);
   }
 }
 
@@ -1790,4 +1834,19 @@ body.playing:not(.chrome-open) #tabbar { display: none !important; }
   border: 1px solid rgba(159, 220, 255, .3);
   border-radius: 5px;
   padding: 2px 4px;
+}
+
+/* --- phone: the callout clears the whole top block ------------------------
+   Modes, HUD, and the MAP, which is the tallest of the three. Derived from
+   the map's own sizing expression so the two cannot drift apart.
+
+   This lives at the END of the file on purpose: #td-tut's base rule is
+   declared after the mobile blocks above, and at equal specificity the later
+   declaration wins — an override up there was simply ignored. */
+@media (pointer: coarse), (max-width: 700px) {
+  #td-tut,
+  #td-tut.tut-flash {
+    top: calc(max(8px, env(safe-area-inset-top)) + 42px + min(240px, 32vmin) + 14px);
+    max-width: min(92vw, 420px);
+  }
 }

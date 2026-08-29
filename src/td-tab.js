@@ -19,25 +19,25 @@
 
 import * as THREE from '../vendor/three.module.js';
 import GUI from '../vendor/lil-gui.esm.js';
-import { generateSphereMesh, relax } from './grid.js?v=ad68ba69';
-import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=ad68ba69';
-import { mulberry32, randomSeed } from './rng.js?v=ad68ba69';
-import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3, segKey } from './vec3.js?v=ad68ba69';
-import { CREATURES, waveJelly } from './creatures.js?v=ad68ba69';
-import { UNITS, UNIT_NAMES, buildUnit, buildCreature, preloadMkcx, makeBulletCloud, makeRewardSolid, makeShellSolid, makeDebris, makeDotBurst, makePortalCloud, makeHeartCloud, makeDotEnemy } from './units.js?v=ad68ba69';
-import { LOOKS, LOOK_NAMES } from './looks.js?v=ad68ba69';
-import { makeCellIndex } from './cellindex.js?v=ad68ba69';
-import { CREATURE_TINTS, ENEMY_SPEC, INTROS, computeWavePlan } from './enemyspec.js?v=ad68ba69';
-import { PICKUPS } from './pickups.js?v=ad68ba69';
-import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER } from './towers.js?v=ad68ba69';
-import { makeEconomy, sellRefund } from './economy.js?v=ad68ba69';
-import { makeBloom } from './postfx.js?v=ad68ba69';
-import { TANK_FEEL, TANK_FEEL_KNOBS, makeTankFeel, stepTankFeel, landTankFeel, fireTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js?v=ad68ba69';
-import { FEEL, loadFeel, saveFeel } from './feelstore.js?v=ad68ba69';
-import { BLOOM_GROUPS } from './bloomweights.js?v=ad68ba69';
-import { TOWER_LOOK_NAMES, DEFAULT_TOWER_LOOK, buildTowerLook, preloadLook } from './towerlooks.js?v=ad68ba69';
-import { makeAudio } from './audio.js?v=ad68ba69';
-import { DEATH_KEYS } from './audiomanifest.js?v=ad68ba69';
+import { generateSphereMesh, relax } from './grid.js?v=d28e4534';
+import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=d28e4534';
+import { mulberry32, randomSeed } from './rng.js?v=d28e4534';
+import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3, segKey } from './vec3.js?v=d28e4534';
+import { CREATURES, waveJelly } from './creatures.js?v=d28e4534';
+import { UNITS, UNIT_NAMES, buildUnit, buildCreature, preloadMkcx, makeBulletCloud, makeRewardSolid, makeShellSolid, makeDebris, makeDotBurst, makePortalCloud, makeHeartCloud, makeDotEnemy } from './units.js?v=d28e4534';
+import { LOOKS, LOOK_NAMES } from './looks.js?v=d28e4534';
+import { makeCellIndex } from './cellindex.js?v=d28e4534';
+import { CREATURE_TINTS, ENEMY_SPEC, INTROS, computeWavePlan } from './enemyspec.js?v=d28e4534';
+import { PICKUPS } from './pickups.js?v=d28e4534';
+import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER } from './towers.js?v=d28e4534';
+import { makeEconomy, sellRefund } from './economy.js?v=d28e4534';
+import { makeBloom } from './postfx.js?v=d28e4534';
+import { TANK_FEEL, TANK_FEEL_KNOBS, makeTankFeel, stepTankFeel, landTankFeel, fireTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js?v=d28e4534';
+import { FEEL, loadFeel, saveFeel } from './feelstore.js?v=d28e4534';
+import { BLOOM_GROUPS } from './bloomweights.js?v=d28e4534';
+import { TOWER_LOOK_NAMES, DEFAULT_TOWER_LOOK, buildTowerLook, preloadLook } from './towerlooks.js?v=d28e4534';
+import { makeAudio } from './audio.js?v=d28e4534';
+import { DEATH_KEYS } from './audiomanifest.js?v=d28e4534';
 
 export function initTdTab(root) {
   let active = false;
@@ -4358,6 +4358,7 @@ export function initTdTab(root) {
         }
       });
       const m = mapRenderer.info.render;
+      console.log(`PERF viewport=${innerWidth}x${innerHeight} dpr=${devicePixelRatio}`);
       console.log(`PERF main calls=${r.calls} tris=${r.triangles} pts=${r.points}`
         + ` | MAP calls=${m.calls} tris=${m.triangles} pts=${m.points}`
         + ` | TOTAL calls=${r.calls + m.calls}`
@@ -4366,6 +4367,52 @@ export function initTdTab(root) {
       renderer.info.autoReset = true;
       mapRenderer.info.autoReset = true;
     };
+  }
+
+  // ?layout=N — after N seconds, print the on-screen box of every HUD piece
+  // and every overlap between them. A screenshot cannot be trusted for this:
+  // headless will not lay out below ~500px, it lays out wide and CROPS, so a
+  // phone-sized picture shows phone-sized pixels of a tablet-sized layout.
+  // Rectangles do not lie.
+  const layoutAt = parseFloat(urlParams.get('layout') || '0');
+  if (layoutAt > 0) {
+    setTimeout(() => {
+      const want = {
+        // scoped to THIS tab: the sibling tabs carry the same classes, and
+        // querySelector was returning a hidden tab's copy and skipping it
+        menu: '#chrome-toggle', modes: '#tab-td .tc-util', hud: '#td-stats',
+        map: '#tab-td .minimap', tut: '#td-tut', throttle: '#td-throttle',
+        steerL: '#td-pad-left', steerR: '#td-pad-right',
+        fire: '#td-pad-fire', laser: '#td-pad-laser',
+      };
+      const box = {};
+      for (const [k, sel] of Object.entries(want)) {
+        const el = document.querySelector(sel);
+        // NOT offsetParent: it is null for position:fixed elements, which
+        // silently dropped the menu button out of every report
+        if (!el || getComputedStyle(el).display === 'none') continue;
+        const r = el.getBoundingClientRect();
+        if (r.width < 1 || r.height < 1) continue;
+        box[k] = r;
+        console.log(`LAYOUT ${k.padEnd(9)} x ${Math.round(r.left)}..${Math.round(r.right)}`
+          + `  y ${Math.round(r.top)}..${Math.round(r.bottom)}`);
+      }
+      const keys = Object.keys(box);
+      let clashes = 0;
+      for (let i = 0; i < keys.length; i++) {
+        for (let j = i + 1; j < keys.length; j++) {
+          const a = box[keys[i]], b = box[keys[j]];
+          const ox = Math.min(a.right, b.right) - Math.max(a.left, b.left);
+          const oy = Math.min(a.bottom, b.bottom) - Math.max(a.top, b.top);
+          if (ox > 2 && oy > 2) {
+            clashes++;
+            console.log(`LAYOUT OVERLAP ${keys[i]} x ${keys[j]}`
+              + ` — ${Math.round(ox)}x${Math.round(oy)}px`);
+          }
+        }
+      }
+      console.log(`LAYOUT viewport ${innerWidth}x${innerHeight} — ${clashes} overlaps`);
+    }, layoutAt * 1000);
   }
 
   const tutSteps = parseInt(urlParams.get('tutstep') || '0', 10);
