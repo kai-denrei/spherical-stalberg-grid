@@ -16,8 +16,8 @@
 
 import * as THREE from '../vendor/three.module.js';
 import { loadGlb, mergeByMaterial, fitModel, tintModel, makeShellRack,
-  addEdgeOutlines, makeHeatSleeve } from './glbmodels.js?v=79d3e853';
-import { CREATURES, waveJelly, spherePts, bulletPts, missilePts, heartPts, torusPts, towerHeadPts, enemyDotPts, portalPts } from './creatures.js?v=79d3e853';
+  addEdgeOutlines, makeHeatSleeve } from './glbmodels.js?v=57e8bd97';
+import { CREATURES, waveJelly, spherePts, bulletPts, missilePts, heartPts, torusPts, towerHeadPts, enemyDotPts, portalPts } from './creatures.js?v=57e8bd97';
 
 function normalizeToUnit(group) {
   group.updateMatrixWorld(true);
@@ -930,10 +930,85 @@ export function onMkcxReady(cb) {
   preloadMkcx();
 }
 
+// Blueprint callouts: which authored node to hang each label on, and what to
+// call it in English. Sourced from the model's own node names so a label
+// always names something that actually exists to be edited — pointing at "the
+// bit near the front" is how the turret stayed 6 deg out of true for weeks.
+const MKCX_CALLOUTS = [
+  ['Hull_Mesh', 'hull'],
+  ['Turret_Pivot', 'primary turret'],
+  ['Barrel_Mesh', 'main barrel'],
+  ['MuzzleBrake_Mesh', 'muzzle brake'],
+  ['Mantlet_Mesh', 'mantlet'],
+  ['Sight_Primary', 'primary sight'],
+  ['Hatch_Commander', 'commander hatch'],
+  ['LauncherPod_L', 'launcher pod'],
+  ['Stowage_Bin', 'stowage bin'],
+  ['Secondary_L_Pivot', 'secondary turret'],
+  ['Secondary_R_Gun_Pivot', 'secondary gun'],
+  ['Nacelle_L', 'nacelle (skirt)'],
+  ['LiftEmitter_L2', 'lift emitter'],
+  ['Pylon_LB', 'pylon'],
+  ['Hull_Glow_1', 'accent strip'],
+  ['Headlight_R', 'headlight'],
+  ['EngineDeck_Grille', 'engine deck'],
+  ['Driver_Hatch', 'driver hatch'],
+  ['Sensor_Mast', 'sensor mast'],
+  ['Callout_4', 'muzzle'],   // authored empty at the barrel tip
+];
+
+// Drop an empty at each callout's world position, parented to the model root,
+// BEFORE the merge welds those nodes away. Empties are not meshes, so they
+// survive the merge untouched and are carried by fitModel's scale and
+// recentring like everything else — no coordinates to keep in sync by hand.
+function markCallouts(scene) {
+  const root = scene.getObjectByName('MKCX_Root') || scene;
+  root.updateMatrixWorld(true);
+  const marks = [];
+  const p = new THREE.Vector3();
+  for (const [node, label] of MKCX_CALLOUTS) {
+    const o = scene.getObjectByName(node);
+    if (!o) continue;
+    // Hang the marker on the nearest surviving PIVOT, so a label on the
+    // turret sweeps with the turret instead of hovering where the turret
+    // used to point. Never on a mesh: the merge removes those, and a child
+    // of a removed node goes with it.
+    let host = root;
+    for (let a = o; a; a = a.parent) {
+      if (MKCX_PIVOTS.includes(a.name)) { host = a; break; }
+    }
+    o.getWorldPosition(p);
+    const m = new THREE.Object3D();
+    m.position.copy(host.worldToLocal(p.clone()));
+    m.userData.callout = { label, node };
+    marks.push([host, m]);
+  }
+  for (const [host, m] of marks) host.add(m);  // after the walk, never during
+  return marks.map(([, m]) => m);
+}
+
+// One load, one merge, one set of callout markers — no matter how many
+// callers ask. loadGlb caches the SCENE, but every caller still ran this
+// body against it: re-merging an already-merged scene, and re-marking it,
+// which is why parts whose node is a Group (and so survives a merge) ended
+// up with a label each per call. The promise, not the scene, is the guard.
+let mkcxLoad = null;
 export function preloadMkcx() {
-  return loadGlb(MKCX_URL).then((scene) => {
-    if (!scene) return false;
-    mkcxProto = fitModel(mergeByMaterial(scene, MKCX_PIVOTS, MKCX_DROP), {
+  if (mkcxLoad) return mkcxLoad;
+  mkcxLoad = loadGlb(MKCX_URL).then((scene) => {
+    if (!scene) { mkcxLoad = null; return false; }   // let a retry happen
+    const marks = markCallouts(scene);
+    // The merge parents each batch to its OWNER, and everything outside a
+    // preserved pivot is owned by the root we hand it — the glTF SCENE, a
+    // sibling of MKCX_Root rather than its parent. So the hull, nacelles and
+    // details ended up beside the model instead of inside it, and the hover
+    // split (which walks MKCX_Root's children) lifted only the articulated
+    // pivots: the turret and secondaries rose while the hull stayed put.
+    // attach() re-parents them without moving them.
+    const merged = mergeByMaterial(scene, MKCX_PIVOTS, MKCX_DROP);
+    const inner = merged.getObjectByName('MKCX_Root');
+    if (inner) for (const c of [...merged.children]) if (c !== inner) inner.attach(c);
+    mkcxProto = fitModel(merged, {
       // NOTE which of these actually binds. The model is 10.82 long (the
       // barrel juts far forward) against 2.86 tall, so maxSpan decides the
       // scale and height never gets a say. Raising span is what makes the
@@ -950,9 +1025,11 @@ export function preloadMkcx() {
     // to the procedural units. Built on the PROTOTYPE so EdgesGeometry runs
     // once and every clone shares it.
     addEdgeOutlines(mkcxProto, { angle: 28, opacity: 0.85 });
+    mkcxProto.userData.callouts = marks;
     while (mkcxReadyCbs.length) mkcxReadyCbs.shift()();
     return true;
   });
+  return mkcxLoad;
 }
 
 export function mkcxReady() { return !!mkcxProto; }
@@ -1024,16 +1101,73 @@ function makeMkcx(cols) {
   });
   if (glow) g.userData.healthBeam = glow;
 
+  // --- the hover rig, in three tiers ---------------------------------------
+  // The machine levitates ON the lift emitters, so THEY are what stays welded
+  // to the ground; everything above them is free to move. One tier was not
+  // enough: raising the whole skirt together made the tank look like it flew
+  // off in one piece, with nothing left behind to measure the lift against.
+  //
+  //   HoverEmitters  planted. the ground reference, never moved.
+  //   HoverGear      nacelles + pylons — the skirt, settles by gearDrop.
+  //   HoverBody      hull and everything on it, rises by rise.
+  //     HullVib      takes the idle vibration at full strength
+  //     Weapons      takes a fraction of it, so the guns read as MOUNTED on
+  //                  a shaking hull rather than shaking independently
   const gear = g.getObjectByName('Hover_Gear');
   const modelRoot = gear && gear.parent;
   if (modelRoot) {
+    // Within the gear the emitters are already separated for us: the merge
+    // batches per material, and the emitters are the only M_Glow parts down
+    // there — the nacelles are M_Armour and the pylons M_Steel.
+    const emitters = new THREE.Group();
+    emitters.name = 'HoverEmitters';
+    for (const c of [...gear.children]) {
+      const m = Array.isArray(c.material) ? c.material[0] : c.material;
+      if (m && m.name === 'M_Glow') emitters.attach(c);
+    }
+
     const body = new THREE.Group();
     body.name = 'HoverBody';
     for (const c of [...modelRoot.children]) if (c !== gear) body.add(c);
+
+    // The weapons ride the body but shake less than it does. Both mounts go
+    // in together — the primary turret and the secondaries' shared parent.
+    const weapons = new THREE.Group();
+    weapons.name = 'Weapons';
+    // NB: look in `body`, not in `g`. The body group is populated here but
+    // not re-attached to the model until further down, so for these few
+    // lines everything it holds is invisible to a search from the unit.
+    const secondaries = body.getObjectByName('Secondary_Turrets');
+    for (const name of ['Turret_Pivot', 'Secondary_Turrets']) {
+      const o = body.getObjectByName(name);
+      if (o) weapons.add(o);
+    }
+    // What is left in the body once the weapons are out IS the hull group,
+    // so it is moved wholesale rather than picked over by name.
+    const hull = new THREE.Group();
+    hull.name = 'HullVib';
+    for (const c of [...body.children]) hull.add(c);
+    body.add(hull);
+    body.add(weapons);
+
     modelRoot.add(body);
+    if (emitters.children.length) modelRoot.add(emitters);
+
+    g.userData.hoverEmitters = emitters;
     g.userData.hoverBody = body;   // td-tab lifts THIS, not the unit
-    g.userData.hoverGear = gear;
+    g.userData.hoverGear = gear;   // now the skirt alone
+    g.userData.hoverHull = hull;
+    g.userData.hoverWeapons = weapons;
+    g.userData.secondaries = secondaries;
   }
+  // The callout markers came along in the clone; collect the instance's own
+  // copies (the prototype's would follow the wrong tank around).
+  const callouts = [];
+  g.traverse((o) => { if (o.userData && o.userData.callout) callouts.push(o); });
+  if (callouts.length) g.userData.callouts = callouts;
+  const muzzle = callouts.find((o) => o.userData.callout.node === 'Callout_4');
+  if (muzzle) g.userData.muzzle = muzzle;   // where a shell leaves the gun
+
   if (guns.length) g.userData.laserGuns = guns;
   // The model has no shell rack of its own, so build the procedural tank's
   // one onto the turret roof: 3x3, row-major, index < ammo lit. Parented to

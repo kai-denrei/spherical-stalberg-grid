@@ -20,7 +20,8 @@ async function go(){
   // dev tool: dynamic import with a time key, so it never serves a stale
   // module and never carries a ?v= token for check-tokens.sh to trip over
   const { buildUnit, preloadMkcx } = await import('/src/units.js?dev=' + Date.now());
-  const { applyTankHealth } = await import('/src/tankfeel.js?dev=' + Date.now());
+  const TF = await import('/src/tankfeel.js?dev=' + Date.now());
+  const { applyTankHealth } = TF;
   if(which==='mkcx') await preloadMkcx();
   const g=buildUnit(which,{walker:0x2a3550,walkerHi:0x7df9ff});
   sc.add(g);
@@ -42,6 +43,26 @@ async function go(){
   const dots=g.userData.ammoDots||[];
   dots.forEach((dd,i)=>dd.material.color.setHex(i<4?0xffffff:0x4a505c));
   applyTankHealth(g, parseFloat(q.get('hp') ?? '1'));
+  // ?hover=0..1 settles/raises the rig; ?exag scales the travel so the split
+  // between emitters, skirt and body is visible in a still frame.
+  if(q.get('hover')!==null){
+    const st=TF.makeTankFeel(); st.hoverT=parseFloat(q.get('hover')||'1'); st.t=0.7;
+    const k=parseFloat(q.get('exag')||'1');
+    const P={...TF.TANK_FEEL, rise:TF.TANK_FEEL.rise*k, gearDrop:TF.TANK_FEEL.gearDrop*k,
+             vib:TF.TANK_FEEL.vib*k};
+    if(q.get('fire')) TF.fireTankFeel(st,P);
+    TF.applyTankFeel(g,st,P);
+  }
+  if(q.get('rig')){
+    const path=o=>{const a=[];for(let x=o;x&&x!==g;x=x.parent)a.unshift(x.name||x.type);return a.join('/')};
+    const u=g.userData;
+    for(const k of ['hoverBody','hoverGear','hoverEmitters','hoverHull','hoverWeapons','turret','secondaries'])
+      console.log('RIG',k,u[k]?path(u[k]):'MISSING',u[k]?`kids=${u[k].children.length}`:'');
+    let meshes=0; (u.hoverHull||{traverse:()=>{}}).traverse(o=>{if(o.isMesh)meshes++;});
+    console.log('RIG hull meshes', meshes);
+    let em=0; (u.hoverEmitters||{traverse:()=>{}}).traverse(o=>{if(o.isMesh)em++;});
+    console.log('RIG emitter meshes', em);
+  }
   r.render(sc,cam);
   document.getElementById('lbl').textContent =
     which+'  size '+s.toArray().map(v=>v.toFixed(2)).join(' x ')+'  dots '+dots.length;

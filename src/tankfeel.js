@@ -17,10 +17,12 @@ export const TANK_FEEL = {
   rock: 0.016,     // touchdown tilt, radians
   decay: 5.0,      // how fast that rock dies
   vib: 0.008,      // running vibration, model units — a weak cousin of recoil
+  vibWeapons: 0.3, // ...of which the guns take this share: MOUNTED, not loose
   recoilLen: 0.35,     // seconds a shot's kick lasts
   recoilSlide: 0.18,   // turret slides back this far, model units
   recoilShudder: 0.03, // high-frequency judder on the slide
   recoilPitch: 0.05,   // body noses up, radians
+  recoilSecondary: 0,  // share of that pitch the small secondaries take
 };
 
 // --- the knob schema -------------------------------------------------------
@@ -41,10 +43,12 @@ export const TANK_FEEL_KNOBS = [
   { key: 'rock',          label: 'touchdown rock', group: 'hover',  min: 0,    max: 0.06, step: 0.002 },
   { key: 'decay',         label: 'rock decay',     group: 'hover',  min: 1.5,  max: 10,   step: 0.5 },
   { key: 'vib',           label: 'idle vibration', group: 'hover',  min: 0,    max: 0.04, step: 0.001 },
+  { key: 'vibWeapons',    label: 'guns share',     group: 'hover',  min: 0,    max: 1,    step: 0.05 },
   { key: 'recoilLen',     label: 'kick length',    group: 'recoil', min: 0.05, max: 1,    step: 0.01 },
   { key: 'recoilSlide',   label: 'turret slide',   group: 'recoil', min: 0,    max: 0.6,  step: 0.01 },
   { key: 'recoilShudder', label: 'shudder',        group: 'recoil', min: 0,    max: 0.12, step: 0.005 },
   { key: 'recoilPitch',   label: 'nose-up pitch',  group: 'recoil', min: 0,    max: 0.2,  step: 0.005 },
+  { key: 'recoilSecondary', label: 'secondaries take', group: 'recoil', min: 0,  max: 1,    step: 0.05 },
 ];
 
 // A fresh, mutable set of values — what the sliders write to.
@@ -123,13 +127,24 @@ export function applyTankFeel(unit, st, p = TANK_FEEL) {
     const shudder = rf > 0 ? Math.sin((p.recoilLen - st.recoil) * 70) * p.recoilShudder * rk : 0;
     turret.position.z = (turret.userData.baseZ ?? 0) - p.recoilSlide * rk + shudder;
   }
+  // The two small secondaries fire nothing when the main gun does, so the
+  // main gun's kick should not read on them. They sit inside the body that
+  // noses up, so immunity has to be spent rather than withheld: counter the
+  // body's pitch on their own mount. `recoilSecondary` is how much of it
+  // they keep — 0 leaves them level while the hull rocks under them.
+  // This cancels their ORIENTATION, not the small arc the body's rotation
+  // swings them through; at 0.05 rad that arc is well under a pixel.
+  const sec = unit.userData.secondaries;
+  if (sec) sec.rotation.x = p.recoilPitch * rk * (1 - p.recoilSecondary);
 
   const body = unit.userData.hoverBody;
   if (!body) return;
   const h = st.hoverT;
 
-  // The expansion IS the tell: body up, skirt down, so the gap between them
-  // opens as the engine takes load and closes as it lets go.
+  // The expansion IS the tell: body up, skirt down, and the lift emitters
+  // left where they are. The emitters are the machine's ground contact — it
+  // levitates ON them — so they are the fixed thing both gaps are measured
+  // against. Nothing writes to them, deliberately.
   body.position.y = p.rise * h;
   const gear = unit.userData.hoverGear;
   if (gear) gear.position.y = -p.gearDrop * h;
@@ -137,9 +152,22 @@ export function applyTankFeel(unit, st, p = TANK_FEEL) {
   // Running vibration — two incommensurate frequencies so it reads as a
   // machine idling rather than as one clean oscillation. Scaled by hover, so
   // it arrives with the engine instead of switching on.
+  //
+  // It is applied to the HULL, not the whole body, and the weapons get a
+  // fraction of it on their own mount. Shaking the body shook the guns just
+  // as hard, which read as the guns being loose in their mounts rather than
+  // bolted to a machine that is idling.
   const v = p.vib * h;
-  body.position.x = Math.sin(st.t * 38.0) * v;
-  body.position.z = Math.sin(st.t * 29.3) * v * 0.7;
+  const vx = Math.sin(st.t * 38.0) * v;
+  const vz = Math.sin(st.t * 29.3) * v * 0.7;
+  const hull = unit.userData.hoverHull;
+  if (hull) { hull.position.x = vx; hull.position.z = vz; }
+  else { body.position.x = vx; body.position.z = vz; }   // no split: shake it all
+  const weapons = unit.userData.hoverWeapons;
+  if (weapons) {
+    weapons.position.x = vx * p.vibWeapons;
+    weapons.position.z = vz * p.vibWeapons;
+  }
 
   // Touchdown rock, on the body only: the hull settles onto the skirt.
   // Touchdown rock and recoil pitch both live on the body, SUMMED rather

@@ -11,15 +11,15 @@
 // one context no matter how long the roster grows.
 import * as THREE from '../vendor/three.module.js';
 import { OrbitControls } from '../vendor/OrbitControls.js';
-import { buildUnit, preloadMkcx, makeDebris, makeDotBurst } from './units.js';
+import { buildUnit, preloadMkcx, makeDebris, makeDotBurst, makeBulletCloud } from './units.js?v=57e8bd97';
 import { TANK_FEEL, TANK_FEEL_KNOBS, formatFeelCode, makeTankFeel, stepTankFeel,
-  landTankFeel, fireTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js?v=79d3e853';
-import { FEEL, loadFeel, saveFeel, resetFeel } from './feelstore.js?v=79d3e853';
+  landTankFeel, fireTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js?v=57e8bd97';
+import { FEEL, loadFeel, saveFeel, resetFeel } from './feelstore.js?v=57e8bd97';
 import { buildTowerLook, TOWER_LOOK_NAMES, DEFAULT_TOWER_LOOK, preloadLook } from './towerlooks.js';
 import { TOWER_BY_KEY } from './towers.js';
 import { LOOKS } from './looks.js';
 import { makeBloom } from './postfx.js';
-import { makeAudio } from './audio.js?v=79d3e853';
+import { makeAudio } from './audio.js?v=57e8bd97';
 import { GROUPS, GROUP_LABELS, GROUP_EMPTY, entriesIn } from './unitcatalog.js';
 
 export function initUnitsTab(root) {
@@ -61,6 +61,14 @@ export function initUnitsTab(root) {
   let current = null;
   let clock = 0;
   const wreckFx = [];   // debris/burst objects, ticked and reaped
+  // A shot is three things — the kick, the shell, and the barrel going
+  // red-hot — and the bench had only the kick. Judging "does firing feel
+  // right" without the other two is judging a third of it.
+  const HEAT_COOL = 3.0;                         // matches td-tab's cannon
+  const sleeveCool = new THREE.Color(0x232833);
+  const sleeveHot = new THREE.Color(0xff2a10);
+  let heat = 0;
+  const shells = [];
 
   const nameEl = root.querySelector('#units-name');
   const noteEl = root.querySelector('#units-note');
@@ -94,7 +102,7 @@ export function initUnitsTab(root) {
       b.textContent = snd.label;
       b.addEventListener('click', () => {
         // the shot is a gesture, not just a sample: kick the turret too
-        if (snd.key === 'tank_main') fireTankFeel(feel, FEEL);
+        if (snd.key === 'tank_main') fireShell();
         if (!snd.loop) { sfx.play(snd.key); return; }
         if (bedBtn === b) { stopBed(); return; }  // toggle off
         stopBed();
@@ -135,6 +143,9 @@ export function initUnitsTab(root) {
       else if (m) m.dispose();
     });
     current = null;
+    for (const sh of shells) scene.remove(sh);
+    shells.length = 0;
+    heat = 0;
   }
 
   // Frame whatever was built. Units differ in size by more than 10x, so the
@@ -185,6 +196,7 @@ export function initUnitsTab(root) {
     benchEl.classList.toggle('hidden', !bench);
     if (!bench) setEngine(false);
     applyTankHealth(current, health);
+    buildCallouts();   // labels belong to THIS unit's markers, not the last one's
     countEl.textContent = `${state.index + 1} / ${list.length}`;
     lookSel.parentElement.classList.toggle('hidden', e.kind !== 'tower');
   }
@@ -280,6 +292,16 @@ export function initUnitsTab(root) {
     // drive the unit's own idle animation, so a turret sweeps here as in game
     if (current && current.userData.tick) current.userData.tick(clock);
     if (current && state.spin) current.rotation.y += dt * 0.35;
+    // barrel heat: the same cool->hot lerp the game runs, on the same sleeve
+    if (heat > 0) heat = Math.max(0, heat - dt);
+    const sleeve = current && current.userData.heatSleeve;
+    if (sleeve) sleeve.material.color.lerpColors(sleeveCool, sleeveHot, heat / HEAT_COOL);
+    for (let i = shells.length - 1; i >= 0; i--) {
+      const sh = shells[i];
+      sh.position.addScaledVector(sh.userData.vel, dt);
+      sh.userData.life -= dt;
+      if (sh.userData.life <= 0) { scene.remove(sh); shells.splice(i, 1); }
+    }
     // the bench runs the shipping feel driver over the shipping VALUES —
     // FEEL is the same object the TD tab's folder writes to
     stepTankFeel(feel, dt, running, FEEL);
@@ -294,6 +316,137 @@ export function initUnitsTab(root) {
     }
     controls.update();
     postfx.render();
+    drawCallouts();   // after render, so it tracks the frame just drawn
+  }
+
+  // Fire everything a shot does. The shell leaves the muzzle ANCHOR and flies
+  // along the barrel's own world +Z — derived from the render transform, per
+  // the house rule, so it stays right when the turret has swept.
+  function fireShell() {
+    fireTankFeel(feel, FEEL);
+    if (!current) return;
+    heat = HEAT_COOL;
+    const muzzle = current.userData.muzzle;
+    if (!muzzle) return;
+    const shell = makeBulletCloud(cols);
+    const span = new THREE.Box3().setFromObject(current).getSize(new THREE.Vector3());
+    shell.scale.setScalar(Math.max(span.x, span.y, span.z) * 0.03);
+    muzzle.getWorldPosition(shell.position);
+    const q = new THREE.Quaternion();
+    muzzle.getWorldQuaternion(q);
+    shell.userData.vel = new THREE.Vector3(0, 0, 1).applyQuaternion(q)
+      .multiplyScalar(Math.max(span.x, span.y, span.z) * 2.2);
+    shell.userData.life = 1.1;
+    scene.add(shell);
+    shells.push(shell);
+  }
+
+  // --- blueprint callouts ---------------------------------------------------
+  // Labels projected onto the model, naming parts by the model's OWN node
+  // names. This exists because "the bit at the back that looks tilted" cost a
+  // fortnight: the tilt was a 6 deg slew on Turret_Pivot, and neither of us
+  // could name the piece we were each looking at.
+  const callLayer = root.querySelector('#units-callouts');
+  let callTags = [];
+  let callOn = false;
+  const callProj = new THREE.Vector3();
+
+  function buildCallouts() {
+    if (!callLayer) return;
+    callLayer.textContent = '';
+    callTags = [];
+    const marks = (current && current.userData.callouts) || [];
+    for (const m of marks) {
+      const tag = document.createElement('div');
+      tag.className = 'callout';
+      const lead = document.createElement('s');   // the leader back to the part
+      const name = document.createElement('b');
+      name.textContent = m.userData.callout.label;
+      const node = document.createElement('i');
+      node.textContent = m.userData.callout.node;
+      tag.append(lead, name, node);
+      const dot = document.createElement('u');    // sits exactly on the part
+      dot.className = 'cdot';
+      callLayer.append(tag, dot);
+      callTags.push({ m, tag, lead, dot });
+    }
+    callLayer.classList.toggle('hidden', !callOn || !callTags.length);
+  }
+
+  const ROW = 24;    // px of vertical room a label needs to stay readable
+  const OUT = 34;    // px the label is pushed away from its part, horizontally
+  const FOOT = 200;  // px of chrome at the bottom labels must not fall behind
+
+  function drawCallouts() {
+    if (!callOn || !callTags.length) return;
+    const w = renderer.domElement.clientWidth;
+    const h = renderer.domElement.clientHeight;
+
+    // 1. project, and split by which side of the model each part is on, so
+    //    the labels fan outwards instead of stacking over the tank.
+    const sides = { l: [], r: [] };
+    for (const t of callTags) {
+      t.m.getWorldPosition(callProj).project(camera);
+      // a point behind the camera projects to a MIRRORED point in front of it
+      if (callProj.z > 1) { t.tag.style.opacity = '0'; t.dot.style.opacity = '0'; continue; }
+      t.tag.style.opacity = '';
+      t.dot.style.opacity = '';
+      t.ax = (callProj.x * 0.5 + 0.5) * w;
+      t.ay = (-callProj.y * 0.5 + 0.5) * h;
+      sides[t.ax < w * 0.5 ? 'l' : 'r'].push(t);
+    }
+
+    // 2. declutter each column: sort by height, then walk down enforcing a
+    //    minimum gap. Greedy and one-pass — with ~20 labels the cost of
+    //    anything cleverer is not repaid, and the leader lines carry the
+    //    association anyway once a label has been nudged off its part.
+    for (const key of ['l', 'r']) {
+      const col = sides[key];
+      col.sort((a, b) => a.ay - b.ay);
+      let y = -Infinity;
+      for (const t of col) {
+        t.ly = Math.max(t.ay, y + ROW);
+        y = t.ly;
+      }
+      // The usable band stops above the control row: a label pushed behind
+      // the buttons is a label you cannot read, which defeats the point.
+      const over = y - (h - FOOT);
+      if (over > 0) for (const t of col) t.ly = Math.max(ROW * 0.5, t.ly - over);
+      const dir = key === 'l' ? -1 : 1;
+      for (const t of col) {
+        t.lx = t.ax + OUT * dir;
+        t.tag.classList.toggle('left', key === 'l');
+        // left-hand labels are pulled back by their OWN width, which only a
+        // transform percentage knows — a percentage margin would resolve
+        // against the layer instead and fling them off screen
+        t.tag.style.transform = `translate(${t.lx}px, ${t.ly}px)`
+          + (key === 'l' ? ' translateX(-100%)' : '');
+        t.dot.style.transform = `translate(${t.ax}px, ${t.ay}px)`;
+        // the leader starts at the tag's inner edge and runs back to the part
+        const dx = t.ax - t.lx;
+        const dy = t.ay - t.ly;
+        t.lead.style.width = `${Math.hypot(dx, dy)}px`;
+        t.lead.style.transform = `rotate(${Math.atan2(dy, dx)}rad)`;
+      }
+    }
+  }
+
+  const labelsBtn = root.querySelector('#units-labels');
+  if (labelsBtn) {
+    labelsBtn.addEventListener('click', () => {
+      callOn = !callOn;
+      labelsBtn.classList.toggle('on', callOn);
+      if (callLayer) callLayer.classList.toggle('hidden', !callOn || !callTags.length);
+      drawCallouts();
+    });
+    // ?labels=1 — headless has no pointer, same reason as ?tune=1
+    if (new URLSearchParams(location.search).get('labels')) labelsBtn.click();
+  }
+  // ?fire=N fires a shell N seconds into the run, so the shell in flight and
+  // the red-hot barrel can be caught in a still frame.
+  {
+    const at = parseFloat(new URLSearchParams(location.search).get('fire'));
+    if (Number.isFinite(at)) setTimeout(() => { setEngine(true); fireShell(); }, at * 1000);
   }
 
   // --- the tuning modal ----------------------------------------------------

@@ -135,11 +135,68 @@ console.log('vibration:');
   check('vibration stays under the rise', maxX < TANK_FEEL.rise, `maxX=${maxX}`);
 }
 
+console.log('the three-tier rig:');
+{
+  // The mkcx rig: emitters planted, skirt settling, body rising, and the
+  // weapons riding the body while shaking less than the hull does.
+  const rig = () => {
+    const u = tank({ baseZ: -0.12 });
+    u.userData.hoverHull = node();
+    u.userData.hoverWeapons = node();
+    u.userData.secondaries = node();
+    u.userData.hoverEmitters = node();   // present, and must never be written
+    return u;
+  };
+  const u = rig();
+  const st = makeTankFeel();
+  run(st, 4, true);
+  // sample the envelope: one frame can catch a zero crossing
+  let hullMax = 0, gunMax = 0;
+  for (let i = 0; i < 400; i++) {
+    stepTankFeel(st, 1 / 60, true);
+    applyTankFeel(u, st);
+    hullMax = Math.max(hullMax, Math.abs(u.userData.hoverHull.position.x));
+    gunMax = Math.max(gunMax, Math.abs(u.userData.hoverWeapons.position.x));
+  }
+  check('the hull takes the vibration', hullMax > 0, `hull=${hullMax}`);
+  check('the guns take less of it', gunMax > 0 && gunMax < hullMax,
+        `hull=${hullMax} guns=${gunMax}`);
+  check('the guns take the declared share',
+        approx(gunMax / hullMax, TANK_FEEL.vibWeapons, 1e-3),
+        `${gunMax / hullMax} vs ${TANK_FEEL.vibWeapons}`);
+  check('the body itself does not translate sideways',
+        u.userData.hoverBody.position.x === 0 && u.userData.hoverBody.position.z === 0);
+  check('the body still rises', u.userData.hoverBody.position.y > 0);
+  check('the skirt still settles', u.userData.hoverGear.position.y < 0);
+  check('the emitters stay planted',
+        u.userData.hoverEmitters.position.x === 0
+        && u.userData.hoverEmitters.position.y === 0
+        && u.userData.hoverEmitters.position.z === 0);
+
+  // Secondaries: immune by default, and dialling the share in brings them
+  // back toward the body's own pitch.
+  const u2 = rig();
+  const s2 = makeTankFeel();
+  run(s2, 4, true);
+  fireTankFeel(s2);
+  applyTankFeel(u2, s2);
+  const bodyPitch = u2.userData.hoverBody.rotation.x;
+  check('the body noses up on firing', bodyPitch < 0, `rx=${bodyPitch}`);
+  check('the secondaries cancel it', approx(u2.userData.secondaries.rotation.x, -bodyPitch, 1e-9),
+        `${u2.userData.secondaries.rotation.x} vs ${-bodyPitch}`);
+  applyTankFeel(u2, s2, { ...TANK_FEEL, recoilSecondary: 1 });
+  check('and take it fully at share 1', approx(u2.userData.secondaries.rotation.x, 0, 1e-9));
+  applyTankFeel(u2, s2, { ...TANK_FEEL, recoilSecondary: 0.5 });
+  check('half share is half the cancel',
+        approx(u2.userData.secondaries.rotation.x, -bodyPitch * 0.5, 1e-9));
+}
+
 console.log('tolerates the units that have none of this:');
 {
   applyTankFeel(null, makeTankFeel());
   applyTankFeel({}, makeTankFeel());
   applyTankFeel({ userData: {} }, makeTankFeel());
+  applyTankFeel({ userData: { hoverBody: { position: {}, rotation: {} } } }, makeTankFeel());
   applyTankHealth({ userData: {} }, 0.5);
   applyTankHealth(null, 0.5);
   check('no throw on bare units', true);
