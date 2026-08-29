@@ -16,8 +16,8 @@
 
 import * as THREE from '../vendor/three.module.js';
 import { loadGlb, mergeByMaterial, fitModel, tintModel, makeShellRack,
-  addEdgeOutlines, makeHeatSleeve } from './glbmodels.js?v=ecff1dca';
-import { CREATURES, waveJelly, spherePts, bulletPts, missilePts, heartPts, torusPts, towerHeadPts, enemyDotPts, portalPts } from './creatures.js?v=ecff1dca';
+  addEdgeOutlines, makeHeatSleeve } from './glbmodels.js?v=443b5fe4';
+import { CREATURES, waveJelly, spherePts, bulletPts, missilePts, heartPts, torusPts, towerHeadPts, enemyDotPts, portalPts } from './creatures.js?v=443b5fe4';
 
 function normalizeToUnit(group) {
   group.updateMatrixWorld(true);
@@ -1103,6 +1103,23 @@ function makeMkcx(cols) {
   });
   if (glow) g.userData.healthBeam = glow;
 
+  // Extra accents ON THE DECK. The authored glow strips all sit on the
+  // flanks, so from the top-down build camera — which is half the game — the
+  // health colour was not visible at all, and even side-on they were thin
+  // enough to miss. These share the cloned M_Glow material, so they are
+  // health-coded for free and cost no extra tint bookkeeping.
+  //
+  // Placed from the model's own deck fittings rather than by eye:
+  // EngineDeck_Grille sits at (0, 1.57, -2.40) and Driver_Hatch at
+  // (0, 1.56, 1.15), so the deck runs at y 1.56-1.57; the secondaries are at
+  // z 2.30, and "behind" them is toward -z.
+  const DECK_Y = 1.60;   // just proud of the deck, so it reads as fitted
+  const deckStrips = glow ? [
+    [0, DECK_Y, -2.92, 2.30, 0.05, 0.42],   // the long one across the stern
+    [-0.86, DECK_Y, 1.72, 0.46, 0.05, 0.60], // behind the left secondary
+    [0.86, DECK_Y, 1.72, 0.46, 0.05, 0.60],  // and the right
+  ] : [];
+
   // --- the hover rig, in three tiers ---------------------------------------
   // The machine levitates ON the lift emitters, so THEY are what stays welded
   // to the ground; everything above them is free to move. One tier was not
@@ -1155,6 +1172,10 @@ function makeMkcx(cols) {
       for (const e of emitters.children) {
         const i = Number(e.name.slice(-1)) - 1;
         if (i >= 0 && i < zs.length) e.position.z = nb.min.z + (nb.max.z - nb.min.z) * zs[i];
+        // Fattened. At the authored 0.43 x 0.05 x 1.15 they were a hairline
+        // at play distance, and a health gauge you have to squint at is not
+        // one. Wider and taller rather than longer: the length already reads.
+        e.scale.set(1.55, 1.8, 1.12);
       }
     }
 
@@ -1185,6 +1206,13 @@ function makeMkcx(cols) {
     const hull = new THREE.Group();
     hull.name = 'HullVib';
     for (const c of [...body.children]) hull.add(c);
+    // deck accents ride the hull, so they shake with it like the rest of it
+    for (const [x, y, z, sx, sy, sz] of deckStrips) {
+      const strip = new THREE.Mesh(new THREE.BoxGeometry(sx, sy, sz), glow);
+      strip.position.set(x, y, z);
+      strip.name = 'DeckGlow';
+      hull.add(strip);
+    }
     body.add(hull);
     body.add(weapons);
 
@@ -1260,16 +1288,18 @@ function makeMkcx(cols) {
   //
   //            width    length   (world size per unit of unitScale)
   //   tank     0.508    0.729
-  //   mkcx     0.382    1.051    at 0.54
+  //   mkcx     0.382    1.051    at 0.54  — still read as small on the board
+  //   mkcx     0.531    1.460    at 0.75  — a shade wider than the reference
   //
   // The previous 0.147 came from comparing the mkcx's LENGTH against a
   // corridor's WIDTH. The mkcx is 2.75:1 where the procedural tank is
   // 1.44:1, so that mistake shrank it by most of that ratio and it read as
   // a toy on the board. A tank may be longer than a lane is wide; it may
-  // not be WIDER, and at 0.54 it is three quarters of the reference tank's
-  // width and half again its length, which is what an mkcx should look
-  // like. The unit viewer divides this out, so its look is unaffected.
-  g.userData.baseScale = 0.54;
+  // not be WIDER. 0.54 kept it a quarter narrower than the reference and it
+  // still read as small in play, so it now sits just OVER that width — the
+  // mkcx is the heavier machine, and the board is built for something this
+  // size. The unit viewer divides this out, so its look is unaffected.
+  g.userData.baseScale = 0.75;
   g.userData.kind = 'mesh';
   return g;
 }

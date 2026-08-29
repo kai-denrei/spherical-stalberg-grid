@@ -11,15 +11,15 @@
 // one context no matter how long the roster grows.
 import * as THREE from '../vendor/three.module.js';
 import { OrbitControls } from '../vendor/OrbitControls.js';
-import { buildUnit, preloadMkcx, makeDebris, makeDotBurst, makeBulletCloud } from './units.js?v=ecff1dca';
+import { buildUnit, preloadMkcx, makeDebris, makeDotBurst, makeBulletCloud } from './units.js?v=443b5fe4';
 import { TANK_FEEL, TANK_FEEL_KNOBS, formatFeelCode, makeTankFeel, stepTankFeel,
-  landTankFeel, fireTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js?v=ecff1dca';
-import { FEEL, loadFeel, saveFeel, resetFeel } from './feelstore.js?v=ecff1dca';
+  landTankFeel, fireTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js?v=443b5fe4';
+import { FEEL, loadFeel, saveFeel, resetFeel } from './feelstore.js?v=443b5fe4';
 import { buildTowerLook, TOWER_LOOK_NAMES, DEFAULT_TOWER_LOOK, preloadLook } from './towerlooks.js';
 import { TOWER_BY_KEY } from './towers.js';
 import { LOOKS } from './looks.js';
 import { makeBloom } from './postfx.js';
-import { makeAudio } from './audio.js?v=ecff1dca';
+import { makeAudio } from './audio.js?v=443b5fe4';
 import { GROUPS, GROUP_LABELS, GROUP_EMPTY, entriesIn } from './unitcatalog.js';
 
 export function initUnitsTab(root) {
@@ -378,7 +378,7 @@ export function initUnitsTab(root) {
   }
 
   const ROW = 24;    // px of vertical room a label needs to stay readable
-  const OUT = 34;    // px the label is pushed away from its part, horizontally
+  const OUT = 74;    // px the label column clears the model's silhouette by
   const FOOT = 200;  // px of chrome at the bottom labels must not fall behind
 
   function drawCallouts() {

@@ -1668,16 +1668,22 @@ body.playing:not(.chrome-open) #tabbar { display: none !important; }
   border-right: 1px solid rgba(111, 230, 255, .75);
   text-align: right;
 }
+/* The leader starts at the label's TRANSFORM POINT, because that is the
+   point the JS measured the angle from. For a right-hand label that point is
+   its left edge; for a left-hand one, translateX(-100%) puts it at the right
+   edge. Anchoring to the other edge (as this did) draws every leader away
+   from the tank instead of towards it — which is why they all ended in empty
+   space off the side of the frame. */
 #units-callouts .callout s {
   position: absolute;
   top: 50%;
-  left: 100%;
+  left: 0;
   height: 1px;
   background: rgba(111, 230, 255, .42);
   transform-origin: 0 50%;
   pointer-events: none;
 }
-#units-callouts .callout.left s { left: auto; right: 100%; transform-origin: 100% 50%; }
+#units-callouts .callout.left s { left: 100%; }
 #units-callouts .cdot {
   position: absolute;
   top: 0;

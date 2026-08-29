@@ -19,24 +19,24 @@
 
 import * as THREE from '../vendor/three.module.js';
 import GUI from '../vendor/lil-gui.esm.js';
-import { generateSphereMesh, relax } from './grid.js?v=ecff1dca';
-import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=ecff1dca';
-import { mulberry32, randomSeed } from './rng.js?v=ecff1dca';
-import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3, segKey } from './vec3.js?v=ecff1dca';
-import { CREATURES, waveJelly } from './creatures.js?v=ecff1dca';
-import { UNITS, UNIT_NAMES, buildUnit, preloadMkcx, makeBulletCloud, makeRewardSolid, makeShellSolid, makeDebris, makeDotBurst, makePortalCloud, makeHeartCloud, makeDotEnemy } from './units.js?v=ecff1dca';
-import { LOOKS, LOOK_NAMES } from './looks.js?v=ecff1dca';
-import { makeCellIndex } from './cellindex.js?v=ecff1dca';
-import { CREATURE_TINTS, ENEMY_SPEC, INTROS, computeWavePlan } from './enemyspec.js?v=ecff1dca';
-import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER } from './towers.js?v=ecff1dca';
-import { makeEconomy, sellRefund } from './economy.js?v=ecff1dca';
-import { makeBloom } from './postfx.js?v=ecff1dca';
-import { TANK_FEEL, TANK_FEEL_KNOBS, makeTankFeel, stepTankFeel, landTankFeel, fireTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js?v=ecff1dca';
-import { FEEL, loadFeel, saveFeel } from './feelstore.js?v=ecff1dca';
-import { BLOOM_GROUPS } from './bloomweights.js?v=ecff1dca';
-import { TOWER_LOOK_NAMES, DEFAULT_TOWER_LOOK, buildTowerLook, preloadLook } from './towerlooks.js?v=ecff1dca';
-import { makeAudio } from './audio.js?v=ecff1dca';
-import { DEATH_KEYS } from './audiomanifest.js?v=ecff1dca';
+import { generateSphereMesh, relax } from './grid.js?v=443b5fe4';
+import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=443b5fe4';
+import { mulberry32, randomSeed } from './rng.js?v=443b5fe4';
+import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3, segKey } from './vec3.js?v=443b5fe4';
+import { CREATURES, waveJelly } from './creatures.js?v=443b5fe4';
+import { UNITS, UNIT_NAMES, buildUnit, preloadMkcx, makeBulletCloud, makeRewardSolid, makeShellSolid, makeDebris, makeDotBurst, makePortalCloud, makeHeartCloud, makeDotEnemy } from './units.js?v=443b5fe4';
+import { LOOKS, LOOK_NAMES } from './looks.js?v=443b5fe4';
+import { makeCellIndex } from './cellindex.js?v=443b5fe4';
+import { CREATURE_TINTS, ENEMY_SPEC, INTROS, computeWavePlan } from './enemyspec.js?v=443b5fe4';
+import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER } from './towers.js?v=443b5fe4';
+import { makeEconomy, sellRefund } from './economy.js?v=443b5fe4';
+import { makeBloom } from './postfx.js?v=443b5fe4';
+import { TANK_FEEL, TANK_FEEL_KNOBS, makeTankFeel, stepTankFeel, landTankFeel, fireTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js?v=443b5fe4';
+import { FEEL, loadFeel, saveFeel } from './feelstore.js?v=443b5fe4';
+import { BLOOM_GROUPS } from './bloomweights.js?v=443b5fe4';
+import { TOWER_LOOK_NAMES, DEFAULT_TOWER_LOOK, buildTowerLook, preloadLook } from './towerlooks.js?v=443b5fe4';
+import { makeAudio } from './audio.js?v=443b5fe4';
+import { DEATH_KEYS } from './audiomanifest.js?v=443b5fe4';
 
 export function initTdTab(root) {
   let active = false;
@@ -1618,6 +1618,7 @@ export function initTdTab(root) {
   let hintTimer = null;
   // non-freezing tutorial callout; flash = big centred, skip = show Skip, hold = no auto-hide
   let tutTimer = null;
+  const TUT_BEAT = 4.0;   // seconds of quiet between lessons
   function tutBanner(html, opts = {}) {
     tutEl.className = opts.flash ? 'tut-flash' : '';
     tutEl.innerHTML = html + (opts.skip
@@ -1717,7 +1718,8 @@ export function initTdTab(root) {
       this.fodder = [];
       this.spawnFodder(2, 7, 11);
       this.frozen = true; this.frozenT = 0;
-      tutBanner('RAM THEM · drive straight through', { flash: true, hold: true, skip: !!safeSeen() });
+      this.gapT = 0; this.pending = null;
+      tutBanner('RAM THEM · drive straight through them', { flash: true, hold: true, skip: !!safeSeen() });
       pulseButton('#td-throttle');
       this.tShown = 0; this.phase = 'ram';
     },
@@ -1762,21 +1764,47 @@ export function initTdTab(root) {
     },
     // a phase is cleared when every enemy it spawned is down
     fodderClear() { return this.fodder.every((e) => !e.alive); },
+
+    // A BEAT between lessons. Clearing a pair used to hand out the next
+    // instruction and the next pair in the same frame, so three lessons went
+    // by in the time it takes to read one — no pause to look at the HUD, no
+    // moment to notice which control had just lit up. Now the kill lands, a
+    // short confirmation says what you just used, and the field stays empty
+    // for a few seconds before the next instruction arrives.
+    beat(confirm, fn) {
+      tutBanner(confirm, { hold: true });
+      pulseButton(null);
+      this.pending = fn;
+      this.gapT = TUT_BEAT;
+    },
     // One weapon per pair, in order of how much they cost you: the treads are
     // free, the lasers are free but need aim, the shell is scarce and heats
     // the barrel for three seconds. Two enemies each, so the lesson is a
     // rehearsal rather than a fight — the player is never learning a control
     // and losing at the same time.
     tick(dt) {
-      if (this.frozen) { this.frozenT += dt; if (this.frozenT > 4) { this.frozen = false; hideTutBanner(); } return; }
+      // the opening hold is longer than a banner's read time on purpose: it
+      // is also the first look at the board
+      if (this.frozen) { this.frozenT += dt; if (this.frozenT > 5.5) { this.frozen = false; } return; }
+
+      // a beat is running: nothing spawns, nothing is asked of the player
+      if (this.gapT > 0) {
+        this.gapT -= dt;
+        if (this.gapT <= 0 && this.pending) {
+          const go = this.pending; this.pending = null; go();
+        }
+        return;
+      }
 
       if (this.phase === 'ram') {
         if (this.fodderClear()) {
-          this.spawnFodder(2, 4, 7);
-          tutBanner('Now the SECONDARIES · hold to sweep them with the lasers',
-            { skip: !!safeSeen() });
-          pulseButton('#td-pad-laser');
           this.phase = 'laser';
+          this.beat('Treads done — ramming is free, and it is always available.', () => {
+            this.spawnFodder(2, 5, 8);
+            tutBanner('Now the SECONDARIES · hold to sweep them with the lasers',
+              { hold: true, skip: !!safeSeen() });
+            pulseButton('#td-pad-laser');
+          });
         }
       } else if (this.phase === 'laser') {
         if (this.fodderClear()) {
@@ -1784,26 +1812,34 @@ export function initTdTab(root) {
           // hoping you find a pickup: a tutorial step you can fail to even
           // ATTEMPT is not a tutorial step. Orbs go down beside you as well,
           // because where shells come from is the other half of the lesson.
-          ammo = Math.max(ammo, 3); updateHud();
-          const near = openNeighbors(player.cur).slice(0, 2);
-          for (const ci of (near.length ? near : [player.cur])) spawnOrbAt(ci);
-          this.spawnFodder(2, 4, 7);
-          tutBanner('And the SHELL · overkill on these two, but it is how you '
-            + 'breach a wall. Shells come from the glowing pickups.',
-            { skip: !!safeSeen() });
-          pulseButton('#td-pad-fire');
           this.phase = 'shell';
+          this.beat('Lasers done — free to fire, but they need you pointed at it.', () => {
+            // Shells are scarce, so the lesson hands you some rather than
+            // hoping you find a pickup: a step you can fail to even ATTEMPT
+            // is not a step. Orbs go down beside you too, because where
+            // shells come from is the other half of the lesson.
+            ammo = Math.max(ammo, 3); updateHud();
+            const near = openNeighbors(player.cur).slice(0, 2);
+            for (const ci of (near.length ? near : [player.cur])) spawnOrbAt(ci);
+            this.spawnFodder(2, 5, 8);
+            tutBanner('And the SHELL · overkill on these two, but it is how you '
+              + 'breach a wall. Shells come from the glowing pickups — you have 3.',
+              { hold: true, skip: !!safeSeen() });
+            pulseButton('#td-pad-fire');
+          });
         }
       } else if (this.phase === 'shell') {
         if (this.fodderClear()) {
           this.collapsePortal();   // clear the field: the next beat has no enemies
-          tutBanner('THROTTLE · drag to set your speed, flick up for full. '
-            + 'Below zero reverses — slower than forward, and it is the same lever.',
-            { hold: true, skip: !!safeSeen() });
-          pulseButton('#td-throttle');
-          this.speedT = 0;
-          this.speedFrom = throttle;
           this.phase = 'speed';
+          this.beat('Shell done. That is the whole kit: treads, lasers, shell.', () => {
+            tutBanner('THROTTLE · drag to set your speed, flick up for full. '
+              + 'Below zero reverses — slower than forward, same lever.',
+              { hold: true, skip: !!safeSeen() });
+            pulseButton('#td-throttle');
+            this.speedT = 0;
+            this.speedFrom = throttle;
+          });
         }
       } else if (this.phase === 'speed') {
         // Advance on USE, not on a timer — the point is that they touch it.
@@ -4214,7 +4250,9 @@ export function initTdTab(root) {
       // while requestAnimationFrame is throttled, so a wait-for-the-loop
       // poll times out and the run silently ends up a phase or two short —
       // which is exactly how this hook failed the first two times.
-      tutorial.tick(1 / 60);
+      tutorial.tick(1 / 60);   // register the clear — this opens the beat
+      tutorial.tick(TUT_BEAT + 1);  // ...and run the beat out, so the next
+                                    // lesson has actually landed to look at
       setTimeout(step, 120);
     };
     setTimeout(step, 900);
