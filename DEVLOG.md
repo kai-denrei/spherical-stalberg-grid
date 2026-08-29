@@ -6,6 +6,70 @@ Demo links assume `npm run serve` (port 8144) or the
 
 ---
 
+## `cff89d2` — Beats between lessons, a bigger tank, leaders that point at it
+
+### Three lessons in the time it takes to read one
+
+Clearing a pair handed out the next instruction *and* the next pair in the
+same frame. No pause to look at the HUD, no moment to notice which control
+had just lit up — the pacing made the content unreadable regardless of what
+it said.
+
+Each lesson now ends in a **beat**:
+
+```
+kill lands -> confirmation line, pulse cleared -> 4 s of empty field
+           -> next instruction, next pair
+```
+
+Instruction banners `hold` instead of auto-hiding after 4.5 s, so what you
+are being asked to do is still on screen while you do it. The opening freeze
+goes 4 s → 5.5 s; it is not only a banner, it is the first look at the board.
+
+The beat is a `gapT` countdown with a `pending` thunk, checked before any
+phase logic — so nothing spawns and nothing is asked while it runs.
+
+### The tank, again
+
+0.54 left it a quarter narrower than the procedural reference and it still
+read as small. It now sits just over that width:
+
+| | width | length |
+| --- | --- | --- |
+| tank (reference) | 0.508 | 0.729 |
+| mkcx @ 0.75 | 0.531 | 1.460 |
+
+### The health accents were invisible from above
+
+Every authored glow strip is on the **flanks** — and half this game is played
+looking straight down from the build camera, where the colour simply was not
+present. Three strips added to the deck: a long one across the stern, a
+smaller one behind each secondary. Placed from the model's own fittings
+rather than by eye (`EngineDeck_Grille` y 1.57, `Driver_Hatch` y 1.56 → the
+deck runs at 1.56–1.57; the secondaries sit at z 2.30). They share the cloned
+`M_Glow` material, so they are health-coded for free.
+
+The lift emitters are fattened 1.55× wide, 1.8× tall. At the authored
+0.43 × 0.05 they were a hairline at play distance, and a gauge you have to
+squint at is not a gauge.
+
+### The leaders pointed away from the tank
+
+The line must start at the label's **transform point**, because that is the
+point the angle was measured from — the left edge for a right-hand label, and
+the right edge for a left-hand one, where `translateX(-100%)` puts it:
+
+```css
+#units-callouts .callout s      { left: 0; }     /* right column */
+#units-callouts .callout.left s { left: 100%; }  /* left column  */
+```
+
+Anchoring each to the *opposite* edge, as it did, draws every leader away
+from the model and off the side of the frame. The columns also clear the
+silhouette by 74 px instead of 34, so a label never sits on the part it names.
+
+---
+
 ## `f08eed8` — One weapon per pair, a lever with its own beat, and the log tab
 
 ### The tank was 4.9x too narrow
