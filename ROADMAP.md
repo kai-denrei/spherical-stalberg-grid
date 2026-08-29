@@ -35,7 +35,7 @@ on a live wave-4 board, across one whole frame:
 
 | | wave 4 | wave 8 | +8 towers |
 | --- | --- | --- | --- |
-| draw calls | 1022 | 1448 | 1026 |
+| main-view draw calls | 1022 | 1448 | 1026 |
 | triangles | 36,654 | 48,494 | 36,654 |
 | points drawn | 49,744 | 67,252 | 50,032 |
 | scene objects | 437 | 586 | 454 |
@@ -57,9 +57,12 @@ So:
   with a rewritten buffer serves a thousand particles in one call; a thousand
   objects is a thousand calls and would end the frame budget on its own. The
   unit viewer's firing preview is built this way as the reference.
-- **Worth knowing:** the minimap re-renders the whole scene, so every object
-  is drawn roughly twice. Culling it to a marker layer is the single biggest
-  saving available if the budget ever gets tight.
+- **The minimap is culled** (done). It used to re-render the entire scene
+  through its own `WebGLRenderer` — which, being a separate renderer with its
+  own `info`, was invisible in the numbers above. Measured directly, at wave 4
+  with eight towers it cost **686 draw calls**; as a marker layer it costs
+  **14**. That is 672 calls, 39% of the whole frame, for a map nobody could
+  tell had changed.
 
 ---
 

@@ -1,4 +1,4 @@
-import { BRAILLE_SHAPES, BRAILLE_SHAPE_KINDS } from './braillelab.js?v=04d61a9f';
+import { BRAILLE_SHAPES, BRAILLE_SHAPE_KINDS } from './braillelab.js?v=6081a523';
 // creatures.js — organic dot-cloud units, ported from ~/Dev/Braille
 // fun-shapes (half-dotted > organic): amoeba, bacteriophage, jellyfish.
 // Each generator returns unit-radius points [x,y,z,(hi)] where hi===1 marks a
@@ -280,24 +280,11 @@ export function enemyDotPts(kind, n = 150) {
 // have none, so honouring them would leave those shapes reading as flat dust
 // — and the whole point of `hiEvery` is that it is a knob.
 function resampleLab(src, n, emit) {
-  // RECENTRED on its own bounding box. fitUnit normalises by distance from
-  // the origin, which keeps a shape inside the unit sphere but does nothing
-  // about where its mass sits — and several lab shapes are deliberately
-  // off-origin (an arm reaches forward from its pedestal). Mounted on a mast
-  // that meant the head hung off to one side of the collar instead of
-  // standing on it.
-  let lo = [Infinity, Infinity, Infinity], hi = [-Infinity, -Infinity, -Infinity];
-  for (const p of src) {
-    for (let a = 0; a < 3; a++) {
-      if (p[a] < lo[a]) lo[a] = p[a];
-      if (p[a] > hi[a]) hi[a] = p[a];
-    }
-  }
-  const c = [0, 1, 2].map((a) => (lo[a] + hi[a]) / 2);
+  // Anchoring is seatHead's job, once, for every head — see below.
   const step = src.length / Math.max(1, n);
   for (let i = 0; i < n; i++) {
     const p = src[Math.min(src.length - 1, Math.round(i * step))];
-    emit(p[0] - c[0], p[1] - c[1], p[2] - c[2], i);
+    emit(p[0], p[1], p[2], i);
   }
 }
 
@@ -321,7 +308,35 @@ function strokePts(segs, n, emit) {
   }
 }
 
+// Every head STANDS on its base, and stands on the mast's centreline.
+//
+// Two separate mistakes were being made before. fitUnit normalises by
+// distance from the origin, which says nothing about where a shape's mass
+// sits, so off-origin shapes hung off the side of the collar. Centring on the
+// bounding box fixed that and introduced the second: an arm reaches forward,
+// so its silhouette's centre is well in front of its pedestal — centring the
+// BODY hangs the FOOT off the mast. These are machines that stand on
+// something, so the base is what gets centred and the base is what sits at
+// the anchor.
+function seatHead(pts) {
+  if (!pts.length) return pts;
+  let minY = Infinity, maxY = -Infinity;
+  for (const p of pts) { if (p[1] < minY) minY = p[1]; if (p[1] > maxY) maxY = p[1]; }
+  // the lowest fifth is "the foot"; a flat shape has no foot and uses it all
+  const band = minY + (maxY - minY) * 0.2;
+  let sx = 0, sz = 0, cnt = 0;
+  for (const p of pts) if (p[1] <= band) { sx += p[0]; sz += p[2]; cnt++; }
+  const cx = cnt ? sx / cnt : 0, cz = cnt ? sz / cnt : 0;
+  return pts.map((p) => (p.length > 3
+    ? [p[0] - cx, p[1] - minY, p[2] - cz, p[3]]
+    : [p[0] - cx, p[1] - minY, p[2] - cz]));
+}
+
 export function towerHeadPts(kind, n = 190, hiEvery = 12) {
+  return seatHead(towerHeadPtsRaw(kind, n, hiEvery));
+}
+
+function towerHeadPtsRaw(kind, n = 190, hiEvery = 12) {
   const pts = [];
   const GA = Math.PI * (3 - Math.sqrt(5));
   // every `hiEvery`th dot is a highlight — the half-dotted read. Guarded

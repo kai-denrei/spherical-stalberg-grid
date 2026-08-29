@@ -8,8 +8,8 @@
 //
 // Pure: no DOM, no three.js.
 
-import { TOWER_HEAD_KINDS } from './creatures.js?v=04d61a9f';
-import { makeParams, clampParams, formatKnobs, knobProblems } from './knobs.js?v=04d61a9f';
+import { TOWER_HEAD_KINDS } from './creatures.js?v=6081a523';
+import { makeParams, clampParams, formatKnobs, knobProblems } from './knobs.js?v=6081a523';
 
 // 'as shipped' means "use whatever shape towers.js gave this one".
 export const HEAD_AS_SHIPPED = 'as shipped';
@@ -26,7 +26,10 @@ export const TOWER_HEADS = {};
 
 export const TOWER_FEEL = {
   headScale: 0.42,   // cloud scale inside the head group
-  headLift: 1.12,    // how far the head floats above the mast
+  // The mast's collar top is at 0.83, and a head now sits on its BASE, so
+  // this is the height of the head's FOOT above the mast base. 0.86 rests
+  // it on the collar; raise it to float the head clear, as it used to.
+  headLift: 0.86,    // where the head's base sits, in mast units
   // MEASURED, not guessed. At wave 4 the frame costs ~1020 draw calls and
   // 50k points; the calls scale with OBJECT count, the points with density.
   // Raising a head from 190 to 480 adds ~290 vertices to a draw call that

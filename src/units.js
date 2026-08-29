@@ -16,10 +16,10 @@
 
 import * as THREE from '../vendor/three.module.js';
 import { loadGlb, mergeByMaterial, fitModel, tintModel, makeShellRack,
-  addEdgeOutlines, makeHeatSleeve } from './glbmodels.js?v=04d61a9f';
-import { CREATURES, waveJelly, spherePts, bulletPts, missilePts, heartPts, torusPts, towerHeadPts, enemyDotPts, portalPts } from './creatures.js?v=04d61a9f';
-import { TOWER_FEEL, TOWER_HEADS, headKindFor } from './towerfeel.js?v=04d61a9f';
-import { ENEMY_SPEC } from './enemyspec.js?v=04d61a9f';
+  addEdgeOutlines, makeHeatSleeve } from './glbmodels.js?v=6081a523';
+import { CREATURES, waveJelly, spherePts, bulletPts, missilePts, heartPts, torusPts, towerHeadPts, enemyDotPts, portalPts } from './creatures.js?v=6081a523';
+import { TOWER_FEEL, TOWER_HEADS, headKindFor } from './towerfeel.js?v=6081a523';
+import { ENEMY_SPEC } from './enemyspec.js?v=6081a523';
 
 function normalizeToUnit(group) {
   group.updateMatrixWorld(true);
@@ -582,6 +582,24 @@ export function makeTowerUnit(def, feel = TOWER_FEEL, heads = TOWER_HEADS) {
   // a flat cog seen edge-on is a line; tip it so the teeth read
   if (kind === 'gear') cloud.rotation.x = 0.28;
   head.add(cloud);
+
+  // Which way this head FACES, derived from its own points rather than
+  // assumed. The six-axis arm reaches along +X and the launcher's tubes point
+  // somewhere else again — a tracking tower that assumed +Z would aim every
+  // shape ninety degrees wrong and look deliberate about it.
+  //
+  // The business end is the upper part of the shape; its horizontal offset
+  // from the mast axis is the direction it points. A radially symmetric head
+  // averages to nothing, which correctly reads as "no facing".
+  {
+    let hy = -Infinity, ly = Infinity;
+    for (const p of pts) { if (p[1] > hy) hy = p[1]; if (p[1] < ly) ly = p[1]; }
+    const band = ly + (hy - ly) * 0.65;
+    let sx = 0, sz = 0, c = 0;
+    for (const p of pts) if (p[1] >= band) { sx += p[0]; sz += p[2]; c++; }
+    const mx = c ? sx / c : 0, mz = c ? sz / c : 0;
+    g.userData.headFacing = Math.hypot(mx, mz) > 0.08 ? Math.atan2(mx, mz) : 0;
+  }
   // A tower's own `spin` still wins where towers.js sets one — that is per
   // tower character, not a global look setting. The knob is the default for
   // everything that does not care.

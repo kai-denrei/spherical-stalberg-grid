@@ -19,25 +19,25 @@
 
 import * as THREE from '../vendor/three.module.js';
 import GUI from '../vendor/lil-gui.esm.js';
-import { generateSphereMesh, relax } from './grid.js?v=04d61a9f';
-import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=04d61a9f';
-import { mulberry32, randomSeed } from './rng.js?v=04d61a9f';
-import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3, segKey } from './vec3.js?v=04d61a9f';
-import { CREATURES, waveJelly } from './creatures.js?v=04d61a9f';
-import { UNITS, UNIT_NAMES, buildUnit, buildCreature, preloadMkcx, makeBulletCloud, makeRewardSolid, makeShellSolid, makeDebris, makeDotBurst, makePortalCloud, makeHeartCloud, makeDotEnemy } from './units.js?v=04d61a9f';
-import { LOOKS, LOOK_NAMES } from './looks.js?v=04d61a9f';
-import { makeCellIndex } from './cellindex.js?v=04d61a9f';
-import { CREATURE_TINTS, ENEMY_SPEC, INTROS, computeWavePlan } from './enemyspec.js?v=04d61a9f';
-import { PICKUPS } from './pickups.js?v=04d61a9f';
-import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER } from './towers.js?v=04d61a9f';
-import { makeEconomy, sellRefund } from './economy.js?v=04d61a9f';
-import { makeBloom } from './postfx.js?v=04d61a9f';
-import { TANK_FEEL, TANK_FEEL_KNOBS, makeTankFeel, stepTankFeel, landTankFeel, fireTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js?v=04d61a9f';
-import { FEEL, loadFeel, saveFeel } from './feelstore.js?v=04d61a9f';
-import { BLOOM_GROUPS } from './bloomweights.js?v=04d61a9f';
-import { TOWER_LOOK_NAMES, DEFAULT_TOWER_LOOK, buildTowerLook, preloadLook } from './towerlooks.js?v=04d61a9f';
-import { makeAudio } from './audio.js?v=04d61a9f';
-import { DEATH_KEYS } from './audiomanifest.js?v=04d61a9f';
+import { generateSphereMesh, relax } from './grid.js?v=6081a523';
+import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=6081a523';
+import { mulberry32, randomSeed } from './rng.js?v=6081a523';
+import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3, segKey } from './vec3.js?v=6081a523';
+import { CREATURES, waveJelly } from './creatures.js?v=6081a523';
+import { UNITS, UNIT_NAMES, buildUnit, buildCreature, preloadMkcx, makeBulletCloud, makeRewardSolid, makeShellSolid, makeDebris, makeDotBurst, makePortalCloud, makeHeartCloud, makeDotEnemy } from './units.js?v=6081a523';
+import { LOOKS, LOOK_NAMES } from './looks.js?v=6081a523';
+import { makeCellIndex } from './cellindex.js?v=6081a523';
+import { CREATURE_TINTS, ENEMY_SPEC, INTROS, computeWavePlan } from './enemyspec.js?v=6081a523';
+import { PICKUPS } from './pickups.js?v=6081a523';
+import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER } from './towers.js?v=6081a523';
+import { makeEconomy, sellRefund } from './economy.js?v=6081a523';
+import { makeBloom } from './postfx.js?v=6081a523';
+import { TANK_FEEL, TANK_FEEL_KNOBS, makeTankFeel, stepTankFeel, landTankFeel, fireTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js?v=6081a523';
+import { FEEL, loadFeel, saveFeel } from './feelstore.js?v=6081a523';
+import { BLOOM_GROUPS } from './bloomweights.js?v=6081a523';
+import { TOWER_LOOK_NAMES, DEFAULT_TOWER_LOOK, buildTowerLook, preloadLook } from './towerlooks.js?v=6081a523';
+import { makeAudio } from './audio.js?v=6081a523';
+import { DEATH_KEYS } from './audiomanifest.js?v=6081a523';
 
 export function initTdTab(root) {
   let active = false;
@@ -163,6 +163,52 @@ export function initTdTab(root) {
     ]],
     ['towers', towers.map((tw) => tw.obj)],
   ]);
+
+  // --- the minimap is a MARKER LAYER, not a second render of the world ------
+  // It used to draw the whole scene again, so every object on the board cost
+  // two draw calls instead of one — measured at ~1020 calls a frame, and the
+  // map was roughly half of it. Now the map camera only sees layer 1: the
+  // board itself (four merged meshes), the few hand-placed markers, and ONE
+  // pooled blip cloud carrying every enemy and tower.
+  //
+  // A blip per enemy would have been an object per enemy, which is the cost
+  // being removed. One buffer rewritten each frame is one draw call for the
+  // lot, however many there are.
+  const MAP_LAYER = 1;
+  mapCamera.layers.set(MAP_LAYER);
+  const BLIP_MAX = 600;
+  const blipPos = new Float32Array(BLIP_MAX * 3);
+  const blipCol = new Float32Array(BLIP_MAX * 3);
+  const blipGeo = new THREE.BufferGeometry();
+  blipGeo.setAttribute('position', new THREE.BufferAttribute(blipPos, 3));
+  blipGeo.setAttribute('color', new THREE.BufferAttribute(blipCol, 3));
+  blipGeo.setDrawRange(0, 0);
+  const blipMesh = new THREE.Points(blipGeo, new THREE.PointsMaterial({
+    size: 5, sizeAttenuation: false, vertexColors: true,
+  }));
+  blipMesh.frustumCulled = false;   // the buffer is rewritten; its bounds lie
+  blipMesh.layers.set(MAP_LAYER);   // map only — the board has the real thing
+  scene.add(blipMesh);
+  const tmpBlip = new THREE.Color();
+
+  // Lift a point off the surface so a blip is never buried in the floor.
+  function writeBlips() {
+    let k = 0;
+    const put = (pos, hex) => {
+      if (k >= BLIP_MAX) return;
+      const n = norm3(pos);
+      const r = 1 + params.wallHeight * 2.2;
+      blipPos[k * 3] = n[0] * r; blipPos[k * 3 + 1] = n[1] * r; blipPos[k * 3 + 2] = n[2] * r;
+      tmpBlip.setHex(hex);
+      blipCol[k * 3] = tmpBlip.r; blipCol[k * 3 + 1] = tmpBlip.g; blipCol[k * 3 + 2] = tmpBlip.b;
+      k++;
+    };
+    for (const e of enemies) if (e.alive) put(e.pos, CREATURE_TINTS[e.type] ?? 0xff5577);
+    for (const tw of towers) put(graph.centers[tw.ci], tw.def.color);
+    blipGeo.setDrawRange(0, k);
+    blipGeo.attributes.position.needsUpdate = true;
+    blipGeo.attributes.color.needsUpdate = true;
+  }
 
   // circular minimap: its own small renderer on a round-clipped canvas —
   // scissored insets on the main canvas can only ever be rectangles
@@ -833,6 +879,12 @@ export function initTdTab(root) {
       new THREE.MeshBasicMaterial({ color: look().marker }),
     );
     scene.add(markerMesh);
+    // Layer 1 is the map's world. Everything here is drawn in BOTH views;
+    // everything not here is main-view only, which is the whole saving.
+    // Layers are per-object and not inherited, so each one says so itself.
+    for (const o of [floorMesh, wallMesh, edgeMesh, topMesh, markerMesh, heartSprite]) {
+      if (o) o.layers.enable(MAP_LAYER);
+    }
   }
 
   function placeActors() {
@@ -1704,7 +1756,7 @@ export function initTdTab(root) {
         new THREE.MeshBasicMaterial({ color: CREATURE_TINTS.phage }));
       const mmp = scale3(graph.centers[portalCi], 1 + params.wallHeight * 1.6);
       mm.position.set(mmp[0], mmp[1], mmp[2]);
-      mm.visible = true; scene.add(mm);
+      mm.visible = true; mm.layers.set(MAP_LAYER); scene.add(mm);
       this.portal = { type: 'phage', ci: portalCi, hp: 3, obj, alive: true, found: true, mapMarker: mm };
       spawnPoints.push(this.portal);
       recomputePortalDist();
@@ -2525,6 +2577,7 @@ export function initTdTab(root) {
     const mm = scale3(graph.centers[best], 1 + params.wallHeight * 1.6);
     mapMarker.position.set(mm[0], mm[1], mm[2]);
     mapMarker.visible = false;
+    mapMarker.layers.set(MAP_LAYER);   // map only
     scene.add(mapMarker);
     spawnPoints.push({ ci: best, hp: 3, obj, alive: true, found: false, mapMarker });
     recomputePortalDist();
@@ -3256,9 +3309,48 @@ export function initTdTab(root) {
     return Math.hypot(camDistV.x - p[0], camDistV.y - p[1], camDistV.z - p[2]);
   }
 
+  // How fast a head swings onto a new target, radians-ish per second of
+  // easing. Slow enough that the traverse READS as the tower noticing you.
+  const TRACK_RATE = 5.0;
+  const TRACK_EVERY = 0.15;   // seconds between retargets; the ease covers it
+  const aimV = new THREE.Vector3();
+
+  // Point a directional head at what it is shooting. Only heads that HAVE a
+  // direction get this, and whether one does is read off the geometry
+  // (userData.headFacing) rather than a list someone has to remember to
+  // update — an arm reaches along +X, an obelisk points nowhere.
+  //
+  // The bearing is derived FROM the render transform: put the target into the
+  // tower group's own local space and take the yaw that aims +Z at it. No
+  // sphere trigonometry, and therefore no sign convention to get wrong.
+  function aimTower(tw, dt) {
+    const head = tw.obj.userData.head;
+    const facing = tw.obj.userData.headFacing;
+    if (!head || !facing) return;
+    tw.aimT = (tw.aimT ?? 0) - dt;
+    if (tw.aimT <= 0) {
+      tw.aimT = TRACK_EVERY;
+      const eff = effectiveStats(tw.def, tw.tier);
+      const target = pickTarget(graph.centers[tw.ci], eff.range * cellSide, enemies, chord);
+      if (target) {
+        aimV.set(target.pos[0], target.pos[1], target.pos[2]);
+        tw.obj.worldToLocal(aimV);
+        tw.aim = Math.atan2(aimV.x, aimV.z) - facing;
+      }
+    }
+    if (tw.aim === undefined) return;
+    // shortest way round, so a target crossing behind does not spin it 350deg
+    let d = tw.aim - head.rotation.y;
+    d = Math.atan2(Math.sin(d), Math.cos(d));
+    head.rotation.y += d * Math.min(1, TRACK_RATE * dt);
+  }
+
   function stepTowers(dt, tNow) {
     for (const tw of towers) {
+      // idle first, aim second: the idle sets rotation.y unconditionally, and
+      // a tracking head must have the last word on where it looks
       if (tw.obj.userData.tick) tw.obj.userData.tick(tNow + tw.ci);
+      aimTower(tw, dt);
       tw.cooldown -= dt;
       if (tw.cooldown > 0) continue;
       const eff = effectiveStats(tw.def, tw.tier);
@@ -4070,6 +4162,7 @@ export function initTdTab(root) {
     }
     mapCamera.updateProjectionMatrix();
     scene.background = mapBg;
+    writeBlips();
     markerMesh.visible = true;
     markerMesh.scale.setScalar(1 + 0.25 * Math.sin(t * 5)); // pulse: YOU
     // discovered sources pulse in their own tint
@@ -4247,8 +4340,11 @@ export function initTdTab(root) {
       // info resets on every render() and postfx runs several passes, so a
       // naive read reports the bloom's final fullscreen quad and nothing
       // else. Turn autoReset off and let ONE frame accumulate.
-      renderer.info.autoReset = false;
-      renderer.info.reset();
+      // BOTH renderers. The minimap has its own WebGLRenderer and therefore
+      // its own info — reading only the main one measured half the frame and
+      // made the map look free, which it very much was not.
+      renderer.info.autoReset = false; renderer.info.reset();
+      mapRenderer.info.autoReset = false; mapRenderer.info.reset();
       requestAnimationFrame(() => requestAnimationFrame(() => report()));
     }, perfAt * 1000);
     const report = () => {
@@ -4261,10 +4357,14 @@ export function initTdTab(root) {
           clouds++; points += o.geometry.attributes.position.count;
         }
       });
-      console.log(`PERF calls=${r.calls} tris=${r.triangles} pointsDrawn=${r.points}`
-        + ` | scene objects=${objs} pointClouds=${clouds} cloudVerts=${points}`
-        + ` | geometries=${mem.geometries} textures=${mem.textures}`);
+      const m = mapRenderer.info.render;
+      console.log(`PERF main calls=${r.calls} tris=${r.triangles} pts=${r.points}`
+        + ` | MAP calls=${m.calls} tris=${m.triangles} pts=${m.points}`
+        + ` | TOTAL calls=${r.calls + m.calls}`
+        + ` | scene objects=${objs} clouds=${clouds} cloudVerts=${points}`
+        + ` | geometries=${mem.geometries}`);
       renderer.info.autoReset = true;
+      mapRenderer.info.autoReset = true;
     };
   }
 
