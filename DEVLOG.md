@@ -6,6 +6,20 @@ Demo links assume `npm run serve` (port 8144) or the
 
 ---
 
+## `a12c6da` — The shell is an event
+
+Nine to a rack, and the operator's brief was exact: spending one has to
+*feel worth it* against just waiting for the towers. So: direct hits do
+**4 damage** — a one-shot on everything up to and including the rolling
+mine; only prime and the Thorus soak it. The splash grew to **2 cells**
+at 2/1 damage (half-radius/edge), which means the blast's *edge* still
+kills fodder — a shell into a pocket clears the pocket. And the
+explosion earns the price: the strike's three-ring language at shell
+scale, a doubled dot burst, and the heavy blast sample landing at the
+impact — the shot already spoke at the muzzle; now it answers downrange.
+
+---
+
 ## `1bb9b65` — The game plays itself, then eulogizes you
 
 **The simulator** (`2a420d0`). Tier-1 as designed: the simulation IS the
