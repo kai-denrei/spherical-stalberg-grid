@@ -6,6 +6,31 @@ Demo links assume `npm run serve` (port 8144) or the
 
 ---
 
+## `e2c1d31` — The relay stands at the pole properly
+
+Field report: "the server spawned inside a wall, and I cannot find how to
+interact with it." Three faults, and a design fact discovered on the way:
+
+- **Placement.** The pure minimum-dot cell was solid rock. The
+  current-round walkable minimum sat at dot 0.46 — nowhere near a pole —
+  because round 1 seals everything beyond the inner sector. Measurement
+  settled it: the FULL world's lanes reach dot **−0.987**, so the server
+  now stands on the full-carve cell nearest the true antipode — a real
+  lane that a late round will reveal. The far pole is end-game territory
+  by the game's own band-reveal design; the server leans into that
+  instead of fighting it.
+- **The lift.** While its band is sealed the relay is a landmark mounted
+  ON the high ground (lifted by `wallHeight`); `syncServerLift` settles
+  it onto the lane floor the round its band opens.
+- **The silence.** `placeError` suppressed the tower radial on the
+  server's cell — correctly — but nothing replaced it, which read as
+  "cannot interact". Tapping the server or any neighbour now always
+  answers: hack when awake, the one-per-round notice when patched,
+  "beyond the frontier — push the rounds" while sealed, "drive closer"
+  when open but undiscovered.
+
+---
+
 ## `a328217` — The phone gets flicked
 
 Three mobile rulings from live testing:
