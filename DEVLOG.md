@@ -6,6 +6,38 @@ Demo links assume `npm run serve` (port 8144) or the
 
 ---
 
+## `1c9f81a` — THE SERVER, and the first hack
+
+Something new: at the heart's exact antipode (minimum-dot cell, measured
+−0.999) stands a server — the `server_ceb25b9d` GLB through the standard
+fit pipeline, two cells tall, **invincible**: `breachWallCell` refuses its
+cell (no strike or shell opens it) and `placeError` keeps towers off it.
+
+Drive within three cells and it is FOUND: a pulsing HACK SERVER button
+joins the console rail. The hack opens a full-screen breach overlay — the
+dial-up handshake plays, six seconds of negotiation being exactly the
+fiction of connecting — around the **HDT circuit duel** from the
+`hacking-mini-games` repo, vendored as a static build under
+`minigames/hdt/` (relative base, PWA bits stripped so it cannot register
+a service worker at our scope).
+
+Two integration moves carried the whole thing:
+
+- **The deep link is a filename.** The minigame's router parses digits
+  out of the URL path; serving the built index as `3.html` boots straight
+  into game 3. Zero patching of a finished game.
+- **Same origin beats a protocol.** The iframe is ours, so the parent
+  simply reads the duel's own state — `window.__cx.game().phase` on a
+  600 ms poll. WON patches the firmware: the next tower unlocks ahead of
+  its wave gate (`unlockedTowerKeys(wave + hackedUnlocks)`). LOST drops
+  the connection; the relay resets for another try. One successful hack
+  per round; unlocks persist for the run.
+
+`?server=1` reports antipode dot + async placement; `?hack=1` boots the
+overlay directly — verified headless with the duel rendering in-frame.
+
+---
+
 ## `c4530c0` — Consumables regrow
 
 Health and heart-regen orbs respawn: each consumed one schedules a single

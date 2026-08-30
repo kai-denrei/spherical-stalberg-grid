@@ -16,12 +16,12 @@
 
 import * as THREE from '../vendor/three.module.js';
 import { loadGlb, mergeByMaterial, fitModel, tintModel, makeShellRack,
-  addEdgeOutlines, makeHeatSleeve } from './glbmodels.js?v=19869963';
-import { CREATURES, waveJelly, swimWave, spherePts, bulletPts, missilePts, heartPts, torusPts, towerHeadPts, enemyDotPts, portalPts } from './creatures.js?v=19869963';
-import { TOWER_FEEL, TOWER_HEADS, headKindFor } from './towerfeel.js?v=19869963';
+  addEdgeOutlines, makeHeatSleeve } from './glbmodels.js?v=426e3a3c';
+import { CREATURES, waveJelly, swimWave, spherePts, bulletPts, missilePts, heartPts, torusPts, towerHeadPts, enemyDotPts, portalPts } from './creatures.js?v=426e3a3c';
+import { TOWER_FEEL, TOWER_HEADS, headKindFor } from './towerfeel.js?v=426e3a3c';
 import { STARGATE_PTS, STARGATE_STROKE,
-  HORIZON_N, stargateHorizon } from './stargate.js?v=19869963';
-import { ENEMY_SPEC } from './enemyspec.js?v=19869963';
+  HORIZON_N, stargateHorizon } from './stargate.js?v=426e3a3c';
+import { ENEMY_SPEC } from './enemyspec.js?v=426e3a3c';
 
 function normalizeToUnit(group) {
   group.updateMatrixWorld(true);
