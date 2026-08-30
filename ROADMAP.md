@@ -119,11 +119,12 @@ actually been examined — whether waves 5–8 feel cramped on it is untested.
 - **Homing missiles must CHASE.** Reference: HokorobiTawaa's homing feel
   (`fireHoming` in its effects.ts re-seeks the live target each frame; ours
   aims once). Study before building.
-- **Bring the missile system to the top** — promote the orbital strike in the
-  HUD hierarchy.
+- ~~**Bring the missile system to the top**~~ — DONE: the launch console sits
+  top-centre under the mode row (desktop) / in the left HUD column (phone).
 - **Rework the entire HUD.**
-- **Scores**: more points for tank kills (the credit split already leans this
-  way), multiplier scaling with enemies on the field, etc.
+- ~~**Scores**~~ — DONE: `src/score.js` — tank kills x3, ram premium, field
+  multiplier (+4%/live enemy, cap x2), wave-clear points; BEST persists in
+  localStorage and updates live; final score on the lose modal.
 - ~~**Ranks**~~ — DONE (`f9614fa`): 15-rank insignia (bronze/silver/gold,
   dice-pip stars), hands-on kills only, gold gated on elite kills, resets
   with the hull. Shown on the tank and the HUD tank line; `?rank=N` to check.

@@ -570,7 +570,7 @@ html, body {
 /* border/text color are set inline per enemy tint by announceWave() */
 #h-wave, #td-wave {
   position: absolute;
-  top: 16%;
+  top: 27%;
   left: 50%;
   transform: translateX(-50%);
   z-index: 7;
@@ -1004,7 +1004,7 @@ html, body {
 #td-tut.hidden { display: none; }
 #td-toast {
   position: absolute;
-  top: 8%;
+  top: 27%;
   left: 50%;
   transform: translateX(-50%);
   z-index: 10;
@@ -1870,11 +1870,16 @@ body.playing:not(.chrome-open) #tabbar { display: none !important; }
   position: absolute;
   left: 50%;
   transform: translateX(-50%);
-  bottom: max(12px, env(safe-area-inset-bottom));
+  /* top of the screen, directly under the mode row: the orbital strike is
+     promoted to the HUD's first rank (operator ruling), and the bottom
+     centre it used to hold belongs to thumbs */
+  top: 92px;
   z-index: 7;
   width: 296px;
   font: 12px/1.4 ui-monospace, SFMono-Regular, Menlo, monospace;
 }
+/* the tutorial banner owns the same band; the console waits its turn */
+#tab-td.tutoring #td-launch { display: none; }
 .caution-frame {
   border: 4px solid transparent;
   border-image: repeating-linear-gradient(45deg, #ffc548 0 10px, #1a1a1a 10px 20px) 4;
@@ -2010,7 +2015,7 @@ body.playing:not(.chrome-open) #tabbar { display: none !important; }
 /* the feed owns the screen; the console stands aside with the rest */
 #tab-td.striking #td-launch { visibility: hidden; }
 @media (pointer: coarse), (max-width: 560px) {
-  #td-launch { width: 236px; bottom: max(10px, env(safe-area-inset-bottom)); }
+  #td-launch { width: 236px; }
   .caution-frame { min-height: 66px; gap: 8px; padding: 5px 8px; }
   .launch-button { width: 64px; height: 50px; }
   .launch-button .kanji { font-size: 17px; }
@@ -2137,6 +2142,30 @@ body.playing:not(.chrome-open) #tabbar { display: none !important; }
   border-color: #6fe6ff;
 }
 
-/* the tank's field-promotion insignia, inline on the HUD's tank line */
+/* the score line leads the HUD; the insignia rides next to the best */
+.hud-score { color: #e8edf5; font-weight: bold; letter-spacing: 0.06em; }
 .hud-rank { color: #cfd3da; letter-spacing: 1px; }
-.hud-rank svg { vertical-align: -2px; }
+.hud-rank svg { vertical-align: -6px; }
+
+/* --- phone: the top-centre stack folds into the LEFT column -------------
+   Headless lays out wide and crops, so these are verified by the ?layout
+   rectangle probe, not by screenshots. The NEXT WAVE chip used to sit at
+   top:8px centred — written straight over the mode row on a 390px screen
+   (the operator's complaint). Column: stats, NEXT WAVE, launch console;
+   the radar keeps the right. */
+@media (pointer: coarse), (max-width: 700px) {
+  #td-next {
+    left: max(12px, env(safe-area-inset-left));
+    right: auto;
+    transform: none;
+    top: calc(max(8px, env(safe-area-inset-top)) + 148px);
+    max-width: 300px;
+    text-align: left;
+  }
+  #td-launch {
+    left: max(12px, env(safe-area-inset-left));
+    transform: none;
+    top: calc(max(8px, env(safe-area-inset-top)) + 206px);
+  }
+  #td-toast { top: 42%; }
+}

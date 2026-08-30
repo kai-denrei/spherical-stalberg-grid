@@ -19,30 +19,31 @@
 
 import * as THREE from '../vendor/three.module.js';
 import GUI from '../vendor/lil-gui.esm.js';
-import { generateSphereMesh, relax } from './grid.js?v=8b146e63';
-import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=8b146e63';
-import { mulberry32, randomSeed } from './rng.js?v=8b146e63';
-import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3, segKey } from './vec3.js?v=8b146e63';
-import { CREATURES, waveJelly } from './creatures.js?v=8b146e63';
-import { UNITS, UNIT_NAMES, buildUnit, buildCreature, preloadMkcx, makeBulletCloud, makeRewardSolid, makeShellSolid, makeDebris, makeDotBurst, makePortalCloud, makeHeartCloud, makeDotEnemy } from './units.js?v=8b146e63';
-import { LOOKS, LOOK_NAMES } from './looks.js?v=8b146e63';
-import { makeCellIndex } from './cellindex.js?v=8b146e63';
-import { CREATURE_TINTS, ENEMY_SPEC, INTROS, computeWavePlan } from './enemyspec.js?v=8b146e63';
-import { PICKUPS } from './pickups.js?v=8b146e63';
-import { rankFor, rankLabel, badgeSVG, killReq, eliteReq } from './ranks.js?v=8b146e63';
-import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER } from './towers.js?v=8b146e63';
-import { makeEconomy, sellRefund } from './economy.js?v=8b146e63';
-import { makeBloom } from './postfx.js?v=8b146e63';
-import { TANK_FEEL, TANK_FEEL_KNOBS, makeTankFeel, stepTankFeel, landTankFeel, fireTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js?v=8b146e63';
-import { FEEL, loadFeel, saveFeel } from './feelstore.js?v=8b146e63';
+import { generateSphereMesh, relax } from './grid.js?v=5e01323b';
+import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=5e01323b';
+import { mulberry32, randomSeed } from './rng.js?v=5e01323b';
+import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3, segKey } from './vec3.js?v=5e01323b';
+import { CREATURES, waveJelly } from './creatures.js?v=5e01323b';
+import { UNITS, UNIT_NAMES, buildUnit, buildCreature, preloadMkcx, makeBulletCloud, makeRewardSolid, makeShellSolid, makeDebris, makeDotBurst, makePortalCloud, makeHeartCloud, makeDotEnemy } from './units.js?v=5e01323b';
+import { LOOKS, LOOK_NAMES } from './looks.js?v=5e01323b';
+import { makeCellIndex } from './cellindex.js?v=5e01323b';
+import { CREATURE_TINTS, ENEMY_SPEC, INTROS, computeWavePlan } from './enemyspec.js?v=5e01323b';
+import { PICKUPS } from './pickups.js?v=5e01323b';
+import { rankFor, rankLabel, badgeSVG, killReq, eliteReq } from './ranks.js?v=5e01323b';
+import { makeScore } from './score.js?v=5e01323b';
+import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER } from './towers.js?v=5e01323b';
+import { makeEconomy, sellRefund } from './economy.js?v=5e01323b';
+import { makeBloom } from './postfx.js?v=5e01323b';
+import { TANK_FEEL, TANK_FEEL_KNOBS, makeTankFeel, stepTankFeel, landTankFeel, fireTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js?v=5e01323b';
+import { FEEL, loadFeel, saveFeel } from './feelstore.js?v=5e01323b';
 import { STRIKE_KNOBS, makeStrike, makeStrikeParams, grantStrikes, stepStrike,
   toggleArm, paintTarget, launchStrike, stepFall, skipFall, fallProgress,
-  strikeDamage, retargetStrike, orbitProgress } from './strike.js?v=8b146e63';
-import { radarBasis, radarProject, radarBearing, sweepAngle, radarPhosphor } from './radar.js?v=8b146e63';
-import { BLOOM_GROUPS } from './bloomweights.js?v=8b146e63';
-import { TOWER_LOOK_NAMES, DEFAULT_TOWER_LOOK, buildTowerLook, preloadLook } from './towerlooks.js?v=8b146e63';
-import { makeAudio } from './audio.js?v=8b146e63';
-import { DEATH_KEYS } from './audiomanifest.js?v=8b146e63';
+  strikeDamage, retargetStrike, orbitProgress } from './strike.js?v=5e01323b';
+import { radarBasis, radarProject, radarBearing, sweepAngle, radarPhosphor } from './radar.js?v=5e01323b';
+import { BLOOM_GROUPS } from './bloomweights.js?v=5e01323b';
+import { TOWER_LOOK_NAMES, DEFAULT_TOWER_LOOK, buildTowerLook, preloadLook } from './towerlooks.js?v=5e01323b';
+import { makeAudio } from './audio.js?v=5e01323b';
+import { DEATH_KEYS } from './audiomanifest.js?v=5e01323b';
 
 export function initTdTab(root) {
   let active = false;
@@ -469,7 +470,7 @@ export function initTdTab(root) {
   // the HULL: lose the tank, lose the insignia. Gold's second gate counts
   // the dangerous (non-rammable) tier killed up close.
   let tankKills = 0, tankEliteKills = 0, tankRank = 0;
-  let rankSprite = null, rankBadgeHud = '';
+  let rankBadgeHud = '';
 
   // phagocytosis state, recomputed per frame (amoeba only)
   const reach = { dir: null, amt: 0 };
@@ -1043,14 +1044,6 @@ export function initTdTab(root) {
     // marker floats above the wall tops so nothing on the map occludes it
     const mp = scale3(player.pos, 1 + params.wallHeight * 1.6);
     markerMesh.position.set(mp[0], mp[1], mp[2]);
-    // the insignia hovers over the hull (a Sprite always faces the camera)
-    if (rankSprite && rankSprite.visible) {
-      // small and close: at 0.55 it dwarfed the hull and read as a map
-      // marker rather than something PINNED ON the tank
-      const rp = add3(p, scale3(n, cellSide * 0.78));
-      rankSprite.position.set(rp[0], rp[1], rp[2]);
-      rankSprite.scale.setScalar(cellSide * 0.3);
-    }
     // upright on the surface, facing the SMOOTHED direction (no snap)
     const h = player.smoothDir;
     tmpObj.position.copy(playerMesh.position);
@@ -2435,11 +2428,13 @@ export function initTdTab(root) {
 
   function startTutorial() {
     tutorialActive = true;
+    root.classList.add('tutoring');
     tutorial.phase = 'setup';
     tutorial.setup();
   }
   function endTutorial() {
     tutorialActive = false;
+    root.classList.remove('tutoring');
     waveActive = enemies.some((e) => e.alive); waveAge = 0; interClock = 0;
     tutorial.teardown();
     if (orbMeshes.size === 0) spawnOrbs(); // restore the normal shell field
@@ -2634,7 +2629,9 @@ export function initTdTab(root) {
     // state words only — the how-to lives in the GAMEPLAY section of the
     // briefing and pause modals. CREDIT is the loud line, in orange.
     statsEl.innerHTML =
-      `HEART ${'♥'.repeat(Math.max(0, heartHP)).padEnd(HEART_MAX, '·')}  YOU ♥${playerHP}  ✦${ammo}${rankBadgeHud ? '  ' + rankBadgeHud : ''}\n` +
+      `<span class="hud-score">SCORE ${score.points} · BEST ${score.best}</span>`
+      + `${rankBadgeHud ? '  ' + rankBadgeHud : ''}\n` +
+      `HEART ${'♥'.repeat(Math.max(0, heartHP)).padEnd(HEART_MAX, '·')}  YOU ♥${playerHP}  ✦${ammo}\n` +
       `<span class="hud-credit">${eco.credit}c ×${eco.multiplier().toFixed(2)}</span> · towers ${towers.length}\n` +
       `WAVE ${wave} · ${Math.min(8, Math.max(0, wave))}/8 towers · portals ${spAlive}/${spawnPoints.length} · R${round}${alerts}\n` +
       // one mode: the line reads camera + hold + who is driving
@@ -2802,6 +2799,7 @@ export function initTdTab(root) {
     clearTowers();
     // opening purse: exactly a Rapid (70c) + a Slow (100c) — your first plan
     eco = makeEconomy({ startCredit: 170 });
+    score.reset();
     mesh = generateSphereMesh({ seed: params.seed >>> 0, n: params.points, k: 12 });
     relax(mesh, { n_iters: params.relaxIters, PULL_RATE: 0.25 });
     dungeon = generateDungeon(mesh, {
@@ -3234,6 +3232,8 @@ export function initTdTab(root) {
           debris.push(burst);
           bumpLeft = BUMP_LEN;
           eco.award(spec.bounty, { ram: true }); // the ram premium
+          scoreKill(spec.bounty, { src: 'tank', ram: true,
+            alive: enemies.filter((x) => x.alive).length });
           creditTankKill(spec);
           killCreature(e, true);
           checkVictory();
@@ -3283,36 +3283,16 @@ export function initTdTab(root) {
   const KILL_PAY = { tank: 1.0, tower: 0.5, strike: 0.5 };
 
   // --- field promotion ------------------------------------------------------
+  // HUD badge only. The first cut ALSO floated a sprite over the hull —
+  // directly in front of the camera in third person, blocking exactly the
+  // thing the player steers toward. Operator ruling: same-size badge, up
+  // top, next to the score it rides with.
   function refreshRankVisuals() {
     rankBadgeHud = tankRank > 0
       ? `<span class="hud-rank" title="${tankKills} hands-on kills`
         + `${tankEliteKills ? ` · ${tankEliteKills} elite` : ''}">`
-        + `${badgeSVG(tankRank, 13)} ${rankLabel(tankRank)}</span>`
+        + `${badgeSVG(tankRank, 22)} ${rankLabel(tankRank)}</span>`
       : '';
-    if (!rankSprite) {
-      const cnv = document.createElement('canvas');
-      cnv.width = 256; cnv.height = 256;
-      rankSprite = new THREE.Sprite(new THREE.SpriteMaterial({
-        map: new THREE.CanvasTexture(cnv), transparent: true, depthWrite: false,
-      }));
-      rankSprite.visible = false;
-      scene.add(rankSprite);
-    }
-    rankSprite.visible = tankRank > 0;
-    if (tankRank > 0) {
-      // rasterize the same SVG the HUD uses — one drawing, two homes
-      const r = tankRank;
-      const img = new Image();
-      img.onload = () => {
-        if (r !== tankRank) return; // a later promotion already repainted
-        const cnv = rankSprite.material.map.image;
-        const ctx = cnv.getContext('2d');
-        ctx.clearRect(0, 0, 256, 256);
-        ctx.drawImage(img, 0, 0, 256, 256);
-        rankSprite.material.map.needsUpdate = true;
-      };
-      img.src = 'data:image/svg+xml;base64,' + btoa(badgeSVG(r, 256));
-    }
     updateHud();
   }
   function creditTankKill(spec) {
@@ -3340,6 +3320,7 @@ export function initTdTab(root) {
     if (e.hp <= 0) {
       // any weapon's kill pays — but not the same
       eco.award(Math.max(1, Math.ceil(spec.bounty * (KILL_PAY[src] ?? 0.5))));
+      scoreKill(spec.bounty, { src, alive: enemies.filter((x) => x.alive).length });
       if (src === 'tank') creditTankKill(spec);
       killCreature(e, true);
       return true;
@@ -3723,6 +3704,8 @@ export function initTdTab(root) {
       `× ${reason}<br>` +
       `${enemies.filter((e) => !e.alive).length}/${enemies.length} enemies destroyed · ` +
       `heart ${Math.max(0, heartHP)}/${HEART_MAX}<br>` +
+      `score ${score.points}${score.points >= score.best && score.points > 0
+        ? ' · NEW BEST' : ` · best ${score.best}`}<br>` +
       `<button class="msg-regen">⟲ new sector</button>`;
     // let the wreck play before the modal covers it
     setTimeout(() => msgEl.classList.remove('hidden'), DEATH_HOLD * 1000);
@@ -3821,6 +3804,20 @@ export function initTdTab(root) {
   const towerShots = [];          // { pos, dir, dist, mesh, dmg, splash, homing }
   const beams = [];               // { mesh, ttl } laser + slow-tether fx
   let eco = makeEconomy();
+  // Points are not credits: the scoreboard triples tank kills and scales
+  // with how swarmed the field was. Best survives across runs (localStorage);
+  // it updates LIVE when beaten, so a crash can't eat a record.
+  const BEST_KEY = 'td-best-score-v1';
+  let score = makeScore((() => {
+    try { return +(localStorage.getItem(BEST_KEY) || 0) || 0; } catch { return 0; }
+  })());
+  function persistBest() {
+    try { localStorage.setItem(BEST_KEY, String(score.best)); } catch { /* private mode */ }
+  }
+  function scoreKill(bounty, opts) {
+    score.addKill(bounty, opts);
+    persistBest();
+  }
 
   // HT rule: towers build on the HIGH GROUND only — real wall cells (in
   // the un-sealed world) that border the open sector. Low ground belongs
@@ -4886,6 +4883,7 @@ export function initTdTab(root) {
         waveAge += dt;
         if (enemies.every((e) => !e.alive)) {
           waveActive = false; interClock = 0; waveCharge = 0;
+          score.addWave(wave); persistBest();
           showToast(`<div class="wave-num">WAVE ${wave} CLEARED</div>` +
             `<div class="wave-role">brace — the next wave is coming</div>`, 2200);
         } else if (waveAge >= params.waveCap && spawnPoints.some((s) => s.alive)) {
@@ -5324,7 +5322,7 @@ export function initTdTab(root) {
         map: '#tab-td .minimap', tut: '#td-tut', throttle: '#td-throttle',
         steerL: '#td-pad-left', steerR: '#td-pad-right',
         fire: '#td-pad-fire', laser: '#td-pad-laser',
-        launch: '#td-launch',
+        launch: '#td-launch', next: '#td-next',
       };
       const box = {};
       for (const [k, sel] of Object.entries(want)) {

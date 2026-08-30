@@ -3,7 +3,8 @@
 Stålberg organic quad grid on a sphere, grown into a proto-game.
 Five 3D tabs (grid / maze / organic / battle / heart) + an in-app docs tab.
 Public: https://kai-denrei.github.io/spherical-stalberg-grid/ (Pages,
-`max-age=600` CDN lag; the corner badge shows the served build token).
+`max-age=600` CDN lag; the DEV LOG tab header shows the served build
+token — the corner badge was retired from the game view).
 
 ## Orient first
 

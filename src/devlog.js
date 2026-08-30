@@ -122,28 +122,10 @@ async function show() {
   }
 }
 
+// The corner badge is GONE from the game view (operator ruling — the build
+// token belongs to the dev log, not the play screen). This keeps only the
+// deep link; the log tab reads meta[name="cb"] for the token itself.
 export function wireDevlogBadge() {
-  const hook = () => {
-    const badge = document.getElementById('cb-badge');
-    if (!badge) return false;
-    badge.title = 'dev log';
-    // capture + stop: the badge's own copy-token click stays dormant
-    badge.addEventListener('click', (ev) => {
-      ev.stopPropagation();
-      ev.preventDefault();
-      openLogTab();
-    }, true);
-    return true;
-  };
-  // cb-badge.js is a deferred classic script, so it has usually run before
-  // this module — but don't depend on it
-  if (!hook()) {
-    let tries = 0;
-    const timer = setInterval(() => {
-      if (hook() || ++tries > 40) clearInterval(timer);
-    }, 250);
-  }
-
   // deep link (and headless-verification hook): ?devlog=1 opens it on load
   if (new URLSearchParams(location.search).get('devlog')) openLogTab();
 }
