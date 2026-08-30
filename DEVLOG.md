@@ -6,6 +6,54 @@ Demo links assume `npm run serve` (port 8144) or the
 
 ---
 
+## `34e3253` — Every shot has a name, and the gate finally has a throat
+
+**Fire identity.** Each tower's shot now *reads* at a glance: the sniper is
+a hitscan railgun — a white core beam inside a lingering tint, warn rings at
+muzzle and impact; the homing missile chases (steer `k = min(1, 6·dt)`
+toward the live target — the HokorobiTawaa feel, a missile that *commits*);
+the mortar marks its landing cell the moment it fires, swells as it drops,
+and lands with weight. All non-splash hits pop pooled sparks; tracers draw
+through a shared round-dot texture (a bare `PointsMaterial` renders squares).
+
+**Keymap.** `1/2/3` = O1/T1/T3 · `M`,`O` = map · `C` = missile cheat ·
+`T` = T3 · `Q/E` = throttle ± with a detent · `U` = upgrade (W drives).
+
+**The empty portal centre — root-caused at last.** Two independent faults,
+which is *why* it survived several passes; fixing either alone changed
+nothing visible:
+
+1. **A gallery artifact ported as design.** The braille-lab horizon applies
+   `rotY(t·0.45)` because the *lab gallery* rotates every card by exactly
+   that — the disc counter-spins to stay inside the ring, and the lab's
+   comment says so. Our ring never rotates, so the same rotY spun the disc
+   edge-on inside a face-on ring: an invisible line, most of the time.
+2. **A brightness array indexed from the wrong base.** `stargateHorizon`
+   wrote `bri[k]` with `k` starting at `i0`. The lab passes `i0=0`; the
+   game passes `i0=435` (ring first, horizon after, one buffer) with a
+   174-long shimmer array — every write landed out of bounds, Float32Array
+   dropped them **silently**, and the first idle tick multiplied every
+   centre dot to `(0,0,0)`. The constructor's colors were correct for
+   exactly one frame.
+
+The forensic lesson: three geometry probes passed while the player saw an
+empty ring, because they measured *positions* — and a rotY about the
+vertical doesn't shrink the y-extent, and a black dot has a perfectly good
+position. The probe that caught it dumped the **color attribute** and
+projected dots through the **live camera** (`?gateprobe=1` keeps both).
+Verified the honest way too: parked the strike fall-cam over a forced gate
+and looked — empty before, filled after.
+
+The horizon now churns in place — alternating per-ring drift, travelling
+shimmer, z-breathe — and is densified 105 → 174 dots (the lab card draws
+fat gallery dots on a small canvas; at game scale 105 read as sparse).
+`test/stargate.mjs` pins both faults through the *game's* calling
+convention (`i0 = ring length`), not the lab's: no dark dots, disc stays in
+the ring plane, radii span the throat, and the centre must move between
+ticks.
+
+---
+
 ## `0e0d7ac` — The platform has to come back
 
 Two stacked missiles could fire back-to-back: the ready cap rationed how many

@@ -19,29 +19,29 @@
 
 import * as THREE from '../vendor/three.module.js';
 import GUI from '../vendor/lil-gui.esm.js';
-import { generateSphereMesh, relax } from './grid.js?v=a70df5e4';
-import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=a70df5e4';
-import { mulberry32, randomSeed } from './rng.js?v=a70df5e4';
-import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3, segKey } from './vec3.js?v=a70df5e4';
-import { CREATURES, waveJelly } from './creatures.js?v=a70df5e4';
-import { UNITS, UNIT_NAMES, buildUnit, buildCreature, preloadMkcx, makeBulletCloud, makeRewardSolid, makeShellSolid, makeDebris, makeDotBurst, makePortalCloud, makeHeartCloud, makeDotEnemy } from './units.js?v=a70df5e4';
-import { LOOKS, LOOK_NAMES } from './looks.js?v=a70df5e4';
-import { makeCellIndex } from './cellindex.js?v=a70df5e4';
-import { CREATURE_TINTS, ENEMY_SPEC, INTROS, computeWavePlan } from './enemyspec.js?v=a70df5e4';
-import { PICKUPS } from './pickups.js?v=a70df5e4';
-import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER } from './towers.js?v=a70df5e4';
-import { makeEconomy, sellRefund } from './economy.js?v=a70df5e4';
-import { makeBloom } from './postfx.js?v=a70df5e4';
-import { TANK_FEEL, TANK_FEEL_KNOBS, makeTankFeel, stepTankFeel, landTankFeel, fireTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js?v=a70df5e4';
-import { FEEL, loadFeel, saveFeel } from './feelstore.js?v=a70df5e4';
+import { generateSphereMesh, relax } from './grid.js?v=e19752aa';
+import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=e19752aa';
+import { mulberry32, randomSeed } from './rng.js?v=e19752aa';
+import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3, segKey } from './vec3.js?v=e19752aa';
+import { CREATURES, waveJelly } from './creatures.js?v=e19752aa';
+import { UNITS, UNIT_NAMES, buildUnit, buildCreature, preloadMkcx, makeBulletCloud, makeRewardSolid, makeShellSolid, makeDebris, makeDotBurst, makePortalCloud, makeHeartCloud, makeDotEnemy } from './units.js?v=e19752aa';
+import { LOOKS, LOOK_NAMES } from './looks.js?v=e19752aa';
+import { makeCellIndex } from './cellindex.js?v=e19752aa';
+import { CREATURE_TINTS, ENEMY_SPEC, INTROS, computeWavePlan } from './enemyspec.js?v=e19752aa';
+import { PICKUPS } from './pickups.js?v=e19752aa';
+import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER } from './towers.js?v=e19752aa';
+import { makeEconomy, sellRefund } from './economy.js?v=e19752aa';
+import { makeBloom } from './postfx.js?v=e19752aa';
+import { TANK_FEEL, TANK_FEEL_KNOBS, makeTankFeel, stepTankFeel, landTankFeel, fireTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js?v=e19752aa';
+import { FEEL, loadFeel, saveFeel } from './feelstore.js?v=e19752aa';
 import { STRIKE_KNOBS, makeStrike, makeStrikeParams, grantStrikes, stepStrike,
   toggleArm, paintTarget, launchStrike, stepFall, skipFall, fallProgress,
-  strikeDamage, retargetStrike, orbitProgress } from './strike.js?v=a70df5e4';
-import { radarBasis, radarProject, radarBearing, sweepAngle, radarPhosphor } from './radar.js?v=a70df5e4';
-import { BLOOM_GROUPS } from './bloomweights.js?v=a70df5e4';
-import { TOWER_LOOK_NAMES, DEFAULT_TOWER_LOOK, buildTowerLook, preloadLook } from './towerlooks.js?v=a70df5e4';
-import { makeAudio } from './audio.js?v=a70df5e4';
-import { DEATH_KEYS } from './audiomanifest.js?v=a70df5e4';
+  strikeDamage, retargetStrike, orbitProgress } from './strike.js?v=e19752aa';
+import { radarBasis, radarProject, radarBearing, sweepAngle, radarPhosphor } from './radar.js?v=e19752aa';
+import { BLOOM_GROUPS } from './bloomweights.js?v=e19752aa';
+import { TOWER_LOOK_NAMES, DEFAULT_TOWER_LOOK, buildTowerLook, preloadLook } from './towerlooks.js?v=e19752aa';
+import { makeAudio } from './audio.js?v=e19752aa';
+import { DEATH_KEYS } from './audiomanifest.js?v=e19752aa';
 
 export function initTdTab(root) {
   let active = false;
