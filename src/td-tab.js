@@ -19,31 +19,31 @@
 
 import * as THREE from '../vendor/three.module.js';
 import GUI from '../vendor/lil-gui.esm.js';
-import { generateSphereMesh, relax } from './grid.js?v=2560e8d0';
-import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=2560e8d0';
-import { mulberry32, randomSeed } from './rng.js?v=2560e8d0';
-import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3, segKey } from './vec3.js?v=2560e8d0';
-import { CREATURES, waveJelly } from './creatures.js?v=2560e8d0';
-import { UNITS, UNIT_NAMES, buildUnit, buildCreature, preloadMkcx, preloadServer, makeServerFixture, makeBulletCloud, makeRewardSolid, makeShellSolid, makeDebris, makeDotBurst, makePortalCloud, makeHeartCloud, makeDotEnemy } from './units.js?v=2560e8d0';
-import { LOOKS, LOOK_NAMES } from './looks.js?v=2560e8d0';
-import { makeCellIndex } from './cellindex.js?v=2560e8d0';
-import { CREATURE_TINTS, ENEMY_SPEC, INTROS, computeWavePlan } from './enemyspec.js?v=2560e8d0';
-import { PICKUPS } from './pickups.js?v=2560e8d0';
-import { rankFor, rankLabel, badgeSVG, killReq, eliteReq } from './ranks.js?v=2560e8d0';
-import { makeScore } from './score.js?v=2560e8d0';
-import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER } from './towers.js?v=2560e8d0';
-import { makeEconomy, sellRefund } from './economy.js?v=2560e8d0';
-import { makeBloom } from './postfx.js?v=2560e8d0';
-import { TANK_FEEL, TANK_FEEL_KNOBS, makeTankFeel, stepTankFeel, landTankFeel, fireTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js?v=2560e8d0';
-import { FEEL, loadFeel, saveFeel } from './feelstore.js?v=2560e8d0';
+import { generateSphereMesh, relax } from './grid.js?v=c6d90e0f';
+import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=c6d90e0f';
+import { mulberry32, randomSeed } from './rng.js?v=c6d90e0f';
+import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3, segKey } from './vec3.js?v=c6d90e0f';
+import { CREATURES, waveJelly } from './creatures.js?v=c6d90e0f';
+import { UNITS, UNIT_NAMES, buildUnit, buildCreature, preloadMkcx, preloadServer, makeServerFixture, makeBulletCloud, makeRewardSolid, makeShellSolid, makeDebris, makeDotBurst, makePortalCloud, makeHeartCloud, makeDotEnemy } from './units.js?v=c6d90e0f';
+import { LOOKS, LOOK_NAMES } from './looks.js?v=c6d90e0f';
+import { makeCellIndex } from './cellindex.js?v=c6d90e0f';
+import { CREATURE_TINTS, ENEMY_SPEC, INTROS, computeWavePlan } from './enemyspec.js?v=c6d90e0f';
+import { PICKUPS } from './pickups.js?v=c6d90e0f';
+import { rankFor, rankLabel, badgeSVG, killReq, eliteReq } from './ranks.js?v=c6d90e0f';
+import { makeScore } from './score.js?v=c6d90e0f';
+import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER } from './towers.js?v=c6d90e0f';
+import { makeEconomy, sellRefund } from './economy.js?v=c6d90e0f';
+import { makeBloom } from './postfx.js?v=c6d90e0f';
+import { TANK_FEEL, TANK_FEEL_KNOBS, makeTankFeel, stepTankFeel, landTankFeel, fireTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js?v=c6d90e0f';
+import { FEEL, loadFeel, saveFeel } from './feelstore.js?v=c6d90e0f';
 import { STRIKE_KNOBS, makeStrike, makeStrikeParams, grantStrikes, stepStrike,
   toggleArm, paintTarget, launchStrike, stepFall, skipFall, fallProgress,
-  strikeDamage, retargetStrike, orbitProgress } from './strike.js?v=2560e8d0';
-import { radarBasis, radarProject, radarBearing, sweepAngle, radarPhosphor } from './radar.js?v=2560e8d0';
-import { BLOOM_GROUPS } from './bloomweights.js?v=2560e8d0';
-import { TOWER_LOOK_NAMES, DEFAULT_TOWER_LOOK, buildTowerLook, preloadLook } from './towerlooks.js?v=2560e8d0';
-import { makeAudio } from './audio.js?v=2560e8d0';
-import { DEATH_KEYS } from './audiomanifest.js?v=2560e8d0';
+  strikeDamage, retargetStrike, orbitProgress } from './strike.js?v=c6d90e0f';
+import { radarBasis, radarProject, radarBearing, sweepAngle, radarPhosphor } from './radar.js?v=c6d90e0f';
+import { BLOOM_GROUPS } from './bloomweights.js?v=c6d90e0f';
+import { TOWER_LOOK_NAMES, DEFAULT_TOWER_LOOK, buildTowerLook, preloadLook } from './towerlooks.js?v=c6d90e0f';
+import { makeAudio } from './audio.js?v=c6d90e0f';
+import { DEATH_KEYS } from './audiomanifest.js?v=c6d90e0f';
 
 export function initTdTab(root) {
   let active = false;
@@ -438,6 +438,22 @@ export function initTdTab(root) {
     for (let i = 0; i < dungeon.tags.length; i++) {
       dungeon.tags[i] = (tdFullTags[i] !== BLOCKED && tdSectorId[i] <= round)
         ? tdFullTags[i] : BLOCKED;
+    }
+    // THE SERVER'S GROUND. Its own lane can belong to a LATER band than
+    // its neighbours' — the relay then perched on a sealed wall next to
+    // open lanes, unreachable by tread (operator field report). Ruling:
+    // the relay stands on EMPTY ground. Its cell and full-world-open ring
+    // reveal with the first neighbouring band; the reachability seal
+    // below still governs, so a truly frontier-locked relay stays sealed.
+    if (serverCi >= 0 && tdFullTags[serverCi] !== BLOCKED) {
+      const ring = [serverCi, ...graph.adj[serverCi]];
+      const nearOpen = ring.some((ci) => graph.adj[ci].some((nb) =>
+        tdFullTags[nb] !== BLOCKED && tdSectorId[nb] <= round));
+      if (nearOpen) {
+        for (const ci of ring) {
+          if (tdFullTags[ci] !== BLOCKED) dungeon.tags[ci] = tdFullTags[ci];
+        }
+      }
     }
     let d = bfsDist(graph.adj, [dungeon.heart],
       (i) => dungeon.tags[i] !== BLOCKED);
@@ -1009,21 +1025,8 @@ export function initTdTab(root) {
     // the server sits at the cell whose centre is FARTHEST round the
     // sphere from the heart — the literal antipode, found by minimum dot
     {
-      // The server stands where the FULL world's lanes come nearest the
-      // true antipode (measured: dot -0.987 — the carve genuinely reaches
-      // the pole). Round 1 keeps that band SEALED, so early on the relay
-      // is a landmark mounted on the high ground; pushing the rounds
-      // reveals its lane and makes it reachable. Two earlier cuts were
-      // both wrong: the pure minimum-dot cell was solid rock (the server
-      // spawned INSIDE a wall — operator report), and the current-round
-      // walkable minimum sat at dot 0.46, nowhere near a pole.
-      const hc = norm3(graph.centers[dungeon.heart]);
-      let best = Infinity; serverCi = -1;
-      for (let i = 0; i < graph.centers.length; i++) {
-        if (tdFullTags[i] === BLOCKED || tdFullDist[i] < 0) continue;
-        const d = dot3(norm3(graph.centers[i]), hc);
-        if (d < best) { best = d; serverCi = i; }
-      }
+      // serverCi was chosen at world build (applySector needs it);
+      // this block only casts and seats the model
       const gen = ++serverGen;
       preloadServer().then(() => {
         if (gen !== serverGen || serverCi < 0) return; // board changed meanwhile
@@ -3168,6 +3171,18 @@ export function initTdTab(root) {
     tdMaxD = 0;
     for (let i = 0; i < dungeon.tags.length; i++) {
       if (tdFullTags[i] !== BLOCKED) tdMaxD = Math.max(tdMaxD, tdFullDist[i]);
+    }
+    // THE SERVER'S CELL, chosen here because applySector needs it on every
+    // round assembly: the full world's lane cell nearest the true antipode
+    // (measured dot -0.987 — the carve genuinely reaches the pole).
+    {
+      const hc = norm3(graph.centers[dungeon.heart]);
+      let best = Infinity; serverCi = -1;
+      for (let i = 0; i < graph.centers.length; i++) {
+        if (tdFullTags[i] === BLOCKED || tdFullDist[i] < 0) continue;
+        const d = dot3(norm3(graph.centers[i]), hc);
+        if (d < best) { best = d; serverCi = i; }
+      }
     }
     // carve the sector map. Raw azimuth wedges fail on a lane world
     // (corridors cross wedge borders and re-seal as unreachable), and
@@ -6037,7 +6052,8 @@ export function initTdTab(root) {
     for (let i = 0; i < tdFullTags.length; i++) {
       if (tdFullTags[i] !== BLOCKED) fullMin = Math.min(fullMin, dot3(norm3(graph.centers[i]), hc2));
     }
-    console.log(`SERVER ci=${serverCi} dot=${anti} fullCarveMinDot=${fullMin.toFixed(3)}`);
+    console.log(`SERVER ci=${serverCi} dot=${anti} fullCarveMinDot=${fullMin.toFixed(3)}`
+      + ` ground=${serverCi >= 0 && dungeon.tags[serverCi] !== BLOCKED ? 'OPEN' : 'sealed'}`);
     serverFound = true; syncHackBtn();
     // the model loads async — report again once it should be in the scene
     setTimeout(() => console.log(`SERVER2 placed=${!!serverObj}`
