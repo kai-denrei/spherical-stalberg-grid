@@ -6,6 +6,39 @@ Demo links assume `npm run serve` (port 8144) or the
 
 ---
 
+## `03f1d1a` — Points are not credits, and the top of the screen earns its keep
+
+**The scoreboard** (`src/score.js`, pure + tested). Credits buy towers; the
+score is the bragging number, and it leans the other way on purpose: tank
+kills score **×3** (the economy already pays them ×2 — the leaderboard
+belongs to whoever fights hands-on), rams keep their premium, and every
+kill scales with how swarmed the field was when it landed (+4% per live
+enemy, capped ×2 — pressure is the skill being measured). Wave clears pay
+`100 + 25w`. BEST persists in localStorage and updates **live** when
+beaten, so a crash can't eat a record; the lose modal reports the final
+score and calls out a NEW BEST.
+
+**Four layout rulings in the same pass:**
+
+- The rank sprite over the hull is gone — in third person it hung directly
+  in front of the camera, blocking exactly what the player steers toward.
+  The insignia (22 px) now rides the HUD's new headline: `SCORE · BEST ·
+  [badge] RANK`.
+- The launch console is promoted to the top — centred under the mode row
+  on desktop, third slot of the left column on phones. A stale mobile
+  `bottom:` pin fought the new `top:` and stretched the console 500 px
+  tall; the `?layout` rectangle probe caught it (headless lays out wide
+  and crops, so rectangles are the only trustworthy phone check).
+- The mobile NEXT WAVE chip sat at `top: 8px` centred — written straight
+  over the mode row on a 390 px screen. The top now stacks as a left
+  column (stats → NEXT WAVE → console) with the radar keeping the right;
+  the probe tracks `#td-next` now and reports zero overlaps.
+- The corner build badge is retired from the game view. The DEV LOG tab
+  header shows the served token (it reads `meta[name="cb"]` itself);
+  `?devlog=1` deep-linking survives.
+
+---
+
 ## `f9614fa` — Insignia the hull has to live to wear
 
 The operator's 15-rank sheet, in-game. `src/ranks.js` is pure and
