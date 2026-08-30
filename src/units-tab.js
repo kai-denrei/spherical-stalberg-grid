@@ -12,20 +12,36 @@
 import * as THREE from '../vendor/three.module.js';
 import { OrbitControls } from '../vendor/OrbitControls.js';
 import { buildUnit, preloadMkcx, makeDebris, makeDotBurst, makeBulletCloud,
-  makeDotEnemy, makeRewardSolid, makeShellSolid } from './units.js?v=2b26de02';
+  makeDotEnemy, makeRewardSolid, makeShellSolid } from './units.js?v=18832054';
 import { TANK_FEEL, TANK_FEEL_KNOBS, formatFeelCode, makeTankFeel, stepTankFeel,
-  landTankFeel, fireTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js?v=2b26de02';
+  landTankFeel, fireTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js?v=18832054';
 import { FEEL, loadFeel, saveFeel, resetFeel,
-  TOWER, HEADS, loadTower, saveTower, resetTower } from './feelstore.js?v=2b26de02';
+  TOWER, HEADS, loadTower, saveTower, resetTower } from './feelstore.js?v=18832054';
 import { TOWER_FEEL_KNOBS, formatTowerFeel, clampTowerParams,
-  formatTowerHeads, HEAD_CHOICES, HEAD_AS_SHIPPED } from './towerfeel.js?v=2b26de02';
-import { CREATURE_TINTS } from './enemyspec.js?v=2b26de02';
+  formatTowerHeads, HEAD_CHOICES, HEAD_AS_SHIPPED } from './towerfeel.js?v=18832054';
+import { CREATURE_TINTS } from './enemyspec.js?v=18832054';
 import { buildTowerLook, TOWER_LOOK_NAMES, DEFAULT_TOWER_LOOK, preloadLook } from './towerlooks.js';
 import { TOWER_BY_KEY, TOWERS } from './towers.js';
 import { LOOKS } from './looks.js';
 import { makeBloom } from './postfx.js';
-import { makeAudio } from './audio.js?v=2b26de02';
+import { makeAudio } from './audio.js?v=18832054';
 import { GROUPS, GROUP_LABELS, GROUP_EMPTY, entriesIn } from './unitcatalog.js';
+
+let roundTex = null;
+function roundDotTex() {
+  if (roundTex) return roundTex;
+  const c = document.createElement('canvas');
+  c.width = c.height = 32;
+  const g = c.getContext('2d');
+  const grad = g.createRadialGradient(16, 16, 0, 16, 16, 16);
+  grad.addColorStop(0, 'rgba(255,255,255,1)');
+  grad.addColorStop(0.55, 'rgba(255,255,255,0.9)');
+  grad.addColorStop(1, 'rgba(255,255,255,0)');
+  g.fillStyle = grad;
+  g.fillRect(0, 0, 32, 32);
+  roundTex = new THREE.CanvasTexture(c);
+  return roundTex;
+}
 
 export function initUnitsTab(root) {
   let active = false;
@@ -222,9 +238,9 @@ export function initUnitsTab(root) {
     if (e.kind === 'tower') return buildTowerLook(state.towerLook, TOWER_BY_KEY[e.id]);
     if (e.kind === 'enemy') {
       const hex = CREATURE_TINTS[e.id];
-      // ONE unit on screen: build it at 4x the game's dot density —
+      // ONE unit on screen: build it at 6x the game's dot density —
       // the catalogue can afford the generosity the battlefield cannot
-      return makeDotEnemy(e.id, { walker: hex ?? cols.walker, walkerHi: 0xffffff }, 4);
+      return makeDotEnemy(e.id, { walker: hex ?? cols.walker, walkerHi: 0xffffff }, 6);
     }
     if (e.kind === 'pickup') {
       const p = e.pickup;
@@ -259,6 +275,22 @@ export function initUnitsTab(root) {
     currentEntry = e;
     if (tunerApi) tunerApi.setSubject(e.kind === 'tower' ? 'tower' : 'tank');
     current = buildEntry(e);
+    // the frame() fit blows a unit up to fullscreen while its dots stay
+    // battlefield-sized 2px specks — sparse fog (operator report). The
+    // catalogue fattens every dot to match its magnification.
+    current.traverse((o) => {
+      if (o.isPoints && o.material && o.material.sizeAttenuation === false
+        && !o.userData.dotFat) {
+        o.userData.dotFat = true;
+        o.material.size *= 2.2;
+        // a Points vertex is a SQUARE unless given a map, and at 4.6px the
+        // corners read — the same lesson the mortar shell taught the game
+        o.material.map = roundDotTex();
+        o.material.alphaTest = 0.3;
+        o.material.transparent = true;
+        o.material.needsUpdate = true;
+      }
+    });
     // units carry their own normalization; undo it so everything arrives at
     // a comparable size and the framing maths does the rest
     current.scale.setScalar(1 / (current.userData.baseScale || 1));
