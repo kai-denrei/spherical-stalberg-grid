@@ -19,31 +19,31 @@
 
 import * as THREE from '../vendor/three.module.js';
 import GUI from '../vendor/lil-gui.esm.js';
-import { generateSphereMesh, relax } from './grid.js?v=c25d4f48';
-import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=c25d4f48';
-import { mulberry32, randomSeed } from './rng.js?v=c25d4f48';
-import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3, segKey } from './vec3.js?v=c25d4f48';
-import { CREATURES, waveJelly } from './creatures.js?v=c25d4f48';
-import { UNITS, UNIT_NAMES, buildUnit, buildCreature, preloadMkcx, makeBulletCloud, makeRewardSolid, makeShellSolid, makeDebris, makeDotBurst, makePortalCloud, makeHeartCloud, makeDotEnemy } from './units.js?v=c25d4f48';
-import { LOOKS, LOOK_NAMES } from './looks.js?v=c25d4f48';
-import { makeCellIndex } from './cellindex.js?v=c25d4f48';
-import { CREATURE_TINTS, ENEMY_SPEC, INTROS, computeWavePlan } from './enemyspec.js?v=c25d4f48';
-import { PICKUPS } from './pickups.js?v=c25d4f48';
-import { rankFor, rankLabel, badgeSVG, killReq, eliteReq } from './ranks.js?v=c25d4f48';
-import { makeScore } from './score.js?v=c25d4f48';
-import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER } from './towers.js?v=c25d4f48';
-import { makeEconomy, sellRefund } from './economy.js?v=c25d4f48';
-import { makeBloom } from './postfx.js?v=c25d4f48';
-import { TANK_FEEL, TANK_FEEL_KNOBS, makeTankFeel, stepTankFeel, landTankFeel, fireTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js?v=c25d4f48';
-import { FEEL, loadFeel, saveFeel } from './feelstore.js?v=c25d4f48';
+import { generateSphereMesh, relax } from './grid.js?v=1c834a26';
+import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=1c834a26';
+import { mulberry32, randomSeed } from './rng.js?v=1c834a26';
+import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3, segKey } from './vec3.js?v=1c834a26';
+import { CREATURES, waveJelly } from './creatures.js?v=1c834a26';
+import { UNITS, UNIT_NAMES, buildUnit, buildCreature, preloadMkcx, makeBulletCloud, makeRewardSolid, makeShellSolid, makeDebris, makeDotBurst, makePortalCloud, makeHeartCloud, makeDotEnemy } from './units.js?v=1c834a26';
+import { LOOKS, LOOK_NAMES } from './looks.js?v=1c834a26';
+import { makeCellIndex } from './cellindex.js?v=1c834a26';
+import { CREATURE_TINTS, ENEMY_SPEC, INTROS, computeWavePlan } from './enemyspec.js?v=1c834a26';
+import { PICKUPS } from './pickups.js?v=1c834a26';
+import { rankFor, rankLabel, badgeSVG, killReq, eliteReq } from './ranks.js?v=1c834a26';
+import { makeScore } from './score.js?v=1c834a26';
+import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER } from './towers.js?v=1c834a26';
+import { makeEconomy, sellRefund } from './economy.js?v=1c834a26';
+import { makeBloom } from './postfx.js?v=1c834a26';
+import { TANK_FEEL, TANK_FEEL_KNOBS, makeTankFeel, stepTankFeel, landTankFeel, fireTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js?v=1c834a26';
+import { FEEL, loadFeel, saveFeel } from './feelstore.js?v=1c834a26';
 import { STRIKE_KNOBS, makeStrike, makeStrikeParams, grantStrikes, stepStrike,
   toggleArm, paintTarget, launchStrike, stepFall, skipFall, fallProgress,
-  strikeDamage, retargetStrike, orbitProgress } from './strike.js?v=c25d4f48';
-import { radarBasis, radarProject, radarBearing, sweepAngle, radarPhosphor } from './radar.js?v=c25d4f48';
-import { BLOOM_GROUPS } from './bloomweights.js?v=c25d4f48';
-import { TOWER_LOOK_NAMES, DEFAULT_TOWER_LOOK, buildTowerLook, preloadLook } from './towerlooks.js?v=c25d4f48';
-import { makeAudio } from './audio.js?v=c25d4f48';
-import { DEATH_KEYS } from './audiomanifest.js?v=c25d4f48';
+  strikeDamage, retargetStrike, orbitProgress } from './strike.js?v=1c834a26';
+import { radarBasis, radarProject, radarBearing, sweepAngle, radarPhosphor } from './radar.js?v=1c834a26';
+import { BLOOM_GROUPS } from './bloomweights.js?v=1c834a26';
+import { TOWER_LOOK_NAMES, DEFAULT_TOWER_LOOK, buildTowerLook, preloadLook } from './towerlooks.js?v=1c834a26';
+import { makeAudio } from './audio.js?v=1c834a26';
+import { DEATH_KEYS } from './audiomanifest.js?v=1c834a26';
 
 export function initTdTab(root) {
   let active = false;

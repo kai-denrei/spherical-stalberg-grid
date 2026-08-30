@@ -6,6 +6,27 @@ Demo links assume `npm run serve` (port 8144) or the
 
 ---
 
+## `69a4c6c` — Heat that glows, callouts that switch tongues
+
+The secondary tubes clicked but never changed color on the mkcx model.
+The root cause was worth the note: `mergeByMaterial` can hand the gun
+meshes a material instance **shared with other hull parts** — heating the
+shared instance tinted half the deck by an invisible hair — and a color
+multiply on a dark textured PBR gun barely shows regardless. The guns now
+carry a private clone of their material (shared between the pair only,
+stashed as `userData.gunHeatMat`), and the tab drives its **emissive**
+channel with heat — faint cyan to `0xff2200`, intensity 0.3 → 2.0 — which
+is what the bloom chain amplifies into an actual glow. `?laser=1` now
+reports where the heat lands (`GUNHEAT mat/col/emi/int`), because a color
+no one can see is exactly the bug a probe must catch — position-only
+lessons apply to materials too.
+
+Also: the reckless callouts alternate languages — すげ〜！ ヤバイ！
+接近だ！ 接近過ぎ！ interleaved with the English in the deterministic
+rotation.
+
+---
+
 ## `e34b4d4` — The HUD is an instrument panel now
 
 Preceded by `fe71108` (three tweaks): every autopilot directive except RAM
