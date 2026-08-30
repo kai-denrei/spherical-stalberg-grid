@@ -1860,27 +1860,161 @@ body.playing:not(.chrome-open) #tabbar { display: none !important; }
   }
 }
 
-/* --- orbital strike button: one control, three states ---------------------
-   safe (count shown) -> armed (amber, pulsing) -> locked (solid: LAUNCH).
-   The refusal flicker is DeepWatch's flickerOrdnance: the button says no. */
-#td-pad-arm.idle { opacity: 0.35; }
-#td-pad-arm.armed {
-  color: #ffb347;
-  border-color: rgba(255, 179, 71, 0.75);
-  animation: tutorial-pulse 1.1s ease-in-out infinite;
+/* --- LAUNCH CONTROL — DeepWatch's console, ported whole -------------------
+   The hazard border, the metal safety toggle (its two PNG sprites came with
+   it), and the chunky launch button that runs grey -> orange (needs a
+   target) -> red (authorised). The ritual is unchanged underneath: this is
+   the same arm/paint/launch state machine wearing the instrument it
+   deserved. Source: ~/Documents/Dev/centroid-defense. */
+#td-launch {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  bottom: max(12px, env(safe-area-inset-bottom));
+  z-index: 7;
+  width: 296px;
+  font: 12px/1.4 ui-monospace, SFMono-Regular, Menlo, monospace;
 }
-#td-pad-arm.locked {
-  color: #081018;
-  background: #ffb347;
-  border-color: #ffb347;
+.caution-frame {
+  border: 4px solid transparent;
+  border-image: repeating-linear-gradient(45deg, #ffc548 0 10px, #1a1a1a 10px 20px) 4;
+  background: rgba(6, 10, 8, 0.88);
+  padding: 6px 10px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 78px;
+}
+.safety {
+  background: transparent;
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  font: inherit;
+  color: #3a8c3a;
+  width: 36px;
+}
+.safety .switch-img {
+  width: 28px;
+  height: 46px;
+  object-fit: contain;
+  pointer-events: none;
+  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.6));
+}
+.safety .lbl-on, .safety .lbl-off {
+  font-size: 9px;
+  letter-spacing: 0.18em;
+  color: #274427;
+  transition: color 180ms, text-shadow 180ms;
+  line-height: 1;
+}
+.safety[aria-pressed="true"] .lbl-on { color: #ff3322; text-shadow: 0 0 6px rgba(255, 51, 34, 0.6); }
+.safety[aria-pressed="false"] .lbl-off { color: #3a8c3a; text-shadow: 0 0 4px rgba(58, 140, 58, 0.4); }
+.safety.locked { cursor: not-allowed; opacity: 0.45; }
+#td-launch-readout {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 3px;
+  text-align: center;
+  overflow: hidden;
+}
+#td-launch-readout .status {
+  color: #3a8c3a;
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+#td-launch-readout .status.charging { color: #a06a22; }
+#td-launch-readout .status.ready { color: #ffaa44; text-shadow: 0 0 6px rgba(255, 170, 68, 0.4); }
+#td-launch-readout .status.armed { color: #ff3322; text-shadow: 0 0 6px rgba(255, 51, 34, 0.6); }
+#td-launch-readout .target {
+  color: #274427;
+  font-size: 9px;
+  letter-spacing: 0.18em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+#td-launch-readout .target.set { color: #88ff88; text-shadow: 0 0 5px rgba(136, 255, 136, 0.5); }
+.launch-button {
+  width: 76px;
+  height: 58px;
+  border: 3px solid #444;
+  border-radius: 10px;
+  background: radial-gradient(circle at 35% 30%, #4a4a4a, #2a2a2a 70%, #1a1a1a);
+  color: #555;
+  font-family: inherit;
+  font-weight: 800;
+  cursor: not-allowed;
+  padding: 0;
+  box-shadow: inset 0 -3px 0 rgba(0, 0, 0, 0.5), inset 0 2px 0 rgba(255, 255, 255, 0.05);
+  transition: transform 80ms ease, box-shadow 200ms ease, background 200ms ease, color 200ms ease;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1px;
+  line-height: 1;
+}
+.launch-button .kanji {
+  font-size: 21px;
+  font-weight: 900;
+  font-family: 'Hiragino Mincho ProN', 'Yu Mincho', 'Noto Serif JP', serif;
+}
+.launch-button .latin { font-size: 8px; letter-spacing: 0.22em; margin-top: 1px; }
+.launch-button.target {
+  background: radial-gradient(circle at 35% 30%, #ffb255, #ff7a14 60%, #b04400);
+  color: #fff;
+  border-color: #c25a14;
+  cursor: pointer;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.55);
+  animation: targetPulse 1.4s ease-in-out infinite;
+}
+@keyframes targetPulse {
+  0%, 100% { box-shadow: 0 0 10px rgba(255, 130, 40, 0.55), inset 0 -3px 0 rgba(0, 0, 0, 0.45), inset 0 2px 0 rgba(255, 255, 255, 0.12); }
+  50% { box-shadow: 0 0 20px rgba(255, 130, 40, 0.95), inset 0 -3px 0 rgba(0, 0, 0, 0.45), inset 0 2px 0 rgba(255, 255, 255, 0.18); }
+}
+.launch-button.armed {
+  background: radial-gradient(circle at 35% 30%, #ff7766, #cc1010 60%, #660000);
+  color: #fff;
+  border-color: #8a1a1a;
+  cursor: pointer;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.7);
+  animation: launchPulse 0.8s ease-in-out infinite;
+}
+@keyframes launchPulse {
+  0%, 100% { box-shadow: 0 0 16px rgba(255, 51, 34, 0.55), inset 0 -3px 0 rgba(0, 0, 0, 0.45), inset 0 2px 0 rgba(255, 255, 255, 0.18); }
+  50% { box-shadow: 0 0 26px rgba(255, 51, 34, 0.95), inset 0 -3px 0 rgba(0, 0, 0, 0.45), inset 0 2px 0 rgba(255, 255, 255, 0.22); }
+}
+.launch-button.armed:active {
+  transform: translateY(2px);
   animation: none;
+  background: radial-gradient(circle at 35% 30%, #cc4433, #880000 60%, #330000);
 }
 @keyframes strike-refuse {
   0%, 100% { opacity: 1; }
   25%, 75% { opacity: 0.15; }
   50% { opacity: 1; }
 }
-#td-pad-arm.flicker { animation: strike-refuse 0.36s linear; }
+#td-launch.flicker { animation: strike-refuse 0.36s linear; }
+/* the feed owns the screen; the console stands aside with the rest */
+#tab-td.striking #td-launch { visibility: hidden; }
+@media (pointer: coarse), (max-width: 560px) {
+  #td-launch { width: 236px; bottom: max(10px, env(safe-area-inset-bottom)); }
+  .caution-frame { min-height: 66px; gap: 8px; padding: 5px 8px; }
+  .launch-button { width: 64px; height: 50px; }
+  .launch-button .kanji { font-size: 17px; }
+}
 
 /* --- orbital strike: the munition feed ------------------------------------
    The world goes black-and-white surveillance footage for the fall: a CSS

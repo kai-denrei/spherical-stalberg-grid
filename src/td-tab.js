@@ -19,29 +19,29 @@
 
 import * as THREE from '../vendor/three.module.js';
 import GUI from '../vendor/lil-gui.esm.js';
-import { generateSphereMesh, relax } from './grid.js?v=04fdbb5e';
-import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=04fdbb5e';
-import { mulberry32, randomSeed } from './rng.js?v=04fdbb5e';
-import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3, segKey } from './vec3.js?v=04fdbb5e';
-import { CREATURES, waveJelly } from './creatures.js?v=04fdbb5e';
-import { UNITS, UNIT_NAMES, buildUnit, buildCreature, preloadMkcx, makeBulletCloud, makeRewardSolid, makeShellSolid, makeDebris, makeDotBurst, makePortalCloud, makeHeartCloud, makeDotEnemy } from './units.js?v=04fdbb5e';
-import { LOOKS, LOOK_NAMES } from './looks.js?v=04fdbb5e';
-import { makeCellIndex } from './cellindex.js?v=04fdbb5e';
-import { CREATURE_TINTS, ENEMY_SPEC, INTROS, computeWavePlan } from './enemyspec.js?v=04fdbb5e';
-import { PICKUPS } from './pickups.js?v=04fdbb5e';
-import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER } from './towers.js?v=04fdbb5e';
-import { makeEconomy, sellRefund } from './economy.js?v=04fdbb5e';
-import { makeBloom } from './postfx.js?v=04fdbb5e';
-import { TANK_FEEL, TANK_FEEL_KNOBS, makeTankFeel, stepTankFeel, landTankFeel, fireTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js?v=04fdbb5e';
-import { FEEL, loadFeel, saveFeel } from './feelstore.js?v=04fdbb5e';
+import { generateSphereMesh, relax } from './grid.js?v=72a41ea3';
+import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=72a41ea3';
+import { mulberry32, randomSeed } from './rng.js?v=72a41ea3';
+import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3, segKey } from './vec3.js?v=72a41ea3';
+import { CREATURES, waveJelly } from './creatures.js?v=72a41ea3';
+import { UNITS, UNIT_NAMES, buildUnit, buildCreature, preloadMkcx, makeBulletCloud, makeRewardSolid, makeShellSolid, makeDebris, makeDotBurst, makePortalCloud, makeHeartCloud, makeDotEnemy } from './units.js?v=72a41ea3';
+import { LOOKS, LOOK_NAMES } from './looks.js?v=72a41ea3';
+import { makeCellIndex } from './cellindex.js?v=72a41ea3';
+import { CREATURE_TINTS, ENEMY_SPEC, INTROS, computeWavePlan } from './enemyspec.js?v=72a41ea3';
+import { PICKUPS } from './pickups.js?v=72a41ea3';
+import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER } from './towers.js?v=72a41ea3';
+import { makeEconomy, sellRefund } from './economy.js?v=72a41ea3';
+import { makeBloom } from './postfx.js?v=72a41ea3';
+import { TANK_FEEL, TANK_FEEL_KNOBS, makeTankFeel, stepTankFeel, landTankFeel, fireTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js?v=72a41ea3';
+import { FEEL, loadFeel, saveFeel } from './feelstore.js?v=72a41ea3';
 import { STRIKE_KNOBS, makeStrike, makeStrikeParams, grantStrikes, stepStrike,
   toggleArm, paintTarget, launchStrike, stepFall, skipFall, fallProgress,
-  strikeDamage, retargetStrike } from './strike.js?v=04fdbb5e';
-import { radarBasis, radarProject, radarBearing, sweepAngle, radarPhosphor } from './radar.js?v=04fdbb5e';
-import { BLOOM_GROUPS } from './bloomweights.js?v=04fdbb5e';
-import { TOWER_LOOK_NAMES, DEFAULT_TOWER_LOOK, buildTowerLook, preloadLook } from './towerlooks.js?v=04fdbb5e';
-import { makeAudio } from './audio.js?v=04fdbb5e';
-import { DEATH_KEYS } from './audiomanifest.js?v=04fdbb5e';
+  strikeDamage, retargetStrike } from './strike.js?v=72a41ea3';
+import { radarBasis, radarProject, radarBearing, sweepAngle, radarPhosphor } from './radar.js?v=72a41ea3';
+import { BLOOM_GROUPS } from './bloomweights.js?v=72a41ea3';
+import { TOWER_LOOK_NAMES, DEFAULT_TOWER_LOOK, buildTowerLook, preloadLook } from './towerlooks.js?v=72a41ea3';
+import { makeAudio } from './audio.js?v=72a41ea3';
+import { DEATH_KEYS } from './audiomanifest.js?v=72a41ea3';
 
 export function initTdTab(root) {
   let active = false;
@@ -1900,50 +1900,73 @@ export function initTdTab(root) {
   }, { passive: false });
   root.querySelector('#td-pad-fire').addEventListener('click', () => fire());
 
-  // --- the strike button: one control, three states ------------------------
-  // safe (dim) -> ARMED (pulsing) -> LOCKED (launch). One button because the
-  // ritual is linear; a separate launch control would let the eye skip a step.
-  const armBtn = root.querySelector('#td-pad-arm');
+  // --- LAUNCH CONTROL: DeepWatch's console, driving OUR state machine -------
+  // The safety toggle arms, the readout narrates, the chunky button goes
+  // grey -> orange (needs a target) -> red (authorised). Same ritual, real
+  // instrument. armBtn keeps its name: it gates syncArmUi in the loop.
+  const armBtn = root.querySelector('#td-launch');
+  const safetyEl = root.querySelector('#td-safety');
+  const safetyImg = root.querySelector('#td-safety-img');
+  const launchBtn = root.querySelector('#td-launch-btn');
+  const launchStatus = root.querySelector('#td-launch-status');
+  const launchTarget = root.querySelector('#td-launch-target');
+  const launchLatin = root.querySelector('#td-launch-latin');
   function refuseArm() {
-    // DeepWatch's flickerOrdnance: the button says no, briefly
+    // DeepWatch's flickerOrdnance: the console says no, briefly
     armBtn.classList.remove('flicker');
     void armBtn.offsetWidth;
     armBtn.classList.add('flicker');
   }
+  let armUiKey = '';
   function syncArmUi() {
-    const total = strike.ready + strike.reserved;
-    armBtn.classList.toggle('armed', strike.armed);
-    armBtn.classList.toggle('locked', strike.armed && strike.target >= 0);
-    armBtn.classList.toggle('idle', total === 0 && strike.falling <= 0);
-    armBtn.textContent = strike.armed
-      ? (strike.target >= 0 ? '☄ LAUNCH' : '☄ armed')
-      : `☄ ${strike.ready}`;
-    armBtn.title = strike.armed
-      ? (strike.target >= 0 ? 'launch at the painted cell' : 'tap the board to paint a target')
-      : `orbital strikes ready ${strike.ready} · reserved ${strike.reserved}`
-        + (strike.reserved > 0 ? ` · next in ${Math.ceil((1 - strike.gauge) * strikeTune.windowTime)}s` : '');
+    // narrate the state; write the DOM only when the state actually moves
+    const orbit = strike.reserved > 0 ? Math.round(strike.gauge * 100) : -1;
+    const key = `${strike.armed}|${strike.target}|${strike.ready}|${strike.reserved}|${orbit}`;
+    if (key === armUiKey) return;
+    armUiKey = key;
+    safetyEl.setAttribute('aria-pressed', String(strike.armed));
+    safetyImg.src = strike.armed ? 'assets/ui/switch-on.png' : 'assets/ui/switch-off.png';
+    safetyEl.classList.toggle('locked', !strike.armed && strike.ready <= 0);
+    let status, cls = 'status';
+    if (strike.armed && strike.target >= 0) { status = 'LAUNCH AUTHORIZED'; cls += ' armed'; }
+    else if (strike.armed) { status = 'AWAITING TARGET'; cls += ' armed'; }
+    else if (strike.ready > 0) {
+      status = strike.ready > 1 ? `READY ×${strike.ready} · FLIP ON` : 'READY · FLIP TO ON';
+      cls += ' ready';
+    } else if (strike.reserved > 0) { status = `ORBIT ${orbit}%`; cls += ' charging'; }
+    else status = 'STANDBY';
+    launchStatus.textContent = status;
+    launchStatus.className = cls;
+    const locked = strike.target >= 0;
+    launchTarget.textContent = locked ? `TGT CELL ${String(strike.target).padStart(4, '0')}` : 'NO TARGET';
+    launchTarget.className = locked ? 'target set' : 'target';
+    launchBtn.className = 'launch-button' + (strike.armed ? (locked ? ' armed' : ' target') : '');
+    launchLatin.textContent = strike.armed && !locked ? 'TARGET' : 'LAUNCH';
   }
-  armBtn.addEventListener('click', () => {
-    // locked -> this IS the launch control
+  safetyEl.addEventListener('click', () => {
+    const r = toggleArm(strike);
+    if (r === 'refused') { refuseArm(); return; }
+    sfx.play('tank_pickup');   // the click; DeepWatch calls it satisfying
+    if (r === 'safe') hideRangeRing();
+    armUiKey = ''; syncArmUi();
+    resize();   // armed promotes the minimap to a radar; safe demotes it
+  });
+  launchBtn.addEventListener('click', () => {
     if (strike.armed && strike.target >= 0) {
       const ci = launchStrike(strike, strikeTune);
       if (ci >= 0) {
-        strikeGrace = 0.25;   // the launching tap must not skip its own cam
+        strikeGrace = 0.25;   // the launching click must not skip its own cam
         hideRangeRing();
         sfx.play('tank_main');
         showToast('<div class="wave-num">MUNITION RELEASED</div>'
           + '<div class="wave-role">tap to skip to impact</div>', 1400);
       } else refuseArm();
-      syncArmUi();
+      armUiKey = ''; syncArmUi();
       resize();   // the radar stands down with the safety
       return;
     }
-    const r = toggleArm(strike);
-    if (r === 'refused') { refuseArm(); return; }
-    sfx.play('tank_pickup');
-    if (r === 'safe') hideRangeRing();
-    syncArmUi();
-    resize();   // armed promotes the minimap to a radar; safe demotes it
+    // orange state: the button itself says what is missing
+    refuseArm();
   });
 
   // The blast itself. Portals inside the radius are not damaged — they are
@@ -5094,6 +5117,7 @@ export function initTdTab(root) {
         map: '#tab-td .minimap', tut: '#td-tut', throttle: '#td-throttle',
         steerL: '#td-pad-left', steerR: '#td-pad-right',
         fire: '#td-pad-fire', laser: '#td-pad-laser',
+        launch: '#td-launch',
       };
       const box = {};
       for (const [k, sel] of Object.entries(want)) {
