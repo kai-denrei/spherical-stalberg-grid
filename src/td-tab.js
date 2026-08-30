@@ -19,31 +19,31 @@
 
 import * as THREE from '../vendor/three.module.js';
 import GUI from '../vendor/lil-gui.esm.js';
-import { generateSphereMesh, relax } from './grid.js?v=1995f396';
-import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=1995f396';
-import { mulberry32, randomSeed } from './rng.js?v=1995f396';
-import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3, segKey } from './vec3.js?v=1995f396';
-import { CREATURES, waveJelly } from './creatures.js?v=1995f396';
-import { UNITS, UNIT_NAMES, buildUnit, buildCreature, preloadMkcx, makeBulletCloud, makeRewardSolid, makeShellSolid, makeDebris, makeDotBurst, makePortalCloud, makeHeartCloud, makeDotEnemy } from './units.js?v=1995f396';
-import { LOOKS, LOOK_NAMES } from './looks.js?v=1995f396';
-import { makeCellIndex } from './cellindex.js?v=1995f396';
-import { CREATURE_TINTS, ENEMY_SPEC, INTROS, computeWavePlan } from './enemyspec.js?v=1995f396';
-import { PICKUPS } from './pickups.js?v=1995f396';
-import { rankFor, rankLabel, badgeSVG, killReq, eliteReq } from './ranks.js?v=1995f396';
-import { makeScore } from './score.js?v=1995f396';
-import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER } from './towers.js?v=1995f396';
-import { makeEconomy, sellRefund } from './economy.js?v=1995f396';
-import { makeBloom } from './postfx.js?v=1995f396';
-import { TANK_FEEL, TANK_FEEL_KNOBS, makeTankFeel, stepTankFeel, landTankFeel, fireTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js?v=1995f396';
-import { FEEL, loadFeel, saveFeel } from './feelstore.js?v=1995f396';
+import { generateSphereMesh, relax } from './grid.js?v=e35d2b39';
+import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=e35d2b39';
+import { mulberry32, randomSeed } from './rng.js?v=e35d2b39';
+import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3, segKey } from './vec3.js?v=e35d2b39';
+import { CREATURES, waveJelly } from './creatures.js?v=e35d2b39';
+import { UNITS, UNIT_NAMES, buildUnit, buildCreature, preloadMkcx, makeBulletCloud, makeRewardSolid, makeShellSolid, makeDebris, makeDotBurst, makePortalCloud, makeHeartCloud, makeDotEnemy } from './units.js?v=e35d2b39';
+import { LOOKS, LOOK_NAMES } from './looks.js?v=e35d2b39';
+import { makeCellIndex } from './cellindex.js?v=e35d2b39';
+import { CREATURE_TINTS, ENEMY_SPEC, INTROS, computeWavePlan } from './enemyspec.js?v=e35d2b39';
+import { PICKUPS } from './pickups.js?v=e35d2b39';
+import { rankFor, rankLabel, badgeSVG, killReq, eliteReq } from './ranks.js?v=e35d2b39';
+import { makeScore } from './score.js?v=e35d2b39';
+import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER } from './towers.js?v=e35d2b39';
+import { makeEconomy, sellRefund } from './economy.js?v=e35d2b39';
+import { makeBloom } from './postfx.js?v=e35d2b39';
+import { TANK_FEEL, TANK_FEEL_KNOBS, makeTankFeel, stepTankFeel, landTankFeel, fireTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js?v=e35d2b39';
+import { FEEL, loadFeel, saveFeel } from './feelstore.js?v=e35d2b39';
 import { STRIKE_KNOBS, makeStrike, makeStrikeParams, grantStrikes, stepStrike,
   toggleArm, paintTarget, launchStrike, stepFall, skipFall, fallProgress,
-  strikeDamage, retargetStrike, orbitProgress } from './strike.js?v=1995f396';
-import { radarBasis, radarProject, radarBearing, sweepAngle, radarPhosphor } from './radar.js?v=1995f396';
-import { BLOOM_GROUPS } from './bloomweights.js?v=1995f396';
-import { TOWER_LOOK_NAMES, DEFAULT_TOWER_LOOK, buildTowerLook, preloadLook } from './towerlooks.js?v=1995f396';
-import { makeAudio } from './audio.js?v=1995f396';
-import { DEATH_KEYS } from './audiomanifest.js?v=1995f396';
+  strikeDamage, retargetStrike, orbitProgress } from './strike.js?v=e35d2b39';
+import { radarBasis, radarProject, radarBearing, sweepAngle, radarPhosphor } from './radar.js?v=e35d2b39';
+import { BLOOM_GROUPS } from './bloomweights.js?v=e35d2b39';
+import { TOWER_LOOK_NAMES, DEFAULT_TOWER_LOOK, buildTowerLook, preloadLook } from './towerlooks.js?v=e35d2b39';
+import { makeAudio } from './audio.js?v=e35d2b39';
+import { DEATH_KEYS } from './audiomanifest.js?v=e35d2b39';
 
 export function initTdTab(root) {
   let active = false;
@@ -4204,18 +4204,15 @@ export function initTdTab(root) {
       const flat = norm3(sub3(raw, scale3(norm3(tp), dot3(raw, norm3(tp)))));
       const atk = tw.def.attack;
       if (tw.def.hitscan) {
-        // THE SNIPER IS A RAILGUN. A one-off this strong should not be a dot
-        // crossing the board — the entire shot happens in one frame: damage
-        // lands NOW, and what you see is the bolt it left behind. Two beams,
-        // a white core inside the tower's own tint, fading at different
-        // rates so the trace thins as it dies; a spark where it struck; a
-        // pulse at the mast so the shot is attributable at a glance.
+        // THE SNIPER IS A HEAVY SHOT, not a beam. The beam pair read as a
+        // laser (operator ruling), so now the damage still lands this frame
+        // — a sniper does not miss — but what you SEE is one fat slug
+        // crossing the whole line in ~0.13s, trailing ghosts, with the
+        // impact fx landing when the slug does. Straight line, one round.
         damageEnemy(target, tNow, eff.dmg, true);
         const hitP = add3(target.pos, scale3(norm3(target.pos), cellSide * 0.3));
-        spawnBeam(muzzle, hitP, 0xffffff, 0.20, 0.10);
-        spawnBeam(muzzle, hitP, tw.def.color, 0.5, 0.035);
-        warnRing(cellIndex(target.pos), 0xffffff, 0.3, cellSide * 0.7);
-        warnRing(tw.ci, tw.def.color, 0.35, cellSide * 0.9);
+        spawnSlug(muzzle, hitP, tw.def.color, cellIndex(target.pos));
+        warnRing(tw.ci, tw.def.color, 0.35, cellSide * 0.9); // muzzle pulse
       } else if (atk === 'beam') {
         // hitscan: damage now, draw the light
         damageEnemy(target, tNow, eff.dmg, true);
@@ -4473,6 +4470,41 @@ export function initTdTab(root) {
     }));
     scene.add(line);
     beams.push({ mesh: line, ttl: 0.32, ttl0: 0.32, dg: true });
+  }
+
+  // cosmetic railgun slugs: the hit already landed; the SHOT is what flies
+  const slugFx = []; // { a, b, t, dur, mesh, color, ci }
+  function spawnSlug(a, b, color, impactCi) {
+    const mesh = makeTracer(0xffffff, 14, 6);
+    scene.add(mesh);
+    slugFx.push({ a, b, t: 0, dur: 0.13, mesh, color, ci: impactCi });
+  }
+  function stepSlugs(dt) {
+    for (let i = slugFx.length - 1; i >= 0; i--) {
+      const sl = slugFx[i];
+      sl.t += dt;
+      const f = Math.min(1, sl.t / sl.dur);
+      const attr = sl.mesh.geometry.getAttribute('position');
+      for (let k = 0; k < attr.count; k++) {
+        const fk = Math.max(0, f - k * 0.045); // ghosts trail the head
+        attr.setXYZ(k,
+          sl.a[0] + (sl.b[0] - sl.a[0]) * fk,
+          sl.a[1] + (sl.b[1] - sl.a[1]) * fk,
+          sl.a[2] + (sl.b[2] - sl.a[2]) * fk);
+      }
+      attr.needsUpdate = true;
+      if (f >= 1) {
+        // arrival IS the impact: ring + spark land with the slug
+        if (sl.ci !== -1) {
+          warnRing(sl.ci, 0xffffff, 0.3, cellSide * 0.7);
+          warnRing(sl.ci, sl.color, 0.35, cellSide * 0.5);
+        }
+        scene.remove(sl.mesh);
+        sl.mesh.geometry.dispose();
+        sl.mesh.material.dispose();
+        slugFx.splice(i, 1);
+      }
+    }
   }
 
   function updateBeams(dt) {
@@ -5066,6 +5098,7 @@ export function initTdTab(root) {
       updateTowerShots(dt, t);
     }
     updateBeams(dt); // fx fade even during downtime
+    stepSlugs(dt);
     if (rangeRingTtl > 0) {
       rangeRingTtl -= dt;
       if (rangeRingTtl <= 0) { rangeRingTtl = 0; hideRangeRing(); }
