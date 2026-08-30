@@ -19,31 +19,31 @@
 
 import * as THREE from '../vendor/three.module.js';
 import GUI from '../vendor/lil-gui.esm.js';
-import { generateSphereMesh, relax } from './grid.js?v=65057325';
-import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=65057325';
-import { mulberry32, randomSeed } from './rng.js?v=65057325';
-import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3, segKey } from './vec3.js?v=65057325';
-import { CREATURES, waveJelly } from './creatures.js?v=65057325';
-import { UNITS, UNIT_NAMES, buildUnit, buildCreature, preloadMkcx, preloadServer, makeServerFixture, makeShieldShell, preloadContainer, makeContainerFixture, makeBulletCloud, makeRewardSolid, makeShellSolid, makeDebris, makeDotBurst, makePortalCloud, makeHeartCloud, makeDotEnemy } from './units.js?v=65057325';
-import { LOOKS, LOOK_NAMES } from './looks.js?v=65057325';
-import { makeCellIndex } from './cellindex.js?v=65057325';
-import { CREATURE_TINTS, ENEMY_SPEC, INTROS, computeWavePlan } from './enemyspec.js?v=65057325';
-import { PICKUPS } from './pickups.js?v=65057325';
-import { rankFor, rankLabel, badgeSVG, killReq, eliteReq } from './ranks.js?v=65057325';
-import { makeScore } from './score.js?v=65057325';
-import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER } from './towers.js?v=65057325';
-import { makeEconomy, sellRefund } from './economy.js?v=65057325';
-import { makeBloom } from './postfx.js?v=65057325';
-import { TANK_FEEL, TANK_FEEL_KNOBS, makeTankFeel, stepTankFeel, landTankFeel, fireTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js?v=65057325';
-import { FEEL, loadFeel, saveFeel } from './feelstore.js?v=65057325';
+import { generateSphereMesh, relax } from './grid.js?v=1fe7ac42';
+import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=1fe7ac42';
+import { mulberry32, randomSeed } from './rng.js?v=1fe7ac42';
+import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3, segKey } from './vec3.js?v=1fe7ac42';
+import { CREATURES, waveJelly } from './creatures.js?v=1fe7ac42';
+import { UNITS, UNIT_NAMES, buildUnit, buildCreature, preloadMkcx, preloadServer, makeServerFixture, makeShieldShell, preloadContainer, makeContainerFixture, makeBulletCloud, makeRewardSolid, makeShellSolid, makeDebris, makeDotBurst, makePortalCloud, makeHeartCloud, makeDotEnemy } from './units.js?v=1fe7ac42';
+import { LOOKS, LOOK_NAMES } from './looks.js?v=1fe7ac42';
+import { makeCellIndex } from './cellindex.js?v=1fe7ac42';
+import { CREATURE_TINTS, ENEMY_SPEC, INTROS, computeWavePlan } from './enemyspec.js?v=1fe7ac42';
+import { PICKUPS } from './pickups.js?v=1fe7ac42';
+import { rankFor, rankLabel, badgeSVG, killReq, eliteReq } from './ranks.js?v=1fe7ac42';
+import { makeScore } from './score.js?v=1fe7ac42';
+import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER } from './towers.js?v=1fe7ac42';
+import { makeEconomy, sellRefund } from './economy.js?v=1fe7ac42';
+import { makeBloom } from './postfx.js?v=1fe7ac42';
+import { TANK_FEEL, TANK_FEEL_KNOBS, makeTankFeel, stepTankFeel, landTankFeel, fireTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js?v=1fe7ac42';
+import { FEEL, loadFeel, saveFeel } from './feelstore.js?v=1fe7ac42';
 import { STRIKE_KNOBS, makeStrike, makeStrikeParams, grantStrikes, stepStrike,
   toggleArm, paintTarget, launchStrike, stepFall, skipFall, fallProgress,
-  strikeDamage, retargetStrike, orbitProgress } from './strike.js?v=65057325';
-import { radarBasis, radarProject, radarBearing, sweepAngle, radarPhosphor } from './radar.js?v=65057325';
-import { BLOOM_GROUPS } from './bloomweights.js?v=65057325';
-import { TOWER_LOOK_NAMES, DEFAULT_TOWER_LOOK, buildTowerLook, preloadLook } from './towerlooks.js?v=65057325';
-import { makeAudio } from './audio.js?v=65057325';
-import { DEATH_KEYS } from './audiomanifest.js?v=65057325';
+  strikeDamage, retargetStrike, orbitProgress } from './strike.js?v=1fe7ac42';
+import { radarBasis, radarProject, radarBearing, sweepAngle, radarPhosphor } from './radar.js?v=1fe7ac42';
+import { BLOOM_GROUPS } from './bloomweights.js?v=1fe7ac42';
+import { TOWER_LOOK_NAMES, DEFAULT_TOWER_LOOK, buildTowerLook, preloadLook } from './towerlooks.js?v=1fe7ac42';
+import { makeAudio } from './audio.js?v=1fe7ac42';
+import { DEATH_KEYS } from './audiomanifest.js?v=1fe7ac42';
 
 export function initTdTab(root) {
   let active = false;
@@ -523,7 +523,11 @@ export function initTdTab(root) {
   // Message lists ROTATE (a counter, not Math.random — house rule) so
   // repeats spread out deterministically.
   const RECKLESS_MSGS = ['RECKLESS!', 'すげ〜！', 'CLOSE CALL!', 'ヤバイ！',
-    'TIGHT!', '接近だ！', 'FEARLESS!', '接近過ぎ！'];
+    'TIGHT!', '接近だ！', 'FEARLESS!', '接近過ぎ！',
+    "pt1 c'est chaud!", 'ギリギリ', 'NEAR MISS', '危機一髪',
+    'DODGE THIS', '助かった', 'DOWN TO THE WIRE', 'あぶねー',
+    'SKETCHY', 'セーフ！', 'moins une!', "c'est limite la",
+    'ca passe ou ca casse'];
   const HEART_MSGS = ['PROTECT THE HEART!', 'LIVING DANGEROUSLY!',
     'NEED SAFETY BUFFER!', 'LAST LINE HOLDS!'];
   let recklessIdx = 0, heartIdx = 0;
@@ -1180,48 +1184,60 @@ export function initTdTab(root) {
     {
       // serverCi was chosen at world build (applySector needs it);
       // this block only casts and seats the model
-      // THE LIFE CONTAINERS: three floor cells ringing the heart, doors
-      // facing it. Placed async with the same generation guard as the
-      // server; each holds a static MK-CX clone (engine cold) whose
-      // visibility IS the display.
+      // THE LIFE CONTAINERS v2 (operator's staging): TWO containers, side
+      // by side on the EMPTIEST flank of the heart's chamber — adjacent
+      // open cells at distToHeart 2-3, the pair chosen for the fewest
+      // open neighbours (a wall-side berth, clear of the lanes). Two
+      // hull bays per container; the run's spare tanks rack there, and
+      // every spawn — first scene included — drives OUT of a container.
       const cgen = serverGen + 1; // the value ++serverGen produces below
       preloadContainer().then(() => {
         if (cgen !== serverGen || !dungeon) return; // board changed since
-        const spots = [];
-        for (let d = 2; d <= 4 && spots.length < 3; d++) {
-          for (let i = 0; i < dungeon.tags.length && spots.length < 3; i++) {
-            if (dungeon.tags[i] === BLOCKED || dungeon.distToHeart[i] !== d) continue;
-            if (i === dungeon.spawn || towerByCell.has(i)) continue;
-            // spread them out: no two on adjacent cells
-            if (spots.some((sc) => graph.adj[sc].includes(i) || sc === i)) continue;
-            spots.push(i);
+        let best = null, bestScore = Infinity;
+        for (let i = 0; i < dungeon.tags.length; i++) {
+          if (dungeon.tags[i] === BLOCKED) continue;
+          const di = dungeon.distToHeart[i];
+          if (di < 2 || di > 3 || i === dungeon.spawn) continue;
+          for (const j of graph.adj[i]) {
+            if (j <= i || dungeon.tags[j] === BLOCKED) continue;
+            const dj = dungeon.distToHeart[j];
+            if (dj < 2 || dj > 3 || j === dungeon.spawn) continue;
+            const openness = graph.adj[i].filter((k2) => dungeon.tags[k2] !== BLOCKED).length
+              + graph.adj[j].filter((k2) => dungeon.tags[k2] !== BLOCKED).length;
+            if (openness < bestScore) { bestScore = openness; best = [i, j]; }
           }
         }
+        if (!best) return;
         const hc2 = graph.centers[dungeon.heart];
-        for (const ci of spots) {
+        for (const ci of best) {
           const g = makeContainerFixture();
           if (!g) break;
           const c = graph.centers[ci];
           const nrm2 = graph.normals[ci];
           g.scale.setScalar(cellSide * 0.9);
           g.position.set(c[0], c[1], c[2]);
-          tmpN.set(nrm2[0], nrm2[1], nrm2[2]);
-          g.quaternion.setFromUnitVectors(Y_AXIS, tmpN);
-          // yaw the open doors toward the heart — the display faces home
+          // doors toward the heart: the bays face home, the tanks nose out
           tmpObj.position.copy(g.position);
           tmpObj.up.set(nrm2[0], nrm2[1], nrm2[2]);
           tmpObj.lookAt(hc2[0], hc2[1], hc2[2]);
           g.quaternion.copy(tmpObj.quaternion);
-          const tank = buildCreature('mkcx', look());
-          tank.scale.setScalar(0.34); // sized to sit inside the box
-          tank.position.set(0, 0.12, 0);
-          g.add(tank);
+          const tanks = [];
+          for (const z of [-0.2, 0.2]) {
+            const tank = buildCreature('mkcx', look());
+            tank.scale.setScalar(0.3); // two bays a box, nose to tail
+            tank.position.set(0, 0.12, z);
+            g.add(tank);
+            tanks.push(tank);
+          }
           scene.add(g);
-          lifeContainers.push({ obj: g, tank });
+          lifeContainers.push({ obj: g, tanks, ci });
         }
         syncLifeContainers();
+        // the FIRST SCENE: the opening hull drives out of its bay — if
+        // the player has not yet gone anywhere, restage them at the doors
+        if (t < 6 && player.moves <= 1) respawnPlayerAtSpawn();
         console.log(`CONTAINERS placed=${lifeContainers.length}`
-          + ` cells=${spots.join(',')} spares=${Math.max(0, playerHP - 1)}`);
+          + ` cells=${best.join(',')} spares=${Math.max(0, playerHP - 1)}`);
       });
       const gen = ++serverGen;
       preloadServer().then(() => {
@@ -4065,14 +4081,21 @@ export function initTdTab(root) {
   // directly in front of the camera in third person, blocking exactly the
   // thing the player steers toward. Operator ruling: same-size badge, up
   // top, next to the score it rides with.
-  // spares stocked = lives beyond the hull in play. 3 HP = 2 stocked +
-  // 1 standing empty, exactly the operator's spec; lose a hull and a
-  // container empties, its lock lamps going red.
+  // Bay order across the pair — [c0 bay0, c1 bay0, c0 bay1, c1 bay1] —
+  // so while both containers hold a spare the display reads symmetric,
+  // and each death visibly empties a bay. Lamps go red only when a
+  // container's LAST hull leaves. The spawn commandeers bay k = HP-1.
+  const BAY_ORDER = [[0, 0], [1, 0], [0, 1], [1, 1]];
   function syncLifeContainers() {
+    if (lifeContainers.length < 2) return;
     const spares = Math.max(0, playerHP - 1);
-    lifeContainers.forEach((c, i) => {
-      c.obj.userData.setStocked(i < spares, c.tank);
+    BAY_ORDER.forEach(([cIdx, bay], i) => {
+      const cc = lifeContainers[cIdx];
+      if (cc && cc.tanks[bay]) cc.tanks[bay].visible = i < spares;
     });
+    for (const cc of lifeContainers) {
+      cc.obj.userData.setStocked(cc.tanks.some((tk) => tk.visible), null);
+    }
   }
 
   const fmt = (v) => (v ?? 0).toLocaleString('en-US'); // 3103356 -> 3,103,356
@@ -4747,11 +4770,21 @@ export function initTdTab(root) {
   // home. You come back at the thing you are defending, facing outward.
   function respawnPlayerAtSpawn() {
     let ci = dungeon.heart;
-    outer:
-    for (let d = 1; d <= 3; d++) {
-      for (let i = 0; i < dungeon.tags.length; i++) {
-        if (dungeon.tags[i] !== BLOCKED && !towerCells.has(i)
-          && dungeon.distToHeart[i] === d) { ci = i; break outer; }
+    let fromContainer = false;
+    if (lifeContainers.length === 2) {
+      // commandeer the next hull AT its container: the bay being vacated
+      // is bay index (HP-1) in BAY_ORDER — the operator's staging
+      const k = Math.min(BAY_ORDER.length - 1, Math.max(0, playerHP - 1));
+      const cc = lifeContainers[BAY_ORDER[k][0]];
+      if (cc && dungeon.tags[cc.ci] !== BLOCKED) { ci = cc.ci; fromContainer = true; }
+    }
+    if (!fromContainer) {
+      outer:
+      for (let d = 1; d <= 3; d++) {
+        for (let i = 0; i < dungeon.tags.length; i++) {
+          if (dungeon.tags[i] !== BLOCKED && !towerCells.has(i)
+            && dungeon.distToHeart[i] === d) { ci = i; break outer; }
+        }
       }
     }
     player.freeMode = false;

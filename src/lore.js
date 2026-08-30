@@ -310,16 +310,18 @@ export const LORE = {
   container: {
     name: 'LIFE CONTAINER',
     tag: 'the spare hulls · by the heart',
-    body: 'Three intermodal containers stand in the Cardion’s light, doors '
-      + 'jacked open, lock lamps burning green. Two hold spare MK-CX hulls, '
-      + 'engines cold, painted and fueled; the third stands empty, which is '
-      + 'the honest way to display a number that starts at two. Lose a hull '
-      + 'in the field and a container’s lamps go red over a bare deck. The '
-      + 'crews do not decorate them. The count decorates itself.',
-    visual: 'three weathered sci-fi shipping containers near a glowing '
-      + 'holographic heart, doors open, interior spotlights, two containing '
-      + 'parked futuristic hover tanks, one empty with red lock lamps, '
-      + 'green status lamps on the stocked pair, dramatic pole-station '
+    body: 'Two intermodal containers berthed side by side on the quiet '
+      + 'flank of the Cardion’s chamber, doors jacked open toward the '
+      + 'light, two hull bays each. Every tank the survey landed lives '
+      + 'here between deaths: the first drives out of its bay when the '
+      + 'shift begins, and each replacement is commandeered straight off '
+      + 'the racking. A container’s lock lamps burn green while it still '
+      + 'holds a hull and go red over the last empty bay. The crews do '
+      + 'not decorate them. The count decorates itself.',
+    visual: 'two weathered sci-fi shipping containers side by side near a '
+      + 'glowing holographic heart, doors open toward it, each containing '
+      + 'two parked futuristic hover tanks nose to tail, green lock lamps, '
+      + 'one bay standing empty, interior spotlights, dramatic pole-station '
       + 'lighting, photoreal military logistics, 8k',
   },
 
