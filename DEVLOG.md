@@ -6,6 +6,63 @@ Demo links assume `npm run serve` (port 8144) or the
 
 ---
 
+## `5b26cd0` — The munition feed, and an inline style that beat the stylesheet
+
+### Build mode follows the driver
+
+Top-down is a real control mode only if the thing you are controlling cannot
+escape the screen. When the tank projects outside ~78% of the frame, the free
+camera swings its pole toward the tank's normal — keeping the current *up* so
+the recenter never rolls the world underneath you — easing harder the further
+out it is. A finger on the board owns the view outright; the follow never
+fights a drag.
+
+### The fall is a feed
+
+Black-and-white for the ride down — a CSS `filter` on the WebGL canvas, so it
+costs compositing only — under scanlines, vignette, corner brackets, a green
+crosshair, and an ops HUD (`ORBITAL STRIKE · OTS-723 / WARHEAD 489KG ·
+KINETIC / TGT CELL … / FEED SAT-CAM 2 · LIVE`). The game's chrome stands
+aside; the feed is a takeover.
+
+The red range counter is honest: it is the camera's own distance to the
+target in fictional metres (planet radius ≙ ~4.8 km), so it rides the same
+smoothstep as the fall and **decelerates hard as the ground arrives** — the
+last 200 m read as a held breath, not a spinner.
+
+The impact is a firework: four staged dot-burst shells, white core to ember
+red, over the shock rings. One strike per gate means the set piece is
+affordable.
+
+### The bug worth writing down
+
+`#tab-td.striking .minimap { display: none; }` matched the element — verified
+with `el.matches()` — was present in the CSSOM — verified by walking
+`document.styleSheets` — and the computed display was still `block`.
+
+The probe that ended it printed the element's `style.cssText`:
+
+```
+inline=[display: block; width: 162px; height: 162px;]
+```
+
+**three.js `setSize` writes `display: block` inline on its canvas**, and an
+inline style beats any sheet rule. That earned the stylesheet's one justified
+`!important`, with the reason in a comment beside it.
+
+The sequence matters more than the fix: selector matched → rule present →
+still losing → *the only remaining suspect is inline*. Three probes, no
+staring.
+
+### Verification split by what each method can prove
+
+`?strikecam=1` holds the feed open on a static frame — styling is a
+screenshot's job. Engagement during a real fall is proven by `FEED ON/OFF`
+log lines — a screenshot cannot reliably race a 2.5 s window under a
+virtual-time budget, and this session has now hit that three times.
+
+---
+
 ## `1980e32` — The orbital strike
 
 DeepWatch's system (`~/Documents/Dev/centroid-defense`), carried over by its
