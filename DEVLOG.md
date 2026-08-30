@@ -6,6 +6,27 @@ Demo links assume `npm run serve` (port 8144) or the
 
 ---
 
+## `49a8b2b` — Three protocols
+
+The relay's breach bar grew tabs: HDT (the circuit duel) is joined by
+**BRIDGE** (hashiwokakero) and **SHIKAKU** from the operator's
+`pazorukore` engine. The second vendor was cheaper than the first:
+pazorukore is vanilla ES modules with no build step — our own idiom — so
+the vendor is a straight copy of `index.html + styles.css + src/` into
+`minigames/pzk/`, with the manifest link stripped and `initPWA` stubbed
+(no service worker inside an iframe). Game selection is its own `?game=`
+query; the futuristic skin ships as-is, which is what "same look and
+rendering" meant.
+
+Win detection stays the same-origin read with one branch per engine:
+`__cx.game().phase` (WON/LOST) for the duel, `__pazoru.phase === 'solved'`
+for the puzzles — which cannot be lost, only abandoned, so ABORT is their
+only exit without the prize. Any protocol's win patches the firmware.
+`?hack=hdt|bridges|shikaku` boots each directly; both puzzles verified
+rendering in-frame.
+
+---
+
 ## `4703bca` — The vault
 
 Two placement cuts died in the field ("inside a wall", then "ON a wall")
