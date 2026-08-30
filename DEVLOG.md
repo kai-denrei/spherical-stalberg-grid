@@ -6,6 +6,30 @@ Demo links assume `npm run serve` (port 8144) or the
 
 ---
 
+## `4d5b494` — The AoE tower is a mortar, and its shell falls like one
+
+The head is `half-dotted-mortar.json` — the lab's authored export, embedded
+verbatim (252 points, an angled tube on a baseplate). The launcher read as
+generic ordnance; this is the attack, sculpted.
+
+The arc stopped being a sine hump. Symmetric flight floats down exactly as
+gently as it rises; warping the flight fraction (`u^1.35`) pushes the apex
+past 60% and compresses the descent into what remains — the shell hangs,
+then **plummets**. Apex 2.2 → 3.4 cells, round fattened to 12 px with a
+six-ghost trail.
+
+The blast scales with the splash it deals, and the ground takes a shock
+ring — the orbital strike's language one register down. Show and damage
+radius agree, which is the lesson the strike taught.
+
+One catch worth remembering: a shadowed `const v` inside the flight updater
+parsed clean at module load — `import()` smoke checks pass — and threw
+`Identifier 'v' has already been declared` only when the page actually
+evaluated the script. The headless console caught it; the Node parse check
+could not have.
+
+---
+
 ## `252e89a` — The two tweaks were one scene
 
 The report came as two items: "we spawn behind a portal" and "the portal is
