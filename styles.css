@@ -2477,3 +2477,33 @@ body.playing:not(.chrome-open) #tabbar { display: none !important; }
   #td-stats.hud-panel .hud-vitals { font-size: 12px; }
   #td-stats.hud-panel .hud-wave b { font-size: 13px; }
 }
+
+/* --- the announcement lane -----------------------------------------------
+   SitRep, NEW THREAT / NEW TOWER cards, and toasts move OFF the sightline
+   (operator: "somewhere where there's room, not in your face center").
+   One lane so they never fight each other: desktop = the left rail below
+   the HUD panel (right of the throttle column, clear of the radar);
+   phone = the right column below the radar, above the fire cluster.
+   Callouts, the combo counter, and the danger warning STAY centred —
+   momentary flair is supposed to be in your face. */
+#td-sitrep, #td-wave, #td-toast, #td-tower {
+  left: 80px;
+  right: auto;
+  top: 202px; /* fully clear of the launch console's dashed frame */
+  bottom: auto;
+  transform: none;
+}
+@media (pointer: coarse), (max-width: 700px) {
+  #td-sitrep, #td-wave, #td-toast, #td-tower {
+    left: auto;
+    right: max(8px, env(safe-area-inset-right));
+    /* below the launch console's slot, above the fire cluster */
+    top: calc(max(8px, env(safe-area-inset-top)) + 306px);
+    width: min(74vw, 300px);
+    min-width: 0;
+    max-width: 74vw;
+  }
+  /* compact on the phone so the tallest card clears the fire button at
+     every width this media block covers */
+  #td-sitrep { font-size: 11px; line-height: 1.5; padding: 8px 12px 8px; }
+}

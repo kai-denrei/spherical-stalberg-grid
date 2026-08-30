@@ -19,31 +19,31 @@
 
 import * as THREE from '../vendor/three.module.js';
 import GUI from '../vendor/lil-gui.esm.js';
-import { generateSphereMesh, relax } from './grid.js?v=52a3d5b7';
-import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=52a3d5b7';
-import { mulberry32, randomSeed } from './rng.js?v=52a3d5b7';
-import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3, segKey } from './vec3.js?v=52a3d5b7';
-import { CREATURES, waveJelly } from './creatures.js?v=52a3d5b7';
-import { UNITS, UNIT_NAMES, buildUnit, buildCreature, preloadMkcx, makeBulletCloud, makeRewardSolid, makeShellSolid, makeDebris, makeDotBurst, makePortalCloud, makeHeartCloud, makeDotEnemy } from './units.js?v=52a3d5b7';
-import { LOOKS, LOOK_NAMES } from './looks.js?v=52a3d5b7';
-import { makeCellIndex } from './cellindex.js?v=52a3d5b7';
-import { CREATURE_TINTS, ENEMY_SPEC, INTROS, computeWavePlan } from './enemyspec.js?v=52a3d5b7';
-import { PICKUPS } from './pickups.js?v=52a3d5b7';
-import { rankFor, rankLabel, badgeSVG, killReq, eliteReq } from './ranks.js?v=52a3d5b7';
-import { makeScore } from './score.js?v=52a3d5b7';
-import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER } from './towers.js?v=52a3d5b7';
-import { makeEconomy, sellRefund } from './economy.js?v=52a3d5b7';
-import { makeBloom } from './postfx.js?v=52a3d5b7';
-import { TANK_FEEL, TANK_FEEL_KNOBS, makeTankFeel, stepTankFeel, landTankFeel, fireTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js?v=52a3d5b7';
-import { FEEL, loadFeel, saveFeel } from './feelstore.js?v=52a3d5b7';
+import { generateSphereMesh, relax } from './grid.js?v=7b01e05c';
+import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=7b01e05c';
+import { mulberry32, randomSeed } from './rng.js?v=7b01e05c';
+import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3, segKey } from './vec3.js?v=7b01e05c';
+import { CREATURES, waveJelly } from './creatures.js?v=7b01e05c';
+import { UNITS, UNIT_NAMES, buildUnit, buildCreature, preloadMkcx, makeBulletCloud, makeRewardSolid, makeShellSolid, makeDebris, makeDotBurst, makePortalCloud, makeHeartCloud, makeDotEnemy } from './units.js?v=7b01e05c';
+import { LOOKS, LOOK_NAMES } from './looks.js?v=7b01e05c';
+import { makeCellIndex } from './cellindex.js?v=7b01e05c';
+import { CREATURE_TINTS, ENEMY_SPEC, INTROS, computeWavePlan } from './enemyspec.js?v=7b01e05c';
+import { PICKUPS } from './pickups.js?v=7b01e05c';
+import { rankFor, rankLabel, badgeSVG, killReq, eliteReq } from './ranks.js?v=7b01e05c';
+import { makeScore } from './score.js?v=7b01e05c';
+import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER } from './towers.js?v=7b01e05c';
+import { makeEconomy, sellRefund } from './economy.js?v=7b01e05c';
+import { makeBloom } from './postfx.js?v=7b01e05c';
+import { TANK_FEEL, TANK_FEEL_KNOBS, makeTankFeel, stepTankFeel, landTankFeel, fireTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js?v=7b01e05c';
+import { FEEL, loadFeel, saveFeel } from './feelstore.js?v=7b01e05c';
 import { STRIKE_KNOBS, makeStrike, makeStrikeParams, grantStrikes, stepStrike,
   toggleArm, paintTarget, launchStrike, stepFall, skipFall, fallProgress,
-  strikeDamage, retargetStrike, orbitProgress } from './strike.js?v=52a3d5b7';
-import { radarBasis, radarProject, radarBearing, sweepAngle, radarPhosphor } from './radar.js?v=52a3d5b7';
-import { BLOOM_GROUPS } from './bloomweights.js?v=52a3d5b7';
-import { TOWER_LOOK_NAMES, DEFAULT_TOWER_LOOK, buildTowerLook, preloadLook } from './towerlooks.js?v=52a3d5b7';
-import { makeAudio } from './audio.js?v=52a3d5b7';
-import { DEATH_KEYS } from './audiomanifest.js?v=52a3d5b7';
+  strikeDamage, retargetStrike, orbitProgress } from './strike.js?v=7b01e05c';
+import { radarBasis, radarProject, radarBearing, sweepAngle, radarPhosphor } from './radar.js?v=7b01e05c';
+import { BLOOM_GROUPS } from './bloomweights.js?v=7b01e05c';
+import { TOWER_LOOK_NAMES, DEFAULT_TOWER_LOOK, buildTowerLook, preloadLook } from './towerlooks.js?v=7b01e05c';
+import { makeAudio } from './audio.js?v=7b01e05c';
+import { DEATH_KEYS } from './audiomanifest.js?v=7b01e05c';
 
 export function initTdTab(root) {
   let active = false;
@@ -3629,6 +3629,10 @@ export function initTdTab(root) {
           mat.emissiveIntensity = 0.3 + 1.7 * f;
         }
       }
+      // the sleeves are the gauge that actually READS — same instrument as
+      // the cannon's mid-barrel band, driven the same way
+      const smat = playerMesh.userData.laserSleeveMat;
+      if (smat) smat.color.lerpColors(gunColCool, gunColHot, f);
     }
     // ...and the same cycle on the pad button: white -> orange -> red as
     // heat builds, blinking red through the lockout. Style only when the
@@ -4342,7 +4346,18 @@ export function initTdTab(root) {
       const eff = effectiveStats(tw.def, tw.tier);
       const range = eff.range * cellSide;
       const tp = graph.centers[tw.ci];
-      const target = pickTarget(tp, range, enemies, chord);
+      let target = pickTarget(tp, range, enemies, chord);
+      // the railgun does not shoot THROUGH walls: if the nearest pick is
+      // occluded by high ground, take the nearest VISIBLE enemy instead
+      if (target && tw.def.hitscan && !losClear(tw.ci, target.pos)) {
+        target = null;
+        let bd = Infinity;
+        for (const e of enemies) {
+          if (!e.alive) continue;
+          const d = chord(tp, e.pos);
+          if (d <= range && d < bd && losClear(tw.ci, e.pos)) { bd = d; target = e; }
+        }
+      }
       if (!target) continue;
       tw.cooldown = shotInterval(eff.rate);
       // one line, eight towers: the key IS the def key
@@ -4397,6 +4412,26 @@ export function initTdTab(root) {
           atk === 'mortar' ? chord(tp, target.pos) : 0);
       }
     }
+  }
+
+  // Line of sight for hitscan: sample the chord from the mast's cell to
+  // the target every ~0.45 cells; any BLOCKED cell along it (other than
+  // the tower's own — the mast stands ON high ground) refuses the shot.
+  // Adjacent ridge cells block a shot along the ridge, which is correct:
+  // that is what 'not through walls' means for a gun at wall height.
+  function losClear(fromCi, toPos) {
+    const a = graph.centers[fromCi];
+    const steps = Math.max(2, Math.ceil(dist3(a, toPos) / (cellSide * 0.45)));
+    for (let i = 1; i < steps; i++) {
+      const t = i / steps;
+      const pmid = norm3([
+        a[0] + (toPos[0] - a[0]) * t,
+        a[1] + (toPos[1] - a[1]) * t,
+        a[2] + (toPos[2] - a[2]) * t]);
+      const ci = cellIndex(pmid);
+      if (ci !== -1 && ci !== fromCi && dungeon.tags[ci] === BLOCKED) return false;
+    }
+    return true;
   }
 
   // HK's projectile identity: every shot is a TRACER — a bright additive
@@ -5531,11 +5566,12 @@ export function initTdTab(root) {
     for (const at of [2500, 6000, 12000]) {
       setTimeout(() => {
         const m = playerMesh && playerMesh.userData && playerMesh.userData.gunHeatMat;
-        console.log(`GUNHEAT t=${at} mat=${!!m}`
+        const sm = playerMesh && playerMesh.userData && playerMesh.userData.laserSleeveMat;
+        console.log(`GUNHEAT t=${at} mat=${!!m} sleeve=${!!sm}`
           + ` kind=${playerMesh && playerMesh.userData.kind}`
           + ` heat=${laserHeat.toFixed(2)}`
-          + (m ? ` col=${m.color.getHexString()} emi=${m.emissive ? m.emissive.getHexString() : '-'}`
-            + ` int=${(m.emissiveIntensity ?? 0).toFixed(2)}` : ''));
+          + (m ? ` col=${m.color.getHexString()}` : '')
+          + (sm ? ` scol=${sm.color.getHexString()}` : ''));
       }, at);
     }
   }
@@ -5689,7 +5725,7 @@ export function initTdTab(root) {
         map: '#tab-td .minimap', tut: '#td-tut', throttle: '#td-throttle',
         steerL: '#td-pad-left', steerR: '#td-pad-right',
         fire: '#td-pad-fire', laser: '#td-pad-laser',
-        launch: '#td-launch', next: '#td-next',
+        launch: '#td-launch', next: '#td-next', card: '#td-sitrep',
       };
       const box = {};
       for (const [k, sel] of Object.entries(want)) {

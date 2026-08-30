@@ -16,12 +16,12 @@
 
 import * as THREE from '../vendor/three.module.js';
 import { loadGlb, mergeByMaterial, fitModel, tintModel, makeShellRack,
-  addEdgeOutlines, makeHeatSleeve } from './glbmodels.js?v=52a3d5b7';
-import { CREATURES, waveJelly, swimWave, spherePts, bulletPts, missilePts, heartPts, torusPts, towerHeadPts, enemyDotPts, portalPts } from './creatures.js?v=52a3d5b7';
-import { TOWER_FEEL, TOWER_HEADS, headKindFor } from './towerfeel.js?v=52a3d5b7';
+  addEdgeOutlines, makeHeatSleeve } from './glbmodels.js?v=7b01e05c';
+import { CREATURES, waveJelly, swimWave, spherePts, bulletPts, missilePts, heartPts, torusPts, towerHeadPts, enemyDotPts, portalPts } from './creatures.js?v=7b01e05c';
+import { TOWER_FEEL, TOWER_HEADS, headKindFor } from './towerfeel.js?v=7b01e05c';
 import { STARGATE_PTS, STARGATE_STROKE,
-  HORIZON_N, stargateHorizon } from './stargate.js?v=52a3d5b7';
-import { ENEMY_SPEC } from './enemyspec.js?v=52a3d5b7';
+  HORIZON_N, stargateHorizon } from './stargate.js?v=7b01e05c';
+import { ENEMY_SPEC } from './enemyspec.js?v=7b01e05c';
 
 function normalizeToUnit(group) {
   group.updateMatrixWorld(true);
@@ -1441,6 +1441,18 @@ function makeMkcx(cols) {
       guns[0].children[0].material = mat;
       guns[1].children[0].material = mat;
       g.userData.gunHeatMat = mat;
+      // ...and the emissive alone still never READ at gameplay distance
+      // (operator confirmed on 1c834a26): the cannon's gauge is legible
+      // because it is a dedicated MeshBasicMaterial SLEEVE, not the model's
+      // own PBR. The secondaries get the same instrument — one sleeve per
+      // gun, one shared material so both heat together.
+      const sl = makeHeatSleeve(guns[0], {
+        radius: 0.16, len: 0.62, z: 0.72, color: cols.walkerHi ?? 0x7df9ff });
+      const sr = makeHeatSleeve(guns[1], {
+        radius: 0.16, len: 0.62, z: 0.72, color: cols.walkerHi ?? 0x7df9ff });
+      sr.material.dispose();
+      sr.material = sl.material;
+      g.userData.laserSleeveMat = sl.material;
     } else {
       guns[1].children[0].material = src;
     }

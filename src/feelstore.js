@@ -10,10 +10,10 @@
 // localStorage is not available there. The schema and the maths live in the
 // pure module; only the persistence lives here.
 
-import { TANK_FEEL_KNOBS, makeFeelParams, clampFeelParams } from './tankfeel.js?v=52a3d5b7';
+import { TANK_FEEL_KNOBS, makeFeelParams, clampFeelParams } from './tankfeel.js?v=7b01e05c';
 import { TOWER_FEEL_KNOBS, makeTowerParams, clampTowerParams,
-  TOWER_HEADS as TOWER_HEAD_DEFAULTS, cleanHeads } from './towerfeel.js?v=52a3d5b7';
-import { TOWERS } from './towers.js?v=52a3d5b7';
+  TOWER_HEADS as TOWER_HEAD_DEFAULTS, cleanHeads } from './towerfeel.js?v=7b01e05c';
+import { TOWERS } from './towers.js?v=7b01e05c';
 
 const KEY = 'ssg.tankfeel.v1';    // versioned: a schema change must not inherit
 // v2: v1 stored a GLOBAL headShape override that masked every tower's own

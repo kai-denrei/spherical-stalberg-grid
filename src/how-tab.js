@@ -5,7 +5,7 @@
 // factory rather than three near-identical files. No renderer, no loop.
 // Shares the markdown converter and .mdview styles with the devlog overlay.
 
-import { mdToHtml } from './devlog.js?v=52a3d5b7';
+import { mdToHtml } from './devlog.js?v=7b01e05c';
 
 function makeDocTab(root, selector, file) {
   const el = root.querySelector(selector);
@@ -97,6 +97,20 @@ export function initLogTab(root) {
     const raw = (meta && meta.getAttribute('content')) || '';
     const token = raw.split('#')[0].trim();
     build.textContent = token ? `build ${token}` : '';
+    // click to copy — the affordance the retired corner badge used to have
+    if (token) {
+      build.title = 'copy build token';
+      build.style.cursor = 'pointer';
+      build.addEventListener('click', () => {
+        const done = () => {
+          build.textContent = 'copied ✓';
+          setTimeout(() => { build.textContent = `build ${token}`; }, 900);
+        };
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          navigator.clipboard.writeText(token).then(done, () => {});
+        }
+      });
+    }
   }
 
   const bar = root.querySelector('#log-tabs');
