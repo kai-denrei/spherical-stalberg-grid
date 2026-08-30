@@ -19,28 +19,28 @@
 
 import * as THREE from '../vendor/three.module.js';
 import GUI from '../vendor/lil-gui.esm.js';
-import { generateSphereMesh, relax } from './grid.js?v=2657b69a';
-import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=2657b69a';
-import { mulberry32, randomSeed } from './rng.js?v=2657b69a';
-import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3, segKey } from './vec3.js?v=2657b69a';
-import { CREATURES, waveJelly } from './creatures.js?v=2657b69a';
-import { UNITS, UNIT_NAMES, buildUnit, buildCreature, preloadMkcx, makeBulletCloud, makeRewardSolid, makeShellSolid, makeDebris, makeDotBurst, makePortalCloud, makeHeartCloud, makeDotEnemy } from './units.js?v=2657b69a';
-import { LOOKS, LOOK_NAMES } from './looks.js?v=2657b69a';
-import { makeCellIndex } from './cellindex.js?v=2657b69a';
-import { CREATURE_TINTS, ENEMY_SPEC, INTROS, computeWavePlan } from './enemyspec.js?v=2657b69a';
-import { PICKUPS } from './pickups.js?v=2657b69a';
-import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER } from './towers.js?v=2657b69a';
-import { makeEconomy, sellRefund } from './economy.js?v=2657b69a';
-import { makeBloom } from './postfx.js?v=2657b69a';
-import { TANK_FEEL, TANK_FEEL_KNOBS, makeTankFeel, stepTankFeel, landTankFeel, fireTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js?v=2657b69a';
-import { FEEL, loadFeel, saveFeel } from './feelstore.js?v=2657b69a';
+import { generateSphereMesh, relax } from './grid.js?v=a110086d';
+import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=a110086d';
+import { mulberry32, randomSeed } from './rng.js?v=a110086d';
+import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3, segKey } from './vec3.js?v=a110086d';
+import { CREATURES, waveJelly } from './creatures.js?v=a110086d';
+import { UNITS, UNIT_NAMES, buildUnit, buildCreature, preloadMkcx, makeBulletCloud, makeRewardSolid, makeShellSolid, makeDebris, makeDotBurst, makePortalCloud, makeHeartCloud, makeDotEnemy } from './units.js?v=a110086d';
+import { LOOKS, LOOK_NAMES } from './looks.js?v=a110086d';
+import { makeCellIndex } from './cellindex.js?v=a110086d';
+import { CREATURE_TINTS, ENEMY_SPEC, INTROS, computeWavePlan } from './enemyspec.js?v=a110086d';
+import { PICKUPS } from './pickups.js?v=a110086d';
+import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER } from './towers.js?v=a110086d';
+import { makeEconomy, sellRefund } from './economy.js?v=a110086d';
+import { makeBloom } from './postfx.js?v=a110086d';
+import { TANK_FEEL, TANK_FEEL_KNOBS, makeTankFeel, stepTankFeel, landTankFeel, fireTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js?v=a110086d';
+import { FEEL, loadFeel, saveFeel } from './feelstore.js?v=a110086d';
 import { STRIKE_KNOBS, makeStrike, makeStrikeParams, grantStrikes, stepStrike,
   toggleArm, paintTarget, launchStrike, stepFall, skipFall, fallProgress,
-  strikeDamage, retargetStrike } from './strike.js?v=2657b69a';
-import { BLOOM_GROUPS } from './bloomweights.js?v=2657b69a';
-import { TOWER_LOOK_NAMES, DEFAULT_TOWER_LOOK, buildTowerLook, preloadLook } from './towerlooks.js?v=2657b69a';
-import { makeAudio } from './audio.js?v=2657b69a';
-import { DEATH_KEYS } from './audiomanifest.js?v=2657b69a';
+  strikeDamage, retargetStrike } from './strike.js?v=a110086d';
+import { BLOOM_GROUPS } from './bloomweights.js?v=a110086d';
+import { TOWER_LOOK_NAMES, DEFAULT_TOWER_LOOK, buildTowerLook, preloadLook } from './towerlooks.js?v=a110086d';
+import { makeAudio } from './audio.js?v=a110086d';
+import { DEATH_KEYS } from './audiomanifest.js?v=a110086d';
 
 export function initTdTab(root) {
   let active = false;
@@ -1163,31 +1163,48 @@ export function initTdTab(root) {
   const DTAP_MS = 350, DTAP_PX = 24; // double-tap-to-recenter window
   let lastTap = null;
   const anyHostiles = () => enemies.some((e) => e.alive);
-  const buildFrozen = () => buildMode && !anyHostiles();
-  function toggleBuild() {
-    buildMode = !buildMode;
-    syncBuildUi();
-    updateHud();
-    if (!buildMode) showOverrideModal(); // just switched INTO manual drive
-  }
-  // build mode is a different INSTRUMENT: the driving controls vanish
-  // (zones, triggers, SWAP/CAM) leaving only BUILD/MAP and the board
-  function syncBuildUi() {
-    // The Heart framing is a courtesy on the FIRST entry; afterwards the
-    // camera stays where you left it (double-tap rides it home).
-    // This lives HERE, not in toggleBuild(), because buildMode is also set
-    // directly by the ?mode=build hook and by the tutorial — and with the
-    // old `if (!buildCenter) buildCenter = hn` fallback gone, a path that
-    // skipped centering left the camera staring at the unlit far side.
+
+  // --- ONE MODE ------------------------------------------------------------
+  // BUILD/MANUAL used to be a mode switch that traded capabilities: build to
+  // place towers but lose the fight controls, drive but lose the board. It
+  // is gone. There are only CAMERAS now — orbit (the free strategic view,
+  // whole planet at arm's length), third, pov, bastion — and every
+  // capability works under every one of them: taps open the shop anywhere,
+  // the tank drives anywhere, the auto-gunner fights anywhere.
+  //
+  // `buildMode` survives as a DERIVED value (view === 'orbit') because
+  // twenty read-sites — the drag-orbit gestures, the free-cam branch, the
+  // follow-cam — mean exactly "is the free camera up", and that meaning is
+  // unchanged. It is assigned in ONE place, here.
+  function setView(v) {
+    params.view = v;
+    buildMode = v === 'orbit';
+    if (v !== 'bastion') watchTower = null;
+    // the Heart framing is a courtesy on the FIRST orbit entry; afterwards
+    // the camera stays where you left it (double-tap rides it home)
     if (buildMode && !buildCentered && graph && dungeon) {
       centerBuildOnHeart();
       buildCentered = true;
     }
     root.classList.toggle('build', buildMode);
-    // the chip names the mode you'd SWITCH TO — build↔build makes no sense
+    closeShop();   // the shop is screen-anchored; a view change moves its cell
+    if (viewCtrl) viewCtrl.updateDisplay();
+    updateHud();
+  }
+
+  // The freeze that BUILD used to smuggle in is an explicit switch now:
+  // HOLD keeps the next wave on the pad while the field is clear, from any
+  // camera. It still releases itself the moment hostiles are live.
+  let waveHold = false;
+  const buildFrozen = () => waveHold && !anyHostiles();
+  function toggleHold() {
+    waveHold = !waveHold;
     const chip = root.querySelector('#td-pad-build');
-    if (chip) chip.textContent = buildMode ? 'MANUAL' : 'BUILD';
-    if (!buildMode) closeShop();
+    if (chip) {
+      chip.textContent = waveHold ? 'RESUME' : 'HOLD';
+      chip.classList.toggle('holding', waveHold);
+    }
+    updateHud();
   }
   function toggleMap() {
     mapMode = mapMode === 'player' ? 'heart' : 'player';
@@ -1652,7 +1669,7 @@ export function initTdTab(root) {
     if (down && (k === ' ' || k === 'spacebar')) { fire(); ev.preventDefault(); return; }
     if (down && k === 'h') pulseHint();
     if (down && k === 'v') toggleView();
-    if (down && k === 'b') toggleBuild(); // BUILD ↔ ACTION
+    if (down && k === 'b') toggleHold(); // hold / release the next wave
     if (down && k === 'm') {
       toggleMap();   // minimap ↔ threat view
       // PLAYTEST CHEAT (remove later): M also loads a ready missile. It
@@ -1669,11 +1686,8 @@ export function initTdTab(root) {
   addEventListener('blur', () => { keys.left = keys.right = keys.fast = keys.slow = keys.laser = false; });
 
   function toggleView() {
-    const cycle = ['pov', 'third', 'bastion'];
-    params.view = cycle[(cycle.indexOf(params.view) + 1) % cycle.length];
-    if (params.view !== 'bastion') watchTower = null;
-    viewCtrl.updateDisplay();
-    updateHud();
+    const cycle = ['orbit', 'third', 'pov', 'bastion'];
+    setView(cycle[(cycle.indexOf(params.view) + 1) % cycle.length]);
   }
 
   // touch zones/buttons: press-and-hold, like the keys; onPress fires per
@@ -1748,7 +1762,7 @@ export function initTdTab(root) {
   holdButton('#td-pad-left', 'left');
   holdButton('#td-pad-right', 'right');
   root.querySelector('#td-pad-view').addEventListener('click', () => toggleView());
-  root.querySelector('#td-pad-build').addEventListener('click', () => toggleBuild());
+  root.querySelector('#td-pad-build').addEventListener('click', () => toggleHold());
   function syncDirectiveChip() {
     const chip = root.querySelector('#td-pad-dir');
     if (chip) chip.textContent = DIRECTIVE_LABEL[params.directive] || 'WANDER';
@@ -1776,7 +1790,8 @@ export function initTdTab(root) {
   let pinched = false;             // ≥2 fingers touched this gesture → no tap
   let tapStart = null;
   container.addEventListener('pointerdown', (ev) => {
-    if (!buildMode && params.view !== 'bastion') return;
+    // taps are tracked under EVERY camera — the shop opens anywhere now.
+    // Drag-orbit and pinch stay orbit-only; the chase cams own their framing.
     if (buildMode) {
       buildPointers.set(ev.pointerId, { x: ev.clientX, y: ev.clientY });
       if (buildPointers.size >= 2) { pinched = true; pinchPrev = null; tapStart = null; return; }
@@ -1820,7 +1835,12 @@ export function initTdTab(root) {
       && Math.hypot(ev.clientX - tapStart[0], ev.clientY - tapStart[1]) <= 8;
     buildPointers.delete(ev.pointerId);
     if (buildPointers.size < 2) pinchPrev = null;
-    if (strike.armed && wasTap) {
+    if (strike.falling > 0 && wasTap) {
+      // the feed owns every tap while the munition flies: pointerdown already
+      // spent this one on retarget-or-skip, and letting it fall through
+      // opened the tower shop underneath the strike camera
+      lastTap = null;
+    } else if (strike.armed && wasTap) {
       // painting outranks every other tap while armed: the board is a
       // targeting surface until the safety goes back on
       const ci = cellAtScreen(ev.clientX, ev.clientY);
@@ -1829,35 +1849,39 @@ export function initTdTab(root) {
         showRangeRing(ci, strikeTune.blastCells, 0xffb347, 30);
         syncArmUi();
       }
-    } else if (buildMode && wasTap) {
-      // double-tap anywhere rides the view home. Checked BEFORE the shop
-      // opens, and it closes whatever the first tap of the pair opened —
-      // so the gesture works over a cell, not only over empty board.
+    } else if (wasTap) {
+      // double-tap in ORBIT rides the view home AND pulls back to the whole
+      // planet — the strategic pose is one gesture from anywhere. Checked
+      // BEFORE the shop opens, closing whatever the first tap opened.
       const tnow = performance.now();
-      const dbl = lastTap && tnow - lastTap.t < DTAP_MS
+      const dbl = buildMode && lastTap && tnow - lastTap.t < DTAP_MS
         && Math.hypot(ev.clientX - lastTap.x, ev.clientY - lastTap.y) <= DTAP_PX;
       if (dbl) {
         lastTap = null;
         closeShop();
         centerBuildOnHeart();
-      } else {
-        lastTap = { t: tnow, x: ev.clientX, y: ev.clientY };
-        const ci = cellAtScreen(ev.clientX, ev.clientY);
-        if (ci !== -1) openShop(ci, ev.clientX, ev.clientY);
+        buildDist = 3.4;
+        return;
       }
-    } else if (!buildMode && params.view === 'bastion' && wasTap) {
-      const r = renderer.domElement.getBoundingClientRect();
-      ndc.set(((ev.clientX - r.left) / r.width) * 2 - 1,
-        -((ev.clientY - r.top) / r.height) * 2 + 1);
-      raycaster.setFromCamera(ndc, camera);
-      const hits = raycaster.intersectObjects(towers.map((tw) => tw.obj), true);
-      if (hits.length) {
-        let obj = hits[0].object;
-        while (obj && !towers.some((tw) => tw.obj === obj)) obj = obj.parent;
-        watchTower = towers.find((tw) => tw.obj === obj) || null;
-      } else {
+      lastTap = { t: tnow, x: ev.clientX, y: ev.clientY };
+      // bastion first claim: a tap on a TOWER watches it
+      if (params.view === 'bastion') {
+        const r = renderer.domElement.getBoundingClientRect();
+        ndc.set(((ev.clientX - r.left) / r.width) * 2 - 1,
+          -((ev.clientY - r.top) / r.height) * 2 + 1);
+        raycaster.setFromCamera(ndc, camera);
+        const hits = raycaster.intersectObjects(towers.map((tw) => tw.obj), true);
+        if (hits.length) {
+          let obj = hits[0].object;
+          while (obj && !towers.some((tw) => tw.obj === obj)) obj = obj.parent;
+          watchTower = towers.find((tw) => tw.obj === obj) || null;
+          return;
+        }
         watchTower = null;
       }
+      // the shop opens under EVERY camera — building is not a mode
+      const ci = cellAtScreen(ev.clientX, ev.clientY);
+      if (ci !== -1) openShop(ci, ev.clientX, ev.clientY);
     }
     if (buildPointers.size === 0) { pinched = false; tapStart = null; }
   }
@@ -2272,9 +2296,13 @@ export function initTdTab(root) {
       // before the 2nd wave or the field is empty and checkVictory false-fires
       seedPortals(1);
       spawnWave(); // a real 2nd wave: fresh gate + normal enemies (war is live)
-      tutBanner('Build Towers. Towers go on HIGH GROUND, near the edge.',
-        { skip: !!safeSeen() });
-      pulseButton('#td-pad-build');
+      tutBanner('Build Towers — tap any HIGH GROUND cell, from any camera. '
+        + 'The flashing cells are legal.', { skip: !!safeSeen() });
+      // no button to pulse: building stopped being a mode. The orbit view is
+      // just the best vantage for the lesson, so swing there.
+      setView('orbit');
+      snapCamera();
+      pulseButton(null);
       this.animateLegalSpots();
     },
     animateLegalSpots() {
@@ -2514,11 +2542,9 @@ export function initTdTab(root) {
       `HEART ${'♥'.repeat(Math.max(0, heartHP)).padEnd(HEART_MAX, '·')}  YOU ♥${playerHP}  ✦${ammo}\n` +
       `<span class="hud-credit">${eco.credit}c ×${eco.multiplier().toFixed(2)}</span> · towers ${towers.length}\n` +
       `WAVE ${wave} · ${Math.min(8, Math.max(0, wave))}/8 towers · portals ${spAlive}/${spawnPoints.length} · R${round}${alerts}\n` +
-      (buildMode
-        // 'frozen' described the whole tab and is now only half true: the
-        // wave is held, the tank is not. Say which.
-        ? (anyHostiles() ? 'BUILD · war on' : 'BUILD · wave held · you can drive')
-        : (manualActive() ? (cruise ? 'CRUISE' : 'MANUAL')
+      // one mode: the line reads camera + hold + who is driving
+      ((buildFrozen() ? 'WAVE HELD · ' : (waveHold ? 'HOLD ARMED · ' : ''))
+        + (manualActive() ? (cruise ? 'CRUISE' : 'MANUAL')
           : `AUTO · ${DIRECTIVE_LABEL[params.directive] || 'WANDER'}`));
     // diegetic shell rack: the 3×3 turret dots ARE the ammo counter —
     // neon white loaded, faded grey spent (allies stay full: infinite ammo)
@@ -2536,7 +2562,8 @@ export function initTdTab(root) {
   // unrammable tier; portals are always worth a shell when nothing else
   // is pressing. Manual mode leaves the trigger entirely to the player.
   function autoGunner(tNow) {
-    if (manualActive() || buildMode || player.won || paused) return;
+    // any camera: watching from orbit must not stand your own gun down
+    if (manualActive() || player.won || paused) return;
     if (ammo <= 0 || cannonHeat > 0) return;
     const R = cellSide * 3.0;
     const shellsForAll = params.directive !== 'conserve' && params.directive !== 'ram';
@@ -3553,7 +3580,7 @@ export function initTdTab(root) {
       feel.hoverT = 0;
       landTankFeel(feel);
       applyTankHealth(playerMesh, playerHP / PLAYER_MAX);
-      if (!buildMode) { buildMode = true; syncBuildUi(); snapCamera(); }
+      if (!buildMode) { setView('orbit'); snapCamera(); }
       showToast(`<div class="wave-num">TANK LOST</div>`
         + `<div class="wave-role">${playerHP} left — regroup, then drive out</div>`, 2600);
     }, DEATH_HOLD * 1000);
@@ -4308,7 +4335,8 @@ export function initTdTab(root) {
   gui.add(params, 'look', LOOK_NAMES).onChange(applyLook);
   gui.add(params, 'wallTops', ['auto', 'bright', 'dim', 'black'])
     .name('wall tops').onChange(applyLook);
-  const viewCtrl = gui.add(params, 'view', ['pov', 'third', 'bastion']).name('camera (V)');
+  const viewCtrl = gui.add(params, 'view', ['orbit', 'pov', 'third', 'bastion'])
+    .name('camera (V)').onChange((v) => setView(v));
   const speedCtrl = gui.add(params, 'speed', 0.2, 4, 0.1).name('wander speed');
   const directiveCtrl = gui.add(params, 'directive', DIRECTIVES).name('auto directive').onChange(syncDirectiveChip);
   gui.add(params, 'recoil', 0, 8, 0.1).name('shell recoil');
@@ -4539,7 +4567,7 @@ export function initTdTab(root) {
         // the new ground cools back to its true colors; planning begins
         for (const ci of revealCells) paintCell(ci, floorColorOf(ci));
         revealCells = [];
-        if (!buildMode) { buildMode = true; syncBuildUi(); }
+        if (!buildMode) setView('orbit');
         updateHud();
       }
     }
@@ -4811,7 +4839,7 @@ export function initTdTab(root) {
   if (urlParams.get('laser') === '1') keys.laser = true;
 
   // ?mode=build / ?map=heart jump straight into the TD viewpoints
-  if (urlParams.get('mode') === 'build') { buildMode = true; syncBuildUi(); snapCamera(); }
+  if (urlParams.get('mode') === 'build') { setView('orbit'); snapCamera(); } // legacy alias for view=orbit
   if (urlParams.get('map') === 'heart') mapMode = 'heart';
 
   // ?credit=N pads the purse; ?tower=key@ci,key@ci force-places towers

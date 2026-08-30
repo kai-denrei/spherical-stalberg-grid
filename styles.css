@@ -362,16 +362,14 @@ html, body {
 }
 
 /* build mode is the planning instrument: driving controls step aside */
-/* The steering strips STAY in build mode — the tank is still yours while you
-   plan, and hiding them left the throttle visible with no way to aim it.
-   They are narrow edge strips, so the middle of the board is still free for
-   the drag that orbits the sphere. The fire buttons do go: building is not
-   shooting, and the auto gunner stands down here too. */
-#tab-td.build .tzone-mid,
-#tab-td.build .tfire,
-#tab-td.build #td-pad-hint,
-#tab-td.build #td-pad-view {
-  display: none !important;
+/* ONE MODE: orbit is a camera, not an instrument swap. Nothing hides —
+   steering, throttle, fire and the view cycle all stay, because every
+   capability works under every camera now. (This rule once hid the fight
+   controls in "build mode"; the mode is gone.) */
+#td-pad-build.holding {
+  color: #061018;
+  background: #ffd75e;
+  border-color: #ffd75e;
 }
 
 /* touch devices: 44pt+ hit targets (Apple HIG), roomier gaps */
