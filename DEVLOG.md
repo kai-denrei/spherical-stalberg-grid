@@ -6,6 +6,30 @@ Demo links assume `npm run serve` (port 8144) or the
 
 ---
 
+## `65a80a5` — The balance, confirmed by rerun
+
+Same 3 styles × 8 seeds, same seed ladder, new balance
+(`docs/simdata-2026-08-30-post-balance.jsonl`). Before → after:
+
+- **style1 (the operator's style): 5W/3L → 7W/1 timeout, zero losses.**
+  Median heart: was 5 by wave 3 — now **10 flat through wave 6**. The
+  garrison + taper removed the early executions entirely; the one long
+  run rode 1 heart from wave 7 to 18, dangerous the whole way.
+- **style2 (pure builder): 5L early → 7L LATE (median final wave 6 →
+  10.5, heart 10 until ~wave 12, then collapse).** This is the AOE gate
+  working as designed: tower-only turtling no longer scales into the
+  invasion — without the relay's artillery you eventually drown. Fight
+  hands-on or go hack.
+- **style0 (floor): still dies at wave 2–3.** The metrics still tell bad
+  play from good.
+
+Honest flag: waves 1–6 may now be *too* safe for a competent hands-on
+player (median damage zero). If playtests agree, the taper has room to
+retreat from 55/70/85 toward 70/80/90. The credit flood persists
+(wave 6–9 onset) — still the next lever.
+
+---
+
 ## `d6eac40` — The relay holds the artillery now
 
 The sim batch's levers, pulled as the operator ruled them:
