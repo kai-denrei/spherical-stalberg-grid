@@ -19,31 +19,31 @@
 
 import * as THREE from '../vendor/three.module.js';
 import GUI from '../vendor/lil-gui.esm.js';
-import { generateSphereMesh, relax } from './grid.js?v=0fefacaf';
-import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=0fefacaf';
-import { mulberry32, randomSeed } from './rng.js?v=0fefacaf';
-import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3, segKey } from './vec3.js?v=0fefacaf';
-import { CREATURES, waveJelly } from './creatures.js?v=0fefacaf';
-import { UNITS, UNIT_NAMES, buildUnit, buildCreature, preloadMkcx, preloadServer, makeServerFixture, makeShieldShell, preloadContainer, makeContainerFixture, makeBulletCloud, makeRewardSolid, makeShellSolid, makeDebris, makeDotBurst, makePortalCloud, makeHeartCloud, makeDotEnemy } from './units.js?v=0fefacaf';
-import { LOOKS, LOOK_NAMES } from './looks.js?v=0fefacaf';
-import { makeCellIndex } from './cellindex.js?v=0fefacaf';
-import { CREATURE_TINTS, ENEMY_SPEC, INTROS, computeWavePlan } from './enemyspec.js?v=0fefacaf';
-import { PICKUPS } from './pickups.js?v=0fefacaf';
-import { rankFor, rankLabel, badgeSVG, killReq, eliteReq } from './ranks.js?v=0fefacaf';
-import { makeScore } from './score.js?v=0fefacaf';
-import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER } from './towers.js?v=0fefacaf';
-import { makeEconomy, sellRefund } from './economy.js?v=0fefacaf';
-import { makeBloom } from './postfx.js?v=0fefacaf';
-import { TANK_FEEL, TANK_FEEL_KNOBS, makeTankFeel, stepTankFeel, landTankFeel, fireTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js?v=0fefacaf';
-import { FEEL, loadFeel, saveFeel } from './feelstore.js?v=0fefacaf';
+import { generateSphereMesh, relax } from './grid.js?v=07fa8d0e';
+import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=07fa8d0e';
+import { mulberry32, randomSeed } from './rng.js?v=07fa8d0e';
+import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3, segKey } from './vec3.js?v=07fa8d0e';
+import { CREATURES, waveJelly } from './creatures.js?v=07fa8d0e';
+import { UNITS, UNIT_NAMES, buildUnit, buildCreature, preloadMkcx, preloadServer, makeServerFixture, makeShieldShell, preloadContainer, makeContainerFixture, makeBulletCloud, makeRewardSolid, makeShellSolid, makeDebris, makeDotBurst, makePortalCloud, makeHeartCloud, makeDotEnemy } from './units.js?v=07fa8d0e';
+import { LOOKS, LOOK_NAMES } from './looks.js?v=07fa8d0e';
+import { makeCellIndex } from './cellindex.js?v=07fa8d0e';
+import { CREATURE_TINTS, ENEMY_SPEC, INTROS, computeWavePlan } from './enemyspec.js?v=07fa8d0e';
+import { PICKUPS } from './pickups.js?v=07fa8d0e';
+import { rankFor, rankLabel, badgeSVG, killReq, eliteReq } from './ranks.js?v=07fa8d0e';
+import { makeScore } from './score.js?v=07fa8d0e';
+import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER } from './towers.js?v=07fa8d0e';
+import { makeEconomy, sellRefund } from './economy.js?v=07fa8d0e';
+import { makeBloom } from './postfx.js?v=07fa8d0e';
+import { TANK_FEEL, TANK_FEEL_KNOBS, makeTankFeel, stepTankFeel, landTankFeel, fireTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js?v=07fa8d0e';
+import { FEEL, loadFeel, saveFeel } from './feelstore.js?v=07fa8d0e';
 import { STRIKE_KNOBS, makeStrike, makeStrikeParams, grantStrikes, stepStrike,
   toggleArm, paintTarget, launchStrike, stepFall, skipFall, fallProgress,
-  strikeDamage, retargetStrike, orbitProgress } from './strike.js?v=0fefacaf';
-import { radarBasis, radarProject, radarBearing, sweepAngle, radarPhosphor } from './radar.js?v=0fefacaf';
-import { BLOOM_GROUPS } from './bloomweights.js?v=0fefacaf';
-import { TOWER_LOOK_NAMES, DEFAULT_TOWER_LOOK, buildTowerLook, preloadLook } from './towerlooks.js?v=0fefacaf';
-import { makeAudio } from './audio.js?v=0fefacaf';
-import { DEATH_KEYS } from './audiomanifest.js?v=0fefacaf';
+  strikeDamage, retargetStrike, orbitProgress } from './strike.js?v=07fa8d0e';
+import { radarBasis, radarProject, radarBearing, sweepAngle, radarPhosphor } from './radar.js?v=07fa8d0e';
+import { BLOOM_GROUPS } from './bloomweights.js?v=07fa8d0e';
+import { TOWER_LOOK_NAMES, DEFAULT_TOWER_LOOK, buildTowerLook, preloadLook } from './towerlooks.js?v=07fa8d0e';
+import { makeAudio } from './audio.js?v=07fa8d0e';
+import { DEATH_KEYS } from './audiomanifest.js?v=07fa8d0e';
 
 export function initTdTab(root) {
   let active = false;
@@ -827,16 +827,23 @@ export function initTdTab(root) {
     return n;
   }
 
+  // a life container blocks like a wall — except for the hull currently
+  // berthed in it (spawns start INSIDE and drive out; once out, the box
+  // is solid again behind you)
+  function containerBlocked(ci) {
+    return ci !== player.cur && lifeContainers.some((cc) => cc.ci === ci);
+  }
   function freeBlocked(cand) {
     const ci = cellIndex(cand);
     // the SERVER is solid: a machine you can drive through is a prop, not
     // a fixture (operator field report — the tank phased clean through)
-    if (ci === -1 || dungeon.tags[ci] === BLOCKED || ci === serverCi) return true;
+    if (ci === -1 || dungeon.tags[ci] === BLOCKED || ci === serverCi
+      || containerBlocked(ci)) return true;
     // wide ground keeps the clipping margin; narrow halls trade a little
     // visual overlap for guaranteed passability
     const margin = cellSide * (openCount(ci) <= 3 ? 0.45 : 0.62);
     for (const nb of graph.adj[ci]) {
-      if ((dungeon.tags[nb] === BLOCKED || nb === serverCi)
+      if ((dungeon.tags[nb] === BLOCKED || nb === serverCi || containerBlocked(nb))
         && dist3(cand, graph.centers[nb]) < margin) return true;
     }
     return unitBlocker(cand);
@@ -1681,7 +1688,11 @@ export function initTdTab(root) {
   // the player is actively steering, but unvisited-cell curiosity, a
   // backtrack penalty, and noise keep the walker willful.
   function chooseNext() {
-    const exits = openNeighbors(player.cur);
+    let exits = openNeighbors(player.cur);
+    // auto never routes THROUGH a berth (free movement already refuses);
+    // if the boxes somehow wall the only way out, solidity yields
+    const clear = exits.filter((e2) => !containerBlocked(e2));
+    if (clear.length) exits = clear;
     if (exits.length === 0) return -1;
     // control mode: while the user steers, their intent dominates — the
     // creature's curiosity, backtrack aversion, and whims all yield
