@@ -19,31 +19,31 @@
 
 import * as THREE from '../vendor/three.module.js';
 import GUI from '../vendor/lil-gui.esm.js';
-import { generateSphereMesh, relax } from './grid.js?v=ebb60e76';
-import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=ebb60e76';
-import { mulberry32, randomSeed } from './rng.js?v=ebb60e76';
-import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3, segKey } from './vec3.js?v=ebb60e76';
-import { CREATURES, waveJelly } from './creatures.js?v=ebb60e76';
-import { UNITS, UNIT_NAMES, buildUnit, buildCreature, preloadMkcx, makeBulletCloud, makeRewardSolid, makeShellSolid, makeDebris, makeDotBurst, makePortalCloud, makeHeartCloud, makeDotEnemy } from './units.js?v=ebb60e76';
-import { LOOKS, LOOK_NAMES } from './looks.js?v=ebb60e76';
-import { makeCellIndex } from './cellindex.js?v=ebb60e76';
-import { CREATURE_TINTS, ENEMY_SPEC, INTROS, computeWavePlan } from './enemyspec.js?v=ebb60e76';
-import { PICKUPS } from './pickups.js?v=ebb60e76';
-import { rankFor, rankLabel, badgeSVG, killReq, eliteReq } from './ranks.js?v=ebb60e76';
-import { makeScore } from './score.js?v=ebb60e76';
-import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER } from './towers.js?v=ebb60e76';
-import { makeEconomy, sellRefund } from './economy.js?v=ebb60e76';
-import { makeBloom } from './postfx.js?v=ebb60e76';
-import { TANK_FEEL, TANK_FEEL_KNOBS, makeTankFeel, stepTankFeel, landTankFeel, fireTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js?v=ebb60e76';
-import { FEEL, loadFeel, saveFeel } from './feelstore.js?v=ebb60e76';
+import { generateSphereMesh, relax } from './grid.js?v=c25d4f48';
+import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=c25d4f48';
+import { mulberry32, randomSeed } from './rng.js?v=c25d4f48';
+import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3, segKey } from './vec3.js?v=c25d4f48';
+import { CREATURES, waveJelly } from './creatures.js?v=c25d4f48';
+import { UNITS, UNIT_NAMES, buildUnit, buildCreature, preloadMkcx, makeBulletCloud, makeRewardSolid, makeShellSolid, makeDebris, makeDotBurst, makePortalCloud, makeHeartCloud, makeDotEnemy } from './units.js?v=c25d4f48';
+import { LOOKS, LOOK_NAMES } from './looks.js?v=c25d4f48';
+import { makeCellIndex } from './cellindex.js?v=c25d4f48';
+import { CREATURE_TINTS, ENEMY_SPEC, INTROS, computeWavePlan } from './enemyspec.js?v=c25d4f48';
+import { PICKUPS } from './pickups.js?v=c25d4f48';
+import { rankFor, rankLabel, badgeSVG, killReq, eliteReq } from './ranks.js?v=c25d4f48';
+import { makeScore } from './score.js?v=c25d4f48';
+import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER } from './towers.js?v=c25d4f48';
+import { makeEconomy, sellRefund } from './economy.js?v=c25d4f48';
+import { makeBloom } from './postfx.js?v=c25d4f48';
+import { TANK_FEEL, TANK_FEEL_KNOBS, makeTankFeel, stepTankFeel, landTankFeel, fireTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js?v=c25d4f48';
+import { FEEL, loadFeel, saveFeel } from './feelstore.js?v=c25d4f48';
 import { STRIKE_KNOBS, makeStrike, makeStrikeParams, grantStrikes, stepStrike,
   toggleArm, paintTarget, launchStrike, stepFall, skipFall, fallProgress,
-  strikeDamage, retargetStrike, orbitProgress } from './strike.js?v=ebb60e76';
-import { radarBasis, radarProject, radarBearing, sweepAngle, radarPhosphor } from './radar.js?v=ebb60e76';
-import { BLOOM_GROUPS } from './bloomweights.js?v=ebb60e76';
-import { TOWER_LOOK_NAMES, DEFAULT_TOWER_LOOK, buildTowerLook, preloadLook } from './towerlooks.js?v=ebb60e76';
-import { makeAudio } from './audio.js?v=ebb60e76';
-import { DEATH_KEYS } from './audiomanifest.js?v=ebb60e76';
+  strikeDamage, retargetStrike, orbitProgress } from './strike.js?v=c25d4f48';
+import { radarBasis, radarProject, radarBearing, sweepAngle, radarPhosphor } from './radar.js?v=c25d4f48';
+import { BLOOM_GROUPS } from './bloomweights.js?v=c25d4f48';
+import { TOWER_LOOK_NAMES, DEFAULT_TOWER_LOOK, buildTowerLook, preloadLook } from './towerlooks.js?v=c25d4f48';
+import { makeAudio } from './audio.js?v=c25d4f48';
+import { DEATH_KEYS } from './audiomanifest.js?v=c25d4f48';
 
 export function initTdTab(root) {
   let active = false;
@@ -479,7 +479,8 @@ export function initTdTab(root) {
   // Callouts: quick bragging text for the plays worth bragging about.
   // Message lists ROTATE (a counter, not Math.random — house rule) so
   // repeats spread out deterministically.
-  const RECKLESS_MSGS = ['RECKLESS!', 'CLOSE CALL!', 'TIGHT!', 'FEARLESS!'];
+  const RECKLESS_MSGS = ['RECKLESS!', 'すげ〜！', 'CLOSE CALL!', 'ヤバイ！',
+    'TIGHT!', '接近だ！', 'FEARLESS!', '接近過ぎ！'];
   const HEART_MSGS = ['PROTECT THE HEART!', 'LIVING DANGEROUSLY!',
     'NEED SAFETY BUFFER!', 'LAST LINE HOLDS!'];
   let recklessIdx = 0, heartIdx = 0;
@@ -3586,6 +3587,8 @@ export function initTdTab(root) {
   const Z_AXIS = new THREE.Vector3(0, 0, 1);
   const gunColCool = new THREE.Color(0x7df9ff);
   const gunColHot = new THREE.Color(0xff5340);
+  const gunEmiCool = new THREE.Color(0x06262c);
+  const gunEmiHot = new THREE.Color(0xff2200);
 
   function killLaser(i) {
     scene.remove(laserShots[i].mesh); // geometry/material are shared — keep
@@ -3606,10 +3609,21 @@ export function initTdTab(root) {
     } else {
       laserHeat = Math.max(0, laserHeat - LASER_COOL * dt);
     }
-    // diegetic gauge: both tubes share one material per tank
+    // diegetic gauge: both tubes share one material per tank. The mkcx
+    // tank exposes a private clone (gunHeatMat) whose EMISSIVE carries the
+    // heat — its textured PBR gun barely shows a color multiply, and the
+    // emissive is what the bloom chain turns into a visible glow.
     if (guns) {
-      const tube = guns[0].children[0];
-      tube.material.color.lerpColors(gunColCool, gunColHot, laserHeat / LASER_MAX_HEAT);
+      const f = laserHeat / LASER_MAX_HEAT;
+      const mat = playerMesh.userData.gunHeatMat
+        || (guns[0].children[0] && guns[0].children[0].material);
+      if (mat && mat.color) {
+        mat.color.lerpColors(gunColCool, gunColHot, f);
+        if (mat.emissive) {
+          mat.emissive.lerpColors(gunEmiCool, gunEmiHot, f);
+          mat.emissiveIntensity = 0.3 + 1.7 * f;
+        }
+      }
     }
     // ...and the same cycle on the pad button: white -> orange -> red as
     // heat builds, blinking red through the lockout. Style only when the
@@ -5496,8 +5510,22 @@ export function initTdTab(root) {
   // ?found=1 marks every spawn point discovered (minimap beacon check)
   if (urlParams.get('found') === '1') for (const sp of spawnPoints) sp.found = true;
 
-  // ?laser=1 holds the laser trigger down (headless visual check)
-  if (urlParams.get('laser') === '1') keys.laser = true;
+  // ?laser=1 holds the laser trigger down (headless visual check) and
+  // reports where the heat actually lands — a color that no one can see is
+  // exactly the bug this line exists to catch
+  if (urlParams.get('laser') === '1') {
+    keys.laser = true;
+    for (const at of [2500, 6000, 12000]) {
+      setTimeout(() => {
+        const m = playerMesh && playerMesh.userData && playerMesh.userData.gunHeatMat;
+        console.log(`GUNHEAT t=${at} mat=${!!m}`
+          + ` kind=${playerMesh && playerMesh.userData.kind}`
+          + ` heat=${laserHeat.toFixed(2)}`
+          + (m ? ` col=${m.color.getHexString()} emi=${m.emissive ? m.emissive.getHexString() : '-'}`
+            + ` int=${(m.emissiveIntensity ?? 0).toFixed(2)}` : ''));
+      }, at);
+    }
+  }
 
   // ?mode=build / ?map=heart jump straight into the TD viewpoints
   if (urlParams.get('mode') === 'build') { setView('orbit'); snapCamera(); } // legacy alias for view=orbit

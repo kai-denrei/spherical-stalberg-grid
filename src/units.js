@@ -16,12 +16,12 @@
 
 import * as THREE from '../vendor/three.module.js';
 import { loadGlb, mergeByMaterial, fitModel, tintModel, makeShellRack,
-  addEdgeOutlines, makeHeatSleeve } from './glbmodels.js?v=ebb60e76';
-import { CREATURES, waveJelly, swimWave, spherePts, bulletPts, missilePts, heartPts, torusPts, towerHeadPts, enemyDotPts, portalPts } from './creatures.js?v=ebb60e76';
-import { TOWER_FEEL, TOWER_HEADS, headKindFor } from './towerfeel.js?v=ebb60e76';
+  addEdgeOutlines, makeHeatSleeve } from './glbmodels.js?v=c25d4f48';
+import { CREATURES, waveJelly, swimWave, spherePts, bulletPts, missilePts, heartPts, torusPts, towerHeadPts, enemyDotPts, portalPts } from './creatures.js?v=c25d4f48';
+import { TOWER_FEEL, TOWER_HEADS, headKindFor } from './towerfeel.js?v=c25d4f48';
 import { STARGATE_PTS, STARGATE_STROKE,
-  HORIZON_N, stargateHorizon } from './stargate.js?v=ebb60e76';
-import { ENEMY_SPEC } from './enemyspec.js?v=ebb60e76';
+  HORIZON_N, stargateHorizon } from './stargate.js?v=c25d4f48';
+import { ENEMY_SPEC } from './enemyspec.js?v=c25d4f48';
 
 function normalizeToUnit(group) {
   group.updateMatrixWorld(true);
@@ -1428,7 +1428,22 @@ function makeMkcx(cols) {
   // td-tab looks for the heat gauge — so the model's own gun glows instead.
   // Both share one material so they heat together, as makeTank's do.
   if (guns.length === 2 && guns[0].children[0] && guns[1].children[0]) {
-    guns[1].children[0].material = guns[0].children[0].material;
+    // CLONE the gun material: mergeByMaterial can hand these meshes the
+    // same material instance as other hull parts, so heating the shared
+    // instance tinted half the deck by a hair and the guns by nothing
+    // visible. A private clone, shared between the two guns only, heats
+    // alone — and is stashed on userData so the tab can drive its EMISSIVE
+    // channel too (a color multiply on a dark textured PBR gun is nearly
+    // invisible; an emissive glow is what the bloom chain amplifies).
+    const src = guns[0].children[0].material;
+    if (!Array.isArray(src)) {
+      const mat = src.clone();
+      guns[0].children[0].material = mat;
+      guns[1].children[0].material = mat;
+      g.userData.gunHeatMat = mat;
+    } else {
+      guns[1].children[0].material = src;
+    }
   }
   g.userData.tick = (t) => { if (turret) turret.rotation.y = Math.sin(t * 0.6) * 0.7; };
   g.userData.lift = 0.02;
