@@ -6,6 +6,28 @@ Demo links assume `npm run serve` (port 8144) or the
 
 ---
 
+## `10eb089` — The bubble, and the catalogue's budget
+
+**The energy shield.** A fourth pickup (dome orb — it joins `PICKUPS`, so
+the viewer's Neutral group and the glossary describe it without being
+told): 12 seconds of a dot-shell bubble over the hull — a fibonacci
+ellipsoid of 280 additive points, one draw call, bloom doing the energy
+read. Touch damage bounces off while it holds (the impact still shoves —
+armor stops damage, not physics), the shell flashes on each absorbed hit
+and blinks urgent through its last quarter. Regrows like the other
+consumables. One measurement mattered: the bubble is sized off the CELL —
+the first cut rode `unitScale`, which carries the mkcx normalization, and
+came out five cells wide.
+
+**The viewer goes wild.** Every `DOT_SHAPES` entry takes a density factor:
+game at d=1, unit viewer at **d=4** — one unit on screen at a time can
+afford what a crowd cannot. The shellback's log spiral finally reads as a
+nautilus at 1600 dots. Nothing was hand-added for the new roster: the
+three invasion enemies and the shield orb all arrive in the viewer
+through the derived lists.
+
+---
+
 ## `36521a1` — Three ways to be dangerous
 
 The invasion phase (waves 13+) gets its own roster, one behavior each:
