@@ -6,6 +6,25 @@ Demo links assume `npm run serve` (port 8144) or the
 
 ---
 
+## `(phone v3)` — Smaller, and never everything at once
+
+An operator field screenshot settled it: on a real phone every HUD
+element rendered at desktop scale, all visible at the same time —
+unplayable. The fix is two principles, not twenty tweaks:
+
+- **Smaller.** Mode row to single-line pills (mute button deleted on
+  phones — the phone has a hardware mute), panel to 10px with a width
+  cap, radar to 23vmin/138px (the armed targeting view keeps its size),
+  cards/toasts/console/chip compacted, wheel and throttle scaled by
+  uniform transform so spacing shrinks with the buttons.
+- **Never everything at once.** The tower radial adds a `shopping` class
+  and every transient element clears out from under it — placement is a
+  focused task and gets a clean screen.
+
+Zero overlaps by rectangle probe, verified at real 390px.
+
+---
+
 ## `8a71ea4` — The catalogue earns its fullscreen
 
 Two viewer passes (`63cdba7`, `8a71ea4`): fullscreen units read as sparse
