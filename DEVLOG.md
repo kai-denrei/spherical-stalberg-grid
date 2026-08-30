@@ -6,6 +6,39 @@ Demo links assume `npm run serve` (port 8144) or the
 
 ---
 
+## `e34b4d4` — The HUD is an instrument panel now
+
+Preceded by `fe71108` (three tweaks): every autopilot directive except RAM
+and AVOID now carries a proximity-weighted flee vector away from the solid
+tier — filed against seek-home driving the hull through a barbed; the
+secondary's lockout is audible (a dry-fire click — the reload sample's
+first transient pitched up, rate-limited by the manifest's `minInterval`
+while the play call fires every frame) and legible (the red drains out of
+the pad button bottom-up as the tubes cool, 4% steps); CORONAVIRUS → VIRUS
+and SOLVING TORUS → THORUS, single-sourced in `INTROS`.
+
+**The rework.** The five-line text block became a CRT panel in the
+established console family — subtler than the manual and SitRep, because
+this one never goes away. The design rule: three brightness tiers for
+three reading distances — vitals bright (red hearts with dim sockets,
+cyan tank HP, shells going red at zero), resources mid (orange credit,
+the wave numeral largest on the panel), meta/objectives dim, alerts a
+transient amber row.
+
+Two ideas carry the rest:
+
+- **Control state lives on the control.** The MANUAL/AUTO line left the
+  panel; the AUTO button is amber while engaged and wears its directive's
+  name. A state line you read *next to* a button you press was the same
+  fact twice.
+- **Grouping by tint, not by markup.** Camera buttons cyan (the tank's
+  color), system buttons green. No separators, no extra width — the mode
+  row still fits a 390px phone, which was the stated preoccupation. The
+  phone panel tightens to hold all five rows (alert included) above the
+  NEXT WAVE chip; the rectangle probe reports zero overlaps.
+
+---
+
 ## `1e4d2f7` — Feel: splash, heat, bragging rights, and a report
 
 Four commits in one playtest cadence (`92aa458`, `577f07a`, `1e4d2f7`):
