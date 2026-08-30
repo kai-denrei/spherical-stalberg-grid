@@ -6,6 +6,27 @@ Demo links assume `npm run serve` (port 8144) or the
 
 ---
 
+## `a328217` — The phone gets flicked
+
+Three mobile rulings from live testing:
+
+- **The NEXT WAVE chip is transient.** Mid-wave it read "clear the field"
+  — permanent furniture stating what the board already shows. It appears
+  at wave-clear with the countdown, leaves at spawn.
+- **The console folds vertical.** Safety over readout over 発射, 128px in
+  the right column under the radar, instead of a 296px bar across the left
+  column. The lane moves left below the chip; the hack button docks under
+  the console; the SitRep compacts to die above the throttle. Probe: zero
+  overlaps.
+- **Orbit is explorable.** `buildFollowTank` yielded only while a finger
+  was DOWN — and phones explore in flicks, so every lift let the
+  off-frame tank yank the camera home ("impossible to explore"). A pan
+  now *suspends* the follow; driving again (steer, keys, cruise) or an
+  explicit recenter re-arms it. The duty survives exactly where it is a
+  duty: while you are actually driving from top-down.
+
+---
+
 ## `1c9f81a` — THE SERVER, and the first hack
 
 Something new: at the heart's exact antipode (minimum-dot cell, measured
