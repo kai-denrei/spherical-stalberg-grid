@@ -19,31 +19,31 @@
 
 import * as THREE from '../vendor/three.module.js';
 import GUI from '../vendor/lil-gui.esm.js';
-import { generateSphereMesh, relax } from './grid.js?v=8a0c8908';
-import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=8a0c8908';
-import { mulberry32, randomSeed } from './rng.js?v=8a0c8908';
-import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3, segKey } from './vec3.js?v=8a0c8908';
-import { CREATURES, waveJelly } from './creatures.js?v=8a0c8908';
-import { UNITS, UNIT_NAMES, buildUnit, buildCreature, preloadMkcx, preloadServer, makeServerFixture, makeBulletCloud, makeRewardSolid, makeShellSolid, makeDebris, makeDotBurst, makePortalCloud, makeHeartCloud, makeDotEnemy } from './units.js?v=8a0c8908';
-import { LOOKS, LOOK_NAMES } from './looks.js?v=8a0c8908';
-import { makeCellIndex } from './cellindex.js?v=8a0c8908';
-import { CREATURE_TINTS, ENEMY_SPEC, INTROS, computeWavePlan } from './enemyspec.js?v=8a0c8908';
-import { PICKUPS } from './pickups.js?v=8a0c8908';
-import { rankFor, rankLabel, badgeSVG, killReq, eliteReq } from './ranks.js?v=8a0c8908';
-import { makeScore } from './score.js?v=8a0c8908';
-import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER } from './towers.js?v=8a0c8908';
-import { makeEconomy, sellRefund } from './economy.js?v=8a0c8908';
-import { makeBloom } from './postfx.js?v=8a0c8908';
-import { TANK_FEEL, TANK_FEEL_KNOBS, makeTankFeel, stepTankFeel, landTankFeel, fireTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js?v=8a0c8908';
-import { FEEL, loadFeel, saveFeel } from './feelstore.js?v=8a0c8908';
+import { generateSphereMesh, relax } from './grid.js?v=989e0b6d';
+import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=989e0b6d';
+import { mulberry32, randomSeed } from './rng.js?v=989e0b6d';
+import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3, segKey } from './vec3.js?v=989e0b6d';
+import { CREATURES, waveJelly } from './creatures.js?v=989e0b6d';
+import { UNITS, UNIT_NAMES, buildUnit, buildCreature, preloadMkcx, preloadServer, makeServerFixture, makeBulletCloud, makeRewardSolid, makeShellSolid, makeDebris, makeDotBurst, makePortalCloud, makeHeartCloud, makeDotEnemy } from './units.js?v=989e0b6d';
+import { LOOKS, LOOK_NAMES } from './looks.js?v=989e0b6d';
+import { makeCellIndex } from './cellindex.js?v=989e0b6d';
+import { CREATURE_TINTS, ENEMY_SPEC, INTROS, computeWavePlan } from './enemyspec.js?v=989e0b6d';
+import { PICKUPS } from './pickups.js?v=989e0b6d';
+import { rankFor, rankLabel, badgeSVG, killReq, eliteReq } from './ranks.js?v=989e0b6d';
+import { makeScore } from './score.js?v=989e0b6d';
+import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER } from './towers.js?v=989e0b6d';
+import { makeEconomy, sellRefund } from './economy.js?v=989e0b6d';
+import { makeBloom } from './postfx.js?v=989e0b6d';
+import { TANK_FEEL, TANK_FEEL_KNOBS, makeTankFeel, stepTankFeel, landTankFeel, fireTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js?v=989e0b6d';
+import { FEEL, loadFeel, saveFeel } from './feelstore.js?v=989e0b6d';
 import { STRIKE_KNOBS, makeStrike, makeStrikeParams, grantStrikes, stepStrike,
   toggleArm, paintTarget, launchStrike, stepFall, skipFall, fallProgress,
-  strikeDamage, retargetStrike, orbitProgress } from './strike.js?v=8a0c8908';
-import { radarBasis, radarProject, radarBearing, sweepAngle, radarPhosphor } from './radar.js?v=8a0c8908';
-import { BLOOM_GROUPS } from './bloomweights.js?v=8a0c8908';
-import { TOWER_LOOK_NAMES, DEFAULT_TOWER_LOOK, buildTowerLook, preloadLook } from './towerlooks.js?v=8a0c8908';
-import { makeAudio } from './audio.js?v=8a0c8908';
-import { DEATH_KEYS } from './audiomanifest.js?v=8a0c8908';
+  strikeDamage, retargetStrike, orbitProgress } from './strike.js?v=989e0b6d';
+import { radarBasis, radarProject, radarBearing, sweepAngle, radarPhosphor } from './radar.js?v=989e0b6d';
+import { BLOOM_GROUPS } from './bloomweights.js?v=989e0b6d';
+import { TOWER_LOOK_NAMES, DEFAULT_TOWER_LOOK, buildTowerLook, preloadLook } from './towerlooks.js?v=989e0b6d';
+import { makeAudio } from './audio.js?v=989e0b6d';
+import { DEATH_KEYS } from './audiomanifest.js?v=989e0b6d';
 
 export function initTdTab(root) {
   let active = false;
@@ -1009,9 +1009,18 @@ export function initTdTab(root) {
     // the server sits at the cell whose centre is FARTHEST round the
     // sphere from the heart — the literal antipode, found by minimum dot
     {
+      // The server stands where the FULL world's lanes come nearest the
+      // true antipode (measured: dot -0.987 — the carve genuinely reaches
+      // the pole). Round 1 keeps that band SEALED, so early on the relay
+      // is a landmark mounted on the high ground; pushing the rounds
+      // reveals its lane and makes it reachable. Two earlier cuts were
+      // both wrong: the pure minimum-dot cell was solid rock (the server
+      // spawned INSIDE a wall — operator report), and the current-round
+      // walkable minimum sat at dot 0.46, nowhere near a pole.
       const hc = norm3(graph.centers[dungeon.heart]);
       let best = Infinity; serverCi = -1;
       for (let i = 0; i < graph.centers.length; i++) {
+        if (tdFullTags[i] === BLOCKED || tdFullDist[i] < 0) continue;
         const d = dot3(norm3(graph.centers[i]), hc);
         if (d < best) { best = d; serverCi = i; }
       }
@@ -1020,14 +1029,13 @@ export function initTdTab(root) {
         if (gen !== serverGen || serverCi < 0) return; // board changed meanwhile
         const g = makeServerFixture();
         if (!g) return;
-        const sc = graph.centers[serverCi];
         const sn = graph.normals[serverCi];
         g.scale.setScalar(cellSide * 2.0);
-        g.position.set(sc[0], sc[1], sc[2]);
         tmpN.set(sn[0], sn[1], sn[2]);
         g.quaternion.setFromUnitVectors(Y_AXIS, tmpN);
         scene.add(g);
         serverObj = g;
+        syncServerLift();
       });
     }
 
@@ -1215,6 +1223,16 @@ export function initTdTab(root) {
   // explore'). Driving again — or an explicit recenter — re-arms it,
   // which keeps top-down as a real control mode exactly when it is one.
   let followSuspend = false;
+  // sealed under a round's frontier the relay stands ON the high ground;
+  // when its band reveals, it settles onto the lane floor with it
+  function syncServerLift() {
+    if (!serverObj || serverCi < 0) return;
+    const sc = graph.centers[serverCi];
+    const sn = graph.normals[serverCi];
+    const lift = dungeon.tags[serverCi] === BLOCKED ? params.wallHeight : 0;
+    serverObj.position.set(sc[0] + sn[0] * lift, sc[1] + sn[1] * lift, sc[2] + sn[2] * lift);
+  }
+
   function buildFollowTank(dt) {
     if (!buildMode || strike.falling > 0 || !player.pos) return;
     if (buildPointers.size > 0) return;
@@ -2053,6 +2071,24 @@ export function initTdTab(root) {
       }
       // the shop opens under EVERY camera — building is not a mode
       const ci = cellAtScreen(ev.clientX, ev.clientY);
+      // tapping the SERVER (its cell or a neighbour) is the interaction:
+      // hack if it is awake, and say why not if it is not — a silent
+      // nothing was exactly the operator's 'cannot find how to interact'
+      if (ci !== -1 && serverCi >= 0
+          && (ci === serverCi || graph.adj[serverCi].includes(ci))) {
+        if (serverFound && !hackedRound) openHack();
+        else if (serverFound) {
+          showToast(`<div class="wave-num">RELAY PATCHED</div>`
+            + `<div class="wave-role">one hack per round — come back next round</div>`, 2200);
+        } else if (dungeon.tags[serverCi] === BLOCKED) {
+          showToast(`<div class="wave-num">DORMANT RELAY</div>`
+            + `<div class="wave-role">beyond the frontier — push the rounds to reach it</div>`, 2600);
+        } else {
+          showToast(`<div class="wave-num">DORMANT RELAY</div>`
+            + `<div class="wave-role">drive the tank closer to wake it</div>`, 2200);
+        }
+        return;
+      }
       if (ci !== -1) openShop(ci, ev.clientX, ev.clientY);
     }
     if (buildPointers.size === 0) { pinched = false; tapStart = null; }
@@ -5066,6 +5102,7 @@ export function initTdTab(root) {
     revealDir = revealCells.length ? norm3([cx, cy, cz]) : norm3(graph.normals[dungeon.heart]);
     revealLeft = REVEAL_LEN;
     buildGeometry();
+    syncServerLift();
     // burn the new ground hot — repainted to its true colors when the
     // beat ends (see animate)
     for (const ci of revealCells) paintCell(ci, [1.0, 0.68, 0.16]);
@@ -5431,7 +5468,7 @@ export function initTdTab(root) {
     if (shopMute > 0) shopMute -= dt;
     if (heartCalloutCd > 0) heartCalloutCd -= dt;
     if (!serverFound && serverCi >= 0 && !playerDown
-        && dist3(player.pos, graph.centers[serverCi]) < cellSide * 3) {
+        && dist3(player.pos, graph.centers[serverCi]) < cellSide * 4) {
       serverFound = true;
       showToast(`<div class="wave-num">SERVER FOUND</div>`
         + `<div class="wave-role">an antipode relay — HACK it for tower firmware</div>`, 3400);
@@ -5992,7 +6029,15 @@ export function initTdTab(root) {
   if (urlParams.get('server') === '1') {
     const anti = serverCi >= 0
       ? dot3(norm3(graph.centers[serverCi]), norm3(graph.centers[dungeon.heart])).toFixed(3) : '-';
-    console.log(`SERVER ci=${serverCi} dot=${anti} (want ~ -1)`);
+    // how close does the FULL world's carve get to the pole? If lanes never
+    // reach it, the server is a landmark nobody can ever touch — a design
+    // fact worth measuring, not assuming
+    let fullMin = 1;
+    const hc2 = norm3(graph.centers[dungeon.heart]);
+    for (let i = 0; i < tdFullTags.length; i++) {
+      if (tdFullTags[i] !== BLOCKED) fullMin = Math.min(fullMin, dot3(norm3(graph.centers[i]), hc2));
+    }
+    console.log(`SERVER ci=${serverCi} dot=${anti} fullCarveMinDot=${fullMin.toFixed(3)}`);
     serverFound = true; syncHackBtn();
     // the model loads async — report again once it should be in the scene
     setTimeout(() => console.log(`SERVER2 placed=${!!serverObj}`
