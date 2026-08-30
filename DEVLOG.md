@@ -6,6 +6,35 @@ Demo links assume `npm run serve` (port 8144) or the
 
 ---
 
+## `982a5a9` — The brass before the boss, and an alarm worth believing
+
+Two sounds, one doctrine: a cue should hand over to the thing it warns
+about, not stop dead before it.
+
+**The boss omen.** `boss_tension` (21.4s of distorted brass, kept at full
+length) starts the moment the remaining lead to the boss wave crosses 10
+seconds. The boss wave is *derived* — `INTROS` × `ENEMY_SPEC.boss`, never a
+hardcoded 12 — and the lead uses the same math as the NEXT WAVE countdown:
+`waveIn` once armed, `waveGap − interClock` in the gap. From a cleared
+field the entire lead is `waveGap`, so at the default 7s gap the omen owns
+the whole pre-boss window and is still swelling as the knot clears the
+gate. Once per run.
+
+**The danger klaxon.** `danger_alert` (1s) plus a CRT-red ⚠ overlay —
+phosphor bloom, scanlines, RGB misconvergence, coarse flicker (off under
+`prefers-reduced-motion`) — the first time a dangerous (non-rammable)
+enemy closes within 3.5 cells of the tank. **Once per wave, by design**: a
+constant siren is the alarm you learn to ignore, and this one means STOP
+TOUCHING THAT.
+
+One probe lesson re-learned: `?danger=1` originally forced the warning
+and let the real 1.9s hide-timer run — under a virtual-time budget the
+timer fires before the first paint, so the screenshot showed nothing and
+the overlay was fine. The forced path now PINS the overlay; the game path
+keeps the timeout.
+
+---
+
 ## `03f1d1a` — Points are not credits, and the top of the screen earns its keep
 
 **The scoreboard** (`src/score.js`, pure + tested). Credits buy towers; the
