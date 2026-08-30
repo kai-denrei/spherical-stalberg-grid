@@ -2662,3 +2662,25 @@ body.playing:not(.chrome-open) #tabbar { display: none !important; }
 @media (max-width: 560px) {
   .hk-title { display: none; } /* the tabs are the title on a phone */
 }
+
+/* the radial's keyboard hint: the digit that places this tower */
+.radial-item .rk {
+  position: absolute;
+  top: -7px;
+  left: -7px;
+  width: 15px;
+  height: 15px;
+  line-height: 15px;
+  font-style: normal;
+  font-size: 10px;
+  font-weight: bold;
+  text-align: center;
+  color: #08140a;
+  background: #86ff9e;
+  border-radius: 50%;
+  pointer-events: none;
+}
+.radial-item.locked .rk, .radial-item[disabled] .rk { opacity: 0.35; }
+@media (pointer: coarse), (max-width: 560px) {
+  .radial-item .rk { display: none; } /* no keyboard, no hint */
+}

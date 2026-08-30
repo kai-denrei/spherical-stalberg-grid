@@ -19,31 +19,31 @@
 
 import * as THREE from '../vendor/three.module.js';
 import GUI from '../vendor/lil-gui.esm.js';
-import { generateSphereMesh, relax } from './grid.js?v=86cd631d';
-import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=86cd631d';
-import { mulberry32, randomSeed } from './rng.js?v=86cd631d';
-import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3, segKey } from './vec3.js?v=86cd631d';
-import { CREATURES, waveJelly } from './creatures.js?v=86cd631d';
-import { UNITS, UNIT_NAMES, buildUnit, buildCreature, preloadMkcx, preloadServer, makeServerFixture, makeShieldShell, makeBulletCloud, makeRewardSolid, makeShellSolid, makeDebris, makeDotBurst, makePortalCloud, makeHeartCloud, makeDotEnemy } from './units.js?v=86cd631d';
-import { LOOKS, LOOK_NAMES } from './looks.js?v=86cd631d';
-import { makeCellIndex } from './cellindex.js?v=86cd631d';
-import { CREATURE_TINTS, ENEMY_SPEC, INTROS, computeWavePlan } from './enemyspec.js?v=86cd631d';
-import { PICKUPS } from './pickups.js?v=86cd631d';
-import { rankFor, rankLabel, badgeSVG, killReq, eliteReq } from './ranks.js?v=86cd631d';
-import { makeScore } from './score.js?v=86cd631d';
-import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER } from './towers.js?v=86cd631d';
-import { makeEconomy, sellRefund } from './economy.js?v=86cd631d';
-import { makeBloom } from './postfx.js?v=86cd631d';
-import { TANK_FEEL, TANK_FEEL_KNOBS, makeTankFeel, stepTankFeel, landTankFeel, fireTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js?v=86cd631d';
-import { FEEL, loadFeel, saveFeel } from './feelstore.js?v=86cd631d';
+import { generateSphereMesh, relax } from './grid.js?v=2b57e4db';
+import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=2b57e4db';
+import { mulberry32, randomSeed } from './rng.js?v=2b57e4db';
+import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3, segKey } from './vec3.js?v=2b57e4db';
+import { CREATURES, waveJelly } from './creatures.js?v=2b57e4db';
+import { UNITS, UNIT_NAMES, buildUnit, buildCreature, preloadMkcx, preloadServer, makeServerFixture, makeShieldShell, makeBulletCloud, makeRewardSolid, makeShellSolid, makeDebris, makeDotBurst, makePortalCloud, makeHeartCloud, makeDotEnemy } from './units.js?v=2b57e4db';
+import { LOOKS, LOOK_NAMES } from './looks.js?v=2b57e4db';
+import { makeCellIndex } from './cellindex.js?v=2b57e4db';
+import { CREATURE_TINTS, ENEMY_SPEC, INTROS, computeWavePlan } from './enemyspec.js?v=2b57e4db';
+import { PICKUPS } from './pickups.js?v=2b57e4db';
+import { rankFor, rankLabel, badgeSVG, killReq, eliteReq } from './ranks.js?v=2b57e4db';
+import { makeScore } from './score.js?v=2b57e4db';
+import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER } from './towers.js?v=2b57e4db';
+import { makeEconomy, sellRefund } from './economy.js?v=2b57e4db';
+import { makeBloom } from './postfx.js?v=2b57e4db';
+import { TANK_FEEL, TANK_FEEL_KNOBS, makeTankFeel, stepTankFeel, landTankFeel, fireTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js?v=2b57e4db';
+import { FEEL, loadFeel, saveFeel } from './feelstore.js?v=2b57e4db';
 import { STRIKE_KNOBS, makeStrike, makeStrikeParams, grantStrikes, stepStrike,
   toggleArm, paintTarget, launchStrike, stepFall, skipFall, fallProgress,
-  strikeDamage, retargetStrike, orbitProgress } from './strike.js?v=86cd631d';
-import { radarBasis, radarProject, radarBearing, sweepAngle, radarPhosphor } from './radar.js?v=86cd631d';
-import { BLOOM_GROUPS } from './bloomweights.js?v=86cd631d';
-import { TOWER_LOOK_NAMES, DEFAULT_TOWER_LOOK, buildTowerLook, preloadLook } from './towerlooks.js?v=86cd631d';
-import { makeAudio } from './audio.js?v=86cd631d';
-import { DEATH_KEYS } from './audiomanifest.js?v=86cd631d';
+  strikeDamage, retargetStrike, orbitProgress } from './strike.js?v=2b57e4db';
+import { radarBasis, radarProject, radarBearing, sweepAngle, radarPhosphor } from './radar.js?v=2b57e4db';
+import { BLOOM_GROUPS } from './bloomweights.js?v=2b57e4db';
+import { TOWER_LOOK_NAMES, DEFAULT_TOWER_LOOK, buildTowerLook, preloadLook } from './towerlooks.js?v=2b57e4db';
+import { makeAudio } from './audio.js?v=2b57e4db';
+import { DEATH_KEYS } from './audiomanifest.js?v=2b57e4db';
 
 export function initTdTab(root) {
   let active = false;
@@ -1810,6 +1810,27 @@ export function initTdTab(root) {
       keys[m] = down;
       ev.preventDefault();
       return;
+    }
+    // the tower radial claims the keyboard while it is up: digits place
+    // (1..8 in unlock order — the same order the wheel shows), ESC closes.
+    // Claimed even when the placement fails (locked / can't afford), so a
+    // miss never falls through and flips the camera instead.
+    if (down && shopCi !== -1) {
+      if (k === 'escape') { closeShop(); ev.preventDefault(); return; }
+      const d = parseInt(k, 10);
+      // indexed by the WHEEL's own order (TOWERS), not TOWER_ORDER — the
+      // two differ (slow/homing swap), and the digit badge the player
+      // reads sits on the wheel: what the badge says is what the key does
+      if (d >= 1 && d <= TOWERS.length && !towerByCell.get(shopCi)) {
+        const def = TOWERS[d - 1];
+        const tkey = def.key;
+        const unlocked = new Set(unlockedTowerKeys(wave + hackedUnlocks));
+        if (unlocked.has(tkey) && !placeError(shopCi) && eco.canAfford(def.cost)) {
+          if (placeTower(tkey, shopCi)) closeShop();
+        }
+        ev.preventDefault();
+        return;
+      }
     }
     if (down && k === 'escape') { togglePause(); ev.preventDefault(); return; }
     if (paused) return; // frozen: only ESC gets through
@@ -5176,7 +5197,8 @@ export function initTdTab(root) {
       const y = (R * Math.sin(a)).toFixed(0);
       return `<button class="radial-item ${it.cls}"` +
         `${it.key ? ` data-key="${it.key}"` : ''}${it.dis ? ' disabled' : ''} ` +
-        `style="left:${x}px;top:${y}px;${it.bc ? `border-color:${it.bc}aa;` : ''}">${it.txt}</button>`;
+        `style="left:${x}px;top:${y}px;${it.bc ? `border-color:${it.bc}aa;` : ''}">` +
+        `${it.key ? `<i class="rk">${i + 1}</i>` : ''}${it.txt}</button>`;
     }).join('') + `<div class="shop-note" style="top:${R + 44}px">one new tower each wave</div>`;
     shopEl.classList.remove('hidden');
   }
