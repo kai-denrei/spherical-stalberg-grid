@@ -19,29 +19,29 @@
 
 import * as THREE from '../vendor/three.module.js';
 import GUI from '../vendor/lil-gui.esm.js';
-import { generateSphereMesh, relax } from './grid.js?v=27624311';
-import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=27624311';
-import { mulberry32, randomSeed } from './rng.js?v=27624311';
-import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3, segKey } from './vec3.js?v=27624311';
-import { CREATURES, waveJelly } from './creatures.js?v=27624311';
-import { UNITS, UNIT_NAMES, buildUnit, buildCreature, preloadMkcx, makeBulletCloud, makeRewardSolid, makeShellSolid, makeDebris, makeDotBurst, makePortalCloud, makeHeartCloud, makeDotEnemy } from './units.js?v=27624311';
-import { LOOKS, LOOK_NAMES } from './looks.js?v=27624311';
-import { makeCellIndex } from './cellindex.js?v=27624311';
-import { CREATURE_TINTS, ENEMY_SPEC, INTROS, computeWavePlan } from './enemyspec.js?v=27624311';
-import { PICKUPS } from './pickups.js?v=27624311';
-import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER } from './towers.js?v=27624311';
-import { makeEconomy, sellRefund } from './economy.js?v=27624311';
-import { makeBloom } from './postfx.js?v=27624311';
-import { TANK_FEEL, TANK_FEEL_KNOBS, makeTankFeel, stepTankFeel, landTankFeel, fireTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js?v=27624311';
-import { FEEL, loadFeel, saveFeel } from './feelstore.js?v=27624311';
+import { generateSphereMesh, relax } from './grid.js?v=9ecfd422';
+import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=9ecfd422';
+import { mulberry32, randomSeed } from './rng.js?v=9ecfd422';
+import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3, segKey } from './vec3.js?v=9ecfd422';
+import { CREATURES, waveJelly } from './creatures.js?v=9ecfd422';
+import { UNITS, UNIT_NAMES, buildUnit, buildCreature, preloadMkcx, makeBulletCloud, makeRewardSolid, makeShellSolid, makeDebris, makeDotBurst, makePortalCloud, makeHeartCloud, makeDotEnemy } from './units.js?v=9ecfd422';
+import { LOOKS, LOOK_NAMES } from './looks.js?v=9ecfd422';
+import { makeCellIndex } from './cellindex.js?v=9ecfd422';
+import { CREATURE_TINTS, ENEMY_SPEC, INTROS, computeWavePlan } from './enemyspec.js?v=9ecfd422';
+import { PICKUPS } from './pickups.js?v=9ecfd422';
+import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER } from './towers.js?v=9ecfd422';
+import { makeEconomy, sellRefund } from './economy.js?v=9ecfd422';
+import { makeBloom } from './postfx.js?v=9ecfd422';
+import { TANK_FEEL, TANK_FEEL_KNOBS, makeTankFeel, stepTankFeel, landTankFeel, fireTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js?v=9ecfd422';
+import { FEEL, loadFeel, saveFeel } from './feelstore.js?v=9ecfd422';
 import { STRIKE_KNOBS, makeStrike, makeStrikeParams, grantStrikes, stepStrike,
   toggleArm, paintTarget, launchStrike, stepFall, skipFall, fallProgress,
-  strikeDamage, retargetStrike } from './strike.js?v=27624311';
-import { radarBasis, radarProject, radarBearing, sweepAngle, radarPhosphor } from './radar.js?v=27624311';
-import { BLOOM_GROUPS } from './bloomweights.js?v=27624311';
-import { TOWER_LOOK_NAMES, DEFAULT_TOWER_LOOK, buildTowerLook, preloadLook } from './towerlooks.js?v=27624311';
-import { makeAudio } from './audio.js?v=27624311';
-import { DEATH_KEYS } from './audiomanifest.js?v=27624311';
+  strikeDamage, retargetStrike } from './strike.js?v=9ecfd422';
+import { radarBasis, radarProject, radarBearing, sweepAngle, radarPhosphor } from './radar.js?v=9ecfd422';
+import { BLOOM_GROUPS } from './bloomweights.js?v=9ecfd422';
+import { TOWER_LOOK_NAMES, DEFAULT_TOWER_LOOK, buildTowerLook, preloadLook } from './towerlooks.js?v=9ecfd422';
+import { makeAudio } from './audio.js?v=9ecfd422';
+import { DEATH_KEYS } from './audiomanifest.js?v=9ecfd422';
 
 export function initTdTab(root) {
   let active = false;
@@ -207,6 +207,7 @@ export function initTdTab(root) {
   const strike = makeStrike();
   const strikeTune = makeStrikeParams();
   let strikeGrace = 0;   // s after launch during which a tap cannot skip
+  let shopMute = 0;      // s after impact during which the shop stays shut
   const strikecamEl = root.querySelector('#td-strikecam');
   const scInfoEl = root.querySelector('#sc-info');
   const scRangeEl = root.querySelector('#sc-range');
@@ -2778,18 +2779,30 @@ export function initTdTab(root) {
     player.freeMode = false;
     player.virtualStart = null;
 
-    player.cur = dungeon.spawn;
+    // Round start mirrors the death respawn: beside the HEART, not at
+    // dungeon.spawn — the carve's "spawn" often lands in the same far band
+    // the gates seed into, which put a fresh player nose-to-nose with a
+    // forming portal before they had touched a control.
+    let startCi = dungeon.heart;
+    outer:
+    for (let d = 1; d <= 3; d++) {
+      for (let i = 0; i < dungeon.tags.length; i++) {
+        if (dungeon.tags[i] !== BLOCKED && dungeon.distToHeart[i] === d) { startCi = i; break outer; }
+      }
+    }
+    player.cur = startCi;
     player.prev = -1;
     player.moves = 0;
     player.won = false;
-    player.visited = new Set([dungeon.spawn]);
-    player.pos = graph.centers[dungeon.spawn].slice();
+    player.visited = new Set([startCi]);
+    player.pos = graph.centers[startCi].slice();
     whim = mulberry32((params.seed ^ 0x51eef) >>> 0);
     const exits = openNeighbors(player.cur);
-    // start aimed the way to the heart so the opening shot reads
+    // aimed OUTWARD, like the death respawn: starting beside the heart,
+    // "toward the heart" would point you into the thing you defend
     let e0 = exits[0];
     for (const e of exits) {
-      if (dungeon.distToHeart[e] === dungeon.distToHeart[player.cur] - 1) { e0 = e; break; }
+      if (dungeon.distToHeart[e] === dungeon.distToHeart[player.cur] + 1) { e0 = e; break; }
     }
     player.heading = tangentDirTo(player.cur, e0);
     player.travelDir = player.heading.slice();
@@ -4180,6 +4193,11 @@ export function initTdTab(root) {
   // R follows HK's sizing (max(66, min(104, 0.3·viewport-min))); the
   // anchor clamps so the ring never leaves the screen.
   function openShop(ci, sx, sy) {
+    // The strike owns the board while it is armed, flying, or just landed.
+    // The tap DISPATCH already tries to route around the shop, but a modal
+    // that must never appear mid-ritual is guarded at its own door — every
+    // future tap path inherits the rule instead of re-implementing it.
+    if (strike.armed || strike.falling > 0 || shopMute > 0) return;
     shopCi = ci;
     if (sx == null && shopPos) [sx, sy] = shopPos;
     // measure the CONTAINER, not the canvas: hooks can open the shop
@@ -4653,9 +4671,15 @@ export function initTdTab(root) {
       if (rangeRingTtl <= 0) { rangeRingTtl = 0; hideRangeRing(); }
     }
     if (strikeGrace > 0) strikeGrace -= dt;
+    if (shopMute > 0) shopMute -= dt;
     {
       const impactCi = stepFall(strike, dt);
-      if (impactCi >= 0) { executeStrike(impactCi, t); snapCamera(); }
+      if (impactCi >= 0) {
+        executeStrike(impactCi, t);
+        snapCamera();
+        // the skip-tap and the impact race; the loser must not buy a tower
+        shopMute = 0.8;
+      }
       syncStrikeFeed();
     }
     if (armBtn) syncArmUi();
@@ -4992,7 +5016,7 @@ export function initTdTab(root) {
 
   // opening briefing on a clean load; any debug hook means headless/demo,
   // where a frozen sim would break the verification flow
-  const debugging = ['walk', 'tick', 'wave', 'blast', 'laser', 'found', 'recoil', 'mode', 'map', 'tower', 'credit', 'shop', 'sector', 'reveal', 'portal', 'lose', 'charge', 'layout', 'perf', 'strike', 'strikefall', 'strikecam']
+  const debugging = ['walk', 'tick', 'wave', 'blast', 'laser', 'found', 'recoil', 'mode', 'map', 'tower', 'credit', 'shop', 'sector', 'reveal', 'portal', 'lose', 'charge', 'layout', 'perf', 'strike', 'strikefall', 'strikecam', 'gateprobe']
     .some((k) => urlParams.get(k));
   const tutParam = urlParams.get('tutorial');
   runTutorial = tutParam === '1' || (tutParam !== '0' && !debugging);
@@ -5157,6 +5181,50 @@ export function initTdTab(root) {
       // pressed player takes, and so worth exercising anyway
       setTimeout(() => skipFall(strike), 2100);
     }, 1200);
+  }
+
+  // ?gateprobe=1 — report a live gate's geometry: drawRange, and where its
+  // horizon dots actually sit. The horizon rendered in the module bench, so
+  // if it is missing in game the difference is in THIS file's handling.
+  if (urlParams.get('gateprobe')) {
+    // rAF-counted, not timer-based: under a virtual-time budget every timer
+    // can fire before the FIRST frame renders, and the first cut of this
+    // probe reported dial=0 on a gate that simply had not been given a frame
+    let gpFrames = 0;
+    const gpWait = () => {
+      gpFrames++;
+      if (gpFrames === 8) gpReport();          // mid-dial, as the player sees it
+      if (gpFrames === 10) {
+        // then FORCE formation and tick once — swiftshader cannot render 70
+        // frames inside the watchdog, and the question is whether the game
+        // path positions the horizon, not how fast headless paints
+        const sp = spawnPoints.find((q) => q.alive);
+        if (sp && sp.obj.userData.setForm) {
+          sp.obj.userData.dial = 1;
+          sp.obj.userData.setForm(1);
+          sp.obj.userData.tick(2.2);
+          gpReport();
+        }
+      }
+      if (gpFrames < 10) requestAnimationFrame(gpWait);
+    };
+    requestAnimationFrame(gpWait);
+    const gpReport = () => {
+      const sp = spawnPoints.find((q) => q.alive);
+      if (!sp) { console.log('GATE none'); return; }
+      const g = sp.obj.geometry;
+      const a = g.getAttribute('position');
+      const H0 = 435;
+      let minR = Infinity, maxR = 0, zeros = 0;
+      for (let i = H0; i < a.count; i++) {
+        const r = Math.hypot(a.getX(i), a.getY(i), a.getZ(i));
+        if (r < 1e-6) zeros++;
+        minR = Math.min(minR, r); maxR = Math.max(maxR, r);
+      }
+      console.log(`GATE count=${a.count} drawRange=${g.drawRange.count}`
+        + ` dial=${sp.obj.userData.dial} horizonR=${minR.toFixed(3)}..${maxR.toFixed(3)}`
+        + ` zeros=${zeros} scale=${sp.obj.scale.x.toFixed(3)}`);
+    };
   }
 
   const tutSteps = parseInt(urlParams.get('tutstep') || '0', 10);

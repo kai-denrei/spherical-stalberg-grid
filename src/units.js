@@ -16,12 +16,12 @@
 
 import * as THREE from '../vendor/three.module.js';
 import { loadGlb, mergeByMaterial, fitModel, tintModel, makeShellRack,
-  addEdgeOutlines, makeHeatSleeve } from './glbmodels.js?v=27624311';
-import { CREATURES, waveJelly, swimWave, spherePts, bulletPts, missilePts, heartPts, torusPts, towerHeadPts, enemyDotPts, portalPts } from './creatures.js?v=27624311';
-import { TOWER_FEEL, TOWER_HEADS, headKindFor } from './towerfeel.js?v=27624311';
+  addEdgeOutlines, makeHeatSleeve } from './glbmodels.js?v=9ecfd422';
+import { CREATURES, waveJelly, swimWave, spherePts, bulletPts, missilePts, heartPts, torusPts, towerHeadPts, enemyDotPts, portalPts } from './creatures.js?v=9ecfd422';
+import { TOWER_FEEL, TOWER_HEADS, headKindFor } from './towerfeel.js?v=9ecfd422';
 import { STARGATE_PTS, STARGATE_STROKE,
-  HORIZON_N, stargateHorizon } from './stargate.js?v=27624311';
-import { ENEMY_SPEC } from './enemyspec.js?v=27624311';
+  HORIZON_N, stargateHorizon } from './stargate.js?v=9ecfd422';
+import { ENEMY_SPEC } from './enemyspec.js?v=9ecfd422';
 
 function normalizeToUnit(group) {
   group.updateMatrixWorld(true);
@@ -776,6 +776,12 @@ export function makePortalCloud(cols, phase = 0) {
   for (let i = H0; i < N; i++) {
     baseCol[i * 3] = cBody.r; baseCol[i * 3 + 1] = cBody.g; baseCol[i * 3 + 2] = cBody.b;
   }
+  // Position the horizon at t=0 IN THE CONSTRUCTOR. Its dots are otherwise
+  // placed only by the idle tick, which the dial-in skips — so through the
+  // whole draw-on they sat at the ORIGIN, and the reveal's final act was a
+  // clump of dots in the gate's throat instead of the disc. Anyone standing
+  // next to a forming gate (a fresh spawn, say) watched exactly that.
+  stargateHorizon(0, pos, new Float32Array(HORIZON_N), H0);
   col.set(baseCol);
   const geo = new THREE.BufferGeometry();
   geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
