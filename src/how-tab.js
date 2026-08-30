@@ -5,7 +5,7 @@
 // factory rather than three near-identical files. No renderer, no loop.
 // Shares the markdown converter and .mdview styles with the devlog overlay.
 
-import { mdToHtml } from './devlog.js?v=c6d90e0f';
+import { mdToHtml } from './devlog.js?v=d3dd889f';
 
 function makeDocTab(root, selector, file) {
   const el = root.querySelector(selector);
@@ -96,20 +96,33 @@ export function initLogTab(root) {
     const meta = document.querySelector('meta[name="cb"]');
     const raw = (meta && meta.getAttribute('content')) || '';
     const token = raw.split('#')[0].trim();
-    build.textContent = token ? `build ${token}` : '';
-    // click to copy — the affordance the retired corner badge used to have
+    // a small ⧉ copies the TOKEN, a small 🔗 copies a deep link to this
+    // dev log — two icons, not a clickable label (operator ruling: the
+    // whole-section click was the wrong affordance)
+    build.textContent = '';
     if (token) {
-      build.title = 'copy build token';
-      build.style.cursor = 'pointer';
-      build.addEventListener('click', () => {
-        const done = () => {
-          build.textContent = 'copied ✓';
-          setTimeout(() => { build.textContent = `build ${token}`; }, 900);
-        };
-        if (navigator.clipboard && navigator.clipboard.writeText) {
-          navigator.clipboard.writeText(token).then(done, () => {});
-        }
-      });
+      const label = document.createElement('span');
+      label.textContent = `build ${token} `;
+      build.appendChild(label);
+      const mkBtn = (glyph, title, text) => {
+        const b = document.createElement('button');
+        b.type = 'button';
+        b.textContent = glyph;
+        b.title = title;
+        b.className = 'log-copy';
+        b.addEventListener('click', () => {
+          if (!(navigator.clipboard && navigator.clipboard.writeText)) return;
+          navigator.clipboard.writeText(text).then(() => {
+            const was = b.textContent;
+            b.textContent = '✓';
+            setTimeout(() => { b.textContent = was; }, 900);
+          }, () => {});
+        });
+        return b;
+      };
+      build.appendChild(mkBtn('⧉', 'copy build token', token));
+      build.appendChild(mkBtn('🔗', 'copy deep link to the dev log',
+        `${location.origin}${location.pathname}?devlog=1`));
     }
   }
 

@@ -2607,3 +2607,17 @@ body.playing:not(.chrome-open) #tabbar { display: none !important; }
   #td-sitrep .sr-name { width: 56px; }
   #td-sitrep .sr-row { line-height: 1.35; }
 }
+
+/* dev-log build line: tiny copy affordances, not a clickable label */
+.log-copy {
+  font: 11px ui-monospace, Menlo, monospace;
+  background: transparent;
+  border: 1px solid rgba(160, 180, 200, 0.3);
+  border-radius: 4px;
+  color: inherit;
+  cursor: pointer;
+  padding: 1px 5px;
+  margin-left: 4px;
+  vertical-align: 1px;
+}
+.log-copy:hover { border-color: rgba(160, 180, 200, 0.7); }
