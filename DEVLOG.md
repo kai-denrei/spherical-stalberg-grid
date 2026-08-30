@@ -6,6 +6,38 @@ Demo links assume `npm run serve` (port 8144) or the
 
 ---
 
+## `7523a30` — Line of sight, the third heat gauge, and the lane
+
+**The railgun respects walls now.** `losClear` samples the chord from the
+mast's cell every ~0.45 cells; any BLOCKED cell along it — other than the
+tower's own, since the mast stands ON high ground — refuses the shot, and
+the sniper takes the nearest *visible* enemy instead. A shot along a wall
+ridge is blocked by the ridge, which is exactly what "not through walls"
+means for a gun at wall height.
+
+**Secondary heat, attempt three, right mechanism.** Attempt one lerped a
+material that `mergeByMaterial` had shared with half the hull. Attempt
+two cloned it and drove emissive — provably changing, still invisible at
+gameplay distance (operator confirmed on `1c834a26`). The realization:
+the cannon's gauge is legible because it is a **dedicated
+MeshBasicMaterial sleeve**, not the model's own PBR. The secondaries now
+wear the same instrument — a small sleeve per tube, one shared material,
+driven by the same lerp that provably works for the cannon. Lesson filed:
+when a working reference exists (the cannon), copy its MECHANISM before
+inventing a subtler one.
+
+**The announcement lane.** SitRep, NEW THREAT/TOWER cards, and toasts
+move off the sightline into one shared lane — desktop left rail, phone
+right column — so they never fight each other and never cover the tank.
+Callouts, the combo, and the danger warning stay centred on purpose. The
+rectangle probe tracks the card now; zero overlaps at every width the
+phone media block covers.
+
+Also: the dev-log build token is click-to-copy, the affordance the
+retired corner badge used to carry.
+
+---
+
 ## `d2a1efa` — The wreck had agency
 
 The operator's bug report — "respawned on the same spot with RED life
