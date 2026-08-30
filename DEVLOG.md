@@ -6,6 +6,25 @@ Demo links assume `npm run serve` (port 8144) or the
 
 ---
 
+## `0fc19cd` — Thirty-five entries, two registers each
+
+The units viewer grew a CODEX (LORE button, `?lore=1`): every unit
+described as it *exists* — survey-log register — and again as a
+txt2img-ready visual prompt, each behind its own ⧉ with a copy-all in
+the bar. The conceit that makes the whole game cohere: the dot-render is
+the tank's **survey lattice** — lidar constellations standing in for
+organisms that are wetter, brighter, and worse — and a SOLID in the
+returns is a core the beam could not pass. The do-not-ram rule, written
+in hull fragments.
+
+Object Stålberg-9, the Cardion, the Antipode Relay, the Gates; the
+six-axis arm that learned violence; the Obelisk we excavated and chose
+not to ask about; the Shellback that measurably read our doctrine.
+`test/lore.mjs` asserts the rule: every catalogue id has an entry with
+real substance — the roster grows, the codex must grow with it.
+
+---
+
 ## `a55ffe4` — Smaller, and never everything at once
 
 An operator field screenshot settled it: on a real phone every HUD
