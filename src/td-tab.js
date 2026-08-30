@@ -19,31 +19,31 @@
 
 import * as THREE from '../vendor/three.module.js';
 import GUI from '../vendor/lil-gui.esm.js';
-import { generateSphereMesh, relax } from './grid.js?v=6008c786';
-import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=6008c786';
-import { mulberry32, randomSeed } from './rng.js?v=6008c786';
-import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3, segKey } from './vec3.js?v=6008c786';
-import { CREATURES, waveJelly } from './creatures.js?v=6008c786';
-import { UNITS, UNIT_NAMES, buildUnit, buildCreature, preloadMkcx, preloadServer, makeServerFixture, makeShieldShell, makeBulletCloud, makeRewardSolid, makeShellSolid, makeDebris, makeDotBurst, makePortalCloud, makeHeartCloud, makeDotEnemy } from './units.js?v=6008c786';
-import { LOOKS, LOOK_NAMES } from './looks.js?v=6008c786';
-import { makeCellIndex } from './cellindex.js?v=6008c786';
-import { CREATURE_TINTS, ENEMY_SPEC, INTROS, computeWavePlan } from './enemyspec.js?v=6008c786';
-import { PICKUPS } from './pickups.js?v=6008c786';
-import { rankFor, rankLabel, badgeSVG, killReq, eliteReq } from './ranks.js?v=6008c786';
-import { makeScore } from './score.js?v=6008c786';
-import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER } from './towers.js?v=6008c786';
-import { makeEconomy, sellRefund } from './economy.js?v=6008c786';
-import { makeBloom } from './postfx.js?v=6008c786';
-import { TANK_FEEL, TANK_FEEL_KNOBS, makeTankFeel, stepTankFeel, landTankFeel, fireTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js?v=6008c786';
-import { FEEL, loadFeel, saveFeel } from './feelstore.js?v=6008c786';
+import { generateSphereMesh, relax } from './grid.js?v=1237329e';
+import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=1237329e';
+import { mulberry32, randomSeed } from './rng.js?v=1237329e';
+import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3, segKey } from './vec3.js?v=1237329e';
+import { CREATURES, waveJelly } from './creatures.js?v=1237329e';
+import { UNITS, UNIT_NAMES, buildUnit, buildCreature, preloadMkcx, preloadServer, makeServerFixture, makeShieldShell, makeBulletCloud, makeRewardSolid, makeShellSolid, makeDebris, makeDotBurst, makePortalCloud, makeHeartCloud, makeDotEnemy } from './units.js?v=1237329e';
+import { LOOKS, LOOK_NAMES } from './looks.js?v=1237329e';
+import { makeCellIndex } from './cellindex.js?v=1237329e';
+import { CREATURE_TINTS, ENEMY_SPEC, INTROS, computeWavePlan } from './enemyspec.js?v=1237329e';
+import { PICKUPS } from './pickups.js?v=1237329e';
+import { rankFor, rankLabel, badgeSVG, killReq, eliteReq } from './ranks.js?v=1237329e';
+import { makeScore } from './score.js?v=1237329e';
+import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER } from './towers.js?v=1237329e';
+import { makeEconomy, sellRefund } from './economy.js?v=1237329e';
+import { makeBloom } from './postfx.js?v=1237329e';
+import { TANK_FEEL, TANK_FEEL_KNOBS, makeTankFeel, stepTankFeel, landTankFeel, fireTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js?v=1237329e';
+import { FEEL, loadFeel, saveFeel } from './feelstore.js?v=1237329e';
 import { STRIKE_KNOBS, makeStrike, makeStrikeParams, grantStrikes, stepStrike,
   toggleArm, paintTarget, launchStrike, stepFall, skipFall, fallProgress,
-  strikeDamage, retargetStrike, orbitProgress } from './strike.js?v=6008c786';
-import { radarBasis, radarProject, radarBearing, sweepAngle, radarPhosphor } from './radar.js?v=6008c786';
-import { BLOOM_GROUPS } from './bloomweights.js?v=6008c786';
-import { TOWER_LOOK_NAMES, DEFAULT_TOWER_LOOK, buildTowerLook, preloadLook } from './towerlooks.js?v=6008c786';
-import { makeAudio } from './audio.js?v=6008c786';
-import { DEATH_KEYS } from './audiomanifest.js?v=6008c786';
+  strikeDamage, retargetStrike, orbitProgress } from './strike.js?v=1237329e';
+import { radarBasis, radarProject, radarBearing, sweepAngle, radarPhosphor } from './radar.js?v=1237329e';
+import { BLOOM_GROUPS } from './bloomweights.js?v=1237329e';
+import { TOWER_LOOK_NAMES, DEFAULT_TOWER_LOOK, buildTowerLook, preloadLook } from './towerlooks.js?v=1237329e';
+import { makeAudio } from './audio.js?v=1237329e';
+import { DEATH_KEYS } from './audiomanifest.js?v=1237329e';
 
 export function initTdTab(root) {
   let active = false;
@@ -561,7 +561,7 @@ export function initTdTab(root) {
   function simBuild() {
     const trunk = simTrunk();
     if (!trunk.length) return;
-    const unlockedSet = new Set(unlockedTowerKeys(wave + hackedUnlocks));
+    const unlockedSet = new Set(unlockedTowerKeys(wave, hackedUnlocks));
     const have = (k) => towers.reduce((a, tw) => a + (tw.def.key === k ? 1 : 0), 0);
     const wants = [];
     if (have('slow') < 2) wants.push('slow');
@@ -572,7 +572,7 @@ export function initTdTab(root) {
     // NOTHING and loses the heart by wave 2 — so until the kit arrives,
     // keep pace with the waves using the newest thing unlocked
     if (towers.length < Math.min(4, wave)) {
-      wants.unshift(unlockedTowerKeys(wave + hackedUnlocks).pop());
+      wants.unshift(unlockedTowerKeys(wave, hackedUnlocks).pop());
     }
     for (const k of wants) {
       if (!unlockedSet.has(k)) continue;
@@ -599,7 +599,7 @@ export function initTdTab(root) {
   function simBuildAll() {
     const trunk = simTrunk();
     if (!trunk.length) return;
-    const keys2 = unlockedTowerKeys(wave + hackedUnlocks).slice().reverse();
+    const keys2 = unlockedTowerKeys(wave, hackedUnlocks).slice().reverse();
     for (const k of keys2) {
       const def = TOWER_BY_KEY[k];
       if (!eco.canAfford(def.cost)) continue;
@@ -1959,7 +1959,7 @@ export function initTdTab(root) {
       if (d >= 1 && d <= TOWERS.length && !towerByCell.get(shopCi)) {
         const def = TOWERS[d - 1];
         const tkey = def.key;
-        const unlocked = new Set(unlockedTowerKeys(wave + hackedUnlocks));
+        const unlocked = new Set(unlockedTowerKeys(wave, hackedUnlocks));
         if (unlocked.has(tkey) && !placeError(shopCi) && eco.canAfford(def.cost)) {
           if (placeTower(tkey, shopCi)) closeShop();
         }
@@ -3041,10 +3041,12 @@ export function initTdTab(root) {
     if (won === true) {
       hackedRound = true;
       hackedUnlocks++;
-      const ks = unlockedTowerKeys(wave + hackedUnlocks);
+      const ks = unlockedTowerKeys(wave, hackedUnlocks);
       showTowerToast(ks[ks.length - 1]);
       showToast(`<div class="wave-num">FIRMWARE PATCHED</div>`
-        + `<div class="wave-role">schematics decrypted — a tower unlocked ahead of its wave</div>`, 3400);
+        + `<div class="wave-role">${hackedUnlocks <= 1
+          ? 'AOE schematics decrypted — the relay held the OP half of the combo'
+          : 'a tower unlocked ahead of its wave'}</div>`, 3400);
       updateHud();
     } else if (won === false) {
       showToast(`<div class="wave-num">TRACE COMPLETE</div>`
@@ -3189,7 +3191,7 @@ export function initTdTab(root) {
       + ` ×${eco.multiplier().toFixed(2)}</span>`
       + `<span class="hud-wave">WAVE <b>${wave}</b> · R${round}</span></div>`
       + `<div class="hud-obj">portals ${spAlive}/${spawnPoints.length}`
-      + ` · built ${towers.length} · ${Math.min(8, Math.max(0, wave + hackedUnlocks))}/8 towers</div>`
+      + ` · built ${towers.length} · ${unlockedTowerKeys(wave, hackedUnlocks).length}/8 towers</div>`
       + (alerts ? `<div class="hud-alert">${alerts}</div>` : '');
     if (dirBtnEl) {
       const eng = !manualActive();
@@ -3367,6 +3369,22 @@ export function initTdTab(root) {
     // opening purse: exactly a Rapid (70c) + a Slow (100c) — your first plan
     eco = makeEconomy({ startCredit: 170 });
     score.reset();
+    // THE OPENING GARRISON (sim batch: the heart pays half its total in
+    // waves 1-3, before any kit exists). Two singles stand pre-built on
+    // the walls nearest the heart — free, placed after the board exists.
+    queueMicrotask(() => {
+      let placed = 0;
+      eco.addCredit(TOWER_BY_KEY.single.cost * 2); // the garrison is free
+      for (let d = 1; d <= 4 && placed < 2; d++) {
+        for (let i = 0; i < dungeon.tags.length && placed < 2; i++) {
+          if (dungeon.tags[i] !== BLOCKED || placeError(i)) continue;
+          const nearOpen = graph.adj[i].some((nb) =>
+            dungeon.tags[nb] !== BLOCKED && dungeon.distToHeart[nb] >= 0
+            && dungeon.distToHeart[nb] <= d);
+          if (nearOpen && placeTower('single', i)) placed++;
+        }
+      }
+    });
     hackedUnlocks = 0; hackedRound = false; syncHackBtn();
     resetRunStats();
     bossCued = false;
@@ -5393,13 +5411,15 @@ export function initTdTab(root) {
     } else {
       const err = placeError(ci);
       center = `<div class="radial-center">${err ? 'blocked' : eco.credit + 'c'}</div>`;
-      const unlocked = new Set(unlockedTowerKeys(wave + hackedUnlocks));
+      const unlocked = new Set(unlockedTowerKeys(wave, hackedUnlocks));
       items = TOWERS.map((def) => {
         const locked = !unlocked.has(def.key);
         return {
           cls: locked ? 'shop-buy locked' : 'shop-buy',
           key: def.key,
-          txt: locked ? `${def.key}<br>W${towerUnlockWave(def.key)}` : `${def.key}<br>${def.cost}c`,
+          txt: locked
+            ? `${def.key}<br>${towerUnlockWave(def.key) === null ? '&#8961; RELAY' : 'W' + towerUnlockWave(def.key)}`
+            : `${def.key}<br>${def.cost}c`,
           dis: locked || !!err || !eco.canAfford(def.cost),
           bc: '#' + def.color.toString(16).padStart(6, '0'),
         };
@@ -5863,7 +5883,8 @@ export function initTdTab(root) {
         interClock += dt;
         // arm early enough that the countdown consumes the last WAVE_WARN of
         // the gap — the total wait from cleared to spawned is unchanged
-        if (interClock >= params.waveGap - WAVE_WARN) armWave();
+        const gap = params.waveGap * (wave < 2 ? 1.6 : 1); // breathe early
+        if (interClock >= gap - WAVE_WARN) armWave();
       } else if (waveIn < 0) {
         waveCharge = 0;
       }

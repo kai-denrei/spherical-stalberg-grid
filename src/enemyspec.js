@@ -103,7 +103,11 @@ export function computeWavePlan(wave, round = 1, waveSize = 4) {
   const supports = [];
   const k = Math.min(2, pool.length);
   for (let i = 0; i < k; i++) supports.push(pool.splice(Math.floor(rnd() * pool.length), 1)[0]);
-  const base = waveSize + wave + 2 * (Math.max(1, round) - 1);
+  let base = waveSize + wave + 2 * (Math.max(1, round) - 1);
+  // GENTLER OPENINGS (sim batch 2026-08-30: waves 1-3 deal essentially
+  // all heart damage — median 10->5 before the kit exists). The first
+  // three waves taper: 55% / 70% / 85% of their scheduled size.
+  if (wave <= 3) base = Math.max(2, Math.round(base * (0.4 + 0.15 * wave)));
   const density = (t) => {
     const s = ENEMY_SPEC[t];
     return s.boss ? 1

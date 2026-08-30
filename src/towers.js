@@ -124,12 +124,33 @@ export const shotInterval = (rate) => 1 / rate;
 // Cumulative: wave N grants the first N towers (capped at the roster).
 export const TOWER_ORDER = ['single', 'rapid', 'spread', 'slow', 'homing', 'aoe', 'sniper', 'laser'];
 
-export function unlockedTowerKeys(wave) {
-  const n = Math.max(1, Math.min(TOWER_ORDER.length, Math.floor(wave) || 1));
-  return TOWER_ORDER.slice(0, n);
+// HACK-GATED: never unlocked by the wave clock — the only source is
+// winning a protocol at the Antipode Relay. Sim batch 2026-08-30 showed
+// the mid-game locking solid once the full kit arrives by timetable; the
+// operator's ruling gates the OP half of the slow+aoe combo behind the
+// errand. The wave ladder is TOWER_ORDER minus these, so sniper and
+// laser each arrive one wave earlier than before.
+export const HACK_GATED = ['aoe'];
+const WAVE_LADDER = TOWER_ORDER.filter((k) => !HACK_GATED.includes(k));
+
+export function unlockedTowerKeys(wave, hacks = 0) {
+  const n = Math.max(1, Math.min(WAVE_LADDER.length, Math.floor(wave) || 1));
+  const out = WAVE_LADDER.slice(0, n);
+  // relay wins decrypt the gated kit first, in gate order; wins beyond
+  // that push the wave ladder ahead of the clock
+  const h = Math.max(0, Math.floor(hacks));
+  for (let i = 0; i < Math.min(h, HACK_GATED.length); i++) out.push(HACK_GATED[i]);
+  const extra = h - HACK_GATED.length;
+  if (extra > 0) {
+    const m = Math.min(WAVE_LADDER.length, n + extra);
+    for (const k of WAVE_LADDER.slice(n, m)) out.push(k);
+  }
+  return out;
 }
 
+// The wave a key unlocks on — null for hack-gated keys, which have no
+// wave at all (the radial shows the relay glyph instead of a W number).
 export function towerUnlockWave(key) {
-  const i = TOWER_ORDER.indexOf(key);
-  return i < 0 ? 1 : i + 1;
+  const i = WAVE_LADDER.indexOf(key);
+  return i < 0 ? null : i + 1;
 }

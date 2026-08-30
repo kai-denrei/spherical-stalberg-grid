@@ -3,7 +3,7 @@
 // (credits/streak math). All pure modules; no DOM, no three.js.
 
 import { CREATURE_TINTS, ENEMY_SPEC, INTROS, computeWavePlan, typesByWave } from '../src/enemyspec.js';
-import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER } from '../src/towers.js';
+import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER, HACK_GATED } from '../src/towers.js';
 import { makeEconomy, sellRefund, waveClearBonus, earlyCallBonus, START_CREDIT, RAM_PREMIUM } from '../src/economy.js';
 
 let failures = 0;
@@ -105,10 +105,21 @@ check('wave 1 unlocks single only', JSON.stringify(unlockedTowerKeys(1)) === JSO
 check('wave 2 unlocks single+rapid', JSON.stringify(unlockedTowerKeys(2)) === JSON.stringify(['single', 'rapid']));
 check('unlock clamps below 1', JSON.stringify(unlockedTowerKeys(0)) === JSON.stringify(['single'])
   && JSON.stringify(unlockedTowerKeys(-3)) === JSON.stringify(['single']));
-check('wave N grants N towers (cumulative)', [1, 2, 3, 4, 5, 6, 7, 8].every((w) => unlockedTowerKeys(w).length === w));
-check('all 8 towers by wave 8, capped after', unlockedTowerKeys(8).length === 8 && unlockedTowerKeys(99).length === 8);
-check('every unlocked key is a real tower', unlockedTowerKeys(8).every((k) => TOWER_BY_KEY[k]));
-check('towerUnlockWave: laser=8, single=1, rapid=2', towerUnlockWave('laser') === 8 && towerUnlockWave('single') === 1 && towerUnlockWave('rapid') === 2);
+const LADDER_N = TOWER_ORDER.length - HACK_GATED.length;
+check('wave N grants N towers (cumulative, ladder only)',
+  Array.from({ length: LADDER_N }, (_, i) => i + 1).every((w) => unlockedTowerKeys(w).length === w));
+check('the wave clock NEVER unlocks a gated tower',
+  HACK_GATED.every((k) => !unlockedTowerKeys(99).includes(k)));
+check('the first relay win decrypts the gate',
+  HACK_GATED.every((k) => unlockedTowerKeys(1, 1).includes(k)));
+check('wins beyond the gate push the ladder',
+  unlockedTowerKeys(2, 2).length === 2 + 1 + 1); // wave 2 + gate + 1 early
+check('full kit = ladder by clock + gate by relay',
+  unlockedTowerKeys(99, HACK_GATED.length).length === TOWER_ORDER.length);
+check('every unlocked key is a real tower', unlockedTowerKeys(99, 9).every((k) => TOWER_BY_KEY[k]));
+check('towerUnlockWave: gated keys have NO wave',
+  HACK_GATED.every((k) => towerUnlockWave(k) === null)
+  && towerUnlockWave('single') === 1 && towerUnlockWave('laser') === LADDER_N);
 check('TOWER_ORDER covers the roster', TOWER_ORDER.length === TOWERS.length && TOWER_ORDER.every((k) => TOWER_BY_KEY[k]));
 
 // --- wave plan -----------------------------------------------------------
