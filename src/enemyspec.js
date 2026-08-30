@@ -99,5 +99,20 @@ export function computeWavePlan(wave, round = 1, waveSize = 4) {
   };
   const entries = [{ type: headline, count: density(headline) }];
   for (const t of supports) entries.push({ type: t, count: Math.max(1, Math.round(density(t) * 0.4)) });
+  // THE INVASION. Waves 1..8 are the unlock ladder — one tower per wave, the
+  // count kept learnable. Once the kit is complete the gloves come off: every
+  // count surges (fodder hardest), and the earliest rammable types return in
+  // flood numbers on top. It must FEEL like an invasion, and the player now
+  // has eight tower kinds and an orbital strike to answer it with.
+  if (wave > 8) {
+    const surge = 1 + (wave - 8) * 0.25;
+    for (const e of entries) {
+      const sp = ENEMY_SPEC[e.type];
+      e.count = Math.round(e.count * (sp.rammable ? 1.6 * surge : Math.sqrt(surge)));
+    }
+    for (const t of ['phage', 'ghost']) {
+      if (avail.includes(t)) entries.push({ type: t, count: Math.round(base * 1.2 * surge) });
+    }
+  }
   return { headline, entries };
 }

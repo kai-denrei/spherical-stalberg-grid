@@ -114,7 +114,18 @@ check('TOWER_ORDER covers the roster', TOWER_ORDER.length === TOWERS.length && T
 // --- wave plan -----------------------------------------------------------
 check('wave 1 plan is a single type', (() => { const p = computeWavePlan(1, 1, 4); return p.entries.length === 1 && p.headline === 'phage'; })());
 check('headline is the newest available type', [2, 5, 9, 12].every((w) => computeWavePlan(w, 1, 4).headline === INTROS[Math.min(w, 12) - 1].type));
-check('plan entries = 1 + up to 2 supports', [1, 2, 3, 8, 12].every((w) => { const n = computeWavePlan(w, 1, 4).entries.length; return n >= 1 && n <= 3; }));
+// through wave 8 (the unlock ladder) the shape stays learnable; past it the
+// INVASION adds flood entries on top, so the cap only binds the ladder
+check('ladder waves = 1 + up to 2 supports', [1, 2, 3, 8].every((w) => { const n = computeWavePlan(w, 1, 4).entries.length; return n >= 1 && n <= 3; }));
+check('invasion waves flood past the ladder cap', computeWavePlan(12, 1, 4).entries.length > 3);
+check('the flood is rammable fodder', (() => {
+  const p = computeWavePlan(12, 1, 4);
+  return p.entries.slice(-2).every((e) => ['phage', 'ghost'].includes(e.type) && e.count >= 10);
+})());
+check('the invasion swells the total hard', (() => {
+  const tot = (w) => computeWavePlan(w, 1, 4).entries.reduce((a, e) => a + e.count, 0);
+  return tot(9) > tot(8) * 2.5;
+})());
 check('supports are earlier types, never the headline', [3, 8, 12].every((w) => { const p = computeWavePlan(w, 1, 4); const avail = typesByWave(w); return p.entries.slice(1).every((e) => e.type !== p.headline && avail.includes(e.type)); }));
 check('wave plan is deterministic', JSON.stringify(computeWavePlan(7, 2, 4)) === JSON.stringify(computeWavePlan(7, 2, 4)));
 check('all wave-plan counts are >= 1', [1, 4, 8, 12, 20].every((w) => computeWavePlan(w, 2, 4).entries.every((e) => e.count >= 1)));

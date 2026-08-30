@@ -69,6 +69,17 @@ So:
 
 ## Committed
 
+### One mode: the camera overhaul
+
+Planned with the operator 2026-08-30, no code yet. The build/tank SWITCH goes
+away. There is one mode, with preset cameras (top-down, chase, PoV, bastion)
+plus a free cam — and every capability everywhere: build towers from the
+chase cam, drive the tank from top-down (the build-mode driving and
+follow-cam already prove that half works). The mode toggle's remaining
+meaning — the wave freeze — becomes its own explicit control or goes.
+This obsoletes parts of the current BUILD/CAM buttons and the `?mode=` hook.
+
+
 ### Tank feel, tuned rather than derived
 
 Model scale, tint strength, bloom weights and audio levels were *derived* —

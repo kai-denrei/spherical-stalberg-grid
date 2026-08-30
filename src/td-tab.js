@@ -19,28 +19,28 @@
 
 import * as THREE from '../vendor/three.module.js';
 import GUI from '../vendor/lil-gui.esm.js';
-import { generateSphereMesh, relax } from './grid.js?v=ad99a9d0';
-import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=ad99a9d0';
-import { mulberry32, randomSeed } from './rng.js?v=ad99a9d0';
-import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3, segKey } from './vec3.js?v=ad99a9d0';
-import { CREATURES, waveJelly } from './creatures.js?v=ad99a9d0';
-import { UNITS, UNIT_NAMES, buildUnit, buildCreature, preloadMkcx, makeBulletCloud, makeRewardSolid, makeShellSolid, makeDebris, makeDotBurst, makePortalCloud, makeHeartCloud, makeDotEnemy } from './units.js?v=ad99a9d0';
-import { LOOKS, LOOK_NAMES } from './looks.js?v=ad99a9d0';
-import { makeCellIndex } from './cellindex.js?v=ad99a9d0';
-import { CREATURE_TINTS, ENEMY_SPEC, INTROS, computeWavePlan } from './enemyspec.js?v=ad99a9d0';
-import { PICKUPS } from './pickups.js?v=ad99a9d0';
-import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER } from './towers.js?v=ad99a9d0';
-import { makeEconomy, sellRefund } from './economy.js?v=ad99a9d0';
-import { makeBloom } from './postfx.js?v=ad99a9d0';
-import { TANK_FEEL, TANK_FEEL_KNOBS, makeTankFeel, stepTankFeel, landTankFeel, fireTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js?v=ad99a9d0';
-import { FEEL, loadFeel, saveFeel } from './feelstore.js?v=ad99a9d0';
+import { generateSphereMesh, relax } from './grid.js?v=2657b69a';
+import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=2657b69a';
+import { mulberry32, randomSeed } from './rng.js?v=2657b69a';
+import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3, segKey } from './vec3.js?v=2657b69a';
+import { CREATURES, waveJelly } from './creatures.js?v=2657b69a';
+import { UNITS, UNIT_NAMES, buildUnit, buildCreature, preloadMkcx, makeBulletCloud, makeRewardSolid, makeShellSolid, makeDebris, makeDotBurst, makePortalCloud, makeHeartCloud, makeDotEnemy } from './units.js?v=2657b69a';
+import { LOOKS, LOOK_NAMES } from './looks.js?v=2657b69a';
+import { makeCellIndex } from './cellindex.js?v=2657b69a';
+import { CREATURE_TINTS, ENEMY_SPEC, INTROS, computeWavePlan } from './enemyspec.js?v=2657b69a';
+import { PICKUPS } from './pickups.js?v=2657b69a';
+import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER } from './towers.js?v=2657b69a';
+import { makeEconomy, sellRefund } from './economy.js?v=2657b69a';
+import { makeBloom } from './postfx.js?v=2657b69a';
+import { TANK_FEEL, TANK_FEEL_KNOBS, makeTankFeel, stepTankFeel, landTankFeel, fireTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js?v=2657b69a';
+import { FEEL, loadFeel, saveFeel } from './feelstore.js?v=2657b69a';
 import { STRIKE_KNOBS, makeStrike, makeStrikeParams, grantStrikes, stepStrike,
   toggleArm, paintTarget, launchStrike, stepFall, skipFall, fallProgress,
-  strikeDamage, retargetStrike } from './strike.js?v=ad99a9d0';
-import { BLOOM_GROUPS } from './bloomweights.js?v=ad99a9d0';
-import { TOWER_LOOK_NAMES, DEFAULT_TOWER_LOOK, buildTowerLook, preloadLook } from './towerlooks.js?v=ad99a9d0';
-import { makeAudio } from './audio.js?v=ad99a9d0';
-import { DEATH_KEYS } from './audiomanifest.js?v=ad99a9d0';
+  strikeDamage, retargetStrike } from './strike.js?v=2657b69a';
+import { BLOOM_GROUPS } from './bloomweights.js?v=2657b69a';
+import { TOWER_LOOK_NAMES, DEFAULT_TOWER_LOOK, buildTowerLook, preloadLook } from './towerlooks.js?v=2657b69a';
+import { makeAudio } from './audio.js?v=2657b69a';
+import { DEATH_KEYS } from './audiomanifest.js?v=2657b69a';
 
 export function initTdTab(root) {
   let active = false;
@@ -1653,7 +1653,16 @@ export function initTdTab(root) {
     if (down && k === 'h') pulseHint();
     if (down && k === 'v') toggleView();
     if (down && k === 'b') toggleBuild(); // BUILD ↔ ACTION
-    if (down && k === 'm') toggleMap();   // minimap ↔ threat view
+    if (down && k === 'm') {
+      toggleMap();   // minimap ↔ threat view
+      // PLAYTEST CHEAT (remove later): M also loads a ready missile. It
+      // shares the map key deliberately rather than stealing it — the map
+      // still toggles, the tube still fills, and troubleshooting gets both
+      // for one press. syncArmUi picks the count up next frame.
+      strike.ready = Math.min(9, strike.ready + 1);
+      showToast('<div class="wave-num">CHEAT · MISSILE LOADED</div>'
+        + `<div class="wave-role">☄ ready ${strike.ready}</div>`, 1200);
+    }
   }
   addEventListener('keydown', (ev) => onKeyEvent(ev, true));
   addEventListener('keyup', (ev) => onKeyEvent(ev, false));
@@ -1989,7 +1998,7 @@ export function initTdTab(root) {
     for (const e of enemies) {
       if (!e.alive) continue;
       const dmg = strikeDamage(dist3(c, e.pos), radius, strikeTune);
-      if (dmg > 0) damageEnemy(e, tNow, dmg, false);
+      if (dmg > 0) damageEnemy(e, tNow, dmg, false, 'strike');
     }
     updateHud();
     checkVictory();
@@ -3131,14 +3140,21 @@ export function initTdTab(root) {
   // react) trigger the borrowed on-hit reactions; laser ticks (dmg 0.4,
   // react=false) don't — a constant graze must not keep barbed/knot
   // permanently accelerated. Returns true on kill.
-  function damageEnemy(e, tNow, dmg = 1, react = true) {
+  // `src` decides the pay. The base bounty is HALVED and a tank kill pays
+  // double the new base (i.e. the old full bounty): towers earn passively,
+  // so passive income is what got cheaper — getting close is what pays now.
+  // Rams keep their premium on top; the orbital strike pays base, because
+  // nothing about it is close.
+  const KILL_PAY = { tank: 1.0, tower: 0.5, strike: 0.5 };
+  function damageEnemy(e, tNow, dmg = 1, react = true, src = 'tower') {
     const spec = e.spec;
     if (react && spec.slowOnHit) { e.behMult = spec.slowOnHit; e.behUntil = tNow + 1.2; }
     if (react && spec.accelOnHit) { e.behMult = spec.accelOnHit; e.behUntil = tNow + 1.2; }
     e.lastHitT = tNow; // resets the regenerators' out-of-combat clock
     e.hp -= dmg;
     if (e.hp <= 0) {
-      eco.award(spec.bounty); // any weapon's kill pays — tower, shell, laser
+      // any weapon's kill pays — but not the same
+      eco.award(Math.max(1, Math.ceil(spec.bounty * (KILL_PAY[src] ?? 0.5))));
       killCreature(e, true);
       return true;
     }
@@ -3238,7 +3254,7 @@ export function initTdTab(root) {
       for (const e of enemies) {
         if (!e.alive) continue;
         if (dist3(p.pos, e.pos) < cellSide * Math.max(0.4, (e.size ?? e.spec.size) * 0.8)) {
-          damageEnemy(e, tNow, LASER_DMG, false);
+          damageEnemy(e, tNow, LASER_DMG, false, 'tank');
           dead = true;
           break;
         }
@@ -3349,7 +3365,7 @@ export function initTdTab(root) {
       for (const e of enemies) {
         if (!e.alive) continue;
         if (dist3(p.pos, e.pos) < cellSide * Math.max(0.45, (e.size ?? e.spec.size) * 0.8)) {
-          damageEnemy(e, tNow);
+          damageEnemy(e, tNow, 1, true, 'tank');
           hit = true;
           break;
         }
@@ -3543,11 +3559,20 @@ export function initTdTab(root) {
     }, DEATH_HOLD * 1000);
   }
 
-  // Put the tank back where the round started it: at the spawn gate, aimed
-  // down the hall toward the heart. Free-movement state is cleared, or it
-  // would resume from wherever the wreck stopped.
+  // Respawn beside the HEART, not at the spawn gate. The gate is enemy
+  // ground by the time you die — a wave is usually pouring out of it — so
+  // the old respawn put the wreck straight back into the thing that made it
+  // a wreck, and sometimes BEHIND a portal with the wave between you and
+  // home. You come back at the thing you are defending, facing outward.
   function respawnPlayerAtSpawn() {
-    const ci = dungeon.spawn;
+    let ci = dungeon.heart;
+    outer:
+    for (let d = 1; d <= 3; d++) {
+      for (let i = 0; i < dungeon.tags.length; i++) {
+        if (dungeon.tags[i] !== BLOCKED && !towerCells.has(i)
+          && dungeon.distToHeart[i] === d) { ci = i; break outer; }
+      }
+    }
     player.freeMode = false;
     player.virtualStart = null;
     player.cur = ci;
@@ -3556,8 +3581,11 @@ export function initTdTab(root) {
     player.prog = 0;
     const exits = openNeighbors(ci);
     let e0 = exits[0] ?? ci;
+    // OUTWARD, not heartward: you respawn defending, so you are pointed back
+    // at the war. Beside the heart, "toward" would aim you into the thing
+    // you are protecting.
     for (const e of exits) {
-      if (dungeon.distToHeart[e] === dungeon.distToHeart[ci] - 1) { e0 = e; break; }
+      if (dungeon.distToHeart[e] === dungeon.distToHeart[ci] + 1) { e0 = e; break; }
     }
     player.next = e0;
     player.heading = tangentDirTo(ci, e0);
