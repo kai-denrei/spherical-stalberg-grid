@@ -6,6 +6,30 @@ Demo links assume `npm run serve` (port 8144) or the
 
 ---
 
+## `4703bca` — The vault
+
+Two placement cuts died in the field ("inside a wall", then "ON a wall")
+before the operator specified the pattern outright, and it is better than
+either attempt: **carve an empty chamber at the true antipode, confirm it
+is clear, then seat the server in its centre.**
+
+So the world build now carves a floor disc — every cell within two hops
+of the literal minimum-dot cell, 13 cells, five across — into the FULL
+world, ringed by whatever rock was already there. The vault is exempt
+from both of `applySector`'s gates (band and reachability), so it renders
+as an open room inside the rock from round 1. Unreachable at first *on
+purpose*: walls blast open, and a vault you have to breach is the fiction
+working for us. Its cells keep `distToHeart = -1`, which quietly keeps
+nav, rewards, and portal placement out of it. The `?server=1` probe now
+prints `chamber=13/13 clear ground=OPEN` — the "confirm before seating"
+step, made permanent.
+
+Also: the dev-log copy affordance became a small ⧉ icon (token) plus 🔗
+(deep link to `?devlog=1`) — the whole-label click was the wrong
+affordance.
+
+---
+
 ## `e2c1d31` — The relay stands at the pole properly
 
 Field report: "the server spawned inside a wall, and I cannot find how to
