@@ -108,6 +108,30 @@ actually been examined — whether waves 5–8 feel cramped on it is untested.
 
 ## Candidate
 
+### Operator's list (captured 2026-08-30, playtest notes)
+
+- **More minigames** brought into the collection (the home launcher already
+  frames the app as a set of PoCs).
+- **A Server Rack / Terminal model** — presumably a lab or GLB casting; target
+  unstated, likely a board fixture or look.
+- **Review every tower's shooting pattern.** The unit viewer's FIRE preview
+  exists for exactly this pass.
+- **Homing missiles must CHASE.** Reference: HokorobiTawaa's homing feel
+  (`fireHoming` in its effects.ts re-seeks the live target each frame; ours
+  aims once). Study before building.
+- **Bring the missile system to the top** — promote the orbital strike in the
+  HUD hierarchy.
+- **Rework the entire HUD.**
+- **Scores**: more points for tank kills (the credit split already leans this
+  way), multiplier scaling with enemies on the field, etc.
+- **Ranks**: a small USMC-style insignia on the tank that grows with kills.
+- **A WARNING system** — screen + audio when a non-rammable first comes near:
+  fire only if no alarm for X seconds AND a dangerous unit within Y — a
+  cooldown-gated proximity alarm, not a constant siren. (The manifest has no
+  alarm sample yet; wants an asset.)
+
+
+
 ### Mode incentives
 
 Nothing currently *forces* meaningful switching between the macro layer

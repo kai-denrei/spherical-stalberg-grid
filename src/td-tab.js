@@ -19,29 +19,29 @@
 
 import * as THREE from '../vendor/three.module.js';
 import GUI from '../vendor/lil-gui.esm.js';
-import { generateSphereMesh, relax } from './grid.js?v=6326a0a4';
-import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=6326a0a4';
-import { mulberry32, randomSeed } from './rng.js?v=6326a0a4';
-import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3, segKey } from './vec3.js?v=6326a0a4';
-import { CREATURES, waveJelly } from './creatures.js?v=6326a0a4';
-import { UNITS, UNIT_NAMES, buildUnit, buildCreature, preloadMkcx, makeBulletCloud, makeRewardSolid, makeShellSolid, makeDebris, makeDotBurst, makePortalCloud, makeHeartCloud, makeDotEnemy } from './units.js?v=6326a0a4';
-import { LOOKS, LOOK_NAMES } from './looks.js?v=6326a0a4';
-import { makeCellIndex } from './cellindex.js?v=6326a0a4';
-import { CREATURE_TINTS, ENEMY_SPEC, INTROS, computeWavePlan } from './enemyspec.js?v=6326a0a4';
-import { PICKUPS } from './pickups.js?v=6326a0a4';
-import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER } from './towers.js?v=6326a0a4';
-import { makeEconomy, sellRefund } from './economy.js?v=6326a0a4';
-import { makeBloom } from './postfx.js?v=6326a0a4';
-import { TANK_FEEL, TANK_FEEL_KNOBS, makeTankFeel, stepTankFeel, landTankFeel, fireTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js?v=6326a0a4';
-import { FEEL, loadFeel, saveFeel } from './feelstore.js?v=6326a0a4';
+import { generateSphereMesh, relax } from './grid.js?v=80de5934';
+import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=80de5934';
+import { mulberry32, randomSeed } from './rng.js?v=80de5934';
+import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3, segKey } from './vec3.js?v=80de5934';
+import { CREATURES, waveJelly } from './creatures.js?v=80de5934';
+import { UNITS, UNIT_NAMES, buildUnit, buildCreature, preloadMkcx, makeBulletCloud, makeRewardSolid, makeShellSolid, makeDebris, makeDotBurst, makePortalCloud, makeHeartCloud, makeDotEnemy } from './units.js?v=80de5934';
+import { LOOKS, LOOK_NAMES } from './looks.js?v=80de5934';
+import { makeCellIndex } from './cellindex.js?v=80de5934';
+import { CREATURE_TINTS, ENEMY_SPEC, INTROS, computeWavePlan } from './enemyspec.js?v=80de5934';
+import { PICKUPS } from './pickups.js?v=80de5934';
+import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER } from './towers.js?v=80de5934';
+import { makeEconomy, sellRefund } from './economy.js?v=80de5934';
+import { makeBloom } from './postfx.js?v=80de5934';
+import { TANK_FEEL, TANK_FEEL_KNOBS, makeTankFeel, stepTankFeel, landTankFeel, fireTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js?v=80de5934';
+import { FEEL, loadFeel, saveFeel } from './feelstore.js?v=80de5934';
 import { STRIKE_KNOBS, makeStrike, makeStrikeParams, grantStrikes, stepStrike,
   toggleArm, paintTarget, launchStrike, stepFall, skipFall, fallProgress,
-  strikeDamage, retargetStrike } from './strike.js?v=6326a0a4';
-import { radarBasis, radarProject, radarBearing, sweepAngle, radarPhosphor } from './radar.js?v=6326a0a4';
-import { BLOOM_GROUPS } from './bloomweights.js?v=6326a0a4';
-import { TOWER_LOOK_NAMES, DEFAULT_TOWER_LOOK, buildTowerLook, preloadLook } from './towerlooks.js?v=6326a0a4';
-import { makeAudio } from './audio.js?v=6326a0a4';
-import { DEATH_KEYS } from './audiomanifest.js?v=6326a0a4';
+  strikeDamage, retargetStrike } from './strike.js?v=80de5934';
+import { radarBasis, radarProject, radarBearing, sweepAngle, radarPhosphor } from './radar.js?v=80de5934';
+import { BLOOM_GROUPS } from './bloomweights.js?v=80de5934';
+import { TOWER_LOOK_NAMES, DEFAULT_TOWER_LOOK, buildTowerLook, preloadLook } from './towerlooks.js?v=80de5934';
+import { makeAudio } from './audio.js?v=80de5934';
+import { DEATH_KEYS } from './audiomanifest.js?v=80de5934';
 
 export function initTdTab(root) {
   let active = false;
@@ -1169,9 +1169,11 @@ export function initTdTab(root) {
   function setView(v) {
     params.view = v;
     buildMode = v === 'orbit';
-    if (v !== 'bastion') watchTower = null;
-    // the Heart framing is a courtesy on the FIRST orbit entry; afterwards
-    // the camera stays where you left it (double-tap rides it home)
+    watchTower = null;
+    const camBtn = root.querySelector('#td-pad-view');
+    if (camBtn) camBtn.textContent = VIEW_TAG[v] || 'T3';
+    // first orbit entry still frames the heart — a free camera pointed at
+    // the dark side of a planet is not a view, it is a bug report
     if (buildMode && !buildCentered && graph && dungeon) {
       centerBuildOnHeart();
       buildCentered = true;
@@ -1182,20 +1184,10 @@ export function initTdTab(root) {
     updateHud();
   }
 
-  // The freeze that BUILD used to smuggle in is an explicit switch now:
-  // HOLD keeps the next wave on the pad while the field is clear, from any
-  // camera. It still releases itself the moment hostiles are live.
-  let waveHold = false;
-  const buildFrozen = () => waveHold && !anyHostiles();
-  function toggleHold() {
-    waveHold = !waveHold;
-    const chip = root.querySelector('#td-pad-build');
-    if (chip) {
-      chip.textContent = waveHold ? 'RESUME' : 'HOLD';
-      chip.classList.toggle('holding', waveHold);
-    }
-    updateHud();
-  }
+  // HOLD is gone (operator call, 2026-08-30): the wave telegraph gives
+  // enough warning that a planning pause earned its keep no longer. The
+  // constant stays so every gate on `frozen` reads unchanged.
+  const buildFrozen = () => false;
   function toggleMap() {
     mapMode = mapMode === 'player' ? 'heart' : 'player';
     updateHud();
@@ -1659,7 +1651,6 @@ export function initTdTab(root) {
     if (down && (k === ' ' || k === 'spacebar')) { fire(); ev.preventDefault(); return; }
     if (down && k === 'h') pulseHint();
     if (down && k === 'v') toggleView();
-    if (down && k === 'b') toggleHold(); // hold / release the next wave
     if (down && k === 'm') {
       toggleMap();   // minimap ↔ threat view
       // PLAYTEST CHEAT (remove later): M also loads a ready missile. It
@@ -1675,8 +1666,12 @@ export function initTdTab(root) {
   addEventListener('keyup', (ev) => onKeyEvent(ev, false));
   addEventListener('blur', () => { keys.left = keys.right = keys.fast = keys.slow = keys.laser = false; });
 
+  // T1 tank first person · T3 tank third person · O1 orbital. Bastion left
+  // the cycle (tower-watching was a spectator mode nobody drove from), and
+  // nothing auto-centres any more — the two CENTRE buttons do it on demand.
+  const VIEW_TAG = { pov: 'T1', third: 'T3', orbit: 'O1' };
   function toggleView() {
-    const cycle = ['orbit', 'third', 'pov', 'bastion'];
+    const cycle = ['pov', 'third', 'orbit'];
     setView(cycle[(cycle.indexOf(params.view) + 1) % cycle.length]);
   }
 
@@ -1752,21 +1747,75 @@ export function initTdTab(root) {
   holdButton('#td-pad-left', 'left');
   holdButton('#td-pad-right', 'right');
   root.querySelector('#td-pad-view').addEventListener('click', () => toggleView());
-  root.querySelector('#td-pad-build').addEventListener('click', () => toggleHold());
+  // CENTRE controls: the camera never sticks to anything now — these two
+  // aim the orbital view on demand (and take you there if you are not in it)
+  function centerBuildOnTank() {
+    if (!player.pos) return;
+    const nrm = norm3(player.pos);
+    bqZ.set(nrm[0], nrm[1], nrm[2]);
+    bqY.copy(buildFrame().up);
+    bqX.crossVectors(bqY, bqZ).normalize();
+    bqY.crossVectors(bqZ, bqX).normalize();
+    bqM.makeBasis(bqX, bqY, bqZ);
+    buildQ.setFromRotationMatrix(bqM);
+  }
+  root.querySelector('#td-pad-ctrheart').addEventListener('click', () => {
+    if (params.view !== 'orbit') setView('orbit');
+    centerBuildOnHeart();
+    buildDist = 3.4;   // the heart centre IS the strategic pose: whole planet
+  });
+  root.querySelector('#td-pad-ctrtank').addEventListener('click', () => {
+    if (params.view !== 'orbit') setView('orbit');
+    centerBuildOnTank();
+    buildDist = 2.0;   // the tank centre is tactical: close enough to read cells
+  });
   function syncDirectiveChip() {
     const chip = root.querySelector('#td-pad-dir');
     if (chip) chip.textContent = DIRECTIVE_LABEL[params.directive] || 'WANDER';
   }
+  // TANK-AUTO: the button opens a small radial of directives instead of
+  // blind-cycling six of them — on a phone, cycling meant tapping through
+  // five states you did not want to reach the one you did.
+  const autoRadial = root.querySelector('#td-auto-radial');
+  const AUTO_OPTIONS = [
+    ['wander', 'WANDER'], ['avoid', 'AVOID'], ['ram', 'RAM'],
+    ['conserve', 'SAVE SHELLS'], ['portal', 'SEEK PORTAL'], ['home', 'SEEK HOME'],
+  ];
+  for (const [key, label] of AUTO_OPTIONS) {
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.textContent = label;
+    b.dataset.dir = key;
+    b.addEventListener('click', () => {
+      params.directive = key;
+      autoMode = true;   // picking a directive is the ONLY way into auto
+      steerHold = 1.2;   // give auto its takeover window
+      cruise = false;
+      directiveCtrl.updateDisplay();
+      syncDirectiveChip();
+      updateHud();
+      autoRadial.classList.add('hidden');
+    });
+    autoRadial.appendChild(b);
+  }
+  function syncAutoRadial() {
+    for (const b of autoRadial.children) {
+      b.classList.toggle('active', b.dataset.dir === params.directive && !manualActive());
+    }
+  }
   root.querySelector('#td-pad-dir').addEventListener('click', () => {
-    const i = DIRECTIVES.indexOf(params.directive);
-    params.directive = DIRECTIVES[(i + 1) % DIRECTIVES.length];
-    directiveCtrl.updateDisplay();
-    syncDirectiveChip();
-    updateHud();
-    autoMode = true;  // picking a directive is the ONLY way into auto
-    steerHold = 1.2;
-    cruise = false;
+    const open = autoRadial.classList.toggle('hidden');
+    if (!open) syncAutoRadial();
   });
+  // any tap that is not the radial closes it — a menu must not linger
+  addEventListener('pointerdown', (ev) => {
+    if (!autoRadial.classList.contains('hidden')
+      && !autoRadial.contains(ev.target)
+      && ev.target !== root.querySelector('#td-pad-dir')) {
+      autoRadial.classList.add('hidden');
+    }
+  });
+
   syncDirectiveChip();
   root.querySelector('#td-pad-map').addEventListener('click', () => toggleMap());
 
@@ -2556,9 +2605,8 @@ export function initTdTab(root) {
       `<span class="hud-credit">${eco.credit}c ×${eco.multiplier().toFixed(2)}</span> · towers ${towers.length}\n` +
       `WAVE ${wave} · ${Math.min(8, Math.max(0, wave))}/8 towers · portals ${spAlive}/${spawnPoints.length} · R${round}${alerts}\n` +
       // one mode: the line reads camera + hold + who is driving
-      ((buildFrozen() ? 'WAVE HELD · ' : (waveHold ? 'HOLD ARMED · ' : ''))
-        + (manualActive() ? (cruise ? 'CRUISE' : 'MANUAL')
-          : `AUTO · ${DIRECTIVE_LABEL[params.directive] || 'WANDER'}`));
+      (manualActive() ? (cruise ? 'CRUISE' : 'MANUAL')
+        : `AUTO · ${DIRECTIVE_LABEL[params.directive] || 'WANDER'}`);
     // diegetic shell rack: the 3×3 turret dots ARE the ammo counter —
     // neon white loaded, faded grey spent (allies stay full: infinite ammo)
     const dots = playerMesh && playerMesh.userData.ammoDots;
@@ -3972,9 +4020,29 @@ export function initTdTab(root) {
     geo.setAttribute('color', new THREE.BufferAttribute(col, 3));
     return new THREE.Points(geo, new THREE.PointsMaterial({
       size: px, sizeAttenuation: false, vertexColors: true,
+      map: roundDot(), alphaTest: 0.3,
       transparent: true, opacity: 0.95,
       blending: THREE.AdditiveBlending, depthWrite: false,
     }));
+  }
+
+  // A Points vertex is a SQUARE unless you tell it otherwise, and at 12px
+  // (the mortar shell) the corners read. One shared radial-falloff sprite
+  // rounds every tracer — built once, on first use.
+  let roundDotTex = null;
+  function roundDot() {
+    if (roundDotTex) return roundDotTex;
+    const c = document.createElement('canvas');
+    c.width = c.height = 32;
+    const g = c.getContext('2d');
+    const grad = g.createRadialGradient(16, 16, 0, 16, 16, 16);
+    grad.addColorStop(0, 'rgba(255,255,255,1)');
+    grad.addColorStop(0.55, 'rgba(255,255,255,0.9)');
+    grad.addColorStop(1, 'rgba(255,255,255,0)');
+    g.fillStyle = grad;
+    g.fillRect(0, 0, 32, 32);
+    roundDotTex = new THREE.CanvasTexture(c);
+    return roundDotTex;
   }
 
   function spawnTowerShot(pos, dir, tw, eff, homing, arcTotal = 0) {
@@ -3992,7 +4060,7 @@ export function initTdTab(root) {
       dmg: eff.dmg, splash: (eff.splash || 0) * cellSide, homing,
       range: eff.range * cellSide * 1.35,
       speed: (tw.def.projSpeed ?? 16) * cellSide, // per-tower tempo
-      arcTotal, arcH: cellSide * 3.4, color: tw.def.color, // high lob: the arc IS the identity
+      arcTotal, arcH: cellSide * 2.3, color: tw.def.color, // a lob, not a moonshot
     });
   }
 
@@ -4393,7 +4461,7 @@ export function initTdTab(root) {
   gui.add(params, 'look', LOOK_NAMES).onChange(applyLook);
   gui.add(params, 'wallTops', ['auto', 'bright', 'dim', 'black'])
     .name('wall tops').onChange(applyLook);
-  const viewCtrl = gui.add(params, 'view', ['orbit', 'pov', 'third', 'bastion'])
+  const viewCtrl = gui.add(params, 'view', ['pov', 'third', 'orbit'])
     .name('camera (V)').onChange((v) => setView(v));
   const speedCtrl = gui.add(params, 'speed', 0.2, 4, 0.1).name('wander speed');
   const directiveCtrl = gui.add(params, 'directive', DIRECTIVES).name('auto directive').onChange(syncDirectiveChip);
@@ -4918,7 +4986,7 @@ export function initTdTab(root) {
   if (Number.isFinite(pointsOverride)) params.points = Math.min(16000, Math.max(150, pointsOverride));
   if (Number.isFinite(wallOverride)) params.wallHeight = wallOverride;
   const viewOv = urlParams.get('view');
-  if (['pov', 'third', 'bastion'].includes(viewOv)) { params.view = viewOv; viewCtrl.updateDisplay(); }
+  if (['pov', 'third', 'orbit'].includes(viewOv)) { setView(viewOv); }
   const lookOverride = urlParams.get('look');
   if (LOOKS[lookOverride]) params.look = lookOverride;
   const wtOverride = urlParams.get('walltops');

@@ -2102,3 +2102,37 @@ body.playing:not(.chrome-open) #tabbar { display: none !important; }
   opacity: 0.55;
   letter-spacing: 0.2em;
 }
+
+/* --- tank-auto radial: pick a directive, not cycle six of them ----------- */
+#td-auto-radial {
+  position: absolute;
+  top: 96px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 30;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 6px;
+  background: rgba(8, 13, 20, 0.94);
+  border: 1px solid rgba(159, 220, 255, 0.35);
+  border-radius: 10px;
+}
+#td-auto-radial.hidden { display: none; }
+#td-auto-radial button {
+  font: 11px/1 ui-monospace, SFMono-Regular, Menlo, monospace;
+  letter-spacing: 0.1em;
+  color: #9fdcff;
+  background: rgba(20, 32, 44, 0.7);
+  border: 1px solid rgba(159, 220, 255, 0.25);
+  border-radius: 7px;
+  padding: 8px 14px;
+  cursor: pointer;
+  text-align: left;
+}
+#td-auto-radial button:hover { border-color: rgba(159, 220, 255, 0.6); color: #eaf6ff; }
+#td-auto-radial button.active {
+  color: #061018;
+  background: #6fe6ff;
+  border-color: #6fe6ff;
+}
