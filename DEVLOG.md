@@ -6,6 +6,35 @@ Demo links assume `npm run serve` (port 8144) or the
 
 ---
 
+## `deba00f` — First real data out of the simulator
+
+The harness needed two fixes before it could deliver, both worth keeping:
+`frame()` was doing **DOM work per simulated step** — an innerHTML rebuild
+×120 per painted frame taxed every batch ~2 seconds; gated behind the
+paint flag, batches cost 6–8ms. And under a virtual-time budget rAF
+starves while timers race — the house trap every probe documents, now
+wielded on purpose: the sim loop rides `setTimeout(0)` while simming. A
+300-sim-second run completes in **~7 wall seconds**; 24 runs in under
+five minutes.
+
+The batch (3 styles × 8 seeds, archived in `docs/simdata-2026-08-30.jsonl`)
+quantified the operator's gut feel exactly:
+
+- **Waves 1–3 deal essentially all the heart damage** — median 10 → 5 by
+  wave 3, then flat to the end. The early game is the game.
+- **Credit floods from wave 6–8**: median crosses 3× the priciest tower
+  and compounds ~30–50% per wave once tower capacity saturates (placeable
+  trunk walls run out at ~14–21 towers). A builder run sat on 34,000c by
+  wave 18 with literally nothing to buy.
+- **Hands-on play wins**: style1 (ram + chokepoints) took 5/8 sectors;
+  the pure builder took 1/8. The credit split's intent, confirmed.
+
+The tuning levers this points at: soften waves 2–3 or fatten the opening
+kit; and give the mid-game credit SINKS — per-copy price escalation,
+buyable strike charges, the ally units already specced in the ROADMAP.
+
+---
+
 ## `0fc19cd` — Thirty-five entries, two registers each
 
 The units viewer grew a CODEX (LORE button, `?lore=1`): every unit
