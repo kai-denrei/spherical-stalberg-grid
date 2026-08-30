@@ -2568,3 +2568,42 @@ body.playing:not(.chrome-open) #tabbar { display: none !important; }
   /* phone: the left column below the launch console slot */
   #td-hack { left: max(12px, env(safe-area-inset-left)); top: calc(max(8px, env(safe-area-inset-top)) + 310px); }
 }
+
+/* --- phone columns v2 ----------------------------------------------------
+   The launch console folds VERTICAL under the radar (right column) — it
+   was a 296px bar eating the left column. The announcement lane moves to
+   the left column below the NEXT chip; the hack button docks under the
+   console. Verified by the rectangle probe, as ever. */
+@media (pointer: coarse), (max-width: 700px) {
+  #td-launch {
+    left: auto;
+    right: max(8px, env(safe-area-inset-right));
+    top: calc(max(8px, env(safe-area-inset-top)) + 218px);
+    width: 128px;
+    transform: none;
+  }
+  #td-launch.caution-frame,
+  #td-launch .caution-frame { flex-direction: column; }
+  #td-launch { flex-direction: column; min-height: 0; gap: 6px; padding: 7px 6px; display: flex; }
+  #td-launch-readout { gap: 2px; }
+  #td-launch-readout .status { font-size: 10px; }
+  #td-launch-readout .target { font-size: 9px; }
+  .launch-button { width: 86px; height: 42px; }
+  #td-hack {
+    left: auto;
+    right: max(8px, env(safe-area-inset-right));
+    top: calc(max(8px, env(safe-area-inset-top)) + 410px);
+    padding: 7px 10px;
+    font-size: 11px;
+  }
+  #td-sitrep, #td-wave, #td-toast, #td-tower {
+    left: max(12px, env(safe-area-inset-left));
+    right: auto;
+    top: calc(max(8px, env(safe-area-inset-top)) + 204px);
+    width: min(62vw, 260px);
+  }
+  /* the tallest card must die above the throttle (y~430) */
+  #td-sitrep { font-size: 10px; line-height: 1.42; padding: 7px 10px 7px; }
+  #td-sitrep .sr-name { width: 56px; }
+  #td-sitrep .sr-row { line-height: 1.35; }
+}

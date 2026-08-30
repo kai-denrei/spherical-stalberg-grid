@@ -19,31 +19,31 @@
 
 import * as THREE from '../vendor/three.module.js';
 import GUI from '../vendor/lil-gui.esm.js';
-import { generateSphereMesh, relax } from './grid.js?v=426e3a3c';
-import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=426e3a3c';
-import { mulberry32, randomSeed } from './rng.js?v=426e3a3c';
-import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3, segKey } from './vec3.js?v=426e3a3c';
-import { CREATURES, waveJelly } from './creatures.js?v=426e3a3c';
-import { UNITS, UNIT_NAMES, buildUnit, buildCreature, preloadMkcx, preloadServer, makeServerFixture, makeBulletCloud, makeRewardSolid, makeShellSolid, makeDebris, makeDotBurst, makePortalCloud, makeHeartCloud, makeDotEnemy } from './units.js?v=426e3a3c';
-import { LOOKS, LOOK_NAMES } from './looks.js?v=426e3a3c';
-import { makeCellIndex } from './cellindex.js?v=426e3a3c';
-import { CREATURE_TINTS, ENEMY_SPEC, INTROS, computeWavePlan } from './enemyspec.js?v=426e3a3c';
-import { PICKUPS } from './pickups.js?v=426e3a3c';
-import { rankFor, rankLabel, badgeSVG, killReq, eliteReq } from './ranks.js?v=426e3a3c';
-import { makeScore } from './score.js?v=426e3a3c';
-import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER } from './towers.js?v=426e3a3c';
-import { makeEconomy, sellRefund } from './economy.js?v=426e3a3c';
-import { makeBloom } from './postfx.js?v=426e3a3c';
-import { TANK_FEEL, TANK_FEEL_KNOBS, makeTankFeel, stepTankFeel, landTankFeel, fireTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js?v=426e3a3c';
-import { FEEL, loadFeel, saveFeel } from './feelstore.js?v=426e3a3c';
+import { generateSphereMesh, relax } from './grid.js?v=c1fca3cd';
+import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=c1fca3cd';
+import { mulberry32, randomSeed } from './rng.js?v=c1fca3cd';
+import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3, segKey } from './vec3.js?v=c1fca3cd';
+import { CREATURES, waveJelly } from './creatures.js?v=c1fca3cd';
+import { UNITS, UNIT_NAMES, buildUnit, buildCreature, preloadMkcx, preloadServer, makeServerFixture, makeBulletCloud, makeRewardSolid, makeShellSolid, makeDebris, makeDotBurst, makePortalCloud, makeHeartCloud, makeDotEnemy } from './units.js?v=c1fca3cd';
+import { LOOKS, LOOK_NAMES } from './looks.js?v=c1fca3cd';
+import { makeCellIndex } from './cellindex.js?v=c1fca3cd';
+import { CREATURE_TINTS, ENEMY_SPEC, INTROS, computeWavePlan } from './enemyspec.js?v=c1fca3cd';
+import { PICKUPS } from './pickups.js?v=c1fca3cd';
+import { rankFor, rankLabel, badgeSVG, killReq, eliteReq } from './ranks.js?v=c1fca3cd';
+import { makeScore } from './score.js?v=c1fca3cd';
+import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER } from './towers.js?v=c1fca3cd';
+import { makeEconomy, sellRefund } from './economy.js?v=c1fca3cd';
+import { makeBloom } from './postfx.js?v=c1fca3cd';
+import { TANK_FEEL, TANK_FEEL_KNOBS, makeTankFeel, stepTankFeel, landTankFeel, fireTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js?v=c1fca3cd';
+import { FEEL, loadFeel, saveFeel } from './feelstore.js?v=c1fca3cd';
 import { STRIKE_KNOBS, makeStrike, makeStrikeParams, grantStrikes, stepStrike,
   toggleArm, paintTarget, launchStrike, stepFall, skipFall, fallProgress,
-  strikeDamage, retargetStrike, orbitProgress } from './strike.js?v=426e3a3c';
-import { radarBasis, radarProject, radarBearing, sweepAngle, radarPhosphor } from './radar.js?v=426e3a3c';
-import { BLOOM_GROUPS } from './bloomweights.js?v=426e3a3c';
-import { TOWER_LOOK_NAMES, DEFAULT_TOWER_LOOK, buildTowerLook, preloadLook } from './towerlooks.js?v=426e3a3c';
-import { makeAudio } from './audio.js?v=426e3a3c';
-import { DEATH_KEYS } from './audiomanifest.js?v=426e3a3c';
+  strikeDamage, retargetStrike, orbitProgress } from './strike.js?v=c1fca3cd';
+import { radarBasis, radarProject, radarBearing, sweepAngle, radarPhosphor } from './radar.js?v=c1fca3cd';
+import { BLOOM_GROUPS } from './bloomweights.js?v=c1fca3cd';
+import { TOWER_LOOK_NAMES, DEFAULT_TOWER_LOOK, buildTowerLook, preloadLook } from './towerlooks.js?v=c1fca3cd';
+import { makeAudio } from './audio.js?v=c1fca3cd';
+import { DEATH_KEYS } from './audiomanifest.js?v=c1fca3cd';
 
 export function initTdTab(root) {
   let active = false;
@@ -1192,6 +1192,7 @@ export function initTdTab(root) {
   // the GOAL only — the loop's camera slerp (0.14/frame) does the easing,
   // so a recenter rides home over ~0.4s without its own animation.
   function centerBuildOnHeart() {
+    followSuspend = false;
     const { hn, t1 } = poleFrame();
     bqZ.set(hn[0], hn[1], hn[2]).normalize();
     bqY.set(t1[0], t1[1], t1[2]);
@@ -1208,9 +1209,20 @@ export function initTdTab(root) {
   // tank is, so a nudge at the edge is gentle and an off-screen tank is not.
   const followQ = new THREE.Quaternion();
   const followV = new THREE.Vector3();
+  // A deliberate pan SUSPENDS the follow — on a phone you explore in
+  // flicks, and yielding only while a finger was down meant every lift
+  // snapped the view straight back to the tank (operator: 'impossible to
+  // explore'). Driving again — or an explicit recenter — re-arms it,
+  // which keeps top-down as a real control mode exactly when it is one.
+  let followSuspend = false;
   function buildFollowTank(dt) {
     if (!buildMode || strike.falling > 0 || !player.pos) return;
     if (buildPointers.size > 0) return;
+    if (followSuspend) {
+      if (!(steeringActive() || keys.left || keys.right || keys.fast
+        || keys.slow || cruise)) return;
+      followSuspend = false; // the player is driving — duty resumes
+    }
     followV.set(player.pos[0], player.pos[1], player.pos[2]).project(camera);
     const out = Math.max(Math.abs(followV.x), Math.abs(followV.y));
     if (out < 0.78 && followV.z < 1) return;   // comfortably framed
@@ -1869,6 +1881,7 @@ export function initTdTab(root) {
   // CENTRE controls: the camera never sticks to anything now — these two
   // aim the orbital view on demand (and take you there if you are not in it)
   function centerBuildOnTank() {
+    followSuspend = false;
     if (!player.pos) return;
     const nrm = norm3(player.pos);
     bqZ.set(nrm[0], nrm[1], nrm[2]);
@@ -1983,6 +1996,7 @@ export function initTdTab(root) {
       dragUp.copy(f.up);
       dragRight.copy(f.right);
       const k = buildDist * 0.0016; // px → radians, zoom-aware
+      followSuspend = true; // exploring: the follow waits for the wheel
       buildQ.premultiply(bqTmp.setFromAxisAngle(dragUp, -dx * k));
       buildQ.premultiply(bqTmp.setFromAxisAngle(dragRight, -dy * k));
       buildQ.normalize();
@@ -3041,7 +3055,13 @@ export function initTdTab(root) {
     const frozen = buildFrozen() || revealLeft > 0;
     let when;
     if (frozen) when = 'ready · leave BUILD to engage';
-    else if (waveActive && !enemies.every((e) => !e.alive)) when = 'clear the field';
+    else if (waveActive && !enemies.every((e) => !e.alive)) {
+      // mid-wave the chip said 'clear the field' — permanent furniture
+      // saying something the board already says. It HIDES now: the chip
+      // appears at wave-clear with the countdown and leaves at spawn.
+      nextEl.classList.add('hidden');
+      return;
+    }
     // the armed countdown is the truth once it is running — during a stall
     // the gap clock is not what decides when the wave lands
     else if (waveIn >= 0) when = `in ${Math.max(0, Math.ceil(waveIn))}s`;
@@ -5850,7 +5870,7 @@ export function initTdTab(root) {
         map: '#tab-td .minimap', tut: '#td-tut', throttle: '#td-throttle',
         steerL: '#td-pad-left', steerR: '#td-pad-right',
         fire: '#td-pad-fire', laser: '#td-pad-laser',
-        launch: '#td-launch', next: '#td-next', card: '#td-sitrep',
+        launch: '#td-launch', next: '#td-next', card: '#td-sitrep', hack: '#td-hack',
       };
       const box = {};
       for (const [k, sel] of Object.entries(want)) {
