@@ -6,6 +6,32 @@ Demo links assume `npm run serve` (port 8144) or the
 
 ---
 
+## `36521a1` — Three ways to be dangerous
+
+The invasion phase (waves 13+) gets its own roster, one behavior each:
+
+- **SAUCER** (wave 13) — the lab's ufo shape, freed when the bacterium
+  took scoutufo's slot. Rammable fodder, but `jink` stacks a second,
+  faster weave on the erratic bursts — a dogfight, not a walk.
+- **SHELLBACK** (wave 14) — the lab's seashell spiral under the wave
+  animation. The tactician: it holds at the *edge* of tower coverage
+  until three minions arrive as cover, then bursts through with them at
+  1.9× — the first enemy that reads your towers. (Geometry lesson: a log
+  spiral's mass sits in its outer whorl, so the cloud is centroid-
+  recentred and pulled to 0.78 or the solid core floats beside the shell
+  and the dots read as dust.)
+- **PHANTOM** (wave 15) — the ghost shape under optical camo: a ~0.14
+  opacity haze with a brief shimmer of presence every ~6 seconds, and the
+  radar shares the same decloak window — no window, no blip. Non-rammable
+  on purpose: the danger klaxon becomes the warning for the thing you
+  cannot see.
+
+The roster tests were pinned to 12 and failed exactly as the deban lesson
+predicted; they now assert relationships (every intro ↔ spec ↔ tint,
+`typesByWave` caps at `INTROS.length`) instead of counts.
+
+---
+
 ## `49a8b2b` — Three protocols
 
 The relay's breach bar grew tabs: HDT (the circuit duel) is joined by
