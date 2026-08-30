@@ -6,6 +6,29 @@ Demo links assume `npm run serve` (port 8144) or the
 
 ---
 
+## `3d9ca55` — Demolition is permanent
+
+Field report: pushing toward the server when a round ends, the sector
+reassembly sometimes sealed the tank inside solid rock — `applySector`
+rebuilds every round's tags from the full world, which quietly regrew
+every wall the player had blasted.
+
+The operator proposed the mechanic and it shipped verbatim: **breached
+walls stay breached.** Every cell opened by a shell or a strike joins
+`breachedCells`, re-applied on every reassembly *before* the reachability
+seal — deliberate ordering, because a breach tunnel that connects to the
+open network is thereby reachable and survives the seal on its own merit.
+A new world clears the set; the server's cell and tower-anchored walls
+stay unbreachable.
+
+Persistence alone left one entombment path: a tank parked on a
+*later-band* lane it reached through a breach — the band gate reseals
+that ground regardless. So the safety net: after each reassembly, a tank
+standing on BLOCKED redeploys beside the heart with a REDEPLOYED toast
+that says why it moved. The frontier can shift; it cannot bury you.
+
+---
+
 ## `10eb089` — The bubble, and the catalogue's budget
 
 **The energy shield.** A fourth pickup (dome orb — it joins `PICKUPS`, so
