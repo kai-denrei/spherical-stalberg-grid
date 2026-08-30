@@ -148,7 +148,7 @@ builder 1/8. Levers, in the operator's preference order:
 - Credit sinks: per-copy tower price escalation; buyable strike charges;
   the ally units specced under Economy.
 
-### Container lives display (asset landed, build next)
+### ~~Container lives display~~ — DONE (`5c7e1b6`)
 
 `assets/models/container.glb` (650KB, vendored 2026-08-30): three shipping
 containers near the Heart AS the lives counter — one empty, two each

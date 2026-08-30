@@ -6,6 +6,29 @@ Demo links assume `npm run serve` (port 8144) or the
 
 ---
 
+## `5c7e1b6` — Lives you can walk up and count
+
+The container GLB became the third diegetic instrument: health is the
+glow strips, ammo is the shell rack, and LIVES are now three shipping
+containers ringing the heart, doors jacked open facing it. Two hold a
+cold MK-CX; one stands empty — a counter that starts at two, displayed
+honestly. Lose a hull and a container's tank vanishes, its lock lamps
+going red (private lamp materials per instance — the shared-material
+lesson, third application). `Cargo_Group` dies at preload per the spec,
+and the authored collision wireframes are hidden in both casted GLBs.
+
+A guard bug worth the note: the placement's generation check was off by
+one against `++serverGen` and silently never placed anything — caught
+only because the placement logs `CONTAINERS placed=N`, the same
+probe-or-it-didn't-happen rule everything else here lives by.
+
+The viewer grew the world to match (operator's ask): the Antipode Relay
+and the Life Container join the neutral group, the Gate joins the
+hostiles, and the codex covers them all — the world entries now double
+as unit entries via aliases, one text with two homes.
+
+---
+
 ## `fd50584` — The balance, confirmed by rerun
 
 Same 3 styles × 8 seeds, same seed ladder, new balance
