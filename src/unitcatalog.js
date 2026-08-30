@@ -103,10 +103,26 @@ const PICKUP_UNITS = [
   },
 ];
 
+// World structures shown in the viewer: fixtures on the neutral side (the
+// relay and the life container are nobody's soldiers), the gate with the
+// hostiles — it is where they come from.
+const STRUCTURE_UNITS = [
+  { id: 'server', kind: 'fixture', label: 'the antipode relay',
+    note: 'invincible server at the far pole — win a protocol, decrypt a tower',
+    sounds: [{ key: 'server_dialup', label: 'handshake' }] },
+  { id: 'container', kind: 'fixture', label: 'life container',
+    note: 'three stand by the heart — the ones still holding a spare MK-CX are your lives' },
+];
+const PORTAL_UNIT = [
+  { id: 'portal', kind: 'portal', label: 'the gate',
+    note: 'draws itself in, locks nine chevrons, opens — 3 shells close it',
+    sounds: [{ key: 'portal_warn', label: 'wave warning' }] },
+];
+
 export const UNIT_CATALOG = {
   friendly: [...PLAYER_UNITS, ...TOWER_UNITS],
-  neutral: PICKUP_UNITS,
-  hostile: HOSTILE_UNITS,
+  neutral: [...PICKUP_UNITS, ...STRUCTURE_UNITS],
+  hostile: [...HOSTILE_UNITS, ...PORTAL_UNIT],
 };
 
 export function groupOf(id) {

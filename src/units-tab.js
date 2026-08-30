@@ -12,21 +12,22 @@
 import * as THREE from '../vendor/three.module.js';
 import { OrbitControls } from '../vendor/OrbitControls.js';
 import { buildUnit, preloadMkcx, makeDebris, makeDotBurst, makeBulletCloud,
-  makeDotEnemy, makeRewardSolid, makeShellSolid } from './units.js?v=c71eac55';
+  makeDotEnemy, makeRewardSolid, makeShellSolid, makePortalCloud,
+  preloadServer, makeServerFixture, preloadContainer, makeContainerFixture } from './units.js?v=c319f21e';
 import { TANK_FEEL, TANK_FEEL_KNOBS, formatFeelCode, makeTankFeel, stepTankFeel,
-  landTankFeel, fireTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js?v=c71eac55';
+  landTankFeel, fireTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js?v=c319f21e';
 import { FEEL, loadFeel, saveFeel, resetFeel,
-  TOWER, HEADS, loadTower, saveTower, resetTower } from './feelstore.js?v=c71eac55';
+  TOWER, HEADS, loadTower, saveTower, resetTower } from './feelstore.js?v=c319f21e';
 import { TOWER_FEEL_KNOBS, formatTowerFeel, clampTowerParams,
-  formatTowerHeads, HEAD_CHOICES, HEAD_AS_SHIPPED } from './towerfeel.js?v=c71eac55';
-import { CREATURE_TINTS } from './enemyspec.js?v=c71eac55';
+  formatTowerHeads, HEAD_CHOICES, HEAD_AS_SHIPPED } from './towerfeel.js?v=c319f21e';
+import { CREATURE_TINTS } from './enemyspec.js?v=c319f21e';
 import { buildTowerLook, TOWER_LOOK_NAMES, DEFAULT_TOWER_LOOK, preloadLook } from './towerlooks.js';
 import { TOWER_BY_KEY, TOWERS } from './towers.js';
 import { LOOKS } from './looks.js';
 import { makeBloom } from './postfx.js';
-import { makeAudio } from './audio.js?v=c71eac55';
+import { makeAudio } from './audio.js?v=c319f21e';
 import { GROUPS, GROUP_LABELS, GROUP_EMPTY, entriesIn } from './unitcatalog.js';
-import { LORE, LORE_WORLD, loreText, loreAll } from './lore.js?v=c71eac55';
+import { LORE, LORE_WORLD, loreText, loreAll } from './lore.js?v=c319f21e';
 
 let roundTex = null;
 function roundDotTex() {
@@ -237,6 +238,24 @@ export function initUnitsTab(root) {
   // exists only on the cloud.
   function buildEntry(e) {
     if (e.kind === 'tower') return buildTowerLook(state.towerLook, TOWER_BY_KEY[e.id]);
+    if (e.kind === 'portal') {
+      const p = makePortalCloud({ body: 0xcfd8ff, hi: 0xffffff });
+      p.userData.baseScale = 1;
+      return p;
+    }
+    if (e.kind === 'fixture') {
+      // fixtures preload async; by the time anyone pages to them the
+      // bytes have almost always landed — the placeholder covers the gap
+      const g = (e.id === 'server' ? makeServerFixture() : makeContainerFixture());
+      if (g) { g.userData.baseScale = 1; return g; }
+      (e.id === 'server' ? preloadServer() : preloadContainer());
+      const ph = new THREE.Group();
+      ph.add(new THREE.Mesh(new THREE.BoxGeometry(0.6, 0.6, 0.6),
+        new THREE.MeshLambertMaterial({ color: 0x2a3442 })));
+      ph.userData.kind = 'mesh';
+      ph.userData.baseScale = 1;
+      return ph;
+    }
     if (e.kind === 'enemy') {
       const hex = CREATURE_TINTS[e.id];
       // ONE unit on screen: build it at 6x the game's dot density —
@@ -471,6 +490,9 @@ export function initUnitsTab(root) {
       }, () => {});
     });
   }
+
+  preloadServer();
+  preloadContainer();
 
   // ?lore=1 — open the codex on load (screenshot / deep-link hook)
   if (new URLSearchParams(location.search).get('lore') === '1' && lorePanel) {

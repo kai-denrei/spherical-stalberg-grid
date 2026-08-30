@@ -16,12 +16,12 @@
 
 import * as THREE from '../vendor/three.module.js';
 import { loadGlb, mergeByMaterial, fitModel, tintModel, makeShellRack,
-  addEdgeOutlines, makeHeatSleeve } from './glbmodels.js?v=c71eac55';
-import { CREATURES, waveJelly, swimWave, spherePts, bulletPts, missilePts, heartPts, torusPts, towerHeadPts, enemyDotPts, portalPts } from './creatures.js?v=c71eac55';
-import { TOWER_FEEL, TOWER_HEADS, headKindFor } from './towerfeel.js?v=c71eac55';
+  addEdgeOutlines, makeHeatSleeve } from './glbmodels.js?v=c319f21e';
+import { CREATURES, waveJelly, swimWave, spherePts, bulletPts, missilePts, heartPts, torusPts, towerHeadPts, enemyDotPts, portalPts } from './creatures.js?v=c319f21e';
+import { TOWER_FEEL, TOWER_HEADS, headKindFor } from './towerfeel.js?v=c319f21e';
 import { STARGATE_PTS, STARGATE_STROKE,
-  HORIZON_N, stargateHorizon } from './stargate.js?v=c71eac55';
-import { ENEMY_SPEC } from './enemyspec.js?v=c71eac55';
+  HORIZON_N, stargateHorizon } from './stargate.js?v=c319f21e';
+import { ENEMY_SPEC } from './enemyspec.js?v=c319f21e';
 
 function normalizeToUnit(group) {
   group.updateMatrixWorld(true);
@@ -1235,6 +1235,13 @@ function markCallouts(scene) {
 // which is why parts whose node is a Group (and so survives a merge) ended
 // up with a label each per call. The promise, not the scene, is the guard.
 let mkcxLoad = null;
+// Authored GLBs ship their collision volumes as visible red wireframes —
+// helper meshes for the DCC, noise everywhere else. Hidden, not removed:
+// a future physics pass may want to read them.
+function hideCollisionNodes(root) {
+  root.traverse((o) => { if (/collision/i.test(o.name || '')) o.visible = false; });
+}
+
 // --- the SERVER: a board fixture cast from GLB ---------------------------
 // Not a unit: no rig, no tick, no health. fitModel seats the foot at y=0
 // inside a wrapper group (unit height, span-capped per the house rule for
@@ -1244,6 +1251,7 @@ export function preloadServer() {
   if (serverLoad) return serverLoad;
   serverLoad = loadGlb('assets/models/server.glb').then((scene) => {
     if (!scene) { serverLoad = null; return false; }
+    hideCollisionNodes(scene);
     serverProto = fitModel(scene, { height: 1, maxSpan: 0.8 });
     return true;
   });
@@ -1252,6 +1260,60 @@ export function preloadServer() {
 export function makeServerFixture() {
   if (!serverProto) { preloadServer(); return null; }
   const g = serverProto.clone(true);
+  g.userData.kind = 'fixture';
+  return g;
+}
+
+// --- the LIFE CONTAINERS: shipping containers that ARE the lives display.
+// One empty, the rest each holding a spare MK-CX — lose a tank and its
+// container stands empty. The GLB ships with cargo (pallets + loads);
+// the operator's spec empties them, so Cargo_Group dies at preload.
+// Doors are fixed OPEN — the display reads by looking in; presence of
+// the tank IS the counter, the lock lamps reinforce it.
+let containerProto = null, containerLoad = null;
+export function preloadContainer() {
+  if (containerLoad) return containerLoad;
+  containerLoad = loadGlb('assets/models/container.glb').then((scene) => {
+    if (!scene) { containerLoad = null; return false; }
+    const cargo = scene.getObjectByName('Cargo_Group');
+    if (cargo && cargo.parent) cargo.parent.remove(cargo); // empty the boxes
+    hideCollisionNodes(scene);
+    // fit by height with a span cap (house rule): a container is ~1.5x
+    // longer than tall, so the span cap is what binds — noted, not assumed
+    containerProto = fitModel(scene, { height: 1, maxSpan: 1.6 });
+    return true;
+  });
+  return containerLoad;
+}
+export function makeContainerFixture() {
+  if (!containerProto) { preloadContainer(); return null; }
+  const g = containerProto.clone(true);
+  // doors stand open: the counter must be readable at a glance
+  const dl = g.getObjectByName('Door_L_Pivot');
+  const dr = g.getObjectByName('Door_R_Pivot');
+  if (dl) dl.rotation.y = -1.9;
+  if (dr) dr.rotation.y = 1.9;
+  // lock lamps get PRIVATE materials (clone shares them otherwise, and
+  // one container's state would repaint every sibling's lamps)
+  const lamps = [];
+  g.traverse((o) => {
+    if (o.isMesh && /^Lock_Lamp_/.test(o.name)) {
+      o.material = o.material.clone();
+      lamps.push(o);
+    }
+  });
+  let stocked = null;
+  g.userData.setStocked = (on, cargoObj) => {
+    if (stocked === on) return;
+    stocked = on;
+    for (const l of lamps) {
+      l.material.color.setHex(on ? 0x2aff66 : 0xff3322);
+      if (l.material.emissive) {
+        l.material.emissive.setHex(on ? 0x0c4418 : 0x441008);
+      }
+    }
+    if (cargoObj) cargoObj.visible = on;
+  };
   g.userData.kind = 'fixture';
   return g;
 }

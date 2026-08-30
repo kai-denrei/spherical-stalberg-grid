@@ -307,6 +307,22 @@ export const LORE = {
       + 'zone, realistic military still life, shallow depth of field, 8k',
   },
 
+  container: {
+    name: 'LIFE CONTAINER',
+    tag: 'the spare hulls · by the heart',
+    body: 'Three intermodal containers stand in the Cardion’s light, doors '
+      + 'jacked open, lock lamps burning green. Two hold spare MK-CX hulls, '
+      + 'engines cold, painted and fueled; the third stands empty, which is '
+      + 'the honest way to display a number that starts at two. Lose a hull '
+      + 'in the field and a container’s lamps go red over a bare deck. The '
+      + 'crews do not decorate them. The count decorates itself.',
+    visual: 'three weathered sci-fi shipping containers near a glowing '
+      + 'holographic heart, doors open, interior spotlights, two containing '
+      + 'parked futuristic hover tanks, one empty with red lock lamps, '
+      + 'green status lamps on the stocked pair, dramatic pole-station '
+      + 'lighting, photoreal military logistics, 8k',
+  },
+
   // --- hostiles -----------------------------------------------------------
   phage: {
     name: 'THE PHAGE',
@@ -509,6 +525,11 @@ export const LORE = {
       + 'night battlefield, one searchlight, photoreal VFX, 8k',
   },
 };
+
+// The world entries double as unit entries where the catalogue shows the
+// same thing (the relay and the gate live in both places) — one text, two
+// homes, no drift.
+for (const w of LORE_WORLD) if (!LORE[w.id]) LORE[w.id] = w;
 
 // one entry, formatted for the clipboard
 export function loreText(e) {
