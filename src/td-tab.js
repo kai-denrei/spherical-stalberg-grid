@@ -19,31 +19,31 @@
 
 import * as THREE from '../vendor/three.module.js';
 import GUI from '../vendor/lil-gui.esm.js';
-import { generateSphereMesh, relax } from './grid.js?v=8ee47ec2';
-import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=8ee47ec2';
-import { mulberry32, randomSeed } from './rng.js?v=8ee47ec2';
-import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3, segKey } from './vec3.js?v=8ee47ec2';
-import { CREATURES, waveJelly } from './creatures.js?v=8ee47ec2';
-import { UNITS, UNIT_NAMES, buildUnit, buildCreature, preloadMkcx, preloadServer, makeServerFixture, makeShieldShell, makeBulletCloud, makeRewardSolid, makeShellSolid, makeDebris, makeDotBurst, makePortalCloud, makeHeartCloud, makeDotEnemy } from './units.js?v=8ee47ec2';
-import { LOOKS, LOOK_NAMES } from './looks.js?v=8ee47ec2';
-import { makeCellIndex } from './cellindex.js?v=8ee47ec2';
-import { CREATURE_TINTS, ENEMY_SPEC, INTROS, computeWavePlan } from './enemyspec.js?v=8ee47ec2';
-import { PICKUPS } from './pickups.js?v=8ee47ec2';
-import { rankFor, rankLabel, badgeSVG, killReq, eliteReq } from './ranks.js?v=8ee47ec2';
-import { makeScore } from './score.js?v=8ee47ec2';
-import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER } from './towers.js?v=8ee47ec2';
-import { makeEconomy, sellRefund } from './economy.js?v=8ee47ec2';
-import { makeBloom } from './postfx.js?v=8ee47ec2';
-import { TANK_FEEL, TANK_FEEL_KNOBS, makeTankFeel, stepTankFeel, landTankFeel, fireTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js?v=8ee47ec2';
-import { FEEL, loadFeel, saveFeel } from './feelstore.js?v=8ee47ec2';
+import { generateSphereMesh, relax } from './grid.js?v=3b01de22';
+import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=3b01de22';
+import { mulberry32, randomSeed } from './rng.js?v=3b01de22';
+import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3, segKey } from './vec3.js?v=3b01de22';
+import { CREATURES, waveJelly } from './creatures.js?v=3b01de22';
+import { UNITS, UNIT_NAMES, buildUnit, buildCreature, preloadMkcx, preloadServer, makeServerFixture, makeShieldShell, makeBulletCloud, makeRewardSolid, makeShellSolid, makeDebris, makeDotBurst, makePortalCloud, makeHeartCloud, makeDotEnemy } from './units.js?v=3b01de22';
+import { LOOKS, LOOK_NAMES } from './looks.js?v=3b01de22';
+import { makeCellIndex } from './cellindex.js?v=3b01de22';
+import { CREATURE_TINTS, ENEMY_SPEC, INTROS, computeWavePlan } from './enemyspec.js?v=3b01de22';
+import { PICKUPS } from './pickups.js?v=3b01de22';
+import { rankFor, rankLabel, badgeSVG, killReq, eliteReq } from './ranks.js?v=3b01de22';
+import { makeScore } from './score.js?v=3b01de22';
+import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER } from './towers.js?v=3b01de22';
+import { makeEconomy, sellRefund } from './economy.js?v=3b01de22';
+import { makeBloom } from './postfx.js?v=3b01de22';
+import { TANK_FEEL, TANK_FEEL_KNOBS, makeTankFeel, stepTankFeel, landTankFeel, fireTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js?v=3b01de22';
+import { FEEL, loadFeel, saveFeel } from './feelstore.js?v=3b01de22';
 import { STRIKE_KNOBS, makeStrike, makeStrikeParams, grantStrikes, stepStrike,
   toggleArm, paintTarget, launchStrike, stepFall, skipFall, fallProgress,
-  strikeDamage, retargetStrike, orbitProgress } from './strike.js?v=8ee47ec2';
-import { radarBasis, radarProject, radarBearing, sweepAngle, radarPhosphor } from './radar.js?v=8ee47ec2';
-import { BLOOM_GROUPS } from './bloomweights.js?v=8ee47ec2';
-import { TOWER_LOOK_NAMES, DEFAULT_TOWER_LOOK, buildTowerLook, preloadLook } from './towerlooks.js?v=8ee47ec2';
-import { makeAudio } from './audio.js?v=8ee47ec2';
-import { DEATH_KEYS } from './audiomanifest.js?v=8ee47ec2';
+  strikeDamage, retargetStrike, orbitProgress } from './strike.js?v=3b01de22';
+import { radarBasis, radarProject, radarBearing, sweepAngle, radarPhosphor } from './radar.js?v=3b01de22';
+import { BLOOM_GROUPS } from './bloomweights.js?v=3b01de22';
+import { TOWER_LOOK_NAMES, DEFAULT_TOWER_LOOK, buildTowerLook, preloadLook } from './towerlooks.js?v=3b01de22';
+import { makeAudio } from './audio.js?v=3b01de22';
+import { DEATH_KEYS } from './audiomanifest.js?v=3b01de22';
 
 export function initTdTab(root) {
   let active = false;
@@ -372,6 +372,10 @@ export function initTdTab(root) {
   // and a win decrypts the next tower ahead of its wave gate.
   let serverObj = null, serverCi = -1, serverGen = 0;
   let serverChamber = []; // the carved vault: floor cells, walls all round
+  // walls the PLAYER opened (shells, strikes) stay open across rounds —
+  // demolition is permanent (operator ruling: a breach you paid for does
+  // not grow back at the next frontier shift)
+  const breachedCells = new Set();
   let serverFound = false, hackedRound = false, hackedUnlocks = 0;
   let playerSize = 0.06; // set per-generation in buildActors
 
@@ -454,6 +458,12 @@ export function initTdTab(root) {
     // frontier arrives — the operator's stated design. Its cells keep
     // distToHeart -1, so nav, rewards, and portal picks all ignore it.
     for (const ci of serverChamber) dungeon.tags[ci] = ROOM;
+    // ...and so are the player's breaches: paid-for demolition survives
+    // the frontier shift. (Before the seal on purpose — a breach tunnel
+    // that connects to the open network is thereby REACHABLE and stays.)
+    for (const ci of breachedCells) {
+      if (ci !== serverCi && !towerByCell.has(ci)) dungeon.tags[ci] = PATH;
+    }
     dungeon.distToHeart = d;
     {
       let n = 0;
@@ -3205,6 +3215,7 @@ export function initTdTab(root) {
     dangerWarnedWave = -1;
     heartCalloutCd = 0; streakMark = 0;
     ramCombo = 0; ramComboT = 0; syncCombo();
+    breachedCells.clear(); // a NEW world owes nothing to the old one's holes
     mesh = generateSphereMesh({ seed: params.seed >>> 0, n: params.points, k: 12 });
     relax(mesh, { n_iters: params.relaxIters, PULL_RATE: 0.25 });
     dungeon = generateDungeon(mesh, {
@@ -4034,6 +4045,7 @@ export function initTdTab(root) {
   function breachWallCell(ci) {
     if (ci === serverCi) return false; // the server is INVINCIBLE — no missile opens it
     if (towerByCell.has(ci)) return false; // a mounted tower anchors its wall
+    breachedCells.add(ci); // demolition is permanent across rounds
     dungeon.tags[ci] = PATH;
     const c = graph.centers[ci];
     const n = graph.normals[ci];
@@ -5242,6 +5254,16 @@ export function initTdTab(root) {
     revealLeft = REVEAL_LEN;
     buildGeometry();
     syncServerLift();
+    // THE SAFETY NET. Breach persistence keeps corridors open, but a tank
+    // parked on a later-band lane it reached THROUGH a breach can still
+    // have the band gate reseal the ground under it — walls closing over
+    // the hull (operator bug report). If the shift entombed the tank,
+    // redeploy it beside the heart and say so.
+    if (player.cur >= 0 && dungeon.tags[player.cur] === BLOCKED && !playerDown) {
+      respawnPlayerAtSpawn();
+      showToast(`<div class="wave-num">REDEPLOYED</div>`
+        + `<div class="wave-role">the frontier shifted over your position</div>`, 3000);
+    }
     // burn the new ground hot — repainted to its true colors when the
     // beat ends (see animate)
     for (const ci of revealCells) paintCell(ci, [1.0, 0.68, 0.16]);
