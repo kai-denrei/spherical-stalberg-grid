@@ -2684,3 +2684,40 @@ body.playing:not(.chrome-open) #tabbar { display: none !important; }
 @media (pointer: coarse), (max-width: 560px) {
   .radial-item .rk { display: none; } /* no keyboard, no hint */
 }
+
+/* --- the SIM tab: console-family batch runner ---------------------------- */
+#tab-sim { color: #86ff9e; font: 13px/1.7 ui-monospace, Menlo, monospace; }
+#sim-panel { max-width: 860px; margin: 60px auto 0; padding: 0 16px; }
+.sim-head { font-weight: bold; letter-spacing: 0.2em; color: #b8ffca; margin-bottom: 12px; }
+.sim-controls { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; margin-bottom: 12px; }
+.sim-controls label { color: #6fe387; display: flex; gap: 6px; align-items: center; }
+.sim-controls select, .sim-controls input {
+  background: #06140a; color: #b8ffca; border: 1px solid rgba(110, 255, 140, 0.4);
+  border-radius: 5px; padding: 4px 8px; font: inherit;
+}
+.sim-controls input[type="number"] { width: 64px; }
+#sim-run, #sim-stop {
+  font: bold 12px ui-monospace, Menlo, monospace; letter-spacing: 0.1em;
+  color: #08140a; background: #86ff9e; border: 0; border-radius: 5px;
+  padding: 6px 14px; cursor: pointer;
+}
+#sim-stop { background: #ff5340; color: #140806; }
+#sim-status { color: #6fe387; }
+#sim-agg { margin: 8px 0 10px; color: #d6ffdf; }
+#sim-agg b { color: #ffffff; }
+#sim-table { border-collapse: collapse; width: 100%; }
+#sim-table th, #sim-table td {
+  text-align: right; padding: 3px 10px; border-bottom: 1px solid rgba(110, 255, 140, 0.15);
+}
+#sim-table th { color: #6fe387; font-weight: normal; letter-spacing: 0.08em; }
+#sim-table td:nth-child(2) { text-transform: uppercase; }
+tr.sim-win td:nth-child(2) { color: #86ff9e; }
+tr.sim-loss td:nth-child(2) { color: #ff5340; }
+tr.sim-timeout td:nth-child(2), tr.sim-stalled td:nth-child(2) { color: #ffb000; }
+#sim-frame {
+  /* the run is visible but small — a picture-in-picture of the game
+     playing itself; the DATA is the product, the view is a courtesy */
+  position: fixed; right: 12px; bottom: 12px;
+  width: 360px; height: 240px; border: 1px solid rgba(110, 255, 140, 0.4);
+  border-radius: 6px; background: #000;
+}

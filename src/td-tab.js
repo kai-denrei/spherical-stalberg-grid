@@ -19,31 +19,31 @@
 
 import * as THREE from '../vendor/three.module.js';
 import GUI from '../vendor/lil-gui.esm.js';
-import { generateSphereMesh, relax } from './grid.js?v=7d0c4cc9';
-import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=7d0c4cc9';
-import { mulberry32, randomSeed } from './rng.js?v=7d0c4cc9';
-import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3, segKey } from './vec3.js?v=7d0c4cc9';
-import { CREATURES, waveJelly } from './creatures.js?v=7d0c4cc9';
-import { UNITS, UNIT_NAMES, buildUnit, buildCreature, preloadMkcx, preloadServer, makeServerFixture, makeShieldShell, makeBulletCloud, makeRewardSolid, makeShellSolid, makeDebris, makeDotBurst, makePortalCloud, makeHeartCloud, makeDotEnemy } from './units.js?v=7d0c4cc9';
-import { LOOKS, LOOK_NAMES } from './looks.js?v=7d0c4cc9';
-import { makeCellIndex } from './cellindex.js?v=7d0c4cc9';
-import { CREATURE_TINTS, ENEMY_SPEC, INTROS, computeWavePlan } from './enemyspec.js?v=7d0c4cc9';
-import { PICKUPS } from './pickups.js?v=7d0c4cc9';
-import { rankFor, rankLabel, badgeSVG, killReq, eliteReq } from './ranks.js?v=7d0c4cc9';
-import { makeScore } from './score.js?v=7d0c4cc9';
-import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER } from './towers.js?v=7d0c4cc9';
-import { makeEconomy, sellRefund } from './economy.js?v=7d0c4cc9';
-import { makeBloom } from './postfx.js?v=7d0c4cc9';
-import { TANK_FEEL, TANK_FEEL_KNOBS, makeTankFeel, stepTankFeel, landTankFeel, fireTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js?v=7d0c4cc9';
-import { FEEL, loadFeel, saveFeel } from './feelstore.js?v=7d0c4cc9';
+import { generateSphereMesh, relax } from './grid.js?v=b7f518e3';
+import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=b7f518e3';
+import { mulberry32, randomSeed } from './rng.js?v=b7f518e3';
+import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3, segKey } from './vec3.js?v=b7f518e3';
+import { CREATURES, waveJelly } from './creatures.js?v=b7f518e3';
+import { UNITS, UNIT_NAMES, buildUnit, buildCreature, preloadMkcx, preloadServer, makeServerFixture, makeShieldShell, makeBulletCloud, makeRewardSolid, makeShellSolid, makeDebris, makeDotBurst, makePortalCloud, makeHeartCloud, makeDotEnemy } from './units.js?v=b7f518e3';
+import { LOOKS, LOOK_NAMES } from './looks.js?v=b7f518e3';
+import { makeCellIndex } from './cellindex.js?v=b7f518e3';
+import { CREATURE_TINTS, ENEMY_SPEC, INTROS, computeWavePlan } from './enemyspec.js?v=b7f518e3';
+import { PICKUPS } from './pickups.js?v=b7f518e3';
+import { rankFor, rankLabel, badgeSVG, killReq, eliteReq } from './ranks.js?v=b7f518e3';
+import { makeScore } from './score.js?v=b7f518e3';
+import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER } from './towers.js?v=b7f518e3';
+import { makeEconomy, sellRefund } from './economy.js?v=b7f518e3';
+import { makeBloom } from './postfx.js?v=b7f518e3';
+import { TANK_FEEL, TANK_FEEL_KNOBS, makeTankFeel, stepTankFeel, landTankFeel, fireTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js?v=b7f518e3';
+import { FEEL, loadFeel, saveFeel } from './feelstore.js?v=b7f518e3';
 import { STRIKE_KNOBS, makeStrike, makeStrikeParams, grantStrikes, stepStrike,
   toggleArm, paintTarget, launchStrike, stepFall, skipFall, fallProgress,
-  strikeDamage, retargetStrike, orbitProgress } from './strike.js?v=7d0c4cc9';
-import { radarBasis, radarProject, radarBearing, sweepAngle, radarPhosphor } from './radar.js?v=7d0c4cc9';
-import { BLOOM_GROUPS } from './bloomweights.js?v=7d0c4cc9';
-import { TOWER_LOOK_NAMES, DEFAULT_TOWER_LOOK, buildTowerLook, preloadLook } from './towerlooks.js?v=7d0c4cc9';
-import { makeAudio } from './audio.js?v=7d0c4cc9';
-import { DEATH_KEYS } from './audiomanifest.js?v=7d0c4cc9';
+  strikeDamage, retargetStrike, orbitProgress } from './strike.js?v=b7f518e3';
+import { radarBasis, radarProject, radarBearing, sweepAngle, radarPhosphor } from './radar.js?v=b7f518e3';
+import { BLOOM_GROUPS } from './bloomweights.js?v=b7f518e3';
+import { TOWER_LOOK_NAMES, DEFAULT_TOWER_LOOK, buildTowerLook, preloadLook } from './towerlooks.js?v=b7f518e3';
+import { makeAudio } from './audio.js?v=b7f518e3';
+import { DEATH_KEYS } from './audiomanifest.js?v=b7f518e3';
 
 export function initTdTab(root) {
   let active = false;
@@ -525,6 +525,99 @@ export function initTdTab(root) {
   const RAM_COMBO_GAP = 4;
   // SitRep bookkeeping: everything the end-of-wave recap reports. Bins are
   // 3s buckets of kill tempo — the sparkline is drawn from them.
+  // --- SIM autoplay (tier-1 gameplay simulation) --------------------------
+  // ?sim=style1|style0 plays the game by policy at ?simfast=K (default 50
+  // fixed steps per frame). style1 is the operator's stated modus operandi:
+  // ram rammable / avoid solids (the ram directive already avoids nothing —
+  // solids shrug rams off, so the flee vector is deliberately NOT applied
+  // to it; the tank trades hull for kills exactly like the operator does),
+  // SLOW and AOE at bottlenecks, SNIPER everywhere, upgrades with spare
+  // credit. style0 is the deliberate floor: wander, build nothing.
+  let simFast = 0, simStyle = null, simPolClock = 0, simDone = false;
+  let simCap = 600; // sim-seconds before a run reports 'timeout'
+  function simTrunk() {
+    // traffic: greedy descent from each live portal toward the heart; a
+    // cell on 2+ routes is trunk — the lanes the policy fortifies
+    const count = new Map();
+    const live = spawnPoints.filter((sp) => sp.alive);
+    for (const sp of live) {
+      let cur = sp.ci, guard = 0;
+      while (dungeon.distToHeart[cur] > 0 && guard++ < 500) {
+        count.set(cur, (count.get(cur) || 0) + 1);
+        let best = cur;
+        for (const nb of graph.adj[cur]) {
+          if (dungeon.tags[nb] !== BLOCKED && dungeon.distToHeart[nb] >= 0
+            && dungeon.distToHeart[nb] < dungeon.distToHeart[best]) best = nb;
+        }
+        if (best === cur) break;
+        cur = best;
+      }
+    }
+    const need = Math.min(2, Math.max(1, live.length));
+    return [...count.entries()].filter(([, c]) => c >= need).map(([ci]) => ci);
+  }
+  function simBuild() {
+    const trunk = simTrunk();
+    if (!trunk.length) return;
+    const unlockedSet = new Set(unlockedTowerKeys(wave + hackedUnlocks));
+    const have = (k) => towers.reduce((a, tw) => a + (tw.def.key === k ? 1 : 0), 0);
+    const wants = [];
+    if (have('slow') < 2) wants.push('slow');
+    if (have('aoe') < 2) wants.push('aoe');
+    wants.push('sniper'); // '...with sniper everywhere'
+    // the opening: the preferred kit unlocks at waves 4-7, and the very
+    // first batch run proved a policy with no early fallback builds
+    // NOTHING and loses the heart by wave 2 — so until the kit arrives,
+    // keep pace with the waves using the newest thing unlocked
+    if (towers.length < Math.min(4, wave)) {
+      wants.unshift(unlockedTowerKeys(wave + hackedUnlocks).pop());
+    }
+    for (const k of wants) {
+      if (!unlockedSet.has(k)) continue;
+      const def = TOWER_BY_KEY[k];
+      if (!eco.canAfford(def.cost)) return; // save up for the priority buy
+      for (const tci of trunk) {
+        for (const nb of graph.adj[tci]) {
+          if (!placeError(nb)) { placeTower(k, nb); return; }
+        }
+      }
+      break; // unlocked and affordable but nowhere to put it — fall through
+    }
+    // nothing to place: spend spare credit on the cheapest upgrade
+    let bestT = null, bestC = Infinity;
+    for (const tw of towers) {
+      const c = upgradeCost(tw.def, tw.tier);
+      if (c !== null && c < bestC && eco.canAfford(c)) { bestC = c; bestT = tw; }
+    }
+    if (bestT) upgradeTower(bestT);
+  }
+  function simPolicy(dt) {
+    simPolClock += dt;
+    if (simPolClock < 2) return; // decide every 2 SIM-seconds
+    simPolClock = 0;
+    const wantDir = simStyle === 'style1' ? 'ram' : 'wander';
+    if (params.directive !== wantDir || !autoMode) {
+      params.directive = wantDir;
+      autoMode = true;
+    }
+    if (simStyle === 'style1') simBuild();
+  }
+  function simWatch() {
+    if (simDone) return;
+    if (player.won) simEmit(heartHP <= 0 || playerHP <= 0 ? 'loss' : 'win');
+    else if (t > simCap) simEmit('timeout');
+  }
+  function simEmit(outcome) {
+    simDone = true;
+    const payload = { style: simStyle, seed: params.seed >>> 0, outcome, wave, round,
+      score: score.points, heart: heartHP, lives: playerHP,
+      towers: towers.length, credit: eco.credit, simT: Math.round(t) };
+    console.log('SIMRESULT ' + JSON.stringify(payload));
+    try {
+      if (window.parent !== window) window.parent.postMessage({ simresult: payload }, '*');
+    } catch { /* sandboxed parent */ }
+  }
+
   let ws = null;
   function resetWaveStats() {
     ws = { t0: simTime, kills: {}, bySrc: { tank: 0, tower: 0, strike: 0 },
@@ -5525,14 +5618,34 @@ export function initTdTab(root) {
     const dt = Math.min((now - lastFrame) / 1000, 0.1); // clamp tab-switch gaps
     updateEngine(dt);
     lastFrame = now;
+    // SIM fast-forward: K fixed-dt update passes per painted frame, and
+    // only every 4th frame paints at all — the sim math is cheap, the
+    // paint is not. Fixed 1/30 steps keep collision/touch checks honest
+    // (one huge dt would tunnel enemies through everything).
+    if (simFast > 1 && !simDone) {
+      simFrameNo++;
+      // every 30th frame: the PiP view is a courtesy, and under software
+      // GL a paint costs more than a hundred sim steps
+      const draw = simFrameNo % 30 === 0;
+      for (let i = 0; i < simFast; i++) frame(1 / 30, !(draw && i === simFast - 1));
+      simWatch();
+      return;
+    }
+    frame(dt, false);
+  }
 
+  let simFrameNo = 0;
+  // the whole former animate() body: dt-driven update + (skippable) render
+  function frame(dt, simSkip) {
     // paused: keep presenting the frozen frame (both views), zero sim.
     // lastFrame keeps updating above so resume has no dt spike.
     if (paused) {
-      playerMesh.visible = params.view !== 'pov';
-      postfx.render();
-      playerMesh.visible = true;
-      drawRadar(t);   // the sweep keeps turning; a dead scope reads as a crash
+      if (!simSkip) {
+        playerMesh.visible = params.view !== 'pov';
+        postfx.render();
+        playerMesh.visible = true;
+        drawRadar(t);   // the sweep keeps turning; a dead scope reads as a crash
+      }
       return;
     }
     t += dt;
@@ -5710,6 +5823,7 @@ export function initTdTab(root) {
       // proximity discovers the source: the minimap beacon lights up
       if (!sp.found && dist3(player.pos, graph.centers[sp.ci]) < cellSide * 5) sp.found = true;
     }
+    if (simStyle && !simDone) simPolicy(dt);
     autoGunner(t);
     checkVictory(); // ram kills and heart-contact deaths can end it too
     updateHud();
@@ -5751,12 +5865,13 @@ export function initTdTab(root) {
     if (waveUnit && !waveEl.classList.contains('hidden')) {
       waveUnit.rotation.y = t * 0.8; // HokorobiTawaa's announce spin
       if (waveUnit.userData.tick) waveUnit.userData.tick(t);
-      waveSpriteRenderer.render(waveScene, waveCam);
+      if (!simSkip) waveSpriteRenderer.render(waveScene, waveCam);
     }
 
     // main view — the map-layer chrome needs no hiding any more; nothing
     // renders that layer
     scene.background = mainBg;
+    if (simSkip) return; // sim pass: state advanced, nothing painted
     // in PoV the camera sits inside the creature — hide it there
     playerMesh.visible = params.view !== 'pov';
     postfx.render();
@@ -5884,6 +5999,17 @@ export function initTdTab(root) {
   const wallOverride = parseFloat(urlParams.get('wall') || '');
   const pointsOverride = parseInt(urlParams.get('points') || '', 10);
   if (Number.isFinite(pointsOverride)) params.points = Math.min(16000, Math.max(150, pointsOverride));
+  const seedOverride = parseInt(urlParams.get('seed') || '', 10);
+  if (Number.isFinite(seedOverride)) params.seed = seedOverride >>> 0;
+  const simParam = urlParams.get('sim');
+  if (simParam) {
+    simStyle = simParam;
+    simFast = Math.max(1, Math.min(120, parseInt(urlParams.get('simfast') || '50', 10)));
+    simCap = Math.max(30, parseInt(urlParams.get('simcap') || '600', 10));
+    postfx.setEnabled(false);   // bare-minimum paint: no bloom chain
+    sfx.setMute(true);          // 50x audio is a fire alarm
+    document.body.classList.add('simming');
+  }
   if (Number.isFinite(wallOverride)) params.wallHeight = wallOverride;
   const viewOv = urlParams.get('view');
   if (['pov', 'third', 'orbit'].includes(viewOv)) { setView(viewOv); }
@@ -6053,7 +6179,7 @@ export function initTdTab(root) {
 
   // opening briefing on a clean load; any debug hook means headless/demo,
   // where a frozen sim would break the verification flow
-  const debugging = ['walk', 'tick', 'wave', 'blast', 'laser', 'found', 'recoil', 'mode', 'map', 'tower', 'credit', 'shop', 'sector', 'reveal', 'portal', 'lose', 'charge', 'layout', 'perf', 'strike', 'strikefall', 'strikecam', 'gateprobe', 'rank', 'danger', 'callout', 'sitrep', 'server', 'hack', 'shield']
+  const debugging = ['walk', 'tick', 'wave', 'blast', 'laser', 'found', 'recoil', 'mode', 'map', 'tower', 'credit', 'shop', 'sector', 'reveal', 'portal', 'lose', 'charge', 'layout', 'perf', 'strike', 'strikefall', 'strikecam', 'gateprobe', 'rank', 'danger', 'callout', 'sitrep', 'server', 'hack', 'shield', 'sim']
     .some((k) => urlParams.get(k));
   const tutParam = urlParams.get('tutorial');
   runTutorial = tutParam === '1' || (tutParam !== '0' && !debugging);
