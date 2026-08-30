@@ -37,8 +37,8 @@ Public: https://kai-denrei.github.io/spherical-stalberg-grid/ (Pages,
   `?tune=1` (opens the unit viewer's feel tuner), `?labels=1`, `?sweep=0`,
   `?fire=N`, `?tutstep=N` (clear N scripted tutorial pairs), `?log=roadmap`,
   `?perf=N` (TD: report draw calls / tris / points for one whole frame —
-  set `info.autoReset=false` first, and read BOTH renderers: the minimap
-  has its own), `?layout=N` (TD: print every HUD box and every overlap —
+  set `info.autoReset=false` first; the minimap is a 2D canvas radar now,
+  so the main renderer is the only WebGL context), `?layout=N` (TD: print every HUD box and every overlap —
   headless will not lay out below ~500px, it lays out wide and CROPS, so
   rectangles are the only trustworthy way to check a phone layout),
   `?charge=0..1` (TD: park the wave clock inside the warning window —

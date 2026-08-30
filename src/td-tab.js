@@ -19,28 +19,29 @@
 
 import * as THREE from '../vendor/three.module.js';
 import GUI from '../vendor/lil-gui.esm.js';
-import { generateSphereMesh, relax } from './grid.js?v=a110086d';
-import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=a110086d';
-import { mulberry32, randomSeed } from './rng.js?v=a110086d';
-import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3, segKey } from './vec3.js?v=a110086d';
-import { CREATURES, waveJelly } from './creatures.js?v=a110086d';
-import { UNITS, UNIT_NAMES, buildUnit, buildCreature, preloadMkcx, makeBulletCloud, makeRewardSolid, makeShellSolid, makeDebris, makeDotBurst, makePortalCloud, makeHeartCloud, makeDotEnemy } from './units.js?v=a110086d';
-import { LOOKS, LOOK_NAMES } from './looks.js?v=a110086d';
-import { makeCellIndex } from './cellindex.js?v=a110086d';
-import { CREATURE_TINTS, ENEMY_SPEC, INTROS, computeWavePlan } from './enemyspec.js?v=a110086d';
-import { PICKUPS } from './pickups.js?v=a110086d';
-import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER } from './towers.js?v=a110086d';
-import { makeEconomy, sellRefund } from './economy.js?v=a110086d';
-import { makeBloom } from './postfx.js?v=a110086d';
-import { TANK_FEEL, TANK_FEEL_KNOBS, makeTankFeel, stepTankFeel, landTankFeel, fireTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js?v=a110086d';
-import { FEEL, loadFeel, saveFeel } from './feelstore.js?v=a110086d';
+import { generateSphereMesh, relax } from './grid.js?v=6c855828';
+import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=6c855828';
+import { mulberry32, randomSeed } from './rng.js?v=6c855828';
+import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3, segKey } from './vec3.js?v=6c855828';
+import { CREATURES, waveJelly } from './creatures.js?v=6c855828';
+import { UNITS, UNIT_NAMES, buildUnit, buildCreature, preloadMkcx, makeBulletCloud, makeRewardSolid, makeShellSolid, makeDebris, makeDotBurst, makePortalCloud, makeHeartCloud, makeDotEnemy } from './units.js?v=6c855828';
+import { LOOKS, LOOK_NAMES } from './looks.js?v=6c855828';
+import { makeCellIndex } from './cellindex.js?v=6c855828';
+import { CREATURE_TINTS, ENEMY_SPEC, INTROS, computeWavePlan } from './enemyspec.js?v=6c855828';
+import { PICKUPS } from './pickups.js?v=6c855828';
+import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER } from './towers.js?v=6c855828';
+import { makeEconomy, sellRefund } from './economy.js?v=6c855828';
+import { makeBloom } from './postfx.js?v=6c855828';
+import { TANK_FEEL, TANK_FEEL_KNOBS, makeTankFeel, stepTankFeel, landTankFeel, fireTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js?v=6c855828';
+import { FEEL, loadFeel, saveFeel } from './feelstore.js?v=6c855828';
 import { STRIKE_KNOBS, makeStrike, makeStrikeParams, grantStrikes, stepStrike,
   toggleArm, paintTarget, launchStrike, stepFall, skipFall, fallProgress,
-  strikeDamage, retargetStrike } from './strike.js?v=a110086d';
-import { BLOOM_GROUPS } from './bloomweights.js?v=a110086d';
-import { TOWER_LOOK_NAMES, DEFAULT_TOWER_LOOK, buildTowerLook, preloadLook } from './towerlooks.js?v=a110086d';
-import { makeAudio } from './audio.js?v=a110086d';
-import { DEATH_KEYS } from './audiomanifest.js?v=a110086d';
+  strikeDamage, retargetStrike } from './strike.js?v=6c855828';
+import { radarBasis, radarProject, radarBearing, sweepAngle, radarPhosphor } from './radar.js?v=6c855828';
+import { BLOOM_GROUPS } from './bloomweights.js?v=6c855828';
+import { TOWER_LOOK_NAMES, DEFAULT_TOWER_LOOK, buildTowerLook, preloadLook } from './towerlooks.js?v=6c855828';
+import { makeAudio } from './audio.js?v=6c855828';
+import { DEATH_KEYS } from './audiomanifest.js?v=6c855828';
 
 export function initTdTab(root) {
   let active = false;
@@ -144,7 +145,6 @@ export function initTdTab(root) {
   scene.background = mainBg;
 
   const camera = new THREE.PerspectiveCamera(68, 1, 0.004, 50);
-  const mapCamera = new THREE.PerspectiveCamera(42, 1, 0.1, 50);
   const postfx = makeBloom(renderer, scene, camera, {});
   // sound. The context can only be born on a user gesture, so arm() wires
   // one-shot listeners and the first tap/keypress creates it. Until then
@@ -177,41 +177,10 @@ export function initTdTab(root) {
   // A blip per enemy would have been an object per enemy, which is the cost
   // being removed. One buffer rewritten each frame is one draw call for the
   // lot, however many there are.
+  // Layer 1 survives as a tag on the board meshes (harmless), but nothing
+  // renders it any more: the minimap's second WebGL scene is gone, replaced
+  // by the 2D radar below.
   const MAP_LAYER = 1;
-  mapCamera.layers.set(MAP_LAYER);
-  const BLIP_MAX = 600;
-  const blipPos = new Float32Array(BLIP_MAX * 3);
-  const blipCol = new Float32Array(BLIP_MAX * 3);
-  const blipGeo = new THREE.BufferGeometry();
-  blipGeo.setAttribute('position', new THREE.BufferAttribute(blipPos, 3));
-  blipGeo.setAttribute('color', new THREE.BufferAttribute(blipCol, 3));
-  blipGeo.setDrawRange(0, 0);
-  const blipMesh = new THREE.Points(blipGeo, new THREE.PointsMaterial({
-    size: 5, sizeAttenuation: false, vertexColors: true,
-  }));
-  blipMesh.frustumCulled = false;   // the buffer is rewritten; its bounds lie
-  blipMesh.layers.set(MAP_LAYER);   // map only — the board has the real thing
-  scene.add(blipMesh);
-  const tmpBlip = new THREE.Color();
-
-  // Lift a point off the surface so a blip is never buried in the floor.
-  function writeBlips() {
-    let k = 0;
-    const put = (pos, hex) => {
-      if (k >= BLIP_MAX) return;
-      const n = norm3(pos);
-      const r = 1 + params.wallHeight * 2.2;
-      blipPos[k * 3] = n[0] * r; blipPos[k * 3 + 1] = n[1] * r; blipPos[k * 3 + 2] = n[2] * r;
-      tmpBlip.setHex(hex);
-      blipCol[k * 3] = tmpBlip.r; blipCol[k * 3 + 1] = tmpBlip.g; blipCol[k * 3 + 2] = tmpBlip.b;
-      k++;
-    };
-    for (const e of enemies) if (e.alive) put(e.pos, CREATURE_TINTS[e.type] ?? 0xff5577);
-    for (const tw of towers) put(graph.centers[tw.ci], tw.def.color);
-    blipGeo.setDrawRange(0, k);
-    blipGeo.attributes.position.needsUpdate = true;
-    blipGeo.attributes.color.needsUpdate = true;
-  }
 
   // --- wave telegraph -------------------------------------------------------
   // A wave used to simply appear. The countdown said so in the corner, but
@@ -338,12 +307,22 @@ export function initTdTab(root) {
     warnGeo.attributes.color.needsUpdate = true;
   }
 
-  // circular minimap: its own small renderer on a round-clipped canvas —
-  // scissored insets on the main canvas can only ever be rectangles
-  const mapRenderer = new THREE.WebGLRenderer({ antialias: true });
-  mapRenderer.setPixelRatio(Math.min(devicePixelRatio, 2));
-  mapRenderer.domElement.className = 'minimap';
-  container.appendChild(mapRenderer.domElement);
+  // --- the radar ------------------------------------------------------------
+  // The minimap stopped being a minimap the day the board went to one merged
+  // mesh — a shrunken copy of the main view told you nothing the main view
+  // did not. It is a PPI SCOPE now, DeepWatch's idiom on our sphere: a
+  // rotating beam, contacts flaring as it passes and decaying behind it,
+  // heading-up around the tank or pole-down over the heart (M still swaps).
+  //
+  // A 2D canvas, not a third renderer: ~200 contacts a frame is nothing, and
+  // it RETIRES the second WebGL context the old map ran on. The class stays
+  // 'minimap' so every existing rule — the round clip, the phone corner, the
+  // strike promotion, the feed's display:none — applies unchanged.
+  const radarEl = document.createElement('canvas');
+  radarEl.className = 'minimap';
+  container.appendChild(radarEl);
+  const radarCtx = radarEl.getContext('2d');
+  let radarCss = 200;
 
   // even-ish lighting: the walker can be anywhere on the sphere, so no side
   // may fall into unreadable darkness
@@ -368,7 +347,12 @@ export function initTdTab(root) {
     const mScale = strike.armed ? 0.52 : 0.32;
     const mCap = strike.armed ? 430 : 240;
     const m = Math.min(mCap, Math.floor(Math.min(w, h) * mScale));
-    mapRenderer.setSize(m, m);
+    radarCss = m;
+    const dpr = Math.min(devicePixelRatio || 1, 2);
+    radarEl.width = Math.round(m * dpr);
+    radarEl.height = Math.round(m * dpr);
+    radarEl.style.width = `${m}px`;
+    radarEl.style.height = `${m}px`;
   }
   addEventListener('resize', resize);
 
@@ -1006,15 +990,20 @@ export function initTdTab(root) {
     // Sized against the SPHERE, not the cell: the map always frames the
     // whole ball, so cell-relative sizes vanish on dense boards.
     // Geometry pre-rotated so the cone's nose is +Z (lookAt convention).
+    // The radar draws YOU itself now. The arrow survives because
+    // placeActors drives its transform every frame — parked on the map
+    // layer, which nothing renders, so it stays invisible instead of
+    // suddenly appearing in the WORLD when the map renderer went away.
     markerMesh = new THREE.Mesh(
       new THREE.ConeGeometry(0.05, 0.115, 4).rotateX(Math.PI / 2),
       new THREE.MeshBasicMaterial({ color: look().marker }),
     );
+    markerMesh.layers.set(MAP_LAYER);
     scene.add(markerMesh);
     // Layer 1 is the map's world. Everything here is drawn in BOTH views;
     // everything not here is main-view only, which is the whole saving.
     // Layers are per-object and not inherited, so each one says so itself.
-    for (const o of [floorMesh, wallMesh, edgeMesh, topMesh, markerMesh, heartSprite]) {
+    for (const o of [floorMesh, wallMesh, edgeMesh, topMesh, heartSprite]) {
       if (o) o.layers.enable(MAP_LAYER);
     }
   }
@@ -3393,6 +3382,20 @@ export function initTdTab(root) {
         if (!e.alive) continue;
         if (dist3(p.pos, e.pos) < cellSide * Math.max(0.45, (e.size ?? e.spec.size) * 0.8)) {
           damageEnemy(e, tNow, 1, true, 'tank');
+          // a shell is not a bullet: a small AoE clips whatever was packed
+          // against the one it struck. Half damage, no on-hit reactions —
+          // the graze must not keep barbed/knot permanently accelerated —
+          // and still tank-rate pay, because the tank fired it.
+          for (const e2 of enemies) {
+            if (e2 === e || !e2.alive) continue;
+            if (dist3(p.pos, e2.pos) < cellSide * 0.95) damageEnemy(e2, tNow, 0.5, false, 'tank');
+          }
+          const clip = makeDotBurst(0xfff2c0, norm3(p.pos), 26);
+          clip.scale.setScalar(cellSide * 0.7);
+          const cp = add3(p.pos, scale3(norm3(p.pos), cellSide * 0.15));
+          clip.position.set(cp[0], cp[1], cp[2]);
+          scene.add(clip);
+          debris.push(clip);
           hit = true;
           break;
         }
@@ -4540,18 +4543,10 @@ export function initTdTab(root) {
     // paused: keep presenting the frozen frame (both views), zero sim.
     // lastFrame keeps updating above so resume has no dt spike.
     if (paused) {
-      scene.background = mainBg;
-      markerMesh.visible = false;
-      for (const sp of spawnPoints) if (sp.mapMarker) sp.mapMarker.visible = false;
       playerMesh.visible = params.view !== 'pov';
       postfx.render();
-      scene.background = mapBg;
-      markerMesh.visible = true;
-      for (const sp of spawnPoints) {
-        if (sp.mapMarker && sp.alive && sp.found) sp.mapMarker.visible = true;
-      }
       playerMesh.visible = true;
-      mapRenderer.render(scene, mapCamera);
+      drawRadar(t);   // the sweep keeps turning; a dead scope reads as a crash
       return;
     }
     t += dt;
@@ -4733,44 +4728,124 @@ export function initTdTab(root) {
       waveSpriteRenderer.render(waveScene, waveCam);
     }
 
-    // main view
+    // main view — the map-layer chrome needs no hiding any more; nothing
+    // renders that layer
     scene.background = mainBg;
-    markerMesh.visible = false;
-    for (const sp of spawnPoints) if (sp.mapMarker) sp.mapMarker.visible = false;
     // in PoV the camera sits inside the creature — hide it there
     playerMesh.visible = params.view !== 'pov';
     postfx.render();
 
-    // minimap, two modes (M): player-centred heading-up as in the heart
-    // tab, or the fixed HEART THREAT VIEW — top-down over the pole,
-    // portals/streams/defenses in one glance
-    const mapDist = 3.05 * (1 + params.wallHeight);
+    drawRadar(t);
+  }
+
+  // The scope. Player mode is heading-up around the tank; heart mode (M) is
+  // pole-down over the whole planet. Contacts carry the phosphor: full the
+  // instant the beam passes, decaying behind it, never dark.
+  function drawRadar(t) {
+    if (!graph || !player.pos) return;
+    const m = radarCss;
+    const dpr = Math.min(devicePixelRatio || 1, 2);
+    const ctx = radarCtx;
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    const cx = m / 2, cy = m / 2, R = m / 2 - 3;
+    // basis + range: heart mode must hold the whole planet (max chord 2.0)
+    let cpos, up;
     if (mapMode === 'heart') {
       const { hn, t1 } = poleFrame();
-      mapCamera.position.set(hn[0] * mapDist, hn[1] * mapDist, hn[2] * mapDist);
-      mapCamera.up.set(t1[0], t1[1], t1[2]);
-      mapCamera.lookAt(0, 0, 0);
+      cpos = graph.centers[dungeon.heart]; up = t1;
+      // eslint-disable-next-line no-unused-vars
+      void hn;
     } else {
-      const n = norm3(player.pos);
-      const hd = player.smoothDir;
-      mapCamera.position.set(n[0] * mapDist, n[1] * mapDist, n[2] * mapDist);
-      mapCamera.up.set(hd[0], hd[1], hd[2]);
-      mapCamera.lookAt(0, 0, 0);
+      cpos = player.pos;
+      up = player.smoothDir;
     }
-    mapCamera.updateProjectionMatrix();
-    scene.background = mapBg;
-    writeBlips();
-    markerMesh.visible = true;
-    markerMesh.scale.setScalar(1 + 0.25 * Math.sin(t * 5)); // pulse: YOU
-    // discovered sources pulse in their own tint
+    const basis = radarBasis(cpos, up);
+    const range = mapMode === 'heart' ? 2.02 : 1.15;
+    const sweep = sweepAngle(t);
+
+    // ground: near-black green, three range rings, crosshair, rim
+    ctx.fillStyle = '#031007';
+    ctx.beginPath(); ctx.arc(cx, cy, R + 3, 0, Math.PI * 2); ctx.fill();
+    ctx.strokeStyle = 'rgba(90, 255, 140, 0.18)';
+    ctx.lineWidth = 1;
+    for (const f of [1 / 3, 2 / 3, 1]) {
+      ctx.beginPath(); ctx.arc(cx, cy, R * f, 0, Math.PI * 2); ctx.stroke();
+    }
+    ctx.beginPath();
+    ctx.moveTo(cx - R, cy); ctx.lineTo(cx + R, cy);
+    ctx.moveTo(cx, cy - R); ctx.lineTo(cx, cy + R);
+    ctx.stroke();
+
+    // the beam: a conic trail BUILDING toward the beam line, so the glow
+    // sits behind the rotation, then the hot edge itself
+    const phi = sweep - Math.PI / 2;   // canvas angles: 0 = +x, clockwise
+    const grad = ctx.createConicGradient(phi, cx, cy);
+    grad.addColorStop(0, 'rgba(90, 255, 140, 0)');
+    grad.addColorStop(0.72, 'rgba(90, 255, 140, 0)');
+    grad.addColorStop(1, 'rgba(90, 255, 140, 0.30)');
+    ctx.fillStyle = grad;
+    ctx.beginPath(); ctx.arc(cx, cy, R, 0, Math.PI * 2); ctx.fill();
+    ctx.strokeStyle = 'rgba(140, 255, 180, 0.85)';
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    ctx.moveTo(cx, cy);
+    ctx.lineTo(cx + R * Math.sin(sweep), cy - R * Math.cos(sweep));
+    ctx.stroke();
+
+    const blip = (pos, style, size, always = false) => {
+      const q = radarProject(pos, cpos, basis, range);
+      const bri = always ? 1 : radarPhosphor(radarBearing(q.x, q.y), sweep);
+      const bx = cx + q.x * R, by = cy + q.y * R;
+      ctx.globalAlpha = q.clamped ? bri * 0.5 : bri;
+      ctx.fillStyle = style;
+      ctx.fillRect(bx - size / 2, by - size / 2, size, size);
+      ctx.globalAlpha = 1;
+    };
+
+    // towers: dim cyan fixtures — infrastructure, not contacts
+    for (const tw of towers) blip(graph.centers[tw.ci], '#4bd7e0', 2.5);
+    // enemies: THE contacts, phosphor green, heavies fatter
+    for (const e of enemies) {
+      if (e.alive) blip(e.pos, '#5aff8c', e.spec.rammable ? 2.5 : 4);
+    }
+    // gates: amber, pulsing harder as a wave charges. Known ones only —
+    // discovery still matters.
     for (const sp of spawnPoints) {
-      if (sp.mapMarker && sp.alive && sp.found) {
-        sp.mapMarker.visible = true;
-        sp.mapMarker.scale.setScalar(1 + 0.45 * Math.sin(t * 4 + sp.ci));
-      }
+      if (!sp.alive || !sp.found) continue;
+      const q = radarProject(graph.centers[sp.ci], cpos, basis, range);
+      const r2 = 3 + 1.4 * Math.sin(t * 4 + sp.ci) + waveCharge * 3.5;
+      ctx.globalAlpha = 0.55 + 0.45 * radarPhosphor(radarBearing(q.x, q.y), sweep);
+      ctx.strokeStyle = '#ffb347';
+      ctx.lineWidth = 1.5;
+      ctx.beginPath(); ctx.arc(cx + q.x * R, cy + q.y * R, Math.max(1.5, r2), 0, Math.PI * 2); ctx.stroke();
+      ctx.globalAlpha = 1;
     }
-    playerMesh.visible = true;
-    mapRenderer.render(scene, mapCamera);
+    // the heart: what all of this is FOR — red, steady
+    blip(graph.centers[dungeon.heart], '#ff4d6a', 5, true);
+    // the strike's painted cell, while one is armed
+    if (strike.armed && strike.target >= 0) {
+      const q = radarProject(graph.centers[strike.target], cpos, basis, range);
+      ctx.strokeStyle = '#ffb347';
+      ctx.lineWidth = 1.5;
+      const bx = cx + q.x * R, by = cy + q.y * R;
+      ctx.beginPath();
+      ctx.moveTo(bx - 6, by); ctx.lineTo(bx + 6, by);
+      ctx.moveTo(bx, by - 6); ctx.lineTo(bx, by + 6);
+      ctx.stroke();
+    }
+    // YOU: a heading wedge at centre (player mode) or a white dot out on the
+    // board (heart mode)
+    ctx.fillStyle = '#f2f8ff';
+    if (mapMode === 'player') {
+      ctx.beginPath();
+      ctx.moveTo(cx, cy - 6);
+      ctx.lineTo(cx - 4, cy + 5);
+      ctx.lineTo(cx + 4, cy + 5);
+      ctx.closePath();
+      ctx.fill();
+    } else {
+      blip(player.pos, '#f2f8ff', 4, true);
+    }
   }
 
   // debug/demo overrides: ?wall=0.03 forces a wall height,
@@ -4941,7 +5016,6 @@ export function initTdTab(root) {
       // its own info — reading only the main one measured half the frame and
       // made the map look free, which it very much was not.
       renderer.info.autoReset = false; renderer.info.reset();
-      mapRenderer.info.autoReset = false; mapRenderer.info.reset();
       requestAnimationFrame(() => requestAnimationFrame(() => report()));
     }, perfAt * 1000);
     const report = () => {
@@ -4954,19 +5028,16 @@ export function initTdTab(root) {
           clouds++; points += o.geometry.attributes.position.count;
         }
       });
-      const m = mapRenderer.info.render;
       console.log(`PERF viewport=${innerWidth}x${innerHeight} dpr=${devicePixelRatio}`);
       // simTime only advances inside advanceMotion, so it is the honest
       // answer to "is the driver live right now"
       console.log(`PERF build=${buildMode} frozenWorld=${buildFrozen()}`
         + ` simTime=${simTime.toFixed(2)}`);
       console.log(`PERF main calls=${r.calls} tris=${r.triangles} pts=${r.points}`
-        + ` | MAP calls=${m.calls} tris=${m.triangles} pts=${m.points}`
-        + ` | TOTAL calls=${r.calls + m.calls}`
+        + ` | radar=2D, no second WebGL context`
         + ` | scene objects=${objs} clouds=${clouds} cloudVerts=${points}`
         + ` | geometries=${mem.geometries}`);
       renderer.info.autoReset = true;
-      mapRenderer.info.autoReset = true;
     };
   }
 
