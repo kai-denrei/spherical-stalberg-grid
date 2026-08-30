@@ -19,31 +19,31 @@
 
 import * as THREE from '../vendor/three.module.js';
 import GUI from '../vendor/lil-gui.esm.js';
-import { generateSphereMesh, relax } from './grid.js?v=90ebfa72';
-import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=90ebfa72';
-import { mulberry32, randomSeed } from './rng.js?v=90ebfa72';
-import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3, segKey } from './vec3.js?v=90ebfa72';
-import { CREATURES, waveJelly } from './creatures.js?v=90ebfa72';
-import { UNITS, UNIT_NAMES, buildUnit, buildCreature, preloadMkcx, makeBulletCloud, makeRewardSolid, makeShellSolid, makeDebris, makeDotBurst, makePortalCloud, makeHeartCloud, makeDotEnemy } from './units.js?v=90ebfa72';
-import { LOOKS, LOOK_NAMES } from './looks.js?v=90ebfa72';
-import { makeCellIndex } from './cellindex.js?v=90ebfa72';
-import { CREATURE_TINTS, ENEMY_SPEC, INTROS, computeWavePlan } from './enemyspec.js?v=90ebfa72';
-import { PICKUPS } from './pickups.js?v=90ebfa72';
-import { rankFor, rankLabel, badgeSVG, killReq, eliteReq } from './ranks.js?v=90ebfa72';
-import { makeScore } from './score.js?v=90ebfa72';
-import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER } from './towers.js?v=90ebfa72';
-import { makeEconomy, sellRefund } from './economy.js?v=90ebfa72';
-import { makeBloom } from './postfx.js?v=90ebfa72';
-import { TANK_FEEL, TANK_FEEL_KNOBS, makeTankFeel, stepTankFeel, landTankFeel, fireTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js?v=90ebfa72';
-import { FEEL, loadFeel, saveFeel } from './feelstore.js?v=90ebfa72';
+import { generateSphereMesh, relax } from './grid.js?v=2018e2c5';
+import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=2018e2c5';
+import { mulberry32, randomSeed } from './rng.js?v=2018e2c5';
+import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3, segKey } from './vec3.js?v=2018e2c5';
+import { CREATURES, waveJelly } from './creatures.js?v=2018e2c5';
+import { UNITS, UNIT_NAMES, buildUnit, buildCreature, preloadMkcx, makeBulletCloud, makeRewardSolid, makeShellSolid, makeDebris, makeDotBurst, makePortalCloud, makeHeartCloud, makeDotEnemy } from './units.js?v=2018e2c5';
+import { LOOKS, LOOK_NAMES } from './looks.js?v=2018e2c5';
+import { makeCellIndex } from './cellindex.js?v=2018e2c5';
+import { CREATURE_TINTS, ENEMY_SPEC, INTROS, computeWavePlan } from './enemyspec.js?v=2018e2c5';
+import { PICKUPS } from './pickups.js?v=2018e2c5';
+import { rankFor, rankLabel, badgeSVG, killReq, eliteReq } from './ranks.js?v=2018e2c5';
+import { makeScore } from './score.js?v=2018e2c5';
+import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER } from './towers.js?v=2018e2c5';
+import { makeEconomy, sellRefund } from './economy.js?v=2018e2c5';
+import { makeBloom } from './postfx.js?v=2018e2c5';
+import { TANK_FEEL, TANK_FEEL_KNOBS, makeTankFeel, stepTankFeel, landTankFeel, fireTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js?v=2018e2c5';
+import { FEEL, loadFeel, saveFeel } from './feelstore.js?v=2018e2c5';
 import { STRIKE_KNOBS, makeStrike, makeStrikeParams, grantStrikes, stepStrike,
   toggleArm, paintTarget, launchStrike, stepFall, skipFall, fallProgress,
-  strikeDamage, retargetStrike, orbitProgress } from './strike.js?v=90ebfa72';
-import { radarBasis, radarProject, radarBearing, sweepAngle, radarPhosphor } from './radar.js?v=90ebfa72';
-import { BLOOM_GROUPS } from './bloomweights.js?v=90ebfa72';
-import { TOWER_LOOK_NAMES, DEFAULT_TOWER_LOOK, buildTowerLook, preloadLook } from './towerlooks.js?v=90ebfa72';
-import { makeAudio } from './audio.js?v=90ebfa72';
-import { DEATH_KEYS } from './audiomanifest.js?v=90ebfa72';
+  strikeDamage, retargetStrike, orbitProgress } from './strike.js?v=2018e2c5';
+import { radarBasis, radarProject, radarBearing, sweepAngle, radarPhosphor } from './radar.js?v=2018e2c5';
+import { BLOOM_GROUPS } from './bloomweights.js?v=2018e2c5';
+import { TOWER_LOOK_NAMES, DEFAULT_TOWER_LOOK, buildTowerLook, preloadLook } from './towerlooks.js?v=2018e2c5';
+import { makeAudio } from './audio.js?v=2018e2c5';
+import { DEATH_KEYS } from './audiomanifest.js?v=2018e2c5';
 
 export function initTdTab(root) {
   let active = false;
@@ -1411,6 +1411,34 @@ export function initTdTab(root) {
         }
       }
     }
+    // SOLID units hurt to touch, and no autopilot order should drive the
+    // hull through one (operator ruling, filed against seek-home): every
+    // directive except RAM (its chase must not be disrupted) and AVOID
+    // (which already flees everything) gets a flee vector away from the
+    // dangerous tier, weighted by proximity so it outvotes the goal field
+    // only at close range.
+    let fleeVec = null;
+    if (!active && params.directive !== 'ram' && params.directive !== 'avoid') {
+      const R = cellSide * 4;
+      let fx = 0, fy = 0, fz = 0, any = false;
+      for (const en of enemies) {
+        if (!en.alive || en.spec.rammable) continue;
+        const dd = dist3(player.pos, en.pos);
+        if (dd > R) continue;
+        const w = 1 - dd / R;
+        fx += (player.pos[0] - en.pos[0]) * w;
+        fy += (player.pos[1] - en.pos[1]) * w;
+        fz += (player.pos[2] - en.pos[2]) * w;
+        any = true;
+      }
+      if (any) {
+        const n = norm3(player.pos);
+        const raw = [fx, fy, fz];
+        const flat = sub3(raw, scale3(n, dot3(raw, n)));
+        const l = len3(flat);
+        if (l > 1e-9) fleeVec = scale3(flat, Math.min(1, l / cellSide) / l);
+      }
+    }
     let best = exits[0], bestScore = -Infinity;
     for (const e of exits) {
       const dir = tangentDirTo(player.cur, e);
@@ -1418,6 +1446,7 @@ export function initTdTab(root) {
       if (!active && !player.visited.has(e)) score += 1.1;      // curiosity
       if (!active && e === player.prev && exits.length > 1) score -= 2.4;
       if (goalVec) score += 3.2 * goalSign * dot3(dir, goalVec);
+      if (fleeVec) score += 3.6 * dot3(dir, fleeVec);
       if (goalField) {
         const gain = goalField[player.cur] - goalField[e];      // +1 closer
         score += 3.2 * Math.max(-1, Math.min(1, gain));
@@ -3528,7 +3557,7 @@ export function initTdTab(root) {
   let laserClock = 0, laserSide = 0;
   let laserHeat = 0, laserOverheat = false;
   const laserBtnEl = root.querySelector('#td-pad-laser');
-  let laserBtnBand = -1;
+  let laserBtnBand = -1, laserDrainPct = -1;
   const LASER_RATE = 0.14;    // s between bursts (guns alternate)
   const LASER_DMG = 0.4;      // fodder: 3 grazes; corona: 5 — weak on purpose
   const LASER_MAX_HEAT = 2.4; // s of continuous fire before lockout
@@ -3581,8 +3610,22 @@ export function initTdTab(root) {
         laserBtnEl.style.color = col;
         laserBtnEl.style.borderColor = col;
         laserBtnEl.classList.toggle('overheat', band === 3);
+        if (band !== 3) laserBtnEl.style.background = '';
       }
+      // the cooldown is VISUAL: through the lockout the red drains out of
+      // the button bottom-up as the tubes shed heat (4% steps, not every
+      // frame — a style write per frame on a button is layout noise)
+      if (laserOverheat) {
+        const drain = Math.round(f * 25) * 4;
+        if (drain !== laserDrainPct) {
+          laserDrainPct = drain;
+          laserBtnEl.style.background =
+            `linear-gradient(to top, rgba(255,51,34,0.5) ${drain}%, rgba(255,51,34,0.08) ${drain}%)`;
+        }
+      } else laserDrainPct = -1;
     }
+    // holding the trigger against locked tubes CLICKS — the gun says no
+    if (wantFire && laserOverheat) sfx.play('laser_click');
     if (wantFire && !laserOverheat) {
       laserClock += dt;
       if (laserClock >= LASER_RATE) {

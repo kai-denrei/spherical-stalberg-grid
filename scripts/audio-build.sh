@@ -74,6 +74,9 @@ portal_warn|Portal_WaveWarning_freezing_gush_01.wav|3.70|1.00
 # and decays naturally into the fight (same handover ethos as the gush).
 boss_tension|BossTension_tension-scapes-brass.mp3|21.40|1.00
 danger_alert|Danger_klaxon-gamestudio.mp3|1.01|1.00
+# dry-fire click: the reload sample's first transient, pitched up — played
+# while the trigger is held against overheated laser tubes
+laser_click|Tank_PickUpNewShells_reload-02.wav|0.10|1.35
 enemy_die_a|slime-pop.wav|0.50|1.00
 enemy_die_b|slime-organic.wav|0.57|1.00
 enemy_die_c|splat_quick.wav|0.33|1.00

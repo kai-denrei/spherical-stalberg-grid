@@ -53,11 +53,11 @@ export const INTROS = [
   { wave: 5,  type: 'jellyfish', label: 'THE JELLYFISH',       role: 'pulse drifter' },
   { wave: 6,  type: 'gslime',    label: 'GREEN SLIME',         role: 'regenerator — ram it before it heals' },
   { wave: 7,  type: 'drifter',   label: 'WAVE SATURN',         role: 'erratic drifter' },
-  { wave: 8,  type: 'corona',    label: 'CORONAVIRUS',         role: 'armored ×2 · slows when shot' },
+  { wave: 8,  type: 'corona',    label: 'VIRUS',         role: 'armored ×2 · slows when shot' },
   { wave: 9,  type: 'barbed',    label: 'BARBED MINE',         role: 'SPEEDS UP when shot' },
   { wave: 10, type: 'rolling',   label: 'ROLLING MINE',        role: 'epic · slows when shot' },
   { wave: 11, type: 'prime',     label: 'PRIME MINE',          role: 'epic-rare · REGENERATES' },
-  { wave: 12, type: 'knot',      label: 'SOLVING TORUS · BOSS', role: 'accelerates when hit · 3 heart damage' },
+  { wave: 12, type: 'knot',      label: 'THORUS · BOSS', role: 'accelerates when hit · 3 heart damage' },
 ];
 
 // deterministic per-wave RNG (no Math.random — keeps the plan reproducible

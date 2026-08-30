@@ -69,6 +69,9 @@ export const SOUNDS = {
   // the boss omen: 21s of brass, started 10s before the knot's wave lands —
   // minInterval a hair under the length so a retrigger can't stack it
   boss_tension: { file: `${A}/boss_tension.mp3`, bus: 'enemies', gain: 0.85, maxVoices: 1, minInterval: 20, rateJitter: 0 },
+  // dry-fire click while the trigger is held on locked laser tubes —
+  // minInterval IS the click rate; the play-call fires every frame
+  laser_click: { file: `${A}/laser_click.mp3`, bus: 'tank', gain: 0.5, maxVoices: 1, minInterval: 0.22, rateJitter: 0.06 },
   // the proximity klaxon (once per wave, paired with the CRT warning)
   danger_alert: { file: `${A}/danger_alert.mp3`, bus: 'ui', gain: 1.0, maxVoices: 1, minInterval: 3, rateJitter: 0 },
   enemy_die_a: { file: `${A}/enemy_die_a.mp3`, bus: 'enemies', gain: 0.60, maxVoices: 3, minInterval: 0.04, rateJitter: 0.12 },
