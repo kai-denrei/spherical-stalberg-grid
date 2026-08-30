@@ -12,19 +12,19 @@
 import * as THREE from '../vendor/three.module.js';
 import { OrbitControls } from '../vendor/OrbitControls.js';
 import { buildUnit, preloadMkcx, makeDebris, makeDotBurst, makeBulletCloud,
-  makeDotEnemy, makeRewardSolid, makeShellSolid } from './units.js?v=18832054';
+  makeDotEnemy, makeRewardSolid, makeShellSolid } from './units.js?v=03977d82';
 import { TANK_FEEL, TANK_FEEL_KNOBS, formatFeelCode, makeTankFeel, stepTankFeel,
-  landTankFeel, fireTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js?v=18832054';
+  landTankFeel, fireTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js?v=03977d82';
 import { FEEL, loadFeel, saveFeel, resetFeel,
-  TOWER, HEADS, loadTower, saveTower, resetTower } from './feelstore.js?v=18832054';
+  TOWER, HEADS, loadTower, saveTower, resetTower } from './feelstore.js?v=03977d82';
 import { TOWER_FEEL_KNOBS, formatTowerFeel, clampTowerParams,
-  formatTowerHeads, HEAD_CHOICES, HEAD_AS_SHIPPED } from './towerfeel.js?v=18832054';
-import { CREATURE_TINTS } from './enemyspec.js?v=18832054';
+  formatTowerHeads, HEAD_CHOICES, HEAD_AS_SHIPPED } from './towerfeel.js?v=03977d82';
+import { CREATURE_TINTS } from './enemyspec.js?v=03977d82';
 import { buildTowerLook, TOWER_LOOK_NAMES, DEFAULT_TOWER_LOOK, preloadLook } from './towerlooks.js';
 import { TOWER_BY_KEY, TOWERS } from './towers.js';
 import { LOOKS } from './looks.js';
 import { makeBloom } from './postfx.js';
-import { makeAudio } from './audio.js?v=18832054';
+import { makeAudio } from './audio.js?v=03977d82';
 import { GROUPS, GROUP_LABELS, GROUP_EMPTY, entriesIn } from './unitcatalog.js';
 
 let roundTex = null;
@@ -275,6 +275,14 @@ export function initUnitsTab(root) {
     currentEntry = e;
     if (tunerApi) tunerApi.setSubject(e.kind === 'tower' ? 'tower' : 'tank');
     current = buildEntry(e);
+    // ENEMIES default to their own game ANIMATION with the turntable OFF —
+    // a swimmer under an added spin reads as neither (operator ruling).
+    // The toggle still works; the default just re-lands per unit shown.
+    const wantSpin = e.kind !== 'enemy';
+    if (state.spin !== wantSpin) {
+      state.spin = wantSpin;
+      spinBtn.classList.toggle('on', wantSpin);
+    }
     // the frame() fit blows a unit up to fullscreen while its dots stay
     // battlefield-sized 2px specks — sparse fog (operator report). The
     // catalogue fattens every dot to match its magnification.
@@ -396,7 +404,8 @@ export function initUnitsTab(root) {
 
   root.querySelector('#units-prev').addEventListener('click', () => step(-1));
   root.querySelector('#units-next').addEventListener('click', () => step(1));
-  root.querySelector('#units-spin').addEventListener('click', (ev) => {
+  const spinBtn = root.querySelector('#units-spin');
+  spinBtn.addEventListener('click', (ev) => {
     state.spin = !state.spin;
     ev.currentTarget.classList.toggle('on', state.spin);
   });
