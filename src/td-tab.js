@@ -19,31 +19,31 @@
 
 import * as THREE from '../vendor/three.module.js';
 import GUI from '../vendor/lil-gui.esm.js';
-import { generateSphereMesh, relax } from './grid.js?v=d2d060e7';
-import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=d2d060e7';
-import { mulberry32, randomSeed } from './rng.js?v=d2d060e7';
-import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3, segKey } from './vec3.js?v=d2d060e7';
-import { CREATURES, waveJelly } from './creatures.js?v=d2d060e7';
-import { UNITS, UNIT_NAMES, buildUnit, buildCreature, preloadMkcx, makeBulletCloud, makeRewardSolid, makeShellSolid, makeDebris, makeDotBurst, makePortalCloud, makeHeartCloud, makeDotEnemy } from './units.js?v=d2d060e7';
-import { LOOKS, LOOK_NAMES } from './looks.js?v=d2d060e7';
-import { makeCellIndex } from './cellindex.js?v=d2d060e7';
-import { CREATURE_TINTS, ENEMY_SPEC, INTROS, computeWavePlan } from './enemyspec.js?v=d2d060e7';
-import { PICKUPS } from './pickups.js?v=d2d060e7';
-import { rankFor, rankLabel, badgeSVG, killReq, eliteReq } from './ranks.js?v=d2d060e7';
-import { makeScore } from './score.js?v=d2d060e7';
-import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER } from './towers.js?v=d2d060e7';
-import { makeEconomy, sellRefund } from './economy.js?v=d2d060e7';
-import { makeBloom } from './postfx.js?v=d2d060e7';
-import { TANK_FEEL, TANK_FEEL_KNOBS, makeTankFeel, stepTankFeel, landTankFeel, fireTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js?v=d2d060e7';
-import { FEEL, loadFeel, saveFeel } from './feelstore.js?v=d2d060e7';
+import { generateSphereMesh, relax } from './grid.js?v=465a306a';
+import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=465a306a';
+import { mulberry32, randomSeed } from './rng.js?v=465a306a';
+import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3, segKey } from './vec3.js?v=465a306a';
+import { CREATURES, waveJelly } from './creatures.js?v=465a306a';
+import { UNITS, UNIT_NAMES, buildUnit, buildCreature, preloadMkcx, makeBulletCloud, makeRewardSolid, makeShellSolid, makeDebris, makeDotBurst, makePortalCloud, makeHeartCloud, makeDotEnemy } from './units.js?v=465a306a';
+import { LOOKS, LOOK_NAMES } from './looks.js?v=465a306a';
+import { makeCellIndex } from './cellindex.js?v=465a306a';
+import { CREATURE_TINTS, ENEMY_SPEC, INTROS, computeWavePlan } from './enemyspec.js?v=465a306a';
+import { PICKUPS } from './pickups.js?v=465a306a';
+import { rankFor, rankLabel, badgeSVG, killReq, eliteReq } from './ranks.js?v=465a306a';
+import { makeScore } from './score.js?v=465a306a';
+import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER } from './towers.js?v=465a306a';
+import { makeEconomy, sellRefund } from './economy.js?v=465a306a';
+import { makeBloom } from './postfx.js?v=465a306a';
+import { TANK_FEEL, TANK_FEEL_KNOBS, makeTankFeel, stepTankFeel, landTankFeel, fireTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js?v=465a306a';
+import { FEEL, loadFeel, saveFeel } from './feelstore.js?v=465a306a';
 import { STRIKE_KNOBS, makeStrike, makeStrikeParams, grantStrikes, stepStrike,
   toggleArm, paintTarget, launchStrike, stepFall, skipFall, fallProgress,
-  strikeDamage, retargetStrike, orbitProgress } from './strike.js?v=d2d060e7';
-import { radarBasis, radarProject, radarBearing, sweepAngle, radarPhosphor } from './radar.js?v=d2d060e7';
-import { BLOOM_GROUPS } from './bloomweights.js?v=d2d060e7';
-import { TOWER_LOOK_NAMES, DEFAULT_TOWER_LOOK, buildTowerLook, preloadLook } from './towerlooks.js?v=d2d060e7';
-import { makeAudio } from './audio.js?v=d2d060e7';
-import { DEATH_KEYS } from './audiomanifest.js?v=d2d060e7';
+  strikeDamage, retargetStrike, orbitProgress } from './strike.js?v=465a306a';
+import { radarBasis, radarProject, radarBearing, sweepAngle, radarPhosphor } from './radar.js?v=465a306a';
+import { BLOOM_GROUPS } from './bloomweights.js?v=465a306a';
+import { TOWER_LOOK_NAMES, DEFAULT_TOWER_LOOK, buildTowerLook, preloadLook } from './towerlooks.js?v=465a306a';
+import { makeAudio } from './audio.js?v=465a306a';
+import { DEATH_KEYS } from './audiomanifest.js?v=465a306a';
 
 export function initTdTab(root) {
   let active = false;
@@ -3904,28 +3904,56 @@ export function initTdTab(root) {
     rewardMeshes.clear();
   }
 
-  function spawnRewards() {
-    clearRewards();
+  function farCells() {
     let maxD = 0;
     for (let i = 0; i < dungeon.tags.length; i++) {
       if (dungeon.tags[i] !== BLOCKED) maxD = Math.max(maxD, dungeon.distToHeart[i]);
     }
     const far = [];
     for (let i = 0; i < dungeon.tags.length; i++) {
-      if (dungeon.tags[i] !== BLOCKED && dungeon.distToHeart[i] >= maxD * 0.55) far.push(i);
+      if (dungeon.tags[i] !== BLOCKED && dungeon.distToHeart[i] >= maxD * 0.55
+        && !rewardMeshes.has(i)) far.push(i);
     }
+    return far;
+  }
+
+  function placeReward(spec, ci) {
+    const r = cellSide * 0.24;
+    const obj = makeRewardSolid(spec.shape, { body: spec.body, hi: 0xffffff }, whim() * 6.283);
+    obj.scale.setScalar(r);
+    obj.userData.sizeScale = r;
+    const c = graph.centers[ci];
+    const n = graph.normals[ci];
+    obj.position.set(c[0] + n[0] * r * 1.2, c[1] + n[1] * r * 1.2, c[2] + n[2] * r * 1.2);
+    scene.add(obj);
+    rewardMeshes.set(ci, { obj, type: spec.type });
+  }
+
+  function spawnRewards() {
+    clearRewards();
+    regrowQueue.length = 0; // a new board owes nothing to the old one's picks
+    const far = farCells();
     for (let k = 0; k < params.rewards && far.length > 0; k++) {
       const ci = far.splice(Math.floor(whim() * far.length), 1)[0];
-      const spec = REWARD_TYPES[k % REWARD_TYPES.length];
-      const r = cellSide * 0.24;
-      const obj = makeRewardSolid(spec.shape, { body: spec.body, hi: 0xffffff }, whim() * 6.283);
-      obj.scale.setScalar(r);
-      obj.userData.sizeScale = r;
-      const c = graph.centers[ci];
-      const n = graph.normals[ci];
-      obj.position.set(c[0] + n[0] * r * 1.2, c[1] + n[1] * r * 1.2, c[2] + n[2] * r * 1.2);
-      scene.add(obj);
-      rewardMeshes.set(ci, { obj, type: spec.type });
+      placeReward(REWARD_TYPES[k % REWARD_TYPES.length], ci);
+    }
+  }
+
+  // Consumables REGROW. Health and heart-regen are the two pickups a long
+  // round genuinely runs out of — power stays one-shot (a permanent buff
+  // that respawned would be a farm). Each consumed orb schedules one
+  // replacement on the far field after a beat; placement reuses the same
+  // whim() stream, so a replayed seed regrows identically.
+  const REGROW_TIME = 50; // s from pickup to the replacement appearing
+  const regrowQueue = []; // { type, t } in simTime
+  function stepRegrow() {
+    while (regrowQueue.length && simTime >= regrowQueue[0].t) {
+      const job = regrowQueue.shift();
+      const spec = REWARD_TYPES.find((sp) => sp.type === job.type);
+      const far = farCells();
+      if (!spec || far.length === 0) continue;
+      const ci = far[Math.floor(whim() * far.length)];
+      placeReward(spec, ci);
     }
   }
 
@@ -3940,6 +3968,9 @@ export function initTdTab(root) {
       if (r.type === 'power') speedBonus *= 1.08;
       else if (r.type === 'health') playerHP = Math.min(PLAYER_MAX, playerHP + 1);
       else if (r.type === 'regen') carryingRegen = true;
+      if (r.type === 'health' || r.type === 'regen') {
+        regrowQueue.push({ type: r.type, t: simTime + REGROW_TIME });
+      }
       updateHud();
     }
     // deliver a carried regen: near the Heart, it heals
@@ -3948,6 +3979,7 @@ export function initTdTab(root) {
       heartHP = Math.min(HEART_MAX, heartHP + 4);
       updateHud();
     }
+    stepRegrow();
     for (const orb of rewardMeshes.values()) orb.obj.userData.tick(simTime);
   }
 
