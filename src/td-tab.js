@@ -19,31 +19,31 @@
 
 import * as THREE from '../vendor/three.module.js';
 import GUI from '../vendor/lil-gui.esm.js';
-import { generateSphereMesh, relax } from './grid.js?v=7b2d7509';
-import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=7b2d7509';
-import { mulberry32, randomSeed } from './rng.js?v=7b2d7509';
-import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3, segKey } from './vec3.js?v=7b2d7509';
-import { CREATURES, waveJelly } from './creatures.js?v=7b2d7509';
-import { UNITS, UNIT_NAMES, buildUnit, buildCreature, preloadMkcx, preloadServer, makeServerFixture, makeShieldShell, makeBulletCloud, makeRewardSolid, makeShellSolid, makeDebris, makeDotBurst, makePortalCloud, makeHeartCloud, makeDotEnemy } from './units.js?v=7b2d7509';
-import { LOOKS, LOOK_NAMES } from './looks.js?v=7b2d7509';
-import { makeCellIndex } from './cellindex.js?v=7b2d7509';
-import { CREATURE_TINTS, ENEMY_SPEC, INTROS, computeWavePlan } from './enemyspec.js?v=7b2d7509';
-import { PICKUPS } from './pickups.js?v=7b2d7509';
-import { rankFor, rankLabel, badgeSVG, killReq, eliteReq } from './ranks.js?v=7b2d7509';
-import { makeScore } from './score.js?v=7b2d7509';
-import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER } from './towers.js?v=7b2d7509';
-import { makeEconomy, sellRefund } from './economy.js?v=7b2d7509';
-import { makeBloom } from './postfx.js?v=7b2d7509';
-import { TANK_FEEL, TANK_FEEL_KNOBS, makeTankFeel, stepTankFeel, landTankFeel, fireTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js?v=7b2d7509';
-import { FEEL, loadFeel, saveFeel } from './feelstore.js?v=7b2d7509';
+import { generateSphereMesh, relax } from './grid.js?v=24d8ce9e';
+import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=24d8ce9e';
+import { mulberry32, randomSeed } from './rng.js?v=24d8ce9e';
+import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3, segKey } from './vec3.js?v=24d8ce9e';
+import { CREATURES, waveJelly } from './creatures.js?v=24d8ce9e';
+import { UNITS, UNIT_NAMES, buildUnit, buildCreature, preloadMkcx, preloadServer, makeServerFixture, makeShieldShell, makeBulletCloud, makeRewardSolid, makeShellSolid, makeDebris, makeDotBurst, makePortalCloud, makeHeartCloud, makeDotEnemy } from './units.js?v=24d8ce9e';
+import { LOOKS, LOOK_NAMES } from './looks.js?v=24d8ce9e';
+import { makeCellIndex } from './cellindex.js?v=24d8ce9e';
+import { CREATURE_TINTS, ENEMY_SPEC, INTROS, computeWavePlan } from './enemyspec.js?v=24d8ce9e';
+import { PICKUPS } from './pickups.js?v=24d8ce9e';
+import { rankFor, rankLabel, badgeSVG, killReq, eliteReq } from './ranks.js?v=24d8ce9e';
+import { makeScore } from './score.js?v=24d8ce9e';
+import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER } from './towers.js?v=24d8ce9e';
+import { makeEconomy, sellRefund } from './economy.js?v=24d8ce9e';
+import { makeBloom } from './postfx.js?v=24d8ce9e';
+import { TANK_FEEL, TANK_FEEL_KNOBS, makeTankFeel, stepTankFeel, landTankFeel, fireTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js?v=24d8ce9e';
+import { FEEL, loadFeel, saveFeel } from './feelstore.js?v=24d8ce9e';
 import { STRIKE_KNOBS, makeStrike, makeStrikeParams, grantStrikes, stepStrike,
   toggleArm, paintTarget, launchStrike, stepFall, skipFall, fallProgress,
-  strikeDamage, retargetStrike, orbitProgress } from './strike.js?v=7b2d7509';
-import { radarBasis, radarProject, radarBearing, sweepAngle, radarPhosphor } from './radar.js?v=7b2d7509';
-import { BLOOM_GROUPS } from './bloomweights.js?v=7b2d7509';
-import { TOWER_LOOK_NAMES, DEFAULT_TOWER_LOOK, buildTowerLook, preloadLook } from './towerlooks.js?v=7b2d7509';
-import { makeAudio } from './audio.js?v=7b2d7509';
-import { DEATH_KEYS } from './audiomanifest.js?v=7b2d7509';
+  strikeDamage, retargetStrike, orbitProgress } from './strike.js?v=24d8ce9e';
+import { radarBasis, radarProject, radarBearing, sweepAngle, radarPhosphor } from './radar.js?v=24d8ce9e';
+import { BLOOM_GROUPS } from './bloomweights.js?v=24d8ce9e';
+import { TOWER_LOOK_NAMES, DEFAULT_TOWER_LOOK, buildTowerLook, preloadLook } from './towerlooks.js?v=24d8ce9e';
+import { makeAudio } from './audio.js?v=24d8ce9e';
+import { DEATH_KEYS } from './audiomanifest.js?v=24d8ce9e';
 
 export function initTdTab(root) {
   let active = false;
@@ -347,8 +347,9 @@ export function initTdTab(root) {
     camera.updateProjectionMatrix();
     // armed promotes the corner disc to a RADAR: same scene, same culled
     // layer, just more of the screen — the targeting view is the map
-    const mScale = strike.armed ? 0.52 : 0.32;
-    const mCap = strike.armed ? 430 : 240;
+    const narrow = w <= 700;
+    const mScale = strike.armed ? (narrow ? 0.44 : 0.52) : (narrow ? 0.23 : 0.32);
+    const mCap = strike.armed ? (narrow ? 340 : 430) : (narrow ? 138 : 240);
     const m = Math.min(mCap, Math.floor(Math.min(w, h) * mScale));
     radarCss = m;
     const dpr = Math.min(devicePixelRatio || 1, 2);
@@ -5313,6 +5314,7 @@ export function initTdTab(root) {
   let shopCi = -1;
   let shopPos = null; // screen anchor, remembered across refreshes
   function closeShop() {
+    root.classList.remove('shopping');
     shopEl.classList.add('hidden');
     shopCi = -1;
     shopPos = null;
@@ -5326,6 +5328,7 @@ export function initTdTab(root) {
   // R follows HK's sizing (max(66, min(104, 0.3·viewport-min))); the
   // anchor clamps so the ring never leaves the screen.
   function openShop(ci, sx, sy) {
+    root.classList.add('shopping');
     // The strike owns the board while it is armed, flying, or just landed.
     // The tap DISPATCH already tries to route around the shop, but a modal
     // that must never appear mid-ritual is guarded at its own door — every

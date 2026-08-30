@@ -4,9 +4,9 @@
 import * as THREE from '../vendor/three.module.js';
 import GUI from '../vendor/lil-gui.esm.js';
 import { OrbitControls } from '../vendor/OrbitControls.js';
-import { createPlanetTankGame, DYING_T } from './tanks2.js?v=7b2d7509';
-import { mulberry32 } from './rng.js?v=7b2d7509';
-import { norm3, scale3 } from './vec3.js?v=7b2d7509';
+import { createPlanetTankGame, DYING_T } from './tanks2.js?v=24d8ce9e';
+import { mulberry32 } from './rng.js?v=24d8ce9e';
+import { norm3, scale3 } from './vec3.js?v=24d8ce9e';
 
 const DT = 1 / 60;
 const TANK_SCALE = 0.08;

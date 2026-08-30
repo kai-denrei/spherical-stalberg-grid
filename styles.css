@@ -2747,3 +2747,67 @@ tr.sim-timeout td:nth-child(2), tr.sim-stalled td:nth-child(2) { color: #ffb000;
   background: #0a0508;
 }
 #td-msg .sr-row, #tab-td .msg .sr-row { text-align: left; }
+
+/* --- phone HUD v3: SMALLER, and never everything at once -----------------
+   Field screenshot: every element at desktop scale, all visible at the
+   same time — unplayable. Everything compacts; the mute button goes
+   (the phone has a mute switch); and while the tower radial is open the
+   transient furniture (cards, console, chip, prompt) clears out. */
+@media (pointer: coarse), (max-width: 700px) {
+  /* the mode row: compact, and no mute */
+  #td-pad-sound { display: none; }
+  #tab-td .tc-util { gap: 5px; }
+  #tab-td .tc-util button {
+    padding: 4px 8px;
+    font-size: 10px;
+    letter-spacing: 0.05em;
+    border-radius: 5px;
+  }
+  /* instrument panel: tighter still, clear of the (smaller) radar */
+  #td-stats.hud-panel {
+    font-size: 10px;
+    line-height: 1.32;
+    padding: 4px 9px 5px;
+    max-width: calc(100vw - 165px);
+  }
+  #td-stats.hud-panel .hud-meta { font-size: 9px; }
+  #td-stats.hud-panel .hud-meta b { font-size: 11px; }
+  #td-stats.hud-panel .hud-vitals { font-size: 11px; }
+  #td-stats.hud-panel .hud-wave b { font-size: 12px; }
+  #td-stats.hud-panel .hud-obj, #td-stats.hud-panel .hud-alert { font-size: 9px; }
+  #td-stats.hud-panel .hud-rank svg { width: 14px; height: 14px; vertical-align: -3px; }
+  /* NEXT chip: up under the shorter panel, smaller */
+  #td-next { top: calc(max(8px, env(safe-area-inset-top)) + 124px); font-size: 10px; padding: 4px 8px 5px; }
+  .nx-head { margin-bottom: 2px; }
+  /* announce cards + toasts: narrow and quiet */
+  #td-sitrep, #td-wave, #td-toast, #td-tower {
+    top: calc(max(8px, env(safe-area-inset-top)) + 166px);
+    width: min(56vw, 232px);
+    font-size: 10px;
+    padding: 7px 10px;
+  }
+  #td-wave .wave-num, #td-tower .wave-num { font-size: 13px; }
+  #td-wave .wave-name, #td-tower .wave-name { font-size: 12px; }
+  #td-wave .wave-role, #td-tower .wave-role { font-size: 10px; }
+  #td-wave .wave-icon, #td-tower .wave-icon { width: 40px; height: 40px; }
+  /* launch console: under the smaller radar, smaller itself */
+  #td-launch { top: calc(max(8px, env(safe-area-inset-top)) + 172px); width: 106px; padding: 5px 5px; gap: 4px; }
+  .safety .switch-img { width: 22px; height: 36px; }
+  #td-launch-readout .status { font-size: 9px; }
+  #td-launch-readout .target { font-size: 8px; }
+  .launch-button { width: 62px; height: 34px; }
+  .launch-button .latin { font-size: 7px; }
+  #td-hack { top: calc(max(8px, env(safe-area-inset-top)) + 316px); padding: 5px 8px; font-size: 10px; }
+  /* the wheel: whole radial scaled down uniformly */
+  #td-shop { transform: scale(0.76); }
+  .shop-note { display: none; }
+  /* throttle lever: smaller footprint */
+  #td-throttle { transform: scale(0.82); transform-origin: bottom left; }
+  /* the radial is a FOCUSED task: transient furniture clears out under it */
+  #tab-td.shopping #td-sitrep, #tab-td.shopping #td-wave,
+  #tab-td.shopping #td-toast, #tab-td.shopping #td-tower,
+  #tab-td.shopping #td-launch, #tab-td.shopping #td-next,
+  #tab-td.shopping #td-hackprompt, #tab-td.shopping #td-hack {
+    display: none;
+  }
+}
