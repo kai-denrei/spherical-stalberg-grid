@@ -19,31 +19,31 @@
 
 import * as THREE from '../vendor/three.module.js';
 import GUI from '../vendor/lil-gui.esm.js';
-import { generateSphereMesh, relax } from './grid.js?v=2018e2c5';
-import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=2018e2c5';
-import { mulberry32, randomSeed } from './rng.js?v=2018e2c5';
-import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3, segKey } from './vec3.js?v=2018e2c5';
-import { CREATURES, waveJelly } from './creatures.js?v=2018e2c5';
-import { UNITS, UNIT_NAMES, buildUnit, buildCreature, preloadMkcx, makeBulletCloud, makeRewardSolid, makeShellSolid, makeDebris, makeDotBurst, makePortalCloud, makeHeartCloud, makeDotEnemy } from './units.js?v=2018e2c5';
-import { LOOKS, LOOK_NAMES } from './looks.js?v=2018e2c5';
-import { makeCellIndex } from './cellindex.js?v=2018e2c5';
-import { CREATURE_TINTS, ENEMY_SPEC, INTROS, computeWavePlan } from './enemyspec.js?v=2018e2c5';
-import { PICKUPS } from './pickups.js?v=2018e2c5';
-import { rankFor, rankLabel, badgeSVG, killReq, eliteReq } from './ranks.js?v=2018e2c5';
-import { makeScore } from './score.js?v=2018e2c5';
-import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER } from './towers.js?v=2018e2c5';
-import { makeEconomy, sellRefund } from './economy.js?v=2018e2c5';
-import { makeBloom } from './postfx.js?v=2018e2c5';
-import { TANK_FEEL, TANK_FEEL_KNOBS, makeTankFeel, stepTankFeel, landTankFeel, fireTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js?v=2018e2c5';
-import { FEEL, loadFeel, saveFeel } from './feelstore.js?v=2018e2c5';
+import { generateSphereMesh, relax } from './grid.js?v=1c55ddc1';
+import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=1c55ddc1';
+import { mulberry32, randomSeed } from './rng.js?v=1c55ddc1';
+import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3, segKey } from './vec3.js?v=1c55ddc1';
+import { CREATURES, waveJelly } from './creatures.js?v=1c55ddc1';
+import { UNITS, UNIT_NAMES, buildUnit, buildCreature, preloadMkcx, makeBulletCloud, makeRewardSolid, makeShellSolid, makeDebris, makeDotBurst, makePortalCloud, makeHeartCloud, makeDotEnemy } from './units.js?v=1c55ddc1';
+import { LOOKS, LOOK_NAMES } from './looks.js?v=1c55ddc1';
+import { makeCellIndex } from './cellindex.js?v=1c55ddc1';
+import { CREATURE_TINTS, ENEMY_SPEC, INTROS, computeWavePlan } from './enemyspec.js?v=1c55ddc1';
+import { PICKUPS } from './pickups.js?v=1c55ddc1';
+import { rankFor, rankLabel, badgeSVG, killReq, eliteReq } from './ranks.js?v=1c55ddc1';
+import { makeScore } from './score.js?v=1c55ddc1';
+import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER } from './towers.js?v=1c55ddc1';
+import { makeEconomy, sellRefund } from './economy.js?v=1c55ddc1';
+import { makeBloom } from './postfx.js?v=1c55ddc1';
+import { TANK_FEEL, TANK_FEEL_KNOBS, makeTankFeel, stepTankFeel, landTankFeel, fireTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js?v=1c55ddc1';
+import { FEEL, loadFeel, saveFeel } from './feelstore.js?v=1c55ddc1';
 import { STRIKE_KNOBS, makeStrike, makeStrikeParams, grantStrikes, stepStrike,
   toggleArm, paintTarget, launchStrike, stepFall, skipFall, fallProgress,
-  strikeDamage, retargetStrike, orbitProgress } from './strike.js?v=2018e2c5';
-import { radarBasis, radarProject, radarBearing, sweepAngle, radarPhosphor } from './radar.js?v=2018e2c5';
-import { BLOOM_GROUPS } from './bloomweights.js?v=2018e2c5';
-import { TOWER_LOOK_NAMES, DEFAULT_TOWER_LOOK, buildTowerLook, preloadLook } from './towerlooks.js?v=2018e2c5';
-import { makeAudio } from './audio.js?v=2018e2c5';
-import { DEATH_KEYS } from './audiomanifest.js?v=2018e2c5';
+  strikeDamage, retargetStrike, orbitProgress } from './strike.js?v=1c55ddc1';
+import { radarBasis, radarProject, radarBearing, sweepAngle, radarPhosphor } from './radar.js?v=1c55ddc1';
+import { BLOOM_GROUPS } from './bloomweights.js?v=1c55ddc1';
+import { TOWER_LOOK_NAMES, DEFAULT_TOWER_LOOK, buildTowerLook, preloadLook } from './towerlooks.js?v=1c55ddc1';
+import { makeAudio } from './audio.js?v=1c55ddc1';
+import { DEATH_KEYS } from './audiomanifest.js?v=1c55ddc1';
 
 export function initTdTab(root) {
   let active = false;
@@ -2532,6 +2532,8 @@ export function initTdTab(root) {
 
   // --- HUD -----------------------------------------------------------------
   const statsEl = root.querySelector('#td-stats');
+  statsEl.classList.add('hud-panel'); // the TD tab dresses the shared slot
+  const dirBtnEl = root.querySelector('#td-pad-dir');
   const msgEl = root.querySelector('#td-msg');
   // the modal's buttons (event delegation survives innerHTML swaps)
   msgEl.addEventListener('click', (ev) => {
@@ -2798,26 +2800,37 @@ export function initTdTab(root) {
     showToast(`<div class="wave-num">MANUAL</div>` +
       `<div class="wave-role">you're driving — tap a directive to hand the wheel to auto</div>`);
   }
+  // The instrument panel. Three reading distances, three brightness tiers:
+  // vitals bright and big (sub-second combat reads), resources mid (credit
+  // orange as ever, the wave numeral the largest thing on the panel), meta
+  // and objectives dim. The who-is-driving line is GONE from the panel —
+  // control state lives ON the AUTO button now, where the control is.
   function updateHud() {
-    const alive = enemies.filter((e) => e.alive).length;
     const spAlive = spawnPoints.filter((s) => s.alive).length;
-    // compact HUD: the shells row is GONE — the turret rack is the ammo
-    // counter (a small ✦n remains for PoV, where the turret isn't visible).
-    // Alerts only appear when they're true; the how-to lives in the briefing.
-    const alerts = (carryingRegen ? ' · ⬤ REGEN' : '')
-      + (cannonHeat > 0 ? ' · cannon HOT' : '')
-      + (laserOverheat ? ' · laser COOLING' : '');
-    // state words only — the how-to lives in the GAMEPLAY section of the
-    // briefing and pause modals. CREDIT is the loud line, in orange.
+    const alerts = [carryingRegen ? '⬤ REGEN CARRIED' : '',
+      cannonHeat > 0 ? 'CANNON HOT' : '',
+      laserOverheat ? 'LASER COOLING' : ''].filter(Boolean).join(' · ');
+    const hearts = `<span class="hp-heart">${'♥'.repeat(Math.max(0, heartHP))}</span>`
+      + `<span class="hp-dim">${'·'.repeat(Math.max(0, HEART_MAX - heartHP))}</span>`;
     statsEl.innerHTML =
-      `<span class="hud-score">SCORE ${score.points} · BEST ${score.best}</span>`
-      + `${rankBadgeHud ? '  ' + rankBadgeHud : ''}\n` +
-      `HEART ${'♥'.repeat(Math.max(0, heartHP)).padEnd(HEART_MAX, '·')}  YOU ♥${playerHP}  ✦${ammo}\n` +
-      `<span class="hud-credit">${eco.credit}c ×${eco.multiplier().toFixed(2)}</span> · towers ${towers.length}\n` +
-      `WAVE ${wave} · ${Math.min(8, Math.max(0, wave))}/8 towers · portals ${spAlive}/${spawnPoints.length} · R${round}${alerts}\n` +
-      // one mode: the line reads camera + hold + who is driving
-      (manualActive() ? (cruise ? 'CRUISE' : 'MANUAL')
-        : `AUTO · ${DIRECTIVE_LABEL[params.directive] || 'WANDER'}`);
+      `<div class="hud-meta">SCORE <b>${score.points}</b> · BEST ${score.best}`
+      + `${rankBadgeHud ? ' ' + rankBadgeHud : ''}</div>`
+      + `<div class="hud-vitals">${hearts} <span class="hud-lbl">HEART</span>`
+      + ` <span class="hp-you">♥${playerHP}</span>`
+      + ` <span class="hp-ammo${ammo === 0 ? ' out' : ''}">✦${ammo}</span></div>`
+      + `<div class="hud-res"><span class="hud-credit">${eco.credit}c`
+      + ` ×${eco.multiplier().toFixed(2)}</span>`
+      + `<span class="hud-wave">WAVE <b>${wave}</b> · R${round}</span></div>`
+      + `<div class="hud-obj">portals ${spAlive}/${spawnPoints.length}`
+      + ` · built ${towers.length} · ${Math.min(8, Math.max(0, wave))}/8 towers</div>`
+      + (alerts ? `<div class="hud-alert">${alerts}</div>` : '');
+    if (dirBtnEl) {
+      const eng = !manualActive();
+      const lbl = eng ? (DIRECTIVE_LABEL[params.directive] || 'AUTO')
+        : (cruise ? 'CRUISE' : 'AUTO');
+      if (dirBtnEl.textContent !== lbl) dirBtnEl.textContent = lbl;
+      dirBtnEl.classList.toggle('engaged', eng);
+    }
     // diegetic shell rack: the 3×3 turret dots ARE the ammo counter —
     // neon white loaded, faded grey spent (allies stay full: infinite ammo)
     const dots = playerMesh && playerMesh.userData.ammoDots;

@@ -2406,3 +2406,74 @@ body.playing:not(.chrome-open) #tabbar { display: none !important; }
   color: #6fe387;
   animation: pulse-soft 1.6s ease-in-out infinite;
 }
+
+/* --- the HUD instrument panel (TD only; the shared rule keeps position) --
+   Three brightness tiers for three reading distances: vitals bright and
+   big, resources mid, meta/objectives dim. Same console family as the
+   field manual and SitRep, but subtler — this one never goes away. */
+#td-stats.hud-panel {
+  white-space: normal;
+  line-height: 1.55;
+  background: rgba(3, 14, 7, 0.62);
+  border: 1px solid rgba(110, 255, 140, 0.28);
+  border-radius: 8px;
+  padding: 7px 12px 8px;
+  color: #6fe387;
+  text-shadow: 0 0 6px rgba(110, 255, 140, 0.22);
+  min-width: 232px;
+  pointer-events: none;
+}
+#td-stats.hud-panel .hud-meta { font-size: 11px; color: #4fae63; letter-spacing: 0.06em; }
+#td-stats.hud-panel .hud-meta b { color: #b8ffca; font-size: 13px; }
+.hud-vitals { font-size: 14px; letter-spacing: 0.04em; }
+.hud-lbl { font-size: 10px; color: #4fae63; letter-spacing: 0.14em; }
+.hp-heart { color: #ff6a88; text-shadow: 0 0 8px rgba(255, 106, 136, 0.5); }
+.hp-dim { color: rgba(255, 106, 136, 0.22); }
+.hp-you { color: #9fdcff; margin-left: 8px; text-shadow: 0 0 7px rgba(159, 220, 255, 0.4); }
+.hp-ammo { color: #eef4ff; margin-left: 8px; }
+.hp-ammo.out { color: #ff5340; text-shadow: 0 0 8px rgba(255, 83, 64, 0.6); }
+.hud-res { display: flex; justify-content: space-between; gap: 12px; align-items: baseline; }
+.hud-wave { color: #d6ffdf; letter-spacing: 0.06em; }
+.hud-wave b { font-size: 16px; }
+.hud-obj { font-size: 11px; color: #4fae63; }
+.hud-alert { font-size: 11px; color: #ffb000; text-shadow: 0 0 8px rgba(255, 176, 0, 0.4); letter-spacing: 0.08em; }
+
+/* mode row joins the console family. Two clusters encoded by tint alone —
+   camera controls cyan (the tank's color), system controls green — so the
+   grouping needs no extra markup and no extra width. */
+#tab-td .tc-util button {
+  background: rgba(3, 14, 7, 0.72);
+  color: #86ff9e;
+  border: 1px solid rgba(110, 255, 140, 0.4);
+  border-radius: 6px;
+  text-shadow: 0 0 6px rgba(110, 255, 140, 0.3);
+  opacity: 1;
+}
+#tab-td .tc-util button:active { background: rgba(110, 255, 140, 0.25); color: #eafff0; }
+#tab-td #td-pad-view, #tab-td #td-pad-ctrheart, #tab-td #td-pad-ctrtank {
+  color: #9fdcff;
+  border-color: rgba(159, 220, 255, 0.4);
+  text-shadow: 0 0 6px rgba(159, 220, 255, 0.3);
+}
+/* the AUTO button IS the who-is-driving line now: amber while engaged,
+   wearing the directive's name */
+#tab-td #td-pad-dir.engaged {
+  color: #ffb000;
+  border-color: rgba(255, 176, 0, 0.55);
+  text-shadow: 0 0 7px rgba(255, 176, 0, 0.45);
+}
+/* the NEXT WAVE chip joins the same idiom */
+#td-next {
+  background: rgba(3, 14, 7, 0.85);
+  border: 1px solid rgba(110, 255, 140, 0.35);
+  color: #86ff9e;
+  border-radius: 8px;
+}
+#td-hint { color: #4fae63; }
+@media (pointer: coarse), (max-width: 700px) {
+  /* the panel must hold FIVE rows (alerts included) inside the band above
+     the NEXT WAVE chip at top+148 — tightened, not truncated */
+  #td-stats.hud-panel { line-height: 1.38; padding: 5px 10px 6px; min-width: 0; }
+  #td-stats.hud-panel .hud-vitals { font-size: 12px; }
+  #td-stats.hud-panel .hud-wave b { font-size: 13px; }
+}

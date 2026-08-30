@@ -116,7 +116,11 @@ actually been examined — whether waves 5–8 feel cramped on it is untested.
   the live target each frame, the HokorobiTawaa feel.
 - ~~**Bring the missile system to the top**~~ — DONE: the launch console sits
   top-centre under the mode row (desktop) / in the left HUD column (phone).
-- **Rework the entire HUD.**
+- ~~**Rework the entire HUD**~~ — DONE: the 5-line text block became a CRT
+  instrument panel (three brightness tiers for three reading distances);
+  control state moved ONTO the AUTO button; camera/system button clusters
+  encoded by tint; NEXT WAVE chip joined the idiom; phone bands re-verified
+  by rectangle probe with the alert row accounted for.
 - ~~**Scores**~~ — DONE: `src/score.js` — tank kills x3, ram premium, field
   multiplier (+4%/live enemy, cap x2), wave-clear points; BEST persists in
   localStorage and updates live; final score on the lose modal.
