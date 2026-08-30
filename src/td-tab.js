@@ -19,31 +19,31 @@
 
 import * as THREE from '../vendor/three.module.js';
 import GUI from '../vendor/lil-gui.esm.js';
-import { generateSphereMesh, relax } from './grid.js?v=e35d2b39';
-import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=e35d2b39';
-import { mulberry32, randomSeed } from './rng.js?v=e35d2b39';
-import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3, segKey } from './vec3.js?v=e35d2b39';
-import { CREATURES, waveJelly } from './creatures.js?v=e35d2b39';
-import { UNITS, UNIT_NAMES, buildUnit, buildCreature, preloadMkcx, makeBulletCloud, makeRewardSolid, makeShellSolid, makeDebris, makeDotBurst, makePortalCloud, makeHeartCloud, makeDotEnemy } from './units.js?v=e35d2b39';
-import { LOOKS, LOOK_NAMES } from './looks.js?v=e35d2b39';
-import { makeCellIndex } from './cellindex.js?v=e35d2b39';
-import { CREATURE_TINTS, ENEMY_SPEC, INTROS, computeWavePlan } from './enemyspec.js?v=e35d2b39';
-import { PICKUPS } from './pickups.js?v=e35d2b39';
-import { rankFor, rankLabel, badgeSVG, killReq, eliteReq } from './ranks.js?v=e35d2b39';
-import { makeScore } from './score.js?v=e35d2b39';
-import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER } from './towers.js?v=e35d2b39';
-import { makeEconomy, sellRefund } from './economy.js?v=e35d2b39';
-import { makeBloom } from './postfx.js?v=e35d2b39';
-import { TANK_FEEL, TANK_FEEL_KNOBS, makeTankFeel, stepTankFeel, landTankFeel, fireTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js?v=e35d2b39';
-import { FEEL, loadFeel, saveFeel } from './feelstore.js?v=e35d2b39';
+import { generateSphereMesh, relax } from './grid.js?v=a9a98d3d';
+import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=a9a98d3d';
+import { mulberry32, randomSeed } from './rng.js?v=a9a98d3d';
+import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3, segKey } from './vec3.js?v=a9a98d3d';
+import { CREATURES, waveJelly } from './creatures.js?v=a9a98d3d';
+import { UNITS, UNIT_NAMES, buildUnit, buildCreature, preloadMkcx, makeBulletCloud, makeRewardSolid, makeShellSolid, makeDebris, makeDotBurst, makePortalCloud, makeHeartCloud, makeDotEnemy } from './units.js?v=a9a98d3d';
+import { LOOKS, LOOK_NAMES } from './looks.js?v=a9a98d3d';
+import { makeCellIndex } from './cellindex.js?v=a9a98d3d';
+import { CREATURE_TINTS, ENEMY_SPEC, INTROS, computeWavePlan } from './enemyspec.js?v=a9a98d3d';
+import { PICKUPS } from './pickups.js?v=a9a98d3d';
+import { rankFor, rankLabel, badgeSVG, killReq, eliteReq } from './ranks.js?v=a9a98d3d';
+import { makeScore } from './score.js?v=a9a98d3d';
+import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER } from './towers.js?v=a9a98d3d';
+import { makeEconomy, sellRefund } from './economy.js?v=a9a98d3d';
+import { makeBloom } from './postfx.js?v=a9a98d3d';
+import { TANK_FEEL, TANK_FEEL_KNOBS, makeTankFeel, stepTankFeel, landTankFeel, fireTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js?v=a9a98d3d';
+import { FEEL, loadFeel, saveFeel } from './feelstore.js?v=a9a98d3d';
 import { STRIKE_KNOBS, makeStrike, makeStrikeParams, grantStrikes, stepStrike,
   toggleArm, paintTarget, launchStrike, stepFall, skipFall, fallProgress,
-  strikeDamage, retargetStrike, orbitProgress } from './strike.js?v=e35d2b39';
-import { radarBasis, radarProject, radarBearing, sweepAngle, radarPhosphor } from './radar.js?v=e35d2b39';
-import { BLOOM_GROUPS } from './bloomweights.js?v=e35d2b39';
-import { TOWER_LOOK_NAMES, DEFAULT_TOWER_LOOK, buildTowerLook, preloadLook } from './towerlooks.js?v=e35d2b39';
-import { makeAudio } from './audio.js?v=e35d2b39';
-import { DEATH_KEYS } from './audiomanifest.js?v=e35d2b39';
+  strikeDamage, retargetStrike, orbitProgress } from './strike.js?v=a9a98d3d';
+import { radarBasis, radarProject, radarBearing, sweepAngle, radarPhosphor } from './radar.js?v=a9a98d3d';
+import { BLOOM_GROUPS } from './bloomweights.js?v=a9a98d3d';
+import { TOWER_LOOK_NAMES, DEFAULT_TOWER_LOOK, buildTowerLook, preloadLook } from './towerlooks.js?v=a9a98d3d';
+import { makeAudio } from './audio.js?v=a9a98d3d';
+import { DEATH_KEYS } from './audiomanifest.js?v=a9a98d3d';
 
 export function initTdTab(root) {
   let active = false;
@@ -487,6 +487,21 @@ export function initTdTab(root) {
   let streakMark = 0;       // last streak milestone already called out
   let ramCombo = 0, ramComboT = 0;  // count-up + its expiry window
   const RAM_COMBO_GAP = 4;
+  // SitRep bookkeeping: everything the end-of-wave recap reports. Bins are
+  // 3s buckets of kill tempo — the sparkline is drawn from them.
+  let ws = null;
+  function resetWaveStats() {
+    ws = { t0: simTime, kills: {}, bySrc: { tank: 0, tower: 0, strike: 0 },
+      rams: 0, points0: score.points, maxMult: 1, leaks: 0,
+      bins: new Array(16).fill(0) };
+  }
+  function noteWaveKill(type, src) {
+    if (!ws) return;
+    ws.kills[type] = (ws.kills[type] || 0) + 1;
+    ws.bySrc[src] = (ws.bySrc[src] || 0) + 1;
+    ws.bins[Math.min(15, Math.floor((simTime - ws.t0) / 3))]++;
+    ws.maxMult = Math.max(ws.maxMult, eco.multiplier());
+  }
 
   // phagocytosis state, recomputed per frame (amoeba only)
   const reach = { dir: null, amt: 0 };
@@ -2694,6 +2709,51 @@ export function initTdTab(root) {
     }
   }
 
+  // End-of-wave SitRep: the downtime between waves earns a recap — kills
+  // by type as a tinted histogram, kill tempo as a block-glyph sparkline,
+  // points and bonuses in one line. Military register, field-manual green.
+  // Non-blocking: the tank still drives; tap dismisses, the next wave's
+  // telegraph dismisses it regardless.
+  const sitrepEl = root.querySelector('#td-sitrep');
+  const SPARK = '▁▂▃▄▅▆▇█';
+  function sparkline(bins) {
+    let last = bins.length - 1;
+    while (last > 0 && bins[last] === 0) last--;
+    const used = bins.slice(0, Math.max(3, last + 1));
+    const top = Math.max(1, ...used);
+    return used.map((v) => SPARK[Math.round((v / top) * 7)]).join('');
+  }
+  function showSitrep() {
+    if (!sitrepEl || !ws) return;
+    const total = Object.values(ws.kills).reduce((a, b) => a + b, 0);
+    if (total === 0) return; // nothing happened; say nothing
+    const dur = Math.max(1, Math.round(simTime - ws.t0));
+    const top = Math.max(1, ...Object.values(ws.kills));
+    const rows = Object.entries(ws.kills).sort((a, b) => b[1] - a[1])
+      .map(([type, k]) => {
+        const tint = '#' + (CREATURE_TINTS[type] ?? 0xffffff).toString(16).padStart(6, '0');
+        return `<div class="sr-row"><span class="sr-name">${type}</span>`
+          + `<span class="sr-track"><span class="sr-bar" style="width:${Math.round((k / top) * 100)}%;background:${tint}"></span></span>`
+          + `<span class="sr-n">${k}</span></div>`;
+      }).join('');
+    sitrepEl.innerHTML =
+      `<div class="sr-head">&#9626; SITREP &middot; WAVE ${wave} CLEAR &middot; ${dur}s</div>`
+      + `<div class="sr-line">KILLS ${total} &mdash; tank ${ws.bySrc.tank}`
+      + ` &middot; towers ${ws.bySrc.tower} &middot; orbital ${ws.bySrc.strike}</div>`
+      + rows
+      + `<div class="sr-line sr-spark">TEMPO ${sparkline(ws.bins)}</div>`
+      + `<div class="sr-line">POINTS +${score.points - ws.points0}`
+      + ` &middot; CLEAR BONUS +${100 + 25 * wave} &middot; PEAK &times;${ws.maxMult.toFixed(2)}</div>`
+      + `<div class="sr-line">RAMS ${ws.rams}${ws.leaks ? ` &middot; <span class="sr-leak">LEAKS ${ws.leaks}</span>` : ' &middot; no leaks'}</div>`
+      + `<div class="sr-foot">[ tap &mdash; dismiss ]</div>`;
+    sitrepEl.classList.remove('hidden');
+  }
+  function hideSitrep() { if (sitrepEl) sitrepEl.classList.add('hidden'); }
+  if (sitrepEl) sitrepEl.addEventListener('pointerdown', (ev) => {
+    ev.stopPropagation(); // a dismiss tap must not read as a board tap
+    hideSitrep();
+  });
+
   // generic transient toast (non-blocking, auto-hides)
   const toastEl = root.querySelector('#td-toast');
   let toastTimer = null;
@@ -3197,6 +3257,7 @@ export function initTdTab(root) {
 
   function armWave() {
     if (waveIn >= 0) return;
+    hideSitrep(); // the telegraph outranks the recap
     waveIn = WAVE_WARN;
     warnBeat = 0;
     waveCharge = 0;
@@ -3211,6 +3272,7 @@ export function initTdTab(root) {
 
   function spawnWave() {
     waveIn = -1;
+    resetWaveStats();
     // the release — a wide, brief ring from every gate that is opening
     for (const sp of spawnPoints) {
       if (sp.alive) warnRing(sp.ci, CREATURE_TINTS[sp.type] ?? 0xffffff, 0.75, cellSide * 5.5);
@@ -3349,6 +3411,8 @@ export function initTdTab(root) {
           scoreKill(spec.bounty, { src: 'tank', ram: true,
             alive: enemies.filter((x) => x.alive).length });
           ramCombo++; ramComboT = RAM_COMBO_GAP;
+          noteWaveKill(e.type, 'tank');
+          if (ws) ws.rams++;
           syncCombo();
           if (ramCombo >= 10 && ramCombo % 10 === 0) {
             showCallout(`RAM ×${ramCombo}`, 'co-milestone');
@@ -3441,6 +3505,7 @@ export function initTdTab(root) {
       // any weapon's kill pays — but not the same
       eco.award(Math.max(1, Math.ceil(spec.bounty * (KILL_PAY[src] ?? 0.5))));
       scoreKill(spec.bounty, { src, alive: enemies.filter((x) => x.alive).length });
+      noteWaveKill(e.type, src);
       noteKillContext(e, src);
       if (src === 'tank') creditTankKill(spec);
       killCreature(e, true);
@@ -3935,6 +4000,7 @@ export function initTdTab(root) {
   function heartHit(dmg = 1) {
     eco.leak(); // a breach kills the streak — HK's rule, our Heart
     streakMark = 0;
+    if (ws) ws.leaks++;
     if (!tutorialActive) heartHP -= dmg;
     heartSprite.userData.hit(); // orange/red Wave flare
     updateHud();
@@ -5065,8 +5131,10 @@ export function initTdTab(root) {
         if (enemies.every((e) => !e.alive)) {
           waveActive = false; interClock = 0; waveCharge = 0;
           score.addWave(wave); persistBest();
-          showToast(`<div class="wave-num">WAVE ${wave} CLEARED</div>` +
-            `<div class="wave-role">brace — the next wave is coming</div>`, 2200);
+          if (tutorialActive) {
+            showToast(`<div class="wave-num">WAVE ${wave} CLEARED</div>` +
+              `<div class="wave-role">brace — the next wave is coming</div>`, 2200);
+          } else showSitrep(); // the recap IS the cleared card now
         } else if (waveAge >= params.waveCap && spawnPoints.some((s) => s.alive)) {
           armWave(); // safety: the field is stalled — but it still announces
         }
@@ -5454,7 +5522,7 @@ export function initTdTab(root) {
 
   // opening briefing on a clean load; any debug hook means headless/demo,
   // where a frozen sim would break the verification flow
-  const debugging = ['walk', 'tick', 'wave', 'blast', 'laser', 'found', 'recoil', 'mode', 'map', 'tower', 'credit', 'shop', 'sector', 'reveal', 'portal', 'lose', 'charge', 'layout', 'perf', 'strike', 'strikefall', 'strikecam', 'gateprobe', 'rank', 'danger', 'callout']
+  const debugging = ['walk', 'tick', 'wave', 'blast', 'laser', 'found', 'recoil', 'mode', 'map', 'tower', 'credit', 'shop', 'sector', 'reveal', 'portal', 'lose', 'charge', 'layout', 'perf', 'strike', 'strikefall', 'strikecam', 'gateprobe', 'rank', 'danger', 'callout', 'sitrep']
     .some((k) => urlParams.get(k));
   const tutParam = urlParams.get('tutorial');
   runTutorial = tutParam === '1' || (tutParam !== '0' && !debugging);
@@ -5640,6 +5708,17 @@ export function initTdTab(root) {
     showCallout('STREAK ×1.45', 'co-streak', true);
     ramCombo = 23; syncCombo();
     ramComboT = 9999; // pinned: the expiry timer outruns headless paints
+  }
+
+  // ?sitrep=1 — fabricated wave stats through the real renderer
+  if (urlParams.get('sitrep') === '1') {
+    resetWaveStats();
+    ws.kills = { phage: 8, ghost: 5, corona: 3, barbed: 1 };
+    ws.bySrc = { tank: 7, tower: 9, strike: 1 };
+    ws.rams = 5; ws.leaks = 1; ws.maxMult = 1.65;
+    ws.bins = [0, 2, 5, 4, 3, 2, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0];
+    ws.t0 = simTime - 42;
+    showSitrep();
   }
 
   // ?rank=N — jump the ladder for layout checks: grants exactly rank N's

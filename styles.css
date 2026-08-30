@@ -2359,3 +2359,50 @@ body.playing:not(.chrome-open) #tabbar { display: none !important; }
 @media (prefers-reduced-motion: reduce) {
   #td-combo[data-tier="5"], .tfire.overheat { animation: none; }
 }
+
+/* --- end-of-wave SitRep --------------------------------------------------
+   The downtime between waves earns a recap: field-manual green, histogram
+   bars in each enemy's own tint, kill tempo as a block sparkline. */
+#td-sitrep {
+  position: absolute;
+  top: 32%;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 8;
+  width: min(86vw, 360px);
+  padding: 12px 18px 10px;
+  border: 1px solid rgba(110, 255, 140, 0.5);
+  border-radius: 8px;
+  background: rgba(3, 14, 7, 0.92);
+  color: #86ff9e;
+  font: 12px/1.7 ui-monospace, SFMono-Regular, Menlo, monospace;
+  text-shadow: 0 0 6px rgba(110, 255, 140, 0.4);
+  cursor: pointer;
+}
+#td-sitrep.hidden { display: none; }
+.sr-head {
+  font-weight: bold;
+  letter-spacing: 0.22em;
+  color: #b8ffca;
+  margin-bottom: 4px;
+}
+.sr-line b { color: #d6ffdf; }
+.sr-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  line-height: 1.5;
+}
+.sr-name { width: 72px; color: #6fe387; overflow: hidden; text-overflow: ellipsis; }
+.sr-track { flex: 1; height: 8px; background: rgba(110, 255, 140, 0.12); border-radius: 2px; overflow: hidden; }
+.sr-bar { display: block; height: 100%; border-radius: 2px; }
+.sr-n { width: 24px; text-align: right; color: #d6ffdf; }
+.sr-spark { letter-spacing: 0.08em; color: #b8ffca; }
+.sr-leak { color: #ff5340; }
+.sr-foot {
+  margin-top: 6px;
+  text-align: center;
+  letter-spacing: 0.2em;
+  color: #6fe387;
+  animation: pulse-soft 1.6s ease-in-out infinite;
+}
