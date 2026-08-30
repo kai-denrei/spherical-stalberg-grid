@@ -19,29 +19,29 @@
 
 import * as THREE from '../vendor/three.module.js';
 import GUI from '../vendor/lil-gui.esm.js';
-import { generateSphereMesh, relax } from './grid.js?v=0a14454c';
-import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=0a14454c';
-import { mulberry32, randomSeed } from './rng.js?v=0a14454c';
-import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3, segKey } from './vec3.js?v=0a14454c';
-import { CREATURES, waveJelly } from './creatures.js?v=0a14454c';
-import { UNITS, UNIT_NAMES, buildUnit, buildCreature, preloadMkcx, makeBulletCloud, makeRewardSolid, makeShellSolid, makeDebris, makeDotBurst, makePortalCloud, makeHeartCloud, makeDotEnemy } from './units.js?v=0a14454c';
-import { LOOKS, LOOK_NAMES } from './looks.js?v=0a14454c';
-import { makeCellIndex } from './cellindex.js?v=0a14454c';
-import { CREATURE_TINTS, ENEMY_SPEC, INTROS, computeWavePlan } from './enemyspec.js?v=0a14454c';
-import { PICKUPS } from './pickups.js?v=0a14454c';
-import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER } from './towers.js?v=0a14454c';
-import { makeEconomy, sellRefund } from './economy.js?v=0a14454c';
-import { makeBloom } from './postfx.js?v=0a14454c';
-import { TANK_FEEL, TANK_FEEL_KNOBS, makeTankFeel, stepTankFeel, landTankFeel, fireTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js?v=0a14454c';
-import { FEEL, loadFeel, saveFeel } from './feelstore.js?v=0a14454c';
+import { generateSphereMesh, relax } from './grid.js?v=36014414';
+import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=36014414';
+import { mulberry32, randomSeed } from './rng.js?v=36014414';
+import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3, segKey } from './vec3.js?v=36014414';
+import { CREATURES, waveJelly } from './creatures.js?v=36014414';
+import { UNITS, UNIT_NAMES, buildUnit, buildCreature, preloadMkcx, makeBulletCloud, makeRewardSolid, makeShellSolid, makeDebris, makeDotBurst, makePortalCloud, makeHeartCloud, makeDotEnemy } from './units.js?v=36014414';
+import { LOOKS, LOOK_NAMES } from './looks.js?v=36014414';
+import { makeCellIndex } from './cellindex.js?v=36014414';
+import { CREATURE_TINTS, ENEMY_SPEC, INTROS, computeWavePlan } from './enemyspec.js?v=36014414';
+import { PICKUPS } from './pickups.js?v=36014414';
+import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER } from './towers.js?v=36014414';
+import { makeEconomy, sellRefund } from './economy.js?v=36014414';
+import { makeBloom } from './postfx.js?v=36014414';
+import { TANK_FEEL, TANK_FEEL_KNOBS, makeTankFeel, stepTankFeel, landTankFeel, fireTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js?v=36014414';
+import { FEEL, loadFeel, saveFeel } from './feelstore.js?v=36014414';
 import { STRIKE_KNOBS, makeStrike, makeStrikeParams, grantStrikes, stepStrike,
   toggleArm, paintTarget, launchStrike, stepFall, skipFall, fallProgress,
-  strikeDamage, retargetStrike } from './strike.js?v=0a14454c';
-import { radarBasis, radarProject, radarBearing, sweepAngle, radarPhosphor } from './radar.js?v=0a14454c';
-import { BLOOM_GROUPS } from './bloomweights.js?v=0a14454c';
-import { TOWER_LOOK_NAMES, DEFAULT_TOWER_LOOK, buildTowerLook, preloadLook } from './towerlooks.js?v=0a14454c';
-import { makeAudio } from './audio.js?v=0a14454c';
-import { DEATH_KEYS } from './audiomanifest.js?v=0a14454c';
+  strikeDamage, retargetStrike } from './strike.js?v=36014414';
+import { radarBasis, radarProject, radarBearing, sweepAngle, radarPhosphor } from './radar.js?v=36014414';
+import { BLOOM_GROUPS } from './bloomweights.js?v=36014414';
+import { TOWER_LOOK_NAMES, DEFAULT_TOWER_LOOK, buildTowerLook, preloadLook } from './towerlooks.js?v=36014414';
+import { makeAudio } from './audio.js?v=36014414';
+import { DEATH_KEYS } from './audiomanifest.js?v=36014414';
 
 export function initTdTab(root) {
   let active = false;
@@ -4303,6 +4303,11 @@ export function initTdTab(root) {
     // that must never appear mid-ritual is guarded at its own door — every
     // future tap path inherits the rule instead of re-implementing it.
     if (strike.armed || strike.falling > 0 || shopMute > 0) return;
+    // An unbuildable cell gets NOTHING, not a radial of greyed-out towers
+    // with "blocked" in the middle. A modal whose every option is disabled
+    // is a wall of no; silence reads as "not here" faster than any label.
+    // (An existing tower still opens — that is upgrade/sell, not placement.)
+    if (!towerByCell.get(ci) && placeError(ci)) { closeShop(); return; }
     shopCi = ci;
     if (sx == null && shopPos) [sx, sy] = shopPos;
     // measure the CONTAINER, not the canvas: hooks can open the shop
