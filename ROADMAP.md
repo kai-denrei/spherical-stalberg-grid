@@ -141,11 +141,10 @@ after); credit floods from wave 6–8 and compounds ~30–50%/wave once
 placeable walls saturate (~14–21 towers); hands-on style1 wins 5/8 vs
 builder 1/8. Levers, in the operator's preference order:
 
-- **Gate the strongest towers behind the HACKS** (operator's pick):
-  sniper/laser stop unlocking by wave; winning a Relay protocol becomes
-  the only source for the top of the tree. Gives the mid-game an errand
-  and makes peak defense a player action, not a clock.
-- Early cliff: soften waves 2–3 or fatten the opening kit.
+- ~~**Gate the strongest towers behind the HACKS**~~ — DONE (`d6eac40`),
+  refined by the operator to gate **AOE** (the OP half of slow+aoe).
+- ~~Early cliff~~ — DONE (`d6eac40`): waves 1–3 taper 55/70/85%, first
+  gap 1.6×, two free singles garrison the heart.
 - Credit sinks: per-copy tower price escalation; buyable strike charges;
   the ally units specced under Economy.
 

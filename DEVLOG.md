@@ -6,6 +6,31 @@ Demo links assume `npm run serve` (port 8144) or the
 
 ---
 
+## `d6eac40` — The relay holds the artillery now
+
+The sim batch's levers, pulled as the operator ruled them:
+
+- **The AOE gate.** The OP half of the slow+aoe combo never unlocks by
+  the wave clock again — `HACK_GATED` removes it from the ladder, and the
+  only source is winning a protocol at the Antipode Relay. The radial
+  shows **⌁ RELAY** where its wave number used to be; sniper and laser
+  each arrive a wave earlier in the reshuffled ladder. The tests assert
+  the rules, not the lists: the clock never unlocks a gated tower, the
+  first relay win always does.
+- **The opening garrison.** Two free singles pre-built on the walls
+  nearest the heart — it was paying half its total damage before any kit
+  existed.
+- **Gentler openings.** Waves 1–3 taper to 55/70/85% of scheduled size,
+  and the first gap runs 1.6× — starting further away in *time*.
+
+The before/after on one seed says it all: seed 1000 died at wave 2 with
+heart 0 under the old balance; under the new one it reaches wave 13 on
+**1 heart** — the early game bites without executing, and the mid-game
+without AOE is no longer free. The credit flood is still there (3,465c by
+wave 12); that lever stays on the ROADMAP list.
+
+---
+
 ## `deba00f` — First real data out of the simulator
 
 The harness needed two fixes before it could deliver, both worth keeping:
