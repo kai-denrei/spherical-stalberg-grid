@@ -6,6 +6,35 @@ Demo links assume `npm run serve` (port 8144) or the
 
 ---
 
+## `f9614fa` — Insignia the hull has to live to wear
+
+The operator's 15-rank sheet, in-game. `src/ranks.js` is pure and
+Node-tested: bronze chevrons (1–5), silver chevrons over a filling core
+diamond (6–10), gold stars in a laurel (11–15); tier is `floor((rank-1)/5)`,
+never stored. The one change asked for by name: **4 and 5 stars sit as dice
+pips** — a 2×2 square and a quincunx — and `test/ranks.mjs` pins the rule
+that pips stay *narrower* than the row of three they replaced.
+
+Three design decisions carry the feature:
+
+- **Only hands-on kills count.** Shells, lasers, and rams credit the
+  ladder; tower and orbital kills pay credits, not respect. The ram branch
+  bypasses `damageEnemy`, so it credits at the treads.
+- **Gold is double-gated.** Cumulative kills follow `r(r+3)/2` (2, 5, 9 …
+  135), and each gold level also wants 2 elite (non-rammable) kills up
+  close — the units that hurt to touch are the ones that count.
+- **The ladder dies with the tank.** `loseTank()` strips it, and the TANK
+  LOST toast says which insignia went down with the hull.
+
+One SVG, two homes: inline on the HUD's tank line (13 px, next to YOU —
+where the score display will land), and rasterized through
+`data:image/svg+xml` → canvas → `CanvasTexture` onto a Sprite pinned over
+the hull (0.3 cells — at 0.55 it read as a map marker, not a patch).
+`?rank=N` grants exactly rank N's requirements and renders through the
+normal path, so layout checks exercise the real pipeline.
+
+---
+
 ## `34e3253` — Every shot has a name, and the gate finally has a throat
 
 **Fire identity.** Each tower's shot now *reads* at a glance: the sniper is
