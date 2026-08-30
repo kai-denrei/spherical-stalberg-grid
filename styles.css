@@ -2507,3 +2507,64 @@ body.playing:not(.chrome-open) #tabbar { display: none !important; }
      every width this media block covers */
   #td-sitrep { font-size: 11px; line-height: 1.5; padding: 8px 12px 8px; }
 }
+
+/* --- the server hack -----------------------------------------------------
+   The HACK button joins the console family on the left rail; the breach
+   overlay is a full-screen terminal frame around the minigame iframe. */
+#td-hack {
+  position: absolute;
+  left: 14px;
+  top: 160px;
+  z-index: 8;
+  padding: 8px 14px;
+  font: bold 12px ui-monospace, Menlo, monospace;
+  letter-spacing: 0.14em;
+  background: rgba(3, 14, 7, 0.85);
+  color: #b8ffca;
+  border: 1px solid rgba(110, 255, 140, 0.55);
+  border-radius: 6px;
+  cursor: pointer;
+  text-shadow: 0 0 7px rgba(110, 255, 140, 0.4);
+  animation: pulse-soft 2.2s ease-in-out infinite;
+}
+#td-hack.hidden { display: none; }
+#td-hackwrap {
+  position: fixed;
+  inset: 0;
+  z-index: 70;
+  display: flex;
+  flex-direction: column;
+  background: rgba(2, 8, 4, 0.97);
+}
+#td-hackwrap.hidden { display: none; }
+.hk-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 14px;
+  font: bold 12px ui-monospace, Menlo, monospace;
+  letter-spacing: 0.18em;
+  color: #b8ffca;
+  border-bottom: 1px solid rgba(110, 255, 140, 0.4);
+  text-shadow: 0 0 7px rgba(110, 255, 140, 0.4);
+}
+.hk-bar button {
+  font: bold 11px ui-monospace, Menlo, monospace;
+  letter-spacing: 0.12em;
+  color: #ff5340;
+  background: transparent;
+  border: 1px solid rgba(255, 83, 64, 0.5);
+  border-radius: 5px;
+  padding: 4px 10px;
+  cursor: pointer;
+}
+#td-hackframe {
+  flex: 1;
+  width: 100%;
+  border: 0;
+  background: #08080d;
+}
+@media (pointer: coarse), (max-width: 700px) {
+  /* phone: the left column below the launch console slot */
+  #td-hack { left: max(12px, env(safe-area-inset-left)); top: calc(max(8px, env(safe-area-inset-top)) + 310px); }
+}

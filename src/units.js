@@ -16,12 +16,12 @@
 
 import * as THREE from '../vendor/three.module.js';
 import { loadGlb, mergeByMaterial, fitModel, tintModel, makeShellRack,
-  addEdgeOutlines, makeHeatSleeve } from './glbmodels.js?v=c492851f';
-import { CREATURES, waveJelly, swimWave, spherePts, bulletPts, missilePts, heartPts, torusPts, towerHeadPts, enemyDotPts, portalPts } from './creatures.js?v=c492851f';
-import { TOWER_FEEL, TOWER_HEADS, headKindFor } from './towerfeel.js?v=c492851f';
+  addEdgeOutlines, makeHeatSleeve } from './glbmodels.js?v=19869963';
+import { CREATURES, waveJelly, swimWave, spherePts, bulletPts, missilePts, heartPts, torusPts, towerHeadPts, enemyDotPts, portalPts } from './creatures.js?v=19869963';
+import { TOWER_FEEL, TOWER_HEADS, headKindFor } from './towerfeel.js?v=19869963';
 import { STARGATE_PTS, STARGATE_STROKE,
-  HORIZON_N, stargateHorizon } from './stargate.js?v=c492851f';
-import { ENEMY_SPEC } from './enemyspec.js?v=c492851f';
+  HORIZON_N, stargateHorizon } from './stargate.js?v=19869963';
+import { ENEMY_SPEC } from './enemyspec.js?v=19869963';
 
 function normalizeToUnit(group) {
   group.updateMatrixWorld(true);
@@ -1150,6 +1150,27 @@ function markCallouts(scene) {
 // which is why parts whose node is a Group (and so survives a merge) ended
 // up with a label each per call. The promise, not the scene, is the guard.
 let mkcxLoad = null;
+// --- the SERVER: a board fixture cast from GLB ---------------------------
+// Not a unit: no rig, no tick, no health. fitModel seats the foot at y=0
+// inside a wrapper group (unit height, span-capped per the house rule for
+// imported models); the tab scales and orients the clone per placement.
+let serverProto = null, serverLoad = null;
+export function preloadServer() {
+  if (serverLoad) return serverLoad;
+  serverLoad = loadGlb('assets/models/server.glb').then((scene) => {
+    if (!scene) { serverLoad = null; return false; }
+    serverProto = fitModel(scene, { height: 1, maxSpan: 0.8 });
+    return true;
+  });
+  return serverLoad;
+}
+export function makeServerFixture() {
+  if (!serverProto) { preloadServer(); return null; }
+  const g = serverProto.clone(true);
+  g.userData.kind = 'fixture';
+  return g;
+}
+
 export function preloadMkcx() {
   if (mkcxLoad) return mkcxLoad;
   mkcxLoad = loadGlb(MKCX_URL).then((scene) => {

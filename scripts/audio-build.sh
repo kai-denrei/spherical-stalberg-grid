@@ -77,6 +77,9 @@ danger_alert|Danger_klaxon-gamestudio.mp3|1.01|1.00
 # dry-fire click: the reload sample's first transient, pitched up — played
 # while the trigger is held against overheated laser tubes
 laser_click|Tank_PickUpNewShells_reload-02.wav|0.10|1.35
+# the hack handshake: the dial-up modem, full length — six seconds of
+# negotiation IS the fiction of connecting to the server
+server_dialup|Server_dialup-handshake.mp3|6.15|1.00
 enemy_die_a|slime-pop.wav|0.50|1.00
 enemy_die_b|slime-organic.wav|0.57|1.00
 enemy_die_c|splat_quick.wav|0.33|1.00

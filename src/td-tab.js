@@ -19,31 +19,31 @@
 
 import * as THREE from '../vendor/three.module.js';
 import GUI from '../vendor/lil-gui.esm.js';
-import { generateSphereMesh, relax } from './grid.js?v=c492851f';
-import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=c492851f';
-import { mulberry32, randomSeed } from './rng.js?v=c492851f';
-import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3, segKey } from './vec3.js?v=c492851f';
-import { CREATURES, waveJelly } from './creatures.js?v=c492851f';
-import { UNITS, UNIT_NAMES, buildUnit, buildCreature, preloadMkcx, makeBulletCloud, makeRewardSolid, makeShellSolid, makeDebris, makeDotBurst, makePortalCloud, makeHeartCloud, makeDotEnemy } from './units.js?v=c492851f';
-import { LOOKS, LOOK_NAMES } from './looks.js?v=c492851f';
-import { makeCellIndex } from './cellindex.js?v=c492851f';
-import { CREATURE_TINTS, ENEMY_SPEC, INTROS, computeWavePlan } from './enemyspec.js?v=c492851f';
-import { PICKUPS } from './pickups.js?v=c492851f';
-import { rankFor, rankLabel, badgeSVG, killReq, eliteReq } from './ranks.js?v=c492851f';
-import { makeScore } from './score.js?v=c492851f';
-import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER } from './towers.js?v=c492851f';
-import { makeEconomy, sellRefund } from './economy.js?v=c492851f';
-import { makeBloom } from './postfx.js?v=c492851f';
-import { TANK_FEEL, TANK_FEEL_KNOBS, makeTankFeel, stepTankFeel, landTankFeel, fireTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js?v=c492851f';
-import { FEEL, loadFeel, saveFeel } from './feelstore.js?v=c492851f';
+import { generateSphereMesh, relax } from './grid.js?v=19869963';
+import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=19869963';
+import { mulberry32, randomSeed } from './rng.js?v=19869963';
+import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3, segKey } from './vec3.js?v=19869963';
+import { CREATURES, waveJelly } from './creatures.js?v=19869963';
+import { UNITS, UNIT_NAMES, buildUnit, buildCreature, preloadMkcx, preloadServer, makeServerFixture, makeBulletCloud, makeRewardSolid, makeShellSolid, makeDebris, makeDotBurst, makePortalCloud, makeHeartCloud, makeDotEnemy } from './units.js?v=19869963';
+import { LOOKS, LOOK_NAMES } from './looks.js?v=19869963';
+import { makeCellIndex } from './cellindex.js?v=19869963';
+import { CREATURE_TINTS, ENEMY_SPEC, INTROS, computeWavePlan } from './enemyspec.js?v=19869963';
+import { PICKUPS } from './pickups.js?v=19869963';
+import { rankFor, rankLabel, badgeSVG, killReq, eliteReq } from './ranks.js?v=19869963';
+import { makeScore } from './score.js?v=19869963';
+import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER } from './towers.js?v=19869963';
+import { makeEconomy, sellRefund } from './economy.js?v=19869963';
+import { makeBloom } from './postfx.js?v=19869963';
+import { TANK_FEEL, TANK_FEEL_KNOBS, makeTankFeel, stepTankFeel, landTankFeel, fireTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js?v=19869963';
+import { FEEL, loadFeel, saveFeel } from './feelstore.js?v=19869963';
 import { STRIKE_KNOBS, makeStrike, makeStrikeParams, grantStrikes, stepStrike,
   toggleArm, paintTarget, launchStrike, stepFall, skipFall, fallProgress,
-  strikeDamage, retargetStrike, orbitProgress } from './strike.js?v=c492851f';
-import { radarBasis, radarProject, radarBearing, sweepAngle, radarPhosphor } from './radar.js?v=c492851f';
-import { BLOOM_GROUPS } from './bloomweights.js?v=c492851f';
-import { TOWER_LOOK_NAMES, DEFAULT_TOWER_LOOK, buildTowerLook, preloadLook } from './towerlooks.js?v=c492851f';
-import { makeAudio } from './audio.js?v=c492851f';
-import { DEATH_KEYS } from './audiomanifest.js?v=c492851f';
+  strikeDamage, retargetStrike, orbitProgress } from './strike.js?v=19869963';
+import { radarBasis, radarProject, radarBearing, sweepAngle, radarPhosphor } from './radar.js?v=19869963';
+import { BLOOM_GROUPS } from './bloomweights.js?v=19869963';
+import { TOWER_LOOK_NAMES, DEFAULT_TOWER_LOOK, buildTowerLook, preloadLook } from './towerlooks.js?v=19869963';
+import { makeAudio } from './audio.js?v=19869963';
+import { DEATH_KEYS } from './audiomanifest.js?v=19869963';
 
 export function initTdTab(root) {
   let active = false;
@@ -367,6 +367,11 @@ export function initTdTab(root) {
   let topGeo = null, topMesh = null; // interior wall-top wires, dimmable
   let floorOffsets = null; // cell -> [start,count] into floor color attr (verts)
   let heartSprite = null, playerMesh = null, markerMesh = null;
+  // THE SERVER: an invincible fixture at the heart's exact antipode.
+  // Finding it offers the HACK — the HDT circuit duel in an overlay —
+  // and a win decrypts the next tower ahead of its wave gate.
+  let serverObj = null, serverCi = -1, serverGen = 0;
+  let serverFound = false, hackedRound = false, hackedUnlocks = 0;
   let playerSize = 0.06; // set per-generation in buildActors
 
   // creature dot-cloud + gameplay state
@@ -994,12 +999,37 @@ export function initTdTab(root) {
 
 
   function buildActors() {
-    for (const o of [heartSprite, playerMesh, markerMesh]) if (o) scene.remove(o);
+    for (const o of [heartSprite, playerMesh, markerMesh, serverObj]) if (o) scene.remove(o);
+    serverObj = null; serverFound = false;
 
     // the Braille heart: dot-cloud cycling twinkle → breathe → jelly,
     // flaring orange/red under Wave when hit
     heartSprite = makeHeartCloud(new THREE.Color(look().heart).getHex());
     scene.add(heartSprite);
+    // the server sits at the cell whose centre is FARTHEST round the
+    // sphere from the heart — the literal antipode, found by minimum dot
+    {
+      const hc = norm3(graph.centers[dungeon.heart]);
+      let best = Infinity; serverCi = -1;
+      for (let i = 0; i < graph.centers.length; i++) {
+        const d = dot3(norm3(graph.centers[i]), hc);
+        if (d < best) { best = d; serverCi = i; }
+      }
+      const gen = ++serverGen;
+      preloadServer().then(() => {
+        if (gen !== serverGen || serverCi < 0) return; // board changed meanwhile
+        const g = makeServerFixture();
+        if (!g) return;
+        const sc = graph.centers[serverCi];
+        const sn = graph.normals[serverCi];
+        g.scale.setScalar(cellSide * 2.0);
+        g.position.set(sc[0], sc[1], sc[2]);
+        tmpN.set(sn[0], sn[1], sn[2]);
+        g.quaternion.setFromUnitVectors(Y_AXIS, tmpN);
+        scene.add(g);
+        serverObj = g;
+      });
+    }
 
     playerSize = Math.min(cellSide, params.wallHeight * 0.75);
 
@@ -2548,7 +2578,7 @@ export function initTdTab(root) {
     const cl = ev.target.classList;
     if (!cl) return;
     if (cl.contains('msg-regen')) regenerate(); // retry the CURRENT round
-    else if (cl.contains('msg-next')) { round++; expandRound(); }
+    else if (cl.contains('msg-next')) { round++; hackedRound = false; syncHackBtn(); expandRound(); }
     else if (cl.contains('msg-begin')) { paused = false; msgEl.classList.add('hidden'); }
     else if (cl.contains('msg-glenemy')) showEnemyGlossary();
     else if (cl.contains('msg-glfriend')) showFriendGlossary();
@@ -2699,6 +2729,59 @@ export function initTdTab(root) {
       `</div><button class="msg-back">← back to briefing</button>`;
     msgEl.classList.remove('hidden');
   }
+  // THE HACK: the vendored HDT circuit duel in a same-origin iframe.
+  // 3.html is the deep link — the minigame's router parses digits out of
+  // the path, so a copy under that name boots straight into game 3 with
+  // zero source patching. Same origin means the parent can simply READ
+  // the game's own state (window.__cx.game().phase) instead of needing a
+  // postMessage protocol added to a finished game.
+  const hackBtnEl = root.querySelector('#td-hack');
+  const hackWrapEl = root.querySelector('#td-hackwrap');
+  const hackFrameEl = root.querySelector('#td-hackframe');
+  let hackPoll = null;
+  function syncHackBtn() {
+    if (hackBtnEl) hackBtnEl.classList.toggle('hidden', !(serverFound && !hackedRound));
+  }
+  function openHack() {
+    if (!hackWrapEl || !hackFrameEl || hackedRound) return;
+    paused = true;
+    sfx.play('server_dialup'); // six seconds of negotiation IS the fiction
+    hackFrameEl.src = 'minigames/hdt/3.html';
+    hackWrapEl.classList.remove('hidden');
+    clearInterval(hackPoll);
+    hackPoll = setInterval(() => {
+      let phase = null;
+      try {
+        const cx = hackFrameEl.contentWindow && hackFrameEl.contentWindow.__cx;
+        if (cx && cx.game) phase = cx.game().phase;
+      } catch { /* frame still booting */ }
+      if (phase === 'WON') closeHack(true);
+      else if (phase === 'LOST') closeHack(false);
+    }, 600);
+  }
+  function closeHack(won) {
+    clearInterval(hackPoll); hackPoll = null;
+    if (hackWrapEl) hackWrapEl.classList.add('hidden');
+    if (hackFrameEl) hackFrameEl.src = 'about:blank';
+    paused = false;
+    if (won === true) {
+      hackedRound = true;
+      hackedUnlocks++;
+      const ks = unlockedTowerKeys(wave + hackedUnlocks);
+      showTowerToast(ks[ks.length - 1]);
+      showToast(`<div class="wave-num">FIRMWARE PATCHED</div>`
+        + `<div class="wave-role">schematics decrypted — a tower unlocked ahead of its wave</div>`, 3400);
+      updateHud();
+    } else if (won === false) {
+      showToast(`<div class="wave-num">TRACE COMPLETE</div>`
+        + `<div class="wave-role">connection dropped — the relay resets, try again</div>`, 2800);
+    }
+    syncHackBtn();
+  }
+  if (hackBtnEl) hackBtnEl.addEventListener('click', openHack);
+  const hackAbortEl = root.querySelector('#td-hack-abort');
+  if (hackAbortEl) hackAbortEl.addEventListener('click', () => closeHack(null));
+
   // callout pop-ups + the ram combo counter (both pointer-transparent)
   const calloutsEl = root.querySelector('#td-callouts');
   const comboEl = root.querySelector('#td-combo');
@@ -2830,7 +2913,7 @@ export function initTdTab(root) {
       + ` ×${eco.multiplier().toFixed(2)}</span>`
       + `<span class="hud-wave">WAVE <b>${wave}</b> · R${round}</span></div>`
       + `<div class="hud-obj">portals ${spAlive}/${spawnPoints.length}`
-      + ` · built ${towers.length} · ${Math.min(8, Math.max(0, wave))}/8 towers</div>`
+      + ` · built ${towers.length} · ${Math.min(8, Math.max(0, wave + hackedUnlocks))}/8 towers</div>`
       + (alerts ? `<div class="hud-alert">${alerts}</div>` : '');
     if (dirBtnEl) {
       const eng = !manualActive();
@@ -3002,6 +3085,7 @@ export function initTdTab(root) {
     // opening purse: exactly a Rapid (70c) + a Slow (100c) — your first plan
     eco = makeEconomy({ startCredit: 170 });
     score.reset();
+    hackedUnlocks = 0; hackedRound = false; syncHackBtn();
     bossCued = false;
     dangerWarnedWave = -1;
     heartCalloutCd = 0; streakMark = 0;
@@ -3765,6 +3849,7 @@ export function initTdTab(root) {
   // breaches half a dozen cells pays for one BFS and one geometry build,
   // not six of each.
   function breachWallCell(ci) {
+    if (ci === serverCi) return false; // the server is INVINCIBLE — no missile opens it
     if (towerByCell.has(ci)) return false; // a mounted tower anchors its wall
     dungeon.tags[ci] = PATH;
     const c = graph.centers[ci];
@@ -4159,6 +4244,7 @@ export function initTdTab(root) {
   // carry enemy pathing, so a tower can never dam a lane.
   function placeError(ci) {
     if (ci === -1) return 'nothing there';
+    if (ci === serverCi) return 'the server holds this cell';
     if (tdFullTags[ci] !== BLOCKED) return 'towers need HIGH GROUND';
     if (towerByCell.has(ci)) return 'occupied';
     if (!graph.adj[ci].some((nb) => dungeon.tags[nb] !== BLOCKED)) {
@@ -4863,7 +4949,7 @@ export function initTdTab(root) {
     } else {
       const err = placeError(ci);
       center = `<div class="radial-center">${err ? 'blocked' : eco.credit + 'c'}</div>`;
-      const unlocked = new Set(unlockedTowerKeys(wave));
+      const unlocked = new Set(unlockedTowerKeys(wave + hackedUnlocks));
       items = TOWERS.map((def) => {
         const locked = !unlocked.has(def.key);
         return {
@@ -5324,6 +5410,13 @@ export function initTdTab(root) {
     if (strikeGrace > 0) strikeGrace -= dt;
     if (shopMute > 0) shopMute -= dt;
     if (heartCalloutCd > 0) heartCalloutCd -= dt;
+    if (!serverFound && serverCi >= 0 && !playerDown
+        && dist3(player.pos, graph.centers[serverCi]) < cellSide * 3) {
+      serverFound = true;
+      showToast(`<div class="wave-num">SERVER FOUND</div>`
+        + `<div class="wave-role">an antipode relay — HACK it for tower firmware</div>`, 3400);
+      syncHackBtn();
+    }
     if (ramComboT > 0) {
       ramComboT -= dt;
       if (ramComboT <= 0) { ramCombo = 0; syncCombo(); }
@@ -5687,7 +5780,7 @@ export function initTdTab(root) {
 
   // opening briefing on a clean load; any debug hook means headless/demo,
   // where a frozen sim would break the verification flow
-  const debugging = ['walk', 'tick', 'wave', 'blast', 'laser', 'found', 'recoil', 'mode', 'map', 'tower', 'credit', 'shop', 'sector', 'reveal', 'portal', 'lose', 'charge', 'layout', 'perf', 'strike', 'strikefall', 'strikecam', 'gateprobe', 'rank', 'danger', 'callout', 'sitrep']
+  const debugging = ['walk', 'tick', 'wave', 'blast', 'laser', 'found', 'recoil', 'mode', 'map', 'tower', 'credit', 'shop', 'sector', 'reveal', 'portal', 'lose', 'charge', 'layout', 'perf', 'strike', 'strikefall', 'strikecam', 'gateprobe', 'rank', 'danger', 'callout', 'sitrep', 'server', 'hack']
     .some((k) => urlParams.get(k));
   const tutParam = urlParams.get('tutorial');
   runTutorial = tutParam === '1' || (tutParam !== '0' && !debugging);
@@ -5874,6 +5967,19 @@ export function initTdTab(root) {
     ramCombo = 23; syncCombo();
     ramComboT = 9999; // pinned: the expiry timer outruns headless paints
   }
+
+  // ?server=1 — report the antipode placement, force discovery (button check)
+  if (urlParams.get('server') === '1') {
+    const anti = serverCi >= 0
+      ? dot3(norm3(graph.centers[serverCi]), norm3(graph.centers[dungeon.heart])).toFixed(3) : '-';
+    console.log(`SERVER ci=${serverCi} dot=${anti} (want ~ -1)`);
+    serverFound = true; syncHackBtn();
+    // the model loads async — report again once it should be in the scene
+    setTimeout(() => console.log(`SERVER2 placed=${!!serverObj}`
+      + `${serverObj ? ` scale=${serverObj.scale.x.toFixed(4)}` : ''}`), 5000);
+  }
+  // ?hack=1 — straight into the breach overlay (iframe boot check)
+  if (urlParams.get('hack') === '1') { serverFound = true; syncHackBtn(); openHack(); }
 
   // ?sitrep=1 — fabricated wave stats through the real renderer
   if (urlParams.get('sitrep') === '1') {
