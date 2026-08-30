@@ -12,20 +12,21 @@
 import * as THREE from '../vendor/three.module.js';
 import { OrbitControls } from '../vendor/OrbitControls.js';
 import { buildUnit, preloadMkcx, makeDebris, makeDotBurst, makeBulletCloud,
-  makeDotEnemy, makeRewardSolid, makeShellSolid } from './units.js?v=53cf90d5';
+  makeDotEnemy, makeRewardSolid, makeShellSolid } from './units.js?v=e173e34a';
 import { TANK_FEEL, TANK_FEEL_KNOBS, formatFeelCode, makeTankFeel, stepTankFeel,
-  landTankFeel, fireTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js?v=53cf90d5';
+  landTankFeel, fireTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js?v=e173e34a';
 import { FEEL, loadFeel, saveFeel, resetFeel,
-  TOWER, HEADS, loadTower, saveTower, resetTower } from './feelstore.js?v=53cf90d5';
+  TOWER, HEADS, loadTower, saveTower, resetTower } from './feelstore.js?v=e173e34a';
 import { TOWER_FEEL_KNOBS, formatTowerFeel, clampTowerParams,
-  formatTowerHeads, HEAD_CHOICES, HEAD_AS_SHIPPED } from './towerfeel.js?v=53cf90d5';
-import { CREATURE_TINTS } from './enemyspec.js?v=53cf90d5';
+  formatTowerHeads, HEAD_CHOICES, HEAD_AS_SHIPPED } from './towerfeel.js?v=e173e34a';
+import { CREATURE_TINTS } from './enemyspec.js?v=e173e34a';
 import { buildTowerLook, TOWER_LOOK_NAMES, DEFAULT_TOWER_LOOK, preloadLook } from './towerlooks.js';
 import { TOWER_BY_KEY, TOWERS } from './towers.js';
 import { LOOKS } from './looks.js';
 import { makeBloom } from './postfx.js';
-import { makeAudio } from './audio.js?v=53cf90d5';
+import { makeAudio } from './audio.js?v=e173e34a';
 import { GROUPS, GROUP_LABELS, GROUP_EMPTY, entriesIn } from './unitcatalog.js';
+import { LORE, LORE_WORLD, loreText, loreAll } from './lore.js?v=e173e34a';
 
 let roundTex = null;
 function roundDotTex() {
@@ -404,6 +405,79 @@ export function initUnitsTab(root) {
 
   root.querySelector('#units-prev').addEventListener('click', () => step(-1));
   root.querySelector('#units-next').addEventListener('click', () => step(1));
+  // --- THE CODEX: lore panel, one ⧉ per entry + one for the whole book ---
+  const lorePanel = document.getElementById('units-lorepanel');
+  const loreBody = document.getElementById('lore-body');
+  const copyBtn = (text, title = 'copy this entry') => {
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'log-copy';
+    b.textContent = '⧉';
+    b.title = title;
+    b.addEventListener('click', () => {
+      if (!(navigator.clipboard && navigator.clipboard.writeText)) return;
+      navigator.clipboard.writeText(text).then(() => {
+        b.textContent = '✓';
+        setTimeout(() => { b.textContent = '⧉'; }, 900);
+      }, () => {});
+    });
+    return b;
+  };
+  function renderLore() {
+    if (loreBody.childElementCount) return; // built once
+    const section = (title) => {
+      const h = document.createElement('div');
+      h.className = 'lp-section';
+      h.textContent = title;
+      loreBody.appendChild(h);
+    };
+    const entry = (e) => {
+      const d = document.createElement('div');
+      d.className = 'lp-entry';
+      const h = document.createElement('div');
+      h.className = 'lp-name';
+      h.textContent = `${e.name} — ${e.tag} `;
+      h.appendChild(copyBtn(loreText(e)));
+      const b = document.createElement('p');
+      b.textContent = e.body;
+      const v = document.createElement('p');
+      v.className = 'lp-visual';
+      v.textContent = e.visual;
+      d.append(h, b, v);
+      loreBody.appendChild(d);
+    };
+    section('THE WORLD');
+    for (const e of LORE_WORLD) entry(e);
+    for (const g of GROUPS) {
+      section(GROUP_LABELS[g].toUpperCase());
+      for (const c of entriesIn(g)) if (LORE[c.id]) entry(LORE[c.id]);
+    }
+  }
+  const loreBtn = root.querySelector('#units-lore');
+  if (loreBtn && lorePanel) {
+    loreBtn.addEventListener('click', () => {
+      renderLore();
+      lorePanel.classList.toggle('hidden');
+    });
+    document.getElementById('lore-close').addEventListener('click',
+      () => lorePanel.classList.add('hidden'));
+    const allBtn = document.getElementById('lore-copyall');
+    allBtn.addEventListener('click', () => {
+      const ids = GROUPS.flatMap((g) => entriesIn(g).map((c) => c.id));
+      if (!(navigator.clipboard && navigator.clipboard.writeText)) return;
+      navigator.clipboard.writeText(loreAll(ids)).then(() => {
+        allBtn.textContent = '✓ copied';
+        setTimeout(() => { allBtn.textContent = '⧉ copy all'; }, 1100);
+      }, () => {});
+    });
+  }
+
+  // ?lore=1 — open the codex on load (screenshot / deep-link hook)
+  if (new URLSearchParams(location.search).get('lore') === '1' && lorePanel) {
+    renderLore();
+    lorePanel.classList.remove('hidden');
+  }
+
   const spinBtn = root.querySelector('#units-spin');
   spinBtn.addEventListener('click', (ev) => {
     state.spin = !state.spin;

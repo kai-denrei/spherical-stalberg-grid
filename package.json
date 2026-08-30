@@ -3,7 +3,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "test": "node test/smoke.mjs && node test/maze.mjs && node test/creatures.mjs && node test/units.mjs && node test/tdcore.mjs && node test/tanks.mjs && node test/tanks2.mjs && node test/audiomix.mjs && node test/audiomanifest.mjs && node test/postfx.mjs && node test/segkey.mjs && node test/buildcam.mjs && node test/bloomweights.mjs && node test/towerlooks.mjs && node test/tankfeel.mjs && node test/knobs.mjs && node test/strike.mjs && node test/radar.mjs && node test/stargate.mjs && node test/ranks.mjs && node test/score.mjs",
+    "test": "node test/smoke.mjs && node test/maze.mjs && node test/creatures.mjs && node test/units.mjs && node test/tdcore.mjs && node test/tanks.mjs && node test/tanks2.mjs && node test/audiomix.mjs && node test/audiomanifest.mjs && node test/postfx.mjs && node test/segkey.mjs && node test/buildcam.mjs && node test/bloomweights.mjs && node test/towerlooks.mjs && node test/tankfeel.mjs && node test/knobs.mjs && node test/strike.mjs && node test/radar.mjs && node test/stargate.mjs && node test/ranks.mjs && node test/score.mjs && node test/lore.mjs",
     "serve": "python3 -m http.server 8144",
     "bust": "./scripts/bust.sh"
   }
