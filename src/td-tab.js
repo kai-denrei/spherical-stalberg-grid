@@ -19,28 +19,28 @@
 
 import * as THREE from '../vendor/three.module.js';
 import GUI from '../vendor/lil-gui.esm.js';
-import { generateSphereMesh, relax } from './grid.js?v=772c041d';
-import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=772c041d';
-import { mulberry32, randomSeed } from './rng.js?v=772c041d';
-import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3, segKey } from './vec3.js?v=772c041d';
-import { CREATURES, waveJelly } from './creatures.js?v=772c041d';
-import { UNITS, UNIT_NAMES, buildUnit, buildCreature, preloadMkcx, makeBulletCloud, makeRewardSolid, makeShellSolid, makeDebris, makeDotBurst, makePortalCloud, makeHeartCloud, makeDotEnemy } from './units.js?v=772c041d';
-import { LOOKS, LOOK_NAMES } from './looks.js?v=772c041d';
-import { makeCellIndex } from './cellindex.js?v=772c041d';
-import { CREATURE_TINTS, ENEMY_SPEC, INTROS, computeWavePlan } from './enemyspec.js?v=772c041d';
-import { PICKUPS } from './pickups.js?v=772c041d';
-import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER } from './towers.js?v=772c041d';
-import { makeEconomy, sellRefund } from './economy.js?v=772c041d';
-import { makeBloom } from './postfx.js?v=772c041d';
-import { TANK_FEEL, TANK_FEEL_KNOBS, makeTankFeel, stepTankFeel, landTankFeel, fireTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js?v=772c041d';
-import { FEEL, loadFeel, saveFeel } from './feelstore.js?v=772c041d';
+import { generateSphereMesh, relax } from './grid.js?v=2b2514a2';
+import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=2b2514a2';
+import { mulberry32, randomSeed } from './rng.js?v=2b2514a2';
+import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3, segKey } from './vec3.js?v=2b2514a2';
+import { CREATURES, waveJelly } from './creatures.js?v=2b2514a2';
+import { UNITS, UNIT_NAMES, buildUnit, buildCreature, preloadMkcx, makeBulletCloud, makeRewardSolid, makeShellSolid, makeDebris, makeDotBurst, makePortalCloud, makeHeartCloud, makeDotEnemy } from './units.js?v=2b2514a2';
+import { LOOKS, LOOK_NAMES } from './looks.js?v=2b2514a2';
+import { makeCellIndex } from './cellindex.js?v=2b2514a2';
+import { CREATURE_TINTS, ENEMY_SPEC, INTROS, computeWavePlan } from './enemyspec.js?v=2b2514a2';
+import { PICKUPS } from './pickups.js?v=2b2514a2';
+import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER } from './towers.js?v=2b2514a2';
+import { makeEconomy, sellRefund } from './economy.js?v=2b2514a2';
+import { makeBloom } from './postfx.js?v=2b2514a2';
+import { TANK_FEEL, TANK_FEEL_KNOBS, makeTankFeel, stepTankFeel, landTankFeel, fireTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js?v=2b2514a2';
+import { FEEL, loadFeel, saveFeel } from './feelstore.js?v=2b2514a2';
 import { STRIKE_KNOBS, makeStrike, makeStrikeParams, grantStrikes, stepStrike,
   toggleArm, paintTarget, launchStrike, stepFall, skipFall, fallProgress,
-  strikeDamage } from './strike.js?v=772c041d';
-import { BLOOM_GROUPS } from './bloomweights.js?v=772c041d';
-import { TOWER_LOOK_NAMES, DEFAULT_TOWER_LOOK, buildTowerLook, preloadLook } from './towerlooks.js?v=772c041d';
-import { makeAudio } from './audio.js?v=772c041d';
-import { DEATH_KEYS } from './audiomanifest.js?v=772c041d';
+  strikeDamage } from './strike.js?v=2b2514a2';
+import { BLOOM_GROUPS } from './bloomweights.js?v=2b2514a2';
+import { TOWER_LOOK_NAMES, DEFAULT_TOWER_LOOK, buildTowerLook, preloadLook } from './towerlooks.js?v=2b2514a2';
+import { makeAudio } from './audio.js?v=2b2514a2';
+import { DEATH_KEYS } from './audiomanifest.js?v=2b2514a2';
 
 export function initTdTab(root) {
   let active = false;
@@ -238,6 +238,40 @@ export function initTdTab(root) {
   const strike = makeStrike();
   const strikeTune = makeStrikeParams();
   let strikeGrace = 0;   // s after launch during which a tap cannot skip
+  const strikecamEl = root.querySelector('#td-strikecam');
+  const scInfoEl = root.querySelector('#sc-info');
+  const scRangeEl = root.querySelector('#sc-range');
+  let strikingUi = false;
+  // The feed: B&W filter class, the ops HUD, and the range counter. The
+  // counter is the camera's own distance to the target in fictional metres —
+  // it rides the same smoothstep as the fall, so it decelerates hard as the
+  // ground arrives, which is what makes the last 200m feel like a held
+  // breath rather than a number spinning to zero.
+  const STRIKE_M_PER_UNIT = 4800;   // planet radius 1 == ~4.8km of fiction
+  function syncStrikeFeed() {
+    const on = strike.falling > 0;
+    if (on !== strikingUi) {
+      strikingUi = on;
+      console.log(`FEED ${on ? 'ON' : 'OFF'} range=${scRangeEl.textContent}`);
+      root.classList.toggle('striking', on);
+      strikecamEl.classList.toggle('hidden', !on);
+      if (on) {
+        const ci = strike.fallCi;
+        scInfoEl.textContent =
+          `ORBITAL STRIKE · OTS-723\n`
+          + `WARHEAD 489KG · KINETIC\n`
+          + `TGT CELL ${String(ci).padStart(4, '0')} · SECTOR R${round}\n`
+          + `FEED SAT-CAM 2 · LIVE`;
+      }
+    }
+    if (on && strike.fallCi >= 0) {
+      const c = graph.centers[strike.fallCi];
+      const d = Math.hypot(camera.position.x - c[0], camera.position.y - c[1],
+        camera.position.z - c[2]);
+      const m = Math.max(0, Math.round(d * STRIKE_M_PER_UNIT / 10) * 10);
+      scRangeEl.textContent = `${String(m).padStart(4, '0')}M`;
+    }
+  }
 
   // One pooled cloud for every ring, main view only — the map has its blips.
   const WARN_MAX = 1200;   // ~4 rings alive per gate at the fastest cadence
@@ -1093,6 +1127,33 @@ export function initTdTab(root) {
     bqM.makeBasis(bqX, bqY, bqZ);
     buildQ.setFromRotationMatrix(bqM);
   }
+  // Build mode drives now, so the free camera has a duty it did not have
+  // before: if the tank leaves the frame, swing to bring it back. Top-down
+  // is a real control mode only if the thing you are controlling cannot
+  // escape the screen. The follow NEVER fights a drag — a finger on the
+  // board owns the view outright — and it eases harder the further out the
+  // tank is, so a nudge at the edge is gentle and an off-screen tank is not.
+  const followQ = new THREE.Quaternion();
+  const followV = new THREE.Vector3();
+  function buildFollowTank(dt) {
+    if (!buildMode || strike.falling > 0 || !player.pos) return;
+    if (buildPointers.size > 0) return;
+    followV.set(player.pos[0], player.pos[1], player.pos[2]).project(camera);
+    const out = Math.max(Math.abs(followV.x), Math.abs(followV.y));
+    if (out < 0.78 && followV.z < 1) return;   // comfortably framed
+    // target frame: pole on the tank's normal, keeping the current up so
+    // the recenter does not roll the world underneath you
+    const nrm = norm3(player.pos);
+    bqZ.set(nrm[0], nrm[1], nrm[2]);
+    bqY.copy(buildFrame().up);
+    bqX.crossVectors(bqY, bqZ).normalize();
+    bqY.crossVectors(bqZ, bqX).normalize();
+    bqM.makeBasis(bqX, bqY, bqZ);
+    followQ.setFromRotationMatrix(bqM);
+    const k = Math.min(1, (0.4 + Math.max(0, out - 0.78) * 2.5) * dt * 2.4);
+    buildQ.slerp(followQ, k).normalize();
+  }
+
   const DTAP_MS = 350, DTAP_PX = 24; // double-tap-to-recenter window
   let lastTap = null;
   const anyHostiles = () => enemies.some((e) => e.alive);
@@ -1855,6 +1916,21 @@ export function initTdTab(root) {
     warnRing(ci, 0xfff2c0, 0.9, radius * 2.2);
     warnRing(ci, 0xffb347, 0.6, radius * 1.4);
     warnRing(ci, 0xffffff, 0.4, radius * 0.8);
+    // the firework: staged dot-burst shells, white core out to ember red,
+    // each larger and sparser than the last. One strike per gate means this
+    // can afford to be extravagant — it is a set piece, not a particle tax.
+    const bn = graph.normals[ci];
+    const bp = add3(c, scale3(bn, cellSide * 0.35));
+    for (const [hex, sc, cnt] of [
+      [0xffffff, 1.2, 90], [0xfff2c0, 2.0, 70],
+      [0xffb347, 2.9, 55], [0xff5533, 3.8, 40],
+    ]) {
+      const burst = makeDotBurst(hex, bn, cnt);
+      burst.scale.setScalar(cellSide * sc);
+      burst.position.set(bp[0], bp[1], bp[2]);
+      scene.add(burst);
+      debris.push(burst);
+    }
     for (const sp of spawnPoints) {
       if (sp.alive && dist3(c, graph.centers[sp.ci]) < radius) {
         sp.found = true;
@@ -4440,6 +4516,7 @@ export function initTdTab(root) {
     {
       const impactCi = stepFall(strike, dt);
       if (impactCi >= 0) { executeStrike(impactCi, t); snapCamera(); }
+      syncStrikeFeed();
     }
     if (armBtn) syncArmUi();
     stepWarnFx(dt);
@@ -4496,6 +4573,7 @@ export function initTdTab(root) {
     } else if (playerMesh.userData.tick) {
       playerMesh.userData.tick(t);
     }
+    buildFollowTank(dt);
     updateCameraGoal();
 
     camera.position.lerp(camGoal.pos, 0.14);
@@ -4694,7 +4772,7 @@ export function initTdTab(root) {
 
   // opening briefing on a clean load; any debug hook means headless/demo,
   // where a frozen sim would break the verification flow
-  const debugging = ['walk', 'tick', 'wave', 'blast', 'laser', 'found', 'recoil', 'mode', 'map', 'tower', 'credit', 'shop', 'sector', 'reveal', 'portal', 'lose', 'charge', 'layout', 'perf', 'strike', 'strikefall']
+  const debugging = ['walk', 'tick', 'wave', 'blast', 'laser', 'found', 'recoil', 'mode', 'map', 'tower', 'credit', 'shop', 'sector', 'reveal', 'portal', 'lose', 'charge', 'layout', 'perf', 'strike', 'strikefall', 'strikecam']
     .some((k) => urlParams.get(k));
   const tutParam = urlParams.get('tutorial');
   runTutorial = tutParam === '1' || (tutParam !== '0' && !debugging);
@@ -4823,6 +4901,19 @@ export function initTdTab(root) {
   // after 1.2s, so the fall camera and the blast can be screenshotted.
   const strikeReady = parseInt(urlParams.get('strike') || '0', 10);
   if (strikeReady > 0) { strike.ready = strikeReady; strike.reserved = 0; }
+  // ?strikecam=1 — the feed overlay + filter, held open on a static frame so
+  // the STYLING can be photographed; engagement during a real fall is proven
+  // by the FEED log lines instead, because a screenshot cannot reliably race
+  // a 2.5s window under a virtual-time budget.
+  if (urlParams.get('strikecam')) {
+    setTimeout(() => {
+      root.classList.add('striking');
+      strikecamEl.classList.remove('hidden');
+      scInfoEl.textContent = 'ORBITAL STRIKE · OTS-723\nWARHEAD 489KG · KINETIC\n'
+        + 'TGT CELL 0408 · SECTOR R1\nFEED SAT-CAM 2 · LIVE';
+      scRangeEl.textContent = '0840M';
+    }, 800);
+  }
   if (urlParams.get('strikefall')) {
     strike.ready = Math.max(1, strike.ready);
     setTimeout(() => {
@@ -4835,7 +4926,7 @@ export function initTdTab(root) {
       // under a virtual-time budget the fall clock (frame dt) barely moves,
       // so the hook exercises the skip — which is also the code path a
       // pressed player takes, and so worth exercising anyway
-      setTimeout(() => skipFall(strike), 900);
+      setTimeout(() => skipFall(strike), 2100);
     }, 1200);
   }
 
