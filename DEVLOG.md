@@ -6,7 +6,7 @@ Demo links assume `npm run serve` (port 8144) or the
 
 ---
 
-## `(phone v3)` — Smaller, and never everything at once
+## `a55ffe4` — Smaller, and never everything at once
 
 An operator field screenshot settled it: on a real phone every HUD
 element rendered at desktop scale, all visible at the same time —
