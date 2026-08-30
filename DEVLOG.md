@@ -6,6 +6,25 @@ Demo links assume `npm run serve` (port 8144) or the
 
 ---
 
+## `f3ec490` — The pedestal is the tier
+
+Operator's spec, adopted whole: a tower's upgrade state is its
+**foundation** — square slab when built, hexagon at the first upgrade,
+circle at the second. Readable from any camera, no label, no bar.
+
+It lives in the shared mast, so all eight towers (and every look)
+inherit it: `userData.setTier(t)` swaps the base mesh in place.
+`EdgesGeometry`'s default threshold does the aesthetics for free — it
+culls the smooth walls of the round bases, so the hexagon keeps its six
+corners and the circle reads as two clean neon rings. A look swap
+re-applies the earned tier, since rebuilt objects are born square.
+
+Verified by geometry, not squinting: the `?tower=` hook grew a
+`key@ci@tier` arm and reports the mounted base — `BoxGeometry`,
+`Cylinder seg=6`, `Cylinder seg=28` for tiers 0/1/2.
+
+---
+
 ## `716d7d2` — The wheel learns digits
 
 Desktop QoL: with the tower radial open, **1–8 place** — each option
