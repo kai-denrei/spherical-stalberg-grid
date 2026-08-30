@@ -6,6 +6,19 @@ Demo links assume `npm run serve` (port 8144) or the
 
 ---
 
+## `01bd6db` — Shallow berths
+
+The freight-length containers hid their cargo in their own shadow — the
+operator could not see what was inside, which for a *display* is the
+whole failure. v3: depth squashed to 0.55 (the racked hull
+counter-stretched so it keeps its proportions), the tank parked at the
+doorway, three berths in a row — a chained adjacent triple at
+distToHeart 3–4, further out than before, scored to hug a wall. One
+hull per berth; each death still commandeers the next hull at its own
+container.
+
+---
+
 ## `abc853b` — Two berths, four bays, and every spawn drives out
 
 Containers v2, restaged to the operator's blocking: **two** containers

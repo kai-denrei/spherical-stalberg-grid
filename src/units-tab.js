@@ -13,21 +13,21 @@ import * as THREE from '../vendor/three.module.js';
 import { OrbitControls } from '../vendor/OrbitControls.js';
 import { buildUnit, preloadMkcx, makeDebris, makeDotBurst, makeBulletCloud,
   makeDotEnemy, makeRewardSolid, makeShellSolid, makePortalCloud,
-  preloadServer, makeServerFixture, preloadContainer, makeContainerFixture } from './units.js?v=c796fff6';
+  preloadServer, makeServerFixture, preloadContainer, makeContainerFixture } from './units.js?v=ab9f0bed';
 import { TANK_FEEL, TANK_FEEL_KNOBS, formatFeelCode, makeTankFeel, stepTankFeel,
-  landTankFeel, fireTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js?v=c796fff6';
+  landTankFeel, fireTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js?v=ab9f0bed';
 import { FEEL, loadFeel, saveFeel, resetFeel,
-  TOWER, HEADS, loadTower, saveTower, resetTower } from './feelstore.js?v=c796fff6';
+  TOWER, HEADS, loadTower, saveTower, resetTower } from './feelstore.js?v=ab9f0bed';
 import { TOWER_FEEL_KNOBS, formatTowerFeel, clampTowerParams,
-  formatTowerHeads, HEAD_CHOICES, HEAD_AS_SHIPPED } from './towerfeel.js?v=c796fff6';
-import { CREATURE_TINTS } from './enemyspec.js?v=c796fff6';
+  formatTowerHeads, HEAD_CHOICES, HEAD_AS_SHIPPED } from './towerfeel.js?v=ab9f0bed';
+import { CREATURE_TINTS } from './enemyspec.js?v=ab9f0bed';
 import { buildTowerLook, TOWER_LOOK_NAMES, DEFAULT_TOWER_LOOK, preloadLook } from './towerlooks.js';
 import { TOWER_BY_KEY, TOWERS } from './towers.js';
 import { LOOKS } from './looks.js';
 import { makeBloom } from './postfx.js';
-import { makeAudio } from './audio.js?v=c796fff6';
+import { makeAudio } from './audio.js?v=ab9f0bed';
 import { GROUPS, GROUP_LABELS, GROUP_EMPTY, entriesIn } from './unitcatalog.js';
-import { LORE, LORE_WORLD, loreText, loreAll } from './lore.js?v=c796fff6';
+import { LORE, LORE_WORLD, loreText, loreAll } from './lore.js?v=ab9f0bed';
 
 let roundTex = null;
 function roundDotTex() {
