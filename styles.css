@@ -2852,3 +2852,25 @@ tr.sim-timeout td:nth-child(2), tr.sim-stalled td:nth-child(2) { color: #ffb000;
 .lp-name { font-weight: bold; color: #d6ffdf; letter-spacing: 0.08em; }
 .lp-entry p { margin: 3px 0; }
 .lp-visual { color: #5aa86e; font-style: italic; font-size: 12px; }
+
+/* the black market's buy button, riding the launch console */
+#td-buy-missile {
+  font: bold 10px ui-monospace, Menlo, monospace;
+  letter-spacing: 0.08em;
+  color: #ffb000;
+  background: rgba(20, 12, 2, 0.8);
+  border: 1px solid rgba(255, 176, 0, 0.5);
+  border-radius: 5px;
+  padding: 4px 7px;
+  cursor: pointer;
+}
+#td-buy-missile.hidden { display: none; }
+/* the killer dossier on the last transmission */
+.go-kinfo { margin-top: 5px; font-size: 12px; color: #cfe2ee; min-height: 18px; }
+.go-noram { color: #ff5340; font-weight: bold; }
+.go-snafu {
+  font: bold 13px ui-monospace, Menlo, monospace;
+  letter-spacing: 0.22em;
+  color: #ff5340;
+  margin-top: 4px;
+}

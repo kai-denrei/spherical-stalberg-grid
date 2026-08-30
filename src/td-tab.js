@@ -19,31 +19,31 @@
 
 import * as THREE from '../vendor/three.module.js';
 import GUI from '../vendor/lil-gui.esm.js';
-import { generateSphereMesh, relax } from './grid.js?v=1399b5a5';
-import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=1399b5a5';
-import { mulberry32, randomSeed } from './rng.js?v=1399b5a5';
-import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3, segKey } from './vec3.js?v=1399b5a5';
-import { CREATURES, waveJelly } from './creatures.js?v=1399b5a5';
-import { UNITS, UNIT_NAMES, buildUnit, buildCreature, preloadMkcx, preloadServer, makeServerFixture, makeShieldShell, preloadContainer, makeContainerFixture, makeBulletCloud, makeRewardSolid, makeShellSolid, makeDebris, makeDotBurst, makePortalCloud, makeHeartCloud, makeDotEnemy } from './units.js?v=1399b5a5';
-import { LOOKS, LOOK_NAMES } from './looks.js?v=1399b5a5';
-import { makeCellIndex } from './cellindex.js?v=1399b5a5';
-import { CREATURE_TINTS, ENEMY_SPEC, INTROS, computeWavePlan } from './enemyspec.js?v=1399b5a5';
-import { PICKUPS } from './pickups.js?v=1399b5a5';
-import { rankFor, rankLabel, badgeSVG, killReq, eliteReq } from './ranks.js?v=1399b5a5';
-import { makeScore } from './score.js?v=1399b5a5';
-import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER } from './towers.js?v=1399b5a5';
-import { makeEconomy, sellRefund } from './economy.js?v=1399b5a5';
-import { makeBloom } from './postfx.js?v=1399b5a5';
-import { TANK_FEEL, TANK_FEEL_KNOBS, makeTankFeel, stepTankFeel, landTankFeel, fireTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js?v=1399b5a5';
-import { FEEL, loadFeel, saveFeel } from './feelstore.js?v=1399b5a5';
+import { generateSphereMesh, relax } from './grid.js?v=645e4f10';
+import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=645e4f10';
+import { mulberry32, randomSeed } from './rng.js?v=645e4f10';
+import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3, segKey } from './vec3.js?v=645e4f10';
+import { CREATURES, waveJelly } from './creatures.js?v=645e4f10';
+import { UNITS, UNIT_NAMES, buildUnit, buildCreature, preloadMkcx, preloadServer, makeServerFixture, makeShieldShell, preloadContainer, makeContainerFixture, makeBulletCloud, makeRewardSolid, makeShellSolid, makeDebris, makeDotBurst, makePortalCloud, makeHeartCloud, makeDotEnemy } from './units.js?v=645e4f10';
+import { LOOKS, LOOK_NAMES } from './looks.js?v=645e4f10';
+import { makeCellIndex } from './cellindex.js?v=645e4f10';
+import { CREATURE_TINTS, ENEMY_SPEC, INTROS, computeWavePlan } from './enemyspec.js?v=645e4f10';
+import { PICKUPS } from './pickups.js?v=645e4f10';
+import { rankFor, rankLabel, badgeSVG, killReq, eliteReq } from './ranks.js?v=645e4f10';
+import { makeScore } from './score.js?v=645e4f10';
+import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER } from './towers.js?v=645e4f10';
+import { makeEconomy, sellRefund } from './economy.js?v=645e4f10';
+import { makeBloom } from './postfx.js?v=645e4f10';
+import { TANK_FEEL, TANK_FEEL_KNOBS, makeTankFeel, stepTankFeel, landTankFeel, fireTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js?v=645e4f10';
+import { FEEL, loadFeel, saveFeel } from './feelstore.js?v=645e4f10';
 import { STRIKE_KNOBS, makeStrike, makeStrikeParams, grantStrikes, stepStrike,
   toggleArm, paintTarget, launchStrike, stepFall, skipFall, fallProgress,
-  strikeDamage, retargetStrike, orbitProgress } from './strike.js?v=1399b5a5';
-import { radarBasis, radarProject, radarBearing, sweepAngle, radarPhosphor } from './radar.js?v=1399b5a5';
-import { BLOOM_GROUPS } from './bloomweights.js?v=1399b5a5';
-import { TOWER_LOOK_NAMES, DEFAULT_TOWER_LOOK, buildTowerLook, preloadLook } from './towerlooks.js?v=1399b5a5';
-import { makeAudio } from './audio.js?v=1399b5a5';
-import { DEATH_KEYS } from './audiomanifest.js?v=1399b5a5';
+  strikeDamage, retargetStrike, orbitProgress } from './strike.js?v=645e4f10';
+import { radarBasis, radarProject, radarBearing, sweepAngle, radarPhosphor } from './radar.js?v=645e4f10';
+import { BLOOM_GROUPS } from './bloomweights.js?v=645e4f10';
+import { TOWER_LOOK_NAMES, DEFAULT_TOWER_LOOK, buildTowerLook, preloadLook } from './towerlooks.js?v=645e4f10';
+import { makeAudio } from './audio.js?v=645e4f10';
+import { DEATH_KEYS } from './audiomanifest.js?v=645e4f10';
 
 export function initTdTab(root) {
   let active = false;
@@ -381,6 +381,10 @@ export function initTdTab(root) {
   // not grow back at the next frontier shift)
   const breachedCells = new Set();
   let serverFound = false, hackedRound = false, hackedUnlocks = 0;
+  let hackWins = 0;              // total protocol wins this run
+  let missileShop = false;       // hack #2 opens it
+  let missilesBought = 0;        // the price climbs with each purchase
+  const missileCost = () => 500 + 250 * missilesBought;
   let playerSize = 0.06; // set per-generation in buildActors
 
   // creature dot-cloud + gameplay state
@@ -2369,7 +2373,28 @@ export function initTdTab(root) {
     armBtn.classList.add('flicker');
   }
   let armUiKey = '';
+  const buyMissileEl = root.querySelector('#td-buy-missile');
+  if (buyMissileEl) buyMissileEl.addEventListener('click', () => {
+    if (!missileShop) return;
+    const cost = missileCost();
+    if (!eco.spend(cost)) {
+      showToast(`<div class="wave-num">INSUFFICIENT FUNDS</div>`
+        + `<div class="wave-role">the market wants ${fmt(cost)}c</div>`, 2000);
+      return;
+    }
+    missilesBought++;
+    strike.reserved += 1;
+    sfx.play('tank_shells');
+    showToast(`<div class="wave-num">MISSILE PURCHASED</div>`
+      + `<div class="wave-role">entering the queue — next one costs ${fmt(missileCost())}c</div>`, 2400);
+    updateHud(); syncArmUi();
+  });
+
   function syncArmUi() {
+    if (buyMissileEl) {
+      buyMissileEl.classList.toggle('hidden', !missileShop);
+      if (missileShop) buyMissileEl.textContent = `+ ${missileCost()}c`;
+    }
     // narrate the state; write the DOM only when the state actually moves
     const orbit = strike.reserved > 0 ? Math.round(strike.gauge * 100) : -1;
     const reorbit = strike.cooldown > 0 ? Math.round(orbitProgress(strike) * 100) : -1;
@@ -2861,7 +2886,11 @@ export function initTdTab(root) {
     const cl = ev.target.classList;
     if (!cl) return;
     if (cl.contains('msg-regen')) regenerate(); // retry the CURRENT round
-    else if (cl.contains('msg-next')) { round++; hackedRound = false; syncHackBtn(); expandRound(); }
+    else if (cl.contains('msg-next')) {
+      round++; hackedRound = false; syncHackBtn();
+      strike.reserved += 1; // the platform restocks one round per sector
+      expandRound(); syncArmUi();
+    }
     else if (cl.contains('msg-begin')) { paused = false; msgEl.classList.add('hidden'); }
     else if (cl.contains('msg-glenemy')) showEnemyGlossary();
     else if (cl.contains('msg-glfriend')) showFriendGlossary();
@@ -3088,13 +3117,22 @@ export function initTdTab(root) {
     paused = false;
     if (won === true) {
       hackedRound = true;
-      hackedUnlocks++;
-      const ks = unlockedTowerKeys(wave, hackedUnlocks);
-      showTowerToast(ks[ks.length - 1]);
-      showToast(`<div class="wave-num">FIRMWARE PATCHED</div>`
-        + `<div class="wave-role">${hackedUnlocks <= 1
-          ? 'AOE schematics decrypted — the relay held the OP half of the combo'
-          : 'a tower unlocked ahead of its wave'}</div>`, 3400);
+      hackWins++;
+      if (hackWins === 2) {
+        // the SECOND win opens the black market: missiles for credit
+        missileShop = true;
+        showToast(`<div class="wave-num">BLACK MARKET OPEN</div>`
+          + `<div class="wave-role">the relay sells missiles now — expensive, and worth it</div>`, 3600);
+        syncArmUi();
+      } else {
+        hackedUnlocks++;
+        const ks = unlockedTowerKeys(wave, hackedUnlocks);
+        showTowerToast(ks[ks.length - 1]);
+        showToast(`<div class="wave-num">FIRMWARE PATCHED</div>`
+          + `<div class="wave-role">${hackedUnlocks <= 1
+            ? 'AOE schematics decrypted — the relay held the OP half of the combo'
+            : 'a tower unlocked ahead of its wave'}</div>`, 3400);
+      }
       updateHud();
     } else if (won === false) {
       showToast(`<div class="wave-num">TRACE COMPLETE</div>`
@@ -3189,7 +3227,7 @@ export function initTdTab(root) {
       + ` &middot; towers ${ws.bySrc.tower} &middot; orbital ${ws.bySrc.strike}</div>`
       + rows
       + `<div class="sr-line sr-spark">TEMPO ${sparkline(ws.bins)}</div>`
-      + `<div class="sr-line">POINTS +${score.points - ws.points0}`
+      + `<div class="sr-line">POINTS +${fmt(score.points - ws.points0)}`
       + ` &middot; CLEAR BONUS +${100 + 25 * wave} &middot; PEAK &times;${ws.maxMult.toFixed(2)}</div>`
       + `<div class="sr-line">RAMS ${ws.rams}${ws.leaks ? ` &middot; <span class="sr-leak">LEAKS ${ws.leaks}</span>` : ' &middot; no leaks'}</div>`
       + `<div class="sr-foot">[ tap &mdash; dismiss ]</div>`;
@@ -3231,7 +3269,7 @@ export function initTdTab(root) {
     const hearts = `<span class="hp-heart">${'♥'.repeat(Math.max(0, heartHP))}</span>`
       + `<span class="hp-dim">${'·'.repeat(Math.max(0, HEART_MAX - heartHP))}</span>`;
     statsEl.innerHTML =
-      `<div class="hud-meta">SCORE <b>${score.points}</b> · BEST ${score.best}`
+      `<div class="hud-meta">SCORE <b>${fmt(score.points)}</b> · BEST ${fmt(score.best)}`
       + `${rankBadgeHud ? ' ' + rankBadgeHud : ''}</div>`
       + `<div class="hud-vitals">${hearts} <span class="hud-lbl">HEART</span>`
       + ` <span class="hp-you">♥${playerHP}</span>`
@@ -3435,6 +3473,7 @@ export function initTdTab(root) {
       }
     });
     hackedUnlocks = 0; hackedRound = false; syncHackBtn();
+    hackWins = 0; missileShop = false; missilesBought = 0;
     resetRunStats();
     bossCued = false;
     dangerWarnedWave = -1;
@@ -4036,6 +4075,8 @@ export function initTdTab(root) {
     });
   }
 
+  const fmt = (v) => (v ?? 0).toLocaleString('en-US'); // 3103356 -> 3,103,356
+
   function refreshRankVisuals() {
     rankBadgeHud = tankRank > 0
       ? `<span class="hud-rank" title="${tankKills} hands-on kills`
@@ -4551,6 +4592,22 @@ export function initTdTab(root) {
     }, DEATH_HOLD * 1000);
   }
 
+  // hover (or tap) a killer's icon on the last transmission: its dossier
+  // fills the line below — name, role, and the stats that killed you
+  msgEl.addEventListener('pointerover', (ev) => {
+    const el = ev.target;
+    if (!el.classList || !el.classList.contains('go-killer')) return;
+    const type = el.dataset.ktype;
+    const spec = ENEMY_SPEC[type];
+    const intro = INTROS.find((iv) => iv.type === type);
+    const info = msgEl.querySelector('.go-kinfo');
+    if (!spec || !info) return;
+    info.innerHTML = `<b>${intro ? intro.label : type.toUpperCase()}</b>`
+      + ` — ${intro ? intro.role : ''} · ${spec.hp} hp · speed ${spec.speed}`
+      + ` · ${spec.rammable ? 'rammable' : '<span class="go-noram">DO NOT RAM</span>'}`
+      + ` · bounty ${spec.bounty}`;
+  });
+
   // The verdict lists. Three tiers by how far the run got; picked by
   // score modulo (deterministic per run — a replayed seed gets the same
   // eulogy). Low tier is the low-key diss track the operator ordered.
@@ -4613,16 +4670,20 @@ export function initTdTab(root) {
     // who took each tank: icon cards for the killers, in order
     const killers = rs && rs.killers.length
       ? `<div class="go-killers">TANKS LOST TO ${rs.killers.map((type) =>
-        `<img class="go-killer" src="${spriteShot(type, unitIcon(type, CREATURE_TINTS[type] ?? 0xffffff))}" title="${type}">`
-      ).join('')}</div>`
+        `<img class="go-killer" data-ktype="${type}" src="${spriteShot(type, unitIcon(type, CREATURE_TINTS[type] ?? 0xffffff))}">`
+      ).join('')}<div class="go-kinfo">hover a killer for its file</div></div>`
       : `<div class="go-killers">hull intact to the end — the heart fell first</div>`;
     const spark = rs && rs.scoreBins.length >= 3
       ? `<div class="sr-line sr-spark">SCORE ${sparkline(rs.scoreBins.map((v, i, a) => v - (a[i - 1] ?? 0)))}</div>` : '';
-    msgEl.innerHTML = `<div class="msg-head">transmission · last light</div>`
+    // the operator's wording, verbatim: LAST TRANSMISSION — SNAFU,
+    // K-KILL ×(hulls destroyed) — THEN the eulogy and the numbers
+    const kkill = PLAYER_MAX - Math.max(0, playerHP);
+    msgEl.innerHTML = `<div class="msg-head">LAST TRANSMISSION</div>`
+      + `<div class="go-snafu">SNAFU · K-KILL ×${kkill}</div>`
       + `<div class="go-verdict${newBest ? ' best' : ''}">${verdict}</div>`
       + `<div class="go-reason">× ${reason}</div>`
       + `<div class="go-grid">`
-      + `<span>SCORE <b>${score.points}</b>${newBest ? ' <i class="go-best">NEW BEST</i>' : ` · best ${score.best}`}</span>`
+      + `<span>SCORE <b>${fmt(score.points)}</b>${newBest ? ' <i class="go-best">NEW BEST</i>' : ` · best ${fmt(score.best)}`}</span>`
       + `<span>WAVE <b>${wave}</b> · R${round}</span>`
       + `<span>KILLS <b>${total}</b> — tank ${rs ? rs.bySrc.tank : 0} · towers ${rs ? rs.bySrc.tower : 0} · orbital ${rs ? rs.bySrc.strike : 0}</span>`
       + `<span>RAMS <b>${rs ? rs.rams : 0}</b> · best combo ×${rs ? rs.maxCombo : 0} · strikes ${rs ? rs.strikes : 0}</span>`
