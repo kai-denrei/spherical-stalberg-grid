@@ -47,6 +47,23 @@ console.log('the shared machinery:');
   check('does not quote a number', /a:\s+2\.5,/.test(src), src);
 }
 
+console.log('bool knobs:');
+{
+  const KN = [{ key: 'walls', label: 'walls', group: 'g', bool: true }];
+  const D = { walls: true };
+  check('bool table is sound', knobProblems(KN, D).length === 0, knobProblems(KN, D).join('; '));
+  check('a non-boolean default is flagged',
+        knobProblems(KN, { walls: 1 }).some((m) => m.includes('non-boolean')));
+  const p = makeParams(KN, D);
+  clampParams(KN, p, { walls: false });
+  check('restores a boolean', p.walls === false);
+  clampParams(KN, p, { walls: '1' });
+  check("accepts '1' as true", p.walls === true);
+  clampParams(KN, p, { walls: 'junk' });
+  check('ignores junk', p.walls === true);
+  check('formats as bare true/false', formatKnobs('B', KN, { walls: false }).includes('false'));
+}
+
 console.log('problem detection:');
 {
   const bad = [

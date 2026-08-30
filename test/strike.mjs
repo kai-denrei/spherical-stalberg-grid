@@ -5,7 +5,7 @@
 import {
   STRIKE_TUNE, STRIKE_KNOBS, makeStrike, grantStrikes, stepStrike,
   toggleArm, paintTarget, launchStrike, stepFall, skipFall, fallProgress,
-  strikeDamage, strikeKnobProblems,
+  strikeDamage, strikeKnobProblems, retargetStrike,
 } from '../src/strike.js';
 
 let failures = 0;
@@ -110,9 +110,34 @@ console.log('the blast:');
     prev = v;
   }
   check('falloff is monotonic', mono);
-  check('squared, not linear — the centre hits hard',
-        strikeDamage(R * 0.5, R) < STRIKE_TUNE.dmgCenter * 0.5);
+  // fat-middle: the old thin curve let fodder standing visibly inside the
+  // blast walk away, which reads as weakness whatever the centre number is
+  check('half radius still hits for most of the centre',
+        approx(strikeDamage(R * 0.5, R), STRIKE_TUNE.dmgCenter * 0.75));
   check('a zero radius damages nothing', strikeDamage(0, 0) === 0);
+}
+
+console.log('the re-aim burst:');
+{
+  const st = makeStrike();
+  check('refused when nothing is in the air', retargetStrike(st, 3) === false);
+  st.ready = 1; st.armed = true; st.target = 4;
+  launchStrike(st);
+  check('the launch loads the burst', st.retargetsLeft === Math.round(STRIKE_TUNE.retargets));
+  check('a bad cell is refused', retargetStrike(st, -1) === false && st.fallCi === 4);
+  check('vectors onto the new cell', retargetStrike(st, 9) === true && st.fallCi === 9);
+  check('the burst is spent', st.retargetsLeft === 0);
+  check('a second re-aim is refused', retargetStrike(st, 2) === false && st.fallCi === 9);
+  let landed = -1;
+  for (let i = 0; i < 200 && landed < 0; i++) landed = stepFall(st, 0.05);
+  check('lands on the RE-AIMED cell', landed === 9);
+  // skipping does not resurrect the burst
+  const st2 = makeStrike();
+  st2.ready = 1; st2.armed = true; st2.target = 1;
+  launchStrike(st2);
+  retargetStrike(st2, 5);
+  skipFall(st2);
+  check('skip after a re-aim lands on the new cell', stepFall(st2, 0.02) === 5);
 }
 
 console.log(failures ? `\n${failures} FAILURES` : '\nall strike invariants hold');

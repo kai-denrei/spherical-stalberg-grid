@@ -16,16 +16,19 @@
 // visuals. This owns every number and every refusal, so the ritual is
 // testable without a pixel.
 
-import { makeParams, clampParams, formatKnobs, knobProblems } from './knobs.js?v=a90958d1';
+import { makeParams, clampParams, formatKnobs, knobProblems } from './knobs.js?v=7eeb0a56';
 
 export const STRIKE_TUNE = {
-  windowTime: 40,   // s for a reserved strike to promote to ready
-  perPortals: 2,    // one strike granted per this many live gates (floor)
-  minBudget: 1,     // but never less than this per sector
-  maxReady: 2,      // ready strikes stack only this high; the window pauses
-  blastCells: 2.4,  // blast radius, in cell-sides
-  fallTime: 2.5,    // seconds of missile cam between launch and impact
-  dmgCenter: 6,     // enemy damage at ground zero; falls off squared
+  windowTime: 40,    // s for a reserved strike to promote to ready
+  perPortals: 2,     // one strike granted per this many live gates (floor)
+  minBudget: 1,      // but never less than this per sector
+  maxReady: 2,       // ready strikes stack only this high; the window pauses
+  blastCells: 3.2,   // blast radius, in cell-sides — the outer ring IS this
+  fallTime: 3.5,     // seconds of missile cam; long enough to re-aim in
+  dmgCenter: 10,     // enemy damage at ground zero
+  retargets: 1,      // mid-fall re-aims per strike — the vectoring burst
+  breakWalls: true,  // the blast breaches every wall in the radius
+  breakTowers: true, // ...and takes your own towers with it. No refunds.
 };
 
 export const STRIKE_KNOBS = [
@@ -35,7 +38,10 @@ export const STRIKE_KNOBS = [
   { key: 'maxReady', label: 'ready cap', group: 'ration', min: 1, max: 4, step: 1 },
   { key: 'blastCells', label: 'blast radius (cells)', group: 'blast', min: 1, max: 5, step: 0.2 },
   { key: 'fallTime', label: 'fall time (s)', group: 'blast', min: 0.8, max: 5, step: 0.1 },
-  { key: 'dmgCenter', label: 'centre damage', group: 'blast', min: 1, max: 12, step: 0.5 },
+  { key: 'dmgCenter', label: 'centre damage', group: 'blast', min: 1, max: 20, step: 0.5 },
+  { key: 'retargets', label: 're-aims per strike', group: 'blast', min: 0, max: 2, step: 1 },
+  { key: 'breakWalls', label: 'destroy walls', group: 'blast', bool: true },
+  { key: 'breakTowers', label: 'destroy friendly towers', group: 'blast', bool: true },
 ];
 
 export const makeStrikeParams = (src = STRIKE_TUNE) => makeParams(STRIKE_KNOBS, src);
@@ -53,6 +59,7 @@ export function makeStrike() {
     falling: -1,   // seconds until impact; -1 = nothing in the air
     fallCi: -1,    // where the falling strike lands
     fallTotal: 1,  // what `falling` started from, for the camera's progress
+    retargetsLeft: 0,   // mid-fall re-aims remaining on the strike in the air
   };
 }
 
@@ -106,6 +113,7 @@ export function launchStrike(st, p = STRIKE_TUNE) {
   st.falling = p.fallTime;
   st.fallTotal = p.fallTime;
   st.fallCi = ci;
+  st.retargetsLeft = Math.round(p.retargets);
   return ci;
 }
 
@@ -120,6 +128,16 @@ export function stepFall(st, dt) {
     return ci;
   }
   return -1;
+}
+
+// Vector the falling munition onto a new cell. Once (by default): the burst
+// is a second chance, not a steerable missile — steerable would make the
+// paint phase pointless. Only while something is actually in the air.
+export function retargetStrike(st, ci) {
+  if (st.falling <= 0 || st.retargetsLeft <= 0 || ci < 0) return false;
+  st.fallCi = ci;
+  st.retargetsLeft--;
+  return true;
 }
 
 // Skip the cinematic: the strike still lands, next frame. Skipping is free —
@@ -139,6 +157,11 @@ export function fallProgress(st) {
 // because one strike killing one gate is the reason the weapon exists.
 export function strikeDamage(dist, radius, p = STRIKE_TUNE) {
   if (dist >= radius || radius <= 0) return 0;
-  const f = 1 - dist / radius;
-  return p.dmgCenter * f * f;
+  // FAT-MIDDLE falloff: 1 - (d/r)^2. The old (1 - d/r)^2 was thin — at half
+  // radius it paid a quarter of centre damage, so level-1 fodder standing
+  // visibly inside the blast walked away, which reads as weakness however
+  // big the number at dead centre is. This curve holds 75% at half radius
+  // and still reaches zero exactly at the ring.
+  const u = dist / radius;
+  return p.dmgCenter * (1 - u * u);
 }

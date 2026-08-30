@@ -25,6 +25,14 @@ export function makeParams(knobs, src) {
 // own localStorage after a schema change.
 export function clampParams(knobs, p, src = {}) {
   for (const k of knobs) {
+    if (k.bool) {
+      // booleans restore as booleans or as '0'/'1'/0/1; anything else is junk
+      const v = src[k.key];
+      if (typeof v === 'boolean') p[k.key] = v;
+      else if (v === 1 || v === '1') p[k.key] = true;
+      else if (v === 0 || v === '0') p[k.key] = false;
+      continue;
+    }
     const v = Number(src[k.key]);
     if (Number.isFinite(v)) p[k.key] = Math.min(k.max, Math.max(k.min, v));
   }
@@ -53,6 +61,7 @@ export function formatKnobs(name, knobs, p) {
 // Choice knobs carry their value as a string and must be quoted; numeric ones
 // are snapped to their step.
 function fmt(v, k) {
+  if (k.bool) return String(!!v);
   return k.choices ? JSON.stringify(v) : roundToStep(v, k.step);
 }
 
@@ -66,6 +75,10 @@ export function knobProblems(knobs, defaults) {
     seen.add(k.key);
     if (!k.label || !k.group) out.push(`${k.key}: missing label or group`);
     if (!(k.key in defaults)) out.push(`${k.key}: names no constant`);
+    if (k.bool) {
+      if (typeof defaults[k.key] !== 'boolean') out.push(`${k.key}: bool knob with a non-boolean default`);
+      continue;
+    }
     if (k.choices) {
       if (!k.choices.includes(defaults[k.key])) out.push(`${k.key}: default is not one of its choices`);
       continue;

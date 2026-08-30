@@ -19,28 +19,28 @@
 
 import * as THREE from '../vendor/three.module.js';
 import GUI from '../vendor/lil-gui.esm.js';
-import { generateSphereMesh, relax } from './grid.js?v=a90958d1';
-import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=a90958d1';
-import { mulberry32, randomSeed } from './rng.js?v=a90958d1';
-import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3, segKey } from './vec3.js?v=a90958d1';
-import { CREATURES, waveJelly } from './creatures.js?v=a90958d1';
-import { UNITS, UNIT_NAMES, buildUnit, buildCreature, preloadMkcx, makeBulletCloud, makeRewardSolid, makeShellSolid, makeDebris, makeDotBurst, makePortalCloud, makeHeartCloud, makeDotEnemy } from './units.js?v=a90958d1';
-import { LOOKS, LOOK_NAMES } from './looks.js?v=a90958d1';
-import { makeCellIndex } from './cellindex.js?v=a90958d1';
-import { CREATURE_TINTS, ENEMY_SPEC, INTROS, computeWavePlan } from './enemyspec.js?v=a90958d1';
-import { PICKUPS } from './pickups.js?v=a90958d1';
-import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER } from './towers.js?v=a90958d1';
-import { makeEconomy, sellRefund } from './economy.js?v=a90958d1';
-import { makeBloom } from './postfx.js?v=a90958d1';
-import { TANK_FEEL, TANK_FEEL_KNOBS, makeTankFeel, stepTankFeel, landTankFeel, fireTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js?v=a90958d1';
-import { FEEL, loadFeel, saveFeel } from './feelstore.js?v=a90958d1';
+import { generateSphereMesh, relax } from './grid.js?v=7eeb0a56';
+import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=7eeb0a56';
+import { mulberry32, randomSeed } from './rng.js?v=7eeb0a56';
+import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3, segKey } from './vec3.js?v=7eeb0a56';
+import { CREATURES, waveJelly } from './creatures.js?v=7eeb0a56';
+import { UNITS, UNIT_NAMES, buildUnit, buildCreature, preloadMkcx, makeBulletCloud, makeRewardSolid, makeShellSolid, makeDebris, makeDotBurst, makePortalCloud, makeHeartCloud, makeDotEnemy } from './units.js?v=7eeb0a56';
+import { LOOKS, LOOK_NAMES } from './looks.js?v=7eeb0a56';
+import { makeCellIndex } from './cellindex.js?v=7eeb0a56';
+import { CREATURE_TINTS, ENEMY_SPEC, INTROS, computeWavePlan } from './enemyspec.js?v=7eeb0a56';
+import { PICKUPS } from './pickups.js?v=7eeb0a56';
+import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER } from './towers.js?v=7eeb0a56';
+import { makeEconomy, sellRefund } from './economy.js?v=7eeb0a56';
+import { makeBloom } from './postfx.js?v=7eeb0a56';
+import { TANK_FEEL, TANK_FEEL_KNOBS, makeTankFeel, stepTankFeel, landTankFeel, fireTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js?v=7eeb0a56';
+import { FEEL, loadFeel, saveFeel } from './feelstore.js?v=7eeb0a56';
 import { STRIKE_KNOBS, makeStrike, makeStrikeParams, grantStrikes, stepStrike,
   toggleArm, paintTarget, launchStrike, stepFall, skipFall, fallProgress,
-  strikeDamage } from './strike.js?v=a90958d1';
-import { BLOOM_GROUPS } from './bloomweights.js?v=a90958d1';
-import { TOWER_LOOK_NAMES, DEFAULT_TOWER_LOOK, buildTowerLook, preloadLook } from './towerlooks.js?v=a90958d1';
-import { makeAudio } from './audio.js?v=a90958d1';
-import { DEATH_KEYS } from './audiomanifest.js?v=a90958d1';
+  strikeDamage, retargetStrike } from './strike.js?v=7eeb0a56';
+import { BLOOM_GROUPS } from './bloomweights.js?v=7eeb0a56';
+import { TOWER_LOOK_NAMES, DEFAULT_TOWER_LOOK, buildTowerLook, preloadLook } from './towerlooks.js?v=7eeb0a56';
+import { makeAudio } from './audio.js?v=7eeb0a56';
+import { DEATH_KEYS } from './audiomanifest.js?v=7eeb0a56';
 
 export function initTdTab(root) {
   let active = false;
@@ -248,6 +248,19 @@ export function initTdTab(root) {
   // ground arrives, which is what makes the last 200m feel like a held
   // breath rather than a number spinning to zero.
   const STRIKE_M_PER_UNIT = 4800;   // planet radius 1 == ~4.8km of fiction
+  const scSkipEl = root.querySelector('#td-strikecam .sc-skip');
+  function strikeFeedInfo() {
+    const ci = strike.fallCi;
+    scInfoEl.textContent =
+      `ORBITAL STRIKE · OTS-723\n`
+      + `WARHEAD 489KG · KINETIC\n`
+      + `TGT CELL ${String(Math.max(0, ci)).padStart(4, '0')} · SECTOR R${round}\n`
+      + `FEED SAT-CAM 2 · LIVE`
+      + (strike.retargetsLeft > 0 ? `\nVECTOR BURST ×${strike.retargetsLeft}` : '\nVECTOR SPENT');
+    scSkipEl.textContent = strike.retargetsLeft > 0
+      ? 'TAP GROUND TO RE-AIM · TAP SKY TO SKIP'
+      : 'TAP TO SKIP';
+  }
   function syncStrikeFeed() {
     const on = strike.falling > 0;
     if (on !== strikingUi) {
@@ -255,14 +268,7 @@ export function initTdTab(root) {
       console.log(`FEED ${on ? 'ON' : 'OFF'} range=${scRangeEl.textContent}`);
       root.classList.toggle('striking', on);
       strikecamEl.classList.toggle('hidden', !on);
-      if (on) {
-        const ci = strike.fallCi;
-        scInfoEl.textContent =
-          `ORBITAL STRIKE · OTS-723\n`
-          + `WARHEAD 489KG · KINETIC\n`
-          + `TGT CELL ${String(ci).padStart(4, '0')} · SECTOR R${round}\n`
-          + `FEED SAT-CAM 2 · LIVE`;
-      }
+      if (on) strikeFeedInfo();
     }
     if (on && strike.fallCi >= 0) {
       const c = graph.centers[strike.fallCi];
@@ -1848,8 +1854,21 @@ export function initTdTab(root) {
   }
   addEventListener('pointerup', endBuildPointer);
   addEventListener('pointercancel', endBuildPointer);
-  container.addEventListener('pointerdown', () => {
-    if (strike.falling > 0 && strikeGrace <= 0) skipFall(strike);
+  container.addEventListener('pointerdown', (ev) => {
+    if (strike.falling <= 0 || strikeGrace > 0) return;
+    // Aim is two-fold: the paint chose the area, and ONE burst mid-fall can
+    // vector the munition onto what the target drifted into. A tap on the
+    // GROUND spends the burst; a tap on the sky — or any tap after it is
+    // spent — skips to impact.
+    if (strike.retargetsLeft > 0) {
+      const ci = cellAtScreen(ev.clientX, ev.clientY);
+      if (ci !== -1 && retargetStrike(strike, ci)) {
+        sfx.play('tank_secondary');
+        strikeFeedInfo();   // TGT CELL changes; the feed should say so
+        return;
+      }
+    }
+    skipFall(strike);
   });
   container.addEventListener('wheel', (ev) => {
     if (!buildMode) return;
@@ -1909,27 +1928,57 @@ export function initTdTab(root) {
   // falloff. The world does the announcing: rings, a kick of the same shock
   // cloud the wave telegraph uses, and the loudest sample in the manifest.
   function executeStrike(ci, tNow) {
-    console.log(`STRIKE impact ci=${ci} portalsBefore=${spawnPoints.filter((q) => q.alive).length}`);
+    const before = {
+      portals: spawnPoints.filter((q) => q.alive).length,
+      enemies: enemies.filter((e) => e.alive).length,
+      towers: towers.length,
+      walls: dungeon.tags.filter((tg) => tg === BLOCKED).length,
+    };
     const c = graph.centers[ci];
     const radius = cellSide * strikeTune.blastCells;
     sfx.play('tank_destroyed', { dist: camDist(c) });
-    warnRing(ci, 0xfff2c0, 0.9, radius * 2.2);
-    warnRing(ci, 0xffb347, 0.6, radius * 1.4);
-    warnRing(ci, 0xffffff, 0.4, radius * 0.8);
+    // Rings tell the TRUTH now: the outermost ring IS the damage radius.
+    // The first cut drew them out to 2.2x it, so level-1 fodder stood
+    // visibly "inside the blast" and walked away — the visuals were writing
+    // a cheque the falloff did not honour.
+    warnRing(ci, 0xffffff, 1.0, radius);
+    warnRing(ci, 0xffb347, 0.7, radius * 0.72);
+    warnRing(ci, 0xfff2c0, 0.45, radius * 0.42);
+    // the screen takes the hit too — the sector-reveal flash, borrowed
+    flashEl.classList.remove('on');
+    void flashEl.offsetWidth;
+    flashEl.classList.add('on');
     // the firework: staged dot-burst shells, white core out to ember red,
     // each larger and sparser than the last. One strike per gate means this
     // can afford to be extravagant — it is a set piece, not a particle tax.
     const bn = graph.normals[ci];
     const bp = add3(c, scale3(bn, cellSide * 0.35));
     for (const [hex, sc, cnt] of [
-      [0xffffff, 1.2, 90], [0xfff2c0, 2.0, 70],
-      [0xffb347, 2.9, 55], [0xff5533, 3.8, 40],
+      [0xffffff, 1.5, 140], [0xfff2c0, 2.4, 110],
+      [0xffb347, 3.4, 90], [0xff7744, 4.4, 70], [0xff4433, 5.4, 50],
     ]) {
       const burst = makeDotBurst(hex, bn, cnt);
       burst.scale.setScalar(cellSide * sc);
       burst.position.set(bp[0], bp[1], bp[2]);
       scene.add(burst);
       debris.push(burst);
+    }
+    // Terrain and towers, when the toggles allow. Towers FIRST: a mounted
+    // tower anchors its wall (breachWallCell refuses it), so the order is
+    // what lets one strike flatten a defended rampart. Walls batch into a
+    // single BFS + rebuild — six breaches must not cost six rebuilds.
+    if (strikeTune.breakTowers) {
+      for (const tw of [...towers]) {
+        if (dist3(c, graph.centers[tw.ci]) < radius) destroyTower(tw);
+      }
+    }
+    if (strikeTune.breakWalls) {
+      let breached = 0;
+      for (let ci2 = 0; ci2 < graph.centers.length; ci2++) {
+        if (dungeon.tags[ci2] !== BLOCKED) continue;
+        if (dist3(c, graph.centers[ci2]) < radius && breachWallCell(ci2)) breached++;
+      }
+      if (breached > 0) rebuildAfterBreach();
     }
     for (const sp of spawnPoints) {
       if (sp.alive && dist3(c, graph.centers[sp.ci]) < radius) {
@@ -1944,6 +1993,14 @@ export function initTdTab(root) {
     }
     updateHud();
     checkVictory();
+    // the proof line goes LAST — its first draft sat above the kill loops
+    // and reported 2->2 portals on a direct hit: a bug in the REPORTING that
+    // read exactly like a bug in the weapon
+    console.log(`STRIKE ci=${ci}`
+      + ` portals ${before.portals}->${spawnPoints.filter((q) => q.alive).length}`
+      + ` enemies ${before.enemies}->${enemies.filter((e) => e.alive).length}`
+      + ` towers ${before.towers}->${towers.length}`
+      + ` walls ${before.walls}->${dungeon.tags.filter((tg) => tg === BLOCKED).length}`);
   }
 
   // ☆ flash the neighbouring cell that is one hop closer to the heart
@@ -3234,7 +3291,15 @@ export function initTdTab(root) {
   // heart-distance field is re-laid — everyone's nav sees the new gap,
   // enemies included. Clearing your path can shorten theirs.
   function blastWall(ci) {
-    if (towerByCell.has(ci)) return; // a mounted tower anchors its wall
+    if (!breachWallCell(ci)) return;
+    rebuildAfterBreach();
+  }
+
+  // The tag flip and the debris, WITHOUT the rebuild — so a strike that
+  // breaches half a dozen cells pays for one BFS and one geometry build,
+  // not six of each.
+  function breachWallCell(ci) {
+    if (towerByCell.has(ci)) return false; // a mounted tower anchors its wall
     dungeon.tags[ci] = PATH;
     const c = graph.centers[ci];
     const n = graph.normals[ci];
@@ -3254,6 +3319,10 @@ export function initTdTab(root) {
     debris.push(fx);
     block.geometry.dispose();
     block.material.dispose();
+    return true;
+  }
+
+  function rebuildAfterBreach() {
     dungeon.distToHeart = bfsDist(graph.adj, [dungeon.heart], (i) => dungeon.tags[i] !== BLOCKED);
     buildGeometry();
   }
@@ -3605,6 +3674,25 @@ export function initTdTab(root) {
     showRangeRing(ci, effectiveStats(def, 0).range, def.color, 1.6);
     updateHud();
     return true;
+  }
+
+  // The strike's version of losing a tower: no refund, and the wreck shows.
+  // Selling is a decision; this is a consequence.
+  function destroyTower(tower) {
+    const c = graph.centers[tower.ci];
+    const nrm = graph.normals[tower.ci];
+    const burst = makeDotBurst(tower.def.color, nrm, 40);
+    burst.scale.setScalar(cellSide * 1.1);
+    burst.position.set(c[0] + nrm[0] * cellSide * 0.3, c[1] + nrm[1] * cellSide * 0.3,
+      c[2] + nrm[2] * cellSide * 0.3);
+    scene.add(burst);
+    debris.push(burst);
+    scene.remove(tower.obj);
+    disposeObj(tower.obj);
+    towers.splice(towers.indexOf(tower), 1);
+    towerByCell.delete(tower.ci);
+    towerCells.delete(tower.ci);
+    if (watchTower === tower) watchTower = null;
   }
 
   function sellTower(tower) {
@@ -4236,7 +4324,8 @@ export function initTdTab(root) {
   // strike knobs share the schema machinery with the feel folders
   const strikeF = gui.addFolder('orbital strike');
   for (const k of STRIKE_KNOBS) {
-    strikeF.add(strikeTune, k.key, k.min, k.max, k.step).name(k.label);
+    if (k.bool) strikeF.add(strikeTune, k.key).name(k.label);
+    else strikeF.add(strikeTune, k.key, k.min, k.max, k.step).name(k.label);
   }
   strikeF.close();
 
@@ -4910,17 +4999,30 @@ export function initTdTab(root) {
       root.classList.add('striking');
       strikecamEl.classList.remove('hidden');
       scInfoEl.textContent = 'ORBITAL STRIKE · OTS-723\nWARHEAD 489KG · KINETIC\n'
-        + 'TGT CELL 0408 · SECTOR R1\nFEED SAT-CAM 2 · LIVE';
+        + 'TGT CELL 0408 · SECTOR R1\nFEED SAT-CAM 2 · LIVE\nVECTOR BURST ×1';
       scRangeEl.textContent = '0840M';
     }, 800);
   }
   if (urlParams.get('strikefall')) {
     strike.ready = Math.max(1, strike.ready);
     setTimeout(() => {
+      // strikefall=enemy paints the thickest CLUSTER of live enemies instead
+      // of a gate, which is how the falloff is verified against things that
+      // actually move
+      let ci0 = -1;
+      if (urlParams.get('strikefall') === 'enemy') {
+        let best = -1;
+        for (const e of enemies) {
+          if (!e.alive) continue;
+          const r2 = cellSide * strikeTune.blastCells;
+          const near = enemies.filter((o2) => o2.alive && dist3(e.pos, o2.pos) < r2).length;
+          if (near > best) { best = near; ci0 = e.cur; }
+        }
+      }
       const sp = spawnPoints.find((q) => q.alive);
-      if (!sp) return;
+      if (ci0 < 0 && !sp) return;
       toggleArm(strike);
-      paintTarget(strike, sp.ci);
+      paintTarget(strike, ci0 >= 0 ? ci0 : sp.ci);
       launchStrike(strike, strikeTune);
       strikeGrace = 0.25;
       // under a virtual-time budget the fall clock (frame dt) barely moves,
