@@ -6,6 +6,33 @@ Demo links assume `npm run serve` (port 8144) or the
 
 ---
 
+## `392833b` — The launch console
+
+The ☄ chip is retired; the strike wears the instrument it came from. Ported
+whole from DeepWatch: the hazard border (a repeating-gradient
+`border-image` — no image asset), the metal safety toggle with its two PNG
+sprites and lit ON/OFF chips, and the chunky 発射 button:
+
+| state | button |
+| --- | --- |
+| cold | grey, dead cursor |
+| armed, no target | orange pulse, label **TARGET** |
+| authorised | red pulse, label **LAUNCH**, press-down on commit |
+
+The narration is DeepWatch's register: `STANDBY`, `ORBIT 41%`,
+`READY · FLIP TO ON`, `AWAITING TARGET`, `LAUNCH AUTHORIZED`,
+`NO TARGET / TGT CELL 0408`.
+
+Underneath, nothing moved — same `strike.js` machine, same refusals, same
+radar promotion. The ritual gained an instrument, not new rules. `syncArmUi`
+runs every frame, so it writes the DOM only when a state key changes.
+
+Bottom-centre placement: the one band both thumb columns leave free, zero
+overlaps at desktop and phone widths, and it stands aside for the munition
+feed with the rest of the chrome.
+
+---
+
 ## `4d5b494` — The AoE tower is a mortar, and its shell falls like one
 
 The head is `half-dotted-mortar.json` — the lab's authored export, embedded
