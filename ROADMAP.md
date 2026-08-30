@@ -69,15 +69,10 @@ So:
 
 ## Committed
 
-### One mode: the camera overhaul
+### ~~One mode: the camera overhaul~~ — DONE
 
-Planned with the operator 2026-08-30, no code yet. The build/tank SWITCH goes
-away. There is one mode, with preset cameras (top-down, chase, PoV, bastion)
-plus a free cam — and every capability everywhere: build towers from the
-chase cam, drive the tank from top-down (the build-mode driving and
-follow-cam already prove that half works). The mode toggle's remaining
-meaning — the wave freeze — becomes its own explicit control or goes.
-This obsoletes parts of the current BUILD/CAM buttons and the `?mode=` hook.
+Shipped as T1/T3/O1 with two centre buttons (heart/tank), buildMode derived,
+tank steerable everywhere, HOLD removed, WANDER became the Tank-Auto radial.
 
 
 ### Tank feel, tuned rather than derived
@@ -114,11 +109,11 @@ actually been examined — whether waves 5–8 feel cramped on it is untested.
   frames the app as a set of PoCs).
 - **A Server Rack / Terminal model** — presumably a lab or GLB casting; target
   unstated, likely a board fixture or look.
-- **Review every tower's shooting pattern.** The unit viewer's FIRE preview
-  exists for exactly this pass.
-- **Homing missiles must CHASE.** Reference: HokorobiTawaa's homing feel
-  (`fireHoming` in its effects.ts re-seeks the live target each frame; ours
-  aims once). Study before building.
+- ~~**Review every tower's shooting pattern**~~ — DONE (`34e3253`,
+  `577f07a`): sniper heavy slug, homing chase steer, mortar drop + landing
+  mark, pooled hit sparks, round tracers.
+- ~~**Homing missiles must CHASE**~~ — DONE: steer k=min(1,6·dt) re-seeks
+  the live target each frame, the HokorobiTawaa feel.
 - ~~**Bring the missile system to the top**~~ — DONE: the launch console sits
   top-centre under the mode row (desktop) / in the left HUD column (phone).
 - **Rework the entire HUD.**
