@@ -6,6 +6,43 @@ Demo links assume `npm run serve` (port 8144) or the
 
 ---
 
+## `1e4d2f7` — Feel: splash, heat, bragging rights, and a report
+
+Four commits in one playtest cadence (`92aa458`, `577f07a`, `1e4d2f7`):
+
+**Shell splash, mortar class.** 1.6 cells (was 0.95) with falloff — 0.75
+inside the half-radius, 0.4 to the edge — and the strike's ring language
+at shell scale so the splash is READ, not inferred.
+
+**The secondary's heat, on the pad.** The gun tubes already glowed; now
+the laser button runs the same cycle — white → orange → red, blinking
+through the lockout. Styled on band *changes* only; per-frame style writes
+on a button are layout noise.
+
+**Callouts + the ram combo.** Deterministic rotation (a counter, not
+`Math.random`) through RECKLESS!/CLOSE CALL!/TIGHT!/FEARLESS! for
+hands-on kills of solid units at arm's length; PROTECT THE HEART! and kin
+for kills in the heart's yard, 6s-gated because sieges kill by the dozen;
+STREAK ×N every fifth consecutive kill, dying with a leak like the streak
+itself. The RAM ×N counter climbs a tier every 10 — size and color, white
+through flickering magenta at ×50 — on a 4s window.
+
+**The sniper fires a round, not a ray** (`577f07a`). The beam pair read
+as a laser. Damage still lands the same frame, but the visible shot is a
+fat slug crossing the line in 0.13s with the impact rings landing when
+the slug does.
+
+**End-of-wave SitRep** (`1e4d2f7`). The cleared toast became a report:
+kills by source, a tint-coded histogram by type, kill tempo as a
+block-glyph sparkline (3s bins), points + clear bonus + peak multiplier,
+rams, leaks in red. Non-blocking, tap to dismiss, outranked by the next
+telegraph. `?sitrep=1`, `?callout=1` render fabricated states through the
+real pipeline — both PIN their displays, because under a virtual-time
+budget every removal timer and every 1.2s animation outruns the first
+painted frame.
+
+---
+
 ## `ee47c12` — The field manual
 
 One CRT screen before the tutorial: green phosphor, scanlines, and eleven
