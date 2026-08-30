@@ -6,6 +6,27 @@ Demo links assume `npm run serve` (port 8144) or the
 
 ---
 
+## `abc853b` — Two berths, four bays, and every spawn drives out
+
+Containers v2, restaged to the operator's blocking: **two** containers
+side by side on the *emptiest* flank of the heart's chamber — the
+adjacent open pair at distToHeart 2–3 scoring the fewest open
+neighbours, a wall-side berth clear of the lanes — doors toward the
+heart, two hull bays each, spares racked nose to tail.
+
+The display and the spawn system are one mechanism now: the opening hull
+drives out of its bay in the first scene, and every death *commandeers*
+the next hull at its own container — bay `k = HP−1` in the order
+c0/0 → c1/0 → c0/1 → c1/1, so the pair reads symmetric while both are
+stocked and each death visibly empties a bay. Lamps go red only over a
+container's last empty bay.
+
+Also: the close-call roster went trilingual with the operator's list
+verbatim — *pt1 c'est chaud!*, *moins une!*, *ca passe ou ca casse*,
+ギリギリ, 危機一髪, セーフ！ and friends.
+
+---
+
 ## `8c1caee` — SNAFU, dossiers, commas, and the black market
 
 The last transmission now opens with the operator's exact words: **LAST
