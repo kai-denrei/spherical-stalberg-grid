@@ -6,6 +6,29 @@ Demo links assume `npm run serve` (port 8144) or the
 
 ---
 
+## `0e0d7ac` — The platform has to come back
+
+Two stacked missiles could fire back-to-back: the ready cap rationed how many
+you *hold*, but nothing rationed the **cadence**. Every launch now puts the
+platform out of position for 12 s (knob: *re-orbit time*), and the console
+narrates the return in DeepWatch's register — `ENTERING ORBIT 43%`, amber,
+safety locked until it reads 100.
+
+Two design points worth the note:
+
+- The cooldown gates **arming**, not the strike already in the air — the
+  ritual stays intact, the tube just will not accept the next round yet.
+- It runs **independently of the promotion window**: a spent platform
+  repositions while the next asset charges, so the two clocks overlap rather
+  than queue. Waiting 12 s and *then* 40 s would have doubled the price of
+  every shot.
+
+Also this session: silence on unbuildable cells (`58909d0` — a radial whose
+every option is disabled is a wall of no; `openShop` refuses at its own door
+with the same `placeError` that used to grey the options).
+
+---
+
 ## `cb407d4` — T1 / T3 / O1, and a radial instead of a cycle
 
 The camera system is three views and two buttons now. The cycle reads
