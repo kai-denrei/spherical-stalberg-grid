@@ -19,31 +19,31 @@
 
 import * as THREE from '../vendor/three.module.js';
 import GUI from '../vendor/lil-gui.esm.js';
-import { generateSphereMesh, relax } from './grid.js?v=d95673d5';
-import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=d95673d5';
-import { mulberry32, randomSeed } from './rng.js?v=d95673d5';
-import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3, segKey } from './vec3.js?v=d95673d5';
-import { CREATURES, waveJelly } from './creatures.js?v=d95673d5';
-import { UNITS, UNIT_NAMES, buildUnit, buildCreature, preloadMkcx, preloadServer, makeServerFixture, makeShieldShell, preloadContainer, makeContainerFixture, makeBulletCloud, makeRewardSolid, makeShellSolid, makeDebris, makeDotBurst, makePortalCloud, makeHeartCloud, makeDotEnemy } from './units.js?v=d95673d5';
-import { LOOKS, LOOK_NAMES } from './looks.js?v=d95673d5';
-import { makeCellIndex } from './cellindex.js?v=d95673d5';
-import { CREATURE_TINTS, ENEMY_SPEC, INTROS, computeWavePlan } from './enemyspec.js?v=d95673d5';
-import { PICKUPS } from './pickups.js?v=d95673d5';
-import { rankFor, rankLabel, badgeSVG, killReq, eliteReq } from './ranks.js?v=d95673d5';
-import { makeScore } from './score.js?v=d95673d5';
-import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER } from './towers.js?v=d95673d5';
-import { makeEconomy, sellRefund } from './economy.js?v=d95673d5';
-import { makeBloom } from './postfx.js?v=d95673d5';
-import { TANK_FEEL, TANK_FEEL_KNOBS, makeTankFeel, stepTankFeel, landTankFeel, fireTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js?v=d95673d5';
-import { FEEL, loadFeel, saveFeel } from './feelstore.js?v=d95673d5';
+import { generateSphereMesh, relax } from './grid.js?v=c796fff6';
+import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=c796fff6';
+import { mulberry32, randomSeed } from './rng.js?v=c796fff6';
+import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3, segKey } from './vec3.js?v=c796fff6';
+import { CREATURES, waveJelly } from './creatures.js?v=c796fff6';
+import { UNITS, UNIT_NAMES, buildUnit, buildCreature, preloadMkcx, preloadServer, makeServerFixture, makeShieldShell, preloadContainer, makeContainerFixture, makeBulletCloud, makeRewardSolid, makeShellSolid, makeDebris, makeDotBurst, makePortalCloud, makeHeartCloud, makeDotEnemy } from './units.js?v=c796fff6';
+import { LOOKS, LOOK_NAMES } from './looks.js?v=c796fff6';
+import { makeCellIndex } from './cellindex.js?v=c796fff6';
+import { CREATURE_TINTS, ENEMY_SPEC, INTROS, computeWavePlan } from './enemyspec.js?v=c796fff6';
+import { PICKUPS } from './pickups.js?v=c796fff6';
+import { rankFor, rankLabel, badgeSVG, killReq, eliteReq } from './ranks.js?v=c796fff6';
+import { makeScore } from './score.js?v=c796fff6';
+import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER } from './towers.js?v=c796fff6';
+import { makeEconomy, sellRefund } from './economy.js?v=c796fff6';
+import { makeBloom } from './postfx.js?v=c796fff6';
+import { TANK_FEEL, TANK_FEEL_KNOBS, makeTankFeel, stepTankFeel, landTankFeel, fireTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js?v=c796fff6';
+import { FEEL, loadFeel, saveFeel } from './feelstore.js?v=c796fff6';
 import { STRIKE_KNOBS, makeStrike, makeStrikeParams, grantStrikes, stepStrike,
   toggleArm, paintTarget, launchStrike, stepFall, skipFall, fallProgress,
-  strikeDamage, retargetStrike, orbitProgress } from './strike.js?v=d95673d5';
-import { radarBasis, radarProject, radarBearing, sweepAngle, radarPhosphor } from './radar.js?v=d95673d5';
-import { BLOOM_GROUPS } from './bloomweights.js?v=d95673d5';
-import { TOWER_LOOK_NAMES, DEFAULT_TOWER_LOOK, buildTowerLook, preloadLook } from './towerlooks.js?v=d95673d5';
-import { makeAudio } from './audio.js?v=d95673d5';
-import { DEATH_KEYS } from './audiomanifest.js?v=d95673d5';
+  strikeDamage, retargetStrike, orbitProgress } from './strike.js?v=c796fff6';
+import { radarBasis, radarProject, radarBearing, sweepAngle, radarPhosphor } from './radar.js?v=c796fff6';
+import { BLOOM_GROUPS } from './bloomweights.js?v=c796fff6';
+import { TOWER_LOOK_NAMES, DEFAULT_TOWER_LOOK, buildTowerLook, preloadLook } from './towerlooks.js?v=c796fff6';
+import { makeAudio } from './audio.js?v=c796fff6';
+import { DEATH_KEYS } from './audiomanifest.js?v=c796fff6';
 
 export function initTdTab(root) {
   let active = false;
@@ -1193,18 +1193,21 @@ export function initTdTab(root) {
       const cgen = serverGen + 1; // the value ++serverGen produces below
       preloadContainer().then(() => {
         if (cgen !== serverGen || !dungeon) return; // board changed since
+        // v3: a CHAIN of three cells (i-j-k, each adjacent to the next)
+        // at distToHeart 3-4 — further out than v2, per the operator —
+        // scored by total openness so the row hugs a wall
+        const inRange = (c2) => dungeon.tags[c2] !== BLOCKED && c2 !== dungeon.spawn
+          && dungeon.distToHeart[c2] >= 3 && dungeon.distToHeart[c2] <= 4;
+        const open = (c2) => graph.adj[c2].filter((k2) => dungeon.tags[k2] !== BLOCKED).length;
         let best = null, bestScore = Infinity;
-        for (let i = 0; i < dungeon.tags.length; i++) {
-          if (dungeon.tags[i] === BLOCKED) continue;
-          const di = dungeon.distToHeart[i];
-          if (di < 2 || di > 3 || i === dungeon.spawn) continue;
-          for (const j of graph.adj[i]) {
-            if (j <= i || dungeon.tags[j] === BLOCKED) continue;
-            const dj = dungeon.distToHeart[j];
-            if (dj < 2 || dj > 3 || j === dungeon.spawn) continue;
-            const openness = graph.adj[i].filter((k2) => dungeon.tags[k2] !== BLOCKED).length
-              + graph.adj[j].filter((k2) => dungeon.tags[k2] !== BLOCKED).length;
-            if (openness < bestScore) { bestScore = openness; best = [i, j]; }
+        for (let j = 0; j < dungeon.tags.length; j++) {
+          if (!inRange(j)) continue;
+          const nbs = graph.adj[j].filter(inRange);
+          for (let a = 0; a < nbs.length; a++) {
+            for (let b = a + 1; b < nbs.length; b++) {
+              const sc = open(nbs[a]) + open(j) + open(nbs[b]);
+              if (sc < bestScore) { bestScore = sc; best = [nbs[a], j, nbs[b]]; }
+            }
           }
         }
         if (!best) return;
@@ -1214,23 +1217,24 @@ export function initTdTab(root) {
           if (!g) break;
           const c = graph.centers[ci];
           const nrm2 = graph.normals[ci];
-          g.scale.setScalar(cellSide * 0.9);
+          // SHALLOW: the full-length box hid its cargo in shadow (operator
+          // report). Depth squashed to 0.55 — one hull fits, and you can
+          // SEE it from the doors.
+          g.scale.set(cellSide * 0.9, cellSide * 0.9, cellSide * 0.9 * 0.55);
           g.position.set(c[0], c[1], c[2]);
           // doors toward the heart: the bays face home, the tanks nose out
           tmpObj.position.copy(g.position);
           tmpObj.up.set(nrm2[0], nrm2[1], nrm2[2]);
           tmpObj.lookAt(hc2[0], hc2[1], hc2[2]);
           g.quaternion.copy(tmpObj.quaternion);
-          const tanks = [];
-          for (const z of [-0.2, 0.2]) {
-            const tank = buildCreature('mkcx', look());
-            tank.scale.setScalar(0.3); // two bays a box, nose to tail
-            tank.position.set(0, 0.12, z);
-            g.add(tank);
-            tanks.push(tank);
-          }
+          const tank = buildCreature('mkcx', look());
+          tank.scale.setScalar(0.32);
+          // counter-stretch: the parent's z-squash would flatten the hull
+          tank.scale.z /= 0.55;
+          tank.position.set(0, 0.12, 0.05); // shown, near the doors
+          g.add(tank);
           scene.add(g);
-          lifeContainers.push({ obj: g, tanks, ci });
+          lifeContainers.push({ obj: g, tanks: [tank], ci });
         }
         syncLifeContainers();
         // the FIRST SCENE: the opening hull drives out of its bay — if
@@ -4081,21 +4085,17 @@ export function initTdTab(root) {
   // directly in front of the camera in third person, blocking exactly the
   // thing the player steers toward. Operator ruling: same-size badge, up
   // top, next to the score it rides with.
-  // Bay order across the pair — [c0 bay0, c1 bay0, c0 bay1, c1 bay1] —
-  // so while both containers hold a spare the display reads symmetric,
-  // and each death visibly empties a bay. Lamps go red only when a
-  // container's LAST hull leaves. The spawn commandeers bay k = HP-1.
-  const BAY_ORDER = [[0, 0], [1, 0], [0, 1], [1, 1]];
+  // v3: one hull per shallow container, three in a row. Container i holds
+  // a spare while i < HP-1; the spawn commandeers container min(2, HP-1)
+  // — the one whose hull just left.
   function syncLifeContainers() {
-    if (lifeContainers.length < 2) return;
+    if (lifeContainers.length < 3) return;
     const spares = Math.max(0, playerHP - 1);
-    BAY_ORDER.forEach(([cIdx, bay], i) => {
-      const cc = lifeContainers[cIdx];
-      if (cc && cc.tanks[bay]) cc.tanks[bay].visible = i < spares;
+    lifeContainers.forEach((cc, i) => {
+      const stocked = i < spares;
+      if (cc.tanks[0]) cc.tanks[0].visible = stocked;
+      cc.obj.userData.setStocked(stocked, null);
     });
-    for (const cc of lifeContainers) {
-      cc.obj.userData.setStocked(cc.tanks.some((tk) => tk.visible), null);
-    }
   }
 
   const fmt = (v) => (v ?? 0).toLocaleString('en-US'); // 3103356 -> 3,103,356
@@ -4771,11 +4771,10 @@ export function initTdTab(root) {
   function respawnPlayerAtSpawn() {
     let ci = dungeon.heart;
     let fromContainer = false;
-    if (lifeContainers.length === 2) {
-      // commandeer the next hull AT its container: the bay being vacated
-      // is bay index (HP-1) in BAY_ORDER — the operator's staging
-      const k = Math.min(BAY_ORDER.length - 1, Math.max(0, playerHP - 1));
-      const cc = lifeContainers[BAY_ORDER[k][0]];
+    if (lifeContainers.length === 3) {
+      // commandeer the next hull AT its container — the berth just vacated
+      const k = Math.min(2, Math.max(0, playerHP - 1));
+      const cc = lifeContainers[k];
       if (cc && dungeon.tags[cc.ci] !== BLOCKED) { ci = cc.ci; fromContainer = true; }
     }
     if (!fromContainer) {

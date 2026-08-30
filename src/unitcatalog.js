@@ -111,7 +111,7 @@ const STRUCTURE_UNITS = [
     note: 'invincible server at the far pole — win a protocol, decrypt a tower',
     sounds: [{ key: 'server_dialup', label: 'handshake' }] },
   { id: 'container', kind: 'fixture', label: 'life container',
-    note: 'two berthed by the heart, two hull bays each — the racked spares are your lives' },
+    note: 'three shallow berths in a row by the heart, one hull each — the racked spares are your lives' },
 ];
 const PORTAL_UNIT = [
   { id: 'portal', kind: 'portal', label: 'the gate',

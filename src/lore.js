@@ -310,19 +310,19 @@ export const LORE = {
   container: {
     name: 'LIFE CONTAINER',
     tag: 'the spare hulls · by the heart',
-    body: 'Two intermodal containers berthed side by side on the quiet '
-      + 'flank of the Cardion’s chamber, doors jacked open toward the '
-      + 'light, two hull bays each. Every tank the survey landed lives '
-      + 'here between deaths: the first drives out of its bay when the '
-      + 'shift begins, and each replacement is commandeered straight off '
-      + 'the racking. A container’s lock lamps burn green while it still '
-      + 'holds a hull and go red over the last empty bay. The crews do '
-      + 'not decorate them. The count decorates itself.',
-    visual: 'two weathered sci-fi shipping containers side by side near a '
-      + 'glowing holographic heart, doors open toward it, each containing '
-      + 'two parked futuristic hover tanks nose to tail, green lock lamps, '
-      + 'one bay standing empty, interior spotlights, dramatic pole-station '
-      + 'lighting, photoreal military logistics, 8k',
+    body: 'Three shallow-berth containers in a row on the far side of the '
+      + 'Cardion’s chamber, doors jacked open toward the light, one hull '
+      + 'each — cut down from freight length so the racked tank sits in '
+      + 'the doorway where a crew can see it. The first drives out when '
+      + 'the shift begins; each replacement is commandeered straight off '
+      + 'its berth. Lock lamps burn green over a stocked berth, red over '
+      + 'an empty one. The crews do not decorate them. The count '
+      + 'decorates itself.',
+    visual: 'three short shipping containers in a neat row near a glowing '
+      + 'holographic heart, doors open toward it, each shallow berth '
+      + 'holding one parked futuristic hover tank visible in the doorway, '
+      + 'green and red lock lamps, interior spotlights, dramatic '
+      + 'pole-station lighting, photoreal military logistics, 8k',
   },
 
   // --- hostiles -----------------------------------------------------------
