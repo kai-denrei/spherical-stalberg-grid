@@ -6,6 +6,25 @@ Demo links assume `npm run serve` (port 8144) or the
 
 ---
 
+## `ee47c12` — The field manual
+
+One CRT screen before the tutorial: green phosphor, scanlines, and eleven
+lines that are each a rule of play rather than a paragraph — the heart,
+ramming (with the one red line: **do not ram solid elements**), shells,
+portals as the win condition, the score's tank bias, insignia, the
+orbital-strike ritual, cruise, and building. Below the fold, a keyboard
+table that renders only where a keyboard exists (coarse-pointer paired
+with a width clause, per the house rule) — touch loads get the thumb-zone
+line instead.
+
+Dismissal is anything: tap, or any key — ESC included, captured before
+the pause menu can react. The sim is frozen while it is up, and whatever
+was queued (tutorial on a first load, briefing otherwise) runs on
+dismissal. `?intro=1` forces it under debug hooks for screenshots;
+`?intro=0` skips it.
+
+---
+
 ## `982a5a9` — The brass before the boss, and an alarm worth believing
 
 Two sounds, one doctrine: a cue should hand over to the thing it warns
