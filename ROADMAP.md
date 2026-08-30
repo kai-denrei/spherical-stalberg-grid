@@ -148,6 +148,25 @@ builder 1/8. Levers, in the operator's preference order:
 - Credit sinks: per-copy tower price escalation; buyable strike charges;
   the ally units specced under Economy.
 
+### Container lives display (asset landed, build next)
+
+`assets/models/container.glb` (650KB, vendored 2026-08-30): three shipping
+containers near the Heart AS the lives counter — one empty, two each
+holding a spare MK-CX. Diegetic: lose a tank, a container stands empty.
+The rig is ready for it (node names inspected):
+
+- **Empty the cargo**: delete/hide `Cargo_Group` (`Pallets_Instanced` +
+  `Loads_Instanced`) — the boxes the operator wants gone.
+- **Articulated doors**: `Door_L_Pivot`/`Door_R_Pivot` swing — the empty
+  container can stand OPEN; a spent life can open its doors as the
+  respawned tank 'drives out'.
+- Extras worth using: `Lock_Lamp_*` (green=stocked/red=spent?),
+  `Telemetry_Readout`, `ID_Plate`; `Callout_*` markers; a
+  `Container_Collision` node for the cell blocker.
+- Place an MK-CX clone (static, engine cold) inside two; sync with
+  playerHP. Same casting pipeline as mkcx/server (fitModel gotchas in
+  the glb memory).
+
 ### Mode incentives
 
 Nothing currently *forces* meaningful switching between the macro layer
