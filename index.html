@@ -5,17 +5,17 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
   <title>spherical stålberg grid</title>
   <meta name="theme-color" content="#10131a">
-  <link rel="manifest" href="./manifest.webmanifest?v=5a76e966">
-  <link rel="apple-touch-icon" href="./icons/apple-touch-icon.png?v=5a76e966">
+  <link rel="manifest" href="./manifest.webmanifest?v=fa168003">
+  <link rel="apple-touch-icon" href="./icons/apple-touch-icon.png?v=fa168003">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="SphereGrid">
-  <link rel="stylesheet" href="./styles.css?v=5a76e966">
+  <link rel="stylesheet" href="./styles.css?v=fa168003">
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
-  <meta name="cb" content="5a76e966">
-  <link rel="icon" type="image/svg+xml" href="./cb-shapes/26.svg?v=5a76e966">
+  <meta name="cb" content="fa168003">
+  <link rel="icon" type="image/svg+xml" href="./cb-shapes/58.svg?v=fa168003">
   <!-- cb-badge retired from the game view (operator ruling): the build
        token lives in the DEV LOG tab, which reads meta[name="cb"] itself -->
 </head>
@@ -145,6 +145,33 @@
     <div id="td-msg" class="hidden"></div>
     <div id="td-tut" class="hidden"></div>
     <div id="td-toast" class="hidden"></div>
+    <div id="td-intro" class="hidden" role="dialog" aria-label="field manual">
+      <div class="fm-frame">
+        <div class="fm-head">&#9626; FIELD MANUAL</div>
+        <div class="fm-body">
+          <div class="fm-line"><b>PROTECT THE HEART</b> &mdash; towers + your tank</div>
+          <div class="fm-line">RAM soft units &middot; free kills</div>
+          <div class="fm-line fm-warn">&#9888; DO NOT RAM units with SOLID elements</div>
+          <div class="fm-line">grab missile triads &middot; shells max 9 &middot; shells open walls</div>
+          <div class="fm-line"><b>DESTROY ALL PORTALS</b> &mdash; the only win</div>
+          <div class="fm-line">tank kills score &times;3 &middot; swarms multiply points</div>
+          <div class="fm-line">hands-on kills earn insignia &middot; lost with the tank</div>
+          <div class="fm-line">ORBITAL STRIKE: charge &rarr; ARM &rarr; tap target &rarr; &#30330;&#23556;</div>
+          <div class="fm-line">set CRUISE (dbl-tap W / Q-E) &mdash; steer and shoot, not throttle</div>
+          <div class="fm-line">BUILD: tap HIGH GROUND in orbit view &middot; upgrade twice</div>
+          <div class="fm-keys fm-desktop">
+            <span>W A S D / arrows</span><span>drive</span>
+            <span>SPACE / SHIFT</span><span>shell / lasers</span>
+            <span>Q / E</span><span>cruise up / down</span>
+            <span>1 / 2 / 3</span><span>orbit &middot; 1st &middot; 3rd</span>
+            <span>M / V</span><span>map / cycle view</span>
+            <span>U / H / ESC</span><span>upgrade / hint / pause</span>
+          </div>
+          <div class="fm-line fm-touch">side zones steer &middot; &#9673; shell &middot; &#8767; lasers &middot; lever = throttle</div>
+        </div>
+        <div class="fm-foot">[ TAP OR ANY KEY &mdash; ENGAGE ]</div>
+      </div>
+    </div>
     <div id="td-danger" class="hidden" aria-hidden="true">
       <div class="dg-sign">&#9888;</div>
       <div class="dg-label">DANGER &middot; HOSTILE CONTACT</div>
@@ -153,7 +180,7 @@
     <div id="td-launch" class="caution-frame" aria-label="launch control">
       <button id="td-safety" class="safety" type="button" aria-pressed="false" aria-label="safety">
         <span class="lbl-on">ON</span>
-        <img id="td-safety-img" class="switch-img" src="assets/ui/switch-off.png?v=5a76e966" alt="" width="120" height="200">
+        <img id="td-safety-img" class="switch-img" src="assets/ui/switch-off.png?v=fa168003" alt="" width="120" height="200">
         <span class="lbl-off">OFF</span>
       </button>
       <div id="td-launch-readout">
@@ -314,6 +341,6 @@
     </div>
   </div>
 
-  <script type="module" src="./src/main.js?v=5a76e966"></script>
+  <script type="module" src="./src/main.js?v=fa168003"></script>
 </body>
 </html>

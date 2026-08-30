@@ -19,31 +19,31 @@
 
 import * as THREE from '../vendor/three.module.js';
 import GUI from '../vendor/lil-gui.esm.js';
-import { generateSphereMesh, relax } from './grid.js?v=5a76e966';
-import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=5a76e966';
-import { mulberry32, randomSeed } from './rng.js?v=5a76e966';
-import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3, segKey } from './vec3.js?v=5a76e966';
-import { CREATURES, waveJelly } from './creatures.js?v=5a76e966';
-import { UNITS, UNIT_NAMES, buildUnit, buildCreature, preloadMkcx, makeBulletCloud, makeRewardSolid, makeShellSolid, makeDebris, makeDotBurst, makePortalCloud, makeHeartCloud, makeDotEnemy } from './units.js?v=5a76e966';
-import { LOOKS, LOOK_NAMES } from './looks.js?v=5a76e966';
-import { makeCellIndex } from './cellindex.js?v=5a76e966';
-import { CREATURE_TINTS, ENEMY_SPEC, INTROS, computeWavePlan } from './enemyspec.js?v=5a76e966';
-import { PICKUPS } from './pickups.js?v=5a76e966';
-import { rankFor, rankLabel, badgeSVG, killReq, eliteReq } from './ranks.js?v=5a76e966';
-import { makeScore } from './score.js?v=5a76e966';
-import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER } from './towers.js?v=5a76e966';
-import { makeEconomy, sellRefund } from './economy.js?v=5a76e966';
-import { makeBloom } from './postfx.js?v=5a76e966';
-import { TANK_FEEL, TANK_FEEL_KNOBS, makeTankFeel, stepTankFeel, landTankFeel, fireTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js?v=5a76e966';
-import { FEEL, loadFeel, saveFeel } from './feelstore.js?v=5a76e966';
+import { generateSphereMesh, relax } from './grid.js?v=fa168003';
+import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=fa168003';
+import { mulberry32, randomSeed } from './rng.js?v=fa168003';
+import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3, segKey } from './vec3.js?v=fa168003';
+import { CREATURES, waveJelly } from './creatures.js?v=fa168003';
+import { UNITS, UNIT_NAMES, buildUnit, buildCreature, preloadMkcx, makeBulletCloud, makeRewardSolid, makeShellSolid, makeDebris, makeDotBurst, makePortalCloud, makeHeartCloud, makeDotEnemy } from './units.js?v=fa168003';
+import { LOOKS, LOOK_NAMES } from './looks.js?v=fa168003';
+import { makeCellIndex } from './cellindex.js?v=fa168003';
+import { CREATURE_TINTS, ENEMY_SPEC, INTROS, computeWavePlan } from './enemyspec.js?v=fa168003';
+import { PICKUPS } from './pickups.js?v=fa168003';
+import { rankFor, rankLabel, badgeSVG, killReq, eliteReq } from './ranks.js?v=fa168003';
+import { makeScore } from './score.js?v=fa168003';
+import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER } from './towers.js?v=fa168003';
+import { makeEconomy, sellRefund } from './economy.js?v=fa168003';
+import { makeBloom } from './postfx.js?v=fa168003';
+import { TANK_FEEL, TANK_FEEL_KNOBS, makeTankFeel, stepTankFeel, landTankFeel, fireTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js?v=fa168003';
+import { FEEL, loadFeel, saveFeel } from './feelstore.js?v=fa168003';
 import { STRIKE_KNOBS, makeStrike, makeStrikeParams, grantStrikes, stepStrike,
   toggleArm, paintTarget, launchStrike, stepFall, skipFall, fallProgress,
-  strikeDamage, retargetStrike, orbitProgress } from './strike.js?v=5a76e966';
-import { radarBasis, radarProject, radarBearing, sweepAngle, radarPhosphor } from './radar.js?v=5a76e966';
-import { BLOOM_GROUPS } from './bloomweights.js?v=5a76e966';
-import { TOWER_LOOK_NAMES, DEFAULT_TOWER_LOOK, buildTowerLook, preloadLook } from './towerlooks.js?v=5a76e966';
-import { makeAudio } from './audio.js?v=5a76e966';
-import { DEATH_KEYS } from './audiomanifest.js?v=5a76e966';
+  strikeDamage, retargetStrike, orbitProgress } from './strike.js?v=fa168003';
+import { radarBasis, radarProject, radarBearing, sweepAngle, radarPhosphor } from './radar.js?v=fa168003';
+import { BLOOM_GROUPS } from './bloomweights.js?v=fa168003';
+import { TOWER_LOOK_NAMES, DEFAULT_TOWER_LOOK, buildTowerLook, preloadLook } from './towerlooks.js?v=fa168003';
+import { makeAudio } from './audio.js?v=fa168003';
+import { DEATH_KEYS } from './audiomanifest.js?v=fa168003';
 
 export function initTdTab(root) {
   let active = false;
@@ -2548,6 +2548,33 @@ export function initTdTab(root) {
     `steer: the side zones · fire: &#9673; shell · &#8767; laser (overheats)<br>` +
     `B = build/tank · M = map view · in BUILD tap HIGH GROUND to place towers<br>` +
     `ESC pause · RAM the small ones · shells breach walls</div>`;
+
+  // The field manual: one laconic CRT screen shown BEFORE the tutorial on a
+  // clean load. Dismiss by tap or any key; whatever was queued (tutorial or
+  // briefing) runs after. The sim is frozen while it is up.
+  const introEl = root.querySelector('#td-intro');
+  let introAfter = null;
+  function dismissIntro() {
+    if (!introEl || introEl.classList.contains('hidden')) return;
+    introEl.classList.add('hidden');
+    removeEventListener('keydown', introKey, true);
+    paused = false;
+    const after = introAfter; introAfter = null;
+    if (after) after();
+  }
+  function introKey(ev) {
+    ev.preventDefault();
+    ev.stopImmediatePropagation(); // ESC must dismiss, not open the pause menu
+    dismissIntro();
+  }
+  function showIntro(after) {
+    if (!introEl) { if (after) after(); return; }
+    introAfter = after || null;
+    paused = true;
+    introEl.classList.remove('hidden');
+    introEl.addEventListener('pointerdown', dismissIntro, { once: true });
+    addEventListener('keydown', introKey, true);
+  }
 
   // opening briefing: the pieces as cards, the ONE win condition, and two
   // clickable glossaries. The sim stays frozen until the player begins.
@@ -5296,7 +5323,13 @@ export function initTdTab(root) {
     .some((k) => urlParams.get(k));
   const tutParam = urlParams.get('tutorial');
   runTutorial = tutParam === '1' || (tutParam !== '0' && !debugging);
-  if (runTutorial) startTutorial();
+  // ?intro=1 forces the manual even under debug hooks (screenshot path);
+  // ?intro=0 skips it. On a clean load it fronts whatever comes next.
+  const introParam = urlParams.get('intro');
+  if (introParam === '1') showIntro();
+  else if (!debugging && introParam !== '0') {
+    showIntro(() => { if (runTutorial) startTutorial(); else showBriefing(); });
+  } else if (runTutorial) startTutorial();
   else if (!debugging) showBriefing();
 
   // ?tutstep=N — clear N scripted pairs, so the later tutorial beats can be
