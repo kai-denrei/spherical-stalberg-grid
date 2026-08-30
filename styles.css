@@ -2721,3 +2721,29 @@ tr.sim-timeout td:nth-child(2), tr.sim-stalled td:nth-child(2) { color: #ffb000;
   width: 360px; height: 240px; border: 1px solid rgba(110, 255, 140, 0.4);
   border-radius: 6px; background: #000;
 }
+
+/* --- the last transmission (game over) ----------------------------------- */
+.go-verdict {
+  font: bold 19px ui-monospace, Menlo, monospace;
+  letter-spacing: 0.12em;
+  color: #ffb000;
+  text-shadow: 0 0 12px rgba(255, 176, 0, 0.5);
+  margin: 8px 0 2px;
+  text-transform: uppercase;
+}
+.go-verdict.best { color: #86ff9e; text-shadow: 0 0 14px rgba(134, 255, 158, 0.6); }
+.go-reason { color: #ff5340; margin-bottom: 8px; }
+.go-grid { display: grid; gap: 3px; margin-bottom: 8px; text-align: left; }
+.go-grid b { font-size: 15px; }
+.go-best {
+  font-style: normal; font-weight: bold; color: #08140a; background: #86ff9e;
+  border-radius: 4px; padding: 1px 6px; margin-left: 4px;
+  animation: pulse-soft 1.4s ease-in-out infinite;
+}
+.go-killers { margin: 8px 0 4px; color: #ff8f80; letter-spacing: 0.08em; }
+.go-killer {
+  width: 44px; height: 44px; vertical-align: middle; margin-left: 6px;
+  border: 1px solid rgba(255, 83, 64, 0.5); border-radius: 6px;
+  background: #0a0508;
+}
+#td-msg .sr-row, #tab-td .msg .sr-row { text-align: left; }

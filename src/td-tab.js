@@ -19,31 +19,31 @@
 
 import * as THREE from '../vendor/three.module.js';
 import GUI from '../vendor/lil-gui.esm.js';
-import { generateSphereMesh, relax } from './grid.js?v=b7f518e3';
-import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=b7f518e3';
-import { mulberry32, randomSeed } from './rng.js?v=b7f518e3';
-import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3, segKey } from './vec3.js?v=b7f518e3';
-import { CREATURES, waveJelly } from './creatures.js?v=b7f518e3';
-import { UNITS, UNIT_NAMES, buildUnit, buildCreature, preloadMkcx, preloadServer, makeServerFixture, makeShieldShell, makeBulletCloud, makeRewardSolid, makeShellSolid, makeDebris, makeDotBurst, makePortalCloud, makeHeartCloud, makeDotEnemy } from './units.js?v=b7f518e3';
-import { LOOKS, LOOK_NAMES } from './looks.js?v=b7f518e3';
-import { makeCellIndex } from './cellindex.js?v=b7f518e3';
-import { CREATURE_TINTS, ENEMY_SPEC, INTROS, computeWavePlan } from './enemyspec.js?v=b7f518e3';
-import { PICKUPS } from './pickups.js?v=b7f518e3';
-import { rankFor, rankLabel, badgeSVG, killReq, eliteReq } from './ranks.js?v=b7f518e3';
-import { makeScore } from './score.js?v=b7f518e3';
-import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER } from './towers.js?v=b7f518e3';
-import { makeEconomy, sellRefund } from './economy.js?v=b7f518e3';
-import { makeBloom } from './postfx.js?v=b7f518e3';
-import { TANK_FEEL, TANK_FEEL_KNOBS, makeTankFeel, stepTankFeel, landTankFeel, fireTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js?v=b7f518e3';
-import { FEEL, loadFeel, saveFeel } from './feelstore.js?v=b7f518e3';
+import { generateSphereMesh, relax } from './grid.js?v=31cf1c4a';
+import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=31cf1c4a';
+import { mulberry32, randomSeed } from './rng.js?v=31cf1c4a';
+import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3, segKey } from './vec3.js?v=31cf1c4a';
+import { CREATURES, waveJelly } from './creatures.js?v=31cf1c4a';
+import { UNITS, UNIT_NAMES, buildUnit, buildCreature, preloadMkcx, preloadServer, makeServerFixture, makeShieldShell, makeBulletCloud, makeRewardSolid, makeShellSolid, makeDebris, makeDotBurst, makePortalCloud, makeHeartCloud, makeDotEnemy } from './units.js?v=31cf1c4a';
+import { LOOKS, LOOK_NAMES } from './looks.js?v=31cf1c4a';
+import { makeCellIndex } from './cellindex.js?v=31cf1c4a';
+import { CREATURE_TINTS, ENEMY_SPEC, INTROS, computeWavePlan } from './enemyspec.js?v=31cf1c4a';
+import { PICKUPS } from './pickups.js?v=31cf1c4a';
+import { rankFor, rankLabel, badgeSVG, killReq, eliteReq } from './ranks.js?v=31cf1c4a';
+import { makeScore } from './score.js?v=31cf1c4a';
+import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER } from './towers.js?v=31cf1c4a';
+import { makeEconomy, sellRefund } from './economy.js?v=31cf1c4a';
+import { makeBloom } from './postfx.js?v=31cf1c4a';
+import { TANK_FEEL, TANK_FEEL_KNOBS, makeTankFeel, stepTankFeel, landTankFeel, fireTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js?v=31cf1c4a';
+import { FEEL, loadFeel, saveFeel } from './feelstore.js?v=31cf1c4a';
 import { STRIKE_KNOBS, makeStrike, makeStrikeParams, grantStrikes, stepStrike,
   toggleArm, paintTarget, launchStrike, stepFall, skipFall, fallProgress,
-  strikeDamage, retargetStrike, orbitProgress } from './strike.js?v=b7f518e3';
-import { radarBasis, radarProject, radarBearing, sweepAngle, radarPhosphor } from './radar.js?v=b7f518e3';
-import { BLOOM_GROUPS } from './bloomweights.js?v=b7f518e3';
-import { TOWER_LOOK_NAMES, DEFAULT_TOWER_LOOK, buildTowerLook, preloadLook } from './towerlooks.js?v=b7f518e3';
-import { makeAudio } from './audio.js?v=b7f518e3';
-import { DEATH_KEYS } from './audiomanifest.js?v=b7f518e3';
+  strikeDamage, retargetStrike, orbitProgress } from './strike.js?v=31cf1c4a';
+import { radarBasis, radarProject, radarBearing, sweepAngle, radarPhosphor } from './radar.js?v=31cf1c4a';
+import { BLOOM_GROUPS } from './bloomweights.js?v=31cf1c4a';
+import { TOWER_LOOK_NAMES, DEFAULT_TOWER_LOOK, buildTowerLook, preloadLook } from './towerlooks.js?v=31cf1c4a';
+import { makeAudio } from './audio.js?v=31cf1c4a';
+import { DEATH_KEYS } from './audiomanifest.js?v=31cf1c4a';
 
 export function initTdTab(root) {
   let active = false;
@@ -618,6 +618,16 @@ export function initTdTab(root) {
     } catch { /* sandboxed parent */ }
   }
 
+  // RUN-level bookkeeping: everything the final send-off reports. Wave
+  // stats (ws) reset each wave; these accumulate until the run ends.
+  let rs = null;
+  function resetRunStats() {
+    rs = { kills: {}, bySrc: { tank: 0, tower: 0, strike: 0 }, rams: 0,
+      strikes: 0, maxCombo: 0, killers: [], maxRank: 0,
+      scoreBins: [], binClock: 0 };
+  }
+  resetRunStats();
+
   let ws = null;
   function resetWaveStats() {
     ws = { t0: simTime, kills: {}, bySrc: { tank: 0, tower: 0, strike: 0 },
@@ -625,6 +635,10 @@ export function initTdTab(root) {
       bins: new Array(16).fill(0) };
   }
   function noteWaveKill(type, src) {
+    if (rs) {
+      rs.kills[type] = (rs.kills[type] || 0) + 1;
+      rs.bySrc[src] = (rs.bySrc[src] || 0) + 1;
+    }
     if (!ws) return;
     ws.kills[type] = (ws.kills[type] || 0) + 1;
     ws.bySrc[src] = (ws.bySrc[src] || 0) + 1;
@@ -3047,6 +3061,7 @@ export function initTdTab(root) {
       streakMark = st - (st % 5);
       showCallout(`STREAK ×${eco.multiplier().toFixed(2)}`, 'co-streak');
     }
+    if (rs) rs.maxRank = Math.max(rs.maxRank, tankRank);
   }
   function noteKillContext(e, src) {
     noteStreak();
@@ -3325,6 +3340,7 @@ export function initTdTab(root) {
     eco = makeEconomy({ startCredit: 170 });
     score.reset();
     hackedUnlocks = 0; hackedRound = false; syncHackBtn();
+    resetRunStats();
     bossCued = false;
     dangerWarnedWave = -1;
     heartCalloutCd = 0; streakMark = 0;
@@ -3856,6 +3872,7 @@ export function initTdTab(root) {
           ramCombo++; ramComboT = RAM_COMBO_GAP;
           noteWaveKill(e.type, 'tank');
           if (ws) ws.rams++;
+          if (rs) { rs.rams++; rs.maxCombo = Math.max(rs.maxCombo, ramCombo); }
           syncCombo();
           if (ramCombo >= 10 && ramCombo % 10 === 0) {
             showCallout(`RAM ×${ramCombo}`, 'co-milestone');
@@ -3866,7 +3883,7 @@ export function initTdTab(root) {
           checkVictory();
           continue;
         }
-        if (tNow > e.touchCd) { e.touchCd = tNow + 1.2; playerHit(); }
+        if (tNow > e.touchCd) { e.touchCd = tNow + 1.2; playerHit(e.type); }
       }
     }
   }
@@ -4425,23 +4442,90 @@ export function initTdTab(root) {
     }, DEATH_HOLD * 1000);
   }
 
+  // The verdict lists. Three tiers by how far the run got; picked by
+  // score modulo (deterministic per run — a replayed seed gets the same
+  // eulogy). Low tier is the low-key diss track the operator ordered.
+  const VERDICT_LOW = [
+    'SNAFU · K-KILL ×3 · try harder next time',
+    'THAT WAS THE TUTORIAL, LAD',
+    'the heart deserved better',
+    'portals 2 · you 0 · do the math',
+    'walked the wrong pole, soldier',
+    'the phage send their regards',
+    'logistics called — they want the tank back',
+    'a bold strategy: dying early',
+    'brief. very brief.',
+    'the SITREP is one word long: OOF',
+  ];
+  const VERDICT_MID = [
+    'GOOD RUN, LAD',
+    'held the line — for a while',
+    'a proper scrap, that one',
+    'the heart remembers who stood',
+    'they earned that one. barely.',
+    'decent tread-work, commander',
+    'the wall of you nearly held',
+    'a fighting retreat, well fought',
+    'they will find the wreck FACING them',
+    'not the worst transmission we have logged',
+  ];
+  const VERDICT_HIGH = [
+    'OUTSTANDING, COMMANDER',
+    'the sector will sing of this',
+    'textbook defense · filthy execution',
+    'a masterclass in applied violence',
+    'the portals BLINKED first',
+    'carve this one into the hull',
+    'the heart beat louder for you',
+    'legendary tread-work · the ranks agree',
+    'they will teach this run at the academy',
+    'send THIS transmission twice',
+  ];
   function loseGame(reason) {
     if (player.won) return;
     player.won = true; // stops motion; same flag, sadder modal
     destroyPlayer();
     ramCombo = 0; ramComboT = 0; syncCombo(); // no brag over a lost heart
-    msgEl.innerHTML = `<div class="msg-head">transmission · last light</div>` +
-      `× ${reason}<br>` +
-      `${enemies.filter((e) => !e.alive).length}/${enemies.length} enemies destroyed · ` +
-      `heart ${Math.max(0, heartHP)}/${HEART_MAX}<br>` +
-      `score ${score.points}${score.points >= score.best && score.points > 0
-        ? ' · NEW BEST' : ` · best ${score.best}`}<br>` +
-      `<button class="msg-regen">⟲ new sector</button>`;
+    // the verdict: tier by distance travelled, line by score (deterministic)
+    const tierList = wave >= 9 || round >= 2 ? VERDICT_HIGH
+      : wave >= 4 ? VERDICT_MID : VERDICT_LOW;
+    const verdict = tierList[score.points % tierList.length];
+    const newBest = score.points >= score.best && score.points > 0;
+    // kills histogram, tinted per enemy (the SitRep's row idiom)
+    const total = rs ? Object.values(rs.kills).reduce((a, b) => a + b, 0) : 0;
+    const top = rs ? Math.max(1, ...Object.values(rs.kills)) : 1;
+    const rows = rs ? Object.entries(rs.kills).sort((a, b) => b[1] - a[1]).slice(0, 6)
+      .map(([type, k]) => {
+        const tint = '#' + (CREATURE_TINTS[type] ?? 0xffffff).toString(16).padStart(6, '0');
+        return `<div class="sr-row"><span class="sr-name">${type}</span>`
+          + `<span class="sr-track"><span class="sr-bar" style="width:${Math.round((k / top) * 100)}%;background:${tint}"></span></span>`
+          + `<span class="sr-n">${k}</span></div>`;
+      }).join('') : '';
+    // who took each tank: icon cards for the killers, in order
+    const killers = rs && rs.killers.length
+      ? `<div class="go-killers">TANKS LOST TO ${rs.killers.map((type) =>
+        `<img class="go-killer" src="${spriteShot(type, unitIcon(type, CREATURE_TINTS[type] ?? 0xffffff))}" title="${type}">`
+      ).join('')}</div>`
+      : `<div class="go-killers">hull intact to the end — the heart fell first</div>`;
+    const spark = rs && rs.scoreBins.length >= 3
+      ? `<div class="sr-line sr-spark">SCORE ${sparkline(rs.scoreBins.map((v, i, a) => v - (a[i - 1] ?? 0)))}</div>` : '';
+    msgEl.innerHTML = `<div class="msg-head">transmission · last light</div>`
+      + `<div class="go-verdict${newBest ? ' best' : ''}">${verdict}</div>`
+      + `<div class="go-reason">× ${reason}</div>`
+      + `<div class="go-grid">`
+      + `<span>SCORE <b>${score.points}</b>${newBest ? ' <i class="go-best">NEW BEST</i>' : ` · best ${score.best}`}</span>`
+      + `<span>WAVE <b>${wave}</b> · R${round}</span>`
+      + `<span>KILLS <b>${total}</b> — tank ${rs ? rs.bySrc.tank : 0} · towers ${rs ? rs.bySrc.tower : 0} · orbital ${rs ? rs.bySrc.strike : 0}</span>`
+      + `<span>RAMS <b>${rs ? rs.rams : 0}</b> · best combo ×${rs ? rs.maxCombo : 0} · strikes ${rs ? rs.strikes : 0}</span>`
+      + `<span>heart ${Math.max(0, heartHP)}/${HEART_MAX} · rank ${rs && rs.maxRank > 0 ? rankLabel(rs.maxRank) : 'unranked'}</span>`
+      + `</div>`
+      + rows + spark + killers
+      + `<button class="msg-regen">⟲ new sector</button>`;
     // let the wreck play before the modal covers it
     setTimeout(() => msgEl.classList.remove('hidden'), DEATH_HOLD * 1000);
   }
 
-  function playerHit() {
+  function playerHit(killerType = null) {
     // the shield takes it: a hard flash on the bubble, nothing on the hull
     if (shieldT > 0) {
       if (shieldObj) shieldObj.material.opacity = 1;
@@ -4449,6 +4533,7 @@ export function initTdTab(root) {
       return;
     }
     playerHP--;
+    if (rs && killerType) rs.killers.push(killerType);
     updateHud();
     if (playerHP > 0) { loseTank(); return; }
     loseGame('your last tank is gone');
@@ -5768,6 +5853,10 @@ export function initTdTab(root) {
     if (shopMute > 0) shopMute -= dt;
     if (heartCalloutCd > 0) heartCalloutCd -= dt;
     if (shieldT > 0) { shieldT -= dt; if (shieldT <= 0) updateHud(); }
+    if (rs) {
+      rs.binClock += dt;
+      if (rs.binClock >= 5) { rs.binClock = 0; rs.scoreBins.push(score.points); }
+    }
     if (!serverFound && serverCi >= 0 && !playerDown
         && dist3(player.pos, graph.centers[serverCi]) < cellSide * 4) {
       serverFound = true;
@@ -5790,6 +5879,7 @@ export function initTdTab(root) {
     {
       const impactCi = stepFall(strike, dt);
       if (impactCi >= 0) {
+        if (rs) rs.strikes++;
         executeStrike(impactCi, t);
         snapCamera();
         // the skip-tap and the impact race; the loser must not buy a tower
