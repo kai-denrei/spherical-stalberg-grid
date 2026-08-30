@@ -6,6 +6,22 @@ Demo links assume `npm run serve` (port 8144) or the
 
 ---
 
+## `716d7d2` — The wheel learns digits
+
+Desktop QoL: with the tower radial open, **1–8 place** — each option
+wears a small green digit badge (hidden on coarse pointers), ESC closes,
+and the digits are *claimed* even when a placement fails, so a miss on a
+locked tower never falls through and flips the camera to O1 instead.
+
+The catch that earns the entry: the wheel renders in `TOWERS` order,
+which is **not** `TOWER_ORDER` — slow and homing swap. The first cut
+numbered the badges by one and fired the keys by the other: badge ④ said
+homing, key 4 placed slow. Caught in the verification screenshot before
+it shipped. The rule that survives: the keys follow the wheel — what the
+badge says is what the key does.
+
+---
+
 ## `3d9ca55` — Demolition is permanent
 
 Field report: pushing toward the server when a round ends, the sector
