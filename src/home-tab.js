@@ -10,7 +10,7 @@
 //
 // Static DOM, built once. No renderer, no loop.
 
-import { POC_GROUPS } from './poccatalog.js?v=03977d82';
+import { POC_GROUPS } from './poccatalog.js?v=7b2d7509';
 
 export function initHomeTab(root) {
   const el = root.querySelector('#home-grid');

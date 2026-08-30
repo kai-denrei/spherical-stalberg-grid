@@ -6,6 +6,24 @@ Demo links assume `npm run serve` (port 8144) or the
 
 ---
 
+## `8a71ea4` — The catalogue earns its fullscreen
+
+Two viewer passes (`63cdba7`, `8a71ea4`): fullscreen units read as sparse
+fog because `frame()` magnifies the silhouette while the dots stay
+battlefield-sized 2px squares — so the catalogue now builds enemies at
+**6× density** and fattens every dot 2.2× through a round-dot sprite (a
+`Points` vertex is a square unless given a map; at 4.6px the corners
+read — the mortar's old lesson, relearned in the viewer). Battlefield
+rendering untouched.
+
+And the SWEEP toggle — named for the tank's turret — was always driving
+every unit's own in-game tick. It is called **ANIMATION** now, and
+hostiles default to it with the turntable OFF: a swimmer under an added
+spin reads as neither. The spin default re-lands per unit shown;
+friendlies and towers keep their turntable.
+
+---
+
 ## `a12c6da` — The shell is an event
 
 Nine to a rack, and the operator's brief was exact: spending one has to
