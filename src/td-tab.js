@@ -19,31 +19,31 @@
 
 import * as THREE from '../vendor/three.module.js';
 import GUI from '../vendor/lil-gui.esm.js';
-import { generateSphereMesh, relax } from './grid.js?v=2fbbddab';
-import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=2fbbddab';
-import { mulberry32, randomSeed } from './rng.js?v=2fbbddab';
-import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3, segKey } from './vec3.js?v=2fbbddab';
-import { CREATURES, waveJelly } from './creatures.js?v=2fbbddab';
-import { UNITS, UNIT_NAMES, buildUnit, buildCreature, preloadMkcx, makeBulletCloud, makeRewardSolid, makeShellSolid, makeDebris, makeDotBurst, makePortalCloud, makeHeartCloud, makeDotEnemy } from './units.js?v=2fbbddab';
-import { LOOKS, LOOK_NAMES } from './looks.js?v=2fbbddab';
-import { makeCellIndex } from './cellindex.js?v=2fbbddab';
-import { CREATURE_TINTS, ENEMY_SPEC, INTROS, computeWavePlan } from './enemyspec.js?v=2fbbddab';
-import { PICKUPS } from './pickups.js?v=2fbbddab';
-import { rankFor, rankLabel, badgeSVG, killReq, eliteReq } from './ranks.js?v=2fbbddab';
-import { makeScore } from './score.js?v=2fbbddab';
-import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER } from './towers.js?v=2fbbddab';
-import { makeEconomy, sellRefund } from './economy.js?v=2fbbddab';
-import { makeBloom } from './postfx.js?v=2fbbddab';
-import { TANK_FEEL, TANK_FEEL_KNOBS, makeTankFeel, stepTankFeel, landTankFeel, fireTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js?v=2fbbddab';
-import { FEEL, loadFeel, saveFeel } from './feelstore.js?v=2fbbddab';
+import { generateSphereMesh, relax } from './grid.js?v=1995f396';
+import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=1995f396';
+import { mulberry32, randomSeed } from './rng.js?v=1995f396';
+import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3, segKey } from './vec3.js?v=1995f396';
+import { CREATURES, waveJelly } from './creatures.js?v=1995f396';
+import { UNITS, UNIT_NAMES, buildUnit, buildCreature, preloadMkcx, makeBulletCloud, makeRewardSolid, makeShellSolid, makeDebris, makeDotBurst, makePortalCloud, makeHeartCloud, makeDotEnemy } from './units.js?v=1995f396';
+import { LOOKS, LOOK_NAMES } from './looks.js?v=1995f396';
+import { makeCellIndex } from './cellindex.js?v=1995f396';
+import { CREATURE_TINTS, ENEMY_SPEC, INTROS, computeWavePlan } from './enemyspec.js?v=1995f396';
+import { PICKUPS } from './pickups.js?v=1995f396';
+import { rankFor, rankLabel, badgeSVG, killReq, eliteReq } from './ranks.js?v=1995f396';
+import { makeScore } from './score.js?v=1995f396';
+import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER } from './towers.js?v=1995f396';
+import { makeEconomy, sellRefund } from './economy.js?v=1995f396';
+import { makeBloom } from './postfx.js?v=1995f396';
+import { TANK_FEEL, TANK_FEEL_KNOBS, makeTankFeel, stepTankFeel, landTankFeel, fireTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js?v=1995f396';
+import { FEEL, loadFeel, saveFeel } from './feelstore.js?v=1995f396';
 import { STRIKE_KNOBS, makeStrike, makeStrikeParams, grantStrikes, stepStrike,
   toggleArm, paintTarget, launchStrike, stepFall, skipFall, fallProgress,
-  strikeDamage, retargetStrike, orbitProgress } from './strike.js?v=2fbbddab';
-import { radarBasis, radarProject, radarBearing, sweepAngle, radarPhosphor } from './radar.js?v=2fbbddab';
-import { BLOOM_GROUPS } from './bloomweights.js?v=2fbbddab';
-import { TOWER_LOOK_NAMES, DEFAULT_TOWER_LOOK, buildTowerLook, preloadLook } from './towerlooks.js?v=2fbbddab';
-import { makeAudio } from './audio.js?v=2fbbddab';
-import { DEATH_KEYS } from './audiomanifest.js?v=2fbbddab';
+  strikeDamage, retargetStrike, orbitProgress } from './strike.js?v=1995f396';
+import { radarBasis, radarProject, radarBearing, sweepAngle, radarPhosphor } from './radar.js?v=1995f396';
+import { BLOOM_GROUPS } from './bloomweights.js?v=1995f396';
+import { TOWER_LOOK_NAMES, DEFAULT_TOWER_LOOK, buildTowerLook, preloadLook } from './towerlooks.js?v=1995f396';
+import { makeAudio } from './audio.js?v=1995f396';
+import { DEATH_KEYS } from './audiomanifest.js?v=1995f396';
 
 export function initTdTab(root) {
   let active = false;
@@ -476,6 +476,17 @@ export function initTdTab(root) {
   const BOSS_WAVE = INTROS.find((i) => ENEMY_SPEC[i.type]?.boss)?.wave ?? -1;
   let bossCued = false;
   let dangerWarnedWave = -1;
+  // Callouts: quick bragging text for the plays worth bragging about.
+  // Message lists ROTATE (a counter, not Math.random — house rule) so
+  // repeats spread out deterministically.
+  const RECKLESS_MSGS = ['RECKLESS!', 'CLOSE CALL!', 'TIGHT!', 'FEARLESS!'];
+  const HEART_MSGS = ['PROTECT THE HEART!', 'LIVING DANGEROUSLY!',
+    'NEED SAFETY BUFFER!', 'LAST LINE HOLDS!'];
+  let recklessIdx = 0, heartIdx = 0;
+  let heartCalloutCd = 0;   // seconds; near-heart kills happen in bursts
+  let streakMark = 0;       // last streak milestone already called out
+  let ramCombo = 0, ramComboT = 0;  // count-up + its expiry window
+  const RAM_COMBO_GAP = 4;
 
   // phagocytosis state, recomputed per frame (amoeba only)
   const reach = { dir: null, amt: 0 };
@@ -2634,6 +2645,55 @@ export function initTdTab(root) {
       `</div><button class="msg-back">← back to briefing</button>`;
     msgEl.classList.remove('hidden');
   }
+  // callout pop-ups + the ram combo counter (both pointer-transparent)
+  const calloutsEl = root.querySelector('#td-callouts');
+  const comboEl = root.querySelector('#td-combo');
+  function showCallout(text, cls, pin = false) {
+    if (!calloutsEl) return;
+    while (calloutsEl.children.length >= 3) calloutsEl.firstChild.remove();
+    const d = document.createElement('div');
+    d.className = `callout ${cls}`;
+    d.textContent = text;
+    calloutsEl.appendChild(d);
+    // pin: the forced ?callout=1 path — under a virtual-time budget both
+    // the removal timer AND the 1.2s animation outrun the first paint
+    if (pin) d.style.animation = 'none';
+    else setTimeout(() => d.remove(), 1200);
+  }
+  function syncCombo() {
+    if (!comboEl) return;
+    if (ramCombo < 2) { comboEl.classList.add('hidden'); return; }
+    comboEl.textContent = `RAM ×${ramCombo}`;
+    // the tier is the intensity dial: size and color climb every 10
+    comboEl.dataset.tier = String(Math.min(5, Math.floor(ramCombo / 10)));
+    comboEl.classList.remove('hidden');
+    comboEl.classList.remove('pop');
+    void comboEl.offsetWidth; // restart the pop animation
+    comboEl.classList.add('pop');
+  }
+  function noteStreak() {
+    // a callout at every 5th consecutive kill — the multiplier made visible
+    const st = eco.streak;
+    if (st >= streakMark + 5) {
+      streakMark = st - (st % 5);
+      showCallout(`STREAK ×${eco.multiplier().toFixed(2)}`, 'co-streak');
+    }
+  }
+  function noteKillContext(e, src) {
+    noteStreak();
+    // hands-on kill of a SOLID unit at arm's length: the reckless family
+    if (src === 'tank' && !e.spec.rammable
+        && dist3(e.pos, player.pos) < cellSide * 2.4) {
+      showCallout(RECKLESS_MSGS[recklessIdx++ % RECKLESS_MSGS.length], 'co-reckless');
+    }
+    // any kill in the heart's yard — gated, sieges kill by the dozen
+    if (heartCalloutCd <= 0
+        && dist3(e.pos, graph.centers[dungeon.heart]) < cellSide * 2.5) {
+      heartCalloutCd = 6;
+      showCallout(HEART_MSGS[heartIdx++ % HEART_MSGS.length], 'co-heart');
+    }
+  }
+
   // generic transient toast (non-blocking, auto-hides)
   const toastEl = root.querySelector('#td-toast');
   let toastTimer = null;
@@ -2834,6 +2894,8 @@ export function initTdTab(root) {
     score.reset();
     bossCued = false;
     dangerWarnedWave = -1;
+    heartCalloutCd = 0; streakMark = 0;
+    ramCombo = 0; ramComboT = 0; syncCombo();
     mesh = generateSphereMesh({ seed: params.seed >>> 0, n: params.points, k: 12 });
     relax(mesh, { n_iters: params.relaxIters, PULL_RATE: 0.25 });
     dungeon = generateDungeon(mesh, {
@@ -3286,6 +3348,12 @@ export function initTdTab(root) {
           eco.award(spec.bounty, { ram: true }); // the ram premium
           scoreKill(spec.bounty, { src: 'tank', ram: true,
             alive: enemies.filter((x) => x.alive).length });
+          ramCombo++; ramComboT = RAM_COMBO_GAP;
+          syncCombo();
+          if (ramCombo >= 10 && ramCombo % 10 === 0) {
+            showCallout(`RAM ×${ramCombo}`, 'co-milestone');
+          }
+          noteStreak();
           creditTankKill(spec);
           killCreature(e, true);
           checkVictory();
@@ -3373,6 +3441,7 @@ export function initTdTab(root) {
       // any weapon's kill pays — but not the same
       eco.award(Math.max(1, Math.ceil(spec.bounty * (KILL_PAY[src] ?? 0.5))));
       scoreKill(spec.bounty, { src, alive: enemies.filter((x) => x.alive).length });
+      noteKillContext(e, src);
       if (src === 'tank') creditTankKill(spec);
       killCreature(e, true);
       return true;
@@ -3393,6 +3462,8 @@ export function initTdTab(root) {
   const laserShots = []; // { pos, dir, dist, mesh }
   let laserClock = 0, laserSide = 0;
   let laserHeat = 0, laserOverheat = false;
+  const laserBtnEl = root.querySelector('#td-pad-laser');
+  let laserBtnBand = -1;
   const LASER_RATE = 0.14;    // s between bursts (guns alternate)
   const LASER_DMG = 0.4;      // fodder: 3 grazes; corona: 5 — weak on purpose
   const LASER_MAX_HEAT = 2.4; // s of continuous fire before lockout
@@ -3432,6 +3503,20 @@ export function initTdTab(root) {
     if (guns) {
       const tube = guns[0].children[0];
       tube.material.color.lerpColors(gunColCool, gunColHot, laserHeat / LASER_MAX_HEAT);
+    }
+    // ...and the same cycle on the pad button: white -> orange -> red as
+    // heat builds, blinking red through the lockout. Style only when the
+    // band CHANGES — per-frame style writes on a button are layout noise.
+    if (laserBtnEl) {
+      const f = laserHeat / LASER_MAX_HEAT;
+      const band = laserOverheat ? 3 : f > 0.66 ? 2 : f > 0.33 ? 1 : 0;
+      if (band !== laserBtnBand) {
+        laserBtnBand = band;
+        const col = ['', '#ffaa44', '#ff6633', '#ff3322'][band];
+        laserBtnEl.style.color = col;
+        laserBtnEl.style.borderColor = col;
+        laserBtnEl.classList.toggle('overheat', band === 3);
+      }
     }
     if (wantFire && !laserOverheat) {
       laserClock += dt;
@@ -3585,16 +3670,27 @@ export function initTdTab(root) {
         if (!e.alive) continue;
         if (dist3(p.pos, e.pos) < cellSide * Math.max(0.45, (e.size ?? e.spec.size) * 0.8)) {
           damageEnemy(e, tNow, 1, true, 'tank');
-          // a shell is not a bullet: a small AoE clips whatever was packed
-          // against the one it struck. Half damage, no on-hit reactions —
-          // the graze must not keep barbed/knot permanently accelerated —
-          // and still tank-rate pay, because the tank fired it.
+          // a shell is not a bullet: mortar-class AoE (operator ruling —
+          // it used to clip 0.95 cells for half damage; now 1.6 cells with
+          // falloff). No on-hit reactions on the splash — the graze must
+          // not keep barbed/knot permanently accelerated — and tank-rate
+          // pay, because the tank fired it.
+          const SHELL_R = cellSide * 1.6;
           for (const e2 of enemies) {
             if (e2 === e || !e2.alive) continue;
-            if (dist3(p.pos, e2.pos) < cellSide * 0.95) damageEnemy(e2, tNow, 0.5, false, 'tank');
+            const d2 = dist3(p.pos, e2.pos);
+            if (d2 < SHELL_R) {
+              damageEnemy(e2, tNow, d2 < SHELL_R * 0.5 ? 0.75 : 0.4, false, 'tank');
+            }
           }
-          const clip = makeDotBurst(0xfff2c0, norm3(p.pos), 26);
-          clip.scale.setScalar(cellSide * 0.7);
+          // splash you can SEE: the strike's ring language at shell scale
+          const sci = cellIndex(p.pos);
+          if (sci !== -1) {
+            warnRing(sci, 0xfff2c0, 0.5, SHELL_R * 1.05);
+            warnRing(sci, 0xffb347, 0.35, SHELL_R * 0.6);
+          }
+          const clip = makeDotBurst(0xfff2c0, norm3(p.pos), 48);
+          clip.scale.setScalar(cellSide * 1.1);
           const cp = add3(p.pos, scale3(norm3(p.pos), cellSide * 0.15));
           clip.position.set(cp[0], cp[1], cp[2]);
           scene.add(clip);
@@ -3838,6 +3934,7 @@ export function initTdTab(root) {
 
   function heartHit(dmg = 1) {
     eco.leak(); // a breach kills the streak — HK's rule, our Heart
+    streakMark = 0;
     if (!tutorialActive) heartHP -= dmg;
     heartSprite.userData.hit(); // orange/red Wave flare
     updateHud();
@@ -4975,6 +5072,11 @@ export function initTdTab(root) {
     }
     if (strikeGrace > 0) strikeGrace -= dt;
     if (shopMute > 0) shopMute -= dt;
+    if (heartCalloutCd > 0) heartCalloutCd -= dt;
+    if (ramComboT > 0) {
+      ramComboT -= dt;
+      if (ramComboT <= 0) { ramCombo = 0; syncCombo(); }
+    }
     {
       const impactCi = stepFall(strike, dt);
       if (impactCi >= 0) {
@@ -5319,7 +5421,7 @@ export function initTdTab(root) {
 
   // opening briefing on a clean load; any debug hook means headless/demo,
   // where a frozen sim would break the verification flow
-  const debugging = ['walk', 'tick', 'wave', 'blast', 'laser', 'found', 'recoil', 'mode', 'map', 'tower', 'credit', 'shop', 'sector', 'reveal', 'portal', 'lose', 'charge', 'layout', 'perf', 'strike', 'strikefall', 'strikecam', 'gateprobe', 'rank', 'danger']
+  const debugging = ['walk', 'tick', 'wave', 'blast', 'laser', 'found', 'recoil', 'mode', 'map', 'tower', 'credit', 'shop', 'sector', 'reveal', 'portal', 'lose', 'charge', 'layout', 'perf', 'strike', 'strikefall', 'strikecam', 'gateprobe', 'rank', 'danger', 'callout']
     .some((k) => urlParams.get(k));
   const tutParam = urlParams.get('tutorial');
   runTutorial = tutParam === '1' || (tutParam !== '0' && !debugging);
@@ -5497,6 +5599,15 @@ export function initTdTab(root) {
   // budget the 1.9s hide-timer fires before the first paint (timers outrun
   // rAF), so a forced warning that also hides itself verifies nothing
   if (urlParams.get('danger') === '1') { dangerFlash(); clearTimeout(dangerTimer); }
+
+  // ?callout=1 — one of each callout + a pinned combo, for layout checks
+  if (urlParams.get('callout') === '1') {
+    showCallout(RECKLESS_MSGS[0], 'co-reckless', true);
+    showCallout(HEART_MSGS[0], 'co-heart', true);
+    showCallout('STREAK ×1.45', 'co-streak', true);
+    ramCombo = 23; syncCombo();
+    ramComboT = 9999; // pinned: the expiry timer outruns headless paints
+  }
 
   // ?rank=N — jump the ladder for layout checks: grants exactly rank N's
   // requirements (kills AND elites), then renders through the normal path

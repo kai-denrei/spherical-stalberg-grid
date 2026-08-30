@@ -2290,3 +2290,72 @@ body.playing:not(.chrome-open) #tabbar { display: none !important; }
 @media (prefers-reduced-motion: reduce) {
   .fm-head, .fm-foot { animation: none; }
 }
+
+/* --- kill callouts + the ram combo counter -------------------------------
+   Quick bragging text: pops big, settles, drifts up and out inside 1.2s.
+   The combo counter is the intensity dial — every 10 rams it grows a size
+   and heats a color, white through magenta. */
+#td-callouts {
+  position: absolute;
+  top: 44%;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 12;
+  pointer-events: none;
+  text-align: center;
+  width: max-content;
+}
+.callout {
+  font: bold 21px ui-monospace, Menlo, monospace;
+  letter-spacing: 0.14em;
+  margin: 2px 0;
+  animation: co-pop 1.2s ease-out forwards;
+}
+.co-reckless { color: #ffb347; text-shadow: 0 0 12px rgba(255, 179, 71, 0.7); }
+.co-heart { color: #ff5340; text-shadow: 0 0 12px rgba(255, 83, 64, 0.7); }
+.co-streak { color: #9ff8ff; text-shadow: 0 0 12px rgba(159, 248, 255, 0.6); }
+.co-milestone {
+  color: #ff2df0;
+  font-size: 27px;
+  text-shadow: 0 0 16px rgba(255, 45, 240, 0.8);
+}
+@keyframes co-pop {
+  0% { opacity: 0; transform: scale(1.9); }
+  14% { opacity: 1; transform: scale(1); }
+  75% { opacity: 1; transform: translateY(0); }
+  100% { opacity: 0; transform: translateY(-20px) scale(0.94); }
+}
+#td-combo {
+  position: absolute;
+  /* below the callout stack: three concurrent callouts reach ~52% */
+  top: 56%;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 12;
+  pointer-events: none;
+  font-family: ui-monospace, Menlo, monospace;
+  font-weight: bold;
+  letter-spacing: 0.1em;
+}
+#td-combo.hidden { display: none; }
+#td-combo[data-tier="0"] { font-size: 17px; color: #ffffff; text-shadow: 0 0 8px rgba(255, 255, 255, 0.5); }
+#td-combo[data-tier="1"] { font-size: 22px; color: #ffe066; text-shadow: 0 0 10px rgba(255, 224, 102, 0.7); }
+#td-combo[data-tier="2"] { font-size: 28px; color: #ffaa44; text-shadow: 0 0 13px rgba(255, 170, 68, 0.8); }
+#td-combo[data-tier="3"] { font-size: 34px; color: #ff6633; text-shadow: 0 0 16px rgba(255, 102, 51, 0.85); }
+#td-combo[data-tier="4"] { font-size: 40px; color: #ff3322; text-shadow: 0 0 20px rgba(255, 51, 34, 0.9); }
+#td-combo[data-tier="5"] {
+  font-size: 48px;
+  color: #ff2df0;
+  text-shadow: 0 0 26px rgba(255, 45, 240, 0.95);
+  animation: dg-flicker 0.14s steps(2) infinite;
+}
+#td-combo.pop { animation: combo-pop 0.2s ease-out; }
+#td-combo[data-tier="5"].pop { animation: combo-pop 0.2s ease-out, dg-flicker 0.14s steps(2) infinite; }
+@keyframes combo-pop {
+  45% { transform: translateX(-50%) scale(1.4); }
+}
+/* the secondary-fire pad blinks red through its lockout */
+.tfire.overheat { animation: dg-flicker 0.3s steps(2) infinite; }
+@media (prefers-reduced-motion: reduce) {
+  #td-combo[data-tier="5"], .tfire.overheat { animation: none; }
+}
