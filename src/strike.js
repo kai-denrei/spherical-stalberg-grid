@@ -16,7 +16,7 @@
 // visuals. This owns every number and every refusal, so the ritual is
 // testable without a pixel.
 
-import { makeParams, clampParams, formatKnobs, knobProblems } from './knobs.js?v=1c834a26';
+import { makeParams, clampParams, formatKnobs, knobProblems } from './knobs.js?v=0d58733e';
 
 export const STRIKE_TUNE = {
   windowTime: 40,    // s for a reserved strike to promote to ready

@@ -19,31 +19,31 @@
 
 import * as THREE from '../vendor/three.module.js';
 import GUI from '../vendor/lil-gui.esm.js';
-import { generateSphereMesh, relax } from './grid.js?v=1c834a26';
-import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=1c834a26';
-import { mulberry32, randomSeed } from './rng.js?v=1c834a26';
-import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3, segKey } from './vec3.js?v=1c834a26';
-import { CREATURES, waveJelly } from './creatures.js?v=1c834a26';
-import { UNITS, UNIT_NAMES, buildUnit, buildCreature, preloadMkcx, makeBulletCloud, makeRewardSolid, makeShellSolid, makeDebris, makeDotBurst, makePortalCloud, makeHeartCloud, makeDotEnemy } from './units.js?v=1c834a26';
-import { LOOKS, LOOK_NAMES } from './looks.js?v=1c834a26';
-import { makeCellIndex } from './cellindex.js?v=1c834a26';
-import { CREATURE_TINTS, ENEMY_SPEC, INTROS, computeWavePlan } from './enemyspec.js?v=1c834a26';
-import { PICKUPS } from './pickups.js?v=1c834a26';
-import { rankFor, rankLabel, badgeSVG, killReq, eliteReq } from './ranks.js?v=1c834a26';
-import { makeScore } from './score.js?v=1c834a26';
-import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER } from './towers.js?v=1c834a26';
-import { makeEconomy, sellRefund } from './economy.js?v=1c834a26';
-import { makeBloom } from './postfx.js?v=1c834a26';
-import { TANK_FEEL, TANK_FEEL_KNOBS, makeTankFeel, stepTankFeel, landTankFeel, fireTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js?v=1c834a26';
-import { FEEL, loadFeel, saveFeel } from './feelstore.js?v=1c834a26';
+import { generateSphereMesh, relax } from './grid.js?v=0d58733e';
+import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=0d58733e';
+import { mulberry32, randomSeed } from './rng.js?v=0d58733e';
+import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3, segKey } from './vec3.js?v=0d58733e';
+import { CREATURES, waveJelly } from './creatures.js?v=0d58733e';
+import { UNITS, UNIT_NAMES, buildUnit, buildCreature, preloadMkcx, makeBulletCloud, makeRewardSolid, makeShellSolid, makeDebris, makeDotBurst, makePortalCloud, makeHeartCloud, makeDotEnemy } from './units.js?v=0d58733e';
+import { LOOKS, LOOK_NAMES } from './looks.js?v=0d58733e';
+import { makeCellIndex } from './cellindex.js?v=0d58733e';
+import { CREATURE_TINTS, ENEMY_SPEC, INTROS, computeWavePlan } from './enemyspec.js?v=0d58733e';
+import { PICKUPS } from './pickups.js?v=0d58733e';
+import { rankFor, rankLabel, badgeSVG, killReq, eliteReq } from './ranks.js?v=0d58733e';
+import { makeScore } from './score.js?v=0d58733e';
+import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER } from './towers.js?v=0d58733e';
+import { makeEconomy, sellRefund } from './economy.js?v=0d58733e';
+import { makeBloom } from './postfx.js?v=0d58733e';
+import { TANK_FEEL, TANK_FEEL_KNOBS, makeTankFeel, stepTankFeel, landTankFeel, fireTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js?v=0d58733e';
+import { FEEL, loadFeel, saveFeel } from './feelstore.js?v=0d58733e';
 import { STRIKE_KNOBS, makeStrike, makeStrikeParams, grantStrikes, stepStrike,
   toggleArm, paintTarget, launchStrike, stepFall, skipFall, fallProgress,
-  strikeDamage, retargetStrike, orbitProgress } from './strike.js?v=1c834a26';
-import { radarBasis, radarProject, radarBearing, sweepAngle, radarPhosphor } from './radar.js?v=1c834a26';
-import { BLOOM_GROUPS } from './bloomweights.js?v=1c834a26';
-import { TOWER_LOOK_NAMES, DEFAULT_TOWER_LOOK, buildTowerLook, preloadLook } from './towerlooks.js?v=1c834a26';
-import { makeAudio } from './audio.js?v=1c834a26';
-import { DEATH_KEYS } from './audiomanifest.js?v=1c834a26';
+  strikeDamage, retargetStrike, orbitProgress } from './strike.js?v=0d58733e';
+import { radarBasis, radarProject, radarBearing, sweepAngle, radarPhosphor } from './radar.js?v=0d58733e';
+import { BLOOM_GROUPS } from './bloomweights.js?v=0d58733e';
+import { TOWER_LOOK_NAMES, DEFAULT_TOWER_LOOK, buildTowerLook, preloadLook } from './towerlooks.js?v=0d58733e';
+import { makeAudio } from './audio.js?v=0d58733e';
+import { DEATH_KEYS } from './audiomanifest.js?v=0d58733e';
 
 export function initTdTab(root) {
   let active = false;
@@ -463,6 +463,13 @@ export function initTdTab(root) {
   const HEART_MAX = 10;
   let playerHP = 3;
   const PLAYER_MAX = 3;
+  // A destroyed tank is DOWN, not merely invisible. Without this flag the
+  // wreck kept its whole agency through the death hold — it drove (auto),
+  // rammed enemies for combo and pay, took touch damage (a second life,
+  // gone — the RED accents), and grabbed pickups — all while hidden. The
+  // player then 'respawned where they died' because the ghost had driven
+  // itself somewhere in the meantime.
+  let playerDown = false;
   let carryingRegen = false;
   let speedBonus = 1; // permanent, from power rewards
   // The tank's field promotion. Only hands-on kills climb it — towers and
@@ -1472,7 +1479,7 @@ export function initTdTab(root) {
 
   // called once per frame: steer, glide (creature-paced), respawn, absorb
   function advanceMotion(dt) {
-    if (player.won || player.next === -1) return;
+    if (player.won || playerDown || player.next === -1) return;
     simTime += dt;
 
     // continuous steering while held; ANY key claims manual control —
@@ -2849,7 +2856,7 @@ export function initTdTab(root) {
   // is pressing. Manual mode leaves the trigger entirely to the player.
   function autoGunner(tNow) {
     // any camera: watching from orbit must not stand your own gun down
-    if (manualActive() || player.won || paused) return;
+    if (manualActive() || player.won || playerDown || paused) return;
     if (ammo <= 0 || cannonHeat > 0) return;
     const R = cellSide * 3.0;
     const shellsForAll = params.directive !== 'conserve' && params.directive !== 'ram';
@@ -3120,6 +3127,7 @@ export function initTdTab(root) {
     deathPick = mulberry32((params.seed >>> 0) ^ 0x9e3779b9);
     heartHP = HEART_MAX;
     playerHP = PLAYER_MAX;
+    playerDown = false;
     resetTankRank();
     carryingRegen = false;
     speedBonus = 1;
@@ -3435,12 +3443,12 @@ export function initTdTab(root) {
       // (per-enemy cooldown so overlap isn't a blender)
       const touchR = cellSide * Math.max(0.4, (e.size ?? spec.size) * 0.8);
       // a unit that HURTS to touch is closing in: warn, once per wave
-      if (!spec.rammable && dangerWarnedWave !== wave
+      if (!playerDown && !spec.rammable && dangerWarnedWave !== wave
           && dist3(e.pos, player.pos) < cellSide * 3.5) {
         dangerWarnedWave = wave;
         dangerFlash();
       }
-      if (dist3(e.pos, player.pos) < touchR) {
+      if (!playerDown && dist3(e.pos, player.pos) < touchR) {
         if (spec.rammable) {
           // run over: tinted splat under the treads + the weight bump
           const burst = makeDotBurst(CREATURE_TINTS[e.type], n);
@@ -3576,14 +3584,9 @@ export function initTdTab(root) {
   const LASER_DMG = 0.4;      // fodder: 3 grazes; corona: 5 — weak on purpose
   const LASER_MAX_HEAT = 2.4; // s of continuous fire before lockout
   const LASER_COOL = 1.4;     // heat shed per second (lockout ≈ 1.7 s)
-  // thin bright core + a wider additive halo child (soft glow without a
-  // bloom chain — additive over the dark board reads as light)
-  const laserGeo = new THREE.BoxGeometry(1, 1, 1); // shared; scaled per bolt
-  const laserMat = new THREE.MeshBasicMaterial({ color: 0xeafdff, transparent: true, opacity: 0.95 });
-  const laserHaloMat = new THREE.MeshBasicMaterial({
-    color: 0x4fd8ff, transparent: true, opacity: 0.4,
-    blending: THREE.AdditiveBlending, depthWrite: false,
-  });
+  // Bolts were BoxGeometry — literally blocky (operator ruling). They are
+  // round tracers now, the same idiom every tower shot speaks: a hot head
+  // with three ghosts strung behind it along the flight line.
   const Z_AXIS = new THREE.Vector3(0, 0, 1);
   const gunColCool = new THREE.Color(0x7df9ff);
   const gunColHot = new THREE.Color(0xff5340);
@@ -3591,13 +3594,15 @@ export function initTdTab(root) {
   const gunEmiHot = new THREE.Color(0xff2200);
 
   function killLaser(i) {
-    scene.remove(laserShots[i].mesh); // geometry/material are shared — keep
+    scene.remove(laserShots[i].mesh);
+    laserShots[i].mesh.geometry.dispose(); // per-bolt tracer geometry now
+    laserShots[i].mesh.material.dispose();
     laserShots.splice(i, 1);
   }
 
   function updateLasers(dt, tNow) {
     const guns = playerMesh && playerMesh.userData.laserGuns;
-    const wantFire = keys.laser && guns && !player.won;
+    const wantFire = keys.laser && guns && !player.won && !playerDown;
     // heat: build while firing, shed otherwise; overheat locks the trigger
     // until the tubes are fully cold (no feathering the cap)
     if (laserOverheat) {
@@ -3666,11 +3671,7 @@ export function initTdTab(root) {
         const n = pos;
         const d = [tmpV.x, tmpV.y, tmpV.z];
         const dir = norm3(sub3(d, scale3(n, dot3(d, n))));
-        const mesh = new THREE.Mesh(laserGeo, laserMat);
-        mesh.scale.set(cellSide * 0.02, cellSide * 0.02, cellSide * 0.46);
-        const halo = new THREE.Mesh(laserGeo, laserHaloMat);
-        halo.scale.set(4.5, 4.5, 1.12); // relative to the thin core
-        mesh.add(halo);
+        const mesh = makeTracer(0xbfefff, 7, 3);
         scene.add(mesh);
         laserShots.push({ pos, dir, dist: 0, mesh });
       }
@@ -3686,9 +3687,15 @@ export function initTdTab(root) {
       p.dir = norm3(sub3(p.dir, scale3(n, dot3(p.dir, n))));
       p.dist += v * dt;
       const lift = 1 + params.wallHeight * 0.5;
-      p.mesh.position.set(p.pos[0] * lift, p.pos[1] * lift, p.pos[2] * lift);
-      tmpV.set(p.dir[0], p.dir[1], p.dir[2]);
-      p.mesh.quaternion.setFromUnitVectors(Z_AXIS, tmpV);
+      // head at the bolt, ghosts strung behind along the flight line
+      const attr = p.mesh.geometry.getAttribute('position');
+      for (let k = 0; k < attr.count; k++) {
+        const off = k * cellSide * 0.085;
+        attr.setXYZ(k, (p.pos[0] - p.dir[0] * off) * lift,
+          (p.pos[1] - p.dir[1] * off) * lift,
+          (p.pos[2] - p.dir[2] * off) * lift);
+      }
+      attr.needsUpdate = true;
       let dead = false;
       for (const e of enemies) {
         if (!e.alive) continue;
@@ -3708,7 +3715,7 @@ export function initTdTab(root) {
 
   // --- firing: the shot leaves along the turret's CURRENT sweep ------------
   function fire(aimDir = null) {
-    if (player.won || paused || ammo <= 0 || cannonHeat > 0) return;
+    if (player.won || playerDown || paused || ammo <= 0 || cannonHeat > 0) return;
     ammo--;
     sfx.play('tank_main'); // the player's own act — always at full presence
     cannonHeat = CANNON_COOL; // the sleeve glows red-hot, cools over 3 s
@@ -3919,6 +3926,7 @@ export function initTdTab(root) {
   }
 
   function checkRewards() {
+    if (playerDown) return; // a wreck picks nothing up
     const r = rewardMeshes.get(player.cur);
     if (r) {
       scene.remove(r.obj);
@@ -3962,6 +3970,7 @@ export function initTdTab(root) {
     scene.add(burst);
     debris.push(burst);
     playerMesh.visible = false;
+    playerDown = true;
   }
 
   // Watching the wreck should not cost a round. This plays the destruction
@@ -3974,6 +3983,7 @@ export function initTdTab(root) {
     setTimeout(() => {
       if (player.won || !playerMesh) return; // a real death happened meanwhile
       playerMesh.visible = true;
+      playerDown = false;
       feel.hoverT = 0;
       landTankFeel(feel);   // it drops back in and settles
     }, DEATH_HOLD * 1000);
@@ -3983,6 +3993,7 @@ export function initTdTab(root) {
     if (player.won) return;
     player.won = true; // stops motion; same flag, sadder modal
     destroyPlayer();
+    ramCombo = 0; ramComboT = 0; syncCombo(); // no brag over a lost heart
     msgEl.innerHTML = `<div class="msg-head">transmission · last light</div>` +
       `× ${reason}<br>` +
       `${enemies.filter((e) => !e.alive).length}/${enemies.length} enemies destroyed · ` +
@@ -4013,12 +4024,14 @@ export function initTdTab(root) {
     const stripped = tankRank > 0 ? rankLabel(tankRank) : '';
     destroyPlayer();
     resetTankRank(); // the insignia belonged to that hull
+    ramCombo = 0; ramComboT = 0; syncCombo(); // the combo died with it too
 
     setTimeout(() => {
       if (player.won || !playerMesh) return;   // a real death happened meanwhile
       // back to the entry point, facing the heart, engine cold
       respawnPlayerAtSpawn();
       playerMesh.visible = true;
+      playerDown = false;
       feel.hoverT = 0;
       landTankFeel(feel);
       applyTankHealth(playerMesh, playerHP / PLAYER_MAX);
