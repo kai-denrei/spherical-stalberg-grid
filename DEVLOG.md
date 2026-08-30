@@ -6,6 +6,60 @@ Demo links assume `npm run serve` (port 8144) or the
 
 ---
 
+## `44bc639` — One mode, and a radar where the minimap was
+
+Two structural changes in one sitting, both long promised.
+
+### Cameras instead of modes
+
+BUILD/MANUAL traded capabilities: enter build to place towers but lose the
+fight, drive but lose the board. Gone. There are only **cameras** now —
+orbit (the old build cam, the strategic pose), third, pov, bastion, cycled on
+V — and every capability works under all of them: taps open the shop
+anywhere, the tank drives anywhere, the auto-gunner fights anywhere, nothing
+hides.
+
+The migration trick: `buildMode` survives as a **derived** value
+(`view === 'orbit'`) assigned in exactly one place. Its twenty read-sites —
+drag-orbit, pinch, the free-cam branch, the follow-cam — all mean "is the
+free camera up", and that meaning is unchanged. Only the write-sites carried
+the mode, and those are what died.
+
+The freeze BUILD used to smuggle in is an explicit **HOLD** switch now (same
+button, same B key, same self-release when hostiles land) — a capability
+with a name instead of a side effect of a camera. Double-tap in orbit pulls
+back to the whole planet: strategy is one gesture from anywhere, which was
+the point.
+
+### The radar
+
+The minimap stopped being a minimap the day it became a culled marker layer —
+a shrunken second render that told you nothing the main view did not. It is
+a **PPI scope** now, DeepWatch's idiom brought home: rotating beam, trailing
+phosphor, contacts flaring as the beam passes and decaying behind it. Gates
+pulse amber harder as a wave charges — the radar shows the telegraph.
+
+It is a 2D canvas, and it **retires the second WebGL context outright**. The
+scope math is pure and pinned (`src/radar.js`): heading-up, starboard-right,
+out-of-range contacts pin to the rim instead of vanishing — orientation
+conventions being exactly the kind of thing that flips silently.
+
+Two details worth their comments: the sweep keeps turning while paused (a
+dead scope reads as a crash; a turning one reads as a pause), and the old
+YOU arrow had to be parked on the now-unrendered map layer — the map
+renderer's absence would otherwise have made it suddenly visible **in the
+world**.
+
+### Playtest tweaks folded in
+
+While a munition flies, the feed owns every tap — the retarget/skip tap had
+been falling through to the shop dispatch and popping the tower modal under
+the strike camera. And the tank's shell carries a small AoE now: half damage
+to anything packed against its victim, no on-hit reactions, a clip of sparks
+so it reads.
+
+---
+
 ## `7a00bb5` — Hit like it looks
 
 ### "Within range yet unhurt" had two causes
