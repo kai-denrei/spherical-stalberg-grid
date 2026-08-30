@@ -45,9 +45,12 @@ export const TOWERS = [
     shape: 'broadcast', spin: 0.3 },
   { key: 'aoe',    label: 'AoE',         color: 0x9fc4ff, cost: 110,
     dmg: 12 / 90, range: 3.5, rate: 0.9, attack: 'mortar', splash: 1.5,
-    // a rocket launcher: boxed tubes lobbing ordnance over a distance and
-    // landing it on an area. The mortar arc is the tower's whole identity.
-    shape: 'launcher', spin: 0.7, projPx: 8, trail: 2, arc: true, projSpeed: 3.5 }, // a slow deliberate LOB
+    // a MORTAR, literally: tube and baseplate, the thing whose entire job
+    // is the lobbed shell this tower fires. The launcher read as generic
+    // ordnance; this one is the attack, sculpted.
+    // fat round, real smoke: the heaviest shell on the board should read
+    // as one in flight, not only on impact
+    shape: 'mortar', spin: 0.7, projPx: 12, trail: 6, arc: true, projSpeed: 3.5 }, // a slow deliberate LOB
   { key: 'sniper', label: 'Sniper',      color: 0xffffff, cost: 130,
     dmg: 62 / 90, range: 7.0, rate: 0.7, attack: 'single',
     // a guyed mast: the tallest, thinnest thing here, built to reach. The
