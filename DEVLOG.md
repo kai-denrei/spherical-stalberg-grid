@@ -6,6 +6,38 @@ Demo links assume `npm run serve` (port 8144) or the
 
 ---
 
+## `cb407d4` — T1 / T3 / O1, and a radial instead of a cycle
+
+The camera system is three views and two buttons now. The cycle reads
+**T1** (first person) → **T3** (third) → **O1** (orbital) on the CAM button
+itself; bastion left the cycle — tower-watching was a spectator mode nobody
+drove from. Nothing auto-centres: two explicit CENTRE buttons aim the orbital
+view on demand (♥ = heart + whole planet, ◉ = tank up close), each switching
+you to O1 if needed. One courtesy kept: the *first* orbit entry still frames
+the heart, because a free camera pointed at the dark side of a planet is not
+a view, it is a bug report.
+
+**HOLD is gone** (operator call). `buildFrozen()` answers `false` forever
+rather than being unpicked from every gate it feeds — the constant carries
+the history, the callers stay untouched.
+
+**WANDER became TANK-AUTO**: a small radial of six directives instead of
+blind-cycling — on a phone, cycling meant tapping through five states you
+did not want to reach the one you did. Picking engages auto (unchanged rule),
+and the directive-pick side effects (`steerHold`, cruise-kill) nearly got
+lost in the migration — the old handler's tail had them below the anchor.
+
+**The mortar** came down (apex 3.4 → 2.3 cells) and every tracer is round: a
+`Points` vertex is a **square** unless given a map, and at 12 px the corners
+read. One shared radial-falloff `CanvasTexture` rounds them all.
+
+Nine playtest notes captured in ROADMAP as the operator's list, including
+the two with teeth: HK-style *chasing* homing (theirs re-seeks every frame;
+ours aims once), and a cooldown-gated danger alarm (no alarm for X seconds
+AND a dangerous unit within Y — a proximity alarm, not a siren).
+
+---
+
 ## `392833b` — The launch console
 
 The ☄ chip is retired; the strike wears the instrument it came from. Ported

@@ -1,19 +1,19 @@
 // main.js — tab shell. Each tab lazily initializes its own renderer/scene the
 // first time it's shown and pauses (skips its loop body) while hidden.
 
-import { wireDevlogBadge } from './devlog.js?v=80de5934';
-import { initHomeTab } from './home-tab.js?v=80de5934';
-import { initGridTab } from './grid-tab.js?v=80de5934';
-import { initMazeTab } from './maze-tab.js?v=80de5934';
-import { initOrganicTab } from './organic-tab.js?v=80de5934';
-import { initBattleTab } from './battle-tab.js?v=80de5934';
-import { initHeartTab } from './heart-tab.js?v=80de5934';
-import { initTdTab } from './td-tab.js?v=80de5934';
-import { initTankTab } from './tank-tab.js?v=80de5934';
-import { initTank2Tab } from './tank2-tab.js?v=80de5934';
-import { initTank3Tab } from './tank3-tab.js?v=80de5934';
-import { initUnitsTab } from './units-tab.js?v=80de5934';
-import { initHowTab, initStackTab, initLogTab } from './how-tab.js?v=80de5934';
+import { wireDevlogBadge } from './devlog.js?v=0a14454c';
+import { initHomeTab } from './home-tab.js?v=0a14454c';
+import { initGridTab } from './grid-tab.js?v=0a14454c';
+import { initMazeTab } from './maze-tab.js?v=0a14454c';
+import { initOrganicTab } from './organic-tab.js?v=0a14454c';
+import { initBattleTab } from './battle-tab.js?v=0a14454c';
+import { initHeartTab } from './heart-tab.js?v=0a14454c';
+import { initTdTab } from './td-tab.js?v=0a14454c';
+import { initTankTab } from './tank-tab.js?v=0a14454c';
+import { initTank2Tab } from './tank2-tab.js?v=0a14454c';
+import { initTank3Tab } from './tank3-tab.js?v=0a14454c';
+import { initUnitsTab } from './units-tab.js?v=0a14454c';
+import { initHowTab, initStackTab, initLogTab } from './how-tab.js?v=0a14454c';
 
 const tabs = {
   home: { root: document.getElementById('tab-home'), init: initHomeTab, api: null },
