@@ -226,6 +226,10 @@ export const MORTAR_PTS = [
   [-0.0099,0.028,0],];
 
 // Our names for them, which are what the tower head picker shows.
+// seashell — logarithmic-spiral tube (ported verbatim from the lab's
+// shellPts; the tactician enemy wears it under the wave animation)
+function shellPts() { const pts = [], k = 0.20, turns = 3.6, Nt = 168, Mf = 11; for (let it = 0; it < Nt; it++) { const th = it / Nt * turns * 2 * Math.PI, R = 0.05 * Math.exp(k * th), ct = Math.cos(th), st = Math.sin(th), tr = R * 0.62; for (let ip = 0; ip < Mf; ip++) { const f = ip / Mf * 2 * Math.PI; pts.push([R * ct + tr * Math.cos(f) * ct, R * st + tr * Math.cos(f) * st, tr * Math.sin(f)]); } } return fitUnit(pts); }
+
 export const BRAILLE_SHAPES = {
   sixaxis: armSixAxisPts,         // six-axis arm — pedestal, shoulder, elbow, wrist, tool flange
   delta: armDeltaPts,             // delta robot — three parallel arms from a fixed frame
@@ -237,6 +241,7 @@ export const BRAILLE_SHAPES = {
   launcher: launcherPts,
   mortar: () => MORTAR_PTS,        // tube-and-baseplate — the AoE tower's head          // rocket launcher — boxed tubes on a traversing mount
   bacterium: bacteriumPts,        // bacterium — rod body with flagella; an ENEMY candidate
+  shell: shellPts,                // seashell spiral — the shellback enemy's body
 };
 
 export const BRAILLE_SHAPE_KINDS = Object.keys(BRAILLE_SHAPES);

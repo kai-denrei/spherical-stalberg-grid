@@ -14,8 +14,8 @@ const check = (name, cond, detail = '') => {
 
 // --- enemyspec -----------------------------------------------------------
 console.log('enemyspec:');
-check('12 types in spec', Object.keys(ENEMY_SPEC).length === 12);
-check('12 intros', INTROS.length === 12);
+check('every intro type has a spec', INTROS.every((iv) => ENEMY_SPEC[iv.type]));
+check('every spec type has an intro', Object.keys(ENEMY_SPEC).every((t) => INTROS.some((iv) => iv.type === t)));
 check('intro waves are 1..12 in order',
   INTROS.every((iv, i) => iv.wave === i + 1));
 check('every intro type has spec and tint',
@@ -113,7 +113,7 @@ check('TOWER_ORDER covers the roster', TOWER_ORDER.length === TOWERS.length && T
 
 // --- wave plan -----------------------------------------------------------
 check('wave 1 plan is a single type', (() => { const p = computeWavePlan(1, 1, 4); return p.entries.length === 1 && p.headline === 'phage'; })());
-check('headline is the newest available type', [2, 5, 9, 12].every((w) => computeWavePlan(w, 1, 4).headline === INTROS[Math.min(w, 12) - 1].type));
+check('headline is the newest available type', [2, 5, 9, 12].every((w) => computeWavePlan(w, 1, 4).headline === INTROS[Math.min(w, INTROS.length) - 1].type));
 // through wave 8 (the unlock ladder) the shape stays learnable; past it the
 // INVASION adds flood entries on top, so the cap only binds the ladder
 check('ladder waves = 1 + up to 2 supports', [1, 2, 3, 8].every((w) => { const n = computeWavePlan(w, 1, 4).entries.length; return n >= 1 && n <= 3; }));
@@ -129,7 +129,7 @@ check('the invasion swells the total hard', (() => {
 check('supports are earlier types, never the headline', [3, 8, 12].every((w) => { const p = computeWavePlan(w, 1, 4); const avail = typesByWave(w); return p.entries.slice(1).every((e) => e.type !== p.headline && avail.includes(e.type)); }));
 check('wave plan is deterministic', JSON.stringify(computeWavePlan(7, 2, 4)) === JSON.stringify(computeWavePlan(7, 2, 4)));
 check('all wave-plan counts are >= 1', [1, 4, 8, 12, 20].every((w) => computeWavePlan(w, 2, 4).entries.every((e) => e.count >= 1)));
-check('typesByWave grows with wave, caps at 12', typesByWave(1).length === 1 && typesByWave(5).length === 5 && typesByWave(99).length === 12);
+check('typesByWave grows with wave, caps at the roster', typesByWave(1).length === 1 && typesByWave(5).length === 5 && typesByWave(99).length === INTROS.length);
 
 if (failures > 0) { console.error(`\n${failures} failure(s)`); process.exit(1); }
 console.log('\ntd-core invariants hold');

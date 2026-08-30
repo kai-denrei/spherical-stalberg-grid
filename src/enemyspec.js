@@ -18,6 +18,9 @@ export const CREATURE_TINTS = {
   rolling: 0xff9a2e,  // HK E_ORANGE — epic
   prime: 0xb44bff,    // HK E_PURPLE — epic-rare
   knot: 0xff1f1f,     // boss: brightest red on the field
+  saucer: 0x8fe8ff,   // agile: pale interceptor cyan
+  shellback: 0xffb46b, // tactician: patient amber
+  phantom: 0xb9c4d9,  // camo: pale steel, mostly unseen anyway
 };
 
 // per-type combat spec. speed multiplies the tab's base enemy speed; size
@@ -39,6 +42,14 @@ export const ENEMY_SPEC = {
   rolling:   { hp: 4, speed: 0.65, size: 0.6,  rammable: false, heartDmg: 2, slowOnHit: 0.55, heavy: true, bounty: 28 },
   prime:     { hp: 6, speed: 0.55, size: 0.65, rammable: false, heartDmg: 2, regen: 0.35, heavy: true, bounty: 45 },
   knot:      { hp: 5, speed: 0.6,  size: 0.8,  rammable: false, heartDmg: 3, accelOnHit: 1.7, boss: true, bounty: 34 },
+  // --- the invasion roster (waves 13+): three styles the ladder never had.
+  // jink stacks a second, faster weave on top of erratic; tactician holds
+  // at the edge of tower coverage until minions arrive as cover, then
+  // bursts; cloaked runs optical camo — hazy on screen, a radar contact
+  // only in brief decloak windows.
+  saucer:    { hp: 1, speed: 1.55, size: 0.36, rammable: true,  heartDmg: 1, erratic: true, jink: true, bounty: 9 },
+  shellback: { hp: 3, speed: 0.9,  size: 0.55, rammable: false, heartDmg: 2, tactician: true, bounty: 24 },
+  phantom:   { hp: 2, speed: 1.05, size: 0.48, rammable: false, heartDmg: 2, cloaked: true, bounty: 28 },
 };
 
 // one new threat per wave, in HokorobiTawaa's difficulty order (agile →
@@ -58,6 +69,9 @@ export const INTROS = [
   { wave: 10, type: 'rolling',   label: 'ROLLING MINE',        role: 'epic · slows when shot' },
   { wave: 11, type: 'prime',     label: 'PRIME MINE',          role: 'epic-rare · REGENERATES' },
   { wave: 12, type: 'knot',      label: 'THORUS · BOSS', role: 'accelerates when hit · 3 heart damage' },
+  { wave: 13, type: 'saucer',    label: 'SAUCER',        role: 'small · agile · weaves like a dogfight' },
+  { wave: 14, type: 'shellback', label: 'SHELLBACK',     role: 'waits at tower range for cover · then bursts' },
+  { wave: 15, type: 'phantom',   label: 'PHANTOM',       role: 'optical camo · a ghost on the radar' },
 ];
 
 // deterministic per-wave RNG (no Math.random — keeps the plan reproducible

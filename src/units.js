@@ -16,12 +16,12 @@
 
 import * as THREE from '../vendor/three.module.js';
 import { loadGlb, mergeByMaterial, fitModel, tintModel, makeShellRack,
-  addEdgeOutlines, makeHeatSleeve } from './glbmodels.js?v=9c765933';
-import { CREATURES, waveJelly, swimWave, spherePts, bulletPts, missilePts, heartPts, torusPts, towerHeadPts, enemyDotPts, portalPts } from './creatures.js?v=9c765933';
-import { TOWER_FEEL, TOWER_HEADS, headKindFor } from './towerfeel.js?v=9c765933';
+  addEdgeOutlines, makeHeatSleeve } from './glbmodels.js?v=862b0e47';
+import { CREATURES, waveJelly, swimWave, spherePts, bulletPts, missilePts, heartPts, torusPts, towerHeadPts, enemyDotPts, portalPts } from './creatures.js?v=862b0e47';
+import { TOWER_FEEL, TOWER_HEADS, headKindFor } from './towerfeel.js?v=862b0e47';
 import { STARGATE_PTS, STARGATE_STROKE,
-  HORIZON_N, stargateHorizon } from './stargate.js?v=9c765933';
-import { ENEMY_SPEC } from './enemyspec.js?v=9c765933';
+  HORIZON_N, stargateHorizon } from './stargate.js?v=862b0e47';
+import { ENEMY_SPEC } from './enemyspec.js?v=862b0e47';
 
 function normalizeToUnit(group) {
   group.updateMatrixWorld(true);
@@ -643,6 +643,27 @@ const DOT_SHAPES = {
   rolling: () => enemyDotPts('seamine'),
   prime: () => enemyDotPts('seamine'),
   knot: () => enemyDotPts('knot'),
+  // the invasion roster: the saucer is the lab's ufo (freed when the
+  // bacterium took scoutufo's slot); the shellback wears the lab's
+  // seashell spiral; the phantom re-uses the ghost — camo does the rest
+  saucer: () => enemyDotPts('ufo'),
+  // recentred on the CENTROID, not the bbox: a log spiral's mass sits in
+  // its outer whorl (measured centroid 0.28, 0.48 after fitUnit), and the
+  // solid core renders at the origin — uncentred, the core floated beside
+  // the shell instead of inside it
+  shellback: () => {
+    const pts = towerHeadPts('shell', 400); // a spiral is all surface — it needs density (dots are vertices, not draw calls)
+    let cx = 0, cy = 0, cz = 0;
+    for (const p of pts) { cx += p[0]; cy += p[1]; cz += p[2]; }
+    cx /= pts.length; cy /= pts.length; cz /= pts.length;
+    // pulled in to 0.78: a log spiral's outer whorl scatters wide, and at
+    // full span the cloud read as dust AROUND the core instead of a body
+    const K = 0.78;
+    return pts.map((p) => (p.length > 3
+      ? [(p[0] - cx) * K, (p[1] - cy) * K, (p[2] - cz) * K, p[3]]
+      : [(p[0] - cx) * K, (p[1] - cy) * K, (p[2] - cz) * K]));
+  },
+  phantom: () => enemyDotPts('ghost'),
 };
 
 // The solid core a NON-RAMMABLE enemy wears. Half-dotted is this game's
@@ -662,6 +683,8 @@ const HARD_CORE = {
   drifter: () => new THREE.OctahedronGeometry(0.34),
   corona: () => new THREE.TorusGeometry(0.42, 0.12, 8, 16).rotateX(Math.PI / 2),
   barbed: () => new THREE.IcosahedronGeometry(0.32),
+  shellback: () => new THREE.SphereGeometry(0.2, 8, 6),
+  phantom: () => new THREE.IcosahedronGeometry(0.24), // the Predator glint
 };
 
 export function makeDotEnemy(type, cols) {
@@ -686,7 +709,11 @@ export function makeDotEnemy(type, cols) {
   // pass over the cloud each frame — 170 points, nothing — and it is the only
   // way a body can flex: a transform can turn a creature but cannot make it
   // beat. Everything else keeps the cheaper transform-only idle below.
-  const SWIM = { scoutufo: { amp: 0.26, beat: 7.0, along: 4.0, jelly: 0.10 } };
+  const SWIM = {
+    scoutufo: { amp: 0.26, beat: 7.0, along: 4.0, jelly: 0.10 },
+    // the shell/wave pairing the operator named: the spiral breathes
+    shellback: { amp: 0.20, beat: 4.6, along: 3.0, jelly: 0.16 },
+  };
   const swim = SWIM[type];
   if (swim) {
     let zMin = Infinity, zMax = -Infinity;

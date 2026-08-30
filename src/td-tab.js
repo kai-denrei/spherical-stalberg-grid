@@ -19,31 +19,31 @@
 
 import * as THREE from '../vendor/three.module.js';
 import GUI from '../vendor/lil-gui.esm.js';
-import { generateSphereMesh, relax } from './grid.js?v=9c765933';
-import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=9c765933';
-import { mulberry32, randomSeed } from './rng.js?v=9c765933';
-import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3, segKey } from './vec3.js?v=9c765933';
-import { CREATURES, waveJelly } from './creatures.js?v=9c765933';
-import { UNITS, UNIT_NAMES, buildUnit, buildCreature, preloadMkcx, preloadServer, makeServerFixture, makeBulletCloud, makeRewardSolid, makeShellSolid, makeDebris, makeDotBurst, makePortalCloud, makeHeartCloud, makeDotEnemy } from './units.js?v=9c765933';
-import { LOOKS, LOOK_NAMES } from './looks.js?v=9c765933';
-import { makeCellIndex } from './cellindex.js?v=9c765933';
-import { CREATURE_TINTS, ENEMY_SPEC, INTROS, computeWavePlan } from './enemyspec.js?v=9c765933';
-import { PICKUPS } from './pickups.js?v=9c765933';
-import { rankFor, rankLabel, badgeSVG, killReq, eliteReq } from './ranks.js?v=9c765933';
-import { makeScore } from './score.js?v=9c765933';
-import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER } from './towers.js?v=9c765933';
-import { makeEconomy, sellRefund } from './economy.js?v=9c765933';
-import { makeBloom } from './postfx.js?v=9c765933';
-import { TANK_FEEL, TANK_FEEL_KNOBS, makeTankFeel, stepTankFeel, landTankFeel, fireTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js?v=9c765933';
-import { FEEL, loadFeel, saveFeel } from './feelstore.js?v=9c765933';
+import { generateSphereMesh, relax } from './grid.js?v=862b0e47';
+import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=862b0e47';
+import { mulberry32, randomSeed } from './rng.js?v=862b0e47';
+import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3, segKey } from './vec3.js?v=862b0e47';
+import { CREATURES, waveJelly } from './creatures.js?v=862b0e47';
+import { UNITS, UNIT_NAMES, buildUnit, buildCreature, preloadMkcx, preloadServer, makeServerFixture, makeBulletCloud, makeRewardSolid, makeShellSolid, makeDebris, makeDotBurst, makePortalCloud, makeHeartCloud, makeDotEnemy } from './units.js?v=862b0e47';
+import { LOOKS, LOOK_NAMES } from './looks.js?v=862b0e47';
+import { makeCellIndex } from './cellindex.js?v=862b0e47';
+import { CREATURE_TINTS, ENEMY_SPEC, INTROS, computeWavePlan } from './enemyspec.js?v=862b0e47';
+import { PICKUPS } from './pickups.js?v=862b0e47';
+import { rankFor, rankLabel, badgeSVG, killReq, eliteReq } from './ranks.js?v=862b0e47';
+import { makeScore } from './score.js?v=862b0e47';
+import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER } from './towers.js?v=862b0e47';
+import { makeEconomy, sellRefund } from './economy.js?v=862b0e47';
+import { makeBloom } from './postfx.js?v=862b0e47';
+import { TANK_FEEL, TANK_FEEL_KNOBS, makeTankFeel, stepTankFeel, landTankFeel, fireTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js?v=862b0e47';
+import { FEEL, loadFeel, saveFeel } from './feelstore.js?v=862b0e47';
 import { STRIKE_KNOBS, makeStrike, makeStrikeParams, grantStrikes, stepStrike,
   toggleArm, paintTarget, launchStrike, stepFall, skipFall, fallProgress,
-  strikeDamage, retargetStrike, orbitProgress } from './strike.js?v=9c765933';
-import { radarBasis, radarProject, radarBearing, sweepAngle, radarPhosphor } from './radar.js?v=9c765933';
-import { BLOOM_GROUPS } from './bloomweights.js?v=9c765933';
-import { TOWER_LOOK_NAMES, DEFAULT_TOWER_LOOK, buildTowerLook, preloadLook } from './towerlooks.js?v=9c765933';
-import { makeAudio } from './audio.js?v=9c765933';
-import { DEATH_KEYS } from './audiomanifest.js?v=9c765933';
+  strikeDamage, retargetStrike, orbitProgress } from './strike.js?v=862b0e47';
+import { radarBasis, radarProject, radarBearing, sweepAngle, radarPhosphor } from './radar.js?v=862b0e47';
+import { BLOOM_GROUPS } from './bloomweights.js?v=862b0e47';
+import { TOWER_LOOK_NAMES, DEFAULT_TOWER_LOOK, buildTowerLook, preloadLook } from './towerlooks.js?v=862b0e47';
+import { makeAudio } from './audio.js?v=862b0e47';
+import { DEATH_KEYS } from './audiomanifest.js?v=862b0e47';
 
 export function initTdTab(root) {
   let active = false;
@@ -3604,6 +3604,46 @@ export function initTdTab(root) {
       }
       // erratic (phage): HokorobiTawaa velocity bursts, 0.7×–1.3×
       if (spec.erratic) pace *= 0.7 + 0.6 * (0.5 + 0.5 * Math.sin(tNow * 3.1 + e.phase * 7));
+      // jink (saucer): a second, faster weave stacked on the bursts —
+      // 0.55×–1.45× at 6.3 rad/s reads as a dogfight, not a walk
+      if (spec.jink) pace *= 0.55 + 0.9 * (0.5 + 0.5 * Math.sin(tNow * 6.3 + e.phase * 11));
+      // tactician (shellback): holds at the EDGE of tower coverage until
+      // enough minions arrive to soak fire, then bursts through with them.
+      // Re-evaluated at 2 Hz, staggered by phase — towers are few, and a
+      // per-frame sweep would be spent on a decision that changes slowly.
+      if (spec.tactician) {
+        if (tNow >= (e.tacUntil ?? 0)) {
+          e.tacUntil = tNow + 0.5 + e.phase * 0.1;
+          let covered = false;
+          for (const tw of towers) {
+            const r = effectiveStats(tw).range * cellSide;
+            if (chord(graph.centers[tw.ci], e.pos) < r + cellSide * 1.2) { covered = true; break; }
+          }
+          if (!covered) e.tacMult = 1;
+          else {
+            let cover = 0;
+            for (const e2 of enemies) {
+              if (e2.alive && e2 !== e && dist3(e2.pos, e.pos) < cellSide * 2.4) cover++;
+            }
+            e.tacMult = cover >= 3 ? 1.9 : 0.3; // burst with the pack, or wait
+          }
+        }
+        pace *= e.tacMult ?? 1;
+      }
+      // cloaked (phantom): optical camo. A haze most of the time — the
+      // cloud sits near-invisible — with a brief shimmer of presence every
+      // ~6s. The radar shares the same decloak window: no window, no blip.
+      if (spec.cloaked) {
+        const vis = ((tNow * 0.16 + e.phase) % 1) < 0.12;
+        const op = vis ? 0.55 : 0.14 + 0.05 * Math.sin(tNow * 2.7 + e.phase * 9);
+        if (e.obj.material) e.obj.material.opacity = op;
+        const core = e.obj.userData.solid;
+        if (core && core.material) {
+          core.material.transparent = true;
+          core.material.opacity = Math.min(1, op * 1.6); // the glint lags the fade
+        }
+        e.decloaked = vis;
+      }
       e.prog += pace * dt;
       while (e.prog >= 1) {
         e.prog -= 1;
@@ -5706,7 +5746,10 @@ export function initTdTab(root) {
     for (const tw of towers) blip(graph.centers[tw.ci], '#4bd7e0', 2.5);
     // enemies: THE contacts, phosphor green, heavies fatter
     for (const e of enemies) {
-      if (e.alive) blip(e.pos, '#5aff8c', e.spec.rammable ? 2.5 : 4);
+      if (!e.alive) continue;
+      // optical camo: a phantom is a contact only in its decloak window
+      if (e.spec.cloaked && !e.decloaked) continue;
+      blip(e.pos, '#5aff8c', e.spec.rammable ? 2.5 : 4);
     }
     // gates: amber, pulsing harder as a wave charges. Known ones only —
     // discovery still matters.
