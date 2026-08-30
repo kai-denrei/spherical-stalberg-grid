@@ -19,31 +19,31 @@
 
 import * as THREE from '../vendor/three.module.js';
 import GUI from '../vendor/lil-gui.esm.js';
-import { generateSphereMesh, relax } from './grid.js?v=6d06b096';
-import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=6d06b096';
-import { mulberry32, randomSeed } from './rng.js?v=6d06b096';
-import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3, segKey } from './vec3.js?v=6d06b096';
-import { CREATURES, waveJelly } from './creatures.js?v=6d06b096';
-import { UNITS, UNIT_NAMES, buildUnit, buildCreature, preloadMkcx, preloadServer, makeServerFixture, makeBulletCloud, makeRewardSolid, makeShellSolid, makeDebris, makeDotBurst, makePortalCloud, makeHeartCloud, makeDotEnemy } from './units.js?v=6d06b096';
-import { LOOKS, LOOK_NAMES } from './looks.js?v=6d06b096';
-import { makeCellIndex } from './cellindex.js?v=6d06b096';
-import { CREATURE_TINTS, ENEMY_SPEC, INTROS, computeWavePlan } from './enemyspec.js?v=6d06b096';
-import { PICKUPS } from './pickups.js?v=6d06b096';
-import { rankFor, rankLabel, badgeSVG, killReq, eliteReq } from './ranks.js?v=6d06b096';
-import { makeScore } from './score.js?v=6d06b096';
-import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER } from './towers.js?v=6d06b096';
-import { makeEconomy, sellRefund } from './economy.js?v=6d06b096';
-import { makeBloom } from './postfx.js?v=6d06b096';
-import { TANK_FEEL, TANK_FEEL_KNOBS, makeTankFeel, stepTankFeel, landTankFeel, fireTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js?v=6d06b096';
-import { FEEL, loadFeel, saveFeel } from './feelstore.js?v=6d06b096';
+import { generateSphereMesh, relax } from './grid.js?v=219ba01e';
+import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=219ba01e';
+import { mulberry32, randomSeed } from './rng.js?v=219ba01e';
+import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3, segKey } from './vec3.js?v=219ba01e';
+import { CREATURES, waveJelly } from './creatures.js?v=219ba01e';
+import { UNITS, UNIT_NAMES, buildUnit, buildCreature, preloadMkcx, preloadServer, makeServerFixture, makeBulletCloud, makeRewardSolid, makeShellSolid, makeDebris, makeDotBurst, makePortalCloud, makeHeartCloud, makeDotEnemy } from './units.js?v=219ba01e';
+import { LOOKS, LOOK_NAMES } from './looks.js?v=219ba01e';
+import { makeCellIndex } from './cellindex.js?v=219ba01e';
+import { CREATURE_TINTS, ENEMY_SPEC, INTROS, computeWavePlan } from './enemyspec.js?v=219ba01e';
+import { PICKUPS } from './pickups.js?v=219ba01e';
+import { rankFor, rankLabel, badgeSVG, killReq, eliteReq } from './ranks.js?v=219ba01e';
+import { makeScore } from './score.js?v=219ba01e';
+import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER } from './towers.js?v=219ba01e';
+import { makeEconomy, sellRefund } from './economy.js?v=219ba01e';
+import { makeBloom } from './postfx.js?v=219ba01e';
+import { TANK_FEEL, TANK_FEEL_KNOBS, makeTankFeel, stepTankFeel, landTankFeel, fireTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js?v=219ba01e';
+import { FEEL, loadFeel, saveFeel } from './feelstore.js?v=219ba01e';
 import { STRIKE_KNOBS, makeStrike, makeStrikeParams, grantStrikes, stepStrike,
   toggleArm, paintTarget, launchStrike, stepFall, skipFall, fallProgress,
-  strikeDamage, retargetStrike, orbitProgress } from './strike.js?v=6d06b096';
-import { radarBasis, radarProject, radarBearing, sweepAngle, radarPhosphor } from './radar.js?v=6d06b096';
-import { BLOOM_GROUPS } from './bloomweights.js?v=6d06b096';
-import { TOWER_LOOK_NAMES, DEFAULT_TOWER_LOOK, buildTowerLook, preloadLook } from './towerlooks.js?v=6d06b096';
-import { makeAudio } from './audio.js?v=6d06b096';
-import { DEATH_KEYS } from './audiomanifest.js?v=6d06b096';
+  strikeDamage, retargetStrike, orbitProgress } from './strike.js?v=219ba01e';
+import { radarBasis, radarProject, radarBearing, sweepAngle, radarPhosphor } from './radar.js?v=219ba01e';
+import { BLOOM_GROUPS } from './bloomweights.js?v=219ba01e';
+import { TOWER_LOOK_NAMES, DEFAULT_TOWER_LOOK, buildTowerLook, preloadLook } from './towerlooks.js?v=219ba01e';
+import { makeAudio } from './audio.js?v=219ba01e';
+import { DEATH_KEYS } from './audiomanifest.js?v=219ba01e';
 
 export function initTdTab(root) {
   let active = false;
@@ -2782,6 +2782,33 @@ export function initTdTab(root) {
   // zero source patching. Same origin means the parent can simply READ
   // the game's own state (window.__cx.game().phase) instead of needing a
   // postMessage protocol added to a finished game.
+  // THREE PROTOCOLS on the relay: the HDT circuit duel, and two grid
+  // puzzles from pazorukore (BRIDGE = hashiwokakero, SHIKAKU) — vendored
+  // build-free at minigames/pzk, selected by its own ?game= query. Win
+  // states differ by engine: the duel exposes __cx.game().phase
+  // ('WON'/'LOST'); pazorukore exposes __pazoru.phase ('solved' — its
+  // puzzles cannot be lost, only abandoned).
+  const HACK_GAMES = {
+    hdt: { src: 'minigames/hdt/3.html' },
+    bridges: { src: 'minigames/pzk/index.html?game=bridges&skin=futuristic' },
+    shikaku: { src: 'minigames/pzk/index.html?game=shikaku&skin=futuristic' },
+  };
+  let hackGame = 'hdt';
+  function readHackPhase() {
+    try {
+      const w = hackFrameEl.contentWindow;
+      if (!w) return null;
+      if (hackGame === 'hdt') {
+        const cx = w.__cx;
+        if (cx && cx.game) {
+          const ph = cx.game().phase;
+          if (ph === 'WON') return 'won';
+          if (ph === 'LOST') return 'lost';
+        }
+      } else if (w.__pazoru && w.__pazoru.phase === 'solved') return 'won';
+    } catch { /* frame still booting */ }
+    return null;
+  }
   const hackBtnEl = root.querySelector('#td-hack');
   const hackPromptEl = root.querySelector('#td-hackprompt');
   let hackPromptForce = false;
@@ -2797,18 +2824,25 @@ export function initTdTab(root) {
     if (!hackWrapEl.classList.contains('hidden')) return; // already breaching
     paused = true;
     sfx.play('server_dialup'); // six seconds of negotiation IS the fiction
-    hackFrameEl.src = 'minigames/hdt/3.html';
+    setHackGame(hackGame);
     hackWrapEl.classList.remove('hidden');
     clearInterval(hackPoll);
     hackPoll = setInterval(() => {
-      let phase = null;
-      try {
-        const cx = hackFrameEl.contentWindow && hackFrameEl.contentWindow.__cx;
-        if (cx && cx.game) phase = cx.game().phase;
-      } catch { /* frame still booting */ }
-      if (phase === 'WON') closeHack(true);
-      else if (phase === 'LOST') closeHack(false);
+      const ph = readHackPhase();
+      if (ph === 'won') closeHack(true);
+      else if (ph === 'lost') closeHack(false);
     }, 600);
+  }
+  function setHackGame(g) {
+    if (!HACK_GAMES[g]) g = 'hdt';
+    hackGame = g;
+    if (hackFrameEl) hackFrameEl.src = HACK_GAMES[g].src;
+    for (const b of root.querySelectorAll('.hk-tab')) {
+      b.classList.toggle('active', b.dataset.hack === g);
+    }
+  }
+  for (const b of root.querySelectorAll('.hk-tab')) {
+    b.addEventListener('click', () => setHackGame(b.dataset.hack));
   }
   function closeHack(won) {
     clearInterval(hackPoll); hackPoll = null;
@@ -6083,8 +6117,13 @@ export function initTdTab(root) {
     setTimeout(() => console.log(`SERVER2 placed=${!!serverObj}`
       + `${serverObj ? ` scale=${serverObj.scale.x.toFixed(4)}` : ''}`), 5000);
   }
-  // ?hack=1 — straight into the breach overlay (iframe boot check)
-  if (urlParams.get('hack') === '1') { serverFound = true; syncHackBtn(); openHack(); }
+  // ?hack=1|hdt|bridges|shikaku — straight into the breach (boot checks)
+  const hackParam = urlParams.get('hack');
+  if (hackParam) {
+    serverFound = true; syncHackBtn();
+    if (HACK_GAMES[hackParam]) hackGame = hackParam;
+    openHack();
+  }
 
   // ?sitrep=1 — fabricated wave stats through the real renderer
   if (urlParams.get('sitrep') === '1') {

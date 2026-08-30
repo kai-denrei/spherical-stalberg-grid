@@ -2641,3 +2641,24 @@ body.playing:not(.chrome-open) #tabbar { display: none !important; }
   animation: pulse-soft 1.8s ease-in-out infinite;
 }
 #td-hackprompt.hidden { display: none; }
+
+/* protocol tabs on the breach bar */
+.hk-tabs { display: flex; gap: 6px; }
+.hk-tab {
+  font: bold 11px ui-monospace, Menlo, monospace;
+  letter-spacing: 0.12em;
+  color: #6fe387;
+  background: transparent;
+  border: 1px solid rgba(110, 255, 140, 0.35);
+  border-radius: 5px;
+  padding: 4px 10px;
+  cursor: pointer;
+}
+.hk-tab.active {
+  color: #08140a;
+  background: #86ff9e;
+  border-color: #86ff9e;
+}
+@media (max-width: 560px) {
+  .hk-title { display: none; } /* the tabs are the title on a phone */
+}
