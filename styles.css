@@ -2136,3 +2136,7 @@ body.playing:not(.chrome-open) #tabbar { display: none !important; }
   background: #6fe6ff;
   border-color: #6fe6ff;
 }
+
+/* the tank's field-promotion insignia, inline on the HUD's tank line */
+.hud-rank { color: #cfd3da; letter-spacing: 1px; }
+.hud-rank svg { vertical-align: -2px; }
