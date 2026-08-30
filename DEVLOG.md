@@ -6,6 +6,44 @@ Demo links assume `npm run serve` (port 8144) or the
 
 ---
 
+## `252e89a` — The two tweaks were one scene
+
+The report came as two items: "we spawn behind a portal" and "the portal is
+missing its inner design". They were the same moment. The round start used
+`dungeon.spawn`, which the carve often lands in the far band the gates seed
+into — so a fresh player opened the game nose-to-nose with a forming portal.
+And a forming portal genuinely had nothing inside: the horizon dots are
+positioned by the idle tick, **which the dial-in skips**, so through the
+whole draw-on they sat at the origin. The reveal's final act was a clump in
+the gate's throat, then a snap as the first tick placed them.
+
+Both ends fixed: the round start mirrors the death respawn (beside the
+heart, aimed **outward** — from distance 1, "toward the heart" points you
+into the thing you defend), and the horizon is positioned at t=0 in the
+constructor, so the draw-on ends on the disc it was always supposed to end
+on. Probed in-game: `drawRange 540, horizonR 0.098..0.580, zeros=0`.
+
+### Guard the door, not the paths
+
+The tower radial kept appearing during strike aiming even though the tap
+dispatch routed around it — some path still reached it. Rather than hunt
+paths, `openShop` itself now refuses while the strike is armed, flying, or
+within 0.8 s of impact (the skip-tap and the landing race; the loser must
+not buy a tower). A modal that must never appear mid-ritual is guarded at
+its own door; every future tap path inherits the rule.
+
+### The probe that reported a paused game
+
+`?gateprobe=1` faithfully printed `dial=0` — on a game sitting paused at the
+briefing, because a URL with no debugging param stops there. Two more
+harness truths joined the pile: probes must count **real frames** (under a
+virtual-time budget every timer can fire before the first paint), and
+swiftshader cannot render 70 frames inside the watchdog, so the probe now
+*forces* formation for its second report. The question was "does the game
+path position the horizon", not "how fast can headless paint".
+
+---
+
 ## `44bc639` — One mode, and a radar where the minimap was
 
 Two structural changes in one sitting, both long promised.
