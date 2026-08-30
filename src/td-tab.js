@@ -19,31 +19,31 @@
 
 import * as THREE from '../vendor/three.module.js';
 import GUI from '../vendor/lil-gui.esm.js';
-import { generateSphereMesh, relax } from './grid.js?v=4d6fc5da';
-import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=4d6fc5da';
-import { mulberry32, randomSeed } from './rng.js?v=4d6fc5da';
-import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3, segKey } from './vec3.js?v=4d6fc5da';
-import { CREATURES, waveJelly } from './creatures.js?v=4d6fc5da';
-import { UNITS, UNIT_NAMES, buildUnit, buildCreature, preloadMkcx, preloadServer, makeServerFixture, makeShieldShell, makeBulletCloud, makeRewardSolid, makeShellSolid, makeDebris, makeDotBurst, makePortalCloud, makeHeartCloud, makeDotEnemy } from './units.js?v=4d6fc5da';
-import { LOOKS, LOOK_NAMES } from './looks.js?v=4d6fc5da';
-import { makeCellIndex } from './cellindex.js?v=4d6fc5da';
-import { CREATURE_TINTS, ENEMY_SPEC, INTROS, computeWavePlan } from './enemyspec.js?v=4d6fc5da';
-import { PICKUPS } from './pickups.js?v=4d6fc5da';
-import { rankFor, rankLabel, badgeSVG, killReq, eliteReq } from './ranks.js?v=4d6fc5da';
-import { makeScore } from './score.js?v=4d6fc5da';
-import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER } from './towers.js?v=4d6fc5da';
-import { makeEconomy, sellRefund } from './economy.js?v=4d6fc5da';
-import { makeBloom } from './postfx.js?v=4d6fc5da';
-import { TANK_FEEL, TANK_FEEL_KNOBS, makeTankFeel, stepTankFeel, landTankFeel, fireTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js?v=4d6fc5da';
-import { FEEL, loadFeel, saveFeel } from './feelstore.js?v=4d6fc5da';
+import { generateSphereMesh, relax } from './grid.js?v=f8da28a4';
+import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=f8da28a4';
+import { mulberry32, randomSeed } from './rng.js?v=f8da28a4';
+import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3, segKey } from './vec3.js?v=f8da28a4';
+import { CREATURES, waveJelly } from './creatures.js?v=f8da28a4';
+import { UNITS, UNIT_NAMES, buildUnit, buildCreature, preloadMkcx, preloadServer, makeServerFixture, makeShieldShell, makeBulletCloud, makeRewardSolid, makeShellSolid, makeDebris, makeDotBurst, makePortalCloud, makeHeartCloud, makeDotEnemy } from './units.js?v=f8da28a4';
+import { LOOKS, LOOK_NAMES } from './looks.js?v=f8da28a4';
+import { makeCellIndex } from './cellindex.js?v=f8da28a4';
+import { CREATURE_TINTS, ENEMY_SPEC, INTROS, computeWavePlan } from './enemyspec.js?v=f8da28a4';
+import { PICKUPS } from './pickups.js?v=f8da28a4';
+import { rankFor, rankLabel, badgeSVG, killReq, eliteReq } from './ranks.js?v=f8da28a4';
+import { makeScore } from './score.js?v=f8da28a4';
+import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER } from './towers.js?v=f8da28a4';
+import { makeEconomy, sellRefund } from './economy.js?v=f8da28a4';
+import { makeBloom } from './postfx.js?v=f8da28a4';
+import { TANK_FEEL, TANK_FEEL_KNOBS, makeTankFeel, stepTankFeel, landTankFeel, fireTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js?v=f8da28a4';
+import { FEEL, loadFeel, saveFeel } from './feelstore.js?v=f8da28a4';
 import { STRIKE_KNOBS, makeStrike, makeStrikeParams, grantStrikes, stepStrike,
   toggleArm, paintTarget, launchStrike, stepFall, skipFall, fallProgress,
-  strikeDamage, retargetStrike, orbitProgress } from './strike.js?v=4d6fc5da';
-import { radarBasis, radarProject, radarBearing, sweepAngle, radarPhosphor } from './radar.js?v=4d6fc5da';
-import { BLOOM_GROUPS } from './bloomweights.js?v=4d6fc5da';
-import { TOWER_LOOK_NAMES, DEFAULT_TOWER_LOOK, buildTowerLook, preloadLook } from './towerlooks.js?v=4d6fc5da';
-import { makeAudio } from './audio.js?v=4d6fc5da';
-import { DEATH_KEYS } from './audiomanifest.js?v=4d6fc5da';
+  strikeDamage, retargetStrike, orbitProgress } from './strike.js?v=f8da28a4';
+import { radarBasis, radarProject, radarBearing, sweepAngle, radarPhosphor } from './radar.js?v=f8da28a4';
+import { BLOOM_GROUPS } from './bloomweights.js?v=f8da28a4';
+import { TOWER_LOOK_NAMES, DEFAULT_TOWER_LOOK, buildTowerLook, preloadLook } from './towerlooks.js?v=f8da28a4';
+import { makeAudio } from './audio.js?v=f8da28a4';
+import { DEATH_KEYS } from './audiomanifest.js?v=f8da28a4';
 
 export function initTdTab(root) {
   let active = false;
@@ -4531,6 +4531,8 @@ export function initTdTab(root) {
       scene.remove(tower.obj);
       disposeObj(tower.obj);
       tower.obj = buildTowerLook(params.towerLook, tower.def);
+      // the rebuilt obj starts at tier 0 — restore the earned pedestal
+      if (tower.obj.userData.setTier) tower.obj.userData.setTier(tower.tier);
       placeTowerObj(tower);
       scene.add(tower.obj);
     }
@@ -4589,6 +4591,8 @@ export function initTdTab(root) {
     if (cost === null || !eco.spend(cost)) return false;
     tower.tier++;
     tower.spent += cost;
+    // the pedestal IS the tier read: square -> hexagon -> circle
+    if (tower.obj.userData.setTier) tower.obj.userData.setTier(tower.tier);
     placeTowerObj(tower); // a tier reads as bulk — derived from tier, not accumulated
     showRangeRing(tower.ci, effectiveStats(tower.def, tower.tier).range, tower.def.color, 1.4);
     updateHud();
@@ -5964,13 +5968,30 @@ export function initTdTab(root) {
   const towerSpec = urlParams.get('tower');
   if (towerSpec) {
     for (const part of towerSpec.split(',')) {
-      const [key, ciStr] = part.split('@');
+      // key@ci or key@ci@tier — the tier arm exists so the pedestal
+      // shapes (square/hex/circle) can be photographed without a mouse
+      const [key, ciStr, tierStr] = part.split('@');
       let ci = parseInt(ciStr, 10);
       if (!TOWER_BY_KEY[key] || !Number.isFinite(ci)) continue;
       // seek forward to the nearest placeable cell — raw indices are a
       // lottery on a sealed sector world
       for (let tries = 0; tries < 400 && ci < dungeon.tags.length; tries++, ci++) {
-        if (!placeError(ci)) { placeTower(key, ci); break; }
+        if (!placeError(ci)) {
+          if (placeTower(key, ci)) {
+            const want = parseInt(tierStr || '0', 10);
+            const tw = towerByCell.get(ci);
+            for (let t = 0; tw && t < want; t++) { eco.addCredit(999); upgradeTower(tw); }
+            // report the pedestal actually mounted — the tier read is
+            // geometry, so the probe reads geometry
+            if (tw) {
+              const b = tw.obj.children.find((c) => c.isMesh && Math.abs(c.position.y - 0.08) < 0.02);
+              const gp = b && b.geometry.parameters;
+              console.log(`TOWERTIER ${key} tier=${tw.tier} base=${b ? b.geometry.type : '?'}`
+                + `${gp && gp.radialSegments ? ` seg=${gp.radialSegments}` : ''}`);
+            }
+          }
+          break;
+        }
       }
     }
   }

@@ -16,12 +16,12 @@
 
 import * as THREE from '../vendor/three.module.js';
 import { loadGlb, mergeByMaterial, fitModel, tintModel, makeShellRack,
-  addEdgeOutlines, makeHeatSleeve } from './glbmodels.js?v=4d6fc5da';
-import { CREATURES, waveJelly, swimWave, spherePts, bulletPts, missilePts, heartPts, torusPts, towerHeadPts, enemyDotPts, portalPts } from './creatures.js?v=4d6fc5da';
-import { TOWER_FEEL, TOWER_HEADS, headKindFor } from './towerfeel.js?v=4d6fc5da';
+  addEdgeOutlines, makeHeatSleeve } from './glbmodels.js?v=f8da28a4';
+import { CREATURES, waveJelly, swimWave, spherePts, bulletPts, missilePts, heartPts, torusPts, towerHeadPts, enemyDotPts, portalPts } from './creatures.js?v=f8da28a4';
+import { TOWER_FEEL, TOWER_HEADS, headKindFor } from './towerfeel.js?v=f8da28a4';
 import { STARGATE_PTS, STARGATE_STROKE,
-  HORIZON_N, stargateHorizon } from './stargate.js?v=4d6fc5da';
-import { ENEMY_SPEC } from './enemyspec.js?v=4d6fc5da';
+  HORIZON_N, stargateHorizon } from './stargate.js?v=f8da28a4';
+import { ENEMY_SPEC } from './enemyspec.js?v=f8da28a4';
 
 function normalizeToUnit(group) {
   group.updateMatrixWorld(true);
@@ -531,10 +531,29 @@ export function makeTowerMast(def) {
   const outline = (mesh) => {
     mesh.add(new THREE.LineSegments(new THREE.EdgesGeometry(mesh.geometry), edge));
   };
-  const base = new THREE.Mesh(new THREE.BoxGeometry(0.8, 0.16, 0.8), steel);
-  base.position.y = 0.08;
-  outline(base);
-  g.add(base);
+  // THE PEDESTAL IS THE TIER READ (operator ruling): square slab when
+  // built, hexagon at the first upgrade, circle at the second — the
+  // upgrade state visible from any camera without a label. EdgesGeometry's
+  // default threshold culls the smooth sides of the round bases, so the
+  // hexagon keeps its corners and the circle reads as two clean rings.
+  const TIER_BASE = [
+    () => new THREE.BoxGeometry(0.8, 0.16, 0.8),
+    () => new THREE.CylinderGeometry(0.46, 0.46, 0.16, 6),
+    () => new THREE.CylinderGeometry(0.44, 0.44, 0.16, 28),
+  ];
+  let base = null;
+  const setTier = (t) => {
+    if (base) {
+      g.remove(base);
+      base.traverse((o) => { if (o.geometry) o.geometry.dispose(); });
+    }
+    const idx = Math.max(0, Math.min(TIER_BASE.length - 1, t | 0));
+    base = new THREE.Mesh(TIER_BASE[idx](), steel);
+    base.position.y = 0.08;
+    outline(base);
+    g.add(base);
+  };
+  setTier(0);
   const column = new THREE.Mesh(new THREE.CylinderGeometry(0.09, 0.2, 0.62, 6), steel);
   column.position.y = 0.47;
   g.add(column);
@@ -553,6 +572,7 @@ export function makeTowerMast(def) {
   g.userData.head = head;
   g.userData.lift = 0.02;
   g.userData.kind = 'mesh';
+  g.userData.setTier = setTier;
   return { g, head, tintM, edge, outline };
 }
 
