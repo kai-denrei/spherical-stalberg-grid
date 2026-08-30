@@ -124,7 +124,9 @@ actually been examined — whether waves 5–8 feel cramped on it is untested.
 - **Rework the entire HUD.**
 - **Scores**: more points for tank kills (the credit split already leans this
   way), multiplier scaling with enemies on the field, etc.
-- **Ranks**: a small USMC-style insignia on the tank that grows with kills.
+- ~~**Ranks**~~ — DONE (`f9614fa`): 15-rank insignia (bronze/silver/gold,
+  dice-pip stars), hands-on kills only, gold gated on elite kills, resets
+  with the hull. Shown on the tank and the HUD tank line; `?rank=N` to check.
 - **A WARNING system** — screen + audio when a non-rammable first comes near:
   fire only if no alarm for X seconds AND a dangerous unit within Y — a
   cooldown-gated proximity alarm, not a constant siren. (The manifest has no
