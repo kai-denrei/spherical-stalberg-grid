@@ -6,6 +6,59 @@ Demo links assume `npm run serve` (port 8144) or the
 
 ---
 
+## `7a00bb5` — Hit like it looks
+
+### "Within range yet unhurt" had two causes
+
+Only one was the damage number. The rings drew at **2.2×** the damage radius,
+so fodder standing visibly "inside the blast" was well outside it — the
+visuals wrote a cheque the falloff did not honour. The outermost ring **is**
+the damage radius now; the kill line and the drawn line are the same line.
+
+And the falloff was thin: `(1 − d/r)²` pays a quarter of centre damage at
+half radius. Fat-middle now — `1 − (d/r)²` — holding 75% at half radius,
+zero exactly at the ring. With `dmgCenter` 6 → 10 and `blastCells` 2.4 → 3.2:
+
+```
+STRIKE ci=1143 portals 2->2 enemies 18->0 towers 0->0 walls 2152->2129
+```
+
+Eighteen enemies, one strike, on a measured cluster hit.
+
+### The blast breaks the world, toggleably
+
+`breakWalls` and `breakTowers`, both defaulting ON. Walls breach through the
+same code the shell uses — split into `breachWallCell` + `rebuildAfterBreach`
+so six breaches cost **one** BFS and one geometry build. Towers die first and
+without refund (selling is a decision; this is a consequence) — and the order
+matters, because a mounted tower anchors its wall: tower-first is what lets
+one strike flatten a defended rampart.
+
+Booleans joined the knob machinery properly — `bool: true` in the table, a
+checkbox in the GUI, coerced-and-vetted on restore — rather than living
+outside it and tripping the coverage test.
+
+### Aim is two-fold
+
+The paint chooses the area; **one vectoring burst** mid-fall re-aims onto
+what the target drifted into. Tap the ground to spend it, tap the sky — or
+anything after it is spent — to skip. Once by default: a second chance, not a
+steerable missile, which would make the paint phase pointless. The feed
+declares the mode (`VECTOR BURST ×1` / `VECTOR SPENT`), and the fall runs
+3.5 s now — long enough to actually use it.
+
+### The reporting bug that read exactly like a weapon bug
+
+The proof line first sat **above** the kill loops and printed
+`portals 2->2` on a direct hit. Twenty minutes of falloff suspicion — and the
+weapon had been fine; the log was measuring before the work. It goes last
+now, with the reason in a comment.
+
+A measurement that runs at the wrong time is worse than no measurement: it
+does not say nothing, it says the wrong thing with confidence.
+
+---
+
 ## `5b26cd0` — The munition feed, and an inline style that beat the stylesheet
 
 ### Build mode follows the driver
