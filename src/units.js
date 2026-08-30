@@ -16,12 +16,12 @@
 
 import * as THREE from '../vendor/three.module.js';
 import { loadGlb, mergeByMaterial, fitModel, tintModel, makeShellRack,
-  addEdgeOutlines, makeHeatSleeve } from './glbmodels.js?v=c91d9a17';
-import { CREATURES, waveJelly, swimWave, spherePts, bulletPts, missilePts, heartPts, torusPts, towerHeadPts, enemyDotPts, portalPts } from './creatures.js?v=c91d9a17';
-import { TOWER_FEEL, TOWER_HEADS, headKindFor } from './towerfeel.js?v=c91d9a17';
+  addEdgeOutlines, makeHeatSleeve } from './glbmodels.js?v=606c6ca8';
+import { CREATURES, waveJelly, swimWave, spherePts, bulletPts, missilePts, heartPts, torusPts, towerHeadPts, enemyDotPts, portalPts } from './creatures.js?v=606c6ca8';
+import { TOWER_FEEL, TOWER_HEADS, headKindFor } from './towerfeel.js?v=606c6ca8';
 import { STARGATE_PTS, STARGATE_STROKE,
-  HORIZON_N, stargateHorizon } from './stargate.js?v=c91d9a17';
-import { ENEMY_SPEC } from './enemyspec.js?v=c91d9a17';
+  HORIZON_N, stargateHorizon } from './stargate.js?v=606c6ca8';
+import { ENEMY_SPEC } from './enemyspec.js?v=606c6ca8';
 
 function normalizeToUnit(group) {
   group.updateMatrixWorld(true);
@@ -621,11 +621,15 @@ export function makeTowerUnit(def, feel = TOWER_FEEL, heads = TOWER_HEADS) {
 // never re-posed); the borrowed types use enemyDotPts silhouettes.
 // Animation is transform-only per type (spin / bob / squash), so a
 // hundred of these cost what one waveJelly hero costs.
+// Every entry takes a DENSITY factor d (default 1): the game builds at
+// d=1 (crowds), the unit viewer at d=4 — one unit on screen at a time can
+// afford to be generous (operator ruling). The classic CREATURES
+// generators carry fixed counts and ignore d.
 const DOT_SHAPES = {
   phage: () => CREATURES.phage(),
   amoeba: () => CREATURES.amoeba(),
   jellyfish: () => CREATURES.jellyfish(),
-  ghost: () => enemyDotPts('ghost'),
+  ghost: (d = 1) => enemyDotPts('ghost', Math.round(150 * d)),
   // The flying saucer, replaced by the lab's bacterium — a rod body with
   // flagella. Reverting is this one line: enemyDotPts('ufo').
   //
@@ -634,25 +638,25 @@ const DOT_SHAPES = {
   // quaternion, so a rotation set on the object would be thrown away. The
   // model runs along X with the flagella at -X; enemies face +Z; so
   // (x, y, z) -> (-z, y, x) puts the head forward and the tail behind.
-  scoutufo: () => towerHeadPts('bacterium', 170)
+  scoutufo: (d = 1) => towerHeadPts('bacterium', Math.round(170 * d))
     .map((p) => (p.length > 3 ? [-p[2], p[1], p[0], p[3]] : [-p[2], p[1], p[0]])),
-  gslime: () => enemyDotPts('slime'),
-  drifter: () => enemyDotPts('saturn'),
-  corona: () => enemyDotPts('corona'),
-  barbed: () => enemyDotPts('seamine'),
-  rolling: () => enemyDotPts('seamine'),
-  prime: () => enemyDotPts('seamine'),
-  knot: () => enemyDotPts('knot'),
+  gslime: (d = 1) => enemyDotPts('slime', Math.round(150 * d)),
+  drifter: (d = 1) => enemyDotPts('saturn', Math.round(150 * d)),
+  corona: (d = 1) => enemyDotPts('corona', Math.round(150 * d)),
+  barbed: (d = 1) => enemyDotPts('seamine', Math.round(150 * d)),
+  rolling: (d = 1) => enemyDotPts('seamine', Math.round(150 * d)),
+  prime: (d = 1) => enemyDotPts('seamine', Math.round(150 * d)),
+  knot: (d = 1) => enemyDotPts('knot', Math.round(150 * d)),
   // the invasion roster: the saucer is the lab's ufo (freed when the
   // bacterium took scoutufo's slot); the shellback wears the lab's
   // seashell spiral; the phantom re-uses the ghost — camo does the rest
-  saucer: () => enemyDotPts('ufo'),
+  saucer: (d = 1) => enemyDotPts('ufo', Math.round(150 * d)),
   // recentred on the CENTROID, not the bbox: a log spiral's mass sits in
   // its outer whorl (measured centroid 0.28, 0.48 after fitUnit), and the
   // solid core renders at the origin — uncentred, the core floated beside
   // the shell instead of inside it
-  shellback: () => {
-    const pts = towerHeadPts('shell', 400); // a spiral is all surface — it needs density (dots are vertices, not draw calls)
+  shellback: (d = 1) => {
+    const pts = towerHeadPts('shell', Math.round(400 * d)); // a spiral is all surface — it needs density
     let cx = 0, cy = 0, cz = 0;
     for (const p of pts) { cx += p[0]; cy += p[1]; cz += p[2]; }
     cx /= pts.length; cy /= pts.length; cz /= pts.length;
@@ -663,7 +667,7 @@ const DOT_SHAPES = {
       ? [(p[0] - cx) * K, (p[1] - cy) * K, (p[2] - cz) * K, p[3]]
       : [(p[0] - cx) * K, (p[1] - cy) * K, (p[2] - cz) * K]));
   },
-  phantom: () => enemyDotPts('ghost'),
+  phantom: (d = 1) => enemyDotPts('ghost', Math.round(150 * d)),
 };
 
 // The solid core a NON-RAMMABLE enemy wears. Half-dotted is this game's
@@ -687,8 +691,8 @@ const HARD_CORE = {
   phantom: () => new THREE.IcosahedronGeometry(0.24), // the Predator glint
 };
 
-export function makeDotEnemy(type, cols) {
-  const base = (DOT_SHAPES[type] || (() => spherePts(140)))();
+export function makeDotEnemy(type, cols, dens = 1) {
+  const base = (DOT_SHAPES[type] || ((d = 1) => spherePts(Math.round(140 * d))))(dens);
   const pos = new Float32Array(base.length * 3);
   const col = new Float32Array(base.length * 3);
   const cBody = new THREE.Color(cols.walker);
@@ -879,6 +883,40 @@ export function makePortalCloud(cols, phase = 0) {
 
   pts.userData.kind = 'portal';
   pts.userData.sizeScale = 1;
+  return pts;
+}
+
+// The energy shield: a dot-shell ellipsoid that hovers over the tank's
+// hull. The game's own idiom — a fibonacci sphere of additive points, one
+// draw call — rather than a translucent mesh: the bloom chain turns the
+// bright dots into the energy read for free. tick(t, frac) shimmers it and
+// blinks it URGENT when frac (time remaining, 0..1) runs low.
+export function makeShieldShell(colorHex = 0x7fe0ff, n = 280) {
+  const pos = new Float32Array(n * 3);
+  const GA = Math.PI * (3 - Math.sqrt(5));
+  for (let i = 0; i < n; i++) {
+    const y = 1 - (2 * i + 1) / n;
+    const r = Math.sqrt(Math.max(0, 1 - y * y));
+    const a = i * GA;
+    // ellipsoid: the hull is longer than it is tall
+    pos[i * 3] = Math.cos(a) * r * 1.05;
+    pos[i * 3 + 1] = y * 0.8;
+    pos[i * 3 + 2] = Math.sin(a) * r * 1.3;
+  }
+  const geo = new THREE.BufferGeometry();
+  geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+  const pts = new THREE.Points(geo, new THREE.PointsMaterial({
+    size: 4.5, sizeAttenuation: false, color: colorHex,
+    transparent: true, opacity: 0.75,
+    blending: THREE.AdditiveBlending, depthWrite: false,
+  }));
+  pts.userData.tick = (t, frac = 1) => {
+    pts.rotation.y = t * 0.7;
+    const urgent = frac < 0.25;
+    const blink = urgent ? (Math.sin(t * 14) > 0 ? 1 : 0.25) : 1;
+    pts.material.opacity = (0.6 + 0.25 * Math.sin(t * 3.1)) * blink;
+  };
+  pts.userData.kind = 'fx';
   return pts;
 }
 
@@ -1559,6 +1597,7 @@ const REWARD_GEO = {
   star: () => new THREE.OctahedronGeometry(1, 0),
   cell: () => new THREE.IcosahedronGeometry(0.92, 0),
   ring: () => new THREE.TorusGeometry(0.72, 0.3, 8, 14),
+  dome: () => new THREE.SphereGeometry(0.8, 10, 6, 0, Math.PI * 2, 0, Math.PI * 0.55),
 };
 
 export function makeRewardSolid(shape, cols, phase = 0) {

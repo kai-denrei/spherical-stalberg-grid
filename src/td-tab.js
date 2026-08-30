@@ -19,31 +19,31 @@
 
 import * as THREE from '../vendor/three.module.js';
 import GUI from '../vendor/lil-gui.esm.js';
-import { generateSphereMesh, relax } from './grid.js?v=c91d9a17';
-import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=c91d9a17';
-import { mulberry32, randomSeed } from './rng.js?v=c91d9a17';
-import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3, segKey } from './vec3.js?v=c91d9a17';
-import { CREATURES, waveJelly } from './creatures.js?v=c91d9a17';
-import { UNITS, UNIT_NAMES, buildUnit, buildCreature, preloadMkcx, preloadServer, makeServerFixture, makeBulletCloud, makeRewardSolid, makeShellSolid, makeDebris, makeDotBurst, makePortalCloud, makeHeartCloud, makeDotEnemy } from './units.js?v=c91d9a17';
-import { LOOKS, LOOK_NAMES } from './looks.js?v=c91d9a17';
-import { makeCellIndex } from './cellindex.js?v=c91d9a17';
-import { CREATURE_TINTS, ENEMY_SPEC, INTROS, computeWavePlan } from './enemyspec.js?v=c91d9a17';
-import { PICKUPS } from './pickups.js?v=c91d9a17';
-import { rankFor, rankLabel, badgeSVG, killReq, eliteReq } from './ranks.js?v=c91d9a17';
-import { makeScore } from './score.js?v=c91d9a17';
-import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER } from './towers.js?v=c91d9a17';
-import { makeEconomy, sellRefund } from './economy.js?v=c91d9a17';
-import { makeBloom } from './postfx.js?v=c91d9a17';
-import { TANK_FEEL, TANK_FEEL_KNOBS, makeTankFeel, stepTankFeel, landTankFeel, fireTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js?v=c91d9a17';
-import { FEEL, loadFeel, saveFeel } from './feelstore.js?v=c91d9a17';
+import { generateSphereMesh, relax } from './grid.js?v=606c6ca8';
+import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=606c6ca8';
+import { mulberry32, randomSeed } from './rng.js?v=606c6ca8';
+import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3, segKey } from './vec3.js?v=606c6ca8';
+import { CREATURES, waveJelly } from './creatures.js?v=606c6ca8';
+import { UNITS, UNIT_NAMES, buildUnit, buildCreature, preloadMkcx, preloadServer, makeServerFixture, makeShieldShell, makeBulletCloud, makeRewardSolid, makeShellSolid, makeDebris, makeDotBurst, makePortalCloud, makeHeartCloud, makeDotEnemy } from './units.js?v=606c6ca8';
+import { LOOKS, LOOK_NAMES } from './looks.js?v=606c6ca8';
+import { makeCellIndex } from './cellindex.js?v=606c6ca8';
+import { CREATURE_TINTS, ENEMY_SPEC, INTROS, computeWavePlan } from './enemyspec.js?v=606c6ca8';
+import { PICKUPS } from './pickups.js?v=606c6ca8';
+import { rankFor, rankLabel, badgeSVG, killReq, eliteReq } from './ranks.js?v=606c6ca8';
+import { makeScore } from './score.js?v=606c6ca8';
+import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER } from './towers.js?v=606c6ca8';
+import { makeEconomy, sellRefund } from './economy.js?v=606c6ca8';
+import { makeBloom } from './postfx.js?v=606c6ca8';
+import { TANK_FEEL, TANK_FEEL_KNOBS, makeTankFeel, stepTankFeel, landTankFeel, fireTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js?v=606c6ca8';
+import { FEEL, loadFeel, saveFeel } from './feelstore.js?v=606c6ca8';
 import { STRIKE_KNOBS, makeStrike, makeStrikeParams, grantStrikes, stepStrike,
   toggleArm, paintTarget, launchStrike, stepFall, skipFall, fallProgress,
-  strikeDamage, retargetStrike, orbitProgress } from './strike.js?v=c91d9a17';
-import { radarBasis, radarProject, radarBearing, sweepAngle, radarPhosphor } from './radar.js?v=c91d9a17';
-import { BLOOM_GROUPS } from './bloomweights.js?v=c91d9a17';
-import { TOWER_LOOK_NAMES, DEFAULT_TOWER_LOOK, buildTowerLook, preloadLook } from './towerlooks.js?v=c91d9a17';
-import { makeAudio } from './audio.js?v=c91d9a17';
-import { DEATH_KEYS } from './audiomanifest.js?v=c91d9a17';
+  strikeDamage, retargetStrike, orbitProgress } from './strike.js?v=606c6ca8';
+import { radarBasis, radarProject, radarBearing, sweepAngle, radarPhosphor } from './radar.js?v=606c6ca8';
+import { BLOOM_GROUPS } from './bloomweights.js?v=606c6ca8';
+import { TOWER_LOOK_NAMES, DEFAULT_TOWER_LOOK, buildTowerLook, preloadLook } from './towerlooks.js?v=606c6ca8';
+import { makeAudio } from './audio.js?v=606c6ca8';
+import { DEATH_KEYS } from './audiomanifest.js?v=606c6ca8';
 
 export function initTdTab(root) {
   let active = false;
@@ -484,6 +484,12 @@ export function initTdTab(root) {
   let playerDown = false;
   let carryingRegen = false;
   let speedBonus = 1; // permanent, from power rewards
+  // the energy shield: a timed bubble over the hull — touch damage
+  // bounces off while it holds. shieldObj is lazy-built, scene-level
+  // (positioned each frame like the marker, so parent scale can't warp it)
+  const SHIELD_TIME = 12;
+  let shieldT = 0;
+  let shieldObj = null;
   // The tank's field promotion. Only hands-on kills climb it — towers and
   // orbital strikes pay credits, not respect — and the ladder belongs to
   // the HULL: lose the tank, lose the insignia. Gold's second gate counts
@@ -1114,6 +1120,22 @@ export function initTdTab(root) {
     if (rf > 0) p = add3(p, scale3(player.smoothDir, -unitScale * 0.06 * rk));
     playerMesh.position.set(p[0], p[1], p[2]);
     playerMesh.scale.setScalar(unitScale * (playerMesh.userData.baseScale ?? 1));
+    // the energy shield rides the hull: positioned every frame, ticking
+    // its shimmer, gone the moment its clock runs out
+    if (shieldT > 0) {
+      if (!shieldObj) {
+        shieldObj = makeShieldShell();
+        scene.add(shieldObj);
+      }
+      shieldObj.visible = true;
+      const sp2 = add3(player.pos, scale3(n, lift * 0.9));
+      shieldObj.position.set(sp2[0], sp2[1], sp2[2]);
+      shieldObj.quaternion.copy(playerMesh.quaternion);
+      // sized off the CELL, not unitScale — measured on screen, unitScale
+      // put the bubble five cells wide (the mkcx normalization rides it)
+      shieldObj.scale.setScalar(cellSide * 0.85);
+      shieldObj.userData.tick(simTime, shieldT / SHIELD_TIME);
+    } else if (shieldObj) shieldObj.visible = false;
     // marker floats above the wall tops so nothing on the map occludes it
     const mp = scale3(player.pos, 1 + params.wallHeight * 1.6);
     markerMesh.position.set(mp[0], mp[1], mp[2]);
@@ -2773,6 +2795,7 @@ export function initTdTab(root) {
       glossCard('#9ff8ff', spriteShot('orb-power', orbIcon('star', 0x9ff8ff)), 'power sphere', 'far-field reward · +8% speed, permanent') +
       glossCard('#3dff6e', spriteShot('orb-health', orbIcon('cell', 0x3dff6e)), 'health sphere', 'far-field reward · +1 your hp') +
       glossCard('#ff2df0', spriteShot('orb-regen', orbIcon('ring', 0xff2df0)), 'regen charge', 'CARRY it back near the heart: +4 heart hp') +
+      glossCard('#59c8ff', spriteShot('orb-shield', orbIcon('dome', 0x59c8ff)), 'energy shield', '12s bubble over the hull — touch damage bounces off') +
       `</div><button class="msg-back">← back to briefing</button>`;
     msgEl.classList.remove('hidden');
   }
@@ -2983,7 +3006,8 @@ export function initTdTab(root) {
   // control state lives ON the AUTO button now, where the control is.
   function updateHud() {
     const spAlive = spawnPoints.filter((s) => s.alive).length;
-    const alerts = [carryingRegen ? '⬤ REGEN CARRIED' : '',
+    const alerts = [shieldT > 0 ? `⛨ SHIELD ${Math.ceil(shieldT)}s` : '',
+      carryingRegen ? '⬤ REGEN CARRIED' : '',
       cannonHeat > 0 ? 'CANNON HOT' : '',
       laserOverheat ? 'LASER COOLING' : ''].filter(Boolean).join(' · ');
     const hearts = `<span class="hp-heart">${'♥'.repeat(Math.max(0, heartHP))}</span>`
@@ -3330,6 +3354,7 @@ export function initTdTab(root) {
     heartHP = HEART_MAX;
     playerHP = PLAYER_MAX;
     playerDown = false;
+    shieldT = 0;
     resetTankRank();
     carryingRegen = false;
     speedBonus = 1;
@@ -4211,7 +4236,13 @@ export function initTdTab(root) {
       if (r.type === 'power') speedBonus *= 1.08;
       else if (r.type === 'health') playerHP = Math.min(PLAYER_MAX, playerHP + 1);
       else if (r.type === 'regen') carryingRegen = true;
-      if (r.type === 'health' || r.type === 'regen') {
+      else if (r.type === 'shield') {
+        shieldT = SHIELD_TIME;
+        sfx.play('tank_spool_up'); // the bubble igniting
+        showToast(`<div class="wave-num">SHIELD UP</div>`
+          + `<div class="wave-role">${SHIELD_TIME}s — touch damage bounces off</div>`, 2200);
+      }
+      if (r.type === 'health' || r.type === 'regen' || r.type === 'shield') {
         regrowQueue.push({ type: r.type, t: simTime + REGROW_TIME });
       }
       updateHud();
@@ -4285,6 +4316,12 @@ export function initTdTab(root) {
   }
 
   function playerHit() {
+    // the shield takes it: a hard flash on the bubble, nothing on the hull
+    if (shieldT > 0) {
+      if (shieldObj) shieldObj.material.opacity = 1;
+      bumpLeft = Math.max(bumpLeft, BUMP_LEN * 0.5); // the impact still SHOVES
+      return;
+    }
     playerHP--;
     updateHud();
     if (playerHP > 0) { loseTank(); return; }
@@ -5569,6 +5606,7 @@ export function initTdTab(root) {
     if (strikeGrace > 0) strikeGrace -= dt;
     if (shopMute > 0) shopMute -= dt;
     if (heartCalloutCd > 0) heartCalloutCd -= dt;
+    if (shieldT > 0) { shieldT -= dt; if (shieldT <= 0) updateHud(); }
     if (!serverFound && serverCi >= 0 && !playerDown
         && dist3(player.pos, graph.centers[serverCi]) < cellSide * 4) {
       serverFound = true;
@@ -5950,7 +5988,7 @@ export function initTdTab(root) {
 
   // opening briefing on a clean load; any debug hook means headless/demo,
   // where a frozen sim would break the verification flow
-  const debugging = ['walk', 'tick', 'wave', 'blast', 'laser', 'found', 'recoil', 'mode', 'map', 'tower', 'credit', 'shop', 'sector', 'reveal', 'portal', 'lose', 'charge', 'layout', 'perf', 'strike', 'strikefall', 'strikecam', 'gateprobe', 'rank', 'danger', 'callout', 'sitrep', 'server', 'hack']
+  const debugging = ['walk', 'tick', 'wave', 'blast', 'laser', 'found', 'recoil', 'mode', 'map', 'tower', 'credit', 'shop', 'sector', 'reveal', 'portal', 'lose', 'charge', 'layout', 'perf', 'strike', 'strikefall', 'strikecam', 'gateprobe', 'rank', 'danger', 'callout', 'sitrep', 'server', 'hack', 'shield']
     .some((k) => urlParams.get(k));
   const tutParam = urlParams.get('tutorial');
   runTutorial = tutParam === '1' || (tutParam !== '0' && !debugging);
@@ -6178,6 +6216,10 @@ export function initTdTab(root) {
     ws.t0 = simTime - 42;
     showSitrep();
   }
+
+  // ?shield=N — ignite the bubble for N seconds (visual check / playtest)
+  const shieldN = parseFloat(urlParams.get('shield') || '0');
+  if (shieldN > 0) { shieldT = shieldN; updateHud(); }
 
   // ?rank=N — jump the ladder for layout checks: grants exactly rank N's
   // requirements (kills AND elites), then renders through the normal path

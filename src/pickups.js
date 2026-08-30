@@ -33,6 +33,14 @@ export const PICKUPS = [
     effect: 'carry it home: heart +4',
     note: 'the only pickup you have to DELIVER — picking it up is half the job',
   },
+  {
+    type: 'shield',
+    shape: 'dome',
+    body: 0x59c8ff,
+    label: 'energy shield',
+    effect: '12s shield — touch damage bounces off',
+    note: 'a bubble over the hull; it blinks before it dies — count your seconds',
+  },
 ];
 
 // Shells are not in the table above because they are not a reward type: they
