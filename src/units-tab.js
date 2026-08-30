@@ -13,21 +13,21 @@ import * as THREE from '../vendor/three.module.js';
 import { OrbitControls } from '../vendor/OrbitControls.js';
 import { buildUnit, preloadMkcx, makeDebris, makeDotBurst, makeBulletCloud,
   makeDotEnemy, makeRewardSolid, makeShellSolid, makePortalCloud,
-  preloadServer, makeServerFixture, preloadContainer, makeContainerFixture } from './units.js?v=ab9f0bed';
+  preloadServer, makeServerFixture, preloadContainer, makeContainerFixture } from './units.js?v=0fefacaf';
 import { TANK_FEEL, TANK_FEEL_KNOBS, formatFeelCode, makeTankFeel, stepTankFeel,
-  landTankFeel, fireTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js?v=ab9f0bed';
+  landTankFeel, fireTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js?v=0fefacaf';
 import { FEEL, loadFeel, saveFeel, resetFeel,
-  TOWER, HEADS, loadTower, saveTower, resetTower } from './feelstore.js?v=ab9f0bed';
+  TOWER, HEADS, loadTower, saveTower, resetTower } from './feelstore.js?v=0fefacaf';
 import { TOWER_FEEL_KNOBS, formatTowerFeel, clampTowerParams,
-  formatTowerHeads, HEAD_CHOICES, HEAD_AS_SHIPPED } from './towerfeel.js?v=ab9f0bed';
-import { CREATURE_TINTS } from './enemyspec.js?v=ab9f0bed';
+  formatTowerHeads, HEAD_CHOICES, HEAD_AS_SHIPPED } from './towerfeel.js?v=0fefacaf';
+import { CREATURE_TINTS } from './enemyspec.js?v=0fefacaf';
 import { buildTowerLook, TOWER_LOOK_NAMES, DEFAULT_TOWER_LOOK, preloadLook } from './towerlooks.js';
 import { TOWER_BY_KEY, TOWERS } from './towers.js';
 import { LOOKS } from './looks.js';
 import { makeBloom } from './postfx.js';
-import { makeAudio } from './audio.js?v=ab9f0bed';
+import { makeAudio } from './audio.js?v=0fefacaf';
 import { GROUPS, GROUP_LABELS, GROUP_EMPTY, entriesIn } from './unitcatalog.js';
-import { LORE, LORE_WORLD, loreText, loreAll } from './lore.js?v=ab9f0bed';
+import { LORE, LORE_WORLD, loreText, loreAll } from './lore.js?v=0fefacaf';
 
 let roundTex = null;
 function roundDotTex() {
@@ -322,6 +322,17 @@ export function initUnitsTab(root) {
     // units carry their own normalization; undo it so everything arrives at
     // a comparable size and the framing maths does the rest
     current.scale.setScalar(1 / (current.userData.baseScale || 1));
+    // AFTER the normalization — setScalar writes all three axes, and the
+    // first cut of this squash was silently wiped by it. The catalogue
+    // shows the berth AS FIELDED: 0.55 depth, the box the player meets.
+    if (e.id === 'container') current.scale.z *= 0.55;
+    // deep-linked (?unit=): report the box the viewer actually RENDERS —
+    // a probe that measures before the transforms settle proves nothing
+    if (new URLSearchParams(location.search).get('unit')) {
+      const bb = new THREE.Box3().setFromObject(current);
+      const sz = new THREE.Vector3(); bb.getSize(sz);
+      console.log(`UNITSIZE ${e.id} x=${sz.x.toFixed(2)} y=${sz.y.toFixed(2)} z=${sz.z.toFixed(2)}`);
+    }
     scene.add(current);
     // a full ammo rack reads better than an empty one when you are judging shape
     (current.userData.ammoDots || []).forEach((d) => d.material.color.setHex(0xffffff));
