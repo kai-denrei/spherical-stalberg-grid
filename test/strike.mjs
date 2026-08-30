@@ -5,7 +5,7 @@
 import {
   STRIKE_TUNE, STRIKE_KNOBS, makeStrike, grantStrikes, stepStrike,
   toggleArm, paintTarget, launchStrike, stepFall, skipFall, fallProgress,
-  strikeDamage, strikeKnobProblems, retargetStrike,
+  strikeDamage, strikeKnobProblems, retargetStrike, orbitProgress,
 } from '../src/strike.js';
 
 let failures = 0;
@@ -115,6 +115,27 @@ console.log('the blast:');
   check('half radius still hits for most of the centre',
         approx(strikeDamage(R * 0.5, R), STRIKE_TUNE.dmgCenter * 0.75));
   check('a zero radius damages nothing', strikeDamage(0, 0) === 0);
+}
+
+console.log('the re-orbit cooldown:');
+{
+  const st = makeStrike();
+  st.ready = 2; st.armed = true; st.target = 4;
+  launchStrike(st);
+  check('launch starts the cooldown', st.cooldown === STRIKE_TUNE.cooldown);
+  check('a stacked second strike must wait',
+        toggleArm(st) === 'refused' && !st.armed,
+        'ready missiles do not skip the re-orbit');
+  check('progress reads the return', orbitProgress(st) < 0.1);
+  run(st, STRIKE_TUNE.cooldown / 2);
+  check('halfway back', Math.abs(orbitProgress(st) - 0.5) < 0.05, orbitProgress(st));
+  // the promotion window is NOT blocked by the cooldown
+  st.reserved = 1; st.gauge = 0;
+  const events = run(st, STRIKE_TUNE.windowTime + 1);
+  check('the window promotes while the platform repositions', events === 1);
+  run(st, STRIKE_TUNE.cooldown);
+  check('back in orbit, arming works again', toggleArm(st) === 'armed');
+  check('progress reads 1 when idle', orbitProgress(makeStrike()) === 1);
 }
 
 console.log('the re-aim burst:');

@@ -16,7 +16,7 @@
 // visuals. This owns every number and every refusal, so the ritual is
 // testable without a pixel.
 
-import { makeParams, clampParams, formatKnobs, knobProblems } from './knobs.js?v=36014414';
+import { makeParams, clampParams, formatKnobs, knobProblems } from './knobs.js?v=32e21370';
 
 export const STRIKE_TUNE = {
   windowTime: 40,    // s for a reserved strike to promote to ready
@@ -27,6 +27,7 @@ export const STRIKE_TUNE = {
   fallTime: 3.5,     // seconds of missile cam; long enough to re-aim in
   dmgCenter: 10,     // enemy damage at ground zero
   retargets: 1,      // mid-fall re-aims per strike — the vectoring burst
+  cooldown: 12,      // s between strikes: the platform must re-enter orbit
   breakWalls: true,  // the blast breaches every wall in the radius
   breakTowers: true, // ...and takes your own towers with it. No refunds.
 };
@@ -40,6 +41,7 @@ export const STRIKE_KNOBS = [
   { key: 'fallTime', label: 'fall time (s)', group: 'blast', min: 0.8, max: 5, step: 0.1 },
   { key: 'dmgCenter', label: 'centre damage', group: 'blast', min: 1, max: 20, step: 0.5 },
   { key: 'retargets', label: 're-aims per strike', group: 'blast', min: 0, max: 2, step: 1 },
+  { key: 'cooldown', label: 're-orbit time (s)', group: 'ration', min: 0, max: 40, step: 1 },
   { key: 'breakWalls', label: 'destroy walls', group: 'blast', bool: true },
   { key: 'breakTowers', label: 'destroy friendly towers', group: 'blast', bool: true },
 ];
@@ -60,6 +62,8 @@ export function makeStrike() {
     fallCi: -1,    // where the falling strike lands
     fallTotal: 1,  // what `falling` started from, for the camera's progress
     retargetsLeft: 0,   // mid-fall re-aims remaining on the strike in the air
+    cooldown: 0,        // s until the platform is back in position
+    cooldownTotal: 1,   // what it started from, for the percentage readout
   };
 }
 
@@ -74,6 +78,9 @@ export function grantStrikes(st, portals, p = STRIKE_TUNE) {
 // caller can chime exactly once. The window PAUSES at the ready cap — time
 // spent hoarding is not banked.
 export function stepStrike(st, dt, p = STRIKE_TUNE) {
+  // the re-orbit clock runs independently of the promotion window: a spent
+  // platform repositions while the next asset charges
+  if (st.cooldown > 0) st.cooldown = Math.max(0, st.cooldown - dt);
   if (st.reserved > 0 && st.ready < p.maxReady) {
     st.gauge = Math.min(1, st.gauge + dt / Math.max(0.001, p.windowTime));
     if (st.gauge >= 1) {
@@ -89,7 +96,9 @@ export function stepStrike(st, dt, p = STRIKE_TUNE) {
 // The safety. You cannot arm an empty tube; disarming clears the target —
 // re-engaging the safety is a full stand-down, not a pause.
 export function toggleArm(st) {
-  if (!st.armed && st.ready <= 0) return 'refused';
+  // a ready missile with no platform in position is still a refusal: the
+  // cooldown gates ARMING, so back-to-back stacked strikes wait their turn
+  if (!st.armed && (st.ready <= 0 || st.cooldown > 0)) return 'refused';
   st.armed = !st.armed;
   if (!st.armed) st.target = -1;
   return st.armed ? 'armed' : 'safe';
@@ -114,6 +123,8 @@ export function launchStrike(st, p = STRIKE_TUNE) {
   st.fallTotal = p.fallTime;
   st.fallCi = ci;
   st.retargetsLeft = Math.round(p.retargets);
+  st.cooldown = p.cooldown;
+  st.cooldownTotal = Math.max(1e-6, p.cooldown);
   return ci;
 }
 
@@ -144,6 +155,12 @@ export function retargetStrike(st, ci) {
 // the cam is a reward, not a cost.
 export function skipFall(st) {
   if (st.falling > 0) st.falling = 1e-4;
+}
+
+// 0..1 progress of the platform's return to orbit, for the console readout.
+export function orbitProgress(st) {
+  if (st.cooldown <= 0) return 1;
+  return 1 - st.cooldown / st.cooldownTotal;
 }
 
 // 0..1 progress of the fall, for the camera. Smoothstepped by the caller.
