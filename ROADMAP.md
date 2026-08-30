@@ -134,6 +134,21 @@ actually been examined — whether waves 5–8 feel cramped on it is untested.
 
 
 
+### Tuning levers (from the 2026-08-30 sim batch — data in docs/simdata-2026-08-30.jsonl)
+
+Measured: waves 1–3 deal essentially all heart damage (median 10→5, flat
+after); credit floods from wave 6–8 and compounds ~30–50%/wave once
+placeable walls saturate (~14–21 towers); hands-on style1 wins 5/8 vs
+builder 1/8. Levers, in the operator's preference order:
+
+- **Gate the strongest towers behind the HACKS** (operator's pick):
+  sniper/laser stop unlocking by wave; winning a Relay protocol becomes
+  the only source for the top of the tree. Gives the mid-game an errand
+  and makes peak defense a player action, not a clock.
+- Early cliff: soften waves 2–3 or fatten the opening kit.
+- Credit sinks: per-copy tower price escalation; buyable strike charges;
+  the ally units specced under Economy.
+
 ### Mode incentives
 
 Nothing currently *forces* meaningful switching between the macro layer

@@ -29,9 +29,23 @@ quantified the operator's gut feel exactly:
 - **Hands-on play wins**: style1 (ram + chokepoints) took 5/8 sectors;
   the pure builder took 1/8. The credit split's intent, confirmed.
 
-The tuning levers this points at: soften waves 2–3 or fatten the opening
-kit; and give the mid-game credit SINKS — per-copy price escalation,
-buyable strike charges, the ally units already specced in the ROADMAP.
+The tuning levers this points at, recorded as the working list (also in
+the ROADMAP, where levers survive):
+
+- **Early cliff**: soften waves 2–3, or fatten the opening kit — the
+  heart pays half its total before slow/aoe exist.
+- **Credit sinks**: per-copy tower price escalation; buyable orbital
+  strike charges (already rationed — a perfect sink); the ally units the
+  economy item already specs.
+- **Operator's preferred lever — gate the strongest towers behind the
+  HACKS.** Sniper/laser (and future top-tier kit) stop unlocking by wave
+  and instead require winning a protocol at the Antipode Relay. This
+  attacks both findings at once: the mid-game gets a reason to spend
+  time (drive to the pole, breach the vault, win the duel) instead of
+  passively banking bounties, and the strongest defense arrives by
+  PLAYER ACTION rather than by the clock that currently trivializes
+  wave 6+. The hack already grants +1 unlock; this would make it the
+  ONLY source for the top of the tree.
 
 ---
 
