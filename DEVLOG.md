@@ -6,7 +6,7 @@ Demo links assume `npm run serve` (port 8144) or the
 
 ---
 
-## `65a80a5` — The balance, confirmed by rerun
+## `fd50584` — The balance, confirmed by rerun
 
 Same 3 styles × 8 seeds, same seed ladder, new balance
 (`docs/simdata-2026-08-30-post-balance.jsonl`). Before → after:
