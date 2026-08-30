@@ -19,31 +19,31 @@
 
 import * as THREE from '../vendor/three.module.js';
 import GUI from '../vendor/lil-gui.esm.js';
-import { generateSphereMesh, relax } from './grid.js?v=f043ab78';
-import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=f043ab78';
-import { mulberry32, randomSeed } from './rng.js?v=f043ab78';
-import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3, segKey } from './vec3.js?v=f043ab78';
-import { CREATURES, waveJelly } from './creatures.js?v=f043ab78';
-import { UNITS, UNIT_NAMES, buildUnit, buildCreature, preloadMkcx, preloadServer, makeServerFixture, makeBulletCloud, makeRewardSolid, makeShellSolid, makeDebris, makeDotBurst, makePortalCloud, makeHeartCloud, makeDotEnemy } from './units.js?v=f043ab78';
-import { LOOKS, LOOK_NAMES } from './looks.js?v=f043ab78';
-import { makeCellIndex } from './cellindex.js?v=f043ab78';
-import { CREATURE_TINTS, ENEMY_SPEC, INTROS, computeWavePlan } from './enemyspec.js?v=f043ab78';
-import { PICKUPS } from './pickups.js?v=f043ab78';
-import { rankFor, rankLabel, badgeSVG, killReq, eliteReq } from './ranks.js?v=f043ab78';
-import { makeScore } from './score.js?v=f043ab78';
-import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER } from './towers.js?v=f043ab78';
-import { makeEconomy, sellRefund } from './economy.js?v=f043ab78';
-import { makeBloom } from './postfx.js?v=f043ab78';
-import { TANK_FEEL, TANK_FEEL_KNOBS, makeTankFeel, stepTankFeel, landTankFeel, fireTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js?v=f043ab78';
-import { FEEL, loadFeel, saveFeel } from './feelstore.js?v=f043ab78';
+import { generateSphereMesh, relax } from './grid.js?v=6d06b096';
+import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=6d06b096';
+import { mulberry32, randomSeed } from './rng.js?v=6d06b096';
+import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3, segKey } from './vec3.js?v=6d06b096';
+import { CREATURES, waveJelly } from './creatures.js?v=6d06b096';
+import { UNITS, UNIT_NAMES, buildUnit, buildCreature, preloadMkcx, preloadServer, makeServerFixture, makeBulletCloud, makeRewardSolid, makeShellSolid, makeDebris, makeDotBurst, makePortalCloud, makeHeartCloud, makeDotEnemy } from './units.js?v=6d06b096';
+import { LOOKS, LOOK_NAMES } from './looks.js?v=6d06b096';
+import { makeCellIndex } from './cellindex.js?v=6d06b096';
+import { CREATURE_TINTS, ENEMY_SPEC, INTROS, computeWavePlan } from './enemyspec.js?v=6d06b096';
+import { PICKUPS } from './pickups.js?v=6d06b096';
+import { rankFor, rankLabel, badgeSVG, killReq, eliteReq } from './ranks.js?v=6d06b096';
+import { makeScore } from './score.js?v=6d06b096';
+import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER } from './towers.js?v=6d06b096';
+import { makeEconomy, sellRefund } from './economy.js?v=6d06b096';
+import { makeBloom } from './postfx.js?v=6d06b096';
+import { TANK_FEEL, TANK_FEEL_KNOBS, makeTankFeel, stepTankFeel, landTankFeel, fireTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js?v=6d06b096';
+import { FEEL, loadFeel, saveFeel } from './feelstore.js?v=6d06b096';
 import { STRIKE_KNOBS, makeStrike, makeStrikeParams, grantStrikes, stepStrike,
   toggleArm, paintTarget, launchStrike, stepFall, skipFall, fallProgress,
-  strikeDamage, retargetStrike, orbitProgress } from './strike.js?v=f043ab78';
-import { radarBasis, radarProject, radarBearing, sweepAngle, radarPhosphor } from './radar.js?v=f043ab78';
-import { BLOOM_GROUPS } from './bloomweights.js?v=f043ab78';
-import { TOWER_LOOK_NAMES, DEFAULT_TOWER_LOOK, buildTowerLook, preloadLook } from './towerlooks.js?v=f043ab78';
-import { makeAudio } from './audio.js?v=f043ab78';
-import { DEATH_KEYS } from './audiomanifest.js?v=f043ab78';
+  strikeDamage, retargetStrike, orbitProgress } from './strike.js?v=6d06b096';
+import { radarBasis, radarProject, radarBearing, sweepAngle, radarPhosphor } from './radar.js?v=6d06b096';
+import { BLOOM_GROUPS } from './bloomweights.js?v=6d06b096';
+import { TOWER_LOOK_NAMES, DEFAULT_TOWER_LOOK, buildTowerLook, preloadLook } from './towerlooks.js?v=6d06b096';
+import { makeAudio } from './audio.js?v=6d06b096';
+import { DEATH_KEYS } from './audiomanifest.js?v=6d06b096';
 
 export function initTdTab(root) {
   let active = false;
@@ -667,12 +667,14 @@ export function initTdTab(root) {
 
   function freeBlocked(cand) {
     const ci = cellIndex(cand);
-    if (ci === -1 || dungeon.tags[ci] === BLOCKED) return true;
+    // the SERVER is solid: a machine you can drive through is a prop, not
+    // a fixture (operator field report — the tank phased clean through)
+    if (ci === -1 || dungeon.tags[ci] === BLOCKED || ci === serverCi) return true;
     // wide ground keeps the clipping margin; narrow halls trade a little
     // visual overlap for guaranteed passability
     const margin = cellSide * (openCount(ci) <= 3 ? 0.45 : 0.62);
     for (const nb of graph.adj[ci]) {
-      if (dungeon.tags[nb] === BLOCKED
+      if ((dungeon.tags[nb] === BLOCKED || nb === serverCi)
         && dist3(cand, graph.centers[nb]) < margin) return true;
     }
     return unitBlocker(cand);
@@ -1782,6 +1784,7 @@ export function initTdTab(root) {
     if (down && (k === ' ' || k === 'spacebar')) { fire(); ev.preventDefault(); return; }
     if (down && k === 'h') pulseHint();
     if (down && k === 'v') toggleView();
+    if (down && k === 'x' && serverFound && !hackedRound) openHack();
     // views land on number keys and on the letters that say them: 1/M/O all
     // read as "map" and go to orbit, 2 is first person, 3/T third person.
     // The radar's heart/player toggle lives on the MAP button alone now.
@@ -2780,6 +2783,9 @@ export function initTdTab(root) {
   // the game's own state (window.__cx.game().phase) instead of needing a
   // postMessage protocol added to a finished game.
   const hackBtnEl = root.querySelector('#td-hack');
+  const hackPromptEl = root.querySelector('#td-hackprompt');
+  let hackPromptForce = false;
+  if (hackPromptEl) hackPromptEl.addEventListener('pointerdown', () => openHack());
   const hackWrapEl = root.querySelector('#td-hackwrap');
   const hackFrameEl = root.querySelector('#td-hackframe');
   let hackPoll = null;
@@ -2788,6 +2794,7 @@ export function initTdTab(root) {
   }
   function openHack() {
     if (!hackWrapEl || !hackFrameEl || hackedRound) return;
+    if (!hackWrapEl.classList.contains('hidden')) return; // already breaching
     paused = true;
     sfx.play('server_dialup'); // six seconds of negotiation IS the fiction
     hackFrameEl.src = 'minigames/hdt/3.html';
@@ -5495,6 +5502,14 @@ export function initTdTab(root) {
         + `<div class="wave-role">an antipode relay — HACK it for tower firmware</div>`, 3400);
       syncHackBtn();
     }
+    // standing at the relay, the game says WHAT TO PRESS — the rail
+    // button alone was invisible to a player looking at the machine
+    if (hackPromptEl) {
+      const near = hackPromptForce || (serverFound && !hackedRound && serverCi >= 0
+        && (!hackWrapEl || hackWrapEl.classList.contains('hidden'))
+        && dist3(player.pos, graph.centers[serverCi]) < cellSide * 4.5);
+      hackPromptEl.classList.toggle('hidden', !near);
+    }
     if (ramComboT > 0) {
       ramComboT -= dt;
       if (ramComboT <= 0) { ramCombo = 0; syncCombo(); }
@@ -6063,6 +6078,7 @@ export function initTdTab(root) {
       + ` chamber=${clear}/${serverChamber.length} clear`
       + ` ground=${serverCi >= 0 && dungeon.tags[serverCi] !== BLOCKED ? 'OPEN' : 'sealed'}`);
     serverFound = true; syncHackBtn();
+    hackPromptForce = true; // pin the prompt for the layout screenshot
     // the model loads async — report again once it should be in the scene
     setTimeout(() => console.log(`SERVER2 placed=${!!serverObj}`
       + `${serverObj ? ` scale=${serverObj.scale.x.toFixed(4)}` : ''}`), 5000);

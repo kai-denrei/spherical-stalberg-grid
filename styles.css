@@ -2621,3 +2621,23 @@ body.playing:not(.chrome-open) #tabbar { display: none !important; }
   vertical-align: 1px;
 }
 .log-copy:hover { border-color: rgba(160, 180, 200, 0.7); }
+
+/* the relay's interact prompt: what to press, said AT the machine */
+#td-hackprompt {
+  position: absolute;
+  top: 63%;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 12;
+  padding: 7px 14px;
+  font: bold 13px ui-monospace, Menlo, monospace;
+  letter-spacing: 0.14em;
+  color: #b8ffca;
+  background: rgba(3, 14, 7, 0.85);
+  border: 1px solid rgba(110, 255, 140, 0.55);
+  border-radius: 6px;
+  text-shadow: 0 0 8px rgba(110, 255, 140, 0.45);
+  cursor: pointer;
+  animation: pulse-soft 1.8s ease-in-out infinite;
+}
+#td-hackprompt.hidden { display: none; }
