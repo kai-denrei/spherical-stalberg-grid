@@ -6,6 +6,28 @@ Demo links assume `npm run serve` (port 8144) or the
 
 ---
 
+## `d2a1efa` — The wreck had agency
+
+The operator's bug report — "respawned on the same spot with RED life
+indicators, still ramping up the RAM ×" — decoded into one missing state:
+**there was no down-state.** Through the death hold the invisible wreck
+kept everything: auto kept driving it, it rammed for combo and pay and
+rank, enemies touching it cost a second life (the red accents), and it
+grabbed pickups. The "same spot" was wherever the ghost had driven itself
+before the respawn timer fired.
+
+`playerDown` now gates motion, touch/ram, the danger warning, both
+weapons, the auto gunner, and pickups; it sets in `destroyPlayer` and
+clears on every restore path. The ram combo dies with the hull — and at
+`loseGame` too, where it used to hover over the last-light modal.
+
+Also: the secondary bolts were `BoxGeometry` — the operator's "too
+blocky" was literal. They are round tracers now, the idiom every tower
+shot already speaks: hot 7px head, three cyan ghosts strung behind along
+the flight line, per-bolt geometry disposed on kill.
+
+---
+
 ## `69a4c6c` — Heat that glows, callouts that switch tongues
 
 The secondary tubes clicked but never changed color on the mkcx model.
