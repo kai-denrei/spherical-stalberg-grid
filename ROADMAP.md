@@ -128,10 +128,10 @@ actually been examined — whether waves 5–8 feel cramped on it is untested.
 - ~~**Ranks**~~ — DONE (`f9614fa`): 15-rank insignia (bronze/silver/gold,
   dice-pip stars), hands-on kills only, gold gated on elite kills, resets
   with the hull. Shown on the tank and the HUD tank line; `?rank=N` to check.
-- **A WARNING system** — screen + audio when a non-rammable first comes near:
-  fire only if no alarm for X seconds AND a dangerous unit within Y — a
-  cooldown-gated proximity alarm, not a constant siren. (The manifest has no
-  alarm sample yet; wants an asset.)
+- ~~**A WARNING system**~~ — DONE: `danger_alert` klaxon + CRT-red warning
+  on the first dangerous (non-rammable) contact within 3.5 cells, once per
+  wave. Plus the boss omen: `boss_tension` brass starts when the lead to the
+  knot's wave crosses 10s. `?danger=1` forces the visual.
 
 
 

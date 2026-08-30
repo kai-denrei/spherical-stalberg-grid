@@ -19,31 +19,31 @@
 
 import * as THREE from '../vendor/three.module.js';
 import GUI from '../vendor/lil-gui.esm.js';
-import { generateSphereMesh, relax } from './grid.js?v=8a468825';
-import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=8a468825';
-import { mulberry32, randomSeed } from './rng.js?v=8a468825';
-import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3, segKey } from './vec3.js?v=8a468825';
-import { CREATURES, waveJelly } from './creatures.js?v=8a468825';
-import { UNITS, UNIT_NAMES, buildUnit, buildCreature, preloadMkcx, makeBulletCloud, makeRewardSolid, makeShellSolid, makeDebris, makeDotBurst, makePortalCloud, makeHeartCloud, makeDotEnemy } from './units.js?v=8a468825';
-import { LOOKS, LOOK_NAMES } from './looks.js?v=8a468825';
-import { makeCellIndex } from './cellindex.js?v=8a468825';
-import { CREATURE_TINTS, ENEMY_SPEC, INTROS, computeWavePlan } from './enemyspec.js?v=8a468825';
-import { PICKUPS } from './pickups.js?v=8a468825';
-import { rankFor, rankLabel, badgeSVG, killReq, eliteReq } from './ranks.js?v=8a468825';
-import { makeScore } from './score.js?v=8a468825';
-import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER } from './towers.js?v=8a468825';
-import { makeEconomy, sellRefund } from './economy.js?v=8a468825';
-import { makeBloom } from './postfx.js?v=8a468825';
-import { TANK_FEEL, TANK_FEEL_KNOBS, makeTankFeel, stepTankFeel, landTankFeel, fireTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js?v=8a468825';
-import { FEEL, loadFeel, saveFeel } from './feelstore.js?v=8a468825';
+import { generateSphereMesh, relax } from './grid.js?v=50c195d8';
+import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=50c195d8';
+import { mulberry32, randomSeed } from './rng.js?v=50c195d8';
+import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3, segKey } from './vec3.js?v=50c195d8';
+import { CREATURES, waveJelly } from './creatures.js?v=50c195d8';
+import { UNITS, UNIT_NAMES, buildUnit, buildCreature, preloadMkcx, makeBulletCloud, makeRewardSolid, makeShellSolid, makeDebris, makeDotBurst, makePortalCloud, makeHeartCloud, makeDotEnemy } from './units.js?v=50c195d8';
+import { LOOKS, LOOK_NAMES } from './looks.js?v=50c195d8';
+import { makeCellIndex } from './cellindex.js?v=50c195d8';
+import { CREATURE_TINTS, ENEMY_SPEC, INTROS, computeWavePlan } from './enemyspec.js?v=50c195d8';
+import { PICKUPS } from './pickups.js?v=50c195d8';
+import { rankFor, rankLabel, badgeSVG, killReq, eliteReq } from './ranks.js?v=50c195d8';
+import { makeScore } from './score.js?v=50c195d8';
+import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER } from './towers.js?v=50c195d8';
+import { makeEconomy, sellRefund } from './economy.js?v=50c195d8';
+import { makeBloom } from './postfx.js?v=50c195d8';
+import { TANK_FEEL, TANK_FEEL_KNOBS, makeTankFeel, stepTankFeel, landTankFeel, fireTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js?v=50c195d8';
+import { FEEL, loadFeel, saveFeel } from './feelstore.js?v=50c195d8';
 import { STRIKE_KNOBS, makeStrike, makeStrikeParams, grantStrikes, stepStrike,
   toggleArm, paintTarget, launchStrike, stepFall, skipFall, fallProgress,
-  strikeDamage, retargetStrike, orbitProgress } from './strike.js?v=8a468825';
-import { radarBasis, radarProject, radarBearing, sweepAngle, radarPhosphor } from './radar.js?v=8a468825';
-import { BLOOM_GROUPS } from './bloomweights.js?v=8a468825';
-import { TOWER_LOOK_NAMES, DEFAULT_TOWER_LOOK, buildTowerLook, preloadLook } from './towerlooks.js?v=8a468825';
-import { makeAudio } from './audio.js?v=8a468825';
-import { DEATH_KEYS } from './audiomanifest.js?v=8a468825';
+  strikeDamage, retargetStrike, orbitProgress } from './strike.js?v=50c195d8';
+import { radarBasis, radarProject, radarBearing, sweepAngle, radarPhosphor } from './radar.js?v=50c195d8';
+import { BLOOM_GROUPS } from './bloomweights.js?v=50c195d8';
+import { TOWER_LOOK_NAMES, DEFAULT_TOWER_LOOK, buildTowerLook, preloadLook } from './towerlooks.js?v=50c195d8';
+import { makeAudio } from './audio.js?v=50c195d8';
+import { DEATH_KEYS } from './audiomanifest.js?v=50c195d8';
 
 export function initTdTab(root) {
   let active = false;
@@ -471,6 +471,11 @@ export function initTdTab(root) {
   // the dangerous (non-rammable) tier killed up close.
   let tankKills = 0, tankEliteKills = 0, tankRank = 0;
   let rankBadgeHud = '';
+  // the boss omen (brass, 10s before the knot's wave) and the proximity
+  // klaxon (once per wave, first dangerous contact)
+  const BOSS_WAVE = INTROS.find((i) => ENEMY_SPEC[i.type]?.boss)?.wave ?? -1;
+  let bossCued = false;
+  let dangerWarnedWave = -1;
 
   // phagocytosis state, recomputed per frame (amoeba only)
   const reach = { dir: null, amt: 0 };
@@ -2800,6 +2805,8 @@ export function initTdTab(root) {
     // opening purse: exactly a Rapid (70c) + a Slow (100c) — your first plan
     eco = makeEconomy({ startCredit: 170 });
     score.reset();
+    bossCued = false;
+    dangerWarnedWave = -1;
     mesh = generateSphereMesh({ seed: params.seed >>> 0, n: params.points, k: 12 });
     relax(mesh, { n_iters: params.relaxIters, PULL_RATE: 0.25 });
     dungeon = generateDungeon(mesh, {
@@ -3087,6 +3094,18 @@ export function initTdTab(root) {
   // Arm the next wave: one entry point, so nothing can spawn unannounced.
   // Idempotent — a stalled field re-asks every frame and must not re-fire the
   // cue or reset the countdown it is already running.
+  // First dangerous contact of the wave: klaxon + a CRT-red warning. Once
+  // per wave BY DESIGN — a constant siren is the alarm you learn to ignore.
+  const dangerEl = root.querySelector('#td-danger');
+  let dangerTimer = null;
+  function dangerFlash() {
+    sfx.play('danger_alert');
+    if (!dangerEl) return;
+    dangerEl.classList.remove('hidden');
+    clearTimeout(dangerTimer);
+    dangerTimer = setTimeout(() => dangerEl.classList.add('hidden'), 1900);
+  }
+
   function armWave() {
     if (waveIn >= 0) return;
     waveIn = WAVE_WARN;
@@ -3221,6 +3240,12 @@ export function initTdTab(root) {
       // free; the dangerous tier hurts to touch and shrugs the ram off
       // (per-enemy cooldown so overlap isn't a blender)
       const touchR = cellSide * Math.max(0.4, (e.size ?? spec.size) * 0.8);
+      // a unit that HURTS to touch is closing in: warn, once per wave
+      if (!spec.rammable && dangerWarnedWave !== wave
+          && dist3(e.pos, player.pos) < cellSide * 3.5) {
+        dangerWarnedWave = wave;
+        dangerFlash();
+      }
       if (dist3(e.pos, player.pos) < touchR) {
         if (spec.rammable) {
           // run over: tinted splat under the treads + the weight bump
@@ -4897,6 +4922,15 @@ export function initTdTab(root) {
       } else if (waveIn < 0) {
         waveCharge = 0;
       }
+      // the boss omen: brass from the moment the remaining lead crosses 10s.
+      // From a cleared field the whole lead is waveGap (armWave overlaps
+      // it), so at the default 7s gap the omen owns the entire pre-boss
+      // window; a stall-forced wave still cues off its 3s telegraph.
+      if (!bossCued && wave + 1 === BOSS_WAVE && !buildFrozen()) {
+        const left = waveIn >= 0 ? waveIn
+          : (waveActive ? Infinity : params.waveGap - interClock);
+        if (left <= 10) { bossCued = true; sfx.play('boss_tension'); }
+      }
     }
     if (tutorialActive) tutorial.tick(dt);
     if (!frozen) {
@@ -5258,7 +5292,7 @@ export function initTdTab(root) {
 
   // opening briefing on a clean load; any debug hook means headless/demo,
   // where a frozen sim would break the verification flow
-  const debugging = ['walk', 'tick', 'wave', 'blast', 'laser', 'found', 'recoil', 'mode', 'map', 'tower', 'credit', 'shop', 'sector', 'reveal', 'portal', 'lose', 'charge', 'layout', 'perf', 'strike', 'strikefall', 'strikecam', 'gateprobe', 'rank']
+  const debugging = ['walk', 'tick', 'wave', 'blast', 'laser', 'found', 'recoil', 'mode', 'map', 'tower', 'credit', 'shop', 'sector', 'reveal', 'portal', 'lose', 'charge', 'layout', 'perf', 'strike', 'strikefall', 'strikecam', 'gateprobe', 'rank', 'danger']
     .some((k) => urlParams.get(k));
   const tutParam = urlParams.get('tutorial');
   runTutorial = tutParam === '1' || (tutParam !== '0' && !debugging);
@@ -5425,6 +5459,11 @@ export function initTdTab(root) {
       setTimeout(() => skipFall(strike), 2100);
     }, 1200);
   }
+
+  // ?danger=1 — force the CRT warning and PIN it: under a virtual-time
+  // budget the 1.9s hide-timer fires before the first paint (timers outrun
+  // rAF), so a forced warning that also hides itself verifies nothing
+  if (urlParams.get('danger') === '1') { dangerFlash(); clearTimeout(dangerTimer); }
 
   // ?rank=N — jump the ladder for layout checks: grants exactly rank N's
   // requirements (kills AND elites), then renders through the normal path

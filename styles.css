@@ -2169,3 +2169,48 @@ body.playing:not(.chrome-open) #tabbar { display: none !important; }
   }
   #td-toast { top: 42%; }
 }
+
+/* --- the CRT danger warning ---------------------------------------------
+   First dangerous contact of a wave: a red phosphor glyph with scanlines
+   and a coarse flicker, gone in under two seconds. Deliberately louder
+   than the toasts — it means STOP TOUCHING THAT. */
+#td-danger {
+  position: absolute;
+  top: 36%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 11;
+  text-align: center;
+  pointer-events: none;
+  color: #ff2a1a;
+  font: bold 15px ui-monospace, Menlo, monospace;
+  letter-spacing: 0.28em;
+  animation: dg-flicker 0.12s steps(2) infinite;
+}
+#td-danger.hidden { display: none; }
+#td-danger .dg-sign {
+  font-size: 64px;
+  line-height: 1;
+  /* phosphor bloom + a hint of RGB misconvergence, the CRT tell */
+  text-shadow: 0 0 18px rgba(255, 42, 26, 0.8),
+    2px 0 0 rgba(255, 0, 60, 0.35), -2px 0 0 rgba(0, 255, 255, 0.25);
+}
+#td-danger .dg-label {
+  margin-top: 6px;
+  text-shadow: 0 0 10px rgba(255, 42, 26, 0.7);
+}
+#td-danger::after {
+  content: '';
+  position: absolute;
+  inset: -12px -24px;
+  background: repeating-linear-gradient(0deg,
+    rgba(0, 0, 0, 0) 0 2px, rgba(0, 0, 0, 0.35) 2px 4px);
+  pointer-events: none;
+}
+@keyframes dg-flicker {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.72; }
+}
+@media (prefers-reduced-motion: reduce) {
+  #td-danger { animation: none; }
+}
