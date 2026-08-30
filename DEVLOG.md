@@ -6,6 +6,35 @@ Demo links assume `npm run serve` (port 8144) or the
 
 ---
 
+## `1bb9b65` — The game plays itself, then eulogizes you
+
+**The simulator** (`2a420d0`). Tier-1 as designed: the simulation IS the
+shipping game. A SIM tab batches runs through one same-origin iframe
+(sequential on purpose — 16GB machine), each run `?sim=<style>&seed=N&
+simfast=K`: the animate loop split into `animate()` + `frame(dt,
+simSkip)` so fast-forward is K honest fixed 1/30 steps per painted frame
+— never one huge dt that tunnels enemies through collision — painting
+every 30th frame, bloom off, audio muted. `style1` is the operator's
+stated modus operandi (ram, SLOW/AOE at trunk chokepoints from greedy
+portal→heart descent, snipers, upgrades); `style0` is the floor. **The
+first completed run paid for the feature**: style1 lost at wave 2 with
+zero towers — the preferred kit unlocks at waves 4–7 and the policy had
+no opening. The fallback rule came from data, not intuition. Runs emit
+`SIMRESULT` JSON (console + postMessage); the tab aggregates win rate
+and medians on a fixed seed ladder so styles compare on identical
+worlds.
+
+**The last transmission** (`1bb9b65`). Game over opens with a verdict in
+three tiers — low-key diss tracks for early deaths, salutes for the
+middle, honors for wave 9+ — picked by score modulo so a replayed seed
+gets the same eulogy. Under it: the run dashboard from new run-level
+bookkeeping — kills by source, rams and best combo, strikes, max rank, a
+tinted kill histogram, a score-tempo sparkline, and THE KILLERS: an icon
+card for each enemy that took a tank, in order. A heart-fall death reads
+"hull intact to the end — the heart fell first."
+
+---
+
 ## `f3ec490` — The pedestal is the tier
 
 Operator's spec, adopted whole: a tower's upgrade state is its
