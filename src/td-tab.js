@@ -19,31 +19,31 @@
 
 import * as THREE from '../vendor/three.module.js';
 import GUI from '../vendor/lil-gui.esm.js';
-import { generateSphereMesh, relax } from './grid.js?v=79becd4d';
-import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=79becd4d';
-import { mulberry32, randomSeed } from './rng.js?v=79becd4d';
-import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3, segKey } from './vec3.js?v=79becd4d';
-import { CREATURES, waveJelly } from './creatures.js?v=79becd4d';
-import { UNITS, UNIT_NAMES, buildUnit, buildCreature, preloadMkcx, preloadServer, makeServerFixture, makeShieldShell, makeBulletCloud, makeRewardSolid, makeShellSolid, makeDebris, makeDotBurst, makePortalCloud, makeHeartCloud, makeDotEnemy } from './units.js?v=79becd4d';
-import { LOOKS, LOOK_NAMES } from './looks.js?v=79becd4d';
-import { makeCellIndex } from './cellindex.js?v=79becd4d';
-import { CREATURE_TINTS, ENEMY_SPEC, INTROS, computeWavePlan } from './enemyspec.js?v=79becd4d';
-import { PICKUPS } from './pickups.js?v=79becd4d';
-import { rankFor, rankLabel, badgeSVG, killReq, eliteReq } from './ranks.js?v=79becd4d';
-import { makeScore } from './score.js?v=79becd4d';
-import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER } from './towers.js?v=79becd4d';
-import { makeEconomy, sellRefund } from './economy.js?v=79becd4d';
-import { makeBloom } from './postfx.js?v=79becd4d';
-import { TANK_FEEL, TANK_FEEL_KNOBS, makeTankFeel, stepTankFeel, landTankFeel, fireTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js?v=79becd4d';
-import { FEEL, loadFeel, saveFeel } from './feelstore.js?v=79becd4d';
+import { generateSphereMesh, relax } from './grid.js?v=28116265';
+import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=28116265';
+import { mulberry32, randomSeed } from './rng.js?v=28116265';
+import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3, segKey } from './vec3.js?v=28116265';
+import { CREATURES, waveJelly } from './creatures.js?v=28116265';
+import { UNITS, UNIT_NAMES, buildUnit, buildCreature, preloadMkcx, preloadServer, makeServerFixture, makeShieldShell, makeBulletCloud, makeRewardSolid, makeShellSolid, makeDebris, makeDotBurst, makePortalCloud, makeHeartCloud, makeDotEnemy } from './units.js?v=28116265';
+import { LOOKS, LOOK_NAMES } from './looks.js?v=28116265';
+import { makeCellIndex } from './cellindex.js?v=28116265';
+import { CREATURE_TINTS, ENEMY_SPEC, INTROS, computeWavePlan } from './enemyspec.js?v=28116265';
+import { PICKUPS } from './pickups.js?v=28116265';
+import { rankFor, rankLabel, badgeSVG, killReq, eliteReq } from './ranks.js?v=28116265';
+import { makeScore } from './score.js?v=28116265';
+import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER } from './towers.js?v=28116265';
+import { makeEconomy, sellRefund } from './economy.js?v=28116265';
+import { makeBloom } from './postfx.js?v=28116265';
+import { TANK_FEEL, TANK_FEEL_KNOBS, makeTankFeel, stepTankFeel, landTankFeel, fireTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js?v=28116265';
+import { FEEL, loadFeel, saveFeel } from './feelstore.js?v=28116265';
 import { STRIKE_KNOBS, makeStrike, makeStrikeParams, grantStrikes, stepStrike,
   toggleArm, paintTarget, launchStrike, stepFall, skipFall, fallProgress,
-  strikeDamage, retargetStrike, orbitProgress } from './strike.js?v=79becd4d';
-import { radarBasis, radarProject, radarBearing, sweepAngle, radarPhosphor } from './radar.js?v=79becd4d';
-import { BLOOM_GROUPS } from './bloomweights.js?v=79becd4d';
-import { TOWER_LOOK_NAMES, DEFAULT_TOWER_LOOK, buildTowerLook, preloadLook } from './towerlooks.js?v=79becd4d';
-import { makeAudio } from './audio.js?v=79becd4d';
-import { DEATH_KEYS } from './audiomanifest.js?v=79becd4d';
+  strikeDamage, retargetStrike, orbitProgress } from './strike.js?v=28116265';
+import { radarBasis, radarProject, radarBearing, sweepAngle, radarPhosphor } from './radar.js?v=28116265';
+import { BLOOM_GROUPS } from './bloomweights.js?v=28116265';
+import { TOWER_LOOK_NAMES, DEFAULT_TOWER_LOOK, buildTowerLook, preloadLook } from './towerlooks.js?v=28116265';
+import { makeAudio } from './audio.js?v=28116265';
+import { DEATH_KEYS } from './audiomanifest.js?v=28116265';
 
 export function initTdTab(root) {
   let active = false;
@@ -535,6 +535,7 @@ export function initTdTab(root) {
   // SLOW and AOE at bottlenecks, SNIPER everywhere, upgrades with spare
   // credit. style0 is the deliberate floor: wander, build nothing.
   let simFast = 0, simStyle = null, simPolClock = 0, simDone = false;
+  const simCurve = []; // one point per wave CLEAR: the tuning signal
   let simCap = 600; // sim-seconds before a run reports 'timeout'
   function simTrunk() {
     // traffic: greedy descent from each live portal toward the heart; a
@@ -592,16 +593,41 @@ export function initTdTab(root) {
     }
     if (bestT) upgradeTower(bestT);
   }
+  // style2 'builder': stay out of trouble, spend EVERYTHING on towers —
+  // newest unlocked first, upgrades with the change. This style survives
+  // into the mid-game, which is where the credit-flood question lives.
+  function simBuildAll() {
+    const trunk = simTrunk();
+    if (!trunk.length) return;
+    const keys2 = unlockedTowerKeys(wave + hackedUnlocks).slice().reverse();
+    for (const k of keys2) {
+      const def = TOWER_BY_KEY[k];
+      if (!eco.canAfford(def.cost)) continue;
+      for (const tci of trunk) {
+        for (const nb of graph.adj[tci]) {
+          if (!placeError(nb)) { placeTower(k, nb); return; }
+        }
+      }
+    }
+    let bestT = null, bestC = Infinity;
+    for (const tw of towers) {
+      const c = upgradeCost(tw.def, tw.tier);
+      if (c !== null && c < bestC && eco.canAfford(c)) { bestC = c; bestT = tw; }
+    }
+    if (bestT) upgradeTower(bestT);
+  }
   function simPolicy(dt) {
     simPolClock += dt;
     if (simPolClock < 2) return; // decide every 2 SIM-seconds
     simPolClock = 0;
-    const wantDir = simStyle === 'style1' ? 'ram' : 'wander';
+    const wantDir = simStyle === 'style1' ? 'ram'
+      : simStyle === 'style2' ? 'avoid' : 'wander';
     if (params.directive !== wantDir || !autoMode) {
       params.directive = wantDir;
       autoMode = true;
     }
     if (simStyle === 'style1') simBuild();
+    else if (simStyle === 'style2') simBuildAll();
   }
   function simWatch() {
     if (simDone) return;
@@ -612,7 +638,8 @@ export function initTdTab(root) {
     simDone = true;
     const payload = { style: simStyle, seed: params.seed >>> 0, outcome, wave, round,
       score: score.points, heart: heartHP, lives: playerHP,
-      towers: towers.length, credit: eco.credit, simT: Math.round(t) };
+      towers: towers.length, credit: eco.credit, simT: Math.round(t),
+      curve: simCurve };
     console.log('SIMRESULT ' + JSON.stringify(payload));
     try {
       if (window.parent !== window) window.parent.postMessage({ simresult: payload }, '*');
@@ -5697,7 +5724,12 @@ export function initTdTab(root) {
   }
 
   function animate() {
-    requestAnimationFrame(animate);
+    // SIM rides TIMERS, not rAF: under a virtual-time budget the timer
+    // queue runs at full speed while BeginFrames are rationed (the same
+    // trap every probe in this file documents — used on purpose for once),
+    // and in a real browser setTimeout(0) still outruns vsync ~4x.
+    if (simFast > 1 && !simDone) setTimeout(animate, 0);
+    else requestAnimationFrame(animate);
     if (!active || !mesh) return;
     // active play = no modal up: briefing, pause, and win/lose all count
     // as idle, which is when the mobile chrome (menu button) may return
@@ -5816,6 +5848,10 @@ export function initTdTab(root) {
         if (enemies.every((e) => !e.alive)) {
           waveActive = false; interClock = 0; waveCharge = 0;
           score.addWave(wave); persistBest();
+          if (simStyle) {
+            simCurve.push({ w: wave, t: Math.round(t), heart: heartHP,
+              credit: eco.credit, towers: towers.length, score: score.points });
+          }
           if (tutorialActive) {
             showToast(`<div class="wave-num">WAVE ${wave} CLEARED</div>` +
               `<div class="wave-role">brace — the next wave is coming</div>`, 2200);
@@ -5873,7 +5909,7 @@ export function initTdTab(root) {
     }
     // standing at the relay, the game says WHAT TO PRESS — the rail
     // button alone was invisible to a player looking at the machine
-    if (hackPromptEl) {
+    if (hackPromptEl && !simSkip) {
       const near = hackPromptForce || (serverFound && !hackedRound && serverCi >= 0
         && (!hackWrapEl || hackWrapEl.classList.contains('hidden'))
         && dist3(player.pos, graph.centers[serverCi]) < cellSide * 4.5);
@@ -5892,9 +5928,9 @@ export function initTdTab(root) {
         // the skip-tap and the impact race; the loser must not buy a tower
         shopMute = 0.8;
       }
-      syncStrikeFeed();
+      if (!simSkip) syncStrikeFeed();
     }
-    if (armBtn) syncArmUi();
+    if (!simSkip && armBtn) syncArmUi();
     stepWarnFx(dt);
     for (const sp of spawnPoints) {
       if (!sp.alive) continue;
@@ -5923,8 +5959,13 @@ export function initTdTab(root) {
     if (simStyle && !simDone) simPolicy(dt);
     autoGunner(t);
     checkVictory(); // ram kills and heart-contact deaths can end it too
-    updateHud();
-    updateNextPreview();
+    // DOM is the sim's tax collector: an innerHTML rebuild per SIM STEP
+    // (120 per painted frame) throttled the fast-forward to ~2s per batch.
+    // The HUD only needs to be true when a frame is actually painted.
+    if (!simSkip) {
+      updateHud();
+      updateNextPreview();
+    }
     placeActors();
 
     // phagocytosis: when the amoeba nears an orb, aim the membrane at it.
@@ -6103,6 +6144,7 @@ export function initTdTab(root) {
     simStyle = simParam;
     simFast = Math.max(1, Math.min(120, parseInt(urlParams.get('simfast') || '50', 10)));
     simCap = Math.max(30, parseInt(urlParams.get('simcap') || '600', 10));
+    console.log(`SIMBOOT style=${simStyle} fast=${simFast} cap=${simCap}`);
     postfx.setEnabled(false);   // bare-minimum paint: no bloom chain
     sfx.setMute(true);          // 50x audio is a fire alarm
     document.body.classList.add('simming');
