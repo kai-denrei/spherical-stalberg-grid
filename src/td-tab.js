@@ -19,29 +19,29 @@
 
 import * as THREE from '../vendor/three.module.js';
 import GUI from '../vendor/lil-gui.esm.js';
-import { generateSphereMesh, relax } from './grid.js?v=343922e8';
-import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=343922e8';
-import { mulberry32, randomSeed } from './rng.js?v=343922e8';
-import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3, segKey } from './vec3.js?v=343922e8';
-import { CREATURES, waveJelly } from './creatures.js?v=343922e8';
-import { UNITS, UNIT_NAMES, buildUnit, buildCreature, preloadMkcx, makeBulletCloud, makeRewardSolid, makeShellSolid, makeDebris, makeDotBurst, makePortalCloud, makeHeartCloud, makeDotEnemy } from './units.js?v=343922e8';
-import { LOOKS, LOOK_NAMES } from './looks.js?v=343922e8';
-import { makeCellIndex } from './cellindex.js?v=343922e8';
-import { CREATURE_TINTS, ENEMY_SPEC, INTROS, computeWavePlan } from './enemyspec.js?v=343922e8';
-import { PICKUPS } from './pickups.js?v=343922e8';
-import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER } from './towers.js?v=343922e8';
-import { makeEconomy, sellRefund } from './economy.js?v=343922e8';
-import { makeBloom } from './postfx.js?v=343922e8';
-import { TANK_FEEL, TANK_FEEL_KNOBS, makeTankFeel, stepTankFeel, landTankFeel, fireTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js?v=343922e8';
-import { FEEL, loadFeel, saveFeel } from './feelstore.js?v=343922e8';
+import { generateSphereMesh, relax } from './grid.js?v=a70df5e4';
+import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=a70df5e4';
+import { mulberry32, randomSeed } from './rng.js?v=a70df5e4';
+import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3, segKey } from './vec3.js?v=a70df5e4';
+import { CREATURES, waveJelly } from './creatures.js?v=a70df5e4';
+import { UNITS, UNIT_NAMES, buildUnit, buildCreature, preloadMkcx, makeBulletCloud, makeRewardSolid, makeShellSolid, makeDebris, makeDotBurst, makePortalCloud, makeHeartCloud, makeDotEnemy } from './units.js?v=a70df5e4';
+import { LOOKS, LOOK_NAMES } from './looks.js?v=a70df5e4';
+import { makeCellIndex } from './cellindex.js?v=a70df5e4';
+import { CREATURE_TINTS, ENEMY_SPEC, INTROS, computeWavePlan } from './enemyspec.js?v=a70df5e4';
+import { PICKUPS } from './pickups.js?v=a70df5e4';
+import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER } from './towers.js?v=a70df5e4';
+import { makeEconomy, sellRefund } from './economy.js?v=a70df5e4';
+import { makeBloom } from './postfx.js?v=a70df5e4';
+import { TANK_FEEL, TANK_FEEL_KNOBS, makeTankFeel, stepTankFeel, landTankFeel, fireTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js?v=a70df5e4';
+import { FEEL, loadFeel, saveFeel } from './feelstore.js?v=a70df5e4';
 import { STRIKE_KNOBS, makeStrike, makeStrikeParams, grantStrikes, stepStrike,
   toggleArm, paintTarget, launchStrike, stepFall, skipFall, fallProgress,
-  strikeDamage, retargetStrike, orbitProgress } from './strike.js?v=343922e8';
-import { radarBasis, radarProject, radarBearing, sweepAngle, radarPhosphor } from './radar.js?v=343922e8';
-import { BLOOM_GROUPS } from './bloomweights.js?v=343922e8';
-import { TOWER_LOOK_NAMES, DEFAULT_TOWER_LOOK, buildTowerLook, preloadLook } from './towerlooks.js?v=343922e8';
-import { makeAudio } from './audio.js?v=343922e8';
-import { DEATH_KEYS } from './audiomanifest.js?v=343922e8';
+  strikeDamage, retargetStrike, orbitProgress } from './strike.js?v=a70df5e4';
+import { radarBasis, radarProject, radarBearing, sweepAngle, radarPhosphor } from './radar.js?v=a70df5e4';
+import { BLOOM_GROUPS } from './bloomweights.js?v=a70df5e4';
+import { TOWER_LOOK_NAMES, DEFAULT_TOWER_LOOK, buildTowerLook, preloadLook } from './towerlooks.js?v=a70df5e4';
+import { makeAudio } from './audio.js?v=a70df5e4';
+import { DEATH_KEYS } from './audiomanifest.js?v=a70df5e4';
 
 export function initTdTab(root) {
   let active = false;
@@ -1622,10 +1622,11 @@ export function initTdTab(root) {
     // QoL: with a tower SELECTED (its radial open, or watched in bastion),
     // W/↑ upgrades it instead of driving — HK's shortcut, kept out of the
     // tank's way by requiring a selection context
-    if (down && (k === 'w' || k === 'arrowup')) {
-      const sel = towerByCell.get(shopCi)
-        || (params.view === 'bastion' && !buildMode ? watchTower : null);
-      if (sel && (buildMode || params.view === 'bastion')) {
+    // U upgrades the selected tower. It was W, which is ALSO the drive key —
+    // a shortcut that fires while you are steering is a trap, not a shortcut.
+    if (down && k === 'u') {
+      const sel = towerByCell.get(shopCi);
+      if (sel) {
         if (upgradeTower(sel)) {
           if (shopCi !== -1) openShop(shopCi); // refresh the radial
         } else if (shopCi !== -1) {
@@ -1651,15 +1652,27 @@ export function initTdTab(root) {
     if (down && (k === ' ' || k === 'spacebar')) { fire(); ev.preventDefault(); return; }
     if (down && k === 'h') pulseHint();
     if (down && k === 'v') toggleView();
-    if (down && k === 'm') {
-      toggleMap();   // minimap ↔ threat view
-      // PLAYTEST CHEAT (remove later): M also loads a ready missile. It
-      // shares the map key deliberately rather than stealing it — the map
-      // still toggles, the tube still fills, and troubleshooting gets both
-      // for one press. syncArmUi picks the count up next frame.
+    // views land on number keys and on the letters that say them: 1/M/O all
+    // read as "map" and go to orbit, 2 is first person, 3/T third person.
+    // The radar's heart/player toggle lives on the MAP button alone now.
+    if (down && (k === '1' || k === 'm' || k === 'o')) setView('orbit');
+    if (down && k === '2') setView('pov');
+    if (down && (k === '3' || k === 't')) setView('third');
+    // C for Cheat (moved off M, which is a VIEW now)
+    if (down && k === 'c') {
       strike.ready = Math.min(9, strike.ready + 1);
       showToast('<div class="wave-num">CHEAT · MISSILE LOADED</div>'
         + `<div class="wave-role">☄ ready ${strike.ready}</div>`, 1200);
+    }
+    // Q/E nudge the throttle lever from the keyboard — up for speed, down
+    // through zero into reverse. Key auto-repeat does the holding.
+    if (down && (k === 'q' || k === 'e')) {
+      const step = k === 'q' ? 0.12 : -0.12;
+      let v2 = throttle + step;
+      if (Math.abs(v2) < 0.07) v2 = 0;   // same detent the lever has
+      throttle = Math.min(1, Math.max(-THROTTLE_REV, v2));
+      if (throttle !== 0) { cruise = false; autoMode = false; }
+      paintThrottle();
     }
   }
   addEventListener('keydown', (ev) => onKeyEvent(ev, true));
@@ -2529,7 +2542,7 @@ export function initTdTab(root) {
       `<div class="msg-scroll">` +
       `<div class="gcards">` +
       glossCard('#ff6a88', spriteShot('heart', heartIcon), 'the heart', 'at the pole — its fall is the only defeat') +
-      glossCard('#9fdcff', spriteShot('tank', unitIcon('tank', look().walker)), 'your tank', 'hold W drive · double-tap W cruise · A/D steer · SPACE shell · SHIFT lasers · ESC pause') +
+      glossCard('#9fdcff', spriteShot('tank', unitIcon('tank', look().walker)), 'your tank', 'W/Q-E drive · A/D steer · SPACE shell · SHIFT lasers · 1/2/3 views · U upgrade · ESC pause') +
       glossCard('#9fdcff', spriteShot('tower-' + params.towerLook, () => buildTowerLook(params.towerLook, TOWER_BY_KEY.single)), 'towers', 'your army — build them on the HIGH GROUND (walls) in BUILD mode') +
       glossCard('#ffb000', spriteShot('triad', makeTriadIcon), 'missile triads', 'drive over = +3 shells · shells also blast walls open') +
       glossCard('#66ff88', spriteShot('phage', unitIcon('phage', CREATURE_TINTS.phage)), 'fodder', 'soft creatures — RAM them, it’s free') +
@@ -3971,7 +3984,20 @@ export function initTdTab(root) {
       const raw = sub3(target.pos, tp);
       const flat = norm3(sub3(raw, scale3(norm3(tp), dot3(raw, norm3(tp)))));
       const atk = tw.def.attack;
-      if (atk === 'beam') {
+      if (tw.def.hitscan) {
+        // THE SNIPER IS A RAILGUN. A one-off this strong should not be a dot
+        // crossing the board — the entire shot happens in one frame: damage
+        // lands NOW, and what you see is the bolt it left behind. Two beams,
+        // a white core inside the tower's own tint, fading at different
+        // rates so the trace thins as it dies; a spark where it struck; a
+        // pulse at the mast so the shot is attributable at a glance.
+        damageEnemy(target, tNow, eff.dmg, true);
+        const hitP = add3(target.pos, scale3(norm3(target.pos), cellSide * 0.3));
+        spawnBeam(muzzle, hitP, 0xffffff, 0.20, 0.10);
+        spawnBeam(muzzle, hitP, tw.def.color, 0.5, 0.035);
+        warnRing(cellIndex(target.pos), 0xffffff, 0.3, cellSide * 0.7);
+        warnRing(tw.ci, tw.def.color, 0.35, cellSide * 0.9);
+      } else if (atk === 'beam') {
         // hitscan: damage now, draw the light
         damageEnemy(target, tNow, eff.dmg, true);
         spawnBeam(muzzle, add3(target.pos, scale3(norm3(target.pos), cellSide * 0.3)), tw.def.color);
@@ -4060,12 +4086,18 @@ export function initTdTab(root) {
     }
     attr.needsUpdate = true;
     scene.add(mesh);
+    // a lobbed shell knows where it will land before it leaves the tube —
+    // the marker on that cell is most of the mortar's feel: threat you can
+    // read, and step out of
+    const landCi = arcTotal > 0
+      ? cellIndex(norm3(add3(p0, scale3(dir, arcTotal)))) : -1;
     towerShots.push({
       pos: p0, dir, dist: 0, mesh,
       dmg: eff.dmg, splash: (eff.splash || 0) * cellSide, homing,
       range: eff.range * cellSide * 1.35,
       speed: (tw.def.projSpeed ?? 16) * cellSide, // per-tower tempo
       arcTotal, arcH: cellSide * 2.3, color: tw.def.color, // a lob, not a moonshot
+      landCi, markT: 0, px: tw.def.projPx ?? 5,
     });
   }
 
@@ -4101,12 +4133,18 @@ export function initTdTab(root) {
     for (let i = towerShots.length - 1; i >= 0; i--) {
       const p = towerShots[i];
       const v = p.speed; // each tower's own tempo — HK's feel lives here
-      // homing re-steers toward its (living) target each frame
+      // HOMING CHASES, per HokorobiTawaa: the velocity is steered toward the
+      // live target's position every frame with a dt-scaled rate — the old
+      // fixed 0.75/0.25 blend was frame-rate-DEPENDENT (limp at 30fps, stiff
+      // at 120) and too soft to read as pursuit at any of them. k = 6/s is
+      // HK's own constant: tight enough to whip round a fleeing phage,
+      // loose enough that the curve is visible, which is the whole point.
       if (p.homing && p.homing.alive) {
         const raw = sub3(p.homing.pos, p.pos);
         const n0 = norm3(p.pos);
         const want = norm3(sub3(raw, scale3(n0, dot3(raw, n0))));
-        p.dir = norm3(add3(scale3(p.dir, 0.75), scale3(want, 0.25)));
+        const k = Math.min(1, 6 * dt);
+        p.dir = norm3(add3(scale3(p.dir, 1 - k), scale3(want, k)));
       }
       p.pos = norm3(add3(p.pos, scale3(p.dir, v * dt)));
       const n = p.pos;
@@ -4122,6 +4160,18 @@ export function initTdTab(root) {
       const uw = Math.pow(u, 1.35);   // (`v` is this scope's speed)
       const arc = p.arcTotal > 0 ? 4 * uw * (1 - uw) * p.arcH : 0;
       const lift = 1 + params.wallHeight * 0.5 + arc;
+      // the shell SWELLS toward apex — nearer the top-down camera, and it
+      // sells the height even from the chase cam
+      if (p.arcTotal > 0) p.mesh.material.size = p.px * (1 + 1.1 * (arc / p.arcH));
+      // the landing cell blinks while the shell is up: readable threat,
+      // through the same pooled rings as everything else
+      if (p.landCi >= 0) {
+        p.markT -= dt;
+        if (p.markT <= 0) {
+          p.markT = 0.3;
+          warnRing(p.landCi, p.color, 0.28, p.splash > 0 ? p.splash * 0.85 : cellSide);
+        }
+      }
       // tracer: ghosts shift back one slot, the head takes the new point
       const attr = p.mesh.geometry.getAttribute('position');
       for (let k = attr.count - 1; k > 0; k--) {
@@ -4140,7 +4190,13 @@ export function initTdTab(root) {
         if (!e.alive) continue;
         if (chord(p.pos, e.pos) < cellSide * Math.max(0.42, (e.size ?? e.spec.size) * 0.8)) {
           if (p.splash > 0) detonate(p, tNow);
-          else damageEnemy(e, tNow, p.dmg, true);
+          else {
+            damageEnemy(e, tNow, p.dmg, true);
+            // HK's hit spark, through the pooled rings — a strike that
+            // lands should flash WHERE it landed, and an object per hit
+            // would be churn the pool exists to avoid
+            warnRing(cellIndex(e.pos), p.color, 0.22, cellSide * 0.55);
+          }
           hit = true;
           break;
         }
@@ -4151,7 +4207,7 @@ export function initTdTab(root) {
 
   // beams: a thin bright segment that burns out fast — laser + slow tethers
   const beamGeo = new THREE.BoxGeometry(1, 1, 1);
-  function spawnBeam(a, b, color, ttl = 0.16) {
+  function spawnBeam(a, b, color, ttl = 0.16, width = 0.03) {
     const mat = new THREE.MeshBasicMaterial({
       color, transparent: true, opacity: 0.9,
       blending: THREE.AdditiveBlending, depthWrite: false,
@@ -4161,7 +4217,7 @@ export function initTdTab(root) {
     mesh.position.set(mid[0], mid[1], mid[2]);
     const d = sub3(b, a);
     const len = len3(d);
-    mesh.scale.set(cellSide * 0.03, cellSide * 0.03, Math.max(1e-6, len));
+    mesh.scale.set(cellSide * width, cellSide * width, Math.max(1e-6, len));
     tmpV.set(d[0], d[1], d[2]).normalize();
     mesh.quaternion.setFromUnitVectors(Z_AXIS, tmpV);
     scene.add(mesh);
@@ -5309,8 +5365,7 @@ export function initTdTab(root) {
     let gpFrames = 0;
     const gpWait = () => {
       gpFrames++;
-      if (gpFrames === 8) gpReport();          // mid-dial, as the player sees it
-      if (gpFrames === 10) {
+      if (gpFrames === 3) {
         // then FORCE formation and tick once — swiftshader cannot render 70
         // frames inside the watchdog, and the question is whether the game
         // path positions the horizon, not how fast headless paints
@@ -5322,7 +5377,7 @@ export function initTdTab(root) {
           gpReport();
         }
       }
-      if (gpFrames < 10) requestAnimationFrame(gpWait);
+      if (gpFrames < 3) requestAnimationFrame(gpWait);
     };
     requestAnimationFrame(gpWait);
     const gpReport = () => {
@@ -5340,6 +5395,25 @@ export function initTdTab(root) {
       console.log(`GATE count=${a.count} drawRange=${g.drawRange.count}`
         + ` dial=${sp.obj.userData.dial} horizonR=${minR.toFixed(3)}..${maxR.toFixed(3)}`
         + ` zeros=${zeros} scale=${sp.obj.scale.x.toFixed(3)}`);
+      // positions passed three probes while the screen stayed empty — so
+      // this pass checks everything ELSE a dot needs: color, material,
+      // visibility, and where it lands on SCREEN through the live camera
+      const cAttr = g.getAttribute('color');
+      const cs = [];
+      for (const i of [H0, H0 + 1, H0 + 80, H0 + 173, 0, 200]) {
+        cs.push(`i${i}=(${cAttr.getX(i).toFixed(2)},${cAttr.getY(i).toFixed(2)},${cAttr.getZ(i).toFixed(2)})`);
+      }
+      const m = sp.obj.material;
+      console.log(`GATE2 ${cs.join(' ')} matCol=${m.color.getHexString()}`
+        + ` op=${m.opacity} vis=${sp.obj.visible} size=${m.size}`);
+      sp.obj.updateWorldMatrix(true, false);
+      const scr = [];
+      for (const i of [H0, H0 + 80, H0 + 173, 0]) {
+        const v = new THREE.Vector3(a.getX(i), a.getY(i), a.getZ(i))
+          .applyMatrix4(sp.obj.matrixWorld).project(camera);
+        scr.push(`i${i}=(${v.x.toFixed(2)},${v.y.toFixed(2)},${v.z.toFixed(3)})`);
+      }
+      console.log(`GATE3 screen ${scr.join(' ')}`);
     };
   }
 

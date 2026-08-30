@@ -52,7 +52,9 @@ export const TOWERS = [
     // as one in flight, not only on impact
     shape: 'mortar', spin: 0.7, projPx: 12, trail: 6, arc: true, projSpeed: 3.5 }, // a slow deliberate LOB
   { key: 'sniper', label: 'Sniper',      color: 0xffffff, cost: 130,
-    dmg: 62 / 90, range: 7.0, rate: 0.7, attack: 'single',
+    // hitscan: the shot IS the trace. A one-off this strong crossing the
+    // board as a dot read like everyone else's bullet, only lonelier.
+    dmg: 62 / 90, range: 7.0, rate: 0.7, attack: 'single', hitscan: true,
     // a guyed mast: the tallest, thinnest thing here, built to reach. The
     // longest range on the board should look like it out-reaches the rest.
     shape: 'guyed', projPx: 7, trail: 11, projSpeed: 42 }, // HK 1.9 — a streak

@@ -118,18 +118,29 @@ export const STARGATE_STROKE = 407;
 // of time. The gallery card calls the pair "chevrons + horizon" — the export
 // was only the first half, which is why the gate came out as a bare ring.
 //
-// Six concentric rings inside the throat, each shimmering on its own phase,
-// the whole disc turning slowly on Y so it reads as a surface rather than a
-// pattern. The lab's own note is worth keeping: stargatePts deliberately
-// skips fitUnit so the horizon can share its exact coordinates.
+// Concentric rings inside the throat, each shimmering on its own phase,
+// with a gentle z ripple so the surface undulates. The lab's own note is
+// worth keeping: stargatePts deliberately skips fitUnit so the horizon can
+// share its exact coordinates.
+//
+// NO rotY. The lab applies rotY(t * 0.45) to this feature because its
+// GALLERY rotates the whole card by exactly that — the feature counter-spins
+// to stay inside the ring, and the lab's comment says so in as many words.
+// Ported into a game whose ring does NOT rotate, that same rotY spun the
+// disc out of the ring plane — edge-on and invisible whenever t * 0.45
+// neared a right angle, which is most of the time. Three geometry probes
+// passed while the player saw an empty ring, because they measured the x-y
+// radius and a rotation about Y does not shrink y.
 export const HORIZON_R = 0.58;
-export const HORIZON_RINGS = 6;
+export const HORIZON_RINGS = 9;
 
 // how many dots the horizon needs — counted the same way it is generated, so
 // the buffer and the writer cannot disagree
+// Denser than the lab card (which draws fat gallery dots on a small canvas):
+// at game size the old 105 read as sparse even when correctly aligned.
 export const HORIZON_N = (() => {
   let n = 0;
-  for (let ir = 1; ir <= HORIZON_RINGS; ir++) n += Math.round(5 + 21 * ir / HORIZON_RINGS);
+  for (let ir = 1; ir <= HORIZON_RINGS; ir++) n += Math.round(6 + 24 * ir / HORIZON_RINGS);
   return n;
 })();
 
@@ -138,20 +149,26 @@ export const HORIZON_N = (() => {
 // portal that has been dimmed should dim its horizon with everything else.
 export function stargateHorizon(t, pos, bri, i0) {
   let k = i0;
-  const c = Math.cos(t * 0.45), s = Math.sin(t * 0.45);
+  // the surface CHURNS in place instead of the disc turning: each ring
+  // drifts at its own slow rate, the shimmer travels, and the z ripple
+  // breathes — motion without ever leaving the ring plane
   for (let ir = 1; ir <= HORIZON_RINGS; ir++) {
     const rr = HORIZON_R * ir / HORIZON_RINGS;
-    const n = Math.round(5 + 21 * ir / HORIZON_RINGS);
+    const n = Math.round(6 + 24 * ir / HORIZON_RINGS);
+    const drift = t * 0.22 * (ir % 2 === 0 ? 1 : -1);   // alternate ring spin
     for (let a = 0; a < n; a++, k++) {
-      const ang = (a / n) * 2 * Math.PI;
+      const ang = (a / n) * 2 * Math.PI + drift;
       const sh = 0.5 + 0.5 * Math.sin(t * 2 + rr * 5 + ang * 3);
-      const x = rr * Math.cos(ang), y = rr * Math.sin(ang);
-      const z = 0.02 * Math.sin(t * 3 + rr * 9);
-      // rotY: the disc turns while the ring stays put
-      pos[k * 3] = x * c + z * s;
-      pos[k * 3 + 1] = y;
-      pos[k * 3 + 2] = -x * s + z * c;
-      bri[k] = (0.3 + 0.7 * sh) * (sh > 0.75 ? 1.8 : 1);
+      pos[k * 3] = rr * Math.cos(ang);
+      pos[k * 3 + 1] = rr * Math.sin(ang);
+      pos[k * 3 + 2] = 0.03 * Math.sin(t * 3 + rr * 9 + ang * 2);
+      // bri is indexed from ZERO, not from i0. pos is the gate's full
+      // buffer so k addresses it directly, but bri is the horizon-only
+      // shimmer array — indexing it by k wrote every brightness out of
+      // bounds whenever i0 > 0 (the game passes i0=435; the lab passes 0),
+      // Float32Array dropped the writes silently, and the first tick then
+      // multiplied every horizon dot to pure black. The empty-centre bug.
+      bri[k - i0] = (0.3 + 0.7 * sh) * (sh > 0.75 ? 1.8 : 1);
     }
   }
   return k;
