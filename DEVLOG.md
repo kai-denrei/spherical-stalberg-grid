@@ -6,6 +6,17 @@ Demo links assume `npm run serve` (port 8144) or the
 
 ---
 
+## `c4530c0` — Consumables regrow
+
+Health and heart-regen orbs respawn: each consumed one schedules a single
+replacement on the far field 50 s after pickup, through the same `whim()`
+stream and the same far-field placement rule as the opening spawn — so a
+replayed seed regrows identically. Power stays one-shot on purpose: a
+permanent speed buff that respawned would be a farm, not a reward. A new
+board clears the queue.
+
+---
+
 ## `7523a30` — Line of sight, the third heat gauge, and the lane
 
 **The railgun respects walls now.** `losClear` samples the chord from the
