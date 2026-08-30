@@ -6,6 +6,23 @@ Demo links assume `npm run serve` (port 8144) or the
 
 ---
 
+## `8c1caee` — SNAFU, dossiers, commas, and the black market
+
+The last transmission now opens with the operator's exact words: **LAST
+TRANSMISSION / SNAFU · K-KILL ×N** — N being hulls destroyed, an honest
+×0 when the heart fell with the tank intact — then the eulogy and the
+numbers, every score wearing commas. Hover a killer's icon and its
+dossier fills in: label, role, hp, speed, DO-NOT-RAM in red, bounty.
+
+Missiles got their economy: the platform restocks **one round per
+sector**, and the **second relay win opens the black market** — a buy
+button on the launch console, 500c and climbing 250 per purchase,
+feeding the *reserve* so bought missiles still ride the promotion
+window and the re-orbit clock. The relay's ladder is now: win 1 = AOE,
+win 2 = the market, wins 3+ = tower unlocks ahead of the clock.
+
+---
+
 ## `5c7e1b6` — Lives you can walk up and count
 
 The container GLB became the third diegetic instrument: health is the
