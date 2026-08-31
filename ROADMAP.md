@@ -69,6 +69,77 @@ So:
 
 ## Committed
 
+### The Construction Drone, and BIOMASS — operator direction, 2026-08-31
+
+A lore-and-gameplay change, handed down whole: **nothing the player builds
+is built by the player any more.** An **Industrial Construction Drone**
+raises every tower and performs every upgrade, and it works in **BIOMASS**
+— alien tissue rendered down — which replaces *credit* as the one currency.
+
+Two commitments, one small and one structural.
+
+**1. Credit becomes Biomass.** A rename with teeth: the resource stops
+being an abstraction the HUD prints and becomes a *substance* the fiction
+can point at. Kills already pay it; now what they pay is the thing that
+died. Touch points, all of them known: `src/economy.js` (12 refs — the
+module name and every `credit` symbol), `src/td-tab.js` (29 — HUD
+`${eco.credit}c`, the radial centre, the shop notes, the sim rows), plus a
+mention each in `score.js`, `ranks.js`, `enemyspec.js`, `sim-tab.js` and
+the sim table header in `index.html`. Decide the unit suffix (`c` → `b`?
+a mass unit — `kg`? a glyph?) before touching the HUD, because it lands in
+three brightness tiers and the radial centre at once. The `?credit=N`
+debug hook should keep working under the old name as an alias — the DEVLOG
+and the two `simdata` batches are historical records and are NOT rewritten.
+
+**2. The drone builds.** Today `placeTower` is instant: pay, and the tower
+exists that frame. Under the drone, placement becomes an **order** — the
+drone travels to the cell, works for a build time, and the emplacement
+stands only when it finishes. That single change pays for several things
+already on this page:
+
+- It is the **mode incentive** we have been looking for. A build order is a
+  thing happening *on the board*, at a place, over time — worth flying the
+  camera to, worth defending with the tank, and losable.
+- It explains the tower fiction we already wrote. Every emplacement in the
+  codex is a factory machine converted to violence — a six-axis arm, a
+  delta picker, a mortar tube. **The drone is what converted them**, and
+  biomass is what it prints with. The codex needs no retcon; it needs the
+  agent that was implied all along.
+- It gives upgrades a physical read. A tier is currently a pedestal shape
+  changing on the spot; under the drone it is a machine that came back.
+
+**Open, and needing the operator's call — do not guess these:**
+
+- **Is the drone killable?** A vulnerable drone makes every build a risk
+  and turns a leak into a real setback; an invulnerable one is a
+  timer with a body. If killable: what does losing it cost — biomass,
+  a respawn wait, or the run?
+- **One drone or a fleet?** One drone serialises the build queue and makes
+  ordering matter. Buyable extra drones are also the credit sink the sim
+  batch asked for.
+- **Does the drone harvest?** The honest version of biomass is that it is
+  *collected from bodies*, not granted at the instant of a kill — corpses
+  drop, and something drives out to pick them up. That is a much larger
+  change (it re-times the whole income curve, and the 2026-08-30 sim data
+  stops describing the game). Possible middle: kills pay as they do now,
+  and *bonus* biomass pools on the field for whoever collects it.
+- **What does build time scale with?** Flat, tower cost, tier, or travel
+  distance. Travel distance is the most interesting and the most punishing.
+- **Where does it live between orders?** A pad by the Heart, the nearest
+  container berth, or wherever it last worked.
+- ~~**Which model?**~~ — settled: **the operator is supplying a .glb for the
+  base**. Same casting pipeline as mkcx and the heptapod tower (vendor into
+  `assets/models/`, register in `glbmodels.js`, `fitModel` gotchas apply, and
+  the model's rest pose is gameplay data — inspect the node names before
+  deciding what articulates). Open until the file lands: whether the working
+  end (arm, printer, whatever it has) articulates or the whole thing merges
+  to one draw call.
+
+Sequencing: the rename is independent and can land first (a mechanical
+pass, tests green throughout). The drone is a gameplay change and should
+not be started before the questions above are answered.
+
+
 ### ~~One mode: the camera overhaul~~ — DONE
 
 Shipped as T1/T3/O1 with two centre buttons (heart/tank), buildMode derived,
@@ -102,6 +173,38 @@ actually been examined — whether waves 5–8 feel cramped on it is untested.
 ---
 
 ## Candidate
+
+### Rank-gated tank upgrades — *nice to have* (operator, 2026-08-31)
+
+The ladder in `ranks.js` currently pays in **respect only**: 15 ranks, hands-on
+kills exclusively, gold gated on elite kills, reset with the hull. It is a
+read-out, not a reward. The idea is to make **experience effective** — a
+veteran hull genuinely fights better than a fresh one.
+
+Candidate effects, cheap end first: higher DPS, faster reload, then real
+kit — better weapons, a rechargeable shield. And visible: **a larger cannon,
+a shield emitter that reads at a glance**, so an enemy tank crest tells you
+what you are looking at before it fires.
+
+The shape this wants: rank is already `rankFor(kills, eliteKills)` and tier
+is derived, never stored, so an upgrade table keyed by rank drops in beside
+it as pure data — same registry idiom as `looks.js` / `towerlooks.js`, where
+changing what a thing LOOKS like never edits what it DOES. Stat effects
+belong next to `TANK_FEEL`; the visual escalation belongs in the unit's look.
+
+Two hazards, named now:
+
+- **It compounds the balance problem we already measured.** The 2026-08-30
+  sim batch has hands-on style winning 5/8 against builder 1/8. Paying the
+  tank *again* for doing the thing it already wins with widens that gap.
+  Whatever this costs the builder, the drone should return.
+- **It doubles the value of not dying.** The ladder resets with the hull, so
+  rank-gated power turns each life into a much bigger loss — which the LIFE
+  CONTAINERS now display three at a time. That is either the best thing about
+  the idea or the thing that makes deaths feel unrecoverable. Untested.
+
+Nice to have. Not scheduled, and behind the drone.
+
 
 ### Operator's list (captured 2026-08-30, playtest notes)
 
@@ -146,7 +249,8 @@ builder 1/8. Levers, in the operator's preference order:
 - ~~Early cliff~~ — DONE (`d6eac40`): waves 1–3 taper 55/70/85%, first
   gap 1.6×, two free singles garrison the heart.
 - Credit sinks: per-copy tower price escalation; buyable strike charges;
-  the ally units specced under Economy.
+  the ally units specced under Economy; **additional construction drones**
+  (a sink that also buys parallelism — see Committed).
 
 ### ~~Container lives display~~ — DONE (`5c7e1b6`)
 
@@ -175,6 +279,10 @@ is players camping one mode for the whole run. Levers on the table:
 build-only information such as range previews and threat-map detail;
 tank-only income; wave events only the tank can answer.
 
+The Construction Drone above is now the leading candidate for this: a build
+order that takes time and happens *somewhere* is the first thing the macro
+layer has produced that the micro layer has a reason to care about.
+
 ### Teaching through the world
 
 The systems exist but teach themselves unevenly — the briefing text carries
@@ -184,7 +292,10 @@ far too much of the load and the world carries too little.
 
 Credit caches and purchasable ally units are specified and unbuilt. The
 income and cost curves are untuned. An early-call bonus and a wave-clear
-drip are already wired but no UI uses them.
+drip are already wired but no UI uses them. All of it is now downstream of
+the Biomass rename and the drone — cost curves priced against a currency
+that is about to change name and possibly acquisition model would be tuned
+twice.
 
 ### Larger boards, after the tutorial
 
