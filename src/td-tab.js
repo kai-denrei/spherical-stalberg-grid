@@ -19,31 +19,31 @@
 
 import * as THREE from '../vendor/three.module.js';
 import GUI from '../vendor/lil-gui.esm.js';
-import { generateSphereMesh, relax } from './grid.js?v=5db4d283';
-import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=5db4d283';
-import { mulberry32, randomSeed } from './rng.js?v=5db4d283';
-import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3, segKey } from './vec3.js?v=5db4d283';
-import { CREATURES, waveJelly } from './creatures.js?v=5db4d283';
-import { UNITS, UNIT_NAMES, buildUnit, buildCreature, preloadMkcx, preloadServer, makeServerFixture, makeShieldShell, preloadContainer, makeContainerFixture, makeBulletCloud, makeRewardSolid, makeShellSolid, makeDebris, makeDotBurst, makePortalCloud, makeHeartCloud, makeDotEnemy } from './units.js?v=5db4d283';
-import { LOOKS, LOOK_NAMES } from './looks.js?v=5db4d283';
-import { makeCellIndex } from './cellindex.js?v=5db4d283';
-import { CREATURE_TINTS, ENEMY_SPEC, INTROS, computeWavePlan } from './enemyspec.js?v=5db4d283';
-import { PICKUPS } from './pickups.js?v=5db4d283';
-import { rankFor, rankLabel, badgeSVG, killReq, eliteReq } from './ranks.js?v=5db4d283';
-import { makeScore } from './score.js?v=5db4d283';
-import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER } from './towers.js?v=5db4d283';
-import { makeEconomy, sellRefund } from './economy.js?v=5db4d283';
-import { makeBloom } from './postfx.js?v=5db4d283';
-import { TANK_FEEL, TANK_FEEL_KNOBS, makeTankFeel, stepTankFeel, landTankFeel, fireTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js?v=5db4d283';
-import { FEEL, loadFeel, saveFeel } from './feelstore.js?v=5db4d283';
+import { generateSphereMesh, relax } from './grid.js?v=b14423d1';
+import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=b14423d1';
+import { mulberry32, randomSeed } from './rng.js?v=b14423d1';
+import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3, segKey } from './vec3.js?v=b14423d1';
+import { CREATURES, waveJelly } from './creatures.js?v=b14423d1';
+import { UNITS, UNIT_NAMES, buildUnit, buildCreature, preloadMkcx, preloadServer, makeServerFixture, makeShieldShell, preloadContainer, makeContainerFixture, preloadFabricator, makeFabricatorDrone, makeBulletCloud, makeRewardSolid, makeShellSolid, makeDebris, makeDotBurst, makePortalCloud, makeHeartCloud, makeDotEnemy } from './units.js?v=b14423d1';
+import { LOOKS, LOOK_NAMES } from './looks.js?v=b14423d1';
+import { makeCellIndex } from './cellindex.js?v=b14423d1';
+import { CREATURE_TINTS, ENEMY_SPEC, INTROS, computeWavePlan } from './enemyspec.js?v=b14423d1';
+import { PICKUPS } from './pickups.js?v=b14423d1';
+import { rankFor, rankLabel, badgeSVG, killReq, eliteReq } from './ranks.js?v=b14423d1';
+import { makeScore } from './score.js?v=b14423d1';
+import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER } from './towers.js?v=b14423d1';
+import { makeEconomy, sellRefund } from './economy.js?v=b14423d1';
+import { makeBloom } from './postfx.js?v=b14423d1';
+import { TANK_FEEL, TANK_FEEL_KNOBS, makeTankFeel, stepTankFeel, landTankFeel, fireTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js?v=b14423d1';
+import { FEEL, loadFeel, saveFeel } from './feelstore.js?v=b14423d1';
 import { STRIKE_KNOBS, makeStrike, makeStrikeParams, grantStrikes, stepStrike,
   toggleArm, paintTarget, launchStrike, stepFall, skipFall, fallProgress,
-  strikeDamage, retargetStrike, orbitProgress } from './strike.js?v=5db4d283';
-import { radarBasis, radarProject, radarBearing, sweepAngle, radarPhosphor } from './radar.js?v=5db4d283';
-import { BLOOM_GROUPS } from './bloomweights.js?v=5db4d283';
-import { TOWER_LOOK_NAMES, DEFAULT_TOWER_LOOK, buildTowerLook, preloadLook } from './towerlooks.js?v=5db4d283';
-import { makeAudio } from './audio.js?v=5db4d283';
-import { DEATH_KEYS } from './audiomanifest.js?v=5db4d283';
+  strikeDamage, retargetStrike, orbitProgress } from './strike.js?v=b14423d1';
+import { radarBasis, radarProject, radarBearing, sweepAngle, radarPhosphor } from './radar.js?v=b14423d1';
+import { BLOOM_GROUPS } from './bloomweights.js?v=b14423d1';
+import { TOWER_LOOK_NAMES, DEFAULT_TOWER_LOOK, buildTowerLook, preloadLook } from './towerlooks.js?v=b14423d1';
+import { makeAudio } from './audio.js?v=b14423d1';
+import { DEATH_KEYS } from './audiomanifest.js?v=b14423d1';
 
 export function initTdTab(root) {
   let active = false;
@@ -591,7 +591,7 @@ export function initTdTab(root) {
       if (!eco.canAfford(def.cost)) return; // save up for the priority buy
       for (const tci of trunk) {
         for (const nb of graph.adj[tci]) {
-          if (!placeError(nb)) { placeTower(k, nb); return; }
+          if (!placeError(nb)) { orderTower(k, nb); return; }
         }
       }
       break; // unlocked and affordable but nowhere to put it — fall through
@@ -602,7 +602,7 @@ export function initTdTab(root) {
       const c = upgradeCost(tw.def, tw.tier);
       if (c !== null && c < bestC && eco.canAfford(c)) { bestC = c; bestT = tw; }
     }
-    if (bestT) upgradeTower(bestT);
+    if (bestT) orderUpgrade(bestT);
   }
   // style2 'builder': stay out of trouble, spend EVERYTHING on towers —
   // newest unlocked first, upgrades with the change. This style survives
@@ -616,7 +616,7 @@ export function initTdTab(root) {
       if (!eco.canAfford(def.cost)) continue;
       for (const tci of trunk) {
         for (const nb of graph.adj[tci]) {
-          if (!placeError(nb)) { placeTower(k, nb); return; }
+          if (!placeError(nb)) { orderTower(k, nb); return; }
         }
       }
     }
@@ -625,7 +625,7 @@ export function initTdTab(root) {
       const c = upgradeCost(tw.def, tw.tier);
       if (c !== null && c < bestC && eco.canAfford(c)) { bestC = c; bestT = tw; }
     }
-    if (bestT) upgradeTower(bestT);
+    if (bestT) orderUpgrade(bestT);
   }
   function simPolicy(dt) {
     simPolClock += dt;
@@ -2176,7 +2176,7 @@ export function initTdTab(root) {
     if (down && k === 'u') {
       const sel = towerByCell.get(shopCi);
       if (sel) {
-        if (upgradeTower(sel)) {
+        if (orderUpgrade(sel)) {
           if (shopCi !== -1) openShop(shopCi); // refresh the radial
         } else if (shopCi !== -1) {
           flashShopNote(upgradeCost(sel.def, sel.tier) === null ? 'max tier' : 'not enough biomass');
@@ -2211,7 +2211,7 @@ export function initTdTab(root) {
         const tkey = def.key;
         const unlocked = new Set(unlockedTowerKeys(wave, hackedUnlocks));
         if (unlocked.has(tkey) && !placeError(shopCi) && eco.canAfford(def.cost)) {
-          if (placeTower(tkey, shopCi)) closeShop();
+          if (orderTower(tkey, shopCi)) closeShop();
         }
         ev.preventDefault();
         return;
@@ -3477,6 +3477,7 @@ export function initTdTab(root) {
       + `<span class="hud-wave">WAVE <b>${wave}</b> · R${round}</span></div>`
       + `<div class="hud-obj">portals ${spAlive}/${spawnPoints.length}`
       + ` · built ${towers.length} · ${unlockedTowerKeys(wave, hackedUnlocks).length}/8 towers</div>`
+      + bobbyLine()
       + (alerts ? `<div class="hud-alert">${alerts}</div>` : '');
     if (dirBtnEl) {
       const eng = !manualActive();
@@ -3669,6 +3670,7 @@ export function initTdTab(root) {
           if (nearOpen && placeTower('single', i)) placed++;
         }
       }
+      spawnBobby();   // on shift from the first second, order or no order
     });
     hackedUnlocks = 0; hackedRound = false; syncHackBtn();
     hackWins = 0; missileShop = false; missilesBought = 0;
@@ -4279,6 +4281,24 @@ export function initTdTab(root) {
       cc.obj.userData.setStocked(racked, null);
       if (cc.obj.userData.setAlive) cc.obj.userData.setAlive(i < playerHP);
     });
+  }
+
+  // BOBBY's line on the objectives row: what he is doing and how deep the
+  // queue is. Silent when there is nothing on the book — a status line that
+  // is always lit is a status line nobody reads.
+  function bobbyLine() {
+    if (!orders.length) return '';
+    const o = orders[0];
+    const what = o.kind === 'upgrade' ? `${o.tower.def.key}+1` : o.key;
+    const rest = orders.length > 1 ? ` +${orders.length - 1}` : '';
+    // its OWN row, not an appendix to the objectives line: that line already
+    // runs to the edge of the box on a phone, and an overflowing status is
+    // a status nobody can read
+    if (bobby && bobby.state === 'build') {
+      const pct = Math.round(Math.min(1, bobby.t / Math.max(0.001, bobby.dur)) * 100);
+      return `<div class="hud-obj hud-bobby">BOBBY &#9656; printing ${what} ${pct}%${rest}</div>`;
+    }
+    return `<div class="hud-obj hud-bobby">BOBBY &#9656; inbound ${what}${rest}</div>`;
   }
 
   const fmt = (v) => (v ?? 0).toLocaleString('en-US'); // 3103356 -> 3,103,356
@@ -5116,14 +5136,23 @@ export function initTdTab(root) {
     }
   }
 
+  // placeTower is now the INSTANT path, and it has exactly two legitimate
+  // users left: the opening garrison (pre-built before the run, not ordered)
+  // and the ?tower= verification hook. Everything the player asks for goes
+  // through Bobby.
   function placeTower(key, ci) {
     const def = TOWER_BY_KEY[key];
     if (!def) return false;
     const err = placeError(ci);
     if (err) { flashShopNote(err); return false; }
     if (!eco.spend(def.cost)) { flashShopNote('not enough biomass'); return false; }
+    commitTower(key, ci, def.cost);
+    return true;
+  }
+  function commitTower(key, ci, spent) {
+    const def = TOWER_BY_KEY[key];
     const obj = buildTowerLook(params.towerLook, def);
-    const tower = { key, def, tier: 0, ci, obj, cooldown: 0, spent: def.cost };
+    const tower = { key, def, tier: 0, ci, obj, cooldown: 0, spent };
     placeTowerObj(tower);
     scene.add(obj);
     towers.push(tower);
@@ -5131,7 +5160,282 @@ export function initTdTab(root) {
     towerCells.add(ci);
     showRangeRing(ci, effectiveStats(def, 0).range, def.color, 1.6);
     updateHud();
+    return tower;
+  }
+
+  // --- BOBBY: the industrial construction drone ---------------------------
+  // Nothing the player builds is built by the player. An order is placed,
+  // BOBBY flies to the cell, and prints. Two clocks stand between wanting a
+  // tower and having one — TRAVEL and BUILD — and that is the whole point:
+  // a board of towers is now a sequence of decisions with a cost in time,
+  // not a purse spent in one gesture. Biomass leaves the purse at ORDER
+  // time (a queue you have not paid for is a queue you would spam), and a
+  // cancelled order refunds in full, because nothing was printed.
+  //
+  // He flies high enough that nothing on the ground reaches him. That is a
+  // deliberate simplification, not a physics claim: making him killable is
+  // a real design lever and it belongs in a decision, not in a default.
+  const BOBBY_TINT = 0xffc24a;      // works-vehicle amber, the hazard-tape family
+  const BOBBY_ALT = 3.4;            // in wall-heights above the wall tops
+  const BOBBY_CELLS_SEC = 2.6;      // cruise, in cells per second
+  const BOBBY_BUILD_BASE = 2.0;     // seconds before cost is considered
+  const BOBBY_BUILD_PER_KG = 1 / 55; // ...and per kg of biomass printed
+  const buildSeconds = (cost) => BOBBY_BUILD_BASE + cost * BOBBY_BUILD_PER_KG;
+  let bobby = null;                 // { obj, dir[3], state, t, dur, order }
+  let printBeam = null;             // one Line, reused for every print
+  const orders = [];                // FIFO; orders[0] is the live one
+  const orderByCell = new Map();    // ci -> order, for the shop and the cancel
+  const bobbyRadius = () => 1 + params.wallHeight * BOBBY_ALT + cellSide * 0.5;
+
+  function bobbyPos(dir) {
+    const r = bobbyRadius();
+    return [dir[0] * r, dir[1] * r, dir[2] * r];
+  }
+  // shortest path over the sphere, capped at maxAngle radians this step
+  function stepDir(from, to, maxAngle) {
+    const d = Math.max(-1, Math.min(1, dot3(from, to)));
+    const ang = Math.acos(d);
+    if (ang < 1e-5 || maxAngle >= ang) return to.slice();
+    const k = maxAngle / ang;
+    const s0 = Math.sin((1 - k) * ang) / Math.sin(ang);
+    const s1 = Math.sin(k * ang) / Math.sin(ang);
+    return norm3(add3(scale3(from, s0), scale3(to, s1)));
+  }
+
+  function spawnBobby() {
+    if (bobby || !graph || !dungeon) return Promise.resolve(false);
+    return preloadFabricator().then((ok) => {
+      if (!ok || bobby || !graph || !dungeon) return;
+      const obj = makeFabricatorDrone(BOBBY_TINT);
+      if (!obj) return;
+      obj.scale.setScalar(cellSide * 1.15);
+      const dir = norm3(graph.centers[dungeon.heart]);
+      bobby = { obj, dir, state: 'idle', t: 0, dur: 0, order: null, loiter: dir.slice() };
+      placeBobby();
+      scene.add(obj);
+      return true;
+    });
+  }
+  function placeBobby() {
+    const p = bobbyPos(bobby.dir);
+    bobby.obj.position.set(p[0], p[1], p[2]);
+    // up is its own radial; face where it is going (or where it is working)
+    const aim = bobby.state === 'travel' && bobby.order
+      ? norm3(graph.centers[bobby.order.ci]) : bobby.loiter;
+    tmpObj.position.copy(bobby.obj.position);
+    tmpObj.up.set(bobby.dir[0], bobby.dir[1], bobby.dir[2]);
+    const t = bobbyPos(aim);
+    if (dist3(t, p) > 1e-4) tmpObj.lookAt(t[0], t[1], t[2]);
+    bobby.obj.quaternion.copy(tmpObj.quaternion);
+  }
+
+  // the site marker: a ring of points on the wall top, in the tower's own
+  // colour, that says "something is coming here". It is the ONLY thing an
+  // ordered-but-unbuilt cell shows until Bobby arrives — the tower itself
+  // grows out of the ground while he prints it, which is a better progress
+  // bar than a progress bar.
+  function makeSiteRing(ci, color) {
+    const c = graph.centers[ci];
+    const n = graph.normals[ci];
+    const theta = cellSide * 0.42;
+    const ref = Math.abs(n[1]) < 0.9 ? [0, 1, 0] : [1, 0, 0];
+    const t1 = norm3(cross3(n, ref));
+    const t2 = cross3(n, t1);
+    const pos = [];
+    for (let i = 0; i < 40; i++) {
+      const a = (i / 40) * 2 * Math.PI;
+      const d = add3(scale3(t1, Math.cos(a)), scale3(t2, Math.sin(a)));
+      const p = scale3(norm3(add3(scale3(norm3(c), Math.cos(theta)), scale3(d, Math.sin(theta)))),
+        1 + params.wallHeight * 1.02);
+      pos.push(p[0], p[1], p[2]);
+    }
+    const geo = new THREE.BufferGeometry();
+    geo.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+    const ring = new THREE.Points(geo, new THREE.PointsMaterial({
+      size: 3.0, sizeAttenuation: false, color, transparent: true, opacity: 0.9,
+    }));
+    scene.add(ring);
+    return ring;
+  }
+  function dropSiteRing(order) {
+    if (!order.ring) return;
+    scene.remove(order.ring);
+    order.ring.geometry.dispose();
+    order.ring.material.dispose();
+    order.ring = null;
+  }
+
+  function orderTower(key, ci) {
+    const def = TOWER_BY_KEY[key];
+    if (!def) return false;
+    const err = placeError(ci);
+    if (err) { flashShopNote(err); return false; }
+    if (orderByCell.has(ci)) { flashShopNote('already on the list'); return false; }
+    if (!eco.spend(def.cost)) { flashShopNote('not enough biomass'); return false; }
+    const order = { kind: 'tower', ci, key, def, cost: def.cost, ring: makeSiteRing(ci, def.color) };
+    orders.push(order);
+    orderByCell.set(ci, order);
+    spawnBobby();
+    sfx.play('laser_click');   // the order goes on the book, not a tower on the wall
+    showRangeRing(ci, effectiveStats(def, 0).range, def.color, 1.6);
+    updateHud();
     return true;
+  }
+  function orderUpgrade(tower) {
+    const cost = upgradeCost(tower.def, tower.tier);
+    if (cost === null) return false;
+    if (orderByCell.has(tower.ci)) { flashShopNote('already on the list'); return false; }
+    if (!eco.spend(cost)) { flashShopNote('not enough biomass'); return false; }
+    const order = { kind: 'upgrade', ci: tower.ci, tower, cost,
+      ring: makeSiteRing(tower.ci, tower.def.color) };
+    orders.push(order);
+    orderByCell.set(tower.ci, order);
+    spawnBobby();
+    updateHud();
+    return true;
+  }
+  // Cancelling costs nothing: nothing has been printed. The one exception is
+  // the order Bobby is already standing over — the biomass is in the nozzle
+  // by then, and half of it does not come back.
+  function cancelOrder(ci) {
+    const order = orderByCell.get(ci);
+    if (!order) return false;
+    const live = orders[0] === order && bobby && bobby.state === 'build';
+    eco.addBiomass(live ? Math.round(order.cost * 0.5) : order.cost);
+    dropSiteRing(order);
+    if (order.ghost) { scene.remove(order.ghost); disposeObj(order.ghost); order.ghost = null; }
+    orders.splice(orders.indexOf(order), 1);
+    orderByCell.delete(ci);
+    if (bobby && bobby.order === order) { bobby.order = null; bobby.state = 'idle'; }
+    flashShopNote(live ? 'order aborted — half back' : 'order cancelled');
+    updateHud();
+    return true;
+  }
+
+  function finishOrder(order) {
+    dropSiteRing(order);
+    if (order.kind === 'tower') {
+      if (order.ghost) { scene.remove(order.ghost); disposeObj(order.ghost); order.ghost = null; }
+      // re-check: the world moved while he flew (a strike, a sell, a tower
+      // someone else put here). If the cell went bad, the biomass comes back.
+      if (placeError(order.ci)) {
+        eco.addBiomass(order.cost);
+        flashShopNote('site lost — biomass returned');
+      } else {
+        commitTower(order.key, order.ci, order.cost);
+        sfx.play('tower_upgrade');
+      }
+    } else if (towers.includes(order.tower)) {
+      order.tower.tier++;
+      order.tower.spent += order.cost;
+      if (order.tower.obj.userData.setTier) order.tower.obj.userData.setTier(order.tower.tier);
+      placeTowerObj(order.tower);
+      showRangeRing(order.ci, effectiveStats(order.tower.def, order.tower.tier).range,
+        order.tower.def.color, 1.4);
+      sfx.play('tower_upgrade');
+    } else {
+      eco.addBiomass(order.cost);   // the tower was sold or destroyed mid-flight
+    }
+    orders.shift();
+    orderByCell.delete(order.ci);
+    bobby.order = null;
+    bobby.state = 'idle';
+    bobby.t = 0;
+    updateHud();
+  }
+
+  function updateBobby(dt) {
+    if (!bobby) return;
+    const speed = BOBBY_CELLS_SEC * cellSide;   // radians per second
+    if (bobby.state === 'idle') {
+      if (orders.length) {
+        bobby.order = orders[0];
+        bobby.state = 'travel';
+      } else {
+        // LOITER. He does not park: he drifts a couple of cells around the
+        // heart, which is what makes him read as a machine on shift rather
+        // than a prop bolted to the sky.
+        const hd = norm3(graph.centers[dungeon.heart]);
+        if (dot3(bobby.dir, bobby.loiter) > 0.99999 || dist3(bobby.loiter, hd) < 1e-9) {
+          const a = t * 0.37;
+          const ref = Math.abs(hd[1]) < 0.9 ? [0, 1, 0] : [1, 0, 0];
+          const t1 = norm3(cross3(hd, ref));
+          const t2 = cross3(hd, t1);
+          const off = cellSide * 2.2;
+          bobby.loiter = norm3(add3(hd,
+            add3(scale3(t1, Math.cos(a) * off), scale3(t2, Math.sin(a) * off))));
+        }
+        bobby.dir = stepDir(bobby.dir, bobby.loiter, speed * 0.35 * dt);
+      }
+    }
+    if (bobby.state === 'travel' && bobby.order) {
+      const target = norm3(graph.centers[bobby.order.ci]);
+      bobby.dir = stepDir(bobby.dir, target, speed * dt);
+      if (dot3(bobby.dir, target) > 0.99995) {
+        bobby.state = 'build';
+        bobby.t = 0;
+        bobby.dur = buildSeconds(bobby.order.cost);
+        bobby.shown = -1;
+        if (bobby.order.kind === 'tower') {
+          // the print: the tower itself grows out of the wall top. Built
+          // here rather than at order time so a queued site costs nothing
+          // but a ring of points.
+          const g = buildTowerLook(params.towerLook, bobby.order.def);
+          bobby.order.ghost = g;
+          scene.add(g);
+        }
+      }
+    } else if (bobby.state === 'build' && bobby.order) {
+      bobby.t += dt;
+      const k = Math.min(1, bobby.t / bobby.dur);
+      const g = bobby.order.ghost;
+      if (g) {
+        // same recipe as placeTowerObj, with the height easing up from
+        // nothing — scale.y is the print head's progress
+        const base = (g.userData.baseScale ?? 1) * cellSide * 0.62;
+        g.scale.set(base, base * Math.max(0.02, k), base);
+        const c = graph.centers[bobby.order.ci];
+        const nrm = graph.normals[bobby.order.ci];
+        const top = 1 + params.wallHeight;
+        g.position.set(c[0] * top, c[1] * top, c[2] * top);
+        tmpN.set(nrm[0], nrm[1], nrm[2]);
+        g.quaternion.setFromUnitVectors(Y_AXIS, tmpN);
+      }
+      const step = Math.floor(k * 10);
+      if (step !== bobby.shown) { bobby.shown = step; updateHud(); }
+      if (bobby.t >= bobby.dur) finishOrder(bobby.order);
+    }
+    if (!bobby) return;
+    const working = bobby.state === 'build';
+    // the print beam: ONE line object, rewritten in place. The effects rule
+    // on this board is that activity must not add objects, and a beam that
+    // exists for the whole build is exactly the thing that would.
+    if (working) {
+      const noz = bobby.obj.userData.nozzle;
+      const a = new THREE.Vector3();
+      if (noz) noz.getWorldPosition(a); else a.copy(bobby.obj.position);
+      const c = graph.centers[bobby.order.ci];
+      const top = 1 + params.wallHeight;
+      if (!printBeam) {
+        printBeam = new THREE.Line(new THREE.BufferGeometry().setAttribute('position',
+          new THREE.BufferAttribute(new Float32Array(6), 3)),
+          new THREE.LineBasicMaterial({
+            color: BOBBY_TINT, transparent: true, opacity: 0.85,
+            blending: THREE.AdditiveBlending, depthWrite: false,
+          }));
+        scene.add(printBeam);
+      }
+      const pa = printBeam.geometry.attributes.position;
+      pa.setXYZ(0, a.x, a.y, a.z);
+      pa.setXYZ(1, c[0] * top, c[1] * top, c[2] * top);
+      pa.needsUpdate = true;
+      printBeam.visible = true;
+      // a printer's flow is not steady; the flicker is deterministic
+      printBeam.material.opacity = 0.55 + 0.35 * Math.abs(Math.sin(bobby.t * 21));
+    } else if (printBeam) printBeam.visible = false;
+    bobby.obj.userData.spinRotors(dt, working ? 1 : (bobby.state === 'travel' ? 0.5 : 0));
+    bobby.obj.userData.setWork(working ? Math.min(1, bobby.t * 3) : 0);
+    placeBobby();
   }
 
   // The strike's version of losing a tower: no refund, and the wreck shows.
@@ -5633,6 +5937,19 @@ export function initTdTab(root) {
   }
 
   function clearTowers() {
+    // the order book dies with the board, and so does its biomass: this is
+    // a fresh run, not a refund
+    for (const o of orders) {
+      dropSiteRing(o);
+      if (o.ghost) { scene.remove(o.ghost); disposeObj(o.ghost); }
+    }
+    orders.length = 0;
+    orderByCell.clear();
+    if (bobby) {
+      scene.remove(bobby.obj);
+      disposeObj(bobby.obj);
+      bobby = null;
+    }
     for (const tw of towers) { scene.remove(tw.obj); disposeObj(tw.obj); }
     towers.length = 0;
     towerByCell.clear();
@@ -5746,8 +6063,21 @@ export function initTdTab(root) {
     shopEl.style.left = cx + 'px';
     shopEl.style.top = cy + 'px';
     const existing = towerByCell.get(ci);
+    const pending = orderByCell.get(ci);
     let center, items;
-    if (existing) {
+    if (pending) {
+      // an ORDERED cell offers one thing: call it off. Nothing is printed
+      // yet, so the biomass comes back whole — unless Bobby is already
+      // standing over it, and then half of it is in the nozzle.
+      const live = orders[0] === pending && bobby && bobby.state === 'build';
+      const back = live ? Math.round(pending.cost * 0.5) : pending.cost;
+      const what = pending.kind === 'upgrade' ? `${pending.tower.def.key} +1` : pending.key;
+      center = `<div class="radial-center">${what}<br>${live ? 'printing' : 'ordered'}</div>`;
+      items = [
+        { cls: 'shop-sell', txt: `cancel<br>+${back}kg`, cancel: true },
+        { cls: 'shop-close', txt: '×' },
+      ];
+    } else if (existing) {
       const cost = upgradeCost(existing.def, existing.tier);
       center = `<div class="radial-center">${existing.def.key}<br>tier ${existing.tier}</div>`;
       items = [
@@ -5782,7 +6112,8 @@ export function initTdTab(root) {
       const x = (R * Math.cos(a)).toFixed(0);
       const y = (R * Math.sin(a)).toFixed(0);
       return `<button class="radial-item ${it.cls}"` +
-        `${it.key ? ` data-key="${it.key}"` : ''}${it.dis ? ' disabled' : ''} ` +
+        `${it.key ? ` data-key="${it.key}"` : ''}${it.cancel ? ' data-cancel="1"' : ''}` +
+        `${it.dis ? ' disabled' : ''} ` +
         `style="left:${x}px;top:${y}px;${it.bc ? `border-color:${it.bc}aa;` : ''}">` +
         `${it.key ? `<i class="rk">${i + 1}</i>` : ''}${it.txt}</button>`;
     }).join('') + `<div class="shop-note" style="top:${R + 44}px">one new tower each wave</div>`;
@@ -5793,11 +6124,16 @@ export function initTdTab(root) {
     if (!el.classList) return;
     if (el.classList.contains('shop-close')) { closeShop(); return; }
     const tower = towerByCell.get(shopCi);
+    if (el.dataset && el.dataset.cancel) {
+      cancelOrder(shopCi);
+      closeShop();
+      return;
+    }
     if (el.classList.contains('shop-buy') && shopCi !== -1) {
       if (el.classList.contains('locked') || el.hasAttribute('disabled')) return;
-      if (placeTower(el.dataset.key, shopCi)) closeShop();
+      if (orderTower(el.dataset.key, shopCi)) closeShop();
     } else if (el.classList.contains('shop-up') && tower) {
-      if (upgradeTower(tower)) openShop(shopCi); // refresh
+      if (orderUpgrade(tower)) openShop(shopCi); // refresh
     } else if (el.classList.contains('shop-sell') && tower) {
       sellTower(tower);
       closeShop();
@@ -6187,6 +6523,11 @@ export function initTdTab(root) {
     const sleeve = playerMesh && playerMesh.userData.heatSleeve;
     if (sleeve) sleeve.material.color.lerpColors(sleeveCool, sleeveHot, cannonHeat / CANNON_COOL);
     if (!driveFrozen) advanceMotion(dt);
+    // Bobby keeps his shift through the build downtime — the war may be
+    // frozen there, but construction is the thing you came to do. A
+    // reveal or the cold open still stops him: those are the game
+    // speaking, and nothing should be printing over the top of it.
+    if (!frozen) updateBobby(dt);
     for (const orb of orbMeshes.values()) orb.userData.tick(t);
     for (let i = debris.length - 1; i >= 0; i--) {
       if (!debris[i].userData.tick(dt)) {
@@ -6644,6 +6985,35 @@ export function initTdTab(root) {
     }
   }
 
+  // ?order=key[,key] puts orders on BOBBY's book (a site is chosen for each,
+  // so the hook needs no cell ids), and ?bobby=N then runs N seconds of his
+  // shift. Both are needed because he is asynchronous twice over: the model
+  // loads async, and the whole point of the mechanic is that a tower takes
+  // wall-clock time to exist — neither of which ?tick can reach.
+  const orderSpec = urlParams.get('order');
+  const bobbyN = parseFloat(urlParams.get('bobby') || '0');
+  if (orderSpec || bobbyN > 0) {
+    (async () => {
+      await spawnBobby();
+      if (orderSpec) {
+        for (const key of orderSpec.split(',')) {
+          if (!TOWER_BY_KEY[key]) continue;
+          eco.addBiomass(TOWER_BY_KEY[key].cost);   // the hook pays its own way
+          for (let ci = 0; ci < dungeon.tags.length; ci++) {
+            if (!placeError(ci) && !orderByCell.has(ci)) { orderTower(key, ci); break; }
+          }
+        }
+      }
+      for (let sT = 0; sT < bobbyN; sT += 0.05) updateBobby(0.05);
+      const o = orders[0];
+      console.log(`BOBBY state=${bobby ? bobby.state : 'absent'}`
+        + ` queue=${orders.length} live=${o ? (o.key || 'upgrade') + '@' + o.ci : '-'}`
+        + ` t=${bobby ? bobby.t.toFixed(2) : '-'}/${bobby ? bobby.dur.toFixed(2) : '-'}`
+        + ` built=${towers.length}`);
+      snapCamera();
+    })();
+  }
+
   // AFTER ?tower= on purpose: this then exercises the live applyTowerLook()
   // swap over existing towers, not just build-time selection.
   const towerLookOv = urlParams.get('towerlook');
@@ -6701,7 +7071,7 @@ export function initTdTab(root) {
 
   // opening briefing on a clean load; any debug hook means headless/demo,
   // where a frozen sim would break the verification flow
-  const debugging = ['walk', 'tick', 'wave', 'blast', 'laser', 'found', 'recoil', 'mode', 'map', 'tower', 'biomass', 'credit', 'driveout', 'shop', 'sector', 'reveal', 'portal', 'lose', 'charge', 'layout', 'perf', 'strike', 'strikefall', 'strikecam', 'gateprobe', 'rank', 'danger', 'callout', 'sitrep', 'server', 'hack', 'shield', 'sim']
+  const debugging = ['walk', 'tick', 'wave', 'blast', 'laser', 'found', 'recoil', 'mode', 'map', 'tower', 'biomass', 'credit', 'driveout', 'order', 'bobby', 'shop', 'sector', 'reveal', 'portal', 'lose', 'charge', 'layout', 'perf', 'strike', 'strikefall', 'strikecam', 'gateprobe', 'rank', 'danger', 'callout', 'sitrep', 'server', 'hack', 'shield', 'sim']
     .some((k) => urlParams.get(k));
   const tutParam = urlParams.get('tutorial');
   runTutorial = tutParam === '1' || (tutParam !== '0' && !debugging);

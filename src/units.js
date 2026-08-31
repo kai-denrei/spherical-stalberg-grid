@@ -16,12 +16,12 @@
 
 import * as THREE from '../vendor/three.module.js';
 import { loadGlb, mergeByMaterial, fitModel, tintModel, makeShellRack,
-  addEdgeOutlines, makeHeatSleeve } from './glbmodels.js?v=5db4d283';
-import { CREATURES, waveJelly, swimWave, spherePts, bulletPts, missilePts, heartPts, torusPts, towerHeadPts, enemyDotPts, portalPts } from './creatures.js?v=5db4d283';
-import { TOWER_FEEL, TOWER_HEADS, headKindFor } from './towerfeel.js?v=5db4d283';
+  addEdgeOutlines, makeHeatSleeve } from './glbmodels.js?v=b14423d1';
+import { CREATURES, waveJelly, swimWave, spherePts, bulletPts, missilePts, heartPts, torusPts, towerHeadPts, enemyDotPts, portalPts } from './creatures.js?v=b14423d1';
+import { TOWER_FEEL, TOWER_HEADS, headKindFor } from './towerfeel.js?v=b14423d1';
 import { STARGATE_PTS, STARGATE_STROKE,
-  HORIZON_N, stargateHorizon } from './stargate.js?v=5db4d283';
-import { ENEMY_SPEC } from './enemyspec.js?v=5db4d283';
+  HORIZON_N, stargateHorizon } from './stargate.js?v=b14423d1';
+import { ENEMY_SPEC } from './enemyspec.js?v=b14423d1';
 
 function normalizeToUnit(group) {
   group.updateMatrixWorld(true);
@@ -1470,6 +1470,78 @@ export function makeContainerFixture(number = 0) {
       q.material.opacity = on ? 1 : 0.65;
     }
   };
+  g.userData.kind = 'fixture';
+  return g;
+}
+
+// --- BOBBY: the industrial construction drone ----------------------------
+// Every tower and every upgrade on this board is built by one machine. It
+// is a quadcopter fabricator: four rotors, a reservoir of biomass, a pump,
+// and a boom carrying an extruder head. It flies to the ordered cell,
+// hangs there, and prints.
+//
+// The authored file ships the drone hovering over a WORKPIECE — a bed slab
+// with a printed bead on it, the pose that shows what the machine is for.
+// The workpiece is scenery for a product shot; on the board Bobby prints
+// towers, not test coupons, so the whole group goes before the merge
+// (operator's call, and afterwards it would be welded in and unaddressable).
+//
+// Preserved pivots, all of them things that must MOVE while it works:
+// four rotor spins, the boom's yaw and pitch, and the head's pitch. The
+// rest merges. Nozzle_Tip stays as an empty — it is where the build beam
+// starts, and a marker costs nothing.
+const FAB_URL = 'assets/models/fabricator.glb';
+const FAB_ROTORS = ['Rotor_FL_Spin', 'Rotor_FR_Spin', 'Rotor_RL_Spin', 'Rotor_RR_Spin'];
+const FAB_PIVOTS = [...FAB_ROTORS, 'Boom_Yaw', 'Boom_Pitch', 'Head_Pitch', 'Nozzle_Tip'];
+const FAB_DROP = ['Workpiece_Group', 'Airframe_Collision'];
+let fabProto = null, fabLoad = null;
+export function preloadFabricator() {
+  if (fabLoad) return fabLoad;
+  fabLoad = loadGlb(FAB_URL).then((scene) => {
+    if (!scene) { fabLoad = null; return false; }
+    const merged = mergeByMaterial(scene, FAB_PIVOTS, FAB_DROP);
+    // The drone is parented under Airframe_Platform, which sits at y=1.03
+    // in file space because it was authored hovering over the bed we just
+    // deleted. fitModel reseats it — min.y to 0, x/z centred — so the
+    // offset never reaches the board.
+    fabProto = fitModel(merged, { height: 0.55, maxSpan: 1.0 });
+    return true;
+  });
+  return fabLoad;
+}
+export function makeFabricatorDrone(tint = 0x8fd8ff) {
+  if (!fabProto) { preloadFabricator(); return null; }
+  const g = fabProto.clone(true);
+  tintModel(g, tint, { wash: 0.22, shades: { armour: 1.0, turret: 0.7, detail: 0.55, steel: 0.34 } });
+  const rotors = FAB_ROTORS.map((n) => g.getObjectByName(n)).filter(Boolean);
+  const boomYaw = g.getObjectByName('Boom_Yaw');
+  const boomPitch = g.getObjectByName('Boom_Pitch');
+  const headPitch = g.getObjectByName('Head_Pitch');
+  const tip = g.getObjectByName('Nozzle_Tip');
+  // rest pose of the boom IS gameplay data (the lesson from the mkcx and
+  // heptapod castings): read it once, and animate as an offset from it, so
+  // stowing the arm means returning to what the artist drew.
+  const rest = {
+    yaw: boomYaw ? boomYaw.rotation.y : 0,
+    pitch: boomPitch ? boomPitch.rotation.x : 0,
+    head: headPitch ? headPitch.rotation.x : 0,
+  };
+  // spin is FREE: one rotation write per rotor per frame, no geometry work.
+  // Idle blur at a fixed rate, faster under load, so the machine reads as
+  // working before you have parsed anything on the HUD.
+  g.userData.spinRotors = (dt, load = 0) => {
+    const w = (26 + 34 * load) * dt;
+    for (const r of rotors) r.rotation.y += w;
+  };
+  // work = 0 stows the boom at its authored rest; work = 1 swings it down
+  // and out, nozzle toward the ground under the drone
+  g.userData.setWork = (work) => {
+    const k = Math.max(0, Math.min(1, work));
+    if (boomPitch) boomPitch.rotation.x = rest.pitch + 0.85 * k;
+    if (headPitch) headPitch.rotation.x = rest.head + 0.55 * k;
+    if (boomYaw) boomYaw.rotation.y = rest.yaw;
+  };
+  g.userData.nozzle = tip || null;
   g.userData.kind = 'fixture';
   return g;
 }

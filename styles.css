@@ -322,6 +322,13 @@ html, body {
   text-shadow: 0 1px 3px rgba(0, 0, 0, 0.9);
 }
 
+/* BOBBY's row: the works-vehicle amber he is painted in, so the status and
+   the machine on the board are obviously the same thing */
+.hud-bobby {
+  color: #ffc24a;
+  letter-spacing: 0.04em;
+}
+
 /* the biomass line is the LOUD line: money-orange, glowing */
 .hud-biomass {
   color: #ffb000;

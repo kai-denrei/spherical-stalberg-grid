@@ -66,6 +66,23 @@ export const LORE_WORLD = [
       + 'cathedral atmosphere, cinematic lighting, hyperrealistic, 8k',
   },
   {
+    id: 'biomass',
+    name: 'BIOMASS',
+    tag: 'the only currency',
+    body: 'Nothing on S-9 can be bought, because there is nobody to buy '
+      + 'from. There is only what the organisms are made of. A kill leaves '
+      + 'tissue on the lattice; the lattice renders it down; what comes '
+      + 'back up the lanes is a warm grey slurry that the fabricator can '
+      + 'print with. Every emplacement on this shell was paid for in the '
+      + 'bodies of the things it was built to stop. Quartermasters used to '
+      + 'call this an economy. The survey log calls it what it is: a '
+      + 'stomach with a defence budget.',
+    visual: 'thick grey-green organic slurry in an industrial hopper, '
+      + 'faintly luminescent alien tissue rendered down to printing feedstock, '
+      + 'condensation on steel, biohazard stencils, cold work lighting, '
+      + 'hard sci-fi realism, macro shot, 8k',
+  },
+  {
     id: 'portal',
     name: 'THE GATES',
     tag: 'enemy ingress',
@@ -139,6 +156,26 @@ export const LORE = {
   },
 
   // --- towers -------------------------------------------------------------
+  bobby: {
+    name: 'FABRICATOR UNIT "BOBBY"',
+    tag: 'the industrial construction drone',
+    body: 'Four rotors, a reservoir, a pump, and a boom with a heated '
+      + 'nozzle on the end of it. Bobby prints every emplacement on this '
+      + 'shell out of rendered biomass, one at a time, at the pace the '
+      + 'material sets — which is the pace, and there is no arguing with '
+      + 'it. He flies at forty metres because forty metres is above '
+      + 'everything that has ever tried to bite him, and he has never once '
+      + 'been asked to be brave. Crews name their fabricators. This one '
+      + 'came out of the crate with BOBBY stencilled on the tank in a hand '
+      + 'nobody recognises, and no crew has been aboard S-9 in a very long '
+      + 'time.',
+    visual: 'industrial quadcopter fabrication drone, amber works-vehicle '
+      + 'paint scarred to bare metal, four ducted rotors on outrigger masts, '
+      + 'slung reservoir tank with a level sight, articulated boom arm '
+      + 'ending in a heated extruder nozzle trailing a bright filament of '
+      + 'molten material, hovering low over a half-printed gun emplacement, '
+      + 'night work lighting, hard sci-fi realism, 8k',
+  },
   single: {
     name: 'ARM, SIX-AXIS',
     tag: 'single-shot emplacement',

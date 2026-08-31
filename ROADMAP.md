@@ -91,11 +91,12 @@ three brightness tiers and the radial centre at once. The `?credit=N`
 debug hook should keep working under the old name as an alias — the DEVLOG
 and the two `simdata` batches are historical records and are NOT rewritten.
 
-**2. The drone builds.** Today `placeTower` is instant: pay, and the tower
-exists that frame. Under the drone, placement becomes an **order** — the
-drone travels to the cell, works for a build time, and the emplacement
-stands only when it finishes. That single change pays for several things
-already on this page:
+**2. The drone builds.** — **SHIPPED** (`?order=`/`?bobby=` verify it). He is
+**BOBBY**, cast from the operator's fabricator .glb: order a tower and he
+flies to the cell, hangs there, and prints it out of biomass. Two clocks
+now stand between wanting a tower and having one — travel and build — and
+biomass leaves the purse at order time, so a queue cannot be spammed for
+free. What follows was the argument for building it, and it held up:
 
 - It is the **mode incentive** we have been looking for. A build order is a
   thing happening *on the board*, at a place, over time — worth flying the
@@ -108,15 +109,24 @@ already on this page:
 - It gives upgrades a physical read. A tier is currently a pedestal shape
   changing on the spot; under the drone it is a machine that came back.
 
-**Open, and needing the operator's call — do not guess these:**
+**Still open — do not guess these:**
 
-- **Is the drone killable?** A vulnerable drone makes every build a risk
-  and turns a leak into a real setback; an invulnerable one is a
-  timer with a body. If killable: what does losing it cost — biomass,
-  a respawn wait, or the run?
-- **One drone or a fleet?** One drone serialises the build queue and makes
-  ordering matter. Buyable extra drones are also the credit sink the sim
-  batch asked for.
+- **Is Bobby killable?** He currently flies at an altitude nothing reaches,
+  which was the operator's own framing ("typically too high to take any
+  damage") and is shipped as a simplification, not a physics claim. A
+  vulnerable Bobby makes every build a risk and turns a leak into a real
+  setback; an invulnerable one is a timer with a body.
+- **Clones.** The operator's idea: Bobby spends his downtime printing
+  copies of himself, and a fleet builds in parallel. This is the best
+  version of the biomass sink the sim batch asked for — it costs the
+  resource, it buys throughput rather than power, and it is self-limiting
+  because every clone competes with a tower for the same slurry. Unbuilt.
+  The queue is already FIFO with one worker, so a second worker is a loop
+  over workers, not a rewrite.
+- **The timing curve is a first guess.** 2.6 cells/sec of travel, and
+  2.0s + cost/55 of print — a 60kg single takes ~3.1s to print, a 260kg
+  laser ~6.7s. Nothing about those numbers has been played against a real
+  wave, and they are the whole feel of the mechanic.
 - **Does the drone harvest?** The honest version of biomass is that it is
   *collected from bodies*, not granted at the instant of a kill — corpses
   drop, and something drives out to pick them up. That is a much larger
