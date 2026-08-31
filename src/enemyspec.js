@@ -28,7 +28,7 @@ export const CREATURE_TINTS = {
 // free, the rest hurt to touch and shrug the ram off. slowOnHit /
 // accelOnHit are HokorobiTawaa's on-hit reactions (1.2 s); regen is their
 // healOOC (hp/s while unhit for 1.2 s); heavy = epic tier, spawns sparse.
-// bounty = HK's credit values, verbatim — the TD economy pays these.
+// bounty = HK's credit values, verbatim — the TD economy pays them as biomass.
 export const ENEMY_SPEC = {
   phage:     { hp: 1, speed: 1.15, size: 0.4,  rammable: true,  heartDmg: 1, erratic: true, bounty: 3 },
   ghost:     { hp: 1, speed: 1.25, size: 0.42, rammable: true,  heartDmg: 1, erratic: true, bounty: 6 },

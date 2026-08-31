@@ -5,7 +5,7 @@
 // quincunx — instead of an ever-wider row. Tier is derived, never stored.
 //
 // The ladder is the TANK's, not the player's: only hands-on kills climb it
-// (tower and orbital kills pay credits, not respect), and it resets with
+// (tower and orbital kills pay biomass, not respect), and it resets with
 // the tank that earned it. Gold has a second gate — the dangerous,
 // non-rammable tier must be fought up close.
 //

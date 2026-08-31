@@ -322,8 +322,8 @@ html, body {
   text-shadow: 0 1px 3px rgba(0, 0, 0, 0.9);
 }
 
-/* the credit line is the LOUD line: money-orange, glowing */
-.hud-credit {
+/* the biomass line is the LOUD line: money-orange, glowing */
+.hud-biomass {
   color: #ffb000;
   font-size: 15px;
   font-weight: bold;

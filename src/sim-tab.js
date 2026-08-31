@@ -38,7 +38,7 @@ export function initSimTab(root) {
     tr.className = `sim-${r.outcome}`;
     tr.innerHTML = `<td>${r.seed}</td><td>${r.outcome}</td><td>${r.wave ?? '—'}</td>`
       + `<td>${r.round ?? '—'}</td><td>${r.score ?? '—'}</td><td>${r.heart ?? '—'}</td>`
-      + `<td>${r.lives ?? '—'}</td><td>${r.towers ?? '—'}</td><td>${r.credit ?? '—'}</td>`
+      + `<td>${r.lives ?? '—'}</td><td>${r.towers ?? '—'}</td><td>${r.biomass ?? '—'}</td>`
       + `<td>${r.simT ?? '—'}</td>`;
     rowsEl.appendChild(tr);
   }

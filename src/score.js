@@ -1,4 +1,4 @@
-// score.js — points, as distinct from credits. Credits buy towers; points
+// score.js — points, as distinct from biomass. Biomass buys towers; points
 // are the bragging number, and they lean the OTHER way on purpose: the
 // economy already pays tank kills double, and the scoreboard triples them,
 // so the leaderboard belongs to whoever fights hands-on. A field multiplier

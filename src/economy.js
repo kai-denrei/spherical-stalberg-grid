@@ -1,12 +1,17 @@
-// economy.js — HokorobiTawaa's credit system, verbatim math. Pure module:
-// no DOM, Node-testable. The TD tab renders the numbers; this owns them.
+// economy.js — the BIOMASS system. HokorobiTawaa's credit math, verbatim;
+// only the substance changed. Pure module: no DOM, Node-testable. The TD
+// tab renders the numbers; this owns them.
 //
-// Loop: kill → bounty × streak-multiplier → credit. Streak grows 5% per
-// consecutive kill, caps at ×5, and resets when an enemy LEAKS (reaches
-// the Heart). Spending: tower/unit purchase, upgrades; selling refunds
-// 75% of everything spent on the piece.
+// Biomass is alien tissue rendered down — the one thing the Construction
+// Drone can print structures out of. Loop: kill → bounty × streak-multiplier
+// → biomass. Streak grows 5% per consecutive kill, caps at ×5, and resets
+// when an enemy LEAKS (reaches the Heart). Spending: tower/unit purchase,
+// upgrades; selling reclaims 75% of everything rendered into the piece.
+//
+// Naming note: the module keeps the name `economy` — the economy is the
+// system, biomass is the currency inside it.
 
-export const START_CREDIT = 190;
+export const START_BIOMASS = 190;
 export const STREAK_STEP = 0.05;
 export const STREAK_CAP = 5;
 export const REFUND_FRACTION = 0.75;
@@ -24,14 +29,14 @@ export function waveClearBonus(wave) {
   return 20 + 4 * wave;
 }
 
-// early-call bonus: credits proportional to downtime skipped, capped
+// early-call bonus: biomass proportional to downtime skipped, capped
 export function earlyCallBonus(secondsSaved, cap = 40) {
   return Math.min(cap, Math.max(0, Math.round(secondsSaved)));
 }
 
 export function makeEconomy(opts = {}) {
-  const startCredit = opts.startCredit ?? START_CREDIT;
-  let credit = startCredit;
+  const startBiomass = opts.startBiomass ?? START_BIOMASS;
+  let biomass = startBiomass;
   let streak = 0;
   let score = 0; // cumulative, never spent
 
@@ -39,7 +44,7 @@ export function makeEconomy(opts = {}) {
     Math.min(STREAK_CAP, 1 + STREAK_STEP * streak);
 
   return {
-    get credit() { return credit; },
+    get biomass() { return biomass; },
     get streak() { return streak; },
     get score() { return score; },
     multiplier,
@@ -48,18 +53,18 @@ export function makeEconomy(opts = {}) {
     award(bounty, { ram = false } = {}) {
       streak++;
       const amount = Math.round(bounty * (ram ? RAM_PREMIUM : 1) * multiplier());
-      credit += amount;
+      biomass += amount;
       score += amount;
       return amount;
     },
     // an enemy reached the Heart: the streak dies with the moment
     leak() { streak = 0; },
-    canAfford(cost) { return credit >= cost; },
+    canAfford(cost) { return biomass >= cost; },
     spend(cost) {
-      if (credit < cost) return false;
-      credit -= cost;
+      if (biomass < cost) return false;
+      biomass -= cost;
       return true;
     },
-    addCredit(n) { credit += n; score += Math.max(0, n); },
+    addBiomass(n) { biomass += n; score += Math.max(0, n); },
   };
 }

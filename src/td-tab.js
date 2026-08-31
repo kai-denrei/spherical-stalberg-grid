@@ -19,31 +19,31 @@
 
 import * as THREE from '../vendor/three.module.js';
 import GUI from '../vendor/lil-gui.esm.js';
-import { generateSphereMesh, relax } from './grid.js?v=07fa8d0e';
-import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=07fa8d0e';
-import { mulberry32, randomSeed } from './rng.js?v=07fa8d0e';
-import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3, segKey } from './vec3.js?v=07fa8d0e';
-import { CREATURES, waveJelly } from './creatures.js?v=07fa8d0e';
-import { UNITS, UNIT_NAMES, buildUnit, buildCreature, preloadMkcx, preloadServer, makeServerFixture, makeShieldShell, preloadContainer, makeContainerFixture, makeBulletCloud, makeRewardSolid, makeShellSolid, makeDebris, makeDotBurst, makePortalCloud, makeHeartCloud, makeDotEnemy } from './units.js?v=07fa8d0e';
-import { LOOKS, LOOK_NAMES } from './looks.js?v=07fa8d0e';
-import { makeCellIndex } from './cellindex.js?v=07fa8d0e';
-import { CREATURE_TINTS, ENEMY_SPEC, INTROS, computeWavePlan } from './enemyspec.js?v=07fa8d0e';
-import { PICKUPS } from './pickups.js?v=07fa8d0e';
-import { rankFor, rankLabel, badgeSVG, killReq, eliteReq } from './ranks.js?v=07fa8d0e';
-import { makeScore } from './score.js?v=07fa8d0e';
-import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER } from './towers.js?v=07fa8d0e';
-import { makeEconomy, sellRefund } from './economy.js?v=07fa8d0e';
-import { makeBloom } from './postfx.js?v=07fa8d0e';
-import { TANK_FEEL, TANK_FEEL_KNOBS, makeTankFeel, stepTankFeel, landTankFeel, fireTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js?v=07fa8d0e';
-import { FEEL, loadFeel, saveFeel } from './feelstore.js?v=07fa8d0e';
+import { generateSphereMesh, relax } from './grid.js?v=04ac6745';
+import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=04ac6745';
+import { mulberry32, randomSeed } from './rng.js?v=04ac6745';
+import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3, segKey } from './vec3.js?v=04ac6745';
+import { CREATURES, waveJelly } from './creatures.js?v=04ac6745';
+import { UNITS, UNIT_NAMES, buildUnit, buildCreature, preloadMkcx, preloadServer, makeServerFixture, makeShieldShell, preloadContainer, makeContainerFixture, makeBulletCloud, makeRewardSolid, makeShellSolid, makeDebris, makeDotBurst, makePortalCloud, makeHeartCloud, makeDotEnemy } from './units.js?v=04ac6745';
+import { LOOKS, LOOK_NAMES } from './looks.js?v=04ac6745';
+import { makeCellIndex } from './cellindex.js?v=04ac6745';
+import { CREATURE_TINTS, ENEMY_SPEC, INTROS, computeWavePlan } from './enemyspec.js?v=04ac6745';
+import { PICKUPS } from './pickups.js?v=04ac6745';
+import { rankFor, rankLabel, badgeSVG, killReq, eliteReq } from './ranks.js?v=04ac6745';
+import { makeScore } from './score.js?v=04ac6745';
+import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER } from './towers.js?v=04ac6745';
+import { makeEconomy, sellRefund } from './economy.js?v=04ac6745';
+import { makeBloom } from './postfx.js?v=04ac6745';
+import { TANK_FEEL, TANK_FEEL_KNOBS, makeTankFeel, stepTankFeel, landTankFeel, fireTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js?v=04ac6745';
+import { FEEL, loadFeel, saveFeel } from './feelstore.js?v=04ac6745';
 import { STRIKE_KNOBS, makeStrike, makeStrikeParams, grantStrikes, stepStrike,
   toggleArm, paintTarget, launchStrike, stepFall, skipFall, fallProgress,
-  strikeDamage, retargetStrike, orbitProgress } from './strike.js?v=07fa8d0e';
-import { radarBasis, radarProject, radarBearing, sweepAngle, radarPhosphor } from './radar.js?v=07fa8d0e';
-import { BLOOM_GROUPS } from './bloomweights.js?v=07fa8d0e';
-import { TOWER_LOOK_NAMES, DEFAULT_TOWER_LOOK, buildTowerLook, preloadLook } from './towerlooks.js?v=07fa8d0e';
-import { makeAudio } from './audio.js?v=07fa8d0e';
-import { DEATH_KEYS } from './audiomanifest.js?v=07fa8d0e';
+  strikeDamage, retargetStrike, orbitProgress } from './strike.js?v=04ac6745';
+import { radarBasis, radarProject, radarBearing, sweepAngle, radarPhosphor } from './radar.js?v=04ac6745';
+import { BLOOM_GROUPS } from './bloomweights.js?v=04ac6745';
+import { TOWER_LOOK_NAMES, DEFAULT_TOWER_LOOK, buildTowerLook, preloadLook } from './towerlooks.js?v=04ac6745';
+import { makeAudio } from './audio.js?v=04ac6745';
+import { DEATH_KEYS } from './audiomanifest.js?v=04ac6745';
 
 export function initTdTab(root) {
   let active = false;
@@ -509,7 +509,7 @@ export function initTdTab(root) {
   let shieldT = 0;
   let shieldObj = null;
   // The tank's field promotion. Only hands-on kills climb it — towers and
-  // orbital strikes pay credits, not respect — and the ladder belongs to
+  // orbital strikes pay biomass, not respect — and the ladder belongs to
   // the HULL: lose the tank, lose the insignia. Gold's second gate counts
   // the dangerous (non-rammable) tier killed up close.
   let tankKills = 0, tankEliteKills = 0, tankRank = 0;
@@ -544,7 +544,7 @@ export function initTdTab(root) {
   // solids shrug rams off, so the flee vector is deliberately NOT applied
   // to it; the tank trades hull for kills exactly like the operator does),
   // SLOW and AOE at bottlenecks, SNIPER everywhere, upgrades with spare
-  // credit. style0 is the deliberate floor: wander, build nothing.
+  // biomass. style0 is the deliberate floor: wander, build nothing.
   let simFast = 0, simStyle = null, simPolClock = 0, simDone = false;
   const simCurve = []; // one point per wave CLEAR: the tuning signal
   let simCap = 600; // sim-seconds before a run reports 'timeout'
@@ -596,7 +596,7 @@ export function initTdTab(root) {
       }
       break; // unlocked and affordable but nowhere to put it — fall through
     }
-    // nothing to place: spend spare credit on the cheapest upgrade
+    // nothing to place: spend spare biomass on the cheapest upgrade
     let bestT = null, bestC = Infinity;
     for (const tw of towers) {
       const c = upgradeCost(tw.def, tw.tier);
@@ -606,7 +606,7 @@ export function initTdTab(root) {
   }
   // style2 'builder': stay out of trouble, spend EVERYTHING on towers —
   // newest unlocked first, upgrades with the change. This style survives
-  // into the mid-game, which is where the credit-flood question lives.
+  // into the mid-game, which is where the biomass-flood question lives.
   function simBuildAll() {
     const trunk = simTrunk();
     if (!trunk.length) return;
@@ -649,7 +649,7 @@ export function initTdTab(root) {
     simDone = true;
     const payload = { style: simStyle, seed: params.seed >>> 0, outcome, wave, round,
       score: score.points, heart: heartHP, lives: playerHP,
-      towers: towers.length, credit: eco.credit, simT: Math.round(t),
+      towers: towers.length, biomass: eco.biomass, simT: Math.round(t),
       curve: simCurve };
     console.log('SIMRESULT ' + JSON.stringify(payload));
     try {
@@ -2012,7 +2012,7 @@ export function initTdTab(root) {
         if (upgradeTower(sel)) {
           if (shopCi !== -1) openShop(shopCi); // refresh the radial
         } else if (shopCi !== -1) {
-          flashShopNote(upgradeCost(sel.def, sel.tier) === null ? 'max tier' : 'not enough credit');
+          flashShopNote(upgradeCost(sel.def, sel.tier) === null ? 'max tier' : 'not enough biomass');
         }
         ev.preventDefault();
         return;
@@ -2410,21 +2410,21 @@ export function initTdTab(root) {
     const cost = missileCost();
     if (!eco.spend(cost)) {
       showToast(`<div class="wave-num">INSUFFICIENT FUNDS</div>`
-        + `<div class="wave-role">the market wants ${fmt(cost)}c</div>`, 2000);
+        + `<div class="wave-role">the market wants ${fmt(cost)}kg</div>`, 2000);
       return;
     }
     missilesBought++;
     strike.reserved += 1;
     sfx.play('tank_shells');
     showToast(`<div class="wave-num">MISSILE PURCHASED</div>`
-      + `<div class="wave-role">entering the queue — next one costs ${fmt(missileCost())}c</div>`, 2400);
+      + `<div class="wave-role">entering the queue — next one costs ${fmt(missileCost())}kg</div>`, 2400);
     updateHud(); syncArmUi();
   });
 
   function syncArmUi() {
     if (buyMissileEl) {
       buyMissileEl.classList.toggle('hidden', !missileShop);
-      if (missileShop) buyMissileEl.textContent = `+ ${missileCost()}c`;
+      if (missileShop) buyMissileEl.textContent = `+ ${missileCost()}kg`;
     }
     // narrate the state; write the DOM only when the state actually moves
     const orbit = strike.reserved > 0 ? Math.round(strike.gauge * 100) : -1;
@@ -3150,7 +3150,7 @@ export function initTdTab(root) {
       hackedRound = true;
       hackWins++;
       if (hackWins === 2) {
-        // the SECOND win opens the black market: missiles for credit
+        // the SECOND win opens the black market: missiles for biomass
         missileShop = true;
         showToast(`<div class="wave-num">BLACK MARKET OPEN</div>`
           + `<div class="wave-role">the relay sells missiles now — expensive, and worth it</div>`, 3600);
@@ -3286,7 +3286,7 @@ export function initTdTab(root) {
       `<div class="wave-role">you're driving — tap a directive to hand the wheel to auto</div>`);
   }
   // The instrument panel. Three reading distances, three brightness tiers:
-  // vitals bright and big (sub-second combat reads), resources mid (credit
+  // vitals bright and big (sub-second combat reads), resources mid (biomass
   // orange as ever, the wave numeral the largest thing on the panel), meta
   // and objectives dim. The who-is-driving line is GONE from the panel —
   // control state lives ON the AUTO button now, where the control is.
@@ -3305,7 +3305,7 @@ export function initTdTab(root) {
       + `<div class="hud-vitals">${hearts} <span class="hud-lbl">HEART</span>`
       + ` <span class="hp-you">♥${playerHP}</span>`
       + ` <span class="hp-ammo${ammo === 0 ? ' out' : ''}">✦${ammo}</span></div>`
-      + `<div class="hud-res"><span class="hud-credit">${eco.credit}c`
+      + `<div class="hud-res"><span class="hud-biomass">${eco.biomass}kg`
       + ` ×${eco.multiplier().toFixed(2)}</span>`
       + `<span class="hud-wave">WAVE <b>${wave}</b> · R${round}</span></div>`
       + `<div class="hud-obj">portals ${spAlive}/${spawnPoints.length}`
@@ -3484,15 +3484,15 @@ export function initTdTab(root) {
     // towerCells would poison openNeighbors during board generation.
     round = 1;
     clearTowers();
-    // opening purse: exactly a Rapid (70c) + a Slow (100c) — your first plan
-    eco = makeEconomy({ startCredit: 170 });
+    // opening biomass: exactly a Rapid (70kg) + a Slow (100kg) — your first plan
+    eco = makeEconomy({ startBiomass: 170 });
     score.reset();
     // THE OPENING GARRISON (sim batch: the heart pays half its total in
     // waves 1-3, before any kit exists). Two singles stand pre-built on
     // the walls nearest the heart — free, placed after the board exists.
     queueMicrotask(() => {
       let placed = 0;
-      eco.addCredit(TOWER_BY_KEY.single.cost * 2); // the garrison is free
+      eco.addBiomass(TOWER_BY_KEY.single.cost * 2); // the garrison is free
       for (let d = 1; d <= 4 && placed < 2; d++) {
         for (let i = 0; i < dungeon.tags.length && placed < 2; i++) {
           if (dungeon.tags[i] !== BLOCKED || placeError(i)) continue;
@@ -4043,7 +4043,7 @@ export function initTdTab(root) {
             showCallout(`RAM ×${ramCombo}`, 'co-milestone');
           }
           noteStreak();
-          creditTankKill(spec);
+          harvestTankKill(spec);
           killCreature(e, true);
           checkVictory();
           continue;
@@ -4119,7 +4119,7 @@ export function initTdTab(root) {
       : '';
     updateHud();
   }
-  function creditTankKill(spec) {
+  function harvestTankKill(spec) {
     tankKills++;
     if (!spec.rammable) tankEliteKills++;
     const r = rankFor(tankKills, tankEliteKills);
@@ -4147,7 +4147,7 @@ export function initTdTab(root) {
       scoreKill(spec.bounty, { src, alive: enemies.filter((x) => x.alive).length });
       noteWaveKill(e.type, src);
       noteKillContext(e, src);
-      if (src === 'tank') creditTankKill(spec);
+      if (src === 'tank') harvestTankKill(spec);
       killCreature(e, true);
       return true;
     }
@@ -4842,7 +4842,7 @@ export function initTdTab(root) {
   const towerShots = [];          // { pos, dir, dist, mesh, dmg, splash, homing }
   const beams = [];               // { mesh, ttl } laser + slow-tether fx
   let eco = makeEconomy();
-  // Points are not credits: the scoreboard triples tank kills and scales
+  // Points are not biomass: the scoreboard triples tank kills and scales
   // with how swarmed the field was. Best survives across runs (localStorage);
   // it updates LIVE when beaten, so a crash can't eat a record.
   const BEST_KEY = 'td-best-score-v1';
@@ -4934,7 +4934,7 @@ export function initTdTab(root) {
     if (!def) return false;
     const err = placeError(ci);
     if (err) { flashShopNote(err); return false; }
-    if (!eco.spend(def.cost)) { flashShopNote('not enough credit'); return false; }
+    if (!eco.spend(def.cost)) { flashShopNote('not enough biomass'); return false; }
     const obj = buildTowerLook(params.towerLook, def);
     const tower = { key, def, tier: 0, ci, obj, cooldown: 0, spent: def.cost };
     placeTowerObj(tower);
@@ -4967,7 +4967,7 @@ export function initTdTab(root) {
   }
 
   function sellTower(tower) {
-    eco.addCredit(sellRefund(tower.spent));
+    eco.addBiomass(sellRefund(tower.spent));
     scene.remove(tower.obj);
     disposeObj(tower.obj);
     towers.splice(towers.indexOf(tower), 1);
@@ -5565,15 +5565,15 @@ export function initTdTab(root) {
       center = `<div class="radial-center">${existing.def.key}<br>tier ${existing.tier}</div>`;
       items = [
         cost !== null
-          ? { cls: 'shop-up', txt: `upgrade<br>${cost}c`, dis: !eco.canAfford(cost) }
+          ? { cls: 'shop-up', txt: `upgrade<br>${cost}kg`, dis: !eco.canAfford(cost) }
           : { cls: 'shop-up', txt: 'MAX', dis: true },
-        { cls: 'shop-sell', txt: `sell<br>+${sellRefund(existing.spent)}c` },
+        { cls: 'shop-sell', txt: `sell<br>+${sellRefund(existing.spent)}kg` },
         { cls: 'shop-close', txt: '×' },
       ];
       showRangeRing(ci, effectiveStats(existing.def, existing.tier).range, existing.def.color, 0);
     } else {
       const err = placeError(ci);
-      center = `<div class="radial-center">${err ? 'blocked' : eco.credit + 'c'}</div>`;
+      center = `<div class="radial-center">${err ? 'blocked' : eco.biomass + 'kg'}</div>`;
       const unlocked = new Set(unlockedTowerKeys(wave, hackedUnlocks));
       items = TOWERS.map((def) => {
         const locked = !unlocked.has(def.key);
@@ -5582,7 +5582,7 @@ export function initTdTab(root) {
           key: def.key,
           txt: locked
             ? `${def.key}<br>${towerUnlockWave(def.key) === null ? '&#8961; RELAY' : 'W' + towerUnlockWave(def.key)}`
-            : `${def.key}<br>${def.cost}c`,
+            : `${def.key}<br>${def.cost}kg`,
           dis: locked || !!err || !eco.canAfford(def.cost),
           bc: '#' + def.color.toString(16).padStart(6, '0'),
         };
@@ -5646,7 +5646,7 @@ export function initTdTab(root) {
       msgEl.innerHTML = `<div class="msg-head">transmission · combat log</div>` +
         `✦ SECTOR ${round} CLEARED — every portal destroyed<br>` +
         `${wave} waves · heart ${heartHP}/${HEART_MAX} · ` +
-        `${towers.length} towers standing · ${eco.credit}c<br>` +
+        `${towers.length} towers standing · ${eco.biomass}kg<br>` +
         `<button class="msg-next">&rsaquo; breach sector ${round + 1} — bigger, farther, meaner</button>`;
       msgEl.classList.remove('hidden');
     }
@@ -5654,7 +5654,7 @@ export function initTdTab(root) {
 
   // sector expansion (HokorobiTawaa's fraying): FLASH WHITE, unseal the
   // next band of the SAME world, re-seed pickups into the new ground,
-  // raise fresh portals farther out. Towers and credit persist.
+  // raise fresh portals farther out. Towers and biomass persist.
   function expandRound() {
     flashEl.classList.remove('on');
     void flashEl.offsetWidth; // restart the animation
@@ -6033,7 +6033,7 @@ export function initTdTab(root) {
           score.addWave(wave); persistBest();
           if (simStyle) {
             simCurve.push({ w: wave, t: Math.round(t), heart: heartHP,
-              credit: eco.credit, towers: towers.length, score: score.points });
+              biomass: eco.biomass, towers: towers.length, score: score.points });
           }
           if (tutorialActive) {
             showToast(`<div class="wave-num">WAVE ${wave} CLEARED</div>` +
@@ -6410,10 +6410,12 @@ export function initTdTab(root) {
   if (urlParams.get('mode') === 'build') { setView('orbit'); snapCamera(); } // legacy alias for view=orbit
   if (urlParams.get('map') === 'heart') mapMode = 'heart';
 
-  // ?credit=N pads the purse; ?tower=key@ci,key@ci force-places towers
+  // ?biomass=N pads the purse (?credit=N still works — the old name is an
+  // alias so saved debug URLs keep working); ?tower=key@ci,key@ci force-places
+  // towers
   // (both headless-verification hooks)
-  const creditN = parseInt(urlParams.get('credit') || '0', 10);
-  if (creditN > 0) eco.addCredit(creditN);
+  const biomassN = parseInt(urlParams.get('biomass') || urlParams.get('credit') || '0', 10);
+  if (biomassN > 0) eco.addBiomass(biomassN);
   const towerSpec = urlParams.get('tower');
   if (towerSpec) {
     for (const part of towerSpec.split(',')) {
@@ -6429,7 +6431,7 @@ export function initTdTab(root) {
           if (placeTower(key, ci)) {
             const want = parseInt(tierStr || '0', 10);
             const tw = towerByCell.get(ci);
-            for (let t = 0; tw && t < want; t++) { eco.addCredit(999); upgradeTower(tw); }
+            for (let t = 0; tw && t < want; t++) { eco.addBiomass(999); upgradeTower(tw); }
             // report the pedestal actually mounted — the tier read is
             // geometry, so the probe reads geometry
             if (tw) {
@@ -6502,7 +6504,7 @@ export function initTdTab(root) {
 
   // opening briefing on a clean load; any debug hook means headless/demo,
   // where a frozen sim would break the verification flow
-  const debugging = ['walk', 'tick', 'wave', 'blast', 'laser', 'found', 'recoil', 'mode', 'map', 'tower', 'credit', 'shop', 'sector', 'reveal', 'portal', 'lose', 'charge', 'layout', 'perf', 'strike', 'strikefall', 'strikecam', 'gateprobe', 'rank', 'danger', 'callout', 'sitrep', 'server', 'hack', 'shield', 'sim']
+  const debugging = ['walk', 'tick', 'wave', 'blast', 'laser', 'found', 'recoil', 'mode', 'map', 'tower', 'biomass', 'credit', 'shop', 'sector', 'reveal', 'portal', 'lose', 'charge', 'layout', 'perf', 'strike', 'strikefall', 'strikecam', 'gateprobe', 'rank', 'danger', 'callout', 'sitrep', 'server', 'hack', 'shield', 'sim']
     .some((k) => urlParams.get(k));
   const tutParam = urlParams.get('tutorial');
   runTutorial = tutParam === '1' || (tutParam !== '0' && !debugging);

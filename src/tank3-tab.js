@@ -4,12 +4,12 @@
 import * as THREE from '../vendor/three.module.js';
 import GUI from '../vendor/lil-gui.esm.js';
 import { OrbitControls } from '../vendor/OrbitControls.js';
-import { createPlanetTankGame, DYING_T } from './tanks2.js?v=07fa8d0e';
-import { buildUnit, onMkcxReady, makeBulletCloud, makeDebris } from './units.js?v=07fa8d0e';
-import { LOOKS } from './looks.js?v=07fa8d0e';
-import { mulberry32 } from './rng.js?v=07fa8d0e';
-import { norm3, scale3 } from './vec3.js?v=07fa8d0e';
-import { makeBloom } from './postfx.js?v=07fa8d0e';
+import { createPlanetTankGame, DYING_T } from './tanks2.js?v=04ac6745';
+import { buildUnit, onMkcxReady, makeBulletCloud, makeDebris } from './units.js?v=04ac6745';
+import { LOOKS } from './looks.js?v=04ac6745';
+import { mulberry32 } from './rng.js?v=04ac6745';
+import { norm3, scale3 } from './vec3.js?v=04ac6745';
+import { makeBloom } from './postfx.js?v=04ac6745';
 
 const DT = 1 / 60;
 const TANK_SCALE = 0.09;    // world radius of each tank

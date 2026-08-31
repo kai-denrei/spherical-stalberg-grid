@@ -1,10 +1,10 @@
 // tdcore.mjs — invariants for the TD M0 extraction: enemyspec (shared
 // roster data), towers (configs + upgrade + targeting math), economy
-// (credits/streak math). All pure modules; no DOM, no three.js.
+// (biomass/streak math). All pure modules; no DOM, no three.js.
 
 import { CREATURE_TINTS, ENEMY_SPEC, INTROS, computeWavePlan, typesByWave } from '../src/enemyspec.js';
 import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER, HACK_GATED } from '../src/towers.js';
-import { makeEconomy, sellRefund, waveClearBonus, earlyCallBonus, START_CREDIT, RAM_PREMIUM } from '../src/economy.js';
+import { makeEconomy, sellRefund, waveClearBonus, earlyCallBonus, START_BIOMASS, RAM_PREMIUM } from '../src/economy.js';
 
 let failures = 0;
 const check = (name, cond, detail = '') => {
@@ -82,7 +82,7 @@ check('upgrade costs HK-exact (70%/120%, then maxed)',
 console.log('economy:');
 {
   const eco = makeEconomy();
-  check('starts at START_CREDIT', eco.credit === START_CREDIT);
+  check('starts at START_BIOMASS', eco.biomass === START_BIOMASS);
   const first = eco.award(10); // streak 1 → ×1.05
   check('first kill pays bounty × 1.05', first === Math.round(10 * 1.05));
   eco.leak();
@@ -91,9 +91,9 @@ console.log('economy:');
   check('multiplier caps at ×5', eco.multiplier() === 5);
   const ramPay = makeEconomy().award(10, { ram: true });
   check('ram premium ×1.5', ramPay === Math.round(10 * RAM_PREMIUM * 1.05));
-  const eco2 = makeEconomy({ startCredit: 50 });
+  const eco2 = makeEconomy({ startBiomass: 50 });
   check('spend guards affordability',
-    eco2.spend(60) === false && eco2.spend(50) === true && eco2.credit === 0);
+    eco2.spend(60) === false && eco2.spend(50) === true && eco2.biomass === 0);
   check('sell refund = 75% of spent', sellRefund(100) === 75);
   check('wave-clear bonus grows', waveClearBonus(5) === 40 && waveClearBonus(1) === 24);
   check('early-call bonus caps', earlyCallBonus(120) === 40 && earlyCallBonus(12) === 12);
