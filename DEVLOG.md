@@ -6,6 +6,69 @@ Demo links assume `npm run serve` (port 8144) or the
 
 ---
 
+## `573fbb7` — BOBBY builds everything now
+
+The operator's fabricator `.glb`, cast as the machine that puts every tower
+and every upgrade on the board. Placement stops being a purchase and becomes
+an **order**: Bobby flies to the cell, hangs over it, and prints the
+emplacement out of biomass. Two clocks now stand between wanting a tower and
+having one — **travel** and **build** — which is the entire point. A defence
+cannot be spammed any more; it has to be meant.
+
+**The casting.** The file ships the drone hovering over a workpiece
+(`Workpiece_Group`: a bed slab plus a printed bead) — the pose that shows
+what the machine is *for*, and scenery on a board where it prints towers
+instead. Dropped before the merge, because afterwards it would be welded
+into a shared mesh and unaddressable. Preserved pivots are the things that
+must move while it works: `Rotor_{FL,FR,RL,RR}_Spin`, `Boom_Yaw`,
+`Boom_Pitch`, `Head_Pitch`, and `Nozzle_Tip` kept as an empty because the
+print beam has to start somewhere. The boom's rest pose is read once and
+animated as an offset from it — a model's rest pose is gameplay data, the
+standing lesson from the mkcx and heptapod castings. The drone is parented
+under `Airframe_Platform` at y=1.03 in file space (it was authored hovering
+over the bed we just deleted); `fitModel` reseats it, so the offset never
+reaches the board.
+
+**The mechanic.**
+
+- Biomass leaves the purse at **order** time. A queue you have not paid for
+  is a queue you would spam.
+- Cancelling refunds in full — nothing was printed. Except the order Bobby
+  is already standing over: the biomass is in the nozzle by then and half of
+  it does not come back. An ordered cell's radial offers exactly one thing.
+- Travel is 2.6 cells/sec over the sphere. A print is `2.0s + cost/55`, so a
+  60kg single takes ~3.1s and a 260kg laser ~6.7s. First guess — the whole
+  feel of the mechanic lives in those two numbers.
+- A queued site shows a ring of points in the tower's colour. When Bobby
+  arrives, the tower itself **grows out of the wall top** as he prints it
+  (`scale.y` is the print head), which beats a progress bar.
+- The print beam is **one pooled `Line`**, rewritten in place. The effects
+  rule here is that activity must not add objects.
+- He re-checks the site on arrival: a strike or a sale that took the cell
+  mid-flight returns the biomass instead of building into a hole.
+- He works through the build downtime — the war is frozen there, but
+  construction is the thing you came to do. A reveal or the cold open stops
+  him; those are the game speaking.
+- He flies where nothing on the ground reaches him. The operator's framing,
+  shipped as a simplification rather than a physics claim.
+
+The headless sim's builder AI moved onto the same path, so the next balance
+batch measures the game as played. `placeTower` survives as the instant path
+for two callers only: the opening garrison (pre-built, not ordered) and
+`?tower=`.
+
+**Verifying an asynchronous machine.** Bobby is async twice over — the model
+loads async, and a tower taking wall-clock time to exist *is* the mechanic —
+so `?tick` cannot reach either. `?order=key` puts orders on the book
+(choosing sites itself, so no cell ids needed) and `?bobby=N` runs N seconds
+of his shift. At 0.5s: `state=travel`. At 4s: `state=build t=2.50/2.73`. At
+14s: `state=idle`, tower standing.
+
+Lore: **BIOMASS** joins the world entries, and Bobby gets his own — including
+why a machine with no crew aboard has a name stencilled on the tank.
+
+---
+
 ## `1bc9d73` — The cold open, and berths you can drive out of
 
 Three operator reports on the life containers, one of which was a real bug
