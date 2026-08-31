@@ -5,22 +5,22 @@
    back to a system face until the subset is rebuilt. */
 @font-face {
   font-family: 'VT323';
-  src: url('assets/fonts/VT323.woff2?v=fc2e9b59') format('woff2');
+  src: url('assets/fonts/VT323.woff2?v=7965f1af') format('woff2');
   font-weight: 400; font-style: normal; font-display: swap;
 }
 @font-face {
   font-family: 'Press Start 2P';
-  src: url('assets/fonts/PressStart2P.woff2?v=fc2e9b59') format('woff2');
+  src: url('assets/fonts/PressStart2P.woff2?v=7965f1af') format('woff2');
   font-weight: 400; font-style: normal; font-display: swap;
 }
 @font-face {
   font-family: 'Share Tech Mono';
-  src: url('assets/fonts/ShareTechMono.woff2?v=fc2e9b59') format('woff2');
+  src: url('assets/fonts/ShareTechMono.woff2?v=7965f1af') format('woff2');
   font-weight: 400; font-style: normal; font-display: swap;
 }
 @font-face {
   font-family: 'DotGothic16';
-  src: url('assets/fonts/DotGothic16.woff2?v=fc2e9b59') format('woff2');
+  src: url('assets/fonts/DotGothic16.woff2?v=7965f1af') format('woff2');
   font-weight: 400; font-style: normal; font-display: swap;
 }
 
@@ -1287,6 +1287,23 @@ html, body {
   pointer-events: none;
 }
 #td-toast.hidden { display: none; }
+/* a toast only takes taps when it is offering one — otherwise it is a sign
+   hanging over a board you need to be able to tap through */
+#td-toast.actionable { pointer-events: auto; }
+.toast-yes {
+  display: block;
+  margin: 9px auto 0;
+  font-family: var(--font-ui);
+  font-size: calc(var(--ui-unit) * 0.92);
+  letter-spacing: 0.1em;
+  color: var(--p-white);
+  background: rgba(51, 255, 119, 0.14);
+  border: 1px solid var(--p-green);
+  border-radius: 4px;
+  padding: 6px 14px;
+  cursor: pointer;
+}
+.toast-yes:hover { background: rgba(51, 255, 119, 0.26); }
 #td-tut .tut-skip {
   pointer-events: auto;
   margin-top: 10px;
@@ -2737,7 +2754,7 @@ body.playing:not(.chrome-open) #tabbar { display: none !important; }
   opacity: 1;
 }
 #tab-td .tc-util button:active { background: rgba(110, 255, 140, 0.25); color: #eafff0; }
-#tab-td #td-pad-view, #tab-td #td-pad-ctrheart, #tab-td #td-pad-ctrtank {
+#tab-td #td-pad-tank, #tab-td #td-pad-orbit, #tab-td #td-pad-ctrheart, #tab-td #td-pad-ctrtank {
   color: #9fdcff;
   border-color: rgba(159, 220, 255, 0.4);
   text-shadow: 0 0 6px rgba(159, 220, 255, 0.3);
@@ -3045,7 +3062,16 @@ tr.sim-timeout td:nth-child(2), tr.sim-stalled td:nth-child(2) { color: #ffb000;
 @media (pointer: coarse), (max-width: 700px) {
   /* the mode row: compact, and no mute */
   #td-pad-sound { display: none; }
-  #tab-td .tc-util { gap: 5px; }
+  /* SIX buttons do not fit 390px in one line — TANK and ORBIT replaced a
+     single cycling camera button, which is worth the width but not worth
+     pushing the row off the screen (it pushed ORBIT and the mute clean off
+     the right edge). Wrap it, centred, and keep it clear of the tab bar. */
+  #tab-td .tc-util {
+    gap: 5px;
+    flex-wrap: wrap;
+    justify-content: center;
+    max-width: calc(100vw - 96px);
+  }
   #tab-td .tc-util button {
     padding: 4px 8px;
     font-size: 10px;

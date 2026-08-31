@@ -19,33 +19,33 @@
 
 import * as THREE from '../vendor/three.module.js';
 import GUI from '../vendor/lil-gui.esm.js';
-import { generateSphereMesh, relax } from './grid.js?v=fc2e9b59';
-import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=fc2e9b59';
-import { mulberry32, randomSeed } from './rng.js?v=fc2e9b59';
-import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3, segKey } from './vec3.js?v=fc2e9b59';
-import { CREATURES, waveJelly } from './creatures.js?v=fc2e9b59';
+import { generateSphereMesh, relax } from './grid.js?v=7965f1af';
+import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=7965f1af';
+import { mulberry32, randomSeed } from './rng.js?v=7965f1af';
+import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3, segKey } from './vec3.js?v=7965f1af';
+import { CREATURES, waveJelly } from './creatures.js?v=7965f1af';
 import { applyFontPack, currentFontPack, FONT_NAMES, TYPE_KNOBS,
-  makeTypeParams, clampTypeParams, formatTypeCode } from './fonts.js?v=fc2e9b59';
-import { UNITS, UNIT_NAMES, buildUnit, buildCreature, preloadMkcx, preloadServer, makeServerFixture, makeShieldShell, preloadContainer, makeContainerFixture, preloadFabricator, makeFabricatorDrone, makeBulletCloud, makeRewardSolid, makeShellSolid, makeDebris, makeDotBurst, makePortalCloud, makeHeartCloud, makeDotEnemy } from './units.js?v=fc2e9b59';
-import { LOOKS, LOOK_NAMES } from './looks.js?v=fc2e9b59';
-import { makeCellIndex } from './cellindex.js?v=fc2e9b59';
-import { CREATURE_TINTS, ENEMY_SPEC, INTROS, computeWavePlan } from './enemyspec.js?v=fc2e9b59';
-import { PICKUPS } from './pickups.js?v=fc2e9b59';
-import { rankFor, rankLabel, badgeSVG, killReq, eliteReq } from './ranks.js?v=fc2e9b59';
-import { makeScore } from './score.js?v=fc2e9b59';
-import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER } from './towers.js?v=fc2e9b59';
-import { makeEconomy, sellRefund } from './economy.js?v=fc2e9b59';
-import { makeBloom } from './postfx.js?v=fc2e9b59';
-import { TANK_FEEL, TANK_FEEL_KNOBS, makeTankFeel, stepTankFeel, landTankFeel, fireTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js?v=fc2e9b59';
-import { FEEL, loadFeel, saveFeel } from './feelstore.js?v=fc2e9b59';
+  makeTypeParams, clampTypeParams, formatTypeCode } from './fonts.js?v=7965f1af';
+import { UNITS, UNIT_NAMES, buildUnit, buildCreature, preloadMkcx, preloadServer, makeServerFixture, makeShieldShell, preloadContainer, makeContainerFixture, preloadFabricator, makeFabricatorDrone, makeBulletCloud, makeRewardSolid, makeShellSolid, makeDebris, makeDotBurst, makePortalCloud, makeHeartCloud, makeDotEnemy } from './units.js?v=7965f1af';
+import { LOOKS, LOOK_NAMES } from './looks.js?v=7965f1af';
+import { makeCellIndex } from './cellindex.js?v=7965f1af';
+import { CREATURE_TINTS, ENEMY_SPEC, INTROS, computeWavePlan } from './enemyspec.js?v=7965f1af';
+import { PICKUPS } from './pickups.js?v=7965f1af';
+import { rankFor, rankLabel, badgeSVG, killReq, eliteReq } from './ranks.js?v=7965f1af';
+import { makeScore } from './score.js?v=7965f1af';
+import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER } from './towers.js?v=7965f1af';
+import { makeEconomy, sellRefund } from './economy.js?v=7965f1af';
+import { makeBloom } from './postfx.js?v=7965f1af';
+import { TANK_FEEL, TANK_FEEL_KNOBS, makeTankFeel, stepTankFeel, landTankFeel, fireTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js?v=7965f1af';
+import { FEEL, loadFeel, saveFeel } from './feelstore.js?v=7965f1af';
 import { STRIKE_KNOBS, makeStrike, makeStrikeParams, grantStrikes, stepStrike,
   toggleArm, paintTarget, launchStrike, stepFall, skipFall, fallProgress,
-  strikeDamage, retargetStrike, orbitProgress } from './strike.js?v=fc2e9b59';
-import { radarBasis, radarProject, radarBearing, sweepAngle, radarPhosphor } from './radar.js?v=fc2e9b59';
-import { BLOOM_GROUPS } from './bloomweights.js?v=fc2e9b59';
-import { TOWER_LOOK_NAMES, DEFAULT_TOWER_LOOK, buildTowerLook, preloadLook } from './towerlooks.js?v=fc2e9b59';
-import { makeAudio } from './audio.js?v=fc2e9b59';
-import { DEATH_KEYS } from './audiomanifest.js?v=fc2e9b59';
+  strikeDamage, retargetStrike, orbitProgress } from './strike.js?v=7965f1af';
+import { radarBasis, radarProject, radarBearing, sweepAngle, radarPhosphor } from './radar.js?v=7965f1af';
+import { BLOOM_GROUPS } from './bloomweights.js?v=7965f1af';
+import { TOWER_LOOK_NAMES, DEFAULT_TOWER_LOOK, buildTowerLook, preloadLook } from './towerlooks.js?v=7965f1af';
+import { makeAudio } from './audio.js?v=7965f1af';
+import { DEATH_KEYS } from './audiomanifest.js?v=7965f1af';
 
 export function initTdTab(root) {
   let active = false;
@@ -1685,8 +1685,13 @@ export function initTdTab(root) {
     params.view = v;
     buildMode = v === 'orbit';
     watchTower = null;
-    const camBtn = root.querySelector('#td-pad-view');
-    if (camBtn) camBtn.textContent = VIEW_TAG[v] || 'T3';
+    // TWO BUTTONS, not one cycle. A cycle makes you tap through a view you
+    // did not want to reach the one you did, which on a phone mid-wave is
+    // the difference between a camera and an obstacle (operator).
+    const tankBtn = root.querySelector('#td-pad-tank');
+    const orbitBtn = root.querySelector('#td-pad-orbit');
+    if (tankBtn) tankBtn.classList.toggle('on', v === 'third' || v === 'pov');
+    if (orbitBtn) orbitBtn.classList.toggle('on', v === 'orbit');
     // first orbit entry still frames the heart — a free camera pointed at
     // the dark side of a planet is not a view, it is a bug report
     if (buildMode && !buildCentered && graph && dungeon) {
@@ -2367,9 +2372,12 @@ export function initTdTab(root) {
   // the cycle (tower-watching was a spectator mode nobody drove from), and
   // nothing auto-centres any more — the two CENTRE buttons do it on demand.
   const VIEW_TAG = { pov: 'T1', third: 'T3', orbit: 'O1', drone: 'BOB' };
+  // V toggles the two views that have buttons. POV is parked (operator: it
+  // earns its screen space on nobody's phone) but still selectable from the
+  // GUI, and the DRONE is not on the cycle at all — you get it by reaching
+  // for Bobby, which is the point of it.
   function toggleView() {
-    const cycle = ['pov', 'third', 'orbit', 'drone'];
-    setView(cycle[(cycle.indexOf(params.view) + 1) % cycle.length]);
+    setView(params.view === 'third' ? 'orbit' : 'third');
   }
 
   // touch zones/buttons: press-and-hold, like the keys; onPress fires per
@@ -2443,7 +2451,8 @@ export function initTdTab(root) {
   holdButton('#td-pad-laser', 'laser');
   holdButton('#td-pad-left', 'left');
   holdButton('#td-pad-right', 'right');
-  root.querySelector('#td-pad-view').addEventListener('click', () => toggleView());
+  root.querySelector('#td-pad-tank').addEventListener('click', () => setView('third'));
+  root.querySelector('#td-pad-orbit').addEventListener('click', () => setView('orbit'));
   // CENTRE controls: the camera never sticks to anything now — these two
   // aim the orbital view on demand (and take you there if you are not in it)
   function centerBuildOnTank() {
@@ -2602,6 +2611,21 @@ export function initTdTab(root) {
         return;
       }
       lastTap = { t: tnow, x: ev.clientX, y: ev.clientY };
+      // TAP BOBBY TO RIDE HIM. The drone camera is not on the view cycle,
+      // because reaching for the machine you want to look through is a
+      // better gesture than tapping past two other cameras to find it. It
+      // asks first: a mis-tap that hijacks your camera mid-wave is worse
+      // than no shortcut at all.
+      if (bobby && params.view !== 'drone') {
+        const r0 = renderer.domElement.getBoundingClientRect();
+        ndc.set(((ev.clientX - r0.left) / r0.width) * 2 - 1,
+          -((ev.clientY - r0.top) / r0.height) * 2 + 1);
+        raycaster.setFromCamera(ndc, camera);
+        if (raycaster.intersectObject(bobby.obj, true).length) {
+          askDroneView();
+          return;
+        }
+      }
       // bastion first claim: a tap on a TOWER watches it
       if (params.view === 'bastion') {
         const r = renderer.domElement.getBoundingClientRect();
@@ -3603,10 +3627,22 @@ export function initTdTab(root) {
   function showToast(html, ms = 3000) {
     if (!toastEl) return;
     toastEl.innerHTML = html;
+    // the toast is pointer-transparent by default (it sits over the board);
+    // it only accepts taps when it is carrying one to accept
+    toastEl.classList.toggle('actionable', html.includes('toast-yes'));
     toastEl.classList.remove('hidden');
     clearTimeout(toastTimer);
     toastTimer = setTimeout(() => toastEl.classList.add('hidden'), ms);
   }
+  if (toastEl) {
+    toastEl.addEventListener('click', (ev) => {
+      if (!ev.target.classList || !ev.target.classList.contains('toast-yes')) return;
+      toastEl.classList.add('hidden');
+      toastEl.classList.remove('actionable');
+      setView('drone');
+    });
+  }
+
   // switching back to driving: a brief, non-pausing reminder of the mode model
   function showOverrideModal() {
     showToast(`<div class="wave-num">MANUAL</div>` +
@@ -6414,6 +6450,16 @@ export function initTdTab(root) {
   // build-mode tap → cell (raycast the floor; a drag is an orbit, not a tap)
   const raycaster = new THREE.Raycaster();
   const ndc = new THREE.Vector2();
+
+  // The confirm for riding Bobby. Not a modal — a modal for a camera change
+  // is a bigger deal than a camera change. A toast with a live button, and
+  // it times out and goes away like every other toast if you meant to tap
+  // the ground behind him.
+  function askDroneView() {
+    showToast('<div class="wave-num">TAKE THE DRONE?</div>'
+      + '<div class="wave-role">ride BOBBY — he keeps working, you just watch</div>'
+      + '<button class="toast-yes">&rsaquo; TAKE CONTROL</button>', 4000);
+  }
   function cellAtScreen(x, y) {
     if (!floorMesh) return -1;
     const r = renderer.domElement.getBoundingClientRect();
