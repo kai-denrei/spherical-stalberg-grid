@@ -16,12 +16,12 @@
 
 import * as THREE from '../vendor/three.module.js';
 import { loadGlb, mergeByMaterial, fitModel, tintModel, makeShellRack,
-  addEdgeOutlines, makeHeatSleeve } from './glbmodels.js?v=04ac6745';
-import { CREATURES, waveJelly, swimWave, spherePts, bulletPts, missilePts, heartPts, torusPts, towerHeadPts, enemyDotPts, portalPts } from './creatures.js?v=04ac6745';
-import { TOWER_FEEL, TOWER_HEADS, headKindFor } from './towerfeel.js?v=04ac6745';
+  addEdgeOutlines, makeHeatSleeve } from './glbmodels.js?v=5db4d283';
+import { CREATURES, waveJelly, swimWave, spherePts, bulletPts, missilePts, heartPts, torusPts, towerHeadPts, enemyDotPts, portalPts } from './creatures.js?v=5db4d283';
+import { TOWER_FEEL, TOWER_HEADS, headKindFor } from './towerfeel.js?v=5db4d283';
 import { STARGATE_PTS, STARGATE_STROKE,
-  HORIZON_N, stargateHorizon } from './stargate.js?v=04ac6745';
-import { ENEMY_SPEC } from './enemyspec.js?v=04ac6745';
+  HORIZON_N, stargateHorizon } from './stargate.js?v=5db4d283';
+import { ENEMY_SPEC } from './enemyspec.js?v=5db4d283';
 
 function normalizeToUnit(group) {
   group.updateMatrixWorld(true);
@@ -1278,6 +1278,38 @@ export function preloadContainer() {
     const cargo = scene.getObjectByName('Cargo_Group');
     if (cargo && cargo.parent) cargo.parent.remove(cargo); // empty the boxes
     hideCollisionNodes(scene);
+    // REPAINT (operator, 2026-08-31): the authored shell is near-black
+    // (baseColor ~0.06-0.12 linear), which is why nobody could tell a
+    // stocked berth from a spent one — the hull inside sat in a black box
+    // in a black room. Lighter industrial grey, walls brightest, frame a
+    // shade under them so the ribs still read, deck lighter still so a
+    // parked hull has something to be a silhouette AGAINST.
+    // Done on the PROTO: every container wears the same paint, so one
+    // shared material is correct here (unlike the lock lamps, which carry
+    // per-instance state and must be cloned).
+    // Base colour alone does NOT do it: the default look (tronColors) runs a
+    // hemi at 0.55 and a sun at 0.25, and a standard material under that
+    // light is near-black whatever you paint it. So each rung carries its
+    // own emissive — the house ladder from tintModel, applied by hand
+    // because these three names are the whole model.
+    const REPAINT = {
+      M_Armour: [0xb4bac0, 0x3a4046],  // walls, roof, door panels — the big surfaces
+      M_Steel: [0x7d848a, 0x23282c],   // posts, rails, headers, sills
+      M_Detail: [0x9aa0a4, 0x2e3236],  // floor deck, handles, cams
+    };
+    const painted = new Set();
+    scene.traverse((o) => {
+      if (!o.isMesh || !o.material) return;
+      for (const m of Array.isArray(o.material) ? o.material : [o.material]) {
+        const rung = REPAINT[m.name];
+        if (!rung || painted.has(m)) continue;
+        painted.add(m);
+        m.color.setHex(rung[0]);
+        if (m.emissive) m.emissive.setHex(rung[1]);
+        if (m.metalness !== undefined) m.metalness = Math.min(m.metalness, 0.4);
+        if (m.roughness !== undefined) m.roughness = Math.max(m.roughness, 0.62);
+      }
+    });
     // fit by height with a span cap (house rule): a container is ~1.5x
     // longer than tall, so the span cap is what binds — noted, not assumed
     containerProto = fitModel(scene, { height: 1, maxSpan: 1.6 });
@@ -1285,7 +1317,67 @@ export function preloadContainer() {
   });
   return containerLoad;
 }
-export function makeContainerFixture() {
+// --- container livery: hazard chevrons and a berth numeral ---------------
+// The canvas work is LAZY on purpose: units.js is Node-imported by
+// test/units.mjs, and `document` does not exist there. Nothing below runs
+// until a fixture is actually built, which only happens in a browser.
+//
+// Geometry note — the fitted proto measures z ±0.80 (long axis, doors at
+// +z), x ±0.32 (width), y 0 to 0.667 (height). Decals are added to the FIT
+// GROUP, so these are the coordinates they live in.
+const CONT_HALF_W = 0.32, CONT_HALF_L = 0.80, CONT_H = 0.667;
+let hazardTex = null;
+function hazardTexture() {
+  if (hazardTex) return hazardTex;
+  const c = document.createElement('canvas');
+  c.width = 128; c.height = 32;
+  const x = c.getContext('2d');
+  x.fillStyle = '#f0bf16'; x.fillRect(0, 0, 128, 32);
+  x.fillStyle = '#14120c';
+  // 45° bars on a 32px period across a 128px tile, so the tile wraps clean
+  for (let i = -1; i < 5; i++) {
+    const o = i * 32;
+    x.beginPath();
+    x.moveTo(o, 32); x.lineTo(o + 16, 32); x.lineTo(o + 48, 0); x.lineTo(o + 32, 0);
+    x.closePath(); x.fill();
+  }
+  hazardTex = new THREE.CanvasTexture(c);
+  hazardTex.wrapS = THREE.RepeatWrapping;
+  if (THREE.SRGBColorSpace) hazardTex.colorSpace = THREE.SRGBColorSpace;
+  return hazardTex;
+}
+const numeralTexes = new Map();
+function numeralTexture(n) {
+  if (numeralTexes.has(n)) return numeralTexes.get(n);
+  const c = document.createElement('canvas');
+  c.width = c.height = 256;
+  const x = c.getContext('2d');
+  x.fillStyle = '#f2ece0';
+  x.font = 'bold 210px "Helvetica Neue", Helvetica, Arial, sans-serif';
+  x.textAlign = 'center'; x.textBaseline = 'middle';
+  x.fillText(String(n), 128, 136);
+  // stencil bridges — two cut bars are what makes a painted numeral read as
+  // MILITARY rather than as a web font sitting on a box
+  x.globalCompositeOperation = 'destination-out';
+  x.fillRect(0, 78, 256, 13);
+  x.fillRect(0, 176, 256, 13);
+  x.globalCompositeOperation = 'source-over';
+  const tex = new THREE.CanvasTexture(c);
+  if (THREE.SRGBColorSpace) tex.colorSpace = THREE.SRGBColorSpace;
+  numeralTexes.set(n, tex);
+  return tex;
+}
+function hazardBand(w, h, tiles) {
+  const m = new THREE.MeshBasicMaterial({
+    map: hazardTexture().clone(), transparent: false, toneMapped: false,
+  });
+  m.map.needsUpdate = true;
+  m.map.wrapS = THREE.RepeatWrapping;
+  m.map.repeat.set(tiles, 1);
+  return new THREE.Mesh(new THREE.PlaneGeometry(w, h), m);
+}
+
+export function makeContainerFixture(number = 0) {
   if (!containerProto) { preloadContainer(); return null; }
   const g = containerProto.clone(true);
   // doors stand open: the counter must be readable at a glance
@@ -1302,6 +1394,58 @@ export function makeContainerFixture() {
       lamps.push(o);
     }
   });
+  // --- livery: hazard tape and the berth numeral --------------------------
+  // The numeral IS the lives read at range: three lit numbers, three hulls.
+  // A spent berth's number goes dark red, so the count is legible from the
+  // orbit camera without counting tanks you cannot resolve at that distance.
+  const numerals = [];
+  if (number > 0) {
+    const tex = numeralTexture(number);
+    const mkNumeral = (w, h) => {
+      const m = new THREE.MeshBasicMaterial({
+        map: tex, transparent: true, depthWrite: false, toneMapped: false,
+      });
+      const mesh = new THREE.Mesh(new THREE.PlaneGeometry(w, h), m);
+      numerals.push(mesh);
+      return mesh;
+    };
+    // both long sides, read from the lane
+    for (const sx of [1, -1]) {
+      const q = mkNumeral(0.42, 0.42);
+      q.position.set(sx * (CONT_HALF_W + 0.004), CONT_H * 0.56, -0.12);
+      q.rotation.y = sx > 0 ? Math.PI / 2 : -Math.PI / 2;
+      g.add(q);
+    }
+    // and the ROOF, which is the face the orbit camera actually sees.
+    // Counter-stretched in z because the fixture is squashed to 0.55 depth
+    // where it is placed — the same trick the racked hull uses.
+    const top = mkNumeral(0.40, 0.40 / 0.55);
+    top.position.set(0, CONT_H + 0.004, -0.10);
+    top.rotation.x = -Math.PI / 2;
+    g.add(top);
+  }
+  // hazard tape: the sill on both flanks, and the doorway frame you drive
+  // through — the industrial read, and it outlines the hole in the dark
+  for (const sx of [1, -1]) {
+    const band = hazardBand(CONT_HALF_L * 2 * 0.96, 0.075, 10);
+    band.position.set(sx * (CONT_HALF_W + 0.004), 0.055, 0);
+    band.rotation.y = sx > 0 ? Math.PI / 2 : -Math.PI / 2;
+    g.add(band);
+  }
+  {
+    const zf = CONT_HALF_L - 0.012;               // just inside the door plane
+    const header = hazardBand(CONT_HALF_W * 2, 0.055, 5);
+    header.position.set(0, CONT_H - 0.03, zf);
+    g.add(header);
+    for (const sx of [1, -1]) {
+      const post = hazardBand(0.055, CONT_H - 0.06, 4);
+      post.position.set(sx * (CONT_HALF_W - 0.028), (CONT_H - 0.06) / 2, zf);
+      post.material.map.rotation = Math.PI / 2;   // chevrons run up the post
+      post.material.map.center.set(0.5, 0.5);
+      g.add(post);
+    }
+  }
+
   let stocked = null;
   g.userData.setStocked = (on, cargoObj) => {
     if (stocked === on) return;
@@ -1313,6 +1457,18 @@ export function makeContainerFixture() {
       }
     }
     if (cargoObj) cargoObj.visible = on;
+  };
+  // the numeral runs on its OWN state: the lamps say "a spare is racked
+  // here", the number says "this life still exists". Berth 3 is empty from
+  // the first second of a run and its 3 is still lit — you are driving it.
+  let alive = null;
+  g.userData.setAlive = (on) => {
+    if (alive === on) return;
+    alive = on;
+    for (const q of numerals) {
+      q.material.color.setHex(on ? 0xffffff : 0x5e1b14);
+      q.material.opacity = on ? 1 : 0.65;
+    }
   };
   g.userData.kind = 'fixture';
   return g;

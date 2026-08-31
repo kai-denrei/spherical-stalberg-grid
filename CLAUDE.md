@@ -42,6 +42,11 @@ token — the corner badge was retired from the game view).
   so the main renderer is the only WebGL context), `?layout=N` (TD: print every HUD box and every overlap —
   headless will not lay out below ~500px, it lays out wide and CROPS, so
   rectangles are the only trustworthy way to check a phone layout),
+  `?cine=N` (park the cold open N seconds in — beats at ~1 / ~5 / ~7, and
+  it HOLDS there so the still lands on the beat you asked for; `?cine=0`
+  skips it), `?driveout=N` (TD: after the berths land, simulate N seconds
+  of motion from the berth and log the cells reached — `?tick` runs at init,
+  BEFORE the container model loads, so it cannot answer this),
   `?charge=0..1` (TD: park the wave clock inside the warning window —
   `?tick` drives motion, NOT the wave scheduler, so winding it forward
   leaves the countdown where it was),

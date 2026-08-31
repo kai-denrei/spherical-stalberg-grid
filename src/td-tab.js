@@ -19,31 +19,31 @@
 
 import * as THREE from '../vendor/three.module.js';
 import GUI from '../vendor/lil-gui.esm.js';
-import { generateSphereMesh, relax } from './grid.js?v=04ac6745';
-import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=04ac6745';
-import { mulberry32, randomSeed } from './rng.js?v=04ac6745';
-import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3, segKey } from './vec3.js?v=04ac6745';
-import { CREATURES, waveJelly } from './creatures.js?v=04ac6745';
-import { UNITS, UNIT_NAMES, buildUnit, buildCreature, preloadMkcx, preloadServer, makeServerFixture, makeShieldShell, preloadContainer, makeContainerFixture, makeBulletCloud, makeRewardSolid, makeShellSolid, makeDebris, makeDotBurst, makePortalCloud, makeHeartCloud, makeDotEnemy } from './units.js?v=04ac6745';
-import { LOOKS, LOOK_NAMES } from './looks.js?v=04ac6745';
-import { makeCellIndex } from './cellindex.js?v=04ac6745';
-import { CREATURE_TINTS, ENEMY_SPEC, INTROS, computeWavePlan } from './enemyspec.js?v=04ac6745';
-import { PICKUPS } from './pickups.js?v=04ac6745';
-import { rankFor, rankLabel, badgeSVG, killReq, eliteReq } from './ranks.js?v=04ac6745';
-import { makeScore } from './score.js?v=04ac6745';
-import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER } from './towers.js?v=04ac6745';
-import { makeEconomy, sellRefund } from './economy.js?v=04ac6745';
-import { makeBloom } from './postfx.js?v=04ac6745';
-import { TANK_FEEL, TANK_FEEL_KNOBS, makeTankFeel, stepTankFeel, landTankFeel, fireTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js?v=04ac6745';
-import { FEEL, loadFeel, saveFeel } from './feelstore.js?v=04ac6745';
+import { generateSphereMesh, relax } from './grid.js?v=5db4d283';
+import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=5db4d283';
+import { mulberry32, randomSeed } from './rng.js?v=5db4d283';
+import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3, segKey } from './vec3.js?v=5db4d283';
+import { CREATURES, waveJelly } from './creatures.js?v=5db4d283';
+import { UNITS, UNIT_NAMES, buildUnit, buildCreature, preloadMkcx, preloadServer, makeServerFixture, makeShieldShell, preloadContainer, makeContainerFixture, makeBulletCloud, makeRewardSolid, makeShellSolid, makeDebris, makeDotBurst, makePortalCloud, makeHeartCloud, makeDotEnemy } from './units.js?v=5db4d283';
+import { LOOKS, LOOK_NAMES } from './looks.js?v=5db4d283';
+import { makeCellIndex } from './cellindex.js?v=5db4d283';
+import { CREATURE_TINTS, ENEMY_SPEC, INTROS, computeWavePlan } from './enemyspec.js?v=5db4d283';
+import { PICKUPS } from './pickups.js?v=5db4d283';
+import { rankFor, rankLabel, badgeSVG, killReq, eliteReq } from './ranks.js?v=5db4d283';
+import { makeScore } from './score.js?v=5db4d283';
+import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER } from './towers.js?v=5db4d283';
+import { makeEconomy, sellRefund } from './economy.js?v=5db4d283';
+import { makeBloom } from './postfx.js?v=5db4d283';
+import { TANK_FEEL, TANK_FEEL_KNOBS, makeTankFeel, stepTankFeel, landTankFeel, fireTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js?v=5db4d283';
+import { FEEL, loadFeel, saveFeel } from './feelstore.js?v=5db4d283';
 import { STRIKE_KNOBS, makeStrike, makeStrikeParams, grantStrikes, stepStrike,
   toggleArm, paintTarget, launchStrike, stepFall, skipFall, fallProgress,
-  strikeDamage, retargetStrike, orbitProgress } from './strike.js?v=04ac6745';
-import { radarBasis, radarProject, radarBearing, sweepAngle, radarPhosphor } from './radar.js?v=04ac6745';
-import { BLOOM_GROUPS } from './bloomweights.js?v=04ac6745';
-import { TOWER_LOOK_NAMES, DEFAULT_TOWER_LOOK, buildTowerLook, preloadLook } from './towerlooks.js?v=04ac6745';
-import { makeAudio } from './audio.js?v=04ac6745';
-import { DEATH_KEYS } from './audiomanifest.js?v=04ac6745';
+  strikeDamage, retargetStrike, orbitProgress } from './strike.js?v=5db4d283';
+import { radarBasis, radarProject, radarBearing, sweepAngle, radarPhosphor } from './radar.js?v=5db4d283';
+import { BLOOM_GROUPS } from './bloomweights.js?v=5db4d283';
+import { TOWER_LOOK_NAMES, DEFAULT_TOWER_LOOK, buildTowerLook, preloadLook } from './towerlooks.js?v=5db4d283';
+import { makeAudio } from './audio.js?v=5db4d283';
+import { DEATH_KEYS } from './audiomanifest.js?v=5db4d283';
 
 export function initTdTab(root) {
   let active = false;
@@ -833,6 +833,12 @@ export function initTdTab(root) {
   function containerBlocked(ci) {
     return ci !== player.cur && lifeContainers.some((cc) => cc.ci === ci);
   }
+  // ...and while you are still IN a berth, the boxes either side of you do
+  // not crowd the exit. The margin test below treats a solid neighbour as a
+  // no-go shell around the lane, which between three boxes in a row leaves a
+  // gap the hull cannot thread — the second half of the operator's
+  // can't-get-out report. Clear of the berth, they go solid again.
+  const berthed = () => lifeContainers.some((cc) => cc.ci === player.cur);
   function freeBlocked(cand) {
     const ci = cellIndex(cand);
     // the SERVER is solid: a machine you can drive through is a prop, not
@@ -842,9 +848,11 @@ export function initTdTab(root) {
     // wide ground keeps the clipping margin; narrow halls trade a little
     // visual overlap for guaranteed passability
     const margin = cellSide * (openCount(ci) <= 3 ? 0.45 : 0.62);
+    const crowdedBy = berthed()
+      ? (nb) => dungeon.tags[nb] === BLOCKED || nb === serverCi
+      : (nb) => dungeon.tags[nb] === BLOCKED || nb === serverCi || containerBlocked(nb);
     for (const nb of graph.adj[ci]) {
-      if ((dungeon.tags[nb] === BLOCKED || nb === serverCi || containerBlocked(nb))
-        && dist3(cand, graph.centers[nb]) < margin) return true;
+      if (crowdedBy(nb) && dist3(cand, graph.centers[nb]) < margin) return true;
     }
     return unitBlocker(cand);
   }
@@ -939,6 +947,9 @@ export function initTdTab(root) {
   const manualActive = () => !autoMode;
 
   const camGoal = { pos: new THREE.Vector3(), quat: new THREE.Quaternion() };
+  // two more of the same, for blending between two framings (the cold open)
+  const cineA = { pos: new THREE.Vector3(), quat: new THREE.Quaternion() };
+  const cineB = { pos: new THREE.Vector3(), quat: new THREE.Quaternion() };
   const tmpObj = new THREE.Object3D();
   // lookAt convention trap: a plain Object3D faces +Z at the target, but a
   // camera renders down -Z (three.js special-cases isCamera in lookAt).
@@ -1206,21 +1217,34 @@ export function initTdTab(root) {
         const inRange = (c2) => dungeon.tags[c2] !== BLOCKED && c2 !== dungeon.spawn
           && dungeon.distToHeart[c2] >= 3 && dungeon.distToHeart[c2] <= 4;
         const open = (c2) => graph.adj[c2].filter((k2) => dungeon.tags[k2] !== BLOCKED).length;
+        // EVERY BERTH KEEPS A LANE (operator field report, 2026-08-31: a
+        // hull could not get out of the first box on its own, and auto mode
+        // sat there forever). Scoring for minimum openness was doing its job
+        // too well — a berth whose only open neighbours are its two sibling
+        // berths is a sealed garage, and each of the three gets used as the
+        // spawn as lives run down. So an escape lane is now a HARD
+        // requirement, and openness only breaks ties among chains that have
+        // one. It still hugs a wall; it can no longer wall itself in.
+        const escapes = (c2, chain) => graph.adj[c2]
+          .filter((k2) => dungeon.tags[k2] !== BLOCKED && !chain.includes(k2)).length;
         let best = null, bestScore = Infinity;
         for (let j = 0; j < dungeon.tags.length; j++) {
           if (!inRange(j)) continue;
           const nbs = graph.adj[j].filter(inRange);
           for (let a = 0; a < nbs.length; a++) {
             for (let b = a + 1; b < nbs.length; b++) {
+              const chain = [nbs[a], j, nbs[b]];
+              if (chain.some((c2) => escapes(c2, chain) === 0)) continue;
               const sc = open(nbs[a]) + open(j) + open(nbs[b]);
-              if (sc < bestScore) { bestScore = sc; best = [nbs[a], j, nbs[b]]; }
+              if (sc < bestScore) { bestScore = sc; best = chain; }
             }
           }
         }
         if (!best) return;
         const hc2 = graph.centers[dungeon.heart];
-        for (const ci of best) {
-          const g = makeContainerFixture();
+        for (let bi = 0; bi < best.length; bi++) {
+          const ci = best[bi];
+          const g = makeContainerFixture(bi + 1); // painted 1-2-3, left to right
           if (!g) break;
           const c = graph.centers[ci];
           const nrm2 = graph.normals[ci];
@@ -1238,7 +1262,12 @@ export function initTdTab(root) {
           tank.scale.setScalar(0.32);
           // counter-stretch: the parent's z-squash would flatten the hull
           tank.scale.z /= 0.55;
-          tank.position.set(0, 0.12, 0.05); // shown, near the doors
+          // AT THE DOORS, not in the middle (operator, 2026-08-31: you could
+          // not see there was a hull in there). The fitted box runs z ±0.80
+          // with the doors at +z and the hull is ~0.29 long in the same
+          // units, so 0.52 puts its nose on the door plane and its whole
+          // body in the light.
+          tank.position.set(0, 0.12, 0.52);
           g.add(tank);
           scene.add(g);
           lifeContainers.push({ obj: g, tanks: [tank], ci });
@@ -1247,8 +1276,34 @@ export function initTdTab(root) {
         // the FIRST SCENE: the opening hull drives out of its bay — if
         // the player has not yet gone anywhere, restage them at the doors
         if (t < 6 && player.moves <= 1) respawnPlayerAtSpawn();
+        beginOpening();   // the cold open has its subject now
+        // ?driveout=N — the operator's can't-get-out report, made testable.
+        // Headless cannot drive, and ?tick runs at init, BEFORE this model
+        // has loaded, so the one moment the question can be asked is here:
+        // simulate N seconds of auto motion from the berth and print the
+        // cells actually reached. A path of one cell means still stuck.
+        const doN = parseFloat(urlParams.get('driveout') || '0');
+        if (doN > 0) {
+          const from = player.cur;
+          const seen = [from];
+          for (let sT = 0; sT < doN; sT += 0.05) {
+            advanceMotion(0.05);
+            if (player.cur !== seen[seen.length - 1]) seen.push(player.cur);
+          }
+          placeActors();
+          console.log(`DRIVEOUT from=${from}`
+            + ` berthed=${lifeContainers.some((cc) => cc.ci === from)}`
+            + ` cells=${seen.length} path=${seen.join('>')}`
+            + ` next=${player.next} prog=${player.prog.toFixed(3)}`
+            + ` won=${player.won} down=${playerDown} free=${player.freeMode}`
+            + ` auto=${autoMode} exits=${openNeighbors(from).join('/')}`);
+        }
+        // escapes=a,b,c is the invariant the operator's can't-get-out report
+        // turned into a rule: every berth must show at least 1, or auto-nav
+        // has nowhere to steer and the hull sits in the box forever
         console.log(`CONTAINERS placed=${lifeContainers.length}`
-          + ` cells=${best.join(',')} spares=${Math.max(0, playerHP - 1)}`);
+          + ` cells=${best.join(',')} spares=${Math.max(0, playerHP - 1)}`
+          + ` escapes=${best.map((c2) => escapes(c2, best)).join(',')}`);
       });
       const gen = ++serverGen;
       preloadServer().then(() => {
@@ -1402,6 +1457,61 @@ export function initTdTab(root) {
   let revealLeft = 0;
   let revealDir = null;
   let revealCells = [];
+
+  // --- THE COLD OPEN -------------------------------------------------------
+  // Operator (2026-08-31): the run opens on a cinematic, tutorial or not.
+  // Three beats, and they are the three things a player needs to know before
+  // anything else: WHERE you are (pull back until the whole vessel is in
+  // frame), WHERE you start (dive onto the berth row), and WHO you are (the
+  // hero hull drives itself out of berth 3 while you watch).
+  //
+  // Beat three is not animation. Driving is unfrozen for it and the tank is
+  // on its own auto-nav — what you watch is the game playing itself for two
+  // seconds, which is also the honest way to prove the berth can be left.
+  const CINE_OUT = 3.0, CINE_DIVE = 3.4, CINE_WATCH = 2.6;
+  const CINE_LEN = CINE_OUT + CINE_DIVE + CINE_WATCH;
+  let cineLeft = 0, cineCi = -1, cineAfter = null, cineScrub = 0;
+  // ?cine=N also HOLDS the clock there, so a headless still can be taken
+  // at a named beat instead of wherever the virtual-time budget lands
+  let cineHold = false;
+  const cineRunning = () => cineLeft > 0;
+  let cinePending = null;   // the opening (manual/tutorial/briefing) it fronts
+
+  function startCinematic(after) {
+    if (!graph || !dungeon) { if (after) after(); return; }
+    // the berth the hull is actually sitting in — the one it will drive out
+    // of — falling back to the last placed, then to the Heart if the model
+    // never loaded
+    const berth = lifeContainers.find((cc) => cc.ci === player.cur);
+    cineCi = berth ? berth.ci
+      : (lifeContainers.length ? lifeContainers[lifeContainers.length - 1].ci
+        : dungeon.heart);
+    cineAfter = after || null;
+    cineLeft = Math.max(0.001, CINE_LEN - cineScrub);
+    cineScrub = 0;
+    addEventListener('keydown', cineSkipKey, true);
+    root.addEventListener('pointerdown', cineSkipTap, true);
+    snapCamera();       // no glide in: the cold open owns frame one
+  }
+  function endCinematic() {
+    if (cineLeft <= 0) return;
+    cineLeft = 0;
+    removeEventListener('keydown', cineSkipKey, true);
+    root.removeEventListener('pointerdown', cineSkipTap, true);
+    const a = cineAfter; cineAfter = null;
+    if (a) a();
+  }
+  // skippable by anything: a cinematic you cannot cut is a cinematic you
+  // resent the second time you see it
+  const cineSkipKey = (ev) => { ev.preventDefault(); ev.stopImmediatePropagation(); endCinematic(); };
+  const cineSkipTap = (ev) => { ev.stopImmediatePropagation(); endCinematic(); };
+  // called once, from wherever gets there first: the berths landing, or the
+  // safety net in the frame loop if the model never arrives
+  function beginOpening() {
+    if (!cinePending) return;
+    const after = cinePending; cinePending = null;
+    startCinematic(after);
+  }
   // AUTO DIRECTIVES: high-level orders for the wanderer
   const DIRECTIVES = ['wander', 'avoid', 'ram', 'conserve', 'home', 'portal'];
   const DIRECTIVE_LABEL = {
@@ -1575,6 +1685,63 @@ export function initTdTab(root) {
       tmpCam.up.set(t1[0], t1[1], t1[2]);
       tmpCam.lookAt(c[0], c[1], c[2]);
       camGoal.quat.copy(tmpCam.quaternion);
+      return;
+    }
+    if (cineLeft > 0) {
+      // THE COLD OPEN. Beat 1 pulls straight out along the berth's own
+      // normal — so the wide shot is still centred on the place it is about
+      // to dive back into, and the pull-back reads as one continuous move
+      // rather than two shots. Beat 2 blends that wide framing into a
+      // low three-quarter on the berth doors. Beat 3 holds it and lets go
+      // of the handbrake.
+      const e = CINE_LEN - cineLeft;
+      const smooth = (u) => u * u * (3 - 2 * u);
+      const bc = graph.centers[cineCi];
+      const bn = graph.normals[cineCi];
+      const ref = Math.abs(bn[1]) < 0.9 ? [0, 1, 0] : [1, 0, 0];
+      const wUp = norm3(cross3(bn, ref));
+      const wideAt = (r, out) => {
+        out.pos.set(bn[0] * r, bn[1] * r, bn[2] * r);
+        tmpCam.position.copy(out.pos);
+        tmpCam.up.set(wUp[0], wUp[1], wUp[2]);
+        tmpCam.lookAt(0, 0, 0);
+        out.quat.copy(tmpCam.quaternion);
+      };
+      // stand where the doors face (they open toward the Heart), low and
+      // close, so the hull rolls straight at the lens
+      let berthLook = add3(bc, scale3(bn, params.wallHeight * 0.55));
+      // beat 3 lets the look point drift onto the hull as it rolls out, so
+      // the shot ends on the tank rather than on the empty box it left
+      if (e > CINE_OUT + CINE_DIVE) {
+        const w = Math.min(1, (e - CINE_OUT - CINE_DIVE) / CINE_WATCH) * 0.85;
+        const pp = add3(player.pos, scale3(norm3(player.pos), params.wallHeight * 0.5));
+        berthLook = [0, 1, 2].map((i) => berthLook[i] + (pp[i] - berthLook[i]) * w);
+      }
+      const berthEye = add3(add3(bc, scale3(bn, params.wallHeight * 1.7 + cellSide * 0.55)),
+        scale3(tangentDirTo(cineCi, dungeon.heart), cellSide * 2.1));
+      if (e < CINE_OUT) {
+        wideAt(1.26 + (3.30 - 1.26) * smooth(e / CINE_OUT), camGoal);
+      } else {
+        // The dive does NOT slerp between two framings: that swings the
+        // subject out of frame in the middle, which is exactly what the
+        // first cut did. It moves the EYE and keeps looking at the berth
+        // the whole way down, so the box only ever grows. The seam with
+        // beat 1 is invisible because the wide eye sits ON the berth's
+        // normal — looking at the planet's centre and looking at the berth
+        // are the same direction from up there.
+        const u = e < CINE_OUT + CINE_DIVE
+          ? smooth((e - CINE_OUT) / CINE_DIVE) : 1;
+        const wide = scale3(bn, 3.30);
+        const eye = [0, 1, 2].map((i) => wide[i] + (berthEye[i] - wide[i]) * u);
+        // up rolls from the wide shot's tangent to the berth's normal —
+        // they are perpendicular, so a plain lerp behaves
+        const up = norm3([0, 1, 2].map((i) => wUp[i] + (bn[i] - wUp[i]) * u));
+        camGoal.pos.set(eye[0], eye[1], eye[2]);
+        tmpCam.position.copy(camGoal.pos);
+        tmpCam.up.set(up[0], up[1], up[2]);
+        tmpCam.lookAt(berthLook[0], berthLook[1], berthLook[2]);
+        camGoal.quat.copy(tmpCam.quaternion);
+      }
       return;
     }
     if (revealLeft > 0 && revealDir) {
@@ -4103,9 +4270,14 @@ export function initTdTab(root) {
     if (lifeContainers.length < 3) return;
     const spares = Math.max(0, playerHP - 1);
     lifeContainers.forEach((cc, i) => {
-      const stocked = i < spares;
-      if (cc.tanks[0]) cc.tanks[0].visible = stocked;
-      cc.obj.userData.setStocked(stocked, null);
+      // a RACKED hull is a spare you have not used; a LIT NUMBER is a life
+      // you still have, the one you are driving included. So berth 3 stands
+      // empty from the first second and still reads 3 — which is what the
+      // painted numerals are for (operator, 2026-08-31).
+      const racked = i < spares;
+      if (cc.tanks[0]) cc.tanks[0].visible = racked;
+      cc.obj.userData.setStocked(racked, null);
+      if (cc.obj.userData.setAlive) cc.obj.userData.setAlive(i < playerHP);
     });
   }
 
@@ -4804,11 +4976,18 @@ export function initTdTab(root) {
     player.pos = graph.centers[ci].slice();
     player.prog = 0;
     const exits = openNeighbors(ci);
-    let e0 = exits[0] ?? ci;
+    // NEVER AIM INTO A SIBLING BERTH. The three boxes stand in a row, so the
+    // cell straight ahead of a berth is usually another berth — and a
+    // respawn pointed at one either drives THROUGH the box on the graph or
+    // noses into a solid wall in free movement. Both are the operator's
+    // can't-get-out report.
+    const clear = exits.filter((e2) => !lifeContainers.some((cc) => cc.ci === e2));
+    const pick = clear.length ? clear : exits;
+    let e0 = pick[0] ?? ci;
     // OUTWARD, not heartward: you respawn defending, so you are pointed back
     // at the war. Beside the heart, "toward" would aim you into the thing
     // you are protecting.
-    for (const e of exits) {
+    for (const e of pick) {
       if (dungeon.distToHeart[e] === dungeon.distToHeart[ci] + 1) { e0 = e; break; }
     }
     player.next = e0;
@@ -4818,6 +4997,14 @@ export function initTdTab(root) {
     player.segLen = Math.max(1e-9, dist3(graph.centers[ci], graph.centers[e0]));
     throttle = 0; cruise = false; paintThrottle();
     stopEngine(0.1, true);
+    // A HULL LEAVING A BERTH DRIVES ITSELF OUT. Manual is the default mode
+    // and manual needs a held key, so a fresh hull sat in its box until the
+    // player worked out that it had to be driven through a gap between two
+    // solid containers from a standstill — which is the whole of the
+    // operator's report. Cruise is the existing rolls-on-its-own state, so
+    // this is not a new mode: the hull idles out of the doors and the
+    // driver takes the wheel the moment they steer.
+    if (fromContainer) { cruise = true; paintThrottle(); }
   }
 
   function heartHit(dmg = 1) {
@@ -5961,6 +6148,14 @@ export function initTdTab(root) {
     // wave clock, motion, combat — while ambient life (portal twinkle,
     // heart moods, debris) and the camera transition keep breathing.
     // Mid-assault the same toggle is camera-only.
+    if (cineLeft > 0) {
+      if (!cineHold) {
+        cineLeft -= dt;
+        if (cineLeft <= 0) endCinematic();
+      }
+    } else if (cinePending && t > 5) {
+      beginOpening();   // safety net: the berths never landed, open anyway
+    }
     if (revealLeft > 0) {
       revealLeft -= dt;
       if (revealLeft <= 0) {
@@ -5975,13 +6170,15 @@ export function initTdTab(root) {
     // first laser input thaws the frozen tutorial opening — checked BEFORE the
     // frozen gate, since updateLasers itself is skipped while frozen
     if (tutorial.frozen && keys.laser) { tutorial.frozen = false; hideTutBanner(); }
-    const frozen = buildFrozen() || revealLeft > 0 || tutorial.frozen;
+    const frozen = buildFrozen() || revealLeft > 0 || tutorial.frozen || cineLeft > 0;
     // The BUILD pause holds the WORLD still, not the DRIVER. Planning with
     // the tank parked where the last wave left it meant switching out of
     // build, repositioning, and switching back — three actions for one
     // intention. A reveal or a tutorial hold still stops everything, because
     // those are the game speaking and it should not be driven over.
-    const driveFrozen = revealLeft > 0 || tutorial.frozen;
+    // the cold open holds the hull for its first two beats and lets go for
+    // the third — beat three IS the tank driving itself out of the berth
+    const driveFrozen = revealLeft > 0 || tutorial.frozen || cineLeft > CINE_WATCH;
 
     bumpLeft = Math.max(0, bumpLeft - dt);
     recoilLeft = Math.max(0, recoilLeft - dt);
@@ -6504,18 +6701,33 @@ export function initTdTab(root) {
 
   // opening briefing on a clean load; any debug hook means headless/demo,
   // where a frozen sim would break the verification flow
-  const debugging = ['walk', 'tick', 'wave', 'blast', 'laser', 'found', 'recoil', 'mode', 'map', 'tower', 'biomass', 'credit', 'shop', 'sector', 'reveal', 'portal', 'lose', 'charge', 'layout', 'perf', 'strike', 'strikefall', 'strikecam', 'gateprobe', 'rank', 'danger', 'callout', 'sitrep', 'server', 'hack', 'shield', 'sim']
+  const debugging = ['walk', 'tick', 'wave', 'blast', 'laser', 'found', 'recoil', 'mode', 'map', 'tower', 'biomass', 'credit', 'driveout', 'shop', 'sector', 'reveal', 'portal', 'lose', 'charge', 'layout', 'perf', 'strike', 'strikefall', 'strikecam', 'gateprobe', 'rank', 'danger', 'callout', 'sitrep', 'server', 'hack', 'shield', 'sim']
     .some((k) => urlParams.get(k));
   const tutParam = urlParams.get('tutorial');
   runTutorial = tutParam === '1' || (tutParam !== '0' && !debugging);
   // ?intro=1 forces the manual even under debug hooks (screenshot path);
   // ?intro=0 skips it. On a clean load it fronts whatever comes next.
   const introParam = urlParams.get('intro');
-  if (introParam === '1') showIntro();
+  // THE COLD OPEN fronts all of it. ?cine=N scrubs N seconds into it (the
+  // screenshot path — beats land at ~1 / ~5 / ~8); ?cine=0 skips it. It is
+  // deliberately NOT gated on `debugging`: a hook like ?tick has no opinion
+  // about the opening, and the cinematic is the thing being verified.
+  const cineParam = urlParams.get('cine');
+  const wantCine = cineParam !== '0' && (cineParam !== null || !debugging);
+  let opening = null;
+  if (introParam === '1') opening = () => showIntro();
   else if (!debugging && introParam !== '0') {
-    showIntro(() => { if (runTutorial) startTutorial(); else showBriefing(); });
-  } else if (runTutorial) startTutorial();
-  else if (!debugging) showBriefing();
+    opening = () => showIntro(() => { if (runTutorial) startTutorial(); else showBriefing(); });
+  } else if (runTutorial) opening = () => startTutorial();
+  else if (!debugging) opening = () => showBriefing();
+
+  if (wantCine) {
+    // held until the berths land (or the frame loop's safety net fires) —
+    // the opening shot needs the thing it is a shot OF
+    cinePending = opening || (() => {});
+    const scrub = parseFloat(cineParam || '0');
+    if (scrub > 0) { cineScrub = scrub; cineHold = true; }
+  } else if (opening) opening();
 
   // ?tutstep=N — clear N scripted pairs, so the later tutorial beats can be
   // reached without a pair of hands. Every other phase here is gated on
