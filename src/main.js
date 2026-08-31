@@ -1,21 +1,22 @@
 // main.js — tab shell. Each tab lazily initializes its own renderer/scene the
 // first time it's shown and pauses (skips its loop body) while hidden.
 
-import { wireDevlogBadge } from './devlog.js?v=846df1be';
-import { initHomeTab } from './home-tab.js?v=846df1be';
-import { initGridTab } from './grid-tab.js?v=846df1be';
-import { initMazeTab } from './maze-tab.js?v=846df1be';
-import { initOrganicTab } from './organic-tab.js?v=846df1be';
-import { initBattleTab } from './battle-tab.js?v=846df1be';
-import { initHeartTab } from './heart-tab.js?v=846df1be';
-import { initTdTab } from './td-tab.js?v=846df1be';
-import { initTankTab } from './tank-tab.js?v=846df1be';
-import { initTank2Tab } from './tank2-tab.js?v=846df1be';
-import { initTank3Tab } from './tank3-tab.js?v=846df1be';
-import { initUnitsTab } from './units-tab.js?v=846df1be';
-import { initHowTab, initStackTab, initLogTab } from './how-tab.js?v=846df1be';
-import { initSimTab } from './sim-tab.js?v=846df1be';
-import { applyFontPack, DEFAULT_FONT } from './fonts.js?v=846df1be';
+import { wireDevlogBadge } from './devlog.js?v=b56e84c9';
+import { initHomeTab } from './home-tab.js?v=b56e84c9';
+import { initGridTab } from './grid-tab.js?v=b56e84c9';
+import { initMazeTab } from './maze-tab.js?v=b56e84c9';
+import { initOrganicTab } from './organic-tab.js?v=b56e84c9';
+import { initBattleTab } from './battle-tab.js?v=b56e84c9';
+import { initHeartTab } from './heart-tab.js?v=b56e84c9';
+import { initTdTab } from './td-tab.js?v=b56e84c9';
+import { initTankTab } from './tank-tab.js?v=b56e84c9';
+import { initTank2Tab } from './tank2-tab.js?v=b56e84c9';
+import { initTank3Tab } from './tank3-tab.js?v=b56e84c9';
+import { initUnitsTab } from './units-tab.js?v=b56e84c9';
+import { initHowTab, initStackTab, initLogTab } from './how-tab.js?v=b56e84c9';
+import { initSimTab } from './sim-tab.js?v=b56e84c9';
+import { applyFontPack, DEFAULT_FONT, DEFAULT_SHOUT_FONT, TYPE_FEEL,
+  makeTypeParams, clampTypeParams } from './fonts.js?v=b56e84c9';
 
 // The typeface pack is APP-WIDE and applied before any tab boots: it writes
 // custom properties onto <html>, and a tab that measures its own layout on
@@ -23,10 +24,20 @@ import { applyFontPack, DEFAULT_FONT } from './fonts.js?v=846df1be';
 // picks one (see FONT_PACKS); it also persists, because a look decision the
 // operator makes on a phone should survive the reload.
 {
-  const want = new URLSearchParams(location.search).get('font');
-  let saved = null;
-  try { saved = localStorage.getItem('ssg-font'); } catch (e) { /* private mode */ }
-  const pick = applyFontPack(want || saved || DEFAULT_FONT);
+  const q = new URLSearchParams(location.search);
+  const want = q.get('font');
+  const wantShout = q.get('fontshout');
+  let saved = null, savedShout = null, type = TYPE_FEEL;
+  try {
+    saved = localStorage.getItem('ssg-font');
+    savedShout = localStorage.getItem('ssg-font-shout');
+    // the tuned values too, through the schema's own clamp — otherwise the
+    // first paint uses the defaults and then jumps when a tab boots
+    const raw = localStorage.getItem('ssg-type');
+    if (raw) type = clampTypeParams(makeTypeParams(), JSON.parse(raw));
+  } catch (e) { /* private mode, or a blob from an older schema */ }
+  const pick = applyFontPack(want || saved || DEFAULT_FONT, document.documentElement,
+    type, wantShout || savedShout || DEFAULT_SHOUT_FONT);
   if (want) { try { localStorage.setItem('ssg-font', pick); } catch (e) { /* ignore */ } }
 }
 

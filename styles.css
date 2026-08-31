@@ -5,22 +5,22 @@
    back to a system face until the subset is rebuilt. */
 @font-face {
   font-family: 'VT323';
-  src: url('assets/fonts/VT323.woff2?v=846df1be') format('woff2');
+  src: url('assets/fonts/VT323.woff2?v=b56e84c9') format('woff2');
   font-weight: 400; font-style: normal; font-display: swap;
 }
 @font-face {
   font-family: 'Press Start 2P';
-  src: url('assets/fonts/PressStart2P.woff2?v=846df1be') format('woff2');
+  src: url('assets/fonts/PressStart2P.woff2?v=b56e84c9') format('woff2');
   font-weight: 400; font-style: normal; font-display: swap;
 }
 @font-face {
   font-family: 'Share Tech Mono';
-  src: url('assets/fonts/ShareTechMono.woff2?v=846df1be') format('woff2');
+  src: url('assets/fonts/ShareTechMono.woff2?v=b56e84c9') format('woff2');
   font-weight: 400; font-style: normal; font-display: swap;
 }
 @font-face {
   font-family: 'DotGothic16';
-  src: url('assets/fonts/DotGothic16.woff2?v=846df1be') format('woff2');
+  src: url('assets/fonts/DotGothic16.woff2?v=b56e84c9') format('woff2');
   font-weight: 400; font-style: normal; font-display: swap;
 }
 
@@ -35,11 +35,22 @@
      a desktop or whispering on a phone. vmin is the intent; the clamp on
      each end is the promise. src/fonts.js writes them, and the type tuner
      in the TD panel moves them live. */
-  --shout-unit: clamp(15px, 2.94vmin, 30px);
-  --ui-unit: clamp(11px, 1.30vmin, 15px);
+  /* SHOUT tier — the callouts and the ram ladder. Arcade, everything on. */
+  --font-shout: "Press Start 2P", "DotGothic16", ui-monospace, Menlo, monospace;
+  --shout-unit: clamp(20px, 1.98vmin, 34px);
+  --shout-scale: 0.72;
+  --shout-halo: -1.8px 0 0 #000, 1.8px 0 0 #000, 0 -1.8px 0 #000, 0 1.8px 0 #000,
+    0 2.10px 6px rgba(0, 0, 0, 0.22), -4px 0 0 rgba(255, 70, 70, 0.45),
+    4px 0 0 rgba(70, 150, 255, 0.45), 0 0 12px currentColor;
+  /* BANNER tier — the wave card, toasts, the defeat card. The same face as
+     the readout, and only the cast shadow: text you have to READ does not
+     want a misconverged beam or a hard outline through it. */
+  --font-banner: "VT323", "DotGothic16", ui-monospace, Menlo, monospace;
+  --banner-unit: clamp(20px, 3.52vmin, 34px);
+  --banner-scale: 1.28;
+  --banner-halo: 0 2.10px 6px rgba(0, 0, 0, 0.22);
+  --ui-unit: clamp(13px, 0.80vmin, 19px);
   --shout-track: 0.06em;
-  --shout-halo: 0 0 3px currentColor, 0 0 9px rgba(120, 255, 170, 0.35);
-  --shout-scale: 1.28;
   --ui-adjust: 0.53;
 }
 
@@ -139,7 +150,14 @@
       rgba(255, 255, 255, 0.012) 0 1px, transparent 1px 3px),
     radial-gradient(120% 130% at 40% 0%, #0a1712 0%, #04080a 70%);
 }
-.fb-block { padding: 10px 0 14px; border-bottom: 1px dashed rgba(47, 187, 96, 0.22); }
+.fb-block {
+  padding: 10px 0 14px;
+  border-bottom: 1px dashed rgba(47, 187, 96, 0.22);
+  /* the shout tier can be WIDER than the panel — an 8x8 bitmap face at
+     shout size is a long word. Scroll rather than clip: a cropped specimen
+     hides exactly the problem you would want the bench to show you. */
+  overflow-x: auto;
+}
 .fb-block:last-child { border-bottom: 0; }
 .fb-cap {
   margin: 0 0 8px;
@@ -768,8 +786,8 @@ html, body {
 @keyframes holo-sweep { 0% { transform: translateY(-120%); } 55%, 100% { transform: translateY(320%); } }
 
 .msg-head {
-  font-family: var(--font-shout);
-  font-size: calc(var(--shout-unit) * 0.48);
+  font-family: var(--font-banner);
+  font-size: calc(var(--banner-unit) * 0.48);
   letter-spacing: 0.32em;
   text-transform: uppercase;
   opacity: 0.85;
@@ -821,20 +839,20 @@ html, body {
 }
 #h-wave.hidden, #td-wave.hidden { display: none; }
 #h-wave .wave-num, #td-wave .wave-num, .wavebox .wave-num {
-  font-family: var(--font-shout);
+  font-family: var(--font-banner);
   --r: 0.48;
-  font-size: calc(var(--shout-unit) * var(--r));
+  font-size: calc(var(--banner-unit) * var(--r));
   letter-spacing: 0.32em;
   text-transform: uppercase;
   opacity: 0.8;
 }
 #h-wave .wave-name, #td-wave .wave-name, .wavebox .wave-name {
-  font-family: var(--font-shout);
+  font-family: var(--font-banner);
   --r: 0.90;
-  font-size: calc(var(--shout-unit) * var(--r));
+  font-size: calc(var(--banner-unit) * var(--r));
   letter-spacing: var(--shout-track);
   margin: 4px 0 2px;
-  text-shadow: var(--shout-halo);
+  text-shadow: var(--banner-halo);
 }
 #h-wave .wave-role, #td-wave .wave-role, .wavebox .wave-role {
   font-size: 12px;
@@ -848,12 +866,12 @@ html, body {
   height: 96px;
 }
 #h-wave .wave-ram, #td-wave .wave-ram, .wavebox .wave-ram {
-  font-family: var(--font-shout);
+  font-family: var(--font-banner);
   --r: 0.52;
-  font-size: calc(var(--shout-unit) * var(--r));
+  font-size: calc(var(--banner-unit) * var(--r));
   letter-spacing: 0.18em;
   margin-top: 5px;
-  text-shadow: var(--shout-halo);
+  text-shadow: var(--banner-halo);
 }
 
 /* --- tower-unlock toast (#td-tower) — own element so it never clobbers   */
@@ -880,20 +898,20 @@ html, body {
 }
 #td-tower.hidden { display: none; }
 #td-tower .wave-num {
-  font-family: var(--font-shout);
+  font-family: var(--font-banner);
   --r: 0.48;
-  font-size: calc(var(--shout-unit) * var(--r));
+  font-size: calc(var(--banner-unit) * var(--r));
   letter-spacing: 0.32em;
   text-transform: uppercase;
   opacity: 0.8;
 }
 #td-tower .wave-name {
-  font-family: var(--font-shout);
+  font-family: var(--font-banner);
   --r: 0.81;
-  font-size: calc(var(--shout-unit) * var(--r));
+  font-size: calc(var(--banner-unit) * var(--r));
   letter-spacing: var(--shout-track);
   margin: 4px 0 2px;
-  text-shadow: var(--shout-halo);
+  text-shadow: var(--banner-halo);
 }
 #td-tower .wave-role {
   font-size: calc(var(--ui-unit) * 0.92);
@@ -2575,9 +2593,9 @@ body.playing:not(.chrome-open) #tabbar { display: none !important; }
 .co-milestone {
   color: var(--p-white);
   --r: 1.28;
-  /* the one place the glow is allowed to run hot: a milestone is the
-     screen being over-driven, and that is the whole read */
-  text-shadow: 0 0 4px currentColor, 0 0 16px rgba(120, 255, 170, 0.55);
+  /* the milestone is bigger, not differently lit: one treatment across the
+     whole shout tier, so a rung and a shout read as the same machine */
+  text-shadow: var(--shout-halo);
 }
 @keyframes co-pop {
   0% { opacity: 0; transform: scale(1.9); }
@@ -2605,16 +2623,16 @@ body.playing:not(.chrome-open) #tabbar { display: none !important; }
   font-weight: bold;
   letter-spacing: var(--shout-track);
 }
-#td-combo[data-tier="0"], .combobox [data-tier="0"] { font-size: calc(var(--shout-unit) * 0.81); color: var(--p-green-dim); text-shadow: 0 0 5px rgba(47, 187, 96, 0.5); }
-#td-combo[data-tier="1"], .combobox [data-tier="1"] { font-size: calc(var(--shout-unit) * 1.05); color: var(--p-green); text-shadow: 0 0 7px rgba(51, 255, 119, 0.55); }
-#td-combo[data-tier="2"], .combobox [data-tier="2"] { font-size: calc(var(--shout-unit) * 1.33); color: var(--p-green-hot); text-shadow: 0 0 9px rgba(157, 255, 190, 0.6); }
-#td-combo[data-tier="3"], .combobox [data-tier="3"] { font-size: calc(var(--shout-unit) * 1.62); color: var(--p-white); text-shadow: 0 0 11px rgba(234, 255, 242, 0.65); }
-#td-combo[data-tier="4"], .combobox [data-tier="4"] { font-size: calc(var(--shout-unit) * 1.90); color: var(--p-blue-hot); text-shadow: 0 0 13px rgba(207, 230, 255, 0.7); }
+#td-combo[data-tier="0"], .combobox [data-tier="0"] { font-size: calc(var(--shout-unit) * 0.81); color: var(--p-green-dim); text-shadow: var(--shout-halo); }
+#td-combo[data-tier="1"], .combobox [data-tier="1"] { font-size: calc(var(--shout-unit) * 1.05); color: var(--p-green); text-shadow: var(--shout-halo); }
+#td-combo[data-tier="2"], .combobox [data-tier="2"] { font-size: calc(var(--shout-unit) * 1.33); color: var(--p-green-hot); text-shadow: var(--shout-halo); }
+#td-combo[data-tier="3"], .combobox [data-tier="3"] { font-size: calc(var(--shout-unit) * 1.62); color: var(--p-white); text-shadow: var(--shout-halo); }
+#td-combo[data-tier="4"], .combobox [data-tier="4"] { font-size: calc(var(--shout-unit) * 1.90); color: var(--p-blue-hot); text-shadow: var(--shout-halo); }
 #td-combo[data-tier="5"], .combobox [data-tier="5"] {
   /* the top rung is the tube giving up: full white, and it flickers */
   font-size: calc(var(--shout-unit) * 2.29);
   color: #ffffff;
-  text-shadow: 0 0 16px rgba(255, 255, 255, 0.85);
+  text-shadow: var(--shout-halo);
   animation: dg-flicker 0.14s steps(2) infinite;
 }
 #td-combo.pop { animation: combo-pop 0.2s ease-out; }
@@ -2993,12 +3011,12 @@ tr.sim-timeout td:nth-child(2), tr.sim-stalled td:nth-child(2) { color: #ffb000;
 
 /* --- the last transmission (game over) ----------------------------------- */
 .go-verdict {
-  font-family: var(--font-shout);
-  font-size: calc(var(--shout-unit) * 0.90);
+  font-family: var(--font-banner);
+  font-size: calc(var(--banner-unit) * 0.90);
   font-weight: bold;
   letter-spacing: var(--shout-track);
   color: var(--p-white);
-  text-shadow: var(--shout-halo);
+  text-shadow: var(--banner-halo);
   margin: 8px 0 2px;
   text-transform: uppercase;
 }
@@ -3143,11 +3161,11 @@ tr.sim-timeout td:nth-child(2), tr.sim-stalled td:nth-child(2) { color: #ffb000;
 .go-kinfo { margin-top: 5px; font-size: 12px; color: #cfe2ee; min-height: 18px; }
 .go-noram { color: #ff5340; font-weight: bold; }
 .go-snafu {
-  font-family: var(--font-shout);
-  font-size: calc(var(--shout-unit) * 0.62);
+  font-family: var(--font-banner);
+  font-size: calc(var(--banner-unit) * 0.62);
   font-weight: bold;
   letter-spacing: 0.22em;
-  text-shadow: var(--shout-halo);
+  text-shadow: var(--banner-halo);
   color: var(--p-blue);
   margin-top: 4px;
 }

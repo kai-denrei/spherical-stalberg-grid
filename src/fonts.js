@@ -15,7 +15,7 @@
 //
 // Pure data plus one thin effectful call — the standing testability line.
 
-import { makeParams, clampParams, formatKnobs } from './knobs.js?v=846df1be';
+import { makeParams, clampParams, formatKnobs } from './knobs.js?v=b56e84c9';
 
 const MONO = 'ui-monospace, "SF Mono", SFMono-Regular, Menlo, monospace';
 const CJK = '"DotGothic16"';   // the shared Japanese voice, appended everywhere
@@ -77,7 +77,16 @@ export const FONT_PACKS = {
 };
 
 export const FONT_NAMES = Object.keys(FONT_PACKS);
-export const DEFAULT_FONT = 'crt';
+
+// TWO TIERS, because they do different jobs and the operator tuned them
+// apart. The SHOUT tier — streak callouts and the ram ladder — is the
+// game's voice raised: arcade, and every effect on. The BANNER tier — the
+// wave card, toasts, the defeat card, the readout — is the game TALKING,
+// and text you have to read does not want a misconverged beam, a hard
+// outline or a 12px core bloom through it. Same knob values feed both; the
+// banner tier just zeroes the three that shout.
+export const DEFAULT_FONT = 'crt';          // banner + readout
+export const DEFAULT_SHOUT_FONT = 'arcade'; // callouts + ram ladder
 
 // --- HOW the type is DISPLAYED, as knobs ----------------------------------
 // The pack decides which face speaks. This decides how it is lit, and it is
@@ -90,21 +99,25 @@ export const DEFAULT_FONT = 'crt';
 // on both ends it is the same fraction of the screen everywhere, and the
 // clamp stops it going microscopic on a watch or absurd on a monitor.
 // Every message size in styles.css is a RATIO of the unit this produces.
+// Dialled on the bench by the operator, 2026-08-31. The four that carry the
+// effect are glow, bleed, shadow and ink — the halo turned out to be the one
+// nobody wanted, so it sits at zero.
 export const TYPE_FEEL = {
-  size: 2.30,      // vmin — the shout unit
-  sizeMin: 15,     // px floor
-  sizeMax: 30,     // px ceiling
-  uiSize: 1.30,    // vmin — the readout unit
-  uiMin: 11,
-  uiMax: 15,
-  track: 0.06,     // em of letter-spacing on the shout layer
-  glow: 3,         // px — the tight stop; it thickens the stroke
-  halo: 9,         // px — the wide wash; it sits the text ON the dark
-  haloA: 0.35,     // ...and how strongly
-  bleed: 0,        // px — misconverged beam: red left, blue right
-  shadow: 0,       // px — a real cast shadow, for busy ground
-  shadowA: 0.55,
-  ink: 0,          // px — a hard dark outline, the last resort for contrast
+  size:    2.75,               // shout size (vmin)
+  sizeMin: 20,                 // shout floor (px)
+  sizeMax: 34,                 // shout ceiling (px)
+  uiSize:  0.8,                // readout size (vmin)
+  uiMin:   13,                 // readout floor (px)
+  uiMax:   19,                 // readout ceiling (px)
+
+  track:   0.06,               // tracking (em)
+  glow:    12,                 // core glow
+  halo:    0,                  // halo spread
+  haloA:   0.5,                // halo strength
+  bleed:   4,                  // beam misconverge
+  shadow:  6,                  // cast shadow
+  shadowA: 0.22,               // shadow strength
+  ink:     1.8,                // dark outline
 };
 
 export const TYPE_KNOBS = [
@@ -155,22 +168,33 @@ export function shoutShadow(p, wash) {
 // Pure: the CSS custom properties a pack becomes. Node-testable, and it is
 // where a typo in a pack shows up as a failing test rather than as a font
 // that silently does not apply.
-export function fontVars(name, t = TYPE_FEEL) {
-  const p = FONT_PACKS[name] || FONT_PACKS[DEFAULT_FONT];
+export function fontVars(name, t = TYPE_FEEL, shoutName = DEFAULT_SHOUT_FONT) {
+  const b = FONT_PACKS[name] || FONT_PACKS[DEFAULT_FONT];
+  const sp = FONT_PACKS[shoutName] || FONT_PACKS[DEFAULT_SHOUT_FONT];
   // clamp() rather than a bare vmin: the middle term is the intent, and the
   // two ends are the promise that a phone never gets a whisper and a
   // monitor never gets a billboard
-  const unit = `clamp(${t.sizeMin}px, ${(t.size * p.scale).toFixed(2)}vmin, ${t.sizeMax}px)`;
-  const uiUnit = `clamp(${t.uiMin}px, ${t.uiSize.toFixed(2)}vmin, ${t.uiMax}px)`;
+  const unit = (scale) =>
+    `clamp(${t.sizeMin}px, ${(t.size * scale).toFixed(2)}vmin, ${t.sizeMax}px)`;
+  // the banner tier drops the three effects that shout: no misconverged
+  // beam, no hard outline, no core bloom. The cast shadow stays, because
+  // that is the one that helps you READ against a busy board.
+  const calm = { ...t, bleed: 0, ink: 0, glow: 0 };
   return {
-    '--font-shout': p.shout,
-    '--font-ui': p.ui,
-    '--shout-unit': unit,
-    '--ui-unit': uiUnit,
+    '--font-shout': sp.shout,
+    '--shout-unit': unit(sp.scale),
+    '--shout-scale': String(sp.scale),
+    '--shout-halo': shoutShadow(t, sp.wash),
+
+    '--font-banner': b.shout,
+    '--banner-unit': unit(b.scale),
+    '--banner-scale': String(b.scale),
+    '--banner-halo': shoutShadow(calm, b.wash),
+
+    '--font-ui': b.ui,
+    '--ui-unit': `clamp(${t.uiMin}px, ${t.uiSize.toFixed(2)}vmin, ${t.uiMax}px)`,
     '--shout-track': `${t.track}em`,
-    '--shout-halo': shoutShadow(t, p.wash),
-    '--shout-scale': String(p.scale),
-    '--ui-adjust': p.uiAdjust || 'none',
+    '--ui-adjust': b.uiAdjust || 'none',
   };
 }
 
@@ -180,12 +204,19 @@ export function currentFontPack(root = document.documentElement) {
   const d = root.dataset.font;
   return FONT_PACKS[d] ? d : DEFAULT_FONT;
 }
+export function currentShoutPack(root = document.documentElement) {
+  const d = root.dataset.fontShout;
+  return FONT_PACKS[d] ? d : DEFAULT_SHOUT_FONT;
+}
 
 // Thin and effectful: the only part that touches the document.
-export function applyFontPack(name, root = document.documentElement, t = TYPE_FEEL) {
+export function applyFontPack(name, root = document.documentElement, t = TYPE_FEEL,
+  shoutName = currentShoutPack(root)) {
   const pick = FONT_PACKS[name] ? name : DEFAULT_FONT;
-  const vars = fontVars(pick, t);
+  const shout = FONT_PACKS[shoutName] ? shoutName : DEFAULT_SHOUT_FONT;
+  const vars = fontVars(pick, t, shout);
   for (const [k, v] of Object.entries(vars)) root.style.setProperty(k, v);
   root.dataset.font = pick;
+  root.dataset.fontShout = shout;
   return pick;
 }

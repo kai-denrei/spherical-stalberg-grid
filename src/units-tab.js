@@ -14,23 +14,23 @@ import { OrbitControls } from '../vendor/OrbitControls.js';
 import { buildUnit, preloadMkcx, makeDebris, makeDotBurst, makeBulletCloud,
   makeDotEnemy, makeRewardSolid, makeShellSolid, makePortalCloud,
   preloadServer, makeServerFixture, preloadContainer, makeContainerFixture,
-  preloadFabricator, makeFabricatorDrone } from './units.js?v=846df1be';
+  preloadFabricator, makeFabricatorDrone } from './units.js?v=b56e84c9';
 import { TANK_FEEL, TANK_FEEL_KNOBS, formatFeelCode, makeTankFeel, stepTankFeel,
-  landTankFeel, fireTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js?v=846df1be';
+  landTankFeel, fireTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js?v=b56e84c9';
 import { FEEL, loadFeel, saveFeel, resetFeel,
-  TOWER, HEADS, loadTower, saveTower, resetTower } from './feelstore.js?v=846df1be';
+  TOWER, HEADS, loadTower, saveTower, resetTower } from './feelstore.js?v=b56e84c9';
 import { TOWER_FEEL_KNOBS, formatTowerFeel, clampTowerParams,
-  formatTowerHeads, HEAD_CHOICES, HEAD_AS_SHIPPED } from './towerfeel.js?v=846df1be';
-import { CREATURE_TINTS } from './enemyspec.js?v=846df1be';
+  formatTowerHeads, HEAD_CHOICES, HEAD_AS_SHIPPED } from './towerfeel.js?v=b56e84c9';
+import { CREATURE_TINTS } from './enemyspec.js?v=b56e84c9';
 import { buildTowerLook, TOWER_LOOK_NAMES, DEFAULT_TOWER_LOOK, preloadLook } from './towerlooks.js';
 import { TOWER_BY_KEY, TOWERS } from './towers.js';
 import { LOOKS } from './looks.js';
 import { makeBloom } from './postfx.js';
-import { makeAudio } from './audio.js?v=846df1be';
+import { makeAudio } from './audio.js?v=b56e84c9';
 import { GROUPS, GROUP_LABELS, GROUP_EMPTY, entriesIn } from './unitcatalog.js';
 import { FONT_NAMES, TYPE_KNOBS, TYPE_FEEL, makeTypeParams, clampTypeParams,
-  formatTypeCode, applyFontPack, currentFontPack, DEFAULT_FONT } from './fonts.js?v=846df1be';
-import { LORE, LORE_WORLD, loreText, loreAll } from './lore.js?v=846df1be';
+  formatTypeCode, applyFontPack, currentFontPack, currentShoutPack } from './fonts.js?v=b56e84c9';
+import { LORE, LORE_WORLD, loreText, loreAll } from './lore.js?v=b56e84c9';
 
 let roundTex = null;
 function roundDotTex() {
@@ -915,7 +915,7 @@ export function initUnitsTab(root) {
       if (raw) clampTypeParams(TYPE, JSON.parse(raw));
     } catch (e) { /* private mode, or a blob from an older schema */ }
     const applyType = () => {
-      applyFontPack(currentFontPack(), document.documentElement, TYPE);
+      applyFontPack(currentFontPack(), document.documentElement, TYPE, currentShoutPack());
     };
     const saveType = () => {
       try { localStorage.setItem('ssg-type', JSON.stringify(TYPE)); } catch (e) { /* ignore */ }
@@ -1085,22 +1085,35 @@ export function initUnitsTab(root) {
     const fontsPanel = root.querySelector('#units-fonts');
     const fontsOpen = root.querySelector('#units-fonts-open');
     if (fontsPanel && fontsOpen) {
+      // TWO faces, because the layer has two jobs. The shout tier is the
+      // game's voice raised; the banner tier is the game talking, and text
+      // you have to read wants a different face from text that hits you.
       const packSel = root.querySelector('#units-font-pack');
-      for (const n of FONT_NAMES) {
-        const o = document.createElement('option');
-        o.value = n; o.textContent = n;
-        packSel.appendChild(o);
+      const shoutSel = root.querySelector('#units-font-shout');
+      for (const sel of [packSel, shoutSel]) {
+        for (const n of FONT_NAMES) {
+          const o = document.createElement('option');
+          o.value = n; o.textContent = n;
+          sel.appendChild(o);
+        }
       }
       packSel.value = currentFontPack();
-      packSel.addEventListener('change', () => {
-        applyFontPack(packSel.value, document.documentElement, TYPE);
-        try { localStorage.setItem('ssg-font', packSel.value); } catch (e) { /* private mode */ }
-      });
+      shoutSel.value = currentShoutPack();
+      const setPacks = () => {
+        applyFontPack(packSel.value, document.documentElement, TYPE, shoutSel.value);
+        try {
+          localStorage.setItem('ssg-font', packSel.value);
+          localStorage.setItem('ssg-font-shout', shoutSel.value);
+        } catch (e) { /* private mode */ }
+      };
+      packSel.addEventListener('change', setPacks);
+      shoutSel.addEventListener('change', setPacks);
       const setFonts = (on) => {
         fontsPanel.classList.toggle('fonts-hidden', !on);
         fontsOpen.classList.toggle('on', on);
         if (on) {
           packSel.value = currentFontPack();
+          shoutSel.value = currentShoutPack();
           subject = SUBJECTS.type;
           titleEl.textContent = subject.title;
           build();
