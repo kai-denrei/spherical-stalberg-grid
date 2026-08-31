@@ -156,31 +156,18 @@ export const LORE = {
   },
 
   // --- towers -------------------------------------------------------------
-  bobby: {
-    name: 'FABRICATOR UNIT "BOBBY"',
-    tag: 'the industrial construction drone',
-    body: 'Four rotors, a reservoir, a pump, and a boom with a heated '
-      + 'nozzle on the end of it. Bobby prints every emplacement on this '
-      + 'shell out of rendered biomass, one at a time, at the pace the '
-      + 'material sets — which is the pace, and there is no arguing with '
-      + 'it. He flies at forty metres because forty metres is above '
-      + 'everything that has ever tried to bite him, and he has never once '
-      + 'been asked to be brave. Crews name their fabricators. This one '
-      + 'came out of the crate with BOBBY stencilled on the tank in a hand '
-      + 'nobody recognises, and no crew has been aboard S-9 in a very long '
-      + 'time.',
-    visual: 'industrial quadcopter fabrication drone, amber works-vehicle '
-      + 'paint scarred to bare metal, four ducted rotors on outrigger masts, '
-      + 'slung reservoir tank with a level sight, articulated boom arm '
-      + 'ending in a heated extruder nozzle trailing a bright filament of '
-      + 'molten material, hovering low over a half-printed gun emplacement, '
-      + 'night work lighting, hard sci-fi realism, 8k',
-  },
   isao: {
     name: 'FABRICATOR UNIT "ISAO"',
-    tag: 'the drone with a face',
-    body: 'The same airframe as Bobby with the sensor pod taken off and a '
-      + 'cathode-ray monitor bolted where it was. It is not a better sensor. '
+    tag: 'the industrial construction drone',
+    body: 'Four rotors, a reservoir of rendered biomass, a pump, and a boom '
+      + 'carrying a heated nozzle. It prints every emplacement on this shell, '
+      + 'one at a time, at the pace the material sets — which is the pace, '
+      + 'and there is no arguing with it. It flies at forty metres because '
+      + 'forty metres is above everything that has ever tried to bite it. '
+      + 'The unit came out of the crate with BOBBY stencilled on the tank in '
+      + 'a hand nobody recognises. It was renamed the week the sensor pod '
+      + 'came off and a cathode-ray monitor went on. It is not a better '
+      + 'sensor. '
       + 'It is a face — two eyes and a mouth on a 16x12 grid, because the '
       + 'unit has one font and no way to draw a curve — and it changes '
       + 'without being asked. Bored between waves. Busy over a print. Wide '

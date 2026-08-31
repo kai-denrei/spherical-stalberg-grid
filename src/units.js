@@ -15,13 +15,14 @@
 // tick(t) (idle animation) }.
 
 import * as THREE from '../vendor/three.module.js';
+import { EMOTION_IDS, emotion } from './emotions.js';
 import { loadGlb, mergeByMaterial, fitModel, tintModel, makeShellRack,
-  addEdgeOutlines, makeHeatSleeve } from './glbmodels.js?v=266f7220';
-import { CREATURES, waveJelly, swimWave, spherePts, bulletPts, missilePts, heartPts, torusPts, towerHeadPts, enemyDotPts, portalPts } from './creatures.js?v=266f7220';
-import { TOWER_FEEL, TOWER_HEADS, headKindFor } from './towerfeel.js?v=266f7220';
+  addEdgeOutlines, makeHeatSleeve } from './glbmodels.js?v=b8f3b1b2';
+import { CREATURES, waveJelly, swimWave, spherePts, bulletPts, missilePts, heartPts, torusPts, towerHeadPts, enemyDotPts, portalPts } from './creatures.js?v=b8f3b1b2';
+import { TOWER_FEEL, TOWER_HEADS, headKindFor } from './towerfeel.js?v=b8f3b1b2';
 import { STARGATE_PTS, STARGATE_STROKE,
-  HORIZON_N, stargateHorizon } from './stargate.js?v=266f7220';
-import { ENEMY_SPEC } from './enemyspec.js?v=266f7220';
+  HORIZON_N, stargateHorizon } from './stargate.js?v=b8f3b1b2';
+import { ENEMY_SPEC } from './enemyspec.js?v=b8f3b1b2';
 
 function normalizeToUnit(group) {
   group.updateMatrixWorld(true);
@@ -1569,53 +1570,50 @@ export function makeFabricatorDrone(tint = 0x8fd8ff) {
 // the lamp lives in a batch with other lit parts and cannot be removed
 // without taking them too. Scale-to-nothing is the honest way to drop one
 // welded part.
-const ISAO_FACES = ['happy', 'bored', 'scared', 'working', 'alert', 'hungry', 'off'];
-const isaoFaceTex = new Map();
-function isaoFace(name) {
-  if (isaoFaceTex.has(name)) return isaoFaceTex.get(name);
+// The face is drawn from the Braille lab's own matrices (src/emotions.js),
+// not from shapes invented here — the lab is where expressions are authored
+// and this is a renderer. Textures are cached per (id, frame), because a
+// static expression is one canvas for the life of the page and an animation
+// is four.
+const isaoTex = new Map();
+function isaoFaceTexture(id, frameIdx = 0) {
+  const key = `${id}:${frameIdx}`;
+  if (isaoTex.has(key)) return isaoTex.get(key);
+  const e = emotion(id);
+  const grid = e.frames[Math.min(frameIdx, e.frames.length - 1)];
+  const rows = grid.length, cols = grid[0].length;
+  // 4x the dot grid, so each dot is a crisp 4px block under NearestFilter
+  const DOT = 16, PAD = 8;
   const c = document.createElement('canvas');
-  c.width = 128; c.height = 96;
+  c.width = cols * DOT + PAD * 2;
+  c.height = rows * DOT + PAD * 2;
   const x = c.getContext('2d');
-  const P = '#7dff9e';           // phosphor
-  const bg = name === 'off' ? '#05100a' : '#08170f';
-  x.fillStyle = bg; x.fillRect(0, 0, 128, 96);
-  x.fillStyle = P;
-  // one pixel unit, so every face is built from the same grid — a machine
-  // that draws its own expressions does not have curves
-  const px = (gx, gy, w, h) => x.fillRect(gx * 8, gy * 8, w * 8, h * 8);
-  const eyes = {
-    happy:   () => { px(2, 3, 2, 2); px(12, 3, 2, 2); },
-    bored:   () => { px(2, 5, 2, 1); px(12, 5, 2, 1); },
-    scared:  () => { px(2, 2, 3, 4); px(11, 2, 3, 4); },
-    working: () => { px(2, 3, 3, 2); px(11, 3, 3, 2); },
-    alert:   () => { px(2, 2, 2, 4); px(12, 2, 2, 4); },
-    hungry:  () => { px(2, 3, 2, 2); px(12, 3, 2, 2); },
-    off:     () => {},
-  };
-  const mouths = {
-    // a smile, drawn as a stepped grin because that is what a grid gives you
-    happy:   () => { px(4, 7, 1, 1); px(5, 8, 6, 1); px(11, 7, 1, 1); },
-    bored:   () => { px(5, 8, 6, 1); },
-    scared:  () => { px(6, 7, 4, 3); },
-    working: () => { px(5, 8, 2, 1); px(9, 8, 2, 1); },
-    alert:   () => { px(4, 8, 8, 1); px(4, 7, 1, 1); px(11, 7, 1, 1); },
-    // biomass: an open mouth, and the machine leaning into it
-    hungry:  () => { px(5, 7, 6, 3); px(6, 6, 4, 1); },
-    off:     () => {},
-  };
-  (eyes[name] || eyes.bored)();
-  (mouths[name] || mouths.bored)();
-  if (name !== 'off') {
-    // scanlines LAST, over the drawing, because that is where they are
-    x.globalAlpha = 0.28;
-    x.fillStyle = '#000';
-    for (let y = 0; y < 96; y += 3) x.fillRect(0, y, 128, 1);
-    x.globalAlpha = 1;
+  x.fillStyle = '#07160e';
+  x.fillRect(0, 0, c.width, c.height);
+  // the dots: a bright core with a soft bleed, which is what a phosphor dot
+  // actually looks like and what stops an 8x8 face reading as a spreadsheet
+  for (let r = 0; r < rows; r++) {
+    for (let q = 0; q < cols; q++) {
+      if (!grid[r][q]) continue;
+      const cx = PAD + q * DOT + DOT / 2;
+      const cy = PAD + r * DOT + DOT / 2;
+      const g = x.createRadialGradient(cx, cy, 0, cx, cy, DOT * 0.8);
+      g.addColorStop(0, '#dfffe9');
+      g.addColorStop(0.35, '#7dff9e');
+      g.addColorStop(1, 'rgba(125, 255, 158, 0)');
+      x.fillStyle = g;
+      x.fillRect(cx - DOT, cy - DOT, DOT * 2, DOT * 2);
+    }
   }
+  // scanlines last, over the drawing, because that is where they are
+  x.globalAlpha = 0.3;
+  x.fillStyle = '#000';
+  for (let y = 0; y < c.height; y += 4) x.fillRect(0, y, c.width, 2);
+  x.globalAlpha = 1;
   const tex = new THREE.CanvasTexture(c);
   if (THREE.SRGBColorSpace) tex.colorSpace = THREE.SRGBColorSpace;
-  tex.magFilter = THREE.NearestFilter;   // a CRT is not smooth, it is coarse
-  isaoFaceTex.set(name, tex);
+  tex.magFilter = THREE.LinearFilter;   // the bleed IS the softness; keep it
+  isaoTex.set(key, tex);
   return tex;
 }
 
@@ -1640,13 +1638,13 @@ export function makeIsaoDrone(tint = 0xbfe6ff) {
   // the rotors already live in.
   const crt = new THREE.Group();
   const bezel = new THREE.Mesh(
-    new THREE.BoxGeometry(0.22, 0.17, 0.05),
+    new THREE.BoxGeometry(0.26, 0.21, 0.05),
     new THREE.MeshStandardMaterial({ color: 0x2b3138, roughness: 0.8, metalness: 0.2 }),
   );
   crt.add(bezel);
   const screen = new THREE.Mesh(
-    new THREE.PlaneGeometry(0.175, 0.13),
-    new THREE.MeshBasicMaterial({ map: isaoFace('bored'), toneMapped: false }),
+    new THREE.PlaneGeometry(0.215, 0.165),
+    new THREE.MeshBasicMaterial({ map: isaoFaceTexture('neutral', 0), toneMapped: false }),
   );
   screen.position.z = 0.026;
   crt.add(screen);
@@ -1656,15 +1654,30 @@ export function makeIsaoDrone(tint = 0xbfe6ff) {
   else crt.position.set(0, 0.42, 0.28);
   g.add(crt);
 
-  let face = 'bored';
-  g.userData.faces = ISAO_FACES;
+  let face = 'neutral', shownFrame = -1, faceClock = 0;
+  g.userData.faces = EMOTION_IDS;
   g.userData.setFace = (name) => {
-    if (!ISAO_FACES.includes(name) || face === name) return;
+    if (!EMOTION_IDS.includes(name) || face === name) return;
     face = name;
-    screen.material.map = isaoFace(name);
+    faceClock = 0;
+    shownFrame = -1;
+    g.userData.tickFace(0);
+  };
+  // Animated expressions (blink, scan) advance on their OWN declared fps
+  // rather than the frame rate — the lab authored them at a cadence and the
+  // cadence is part of the expression. A static face costs one comparison.
+  g.userData.tickFace = (dt) => {
+    faceClock += dt;
+    const e = emotion(face);
+    const idx = e.frames.length === 1
+      ? 0 : Math.floor(faceClock * e.fps) % e.frames.length;
+    if (idx === shownFrame) return;
+    shownFrame = idx;
+    screen.material.map = isaoFaceTexture(face, idx);
     screen.material.needsUpdate = true;
   };
   g.userData.getFace = () => face;
+  g.userData.tickFace(0);
   if (typeof location !== 'undefined' && new URLSearchParams(location.search).get('isao') === '1') {
     g.updateMatrixWorld(true);
     const bb = new THREE.Box3().setFromObject(g);

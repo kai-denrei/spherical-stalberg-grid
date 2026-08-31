@@ -14,23 +14,23 @@ import { OrbitControls } from '../vendor/OrbitControls.js';
 import { buildUnit, preloadMkcx, makeDebris, makeDotBurst, makeBulletCloud,
   makeDotEnemy, makeRewardSolid, makeShellSolid, makePortalCloud,
   preloadServer, makeServerFixture, preloadContainer, makeContainerFixture,
-  preloadFabricator, makeFabricatorDrone, makeIsaoDrone } from './units.js?v=266f7220';
+  preloadFabricator, makeFabricatorDrone, makeIsaoDrone } from './units.js?v=b8f3b1b2';
 import { TANK_FEEL, TANK_FEEL_KNOBS, formatFeelCode, makeTankFeel, stepTankFeel,
-  landTankFeel, fireTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js?v=266f7220';
+  landTankFeel, fireTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js?v=b8f3b1b2';
 import { FEEL, loadFeel, saveFeel, resetFeel,
-  TOWER, HEADS, loadTower, saveTower, resetTower } from './feelstore.js?v=266f7220';
+  TOWER, HEADS, loadTower, saveTower, resetTower } from './feelstore.js?v=b8f3b1b2';
 import { TOWER_FEEL_KNOBS, formatTowerFeel, clampTowerParams,
-  formatTowerHeads, HEAD_CHOICES, HEAD_AS_SHIPPED } from './towerfeel.js?v=266f7220';
-import { CREATURE_TINTS } from './enemyspec.js?v=266f7220';
+  formatTowerHeads, HEAD_CHOICES, HEAD_AS_SHIPPED } from './towerfeel.js?v=b8f3b1b2';
+import { CREATURE_TINTS } from './enemyspec.js?v=b8f3b1b2';
 import { buildTowerLook, TOWER_LOOK_NAMES, DEFAULT_TOWER_LOOK, preloadLook } from './towerlooks.js';
 import { TOWER_BY_KEY, TOWERS } from './towers.js';
 import { LOOKS } from './looks.js';
 import { makeBloom } from './postfx.js';
-import { makeAudio } from './audio.js?v=266f7220';
+import { makeAudio } from './audio.js?v=b8f3b1b2';
 import { GROUPS, GROUP_LABELS, GROUP_EMPTY, entriesIn } from './unitcatalog.js';
 import { FONT_NAMES, TYPE_KNOBS, TYPE_FEEL, makeTypeParams, clampTypeParams,
-  formatTypeCode, applyFontPack, currentFontPack, currentShoutPack } from './fonts.js?v=266f7220';
-import { LORE, LORE_WORLD, loreText, loreAll } from './lore.js?v=266f7220';
+  formatTypeCode, applyFontPack, currentFontPack, currentShoutPack } from './fonts.js?v=b8f3b1b2';
+import { LORE, LORE_WORLD, loreText, loreAll } from './lore.js?v=b8f3b1b2';
 
 let roundTex = null;
 function roundDotTex() {
@@ -271,7 +271,10 @@ export function initUnitsTab(root) {
             // an animation, so showing them means showing them in turn
             if (g.userData.setFace) {
               const f = g.userData.faces;
-              g.userData.setFace(f[Math.floor(t2 / 1.6) % f.length]);
+              g.userData.setFace(f[Math.floor(t2 / 1.8) % f.length]);
+              // and the animated ones need their own clock advanced, or
+              // blink and scan sit on frame zero forever
+              g.userData.tickFace(1 / 60);
             }
           };
         }

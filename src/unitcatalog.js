@@ -58,13 +58,10 @@ const PLAYER_UNITS = [
   // side with the machines he prints. kind:'fixture' because he is cast the
   // same way the server and the containers are — an authored .glb loaded
   // async, not a roster unit with a rig and a health bar.
-  { id: 'bobby', kind: 'fixture', label: 'bobby',
-    note: 'construction drone — four rotors, a biomass reservoir, and the boom that prints every tower',
-    sounds: [{ key: 'tower_upgrade', label: 'print' }] },
-  // ISAO is Bobby v2 and lives beside him rather than replacing him, so the
-  // two can be looked at together while the face earns its place.
+  // ISAO replaced BOBBY on the board (operator, 2026-08-31). The airframe is
+  // the same; the lamp head is a CRT, and the face earned it.
   { id: 'isao', kind: 'fixture', label: 'isao',
-    note: 'fabricator v2 — the lamp head swapped for a CRT that says what it thinks of the shift',
+    note: 'construction drone — prints every tower, and the CRT says what it thinks of the shift',
     sounds: [{ key: 'tower_upgrade', label: 'print' }] },
 ];
 
