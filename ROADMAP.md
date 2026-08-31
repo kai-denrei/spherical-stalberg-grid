@@ -278,6 +278,79 @@ design. Only the first is done.
   localStorage) and a place to display them; the rank insignia in
   `ranks.js` is the drawing idiom to copy.
 
+### Operator's list (captured 2026-08-31, evening)
+
+Five notes, none started. Two are design questions with a real tension in
+them, and the tension is worth naming before either gets built.
+
+**Kika-centroid as a fourth protocol.** A quick skill game where each
+PERFECT pays one orbital missile, four attempts.
+
+Source found: **`kai-denrei/KikaCentroid`** (the operator's own repo, live at
+kai-denrei.github.io/KikaCentroid). Build-free — `index.html`, `game.js` as
+one ES module, `styles.css` — so it vendors exactly the way the duel and the
+pazorukore games did. Two things it needs on the way in, both known:
+
+- **No bridge.** The duel exposes `window.__cx`, pazorukore exposes
+  `window.__pazoru`, and the parent reads the child's state through them
+  because same-origin means it can. KikaCentroid keeps its state in module
+  scope with nothing hung off `window` — its `phase` is
+  `idle|countdown|playing|downtime|recap` and it already tracks
+  `perfectStreak`, so the whole win condition is *there*, just not reachable.
+  One line upstream (`window.__kika = state`) and the existing poll pattern
+  works unchanged. It is the operator's repo, so upstream is the right place
+  — the same call that was made for pazorukore's seed.
+- **It registers a service worker** (`sw.js`, scope `./`). Vendored into a
+  subdirectory of a site that has its own cache-busting, that SW would claim
+  a scope and start serving its own stale copies — which is precisely the
+  conflict the PWA item further down is blocked on. Strip or neuter the
+  registration when vendoring, and note it in the copy so a re-vendor does
+  not quietly restore it.
+
+The design question it raises is not "does it fit" but **what it does to the
+missile economy**. A missile currently has two sources — the orbital charge
+clock, which is a rationing mechanism, and the black market, which is a
+biomass sink. A skill game paying missiles is a THIRD source answering to
+neither: not rationed by time, and it costs no biomass, so a player good at
+it is playing a different economy from one who is not. That may be exactly
+the intent (skill should pay) — but the four-attempt cap suggests the
+operator already senses it needs a bound. Decide what it competes with
+before wiring it in.
+
+**Isao's exposition scenes.** The cinematic register the CRT was designed
+for. Four beats named:
+
+0. how the drone's industrial 3D printing works — the tutorial for a
+   mechanic the game currently explains only by doing it slowly
+1. leaving one portal alive to the last wave, then dismantling/hacking it
+   for tower tech
+2. "I spotted a server room! You should check it out, it might have
+   interesting data for me to use"
+3. "bring me more Biomass!"
+
+Beats 0, 2 and 3 are cheap and want building: they are text plus a held
+face, and both halves already exist. Beat 2 in particular solves a real
+problem — the relay is at the far pole and nothing tells you it is there.
+
+**Beat 1 is the one to think hard about**, and the operator flagged it
+themselves. It cuts directly across what was just settled: gates are killable
+at any moment, and closing one early costs you the biomass and score that
+wave would have paid. Beat 1 adds a *second* reason to leave a gate standing,
+which turns a preference into a genuine dilemma — kill it for safety, keep it
+for income, keep it for TECH — and that is a better shape than what is there
+now. The cost is that it is a third rule to hold in your head about an object
+whose current rule is admirably short ("shoot it three times"). If it goes
+in, it should replace something rather than stack on top.
+
+**Voice, via fish audio on the operator's Ubuntu box.** The pipeline is
+already mechanical on this side: audio lands in `assets/audio/`, gets a line
+in `src/audiomanifest.js` (file, bus, gain, maxVoices, minInterval), and
+`sfx.play(key)` plays it. Voice lines want their own bus so they can duck
+the rest rather than fight it, and a `voice` bus is one entry in BUSES.
+Worth generating one line first and hearing it against a live wave before
+committing to a script — a delivery that works in isolation and not over a
+klaxon is the usual way this goes wrong.
+
 ### Rank-gated tank upgrades — *nice to have* (operator, 2026-08-31)
 
 The ladder in `ranks.js` currently pays in **respect only**: 15 ranks, hands-on
