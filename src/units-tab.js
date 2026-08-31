@@ -14,23 +14,23 @@ import { OrbitControls } from '../vendor/OrbitControls.js';
 import { buildUnit, preloadMkcx, makeDebris, makeDotBurst, makeBulletCloud,
   makeDotEnemy, makeRewardSolid, makeShellSolid, makePortalCloud,
   preloadServer, makeServerFixture, preloadContainer, makeContainerFixture,
-  preloadFabricator, makeFabricatorDrone } from './units.js?v=7965f1af';
+  preloadFabricator, makeFabricatorDrone } from './units.js?v=8bd87615';
 import { TANK_FEEL, TANK_FEEL_KNOBS, formatFeelCode, makeTankFeel, stepTankFeel,
-  landTankFeel, fireTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js?v=7965f1af';
+  landTankFeel, fireTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js?v=8bd87615';
 import { FEEL, loadFeel, saveFeel, resetFeel,
-  TOWER, HEADS, loadTower, saveTower, resetTower } from './feelstore.js?v=7965f1af';
+  TOWER, HEADS, loadTower, saveTower, resetTower } from './feelstore.js?v=8bd87615';
 import { TOWER_FEEL_KNOBS, formatTowerFeel, clampTowerParams,
-  formatTowerHeads, HEAD_CHOICES, HEAD_AS_SHIPPED } from './towerfeel.js?v=7965f1af';
-import { CREATURE_TINTS } from './enemyspec.js?v=7965f1af';
+  formatTowerHeads, HEAD_CHOICES, HEAD_AS_SHIPPED } from './towerfeel.js?v=8bd87615';
+import { CREATURE_TINTS } from './enemyspec.js?v=8bd87615';
 import { buildTowerLook, TOWER_LOOK_NAMES, DEFAULT_TOWER_LOOK, preloadLook } from './towerlooks.js';
 import { TOWER_BY_KEY, TOWERS } from './towers.js';
 import { LOOKS } from './looks.js';
 import { makeBloom } from './postfx.js';
-import { makeAudio } from './audio.js?v=7965f1af';
+import { makeAudio } from './audio.js?v=8bd87615';
 import { GROUPS, GROUP_LABELS, GROUP_EMPTY, entriesIn } from './unitcatalog.js';
 import { FONT_NAMES, TYPE_KNOBS, TYPE_FEEL, makeTypeParams, clampTypeParams,
-  formatTypeCode, applyFontPack, currentFontPack, currentShoutPack } from './fonts.js?v=7965f1af';
-import { LORE, LORE_WORLD, loreText, loreAll } from './lore.js?v=7965f1af';
+  formatTypeCode, applyFontPack, currentFontPack, currentShoutPack } from './fonts.js?v=8bd87615';
+import { LORE, LORE_WORLD, loreText, loreAll } from './lore.js?v=8bd87615';
 
 let roundTex = null;
 function roundDotTex() {
@@ -297,6 +297,82 @@ export function initUnitsTab(root) {
       return makeRewardSolid(p.shape, { body: p.body, hi: 0xffffff }, 1.7);
     }
     return buildUnit(e.id, cols);
+  }
+
+  // A LINK TO THIS EXACT UNIT. ?unit=<id> already deep-links; nothing
+  // surfaced it, so the only way to send someone a specific creature was to
+  // tell them which arrow to press how many times. The button writes the
+  // whole URL — origin, path, query, hash — so it survives being pasted
+  // anywhere, and it falls back to selecting the text when the clipboard is
+  // denied (it is, over plain http on anything but localhost).
+  const linkBtn = root.querySelector('#units-link');
+  function unitUrl(e) {
+    const u = new URL(location.href);
+    u.search = '';
+    u.searchParams.set('unit', e.id);
+    u.hash = '#units';
+    return u.toString();
+  }
+  if (linkBtn) {
+    const lab = linkBtn.querySelector('.label');
+    let revert = 0;
+    linkBtn.addEventListener('click', async () => {
+      if (!currentEntry) return;
+      clearTimeout(revert);
+      const url = unitUrl(currentEntry);
+      try {
+        await navigator.clipboard.writeText(url);
+        linkBtn.classList.add('ok'); lab.textContent = 'copied';
+      } catch {
+        // no clipboard: put it somewhere it can be copied by hand rather
+        // than failing silently
+        linkBtn.classList.add('fail'); lab.textContent = 'see console';
+        console.log(url);
+      }
+      revert = setTimeout(() => {
+        linkBtn.classList.remove('ok', 'fail'); lab.textContent = 'link';
+      }, 1500);
+    });
+  }
+
+  // ?uvlayout=1 — rectangles for the viewer chrome, because a phone layout
+  // CANNOT be checked by screenshot here: headless clamps the window to
+  // ~500px and then crops the image to the size you asked for, so a row
+  // that fits reads as overflowing and vice versa. Same lesson the TD tab
+  // wrote down; this tab needed its own probe to apply it.
+  const uvl = new URLSearchParams(location.search).get('uvlayout');
+  if (uvl) {
+    // ?uvlayout=390 FORCES the chrome to a phone width first. Headless will
+    // not give a viewport under ~500px, so the only way to answer "does this
+    // fit a phone" is to hand the rows a 390px box and measure them in it.
+    const forced = parseInt(uvl, 10);
+    if (forced > 100) {
+      const c = root.querySelector('#units-chrome');
+      c.style.width = `${forced}px`;
+      c.style.left = '50%';
+      c.style.right = 'auto';
+      c.style.transform = 'translateX(-50%)';
+    }
+    setTimeout(() => {
+      const box = forced > 100 ? forced : innerWidth;
+      const orig = root.querySelector('#units-chrome').getBoundingClientRect();
+      const want = { chrome: '#units-chrome', stage: '#units-stage',
+        groups: '#units-groups', id: '#units-id', note: '#units-note',
+        opts: '#units-opts', prev: '#units-prev', next: '#units-next',
+        link: '#units-link', sounds: '#units-sounds' };
+      let over = 0;
+      for (const [k, sel] of Object.entries(want)) {
+        const el = root.querySelector(sel);
+        if (!el || getComputedStyle(el).display === 'none') continue;
+        const r = el.getBoundingClientRect();
+        if (r.width < 1) continue;
+        const bad = r.left < orig.left - 1 || r.right > orig.right + 1;
+        if (bad) over++;
+        console.log(`UVLAYOUT ${k.padEnd(7)} x ${Math.round(r.left)}..${Math.round(r.right)}`
+          + `  y ${Math.round(r.top)}..${Math.round(r.bottom)}${bad ? '  ** OFFSCREEN **' : ''}`);
+      }
+      console.log(`UVLAYOUT box=${box}px (real viewport ${innerWidth}) — ${over} overflowing`);
+    }, 1200);
   }
 
   function show() {

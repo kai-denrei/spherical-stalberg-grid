@@ -24,7 +24,7 @@ import { ShaderPass } from '../vendor/ShaderPass.js';
 import { OutputPass } from '../vendor/OutputPass.js';
 import * as THREE from '../vendor/three.module.js';
 import { buildWeightMap, materialConflicts, clampWeight, DEFAULT_BLOOM_WEIGHTS }
-  from './bloomweights.js?v=7965f1af';
+  from './bloomweights.js?v=8bd87615';
 
 const COARSE = typeof matchMedia === 'function'
   && matchMedia('(pointer: coarse)').matches;
