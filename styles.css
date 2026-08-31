@@ -5,34 +5,56 @@
    back to a system face until the subset is rebuilt. */
 @font-face {
   font-family: 'VT323';
-  src: url('assets/fonts/VT323.woff2?v=13c585f2') format('woff2');
+  src: url('assets/fonts/VT323.woff2?v=991ddfda') format('woff2');
   font-weight: 400; font-style: normal; font-display: swap;
 }
 @font-face {
   font-family: 'Press Start 2P';
-  src: url('assets/fonts/PressStart2P.woff2?v=13c585f2') format('woff2');
+  src: url('assets/fonts/PressStart2P.woff2?v=991ddfda') format('woff2');
   font-weight: 400; font-style: normal; font-display: swap;
 }
 @font-face {
   font-family: 'Share Tech Mono';
-  src: url('assets/fonts/ShareTechMono.woff2?v=13c585f2') format('woff2');
+  src: url('assets/fonts/ShareTechMono.woff2?v=991ddfda') format('woff2');
   font-weight: 400; font-style: normal; font-display: swap;
 }
 @font-face {
   font-family: 'DotGothic16';
-  src: url('assets/fonts/DotGothic16.woff2?v=13c585f2') format('woff2');
+  src: url('assets/fonts/DotGothic16.woff2?v=991ddfda') format('woff2');
   font-weight: 400; font-style: normal; font-display: swap;
 }
 
 /* The five knobs a font pack sets (src/fonts.js writes them onto <html>).
-   These defaults are the `field` pack, so the stylesheet stands up alone if
-   the module never runs. */
+   These defaults are the `crt` pack — the shipped default — so the
+   stylesheet stands up alone if the module never runs. */
 :root {
-  --font-shout: "Share Tech Mono", "DotGothic16", ui-monospace, Menlo, monospace;
-  --font-ui: "Share Tech Mono", "DotGothic16", ui-monospace, Menlo, monospace;
-  --shout-track: 0.12em;
-  --shout-halo: 0 0 5px currentColor, 0 0 15px rgba(120, 220, 200, 0.3);
-  --shout-scale: 1.06;
+  --font-shout: "VT323", "DotGothic16", ui-monospace, Menlo, monospace;
+  --font-ui: "VT323", "DotGothic16", ui-monospace, Menlo, monospace;
+  --shout-track: 0.06em;
+  --shout-halo: 0 0 3px currentColor, 0 0 9px rgba(120, 255, 170, 0.35);
+  --shout-scale: 1.28;
+  --ui-adjust: 0.53;
+}
+
+/* --- CRT PHOSPHOR PALETTE ------------------------------------------------
+   Operator's call (2026-08-31): the message layer sticks to what a cathode
+   ray tube can actually make — P1 green, white, and the blue. Which means
+   escalation has to be carried by BRIGHTNESS rather than by hue, because
+   that is how a phosphor behaves: drive it harder and it whitens. So the
+   ram ladder runs dim green -> green -> hot green -> white -> blue-white,
+   and never reaches for the red no green screen ever had.
+
+   The channel split that falls out of it is worth keeping: GREEN is you and
+   your board, WHITE is the loudest thing on screen right now, BLUE is a
+   subsystem that is not you (Bobby) or a state that is over (the death
+   card). Three phosphors, three meanings. */
+:root {
+  --p-green: #33ff77;
+  --p-green-dim: #2fbb60;
+  --p-green-hot: #9dffbe;
+  --p-white: #eafff2;
+  --p-blue: #66b8ff;
+  --p-blue-hot: #cfe6ff;
 }
 
 /* kill iOS double-tap zoom EVERYWHERE: touch-action does NOT inherit, so
@@ -365,19 +387,21 @@ html, body {
   text-shadow: 0 1px 3px rgba(0, 0, 0, 0.9);
 }
 
-/* BOBBY's row: the works-vehicle amber he is painted in, so the status and
-   the machine on the board are obviously the same thing */
+/* BOBBY's row takes the BLUE phosphor. He is a subsystem, not you — and on
+   a screen where green is your board, a second colour is what says the
+   sentence is about somebody else. */
 .hud-bobby {
-  color: #ffc24a;
+  color: var(--p-blue);
   letter-spacing: 0.04em;
 }
 
-/* the biomass line is the LOUD line: money-orange, glowing */
+/* the biomass line is the LOUD line — hot green, the way a terminal shows
+   the number you are spending. White is kept back for the alert row. */
 .hud-biomass {
-  color: #ffb000;
+  color: var(--p-green-hot);
   font-size: 15px;
   font-weight: bold;
-  text-shadow: 0 0 9px rgba(255, 176, 0, 0.55);
+  text-shadow: 0 0 7px rgba(157, 255, 190, 0.5);
 }
 
 /* GAMEPLAY tips block — lives in the briefing and pause modals only */
@@ -1070,12 +1094,12 @@ html, body {
   font-size: 13px;
   font-size-adjust: var(--ui-adjust, none);
   line-height: 1.5;
-  color: #cfe9ff;
-  background: rgba(6, 14, 22, 0.82);
-  border: 1px solid #35ffd0;
+  color: var(--p-green-hot);
+  background: rgba(4, 14, 9, 0.84);
+  border: 1px solid var(--p-green-dim);
   border-radius: 12px;
   padding: 10px 18px;
-  text-shadow: 0 0 8px rgba(53, 255, 208, 0.4);
+  text-shadow: 0 0 5px rgba(157, 255, 190, 0.35);
   pointer-events: none;
 }
 #td-toast.hidden { display: none; }
@@ -2377,13 +2401,17 @@ body.playing:not(.chrome-open) #tabbar { display: none !important; }
   margin: 2px 0;
   animation: co-pop 1.2s ease-out forwards;
 }
-.co-reckless { color: #ffb347; text-shadow: 0 0 12px rgba(255, 179, 71, 0.7); }
-.co-heart { color: #ff5340; text-shadow: 0 0 12px rgba(255, 83, 64, 0.7); }
-.co-streak { color: #9ff8ff; text-shadow: 0 0 12px rgba(159, 248, 255, 0.6); }
+/* Three shouts, three phosphors — the halo comes from the pack now, so a
+   callout never carries a glow the rest of the layer does not. */
+.co-reckless { color: var(--p-green); }
+.co-heart { color: var(--p-white); }
+.co-streak { color: var(--p-blue); }
 .co-milestone {
-  color: #ff2df0;
-  font-size: 27px;
-  text-shadow: 0 0 16px rgba(255, 45, 240, 0.8);
+  color: var(--p-white);
+  font-size: calc(27px * var(--shout-scale));
+  /* the one place the glow is allowed to run hot: a milestone is the
+     screen being over-driven, and that is the whole read */
+  text-shadow: 0 0 4px currentColor, 0 0 16px rgba(120, 255, 170, 0.55);
 }
 @keyframes co-pop {
   0% { opacity: 0; transform: scale(1.9); }
@@ -2405,15 +2433,16 @@ body.playing:not(.chrome-open) #tabbar { display: none !important; }
   text-shadow: var(--shout-halo);
 }
 #td-combo.hidden { display: none; }
-#td-combo[data-tier="0"] { font-size: calc(17px * var(--shout-scale)); color: #ffffff; text-shadow: 0 0 8px rgba(255, 255, 255, 0.5); }
-#td-combo[data-tier="1"] { font-size: calc(22px * var(--shout-scale)); color: #ffe066; text-shadow: 0 0 10px rgba(255, 224, 102, 0.7); }
-#td-combo[data-tier="2"] { font-size: calc(28px * var(--shout-scale)); color: #ffaa44; text-shadow: 0 0 13px rgba(255, 170, 68, 0.8); }
-#td-combo[data-tier="3"] { font-size: calc(34px * var(--shout-scale)); color: #ff6633; text-shadow: 0 0 16px rgba(255, 102, 51, 0.85); }
-#td-combo[data-tier="4"] { font-size: calc(40px * var(--shout-scale)); color: #ff3322; text-shadow: 0 0 20px rgba(255, 51, 34, 0.9); }
+#td-combo[data-tier="0"] { font-size: calc(17px * var(--shout-scale)); color: var(--p-green-dim); text-shadow: 0 0 5px rgba(47, 187, 96, 0.5); }
+#td-combo[data-tier="1"] { font-size: calc(22px * var(--shout-scale)); color: var(--p-green); text-shadow: 0 0 7px rgba(51, 255, 119, 0.55); }
+#td-combo[data-tier="2"] { font-size: calc(28px * var(--shout-scale)); color: var(--p-green-hot); text-shadow: 0 0 9px rgba(157, 255, 190, 0.6); }
+#td-combo[data-tier="3"] { font-size: calc(34px * var(--shout-scale)); color: var(--p-white); text-shadow: 0 0 11px rgba(234, 255, 242, 0.65); }
+#td-combo[data-tier="4"] { font-size: calc(40px * var(--shout-scale)); color: var(--p-blue-hot); text-shadow: 0 0 13px rgba(207, 230, 255, 0.7); }
 #td-combo[data-tier="5"] {
+  /* the top rung is the tube giving up: full white, and it flickers */
   font-size: calc(48px * var(--shout-scale));
-  color: #ff2df0;
-  text-shadow: 0 0 26px rgba(255, 45, 240, 0.95);
+  color: #ffffff;
+  text-shadow: 0 0 16px rgba(255, 255, 255, 0.85);
   animation: dg-flicker 0.14s steps(2) infinite;
 }
 #td-combo.pop { animation: combo-pop 0.2s ease-out; }
@@ -2503,7 +2532,8 @@ body.playing:not(.chrome-open) #tabbar { display: none !important; }
 .hud-wave { color: #d6ffdf; letter-spacing: 0.06em; }
 .hud-wave b { font-size: 16px; }
 .hud-obj { font-size: 11px; color: #4fae63; }
-.hud-alert { font-size: 11px; color: #ffb000; text-shadow: 0 0 8px rgba(255, 176, 0, 0.4); letter-spacing: 0.08em; }
+/* the one white row: an alert is the brightest thing the tube can do */
+.hud-alert { font-size: 11px; color: var(--p-white); text-shadow: 0 0 8px rgba(234, 255, 242, 0.5); letter-spacing: 0.08em; }
 
 /* mode row joins the console family. Two clusters encoded by tint alone —
    camera controls cyan (the tank's color), system controls green — so the
@@ -2795,7 +2825,7 @@ tr.sim-timeout td:nth-child(2), tr.sim-stalled td:nth-child(2) { color: #ffb000;
   font-size: calc(19px * var(--shout-scale));
   font-weight: bold;
   letter-spacing: var(--shout-track);
-  color: #ffb000;
+  color: var(--p-white);
   text-shadow: var(--shout-halo);
   margin: 8px 0 2px;
   text-transform: uppercase;
@@ -2943,6 +2973,6 @@ tr.sim-timeout td:nth-child(2), tr.sim-stalled td:nth-child(2) { color: #ffb000;
   font-weight: bold;
   letter-spacing: 0.22em;
   text-shadow: var(--shout-halo);
-  color: #ff5340;
+  color: var(--p-blue);
   margin-top: 4px;
 }

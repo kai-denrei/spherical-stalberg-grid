@@ -20,6 +20,7 @@ const CJK = '"DotGothic16"';   // the shared Japanese voice, appended everywhere
 
 export const FONT_PACKS = {
   // the baseline, kept so a candidate can be judged against what shipped
+  // (it is no longer the default — `crt` is, by operator's call)
   system: {
     label: 'system mono',
     shout: `${CJK}, ${MONO}`,
@@ -27,7 +28,7 @@ export const FONT_PACKS = {
     track: '0.14em',
     // a halo, not a glow: two stops, the near one tight enough to thicken
     // the stroke and the far one wide enough to sit the text ON the dark
-    halo: '0 0 6px currentColor, 0 0 16px rgba(120, 200, 255, 0.28)',
+    halo: '0 0 4px currentColor, 0 0 10px rgba(120, 200, 255, 0.18)',
     scale: 1,
     // font-size-adjust normalises x-height across families, so a UI
     // surface does not shrink when the pack changes. `none` = leave the
@@ -41,9 +42,11 @@ export const FONT_PACKS = {
     shout: `"VT323", ${CJK}, ${MONO}`,
     ui: `"VT323", ${CJK}, ${MONO}`,
     track: '0.06em',
-    // VT323 is a thin face at size; the halo does structural work here, not
-    // just atmosphere, so the near stop is brighter than the others
-    halo: '0 0 4px currentColor, 0 0 14px currentColor, 0 0 30px rgba(90, 220, 255, 0.3)',
+    // VT323 is a thin face at size, so the near stop still does structural
+    // work — but the operator wanted the glow pulled back, and a phosphor
+    // bloom that wide was reading as blur rather than as light. One tight
+    // stop to thicken the stroke, one short green wash, and stop.
+    halo: '0 0 3px currentColor, 0 0 9px rgba(120, 255, 170, 0.35)',
     scale: 1.28,   // its cap height runs small — matched by eye, not by math
     uiAdjust: '0.53',   // VT323's x-height is ~0.40; without this the HUD shrinks
   },
@@ -54,7 +57,7 @@ export const FONT_PACKS = {
     shout: `"Press Start 2P", ${CJK}, ${MONO}`,
     ui: `${CJK}, ${MONO}`,
     track: '0.02em',
-    halo: '0 0 5px currentColor, 0 0 18px rgba(255, 200, 90, 0.35)',
+    halo: '0 0 3px currentColor, 0 0 11px rgba(120, 255, 170, 0.24)',
     scale: 0.72,   // 8x8 bitmap runs LARGE for its point size
     uiAdjust: 'none',   // the UI stays system mono in this pack anyway
   },
@@ -65,7 +68,7 @@ export const FONT_PACKS = {
     shout: `"Share Tech Mono", ${CJK}, ${MONO}`,
     ui: `"Share Tech Mono", ${CJK}, ${MONO}`,
     track: '0.12em',
-    halo: '0 0 5px currentColor, 0 0 15px rgba(120, 220, 200, 0.3)',
+    halo: '0 0 3px currentColor, 0 0 10px rgba(120, 220, 200, 0.2)',
     scale: 1.06,
     uiAdjust: 'none',
   },
@@ -76,14 +79,14 @@ export const FONT_PACKS = {
     shout: `${CJK}, ${MONO}`,
     ui: `${CJK}, ${MONO}`,
     track: '0.10em',
-    halo: '0 0 3px currentColor, 0 0 12px currentColor, 0 0 26px rgba(90, 255, 200, 0.22)',
+    halo: '0 0 2px currentColor, 0 0 9px rgba(90, 255, 200, 0.2)',
     scale: 1.0,
     uiAdjust: 'none',
   },
 };
 
 export const FONT_NAMES = Object.keys(FONT_PACKS);
-export const DEFAULT_FONT = 'field';
+export const DEFAULT_FONT = 'crt';
 
 // Pure: the CSS custom properties a pack becomes. Node-testable, and it is
 // where a typo in a pack shows up as a failing test rather than as a font

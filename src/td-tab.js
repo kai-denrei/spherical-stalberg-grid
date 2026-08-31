@@ -19,32 +19,32 @@
 
 import * as THREE from '../vendor/three.module.js';
 import GUI from '../vendor/lil-gui.esm.js';
-import { generateSphereMesh, relax } from './grid.js?v=13c585f2';
-import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=13c585f2';
-import { mulberry32, randomSeed } from './rng.js?v=13c585f2';
-import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3, segKey } from './vec3.js?v=13c585f2';
-import { CREATURES, waveJelly } from './creatures.js?v=13c585f2';
-import { applyFontPack, currentFontPack, FONT_NAMES } from './fonts.js?v=13c585f2';
-import { UNITS, UNIT_NAMES, buildUnit, buildCreature, preloadMkcx, preloadServer, makeServerFixture, makeShieldShell, preloadContainer, makeContainerFixture, preloadFabricator, makeFabricatorDrone, makeBulletCloud, makeRewardSolid, makeShellSolid, makeDebris, makeDotBurst, makePortalCloud, makeHeartCloud, makeDotEnemy } from './units.js?v=13c585f2';
-import { LOOKS, LOOK_NAMES } from './looks.js?v=13c585f2';
-import { makeCellIndex } from './cellindex.js?v=13c585f2';
-import { CREATURE_TINTS, ENEMY_SPEC, INTROS, computeWavePlan } from './enemyspec.js?v=13c585f2';
-import { PICKUPS } from './pickups.js?v=13c585f2';
-import { rankFor, rankLabel, badgeSVG, killReq, eliteReq } from './ranks.js?v=13c585f2';
-import { makeScore } from './score.js?v=13c585f2';
-import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER } from './towers.js?v=13c585f2';
-import { makeEconomy, sellRefund } from './economy.js?v=13c585f2';
-import { makeBloom } from './postfx.js?v=13c585f2';
-import { TANK_FEEL, TANK_FEEL_KNOBS, makeTankFeel, stepTankFeel, landTankFeel, fireTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js?v=13c585f2';
-import { FEEL, loadFeel, saveFeel } from './feelstore.js?v=13c585f2';
+import { generateSphereMesh, relax } from './grid.js?v=991ddfda';
+import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=991ddfda';
+import { mulberry32, randomSeed } from './rng.js?v=991ddfda';
+import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3, segKey } from './vec3.js?v=991ddfda';
+import { CREATURES, waveJelly } from './creatures.js?v=991ddfda';
+import { applyFontPack, currentFontPack, FONT_NAMES } from './fonts.js?v=991ddfda';
+import { UNITS, UNIT_NAMES, buildUnit, buildCreature, preloadMkcx, preloadServer, makeServerFixture, makeShieldShell, preloadContainer, makeContainerFixture, preloadFabricator, makeFabricatorDrone, makeBulletCloud, makeRewardSolid, makeShellSolid, makeDebris, makeDotBurst, makePortalCloud, makeHeartCloud, makeDotEnemy } from './units.js?v=991ddfda';
+import { LOOKS, LOOK_NAMES } from './looks.js?v=991ddfda';
+import { makeCellIndex } from './cellindex.js?v=991ddfda';
+import { CREATURE_TINTS, ENEMY_SPEC, INTROS, computeWavePlan } from './enemyspec.js?v=991ddfda';
+import { PICKUPS } from './pickups.js?v=991ddfda';
+import { rankFor, rankLabel, badgeSVG, killReq, eliteReq } from './ranks.js?v=991ddfda';
+import { makeScore } from './score.js?v=991ddfda';
+import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER } from './towers.js?v=991ddfda';
+import { makeEconomy, sellRefund } from './economy.js?v=991ddfda';
+import { makeBloom } from './postfx.js?v=991ddfda';
+import { TANK_FEEL, TANK_FEEL_KNOBS, makeTankFeel, stepTankFeel, landTankFeel, fireTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js?v=991ddfda';
+import { FEEL, loadFeel, saveFeel } from './feelstore.js?v=991ddfda';
 import { STRIKE_KNOBS, makeStrike, makeStrikeParams, grantStrikes, stepStrike,
   toggleArm, paintTarget, launchStrike, stepFall, skipFall, fallProgress,
-  strikeDamage, retargetStrike, orbitProgress } from './strike.js?v=13c585f2';
-import { radarBasis, radarProject, radarBearing, sweepAngle, radarPhosphor } from './radar.js?v=13c585f2';
-import { BLOOM_GROUPS } from './bloomweights.js?v=13c585f2';
-import { TOWER_LOOK_NAMES, DEFAULT_TOWER_LOOK, buildTowerLook, preloadLook } from './towerlooks.js?v=13c585f2';
-import { makeAudio } from './audio.js?v=13c585f2';
-import { DEATH_KEYS } from './audiomanifest.js?v=13c585f2';
+  strikeDamage, retargetStrike, orbitProgress } from './strike.js?v=991ddfda';
+import { radarBasis, radarProject, radarBearing, sweepAngle, radarPhosphor } from './radar.js?v=991ddfda';
+import { BLOOM_GROUPS } from './bloomweights.js?v=991ddfda';
+import { TOWER_LOOK_NAMES, DEFAULT_TOWER_LOOK, buildTowerLook, preloadLook } from './towerlooks.js?v=991ddfda';
+import { makeAudio } from './audio.js?v=991ddfda';
+import { DEATH_KEYS } from './audiomanifest.js?v=991ddfda';
 
 export function initTdTab(root) {
   let active = false;
@@ -5045,11 +5045,26 @@ export function initTdTab(root) {
     const clear = exits.filter((e2) => !lifeContainers.some((cc) => cc.ci === e2));
     const pick = clear.length ? clear : exits;
     let e0 = pick[0] ?? ci;
-    // OUTWARD, not heartward: you respawn defending, so you are pointed back
-    // at the war. Beside the heart, "toward" would aim you into the thing
-    // you are protecting.
-    for (const e of pick) {
-      if (dungeon.distToHeart[e] === dungeon.distToHeart[ci] + 1) { e0 = e; break; }
+    if (fromContainer) {
+      // OUT OF THE DOORS. The berths are staged with their doors facing the
+      // Heart, so the outward rule below — right for a respawn on open
+      // ground — aims a fresh hull at the BACK WALL of its own container.
+      // The operator watched it happen at the end of the cold open. Which
+      // way the doors point is geometry, not graph distance, so pick the
+      // exit best lined up with it.
+      const doorDir = tangentDirTo(ci, dungeon.heart);
+      let bestDot = -Infinity;
+      for (const e of pick) {
+        const d = dot3(tangentDirTo(ci, e), doorDir);
+        if (d > bestDot) { bestDot = d; e0 = e; }
+      }
+    } else {
+      // OUTWARD, not heartward: you respawn defending, so you are pointed
+      // back at the war. Beside the heart, "toward" would aim you into the
+      // thing you are protecting.
+      for (const e of pick) {
+        if (dungeon.distToHeart[e] === dungeon.distToHeart[ci] + 1) { e0 = e; break; }
+      }
     }
     player.next = e0;
     player.heading = tangentDirTo(ci, e0);
