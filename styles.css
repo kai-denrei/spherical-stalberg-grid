@@ -5,22 +5,22 @@
    back to a system face until the subset is rebuilt. */
 @font-face {
   font-family: 'VT323';
-  src: url('assets/fonts/VT323.woff2?v=e619d3ff') format('woff2');
+  src: url('assets/fonts/VT323.woff2?v=64a7be97') format('woff2');
   font-weight: 400; font-style: normal; font-display: swap;
 }
 @font-face {
   font-family: 'Press Start 2P';
-  src: url('assets/fonts/PressStart2P.woff2?v=e619d3ff') format('woff2');
+  src: url('assets/fonts/PressStart2P.woff2?v=64a7be97') format('woff2');
   font-weight: 400; font-style: normal; font-display: swap;
 }
 @font-face {
   font-family: 'Share Tech Mono';
-  src: url('assets/fonts/ShareTechMono.woff2?v=e619d3ff') format('woff2');
+  src: url('assets/fonts/ShareTechMono.woff2?v=64a7be97') format('woff2');
   font-weight: 400; font-style: normal; font-display: swap;
 }
 @font-face {
   font-family: 'DotGothic16';
-  src: url('assets/fonts/DotGothic16.woff2?v=e619d3ff') format('woff2');
+  src: url('assets/fonts/DotGothic16.woff2?v=64a7be97') format('woff2');
   font-weight: 400; font-style: normal; font-display: swap;
 }
 
@@ -56,6 +56,141 @@
    and on desktop it is the only visible thing that says the tank drives. */
 @media (hover: hover) and (pointer: fine) and (min-width: 900px) {
   #td-pad-left, #td-pad-right, #td-pad-fire, #td-pad-laser { display: none; }
+}
+
+/* --- THE TYPE BENCH (units tab) -----------------------------------------
+   Every message the game shouts, on screen at once, in the real markup and
+   the real classes, while the sliders move. It exists because the message
+   layer cannot be judged in play: a streak shout lives 1.2 seconds and the
+   defeat card only appears when you lose (operator, 2026-08-31).
+
+   The stage paints its own dark ground rather than inheriting the viewer's,
+   so what you are judging is contrast against the GAME's backdrop, not
+   against whatever the turntable happens to be showing. */
+#units-fonts {
+  /* fixed, for the reason #units-tuner documents below: its parent
+     #units-chrome is a bottom-anchored absolute strip, so an absolute panel
+     hangs off the CONTROLS instead of the stage and a percentage max-height
+     resolves against a few dozen pixels. Left side, opposite the sliders,
+     so the specimens and the knobs are both in view at once — which is the
+     entire reason this bench exists. */
+  position: fixed;
+  top: 58px;
+  left: 14px;
+  width: min(430px, calc(100vw - 28px));
+  max-height: calc(100vh - 170px);
+  display: flex;
+  flex-direction: column;
+  z-index: 24;
+  background: rgba(6, 12, 9, 0.94);
+  border: 1px solid #2fbb60;
+  border-radius: 10px;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.6);
+  pointer-events: auto;
+}
+#units-fonts.fonts-hidden { display: none; }
+
+#units-fonts header,
+#units-fonts footer {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px;
+  font: 11px ui-monospace, Menlo, monospace;
+  color: #9dffbe;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  flex: 0 0 auto;
+}
+#units-fonts header { border-bottom: 1px solid rgba(47, 187, 96, 0.35); }
+#units-fonts footer { border-top: 1px solid rgba(47, 187, 96, 0.35); }
+#units-fonts .fb-title { font-weight: bold; }
+#units-fonts .fb-pack { margin-left: auto; display: flex; align-items: center; gap: 6px; }
+#units-fonts select {
+  font: 11px ui-monospace, Menlo, monospace;
+  color: #d6ffdf;
+  background: #0a1a10;
+  border: 1px solid rgba(47, 187, 96, 0.5);
+  border-radius: 3px;
+  padding: 3px 6px;
+}
+#units-fonts header button,
+#units-fonts footer button {
+  font: 11px ui-monospace, Menlo, monospace;
+  letter-spacing: 0.08em;
+  color: #9dffbe;
+  background: transparent;
+  border: 1px solid rgba(47, 187, 96, 0.5);
+  border-radius: 3px;
+  padding: 4px 9px;
+  cursor: pointer;
+}
+#units-fonts header button:hover,
+#units-fonts footer button:hover { color: #eafff2; border-color: #33ff77; }
+#units-fonts header button { margin-left: 0; padding: 2px 8px; font-size: 14px; }
+
+#units-fonts-stage {
+  flex: 1 1 auto;
+  overflow-y: auto;
+  padding: 14px 16px 18px;
+  /* the game's own ground, so contrast is judged against the real thing */
+  background:
+    repeating-linear-gradient(to bottom,
+      rgba(255, 255, 255, 0.012) 0 1px, transparent 1px 3px),
+    radial-gradient(120% 130% at 40% 0%, #0a1712 0%, #04080a 70%);
+}
+.fb-block { padding: 10px 0 14px; border-bottom: 1px dashed rgba(47, 187, 96, 0.22); }
+.fb-block:last-child { border-bottom: 0; }
+.fb-cap {
+  margin: 0 0 8px;
+  font: 9px ui-monospace, Menlo, monospace;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: #4fae63;
+}
+/* the callouts run their entrance animation on a loop in here, because the
+   thing being judged is partly how they READ while moving */
+#units-fonts .callout { animation: co-pop 2.6s ease-out infinite; }
+.fb-ladder { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 14px; }
+.fb-wavebox {
+  display: inline-block;
+  padding: 8px 16px 10px;
+  text-align: center;
+  color: #9ff8ff;
+  background: linear-gradient(180deg, rgba(14, 8, 8, 0.9), rgba(8, 4, 4, 0.9));
+  border: 1px solid #9ff8ff;
+  border-radius: 10px;
+}
+.fb-toast {
+  display: inline-block;
+  padding: 8px 16px;
+  text-align: center;
+  font-family: var(--font-ui);
+  font-size: calc(var(--ui-unit) * 1.0);
+  font-size-adjust: var(--ui-adjust, none);
+  line-height: 1.5;
+  color: var(--p-green-hot);
+  background: rgba(4, 14, 9, 0.84);
+  border: 1px solid var(--p-green-dim);
+  border-radius: 12px;
+  text-shadow: 0 0 5px rgba(157, 255, 190, 0.35);
+}
+.fb-hud {
+  font-family: var(--font-ui);
+  font-size: calc(var(--ui-unit) * 0.92);
+  font-size-adjust: var(--ui-adjust, none);
+  line-height: 1.7;
+  color: #4fae63;
+}
+
+@media (max-width: 560px) {
+  /* on a phone the two panels cannot share the screen, so the bench takes
+     it and the sliders scroll under: the specimens are the point */
+  #units-fonts { left: 10px; right: 10px; width: auto; top: 48px;
+    max-height: calc(50vh); }
+}
+@media (prefers-reduced-motion: reduce) {
+  #units-fonts .callout { animation: none; opacity: 1; }
 }
 
 /* --- CRT PHOSPHOR PALETTE ------------------------------------------------
@@ -685,7 +820,7 @@ html, body {
   animation: wave-pop 0.35s ease-out;
 }
 #h-wave.hidden, #td-wave.hidden { display: none; }
-#h-wave .wave-num, #td-wave .wave-num {
+#h-wave .wave-num, #td-wave .wave-num, .wavebox .wave-num {
   font-family: var(--font-shout);
   --r: 0.48;
   font-size: calc(var(--shout-unit) * var(--r));
@@ -693,7 +828,7 @@ html, body {
   text-transform: uppercase;
   opacity: 0.8;
 }
-#h-wave .wave-name, #td-wave .wave-name {
+#h-wave .wave-name, #td-wave .wave-name, .wavebox .wave-name {
   font-family: var(--font-shout);
   --r: 0.90;
   font-size: calc(var(--shout-unit) * var(--r));
@@ -701,7 +836,7 @@ html, body {
   margin: 4px 0 2px;
   text-shadow: var(--shout-halo);
 }
-#h-wave .wave-role, #td-wave .wave-role {
+#h-wave .wave-role, #td-wave .wave-role, .wavebox .wave-role {
   font-size: 12px;
   opacity: 0.85;
   color: #d8e2ea;
@@ -712,7 +847,7 @@ html, body {
   width: 96px;
   height: 96px;
 }
-#h-wave .wave-ram, #td-wave .wave-ram {
+#h-wave .wave-ram, #td-wave .wave-ram, .wavebox .wave-ram {
   font-family: var(--font-shout);
   --r: 0.52;
   font-size: calc(var(--shout-unit) * var(--r));
@@ -2464,12 +2599,18 @@ body.playing:not(.chrome-open) #tabbar { display: none !important; }
   text-shadow: var(--shout-halo);
 }
 #td-combo.hidden { display: none; }
-#td-combo[data-tier="0"] { font-size: calc(var(--shout-unit) * 0.81); color: var(--p-green-dim); text-shadow: 0 0 5px rgba(47, 187, 96, 0.5); }
-#td-combo[data-tier="1"] { font-size: calc(var(--shout-unit) * 1.05); color: var(--p-green); text-shadow: 0 0 7px rgba(51, 255, 119, 0.55); }
-#td-combo[data-tier="2"] { font-size: calc(var(--shout-unit) * 1.33); color: var(--p-green-hot); text-shadow: 0 0 9px rgba(157, 255, 190, 0.6); }
-#td-combo[data-tier="3"] { font-size: calc(var(--shout-unit) * 1.62); color: var(--p-white); text-shadow: 0 0 11px rgba(234, 255, 242, 0.65); }
-#td-combo[data-tier="4"] { font-size: calc(var(--shout-unit) * 1.90); color: var(--p-blue-hot); text-shadow: 0 0 13px rgba(207, 230, 255, 0.7); }
-#td-combo[data-tier="5"] {
+/* the bench's ladder wears what #td-combo wears, minus the positioning */
+.combobox [data-tier] {
+  font-family: var(--font-shout);
+  font-weight: bold;
+  letter-spacing: var(--shout-track);
+}
+#td-combo[data-tier="0"], .combobox [data-tier="0"] { font-size: calc(var(--shout-unit) * 0.81); color: var(--p-green-dim); text-shadow: 0 0 5px rgba(47, 187, 96, 0.5); }
+#td-combo[data-tier="1"], .combobox [data-tier="1"] { font-size: calc(var(--shout-unit) * 1.05); color: var(--p-green); text-shadow: 0 0 7px rgba(51, 255, 119, 0.55); }
+#td-combo[data-tier="2"], .combobox [data-tier="2"] { font-size: calc(var(--shout-unit) * 1.33); color: var(--p-green-hot); text-shadow: 0 0 9px rgba(157, 255, 190, 0.6); }
+#td-combo[data-tier="3"], .combobox [data-tier="3"] { font-size: calc(var(--shout-unit) * 1.62); color: var(--p-white); text-shadow: 0 0 11px rgba(234, 255, 242, 0.65); }
+#td-combo[data-tier="4"], .combobox [data-tier="4"] { font-size: calc(var(--shout-unit) * 1.90); color: var(--p-blue-hot); text-shadow: 0 0 13px rgba(207, 230, 255, 0.7); }
+#td-combo[data-tier="5"], .combobox [data-tier="5"] {
   /* the top rung is the tube giving up: full white, and it flickers */
   font-size: calc(var(--shout-unit) * 2.29);
   color: #ffffff;

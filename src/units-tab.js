@@ -13,21 +13,24 @@ import * as THREE from '../vendor/three.module.js';
 import { OrbitControls } from '../vendor/OrbitControls.js';
 import { buildUnit, preloadMkcx, makeDebris, makeDotBurst, makeBulletCloud,
   makeDotEnemy, makeRewardSolid, makeShellSolid, makePortalCloud,
-  preloadServer, makeServerFixture, preloadContainer, makeContainerFixture } from './units.js?v=e619d3ff';
+  preloadServer, makeServerFixture, preloadContainer, makeContainerFixture,
+  preloadFabricator, makeFabricatorDrone } from './units.js?v=64a7be97';
 import { TANK_FEEL, TANK_FEEL_KNOBS, formatFeelCode, makeTankFeel, stepTankFeel,
-  landTankFeel, fireTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js?v=e619d3ff';
+  landTankFeel, fireTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js?v=64a7be97';
 import { FEEL, loadFeel, saveFeel, resetFeel,
-  TOWER, HEADS, loadTower, saveTower, resetTower } from './feelstore.js?v=e619d3ff';
+  TOWER, HEADS, loadTower, saveTower, resetTower } from './feelstore.js?v=64a7be97';
 import { TOWER_FEEL_KNOBS, formatTowerFeel, clampTowerParams,
-  formatTowerHeads, HEAD_CHOICES, HEAD_AS_SHIPPED } from './towerfeel.js?v=e619d3ff';
-import { CREATURE_TINTS } from './enemyspec.js?v=e619d3ff';
+  formatTowerHeads, HEAD_CHOICES, HEAD_AS_SHIPPED } from './towerfeel.js?v=64a7be97';
+import { CREATURE_TINTS } from './enemyspec.js?v=64a7be97';
 import { buildTowerLook, TOWER_LOOK_NAMES, DEFAULT_TOWER_LOOK, preloadLook } from './towerlooks.js';
 import { TOWER_BY_KEY, TOWERS } from './towers.js';
 import { LOOKS } from './looks.js';
 import { makeBloom } from './postfx.js';
-import { makeAudio } from './audio.js?v=e619d3ff';
+import { makeAudio } from './audio.js?v=64a7be97';
 import { GROUPS, GROUP_LABELS, GROUP_EMPTY, entriesIn } from './unitcatalog.js';
-import { LORE, LORE_WORLD, loreText, loreAll } from './lore.js?v=e619d3ff';
+import { FONT_NAMES, TYPE_KNOBS, TYPE_FEEL, makeTypeParams, clampTypeParams,
+  formatTypeCode, applyFontPack, currentFontPack, DEFAULT_FONT } from './fonts.js?v=64a7be97';
+import { LORE, LORE_WORLD, loreText, loreAll } from './lore.js?v=64a7be97';
 
 let roundTex = null;
 function roundDotTex() {
@@ -246,9 +249,25 @@ export function initUnitsTab(root) {
     if (e.kind === 'fixture') {
       // fixtures preload async; by the time anyone pages to them the
       // bytes have almost always landed — the placeholder covers the gap
-      const g = (e.id === 'server' ? makeServerFixture() : makeContainerFixture());
-      if (g) { g.userData.baseScale = 1; return g; }
-      (e.id === 'server' ? preloadServer() : preloadContainer());
+      const make = e.id === 'server' ? makeServerFixture
+        : e.id === 'bobby' ? makeFabricatorDrone : makeContainerFixture;
+      const pre = e.id === 'server' ? preloadServer
+        : e.id === 'bobby' ? preloadFabricator : preloadContainer;
+      const g = make(e.id === 'bobby' ? 0xffc24a : undefined);
+      if (g) {
+        g.userData.baseScale = 1;
+        // the rotors are the whole read on a drone: a still quadcopter looks
+        // like a dead one. Hung on the viewer's own animation toggle, so
+        // `animation` off still gives a clean screenshot.
+        if (g.userData.spinRotors) {
+          g.userData.tick = (t2) => {
+            g.userData.spinRotors(1 / 60, 0.4);
+            if (g.userData.setWork) g.userData.setWork(0.5 + 0.5 * Math.sin(t2 * 0.9));
+          };
+        }
+        return g;
+      }
+      pre();
       const ph = new THREE.Group();
       ph.add(new THREE.Mesh(new THREE.BoxGeometry(0.6, 0.6, 0.6),
         new THREE.MeshLambertMaterial({ color: 0x2a3442 })));
@@ -504,6 +523,7 @@ export function initUnitsTab(root) {
 
   preloadServer();
   preloadContainer();
+  preloadFabricator();   // Bobby is in the roster now; start his bytes with the rest
 
   // ?lore=1 — open the codex on load (screenshot / deep-link hook)
   if (new URLSearchParams(location.search).get('lore') === '1' && lorePanel) {
@@ -885,6 +905,23 @@ export function initUnitsTab(root) {
     if (!panel || !list || !open) return { setSubject() {}, isOpen: () => false };
     loadFeel();
     loadTower();
+    // the type values live in the same localStorage the game reads, so a
+    // setting found on this bench is already in force next time you play —
+    // restored through the schema's own clamp, because our own storage is
+    // untrusted input after a schema change
+    const TYPE = makeTypeParams();
+    try {
+      const raw = localStorage.getItem('ssg-type');
+      if (raw) clampTypeParams(TYPE, JSON.parse(raw));
+    } catch (e) { /* private mode, or a blob from an older schema */ }
+    const applyType = () => {
+      applyFontPack(currentFontPack(), document.documentElement, TYPE);
+    };
+    const saveType = () => {
+      try { localStorage.setItem('ssg-type', JSON.stringify(TYPE)); } catch (e) { /* ignore */ }
+    };
+    const resetType = () => { Object.assign(TYPE, makeTypeParams(TYPE_FEEL)); saveType(); };
+    applyType();
     // ?head=<kind> presets the head override, so a candidate shape can be
     // screenshotted without a pointer. Validated against the knob's own
     // choices — an unknown name would ask the generator for a shape it does
@@ -923,6 +960,15 @@ export function initUnitsTab(root) {
         // rebuilding unconditionally beats a per-knob rule that goes stale.
         onChange: () => rebuildCurrent(),
       },
+    };
+    // THE TYPE BENCH is a third subject, not a second tuner. Everything the
+    // panel already does — build rows from a knob table, restore from
+    // storage through the schema's clamp, copy as source — is exactly what
+    // the type knobs need, and a second implementation would drift.
+    SUBJECTS.type = {
+      title: 'message type', knobs: TYPE_KNOBS, values: TYPE,
+      save: saveType, reset: resetType, format: () => formatTypeCode(TYPE),
+      onChange: applyType,
     };
     let subject = SUBJECTS.tank;
     let rows = [];
@@ -1031,6 +1077,65 @@ export function initUnitsTab(root) {
     };
 
     build();
+
+    // --- the fonts bench --------------------------------------------------
+    // The panel of specimens is one element; the sliders are the tuner in
+    // its `type` subject. Opening either opens both, because a slider with
+    // nothing to look at is the problem this was built to solve.
+    const fontsPanel = root.querySelector('#units-fonts');
+    const fontsOpen = root.querySelector('#units-fonts-open');
+    if (fontsPanel && fontsOpen) {
+      const packSel = root.querySelector('#units-font-pack');
+      for (const n of FONT_NAMES) {
+        const o = document.createElement('option');
+        o.value = n; o.textContent = n;
+        packSel.appendChild(o);
+      }
+      packSel.value = currentFontPack();
+      packSel.addEventListener('change', () => {
+        applyFontPack(packSel.value, document.documentElement, TYPE);
+        try { localStorage.setItem('ssg-font', packSel.value); } catch (e) { /* private mode */ }
+      });
+      const setFonts = (on) => {
+        fontsPanel.classList.toggle('fonts-hidden', !on);
+        fontsOpen.classList.toggle('on', on);
+        if (on) {
+          packSel.value = currentFontPack();
+          subject = SUBJECTS.type;
+          titleEl.textContent = subject.title;
+          build();
+          setOpen(true);
+        }
+      };
+      fontsOpen.addEventListener('click', () =>
+        setFonts(fontsPanel.classList.contains('fonts-hidden')));
+      root.querySelector('#units-fonts-close').addEventListener('click', () => {
+        setFonts(false);
+        setOpen(false);
+      });
+      root.querySelector('#units-fonts-reset').addEventListener('click', () => {
+        resetType(); refresh(); applyType();
+      });
+      const fcopy = root.querySelector('#units-fonts-copy');
+      const flabel = fcopy.querySelector('.label');
+      let frevert = 0;
+      fcopy.addEventListener('click', async () => {
+        clearTimeout(frevert);
+        try {
+          await navigator.clipboard.writeText(formatTypeCode(TYPE));
+          fcopy.classList.add('ok'); flabel.textContent = 'copied';
+        } catch {
+          fcopy.classList.add('fail'); flabel.textContent = 'copy failed';
+        }
+        frevert = setTimeout(() => {
+          fcopy.classList.remove('ok', 'fail'); flabel.textContent = 'copy code';
+        }, 1400);
+      });
+      // ?fonts=1 opens the bench on load — headless has no pointer, and this
+      // is now the surface the type decision is actually made on
+      if (new URLSearchParams(location.search).get('fonts')) setFonts(true);
+    }
+
     open.addEventListener('click', () => setOpen(panel.classList.contains('tuner-hidden')));
     // ?tune=1 opens it on load — headless has no pointer, so without this the
     // panel could only ever be verified by hand.
@@ -1062,6 +1167,12 @@ export function initUnitsTab(root) {
 
     return {
       setSubject(which) {
+        // paging through the roster must not yank the panel off the type
+        // bench: the bench is a deliberate mode, and losing your sliders
+        // because you pressed → is the kind of thing that makes a tool
+        // unusable
+        const fp = root.querySelector('#units-fonts');
+        if (fp && !fp.classList.contains('fonts-hidden')) return;
         const next = SUBJECTS[which] || SUBJECTS.tank;
         // rebuild even when the subject is unchanged: stepping from one tower
         // to the next keeps the subject 'tower' but the head row belongs to a

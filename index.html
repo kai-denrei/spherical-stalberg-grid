@@ -5,17 +5,17 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
   <title>spherical stålberg grid</title>
   <meta name="theme-color" content="#10131a">
-  <link rel="manifest" href="./manifest.webmanifest?v=e619d3ff">
-  <link rel="apple-touch-icon" href="./icons/apple-touch-icon.png?v=e619d3ff">
+  <link rel="manifest" href="./manifest.webmanifest?v=64a7be97">
+  <link rel="apple-touch-icon" href="./icons/apple-touch-icon.png?v=64a7be97">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="SphereGrid">
-  <link rel="stylesheet" href="./styles.css?v=e619d3ff">
+  <link rel="stylesheet" href="./styles.css?v=64a7be97">
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
-  <meta name="cb" content="e619d3ff">
-  <link rel="icon" type="image/svg+xml" href="./cb-shapes/38.svg?v=e619d3ff">
+  <meta name="cb" content="64a7be97">
+  <link rel="icon" type="image/svg+xml" href="./cb-shapes/36.svg?v=64a7be97">
   <!-- cb-badge retired from the game view (operator ruling): the build
        token lives in the DEV LOG tab, which reads meta[name="cb"] itself -->
 </head>
@@ -201,7 +201,7 @@
     <div id="td-launch" class="caution-frame" aria-label="launch control">
       <button id="td-safety" class="safety" type="button" aria-pressed="false" aria-label="safety">
         <span class="lbl-on">ON</span>
-        <img id="td-safety-img" class="switch-img" src="assets/ui/switch-off.png?v=e619d3ff" alt="" width="120" height="200">
+        <img id="td-safety-img" class="switch-img" src="assets/ui/switch-off.png?v=64a7be97" alt="" width="120" height="200">
         <span class="lbl-off">OFF</span>
       </button>
       <div id="td-launch-readout">
@@ -313,7 +313,85 @@
         <button id="units-labels" type="button" title="blueprint callouts — name the parts">labels</button>
         <button id="units-sweep" class="on" type="button" title="toggle the unit's own in-game animation (swim, sweep, sway)">animation</button>
         <button id="units-lore" type="button" title="the codex — every unit described as it exists, plus a visual prompt">lore</button>
+        <button id="units-fonts-open" type="button" title="the type bench — every message the game shouts, all at once, with the sliders">fonts</button>
       </div>
+      <!-- THE TYPE BENCH. The message layer is impossible to judge in a real
+           game: a streak shout lives 1.2 seconds and the defeat card only
+           shows when you lose. Here every message the game raises its voice
+           with is on screen at once, in the REAL markup and the REAL classes,
+           while the sliders move. What you tune here is what ships. -->
+      <div id="units-fonts" class="fonts-hidden" role="dialog" aria-label="message type">
+        <header>
+          <span class="fb-title">message type</span>
+          <label class="fb-pack">face <select id="units-font-pack"></select></label>
+          <button id="units-fonts-close" type="button" aria-label="close">&times;</button>
+        </header>
+        <div id="units-fonts-stage">
+          <section class="fb-block">
+            <p class="fb-cap">streak shouts &middot; 1.2s in game</p>
+            <div class="callout co-reckless">RECKLESS!</div>
+            <div class="callout co-heart">&#12377;&#12370;&#12316;&#65281;</div>
+            <div class="callout co-streak">STREAK &times;1.45</div>
+            <div class="callout co-milestone">RAM &times;50</div>
+          </section>
+
+          <section class="fb-block">
+            <p class="fb-cap">the ram ladder &middot; every rung</p>
+            <div class="fb-ladder combobox">
+              <span data-tier="0">&times;3</span>
+              <span data-tier="1">&times;12</span>
+              <span data-tier="2">&times;24</span>
+              <span data-tier="3">&times;35</span>
+              <span data-tier="4">&times;46</span>
+              <span data-tier="5">&times;57</span>
+            </div>
+          </section>
+
+          <section class="fb-block">
+            <p class="fb-cap">wave banner</p>
+            <div class="fb-wavebox wavebox">
+              <div class="wave-num">wave 7 &middot; incoming</div>
+              <div class="wave-name">THE KNOT</div>
+              <div class="wave-role">boss &middot; armoured, and it does not care about your walls</div>
+              <div class="wave-ram">DO NOT RAM &middot; &#21361;&#27231;&#19968;&#39658;</div>
+            </div>
+          </section>
+
+          <section class="fb-block">
+            <p class="fb-cap">toast &middot; system message</p>
+            <div class="fb-toast">
+              <div class="wave-num">BLACK MARKET OPEN</div>
+              <div class="wave-role">the relay sells missiles now &mdash; expensive, and worth it</div>
+            </div>
+          </section>
+
+          <section class="fb-block">
+            <p class="fb-cap">defeat card</p>
+            <div class="msg-head">last transmission</div>
+            <div class="go-snafu">SNAFU &middot; K-KILL &times;2</div>
+            <div class="go-verdict">they will find the wreck FACING them</div>
+          </section>
+
+          <section class="fb-block">
+            <p class="fb-cap">instrument panel &middot; three reading distances</p>
+            <div class="fb-hud hud-panel">
+              <div class="hud-meta">SCORE <b>3,140</b> &middot; BEST 9,802</div>
+              <div class="hud-vitals"><span class="hp-heart">&hearts;&hearts;&hearts;&hearts;&hearts;</span> <span class="hud-lbl">HEART</span> <span class="hp-you">&hearts;3</span> <span class="hp-ammo">&#10022;7</span></div>
+              <div class="hud-res"><span class="hud-biomass">970kg &times;1.45</span><span class="hud-wave">WAVE <b>7</b> &middot; R2</span></div>
+              <div class="hud-obj">portals 2/2 &middot; built 6 &middot; 4/8 towers</div>
+              <div class="hud-obj hud-bobby">BOBBY &#9656; printing laser 28% +1</div>
+              <div class="hud-alert">&#9888; DANGER &middot; SOLID CONTACT</div>
+            </div>
+          </section>
+        </div>
+        <footer>
+          <button id="units-fonts-reset" type="button">reset</button>
+          <button id="units-fonts-copy" type="button" title="copy as source, ready to paste into fonts.js">
+            <span class="glyph" aria-hidden="true">&#x29C9;</span><span class="label">copy code</span>
+          </button>
+        </footer>
+      </div>
+
       <div id="units-tuner" class="tuner-hidden" role="dialog" aria-label="tank feel">
         <header>
           <span id="units-tuner-title">tank feel</span>
@@ -399,6 +477,6 @@
     </div>
   </div>
 
-  <script type="module" src="./src/main.js?v=e619d3ff"></script>
+  <script type="module" src="./src/main.js?v=64a7be97"></script>
 </body>
 </html>

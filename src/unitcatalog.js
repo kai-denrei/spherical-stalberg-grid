@@ -54,13 +54,20 @@ const PLAYER_UNITS = [
   { id: 'mkcx', kind: 'unit', label: 'mkcx',
     note: 'authored hover tank; turret and both secondary guns stay articulated',
     sounds: TANK_SOUNDS },
+  // BOBBY builds everything the player owns, so he belongs on the friendly
+  // side with the machines he prints. kind:'fixture' because he is cast the
+  // same way the server and the containers are — an authored .glb loaded
+  // async, not a roster unit with a rig and a health bar.
+  { id: 'bobby', kind: 'fixture', label: 'bobby',
+    note: 'construction drone — four rotors, a biomass reservoir, and the boom that prints every tower',
+    sounds: [{ key: 'tower_upgrade', label: 'print' }] },
 ];
 
 // Towers are the player's army too, so they belong on the friendly side.
 // Built through the look registry, which is why they carry kind:'tower'.
 const TOWER_UNITS = TOWERS.map((t) => ({
   id: t.key, kind: 'tower', label: t.label,
-  note: `tower · ${t.cost}c · range ${t.range} · ${t.attack}`,
+  note: `tower · ${t.cost}kg · range ${t.range} · ${t.attack}`,
   sounds: [
     { key: `tower_${t.key}`, label: 'fire' },
     { key: 'tower_upgrade', label: 'upgrade' },
