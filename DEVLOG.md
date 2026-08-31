@@ -6,6 +6,42 @@ Demo links assume `npm run serve` (port 8144) or the
 
 ---
 
+## `bb85201` — Credit becomes BIOMASS
+
+The currency changed substance. Kills paid *credit*, an abstraction the HUD
+printed; they now pay **biomass** — alien tissue rendered down, the one
+thing the coming Construction Drone can print structures out of. The lore
+change is the point; the code change is deliberately shallow.
+
+**The math did not move.** HokorobiTawaa's bounty values, the 5%-per-kill
+streak, the ×5 cap, the leak reset, the 75% reclaim on a sell, the ×1.5 ram
+premium — all verbatim. That is what keeps the 2026-08-30 sim batch valid:
+it still describes this build, because only the name and the unit changed.
+
+`src/economy.js` keeps its filename — the economy is the system, biomass is
+the currency inside it. `START_CREDIT` → `START_BIOMASS`, the getter
+`.credit` → `.biomass`, `addCredit` → `addBiomass`, the `startCredit`
+option → `startBiomass`. `creditTankKill` → `harvestTankKill`, because a
+tank that kills does not get credited, it harvests.
+
+The unit is **kg**, not a letter. `190c` reads as an abstraction and `190kg`
+reads as rendered tissue, which is the entire reason for the change. It
+surfaces in six places at once — the loud orange resource line, the radial
+centre, the tower cost tiles, the sell and upgrade wedges, the black-market
+prices, the sector-clear log — so the suffix was picked before anything was
+edited. `.hud-credit` → `.hud-biomass`.
+
+Debug hooks: `?biomass=N` is the name; `?credit=N` still works as an alias
+so saved URLs and sim scripts survive. The sim row key and the sim table
+header in `index.html` are `biomass`. Entries above this one and both
+`simdata` batches keep the old word — they are records, not documentation.
+
+Verified: `npm test` green (tdcore's economy block renamed alongside the
+API), headless load clean, HUD reads `970kg` from `?biomass=800` on a 170
+start.
+
+---
+
 ## `01bd6db` — Shallow berths
 
 The freight-length containers hid their cargo in their own shadow — the
