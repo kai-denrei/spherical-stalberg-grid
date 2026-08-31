@@ -194,7 +194,19 @@ design. Only the first is done.
   pazorukore and through the duel's own bridge; the seed is derived from
   the run's stream, so a replay breaches the same puzzles in the same
   order.
-- **A real win condition.** Endless is a placeholder. The shape the
+- ~~**A real win condition**~~ — DONE. A TOUR is 15 waves (tunable, and the
+  number is a first guess). Survive one and you have won; then bank it and
+  the run ends with the clear on the board, or press on for another tour
+  with everything at stake — dying on tour two costs you tour one, which is
+  the only way "more waves" is a decision rather than a free extra. The
+  second win is the planet: every portal dead with all five sectors open,
+  which is the only reading of "the entire map free" this world supports,
+  since sectors are how the shell unseals. `?tour=N` and `?planet=1` stand
+  on the cards. What is NOT built is the operator's third beat — portals
+  eating the map as you continue — and the achievements roster below is
+  where the rest of the reward for a clear should live.
+
+- **[superseded] A real win condition.** Endless is a placeholder. The shape the
   operator wants, in three stages: (1) a FINITE wave count — survive them
   all and you have won; (2) among survivors, the ranking is by score, so
   the game is "clear it, then clear it better"; (3) an optional

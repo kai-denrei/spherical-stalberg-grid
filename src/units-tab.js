@@ -14,23 +14,23 @@ import { OrbitControls } from '../vendor/OrbitControls.js';
 import { buildUnit, preloadMkcx, makeDebris, makeDotBurst, makeBulletCloud,
   makeDotEnemy, makeRewardSolid, makeShellSolid, makePortalCloud,
   preloadServer, makeServerFixture, preloadContainer, makeContainerFixture,
-  preloadFabricator, makeFabricatorDrone } from './units.js?v=f511b2e8';
+  preloadFabricator, makeFabricatorDrone } from './units.js?v=7f948aa3';
 import { TANK_FEEL, TANK_FEEL_KNOBS, formatFeelCode, makeTankFeel, stepTankFeel,
-  landTankFeel, fireTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js?v=f511b2e8';
+  landTankFeel, fireTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js?v=7f948aa3';
 import { FEEL, loadFeel, saveFeel, resetFeel,
-  TOWER, HEADS, loadTower, saveTower, resetTower } from './feelstore.js?v=f511b2e8';
+  TOWER, HEADS, loadTower, saveTower, resetTower } from './feelstore.js?v=7f948aa3';
 import { TOWER_FEEL_KNOBS, formatTowerFeel, clampTowerParams,
-  formatTowerHeads, HEAD_CHOICES, HEAD_AS_SHIPPED } from './towerfeel.js?v=f511b2e8';
-import { CREATURE_TINTS } from './enemyspec.js?v=f511b2e8';
+  formatTowerHeads, HEAD_CHOICES, HEAD_AS_SHIPPED } from './towerfeel.js?v=7f948aa3';
+import { CREATURE_TINTS } from './enemyspec.js?v=7f948aa3';
 import { buildTowerLook, TOWER_LOOK_NAMES, DEFAULT_TOWER_LOOK, preloadLook } from './towerlooks.js';
 import { TOWER_BY_KEY, TOWERS } from './towers.js';
 import { LOOKS } from './looks.js';
 import { makeBloom } from './postfx.js';
-import { makeAudio } from './audio.js?v=f511b2e8';
+import { makeAudio } from './audio.js?v=7f948aa3';
 import { GROUPS, GROUP_LABELS, GROUP_EMPTY, entriesIn } from './unitcatalog.js';
 import { FONT_NAMES, TYPE_KNOBS, TYPE_FEEL, makeTypeParams, clampTypeParams,
-  formatTypeCode, applyFontPack, currentFontPack, currentShoutPack } from './fonts.js?v=f511b2e8';
-import { LORE, LORE_WORLD, loreText, loreAll } from './lore.js?v=f511b2e8';
+  formatTypeCode, applyFontPack, currentFontPack, currentShoutPack } from './fonts.js?v=7f948aa3';
+import { LORE, LORE_WORLD, loreText, loreAll } from './lore.js?v=7f948aa3';
 
 let roundTex = null;
 function roundDotTex() {

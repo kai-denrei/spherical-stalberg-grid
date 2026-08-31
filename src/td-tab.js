@@ -19,33 +19,33 @@
 
 import * as THREE from '../vendor/three.module.js';
 import GUI from '../vendor/lil-gui.esm.js';
-import { generateSphereMesh, relax } from './grid.js?v=f511b2e8';
-import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=f511b2e8';
-import { mulberry32, randomSeed } from './rng.js?v=f511b2e8';
-import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3, segKey } from './vec3.js?v=f511b2e8';
-import { CREATURES, waveJelly } from './creatures.js?v=f511b2e8';
+import { generateSphereMesh, relax } from './grid.js?v=7f948aa3';
+import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=7f948aa3';
+import { mulberry32, randomSeed } from './rng.js?v=7f948aa3';
+import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3, segKey } from './vec3.js?v=7f948aa3';
+import { CREATURES, waveJelly } from './creatures.js?v=7f948aa3';
 import { applyFontPack, currentFontPack, FONT_NAMES, TYPE_KNOBS,
-  makeTypeParams, clampTypeParams, formatTypeCode } from './fonts.js?v=f511b2e8';
-import { UNITS, UNIT_NAMES, buildUnit, buildCreature, preloadMkcx, preloadServer, makeServerFixture, makeShieldShell, preloadContainer, makeContainerFixture, preloadFabricator, makeFabricatorDrone, makeBulletCloud, makeRewardSolid, makeShellSolid, makeDebris, makeDotBurst, makePortalCloud, makeHeartCloud, makeDotEnemy } from './units.js?v=f511b2e8';
-import { LOOKS, LOOK_NAMES } from './looks.js?v=f511b2e8';
-import { makeCellIndex } from './cellindex.js?v=f511b2e8';
-import { CREATURE_TINTS, ENEMY_SPEC, INTROS, computeWavePlan } from './enemyspec.js?v=f511b2e8';
-import { PICKUPS } from './pickups.js?v=f511b2e8';
-import { rankFor, rankLabel, badgeSVG, killReq, eliteReq } from './ranks.js?v=f511b2e8';
-import { makeScore } from './score.js?v=f511b2e8';
-import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER } from './towers.js?v=f511b2e8';
-import { makeEconomy, sellRefund } from './economy.js?v=f511b2e8';
-import { makeBloom } from './postfx.js?v=f511b2e8';
-import { TANK_FEEL, TANK_FEEL_KNOBS, makeTankFeel, stepTankFeel, landTankFeel, fireTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js?v=f511b2e8';
-import { FEEL, loadFeel, saveFeel } from './feelstore.js?v=f511b2e8';
+  makeTypeParams, clampTypeParams, formatTypeCode } from './fonts.js?v=7f948aa3';
+import { UNITS, UNIT_NAMES, buildUnit, buildCreature, preloadMkcx, preloadServer, makeServerFixture, makeShieldShell, preloadContainer, makeContainerFixture, preloadFabricator, makeFabricatorDrone, makeBulletCloud, makeRewardSolid, makeShellSolid, makeDebris, makeDotBurst, makePortalCloud, makeHeartCloud, makeDotEnemy } from './units.js?v=7f948aa3';
+import { LOOKS, LOOK_NAMES } from './looks.js?v=7f948aa3';
+import { makeCellIndex } from './cellindex.js?v=7f948aa3';
+import { CREATURE_TINTS, ENEMY_SPEC, INTROS, computeWavePlan } from './enemyspec.js?v=7f948aa3';
+import { PICKUPS } from './pickups.js?v=7f948aa3';
+import { rankFor, rankLabel, badgeSVG, killReq, eliteReq } from './ranks.js?v=7f948aa3';
+import { makeScore } from './score.js?v=7f948aa3';
+import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER } from './towers.js?v=7f948aa3';
+import { makeEconomy, sellRefund } from './economy.js?v=7f948aa3';
+import { makeBloom } from './postfx.js?v=7f948aa3';
+import { TANK_FEEL, TANK_FEEL_KNOBS, makeTankFeel, stepTankFeel, landTankFeel, fireTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js?v=7f948aa3';
+import { FEEL, loadFeel, saveFeel } from './feelstore.js?v=7f948aa3';
 import { STRIKE_KNOBS, makeStrike, makeStrikeParams, grantStrikes, stepStrike,
   toggleArm, paintTarget, launchStrike, stepFall, skipFall, fallProgress,
-  strikeDamage, retargetStrike, orbitProgress } from './strike.js?v=f511b2e8';
-import { radarBasis, radarProject, radarBearing, sweepAngle, radarPhosphor } from './radar.js?v=f511b2e8';
-import { BLOOM_GROUPS } from './bloomweights.js?v=f511b2e8';
-import { TOWER_LOOK_NAMES, DEFAULT_TOWER_LOOK, buildTowerLook, preloadLook } from './towerlooks.js?v=f511b2e8';
-import { makeAudio } from './audio.js?v=f511b2e8';
-import { DEATH_KEYS } from './audiomanifest.js?v=f511b2e8';
+  strikeDamage, retargetStrike, orbitProgress } from './strike.js?v=7f948aa3';
+import { radarBasis, radarProject, radarBearing, sweepAngle, radarPhosphor } from './radar.js?v=7f948aa3';
+import { BLOOM_GROUPS } from './bloomweights.js?v=7f948aa3';
+import { TOWER_LOOK_NAMES, DEFAULT_TOWER_LOOK, buildTowerLook, preloadLook } from './towerlooks.js?v=7f948aa3';
+import { makeAudio } from './audio.js?v=7f948aa3';
+import { DEATH_KEYS } from './audiomanifest.js?v=7f948aa3';
 
 export function initTdTab(root) {
   let active = false;
@@ -90,6 +90,8 @@ export function initTdTab(root) {
     orbs: 14,
     orbRespawn: 6, // seconds between respawns (0 = off)
     waveSize: 4,
+    tourWaves: 15, // waves in a TOUR — survive one and you have won (tunable:
+                   // the number is the operator's first guess, not a finding)
     waveGap: 7,   // seconds of anticipation between a cleared wave and the next
     waveCap: 30,  // safety: force the next wave if the current isn't cleared in time
     rewards: 6,
@@ -425,6 +427,25 @@ export function initTdTab(root) {
   const spawnPoints = [];  // { ci, hp, obj, alive, found, mapMarker } — type-agnostic gates
   let wave = 0;
   let waveActive = false; // a wave's enemies are live/uncleared
+
+  // --- THE WIN CONDITION ---------------------------------------------------
+  // A TOUR is 15 waves. Survive them and you have won — that is the basic
+  // win, and it is where the endless mode stops being a placeholder.
+  //
+  // Then the offer: BANK IT and the run ends with the clear on the board, or
+  // PRESS ON for another tour. Pressing on is a GAMBLE (operator's ruling):
+  // the clear is not yours until you stop, so dying on tour two costs you
+  // tour one as well. That is the only way "more waves" is a decision rather
+  // than a free extra.
+  //
+  // The second win is the planet: every portal dead with the whole shell
+  // unsealed — sector 5, the last one there is. checkVictory tells them
+  // apart, because "every portal in this sector" and "every portal there
+  // is" are the same test at different scopes and only one of them is a win.
+  const SECTORS_TOTAL = 5;
+  let toursOffered = 0;    // tours whose bank/press-on choice has been made
+  let toursCleared = 0;    // tours survived this run — forfeit if you fall
+  let clearAtRisk = false; // pressed on: a loss now takes the clears with it
   let interClock = 0;     // anticipation countdown between waves
   let waveAge = 0;        // seconds since the current wave spawned (safety cap)
   const seenTypes = new Set(); // headline types already revealed this run
@@ -3182,6 +3203,15 @@ export function initTdTab(root) {
       strike.reserved += 1; // the platform restocks one round per sector
       expandRound(); syncArmUi();
     }
+    else if (cl.contains('msg-bank')) bankTour();
+    else if (cl.contains('msg-onward')) {
+      // the gamble is taken here, and it is the only place clearAtRisk is set
+      clearAtRisk = true;
+      paused = false;
+      msgEl.classList.add('hidden');
+      showToast(`<div class="wave-num">TOUR ${toursCleared + 1} · NOTHING BANKED</div>`
+        + `<div class="wave-role">${toursCleared} clear${toursCleared > 1 ? 's' : ''} riding on this one</div>`, 3000);
+    }
     else if (cl.contains('msg-begin')) { paused = false; msgEl.classList.add('hidden'); }
     else if (cl.contains('msg-glenemy')) showEnemyGlossary();
     else if (cl.contains('msg-glfriend')) showFriendGlossary();
@@ -3788,6 +3818,7 @@ export function initTdTab(root) {
     // to a bus (operator: "the sound started to lag after the second game").
     sfx.panic();
     stopEngine(0, true);
+    toursOffered = 0; toursCleared = 0; clearAtRisk = false;
     clearTowers();
     // opening biomass: exactly a Rapid (70kg) + a Slow (100kg) — your first plan
     eco = makeEconomy({ startBiomass: 170 });
@@ -5042,8 +5073,15 @@ export function initTdTab(root) {
     // the operator's wording, verbatim: LAST TRANSMISSION — SNAFU,
     // K-KILL ×(hulls destroyed) — THEN the eulogy and the numbers
     const kkill = PLAYER_MAX - Math.max(0, playerHP);
+    // what the gamble cost, said plainly. A forfeited clear the player is
+    // not told about is a mechanic they never learn.
+    const forfeit = clearAtRisk && toursCleared > 0
+      ? `<div class="go-reason">✕ ${toursCleared} banked tour${toursCleared > 1 ? 's' : ''} FORFEIT`
+        + ` — you pressed on</div>`
+      : '';
     msgEl.innerHTML = `<div class="msg-head">LAST TRANSMISSION</div>`
       + `<div class="go-snafu">SNAFU · K-KILL ×${kkill}</div>`
+      + forfeit
       + `<div class="go-verdict${newBest ? ' best' : ''}">${verdict}</div>`
       + `<div class="go-reason">× ${reason}</div>`
       + `<div class="go-grid">`
@@ -6350,15 +6388,85 @@ export function initTdTab(root) {
     return cellIndex([p.x, p.y, p.z]);
   }
 
+  // The choice, at the end of every tour. Frozen while it is up, because
+  // this is the one decision in the game that cannot be taken back.
+  function offerTour() {
+    paused = true;
+    const carried = toursCleared > 1
+      ? `<div class="go-reason">you are carrying ${toursCleared} tours — a loss now takes all of them</div>`
+      : '';
+    msgEl.innerHTML = `<div class="msg-head">transmission · tour complete</div>`
+      + `<div class="go-verdict">TOUR ${toursCleared} SURVIVED</div>`
+      + `<div class="go-grid">`
+      + `<span>WAVES <b>${wave}</b> · heart ${Math.max(0, heartHP)}/${HEART_MAX}</span>`
+      + `<span>SCORE <b>${fmt(score.points)}</b></span>`
+      + `<span>${towers.length} towers standing · ${eco.biomass}kg banked</span>`
+      + `<span>portals ${spawnPoints.filter((s) => s.alive).length}/${spawnPoints.length} · sector ${round}/${SECTORS_TOTAL}</span>`
+      + `</div>` + carried
+      + `<div class="go-reason">bank it and the clear is yours. press on and it is not —`
+      + ` fall on the next tour and you lose this one too.</div>`
+      + `<button class="msg-bank">&check; BANK IT — end the run a winner</button>`
+      + `<button class="msg-onward">&rsaquo; PRESS ON — ${params.tourWaves} more waves, everything at stake</button>`;
+    msgEl.classList.remove('hidden');
+  }
+
+  // Banked: the run ends here, on purpose, with the clear on the board. The
+  // same card the defeat uses, because the numbers a player wants are the
+  // same ones either way — only the verdict at the top changes.
+  function bankTour() {
+    player.won = true;
+    persistBest();
+    let clears = 0;
+    try { clears = (parseInt(localStorage.getItem('td.clears') || '0', 10) || 0) + 1; } catch (e) { /* private mode */ }
+    try { localStorage.setItem('td.clears', String(clears)); } catch (e) { /* ignore */ }
+    const newBest = score.points >= score.best && score.points > 0;
+    msgEl.innerHTML = `<div class="msg-head">transmission · tour banked</div>`
+      + `<div class="go-verdict${newBest ? ' best' : ''}">SURVEYED AND HELD</div>`
+      + `<div class="go-reason">&check; ${toursCleared} tour${toursCleared > 1 ? 's' : ''}`
+      + ` · ${wave} waves · you walked away with it</div>`
+      + `<div class="go-grid">`
+      + `<span>SCORE <b>${fmt(score.points)}</b>${newBest ? ' <i class="go-best">NEW BEST</i>' : ` · best ${fmt(score.best)}`}</span>`
+      + `<span>heart ${Math.max(0, heartHP)}/${HEART_MAX} · sector ${round}/${SECTORS_TOTAL}</span>`
+      + `<span>hulls left ${Math.max(0, playerHP)}/${PLAYER_MAX} · rank ${tankRank > 0 ? rankLabel(tankRank) : 'unranked'}</span>`
+      + `<span>clears on record <b>${clears}</b></span>`
+      + `</div>`
+      + `<div class="go-reason">the planet is not yours yet — that is every portal dead`
+      + ` with the whole shell open, sector ${SECTORS_TOTAL}/${SECTORS_TOTAL}</div>`
+      + `<button class="msg-regen">&#10226; new sector</button>`;
+    msgEl.classList.remove('hidden');
+  }
+
   function checkVictory() {
     if (player.won || tutorialActive) return; // the tutorial is failure/win-proof
     if (spawnPoints.length > 0 && spawnPoints.every((s) => !s.alive) && enemies.every((e) => !e.alive)) {
       player.won = true;
-      msgEl.innerHTML = `<div class="msg-head">transmission · combat log</div>` +
-        `✦ SECTOR ${round} CLEARED — every portal destroyed<br>` +
-        `${wave} waves · heart ${heartHP}/${HEART_MAX} · ` +
-        `${towers.length} towers standing · ${eco.biomass}kg<br>` +
-        `<button class="msg-next">&rsaquo; breach sector ${round + 1} — bigger, farther, meaner</button>`;
+      if (round >= SECTORS_TOTAL) {
+        // THE PLANET. Every portal dead with the whole shell open — there is
+        // no sector left to breach, which is the only reading of "the entire
+        // map free" this world actually supports.
+        try {
+          const p2 = (parseInt(localStorage.getItem('td.planets') || '0', 10) || 0) + 1;
+          localStorage.setItem('td.planets', String(p2));
+        } catch (e) { /* private mode */ }
+        persistBest();
+        msgEl.innerHTML = `<div class="msg-head">transmission · final</div>`
+          + `<div class="go-verdict best">OBJECT STÅLBERG-9 IS YOURS</div>`
+          + `<div class="go-reason">every portal on the shell destroyed, all `
+          + `${SECTORS_TOTAL} sectors open — there is nothing left to breach</div>`
+          + `<div class="go-grid">`
+          + `<span>SCORE <b>${fmt(score.points)}</b></span>`
+          + `<span>${wave} waves · ${toursCleared} tour${toursCleared === 1 ? '' : 's'}</span>`
+          + `<span>heart ${Math.max(0, heartHP)}/${HEART_MAX} · ${towers.length} towers standing</span>`
+          + `<span>hulls left ${Math.max(0, playerHP)}/${PLAYER_MAX}</span>`
+          + `</div>`
+          + `<button class="msg-regen">&#10226; another planet</button>`;
+      } else {
+        msgEl.innerHTML = `<div class="msg-head">transmission · combat log</div>` +
+          `✦ SECTOR ${round}/${SECTORS_TOTAL} CLEARED — every portal destroyed<br>` +
+          `${wave} waves · heart ${heartHP}/${HEART_MAX} · ` +
+          `${towers.length} towers standing · ${eco.biomass}kg<br>` +
+          `<button class="msg-next">&rsaquo; breach sector ${round + 1} — bigger, farther, meaner</button>`;
+      }
       msgEl.classList.remove('hidden');
     }
   }
@@ -6436,6 +6544,7 @@ export function initTdTab(root) {
   const directiveCtrl = gui.add(params, 'directive', DIRECTIVES).name('auto directive').onChange(syncDirectiveChip);
   gui.add(params, 'recoil', 0, 8, 0.1).name('shell recoil');
   gui.add(params, 'waveSize', 1, 6, 1).name('wave size').onFinishChange(regenerate);
+  gui.add(params, 'tourWaves', 5, 40, 1).name('waves per tour');
   gui.add(params, 'waveGap', 3, 20, 1).name('wave gap (s)');
   gui.add(params, 'waveCap', 15, 60, 1).name('wave cap (s)');
   gui.add(params, 'obstacles', 0.05, 0.4, 0.05).onFinishChange(regenerate);
@@ -6794,6 +6903,11 @@ export function initTdTab(root) {
           if (tutorialActive) {
             showToast(`<div class="wave-num">WAVE ${wave} CLEARED</div>` +
               `<div class="wave-role">brace — the next wave is coming</div>`, 2200);
+          } else if (wave % params.tourWaves === 0
+            && wave / params.tourWaves > toursOffered) {
+            toursOffered = wave / params.tourWaves;
+            toursCleared = toursOffered;
+            offerTour();
           } else showSitrep(); // the recap IS the cleared card now
         } else if (waveAge >= params.waveCap && spawnPoints.some((s) => s.alive)) {
           armWave(); // safety: the field is stalled — but it still announces
@@ -7147,6 +7261,31 @@ export function initTdTab(root) {
   const waveN = parseInt(urlParams.get('wave') || '0', 10);
   for (let i = 0; i < waveN; i++) spawnWave();
 
+  // ?tour=1 stands at the end of a tour with the bank/press-on choice up;
+  // ?tour=2 takes the gamble and stands at the end of the SECOND, carrying
+  // the first. Neither is reachable by playing in a headless browser, and
+  // the whole mechanic is the two seconds where that card is on screen.
+  const tourN = parseInt(urlParams.get('tour') || '0', 10);
+  if (tourN > 0) {
+    clearEnemies();
+    wave = params.tourWaves * tourN;
+    toursOffered = tourN - 1;
+    toursCleared = tourN - 1;
+    clearAtRisk = tourN > 1;
+    score.addWave(wave);
+    toursOffered = tourN; toursCleared = tourN;
+    offerTour();
+  }
+
+  // ?planet=1 stands on the second win: the whole shell open, every portal
+  // dead. Reachable only by clearing five sectors, so never by hand here.
+  if (urlParams.get('planet') === '1') {
+    round = SECTORS_TOTAL;
+    for (const sp of spawnPoints) sp.alive = false;
+    clearEnemies();
+    checkVictory();
+  }
+
   // ?found=1 marks every spawn point discovered (minimap beacon check)
   if (urlParams.get('found') === '1') for (const sp of spawnPoints) sp.found = true;
 
@@ -7316,7 +7455,7 @@ export function initTdTab(root) {
     }, 2000);
   }
 
-  const debugging = ['walk', 'tick', 'wave', 'blast', 'laser', 'found', 'recoil', 'mode', 'map', 'tower', 'biomass', 'credit', 'driveout', 'order', 'bobby', 'shop', 'sector', 'reveal', 'portal', 'lose', 'charge', 'layout', 'perf', 'strike', 'strikefall', 'strikecam', 'gateprobe', 'rank', 'danger', 'callout', 'sitrep', 'server', 'hack', 'shield', 'sim']
+  const debugging = ['walk', 'tick', 'wave', 'blast', 'laser', 'found', 'recoil', 'mode', 'map', 'tower', 'biomass', 'credit', 'driveout', 'order', 'bobby', 'tour', 'planet', 'shop', 'sector', 'reveal', 'portal', 'lose', 'charge', 'layout', 'perf', 'strike', 'strikefall', 'strikecam', 'gateprobe', 'rank', 'danger', 'callout', 'sitrep', 'server', 'hack', 'shield', 'sim']
     .some((k) => urlParams.get(k));
   const tutParam = urlParams.get('tutorial');
   runTutorial = tutParam === '1' || (tutParam !== '0' && !debugging);
