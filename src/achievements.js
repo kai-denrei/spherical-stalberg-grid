@@ -128,6 +128,20 @@ export function earned(run) {
 // The ids in `list` that are not already in `have` — the ones worth telling
 // the player about, in table order so a streak ladder announces in order.
 export function freshlyEarned(have, list) {
-  const had = new Set(have);
-  return ACHV_IDS.filter((id) => list.includes(id) && !had.has(id));
+  // `have` comes from storage, which is untrusted input — a blob of the
+  // wrong SHAPE (an object where an array was expected) took the whole tab
+  // down with "object is not iterable", from a Set() constructor three calls
+  // away from anything that mentions storage. A pure function handed
+  // outside data defends itself.
+  const had = new Set(Array.isArray(have) ? have : []);
+  const want = Array.isArray(list) ? list : [];
+  return ACHV_IDS.filter((id) => want.includes(id) && !had.has(id));
+}
+
+// What a stored record should be reduced to before anything trusts it:
+// an array, of ids this build still has. An id retired from the table stops
+// counting rather than sitting in storage forever as a name nothing knows.
+export function sanitiseRecord(raw) {
+  if (!Array.isArray(raw)) return [];
+  return raw.filter((id) => typeof id === 'string' && BY_ID.has(id));
 }

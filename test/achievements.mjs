@@ -3,7 +3,7 @@
 // an achievement that triggers on a blank run is worse than one that never
 // triggers, because it is a lie the player cannot un-see.
 
-import { ACHIEVEMENTS, ACHV_IDS, ACHV_GROUPS, blankRun, earned, freshlyEarned }
+import { ACHIEVEMENTS, ACHV_IDS, ACHV_GROUPS, blankRun, earned, freshlyEarned, sanitiseRecord }
   from '../src/achievements.js';
 
 let failures = 0;
@@ -77,6 +77,16 @@ console.log('freshness:');
   check('order follows the table, so a ladder announces in order',
     freshlyEarned([], ['streak200', 'streak100']).join(',') === 'streak100,streak200');
   check('nothing new is an empty list', freshlyEarned(list, list).length === 0);
+}
+
+console.log('storage is untrusted input:');
+{
+  check('a non-array record does not throw', freshlyEarned({ a: 1 }, ['hacker']).length === 1);
+  check('a null record does not throw', freshlyEarned(null, ['hacker']).length === 1);
+  check('a non-array list does not throw', freshlyEarned([], null).length === 0);
+  check('sanitise drops non-arrays', sanitiseRecord({ x: 1 }).length === 0);
+  check('sanitise drops unknown and non-string ids',
+    sanitiseRecord(['hacker', 'gone-in-v2', 7, null]).join(',') === 'hacker');
 }
 
 if (failures) { console.error(`\nachievements: ${failures} FAILED`); process.exit(1); }
