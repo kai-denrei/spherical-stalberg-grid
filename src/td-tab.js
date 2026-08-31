@@ -19,35 +19,35 @@
 
 import * as THREE from '../vendor/three.module.js';
 import GUI from '../vendor/lil-gui.esm.js';
-import { generateSphereMesh, relax } from './grid.js?v=dd6763ad';
-import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=dd6763ad';
-import { mulberry32, randomSeed } from './rng.js?v=dd6763ad';
-import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3, segKey } from './vec3.js?v=dd6763ad';
-import { CREATURES, waveJelly } from './creatures.js?v=dd6763ad';
+import { generateSphereMesh, relax } from './grid.js?v=7a96b990';
+import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=7a96b990';
+import { mulberry32, randomSeed } from './rng.js?v=7a96b990';
+import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3, segKey } from './vec3.js?v=7a96b990';
+import { CREATURES, waveJelly } from './creatures.js?v=7a96b990';
 import { ACHIEVEMENTS, ACHV_GROUPS, achievement, blankRun, earned, freshlyEarned }
-  from './achievements.js?v=dd6763ad';
-import { applyFontPack, currentFontPack, FONT_NAMES, TYPE_KNOBS,
-  makeTypeParams, clampTypeParams, formatTypeCode } from './fonts.js?v=dd6763ad';
-import { UNITS, UNIT_NAMES, buildUnit, buildCreature, preloadMkcx, preloadServer, makeServerFixture, makeShieldShell, preloadContainer, makeContainerFixture, preloadFabricator, makeIsaoDrone, makeBulletCloud, makeRewardSolid, makeShellSolid, makeDebris, makeDotBurst, makePortalCloud, makeHeartCloud, makeDotEnemy } from './units.js?v=dd6763ad';
-import { LOOKS, LOOK_NAMES } from './looks.js?v=dd6763ad';
-import { makeCellIndex } from './cellindex.js?v=dd6763ad';
-import { CREATURE_TINTS, ENEMY_SPEC, INTROS, computeWavePlan } from './enemyspec.js?v=dd6763ad';
-import { PICKUPS } from './pickups.js?v=dd6763ad';
-import { rankFor, rankLabel, badgeSVG, killReq, eliteReq } from './ranks.js?v=dd6763ad';
-import { makeScore } from './score.js?v=dd6763ad';
-import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER } from './towers.js?v=dd6763ad';
-import { makeEconomy, sellRefund } from './economy.js?v=dd6763ad';
-import { makeBloom } from './postfx.js?v=dd6763ad';
-import { TANK_FEEL, TANK_FEEL_KNOBS, makeTankFeel, stepTankFeel, landTankFeel, fireTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js?v=dd6763ad';
-import { FEEL, loadFeel, saveFeel } from './feelstore.js?v=dd6763ad';
+  from './achievements.js?v=7a96b990';
+import { applyFontPack, currentFontPack, FONT_NAMES,
+  loadTypeFeel } from './fonts.js?v=7a96b990';
+import { UNITS, UNIT_NAMES, buildUnit, buildCreature, preloadMkcx, preloadServer, makeServerFixture, makeShieldShell, preloadContainer, makeContainerFixture, preloadFabricator, makeIsaoDrone, makeBulletCloud, makeRewardSolid, makeShellSolid, makeDebris, makeDotBurst, makePortalCloud, makeHeartCloud, makeDotEnemy } from './units.js?v=7a96b990';
+import { LOOKS, LOOK_NAMES } from './looks.js?v=7a96b990';
+import { makeCellIndex } from './cellindex.js?v=7a96b990';
+import { CREATURE_TINTS, ENEMY_SPEC, INTROS, computeWavePlan } from './enemyspec.js?v=7a96b990';
+import { PICKUPS } from './pickups.js?v=7a96b990';
+import { rankFor, rankLabel, badgeSVG, killReq, eliteReq } from './ranks.js?v=7a96b990';
+import { makeScore } from './score.js?v=7a96b990';
+import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER } from './towers.js?v=7a96b990';
+import { makeEconomy, sellRefund } from './economy.js?v=7a96b990';
+import { makeBloom } from './postfx.js?v=7a96b990';
+import { TANK_FEEL, TANK_FEEL_KNOBS, makeTankFeel, stepTankFeel, landTankFeel, fireTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js?v=7a96b990';
+import { FEEL, loadFeel, saveFeel } from './feelstore.js?v=7a96b990';
 import { STRIKE_KNOBS, makeStrike, makeStrikeParams, grantStrikes, stepStrike,
   toggleArm, paintTarget, launchStrike, stepFall, skipFall, fallProgress,
-  strikeDamage, retargetStrike, orbitProgress } from './strike.js?v=dd6763ad';
-import { radarBasis, radarProject, radarBearing, sweepAngle, radarPhosphor } from './radar.js?v=dd6763ad';
-import { BLOOM_GROUPS } from './bloomweights.js?v=dd6763ad';
-import { TOWER_LOOK_NAMES, DEFAULT_TOWER_LOOK, buildTowerLook, preloadLook } from './towerlooks.js?v=dd6763ad';
-import { makeAudio } from './audio.js?v=dd6763ad';
-import { DEATH_KEYS } from './audiomanifest.js?v=dd6763ad';
+  strikeDamage, retargetStrike, orbitProgress } from './strike.js?v=7a96b990';
+import { radarBasis, radarProject, radarBearing, sweepAngle, radarPhosphor } from './radar.js?v=7a96b990';
+import { BLOOM_GROUPS } from './bloomweights.js?v=7a96b990';
+import { TOWER_LOOK_NAMES, DEFAULT_TOWER_LOOK, buildTowerLook, preloadLook } from './towerlooks.js?v=7a96b990';
+import { makeAudio } from './audio.js?v=7a96b990';
+import { DEATH_KEYS } from './audiomanifest.js?v=7a96b990';
 
 export function initTdTab(root) {
   let active = false;
@@ -5546,11 +5546,7 @@ export function initTdTab(root) {
   // the live type-feel values the tuner writes into, restored from storage
   // through the schema's own clamp — our own localStorage is untrusted input
   // after a schema change, same rule as the feel store
-  const TYPE = makeTypeParams();
-  try {
-    const raw = localStorage.getItem('ssg-type');
-    if (raw) clampTypeParams(TYPE, JSON.parse(raw));
-  } catch (e) { /* private mode, or a blob from an older schema */ }
+  const TYPE = loadTypeFeel();
   // read-only here: whatever was dialled on the bench is already in force
   function applyType() {
     applyFontPack(currentFontPack(), document.documentElement, TYPE);

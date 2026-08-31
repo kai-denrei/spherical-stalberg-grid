@@ -15,7 +15,7 @@
 //
 // Pure data plus one thin effectful call — the standing testability line.
 
-import { makeParams, clampParams, formatKnobs } from './knobs.js?v=dd6763ad';
+import { makeParams, clampParams, formatKnobs } from './knobs.js?v=7a96b990';
 
 const MONO = 'ui-monospace, "SF Mono", SFMono-Regular, Menlo, monospace';
 const CJK = '"DotGothic16"';   // the shared Japanese voice, appended everywhere
@@ -117,7 +117,7 @@ export const TYPE_FEEL = {
   bleed:   4,                  // beam misconverge
   shadow:  6,                  // cast shadow
   shadowA: 0.22,               // shadow strength
-  ink:     1.8,                // dark outline
+  ink:     2.0,                // dark outline
 };
 
 export const TYPE_KNOBS = [
@@ -136,6 +136,44 @@ export const TYPE_KNOBS = [
   { key: 'shadowA', label: 'shadow strength',   group: 'type · light', min: 0,  max: 1,  step: 0.02 },
   { key: 'ink',     label: 'dark outline',      group: 'type · light', min: 0,  max: 3,  step: 0.25 },
 ];
+
+// SHIPPED DEFAULTS MUST BEAT STALE STORAGE. The tuner persists what you
+// dial, which is right — until the defaults in this file change, at which
+// point every browser that has ever opened the bench keeps showing the OLD
+// numbers and the new ones are unreachable. That is exactly what happened:
+// the operator's tuned values landed here as defaults and their own browser
+// went on serving the blob it had saved before them, which reads as the
+// settings reverting.
+//
+// So the blob carries a version. Bump this whenever TYPE_FEEL changes and
+// every stored blob from before the change is discarded on sight. Values
+// dialled after it survive normally.
+export const TYPE_VERSION = 2;
+const TYPE_STORE = 'ssg-type';
+
+// One loader and one saver, exported, because three copies of a restore is
+// three places for this to rot again.
+export function loadTypeFeel() {
+  const p = makeTypeParams();
+  try {
+    const raw = localStorage.getItem(TYPE_STORE);
+    if (!raw) return p;
+    const blob = JSON.parse(raw);
+    if (!blob || blob.v !== TYPE_VERSION) {
+      // not ours: drop it rather than half-applying it
+      localStorage.removeItem(TYPE_STORE);
+      return p;
+    }
+    clampTypeParams(p, blob);
+  } catch { /* private mode, or a blob from an older schema */ }
+  return p;
+}
+
+export function saveTypeFeel(p) {
+  try {
+    localStorage.setItem(TYPE_STORE, JSON.stringify({ v: TYPE_VERSION, ...p }));
+  } catch { /* private mode */ }
+}
 
 export const makeTypeParams = (src = TYPE_FEEL) => makeParams(TYPE_KNOBS, src);
 export const clampTypeParams = (p, src) => clampParams(TYPE_KNOBS, p, src);
