@@ -19,36 +19,36 @@
 
 import * as THREE from '../vendor/three.module.js';
 import GUI from '../vendor/lil-gui.esm.js';
-import { generateSphereMesh, relax } from './grid.js?v=1c81b777';
-import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=1c81b777';
-import { mulberry32, randomSeed } from './rng.js?v=1c81b777';
-import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3, segKey } from './vec3.js?v=1c81b777';
-import { CREATURES, waveJelly } from './creatures.js?v=1c81b777';
+import { generateSphereMesh, relax } from './grid.js?v=4b8e9a6e';
+import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=4b8e9a6e';
+import { mulberry32, randomSeed } from './rng.js?v=4b8e9a6e';
+import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3, segKey } from './vec3.js?v=4b8e9a6e';
+import { CREATURES, waveJelly } from './creatures.js?v=4b8e9a6e';
 import { ACHIEVEMENTS, ACHV_GROUPS, achievement, blankRun, earned, freshlyEarned,
   sanitiseRecord }
-  from './achievements.js?v=1c81b777';
+  from './achievements.js?v=4b8e9a6e';
 import { applyFontPack, currentFontPack, FONT_NAMES,
-  loadTypeFeel } from './fonts.js?v=1c81b777';
-import { UNITS, UNIT_NAMES, buildUnit, buildCreature, preloadMkcx, preloadServer, makeServerFixture, makeShieldShell, preloadContainer, makeContainerFixture, preloadFabricator, makeIsaoDrone, makeBulletCloud, makeRewardSolid, makeShellSolid, makeDebris, makeDotBurst, makePortalCloud, makeHeartCloud, makeDotEnemy } from './units.js?v=1c81b777';
-import { LOOKS, LOOK_NAMES } from './looks.js?v=1c81b777';
-import { makeCellIndex } from './cellindex.js?v=1c81b777';
-import { CREATURE_TINTS, ENEMY_SPEC, INTROS, computeWavePlan, accentFor } from './enemyspec.js?v=1c81b777';
-import { PICKUPS } from './pickups.js?v=1c81b777';
-import { rankFor, rankLabel, badgeSVG, killReq, eliteReq } from './ranks.js?v=1c81b777';
-import { makeScore } from './score.js?v=1c81b777';
-import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER } from './towers.js?v=1c81b777';
-import { makeEconomy, sellRefund } from './economy.js?v=1c81b777';
-import { makeBloom } from './postfx.js?v=1c81b777';
-import { TANK_FEEL, TANK_FEEL_KNOBS, makeTankFeel, stepTankFeel, landTankFeel, fireTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js?v=1c81b777';
-import { FEEL, loadFeel, saveFeel } from './feelstore.js?v=1c81b777';
+  loadTypeFeel } from './fonts.js?v=4b8e9a6e';
+import { UNITS, UNIT_NAMES, buildUnit, buildCreature, preloadMkcx, preloadServer, makeServerFixture, makeShieldShell, preloadContainer, makeContainerFixture, preloadFabricator, makeIsaoDrone, makeBulletCloud, makeRewardSolid, makeShellSolid, makeDebris, makeDotBurst, makePortalCloud, makeHeartCloud, makeDotEnemy } from './units.js?v=4b8e9a6e';
+import { LOOKS, LOOK_NAMES } from './looks.js?v=4b8e9a6e';
+import { makeCellIndex } from './cellindex.js?v=4b8e9a6e';
+import { CREATURE_TINTS, ENEMY_SPEC, INTROS, computeWavePlan, accentFor } from './enemyspec.js?v=4b8e9a6e';
+import { PICKUPS } from './pickups.js?v=4b8e9a6e';
+import { rankFor, rankLabel, badgeSVG, killReq, eliteReq } from './ranks.js?v=4b8e9a6e';
+import { makeScore } from './score.js?v=4b8e9a6e';
+import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER } from './towers.js?v=4b8e9a6e';
+import { makeEconomy, sellRefund } from './economy.js?v=4b8e9a6e';
+import { makeBloom } from './postfx.js?v=4b8e9a6e';
+import { TANK_FEEL, TANK_FEEL_KNOBS, makeTankFeel, stepTankFeel, landTankFeel, fireTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js?v=4b8e9a6e';
+import { FEEL, loadFeel, saveFeel } from './feelstore.js?v=4b8e9a6e';
 import { STRIKE_KNOBS, makeStrike, makeStrikeParams, grantStrikes, stepStrike,
   toggleArm, paintTarget, launchStrike, stepFall, skipFall, fallProgress,
-  strikeDamage, retargetStrike, orbitProgress } from './strike.js?v=1c81b777';
-import { radarBasis, radarProject, radarBearing, sweepAngle, radarPhosphor } from './radar.js?v=1c81b777';
-import { BLOOM_GROUPS } from './bloomweights.js?v=1c81b777';
-import { TOWER_LOOK_NAMES, DEFAULT_TOWER_LOOK, buildTowerLook, preloadLook } from './towerlooks.js?v=1c81b777';
-import { makeAudio } from './audio.js?v=1c81b777';
-import { DEATH_KEYS } from './audiomanifest.js?v=1c81b777';
+  strikeDamage, retargetStrike, orbitProgress } from './strike.js?v=4b8e9a6e';
+import { radarBasis, radarProject, radarBearing, sweepAngle, radarPhosphor } from './radar.js?v=4b8e9a6e';
+import { BLOOM_GROUPS } from './bloomweights.js?v=4b8e9a6e';
+import { TOWER_LOOK_NAMES, DEFAULT_TOWER_LOOK, buildTowerLook, preloadLook } from './towerlooks.js?v=4b8e9a6e';
+import { makeAudio } from './audio.js?v=4b8e9a6e';
+import { DEATH_KEYS } from './audiomanifest.js?v=4b8e9a6e';
 
 export function initTdTab(root) {
   let active = false;
@@ -2782,6 +2782,10 @@ export function initTdTab(root) {
     const key = `${strike.armed}|${strike.target}|${strike.ready}|${strike.reserved}|${orbit}|${reorbit}`;
     if (key === armUiKey) return;
     armUiKey = key;
+    // the console carries its own armed state, so CSS can decide what a
+    // small screen shows: on a phone it is a SWITCH until it is armed, and
+    // the readout and the launch key only appear once you have committed
+    if (armBtn) armBtn.classList.toggle('armed', strike.armed);
     safetyEl.setAttribute('aria-pressed', String(strike.armed));
     safetyImg.src = strike.armed ? 'assets/ui/switch-on.png' : 'assets/ui/switch-off.png';
     safetyEl.classList.toggle('locked', !strike.armed && (strike.ready <= 0 || strike.cooldown > 0));
@@ -7698,7 +7702,7 @@ export function initTdTab(root) {
     }, 2000);
   }
 
-  const debugging = ['walk', 'tick', 'wave', 'blast', 'laser', 'found', 'recoil', 'mode', 'map', 'tower', 'biomass', 'credit', 'driveout', 'order', 'isao', 'bobby', 'record', 'debrief', 'planet', 'shop', 'sector', 'reveal', 'portal', 'lose', 'charge', 'layout', 'perf', 'strike', 'strikefall', 'strikecam', 'gateprobe', 'rank', 'danger', 'callout', 'sitrep', 'server', 'hack', 'shield', 'sim']
+  const debugging = ['walk', 'tick', 'wave', 'blast', 'laser', 'found', 'recoil', 'mode', 'map', 'tower', 'biomass', 'credit', 'driveout', 'order', 'isao', 'bobby', 'record', 'debrief', 'armed', 'planet', 'shop', 'sector', 'reveal', 'portal', 'lose', 'charge', 'layout', 'perf', 'strike', 'strikefall', 'strikecam', 'gateprobe', 'rank', 'danger', 'callout', 'sitrep', 'server', 'hack', 'shield', 'sim']
     .some((k) => urlParams.get(k));
   const tutParam = urlParams.get('tutorial');
   runTutorial = tutParam === '1' || (tutParam !== '0' && !debugging);
@@ -7845,6 +7849,14 @@ export function initTdTab(root) {
   // after 1.2s, so the fall camera and the blast can be screenshotted.
   const strikeReady = parseInt(urlParams.get('strike') || '0', 10);
   if (strikeReady > 0) { strike.ready = strikeReady; strike.reserved = 0; }
+  // ?armed=1 — hold the console ARMED, which on a phone is the only state
+  // where the readout and the launch key exist at all. Without it that half
+  // of the mobile layout cannot be photographed.
+  if (urlParams.get('armed') === '1') {
+    strike.ready = Math.max(1, strike.ready);
+    strike.armed = true;
+    armUiKey = ''; syncArmUi();
+  }
   // ?strikecam=1 — the feed overlay + filter, held open on a static frame so
   // the STYLING can be photographed; engagement during a real fall is proven
   // by the FEED log lines instead, because a screenshot cannot reliably race

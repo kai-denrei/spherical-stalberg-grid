@@ -5,22 +5,22 @@
    back to a system face until the subset is rebuilt. */
 @font-face {
   font-family: 'VT323';
-  src: url('assets/fonts/VT323.woff2?v=1c81b777') format('woff2');
+  src: url('assets/fonts/VT323.woff2?v=4b8e9a6e') format('woff2');
   font-weight: 400; font-style: normal; font-display: swap;
 }
 @font-face {
   font-family: 'Press Start 2P';
-  src: url('assets/fonts/PressStart2P.woff2?v=1c81b777') format('woff2');
+  src: url('assets/fonts/PressStart2P.woff2?v=4b8e9a6e') format('woff2');
   font-weight: 400; font-style: normal; font-display: swap;
 }
 @font-face {
   font-family: 'Share Tech Mono';
-  src: url('assets/fonts/ShareTechMono.woff2?v=1c81b777') format('woff2');
+  src: url('assets/fonts/ShareTechMono.woff2?v=4b8e9a6e') format('woff2');
   font-weight: 400; font-style: normal; font-display: swap;
 }
 @font-face {
   font-family: 'DotGothic16';
-  src: url('assets/fonts/DotGothic16.woff2?v=1c81b777') format('woff2');
+  src: url('assets/fonts/DotGothic16.woff2?v=4b8e9a6e') format('woff2');
   font-weight: 400; font-style: normal; font-display: swap;
 }
 
@@ -3315,4 +3315,59 @@ tr.sim-timeout td:nth-child(2), tr.sim-stalled td:nth-child(2) { color: #ffb000;
   #units-sounds { flex-wrap: wrap; justify-content: center; }
   /* six option buttons wrap to two rows rather than running off the side */
   #units-opts { gap: 6px; row-gap: 6px; }
+}
+
+
+/* --- THE LAUNCH CONSOLE ON A PHONE --------------------------------------
+   It was taking a third of the width and a fifth of the height of a 430pt
+   screen for a control used a handful of times a run (operator screenshot).
+   On a phone it is a SWITCH, and nothing else, until it is armed — then the
+   readout and the launch key appear, because that is the only moment they
+   have anything to say. Desktop is untouched: there is room there, and the
+   console being always-legible is the point of it.
+
+   Width clause AND coarse pointer, and placed at the END of the file, both
+   for reasons this stylesheet has already learned the hard way. */
+@media (pointer: coarse), (max-width: 700px) {
+  /* The mode row wraps to TWO lines on a phone since TANK and ORBIT replaced
+     the single camera button, so it now reaches y=55 where the HUD and the
+     radar both start at 50 — measured as a 5px graze on each. Both move down
+     to clear it. A hairline overlap on a HUD is the kind of thing that reads
+     as sloppy long before anyone can say why. */
+  #tab-td #td-stats.hud-panel { top: calc(max(8px, env(safe-area-inset-top)) + 52px); }
+  #tab-td .minimap { top: calc(max(8px, env(safe-area-inset-top)) + 52px); }
+
+  #td-launch {
+    width: auto;
+    padding: 3px 6px;
+    gap: 0;
+    border-width: 3px;
+    border-image-slice: 3;
+  }
+  #td-launch .caution-frame,
+  #td-launch { min-height: 0; }
+  /* the parts that only matter once you have committed */
+  #td-launch #td-launch-readout,
+  #td-launch #td-launch-btn { display: none; }
+  /* ARMED, the console grows AND the minimap is promoted to a radar at the
+     same moment — measured, they collided by 107x92px. The console drops
+     below the radar for as long as it is armed, and goes back up to its
+     switch-sized perch when it is not. */
+  #td-launch.armed {
+    gap: 8px;
+    padding: 4px 8px;
+    top: calc(max(8px, env(safe-area-inset-top)) + 278px);
+  }
+  #td-launch.armed #td-launch-readout { display: block; }
+  #td-launch.armed #td-launch-btn { display: flex; }
+
+  .safety { width: 26px; gap: 0; }
+  .safety .switch-img { width: 20px; height: 32px; }
+  .safety .lbl-on, .safety .lbl-off { font-size: 7px; letter-spacing: 0.06em; }
+
+  .launch-button { width: 54px; height: 42px; border-width: 2px; }
+  .launch-button .kanji { font-size: 15px; }
+  .launch-button .latin { font-size: 7px; }
+  #td-launch-readout .status { font-size: 8px; }
+  #td-launch-readout .target { font-size: 8px; }
 }
