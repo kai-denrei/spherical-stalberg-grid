@@ -60,6 +60,30 @@ export const EMOTIONS = [
     fps: 4, frames: [[[0,0,1,0,0,1,0,0],[0,1,0,1,1,0,1,0],[1,0,0,0,0,0,0,1],[1,0,0,0,0,0,0,1],[1,0,0,0,0,0,0,1],[0,1,0,0,0,0,1,0],[0,0,1,0,0,1,0,0],[0,0,0,1,1,0,0,0]]] },
 ];
 
+// --- PHOSPHOR COLOUR ------------------------------------------------------
+// NOT part of the port. The matrices above come from the lab verbatim and
+// must stay that way; this is our own layer on top, so a re-port overwrites
+// the data and leaves this alone.
+//
+// Kept simple on the operator's instruction: green is the tube's normal
+// colour, red is anger, blue is sorrow. Three states, and a screen that has
+// gone red is readable from across the board without reading the face at
+// all — which is the point of colouring it rather than trusting an 8x8 grid
+// to carry the whole message at distance.
+export const PHOSPHORS = {
+  green: { core: '#dfffe9', mid: '#7dff9e', bleed: '125, 255, 158', ground: '#07160e' },
+  red: { core: '#ffe2e2', mid: '#ff6a6a', bleed: '255, 106, 106', ground: '#180808' },
+  blue: { core: '#e2f0ff', mid: '#6ab4ff', bleed: '106, 180, 255', ground: '#070f18' },
+};
+
+const EMOTION_PHOSPHOR = {
+  angry: 'red',
+  frustrated: 'red',
+  sad: 'blue',
+};
+
+export const phosphorFor = (id) => PHOSPHORS[EMOTION_PHOSPHOR[id] || 'green'];
+
 export const EMOTION_IDS = EMOTIONS.map((e) => e.id);
 const BY_ID = new Map(EMOTIONS.map((e) => [e.id, e]));
 

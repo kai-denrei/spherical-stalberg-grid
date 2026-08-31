@@ -62,6 +62,49 @@ export const CREATURE_TINTS = {
   knot: ALARM_HUES.red,            // the boss wears the red belt
 };
 
+// --- ACCENTS -------------------------------------------------------------
+// The dot clouds take a body colour and a HIGHLIGHT, and until now every
+// enemy's highlight was white. That works right up to the dark end of the
+// alarm ladder: the phantom is near-black by trade and by rank, and in a
+// crowd of white-belt phage it simply disappears — the operator could not
+// pick the dangerous one out of a group of harmless ones, which is the exact
+// job colour is doing here.
+//
+// So the dark belts carry a RED accent. Red is not on either palette as a
+// body colour, so it never reads as a belt; it reads as a warning light on
+// something you cannot otherwise see, which is what it is.
+export const ACCENT_RED = 0xff2a2a;
+export const ACCENT_DEFAULT = 0xffffff;
+// what a dark body is allowed to highlight with: warning colours, and
+// nothing a safe belt could be mistaken for
+export const ACCENT_ALARM = [ACCENT_RED, 0xff9a2e];
+
+// Relative luminance, so "is this too dark to read in a crowd" is measured
+// rather than eyeballed. Pure, and the test below uses the same number.
+export function hueLuma(hex) {
+  const r = (hex >> 16) & 255, g = (hex >> 8) & 255, b = hex & 255;
+  return (0.2126 * r + 0.7152 * g + 0.0722 * b) / 255;
+}
+// Measured across the palette, the dark cluster (black .23, red .24,
+// deep purple .29) sits clear of everything else — brown is next at .38.
+export const DARK_LUMA = 0.32;
+
+// THE RULE: a DARK alarm body may not highlight in white. White is a safe
+// belt, and a white-flecked dark cloud in a crowd of white-belt phage reads
+// as one of the phage — which is precisely the report. Dark bodies take an
+// accent from the ALARM side instead, so the warning survives the crowd.
+// Brighter alarm bodies (orange, green, purple, brown) carry their own read
+// and keep the white highlight.
+export const CREATURE_ACCENTS = {
+  phantom: ACCENT_RED,     // black belt, optical camo — the one that vanished
+  prime: ACCENT_RED,       // deep purple, 6 hp, regenerates
+  knot: ALARM_HUES.orange, // the boss is already red; red on red is no accent
+};
+
+// What a type's dot cloud should highlight with. Default white; the dark
+// belts get the warning light.
+export const accentFor = (key) => CREATURE_ACCENTS[key] ?? ACCENT_DEFAULT;
+
 // Pure predicates, so the rule can be asserted instead of remembered.
 export const isSafeHue = (hex) => Object.values(SAFE_HUES).includes(hex);
 export const isAlarmHue = (hex) => Object.values(ALARM_HUES).includes(hex);

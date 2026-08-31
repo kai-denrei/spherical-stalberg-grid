@@ -3,7 +3,8 @@
 // (biomass/streak math). All pure modules; no DOM, no three.js.
 
 import { ENEMY_SPEC, INTROS, typesByWave, computeWavePlan, CREATURE_TINTS,
-  SAFE_HUES, ALARM_HUES, isSafeHue, isAlarmHue } from '../src/enemyspec.js';
+  SAFE_HUES, ALARM_HUES, isSafeHue, isAlarmHue, accentFor, hueLuma, DARK_LUMA, ACCENT_ALARM }
+  from '../src/enemyspec.js';
 import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER, HACK_GATED } from '../src/towers.js';
 import { makeEconomy, sellRefund, waveClearBonus, earlyCallBonus, START_BIOMASS, RAM_PREMIUM } from '../src/economy.js';
 
@@ -97,6 +98,22 @@ console.log('enemy colour rule:');
   check('solid enemies wear an ALARM hue (orange/green/brown/purple/dark red)', alarmOk);
   check('the two palettes never overlap',
     !Object.values(SAFE_HUES).some((h) => Object.values(ALARM_HUES).includes(h)));
+  // A DARK dangerous body may not highlight in white: white is a safe belt,
+  // and a white-flecked near-black cloud inside a crowd of white-belt phage
+  // reads as one of the phage. That was the operator's report, and this is
+  // the rule that stops the next dark unit repeating it.
+  let accentOk = true;
+  for (const [key, spec] of Object.entries(ENEMY_SPEC)) {
+    const hex = CREATURE_TINTS[key];
+    if (spec.rammable || hueLuma(hex) >= DARK_LUMA) continue;
+    if (!ACCENT_ALARM.includes(accentFor(key))) {
+      accentOk = false;
+      console.error(`    ${key} is dark and solid but accents in a non-alarm hue`);
+    }
+  }
+  check('dark solid enemies accent from the ALARM palette, never white', accentOk);
+  check('bright enemies keep the plain white highlight',
+    accentFor('phage') === 0xffffff && accentFor('drifter') === 0xffffff);
 }
 
 // --- economy -------------------------------------------------------------

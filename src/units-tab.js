@@ -14,23 +14,23 @@ import { OrbitControls } from '../vendor/OrbitControls.js';
 import { buildUnit, preloadMkcx, makeDebris, makeDotBurst, makeBulletCloud,
   makeDotEnemy, makeRewardSolid, makeShellSolid, makePortalCloud,
   preloadServer, makeServerFixture, preloadContainer, makeContainerFixture,
-  preloadFabricator, makeFabricatorDrone, makeIsaoDrone } from './units.js?v=7a96b990';
+  preloadFabricator, makeFabricatorDrone, makeIsaoDrone } from './units.js?v=65e1ba6c';
 import { TANK_FEEL, TANK_FEEL_KNOBS, formatFeelCode, makeTankFeel, stepTankFeel,
-  landTankFeel, fireTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js?v=7a96b990';
+  landTankFeel, fireTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js?v=65e1ba6c';
 import { FEEL, loadFeel, saveFeel, resetFeel,
-  TOWER, HEADS, loadTower, saveTower, resetTower } from './feelstore.js?v=7a96b990';
+  TOWER, HEADS, loadTower, saveTower, resetTower } from './feelstore.js?v=65e1ba6c';
 import { TOWER_FEEL_KNOBS, formatTowerFeel, clampTowerParams,
-  formatTowerHeads, HEAD_CHOICES, HEAD_AS_SHIPPED } from './towerfeel.js?v=7a96b990';
-import { CREATURE_TINTS } from './enemyspec.js?v=7a96b990';
+  formatTowerHeads, HEAD_CHOICES, HEAD_AS_SHIPPED } from './towerfeel.js?v=65e1ba6c';
+import { CREATURE_TINTS, accentFor } from './enemyspec.js?v=65e1ba6c';
 import { buildTowerLook, TOWER_LOOK_NAMES, DEFAULT_TOWER_LOOK, preloadLook } from './towerlooks.js';
 import { TOWER_BY_KEY, TOWERS } from './towers.js';
 import { LOOKS } from './looks.js';
 import { makeBloom } from './postfx.js';
-import { makeAudio } from './audio.js?v=7a96b990';
+import { makeAudio } from './audio.js?v=65e1ba6c';
 import { GROUPS, GROUP_LABELS, GROUP_EMPTY, entriesIn } from './unitcatalog.js';
 import { FONT_NAMES, TYPE_KNOBS, TYPE_FEEL, makeTypeParams, loadTypeFeel, saveTypeFeel,
-  formatTypeCode, applyFontPack, currentFontPack, currentShoutPack } from './fonts.js?v=7a96b990';
-import { LORE, LORE_WORLD, loreText, loreAll } from './lore.js?v=7a96b990';
+  formatTypeCode, applyFontPack, currentFontPack, currentShoutPack } from './fonts.js?v=65e1ba6c';
+import { LORE, LORE_WORLD, loreText, loreAll } from './lore.js?v=65e1ba6c';
 
 let roundTex = null;
 function roundDotTex() {
@@ -271,7 +271,11 @@ export function initUnitsTab(root) {
             // an animation, so showing them means showing them in turn
             if (g.userData.setFace) {
               const f = g.userData.faces;
-              g.userData.setFace(f[Math.floor(t2 / 1.8) % f.length]);
+              // ?face=<id> parks him on one expression instead of cycling —
+              // the colour rule needs a still of each phosphor, and a
+              // cycling face cannot be photographed under virtual time
+              g.userData.setFace(faceQ && f.includes(faceQ) ? faceQ
+                : f[Math.floor(t2 / 1.8) % f.length]);
               // and the animated ones need their own clock advanced, or
               // blink and scan sit on frame zero forever
               g.userData.tickFace(1 / 60);
@@ -299,7 +303,9 @@ export function initUnitsTab(root) {
       const hex = CREATURE_TINTS[e.id];
       // ONE unit on screen: build it at 6x the game's dot density —
       // the catalogue can afford the generosity the battlefield cannot
-      return makeDotEnemy(e.id, { walker: hex ?? cols.walker, walkerHi: 0xffffff }, 6);
+      // the viewer shows the accent too: a codex entry that does not match
+      // the thing on the board is worse than no codex entry
+      return makeDotEnemy(e.id, { walker: hex ?? cols.walker, walkerHi: accentFor(e.id) }, 6);
     }
     if (e.kind === 'pickup') {
       const p = e.pickup;
@@ -400,6 +406,7 @@ export function initUnitsTab(root) {
   // under a virtual-time budget the turntable barely moves, so without this
   // the only reachable angle is whichever one the camera starts at.
   const yawQ = parseFloat(new URLSearchParams(location.search).get('yaw') || 'NaN');
+  const faceQ = new URLSearchParams(location.search).get('face');
 
   function show() {
     clear();

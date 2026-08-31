@@ -15,14 +15,14 @@
 // tick(t) (idle animation) }.
 
 import * as THREE from '../vendor/three.module.js';
-import { EMOTION_IDS, emotion } from './emotions.js';
+import { EMOTION_IDS, emotion, phosphorFor } from './emotions.js';
 import { loadGlb, mergeByMaterial, fitModel, tintModel, makeShellRack,
-  addEdgeOutlines, makeHeatSleeve } from './glbmodels.js?v=7a96b990';
-import { CREATURES, waveJelly, swimWave, spherePts, bulletPts, missilePts, heartPts, torusPts, towerHeadPts, enemyDotPts, portalPts } from './creatures.js?v=7a96b990';
-import { TOWER_FEEL, TOWER_HEADS, headKindFor } from './towerfeel.js?v=7a96b990';
+  addEdgeOutlines, makeHeatSleeve } from './glbmodels.js?v=65e1ba6c';
+import { CREATURES, waveJelly, swimWave, spherePts, bulletPts, missilePts, heartPts, torusPts, towerHeadPts, enemyDotPts, portalPts } from './creatures.js?v=65e1ba6c';
+import { TOWER_FEEL, TOWER_HEADS, headKindFor } from './towerfeel.js?v=65e1ba6c';
 import { STARGATE_PTS, STARGATE_STROKE,
-  HORIZON_N, stargateHorizon } from './stargate.js?v=7a96b990';
-import { ENEMY_SPEC } from './enemyspec.js?v=7a96b990';
+  HORIZON_N, stargateHorizon } from './stargate.js?v=65e1ba6c';
+import { ENEMY_SPEC } from './enemyspec.js?v=65e1ba6c';
 
 function normalizeToUnit(group) {
   group.updateMatrixWorld(true);
@@ -1580,6 +1580,7 @@ function isaoFaceTexture(id, frameIdx = 0) {
   const key = `${id}:${frameIdx}`;
   if (isaoTex.has(key)) return isaoTex.get(key);
   const e = emotion(id);
+  const ph = phosphorFor(id);
   const grid = e.frames[Math.min(frameIdx, e.frames.length - 1)];
   const rows = grid.length, cols = grid[0].length;
   // 4x the dot grid, so each dot is a crisp 4px block under NearestFilter
@@ -1588,7 +1589,7 @@ function isaoFaceTexture(id, frameIdx = 0) {
   c.width = cols * DOT + PAD * 2;
   c.height = rows * DOT + PAD * 2;
   const x = c.getContext('2d');
-  x.fillStyle = '#07160e';
+  x.fillStyle = ph.ground;
   x.fillRect(0, 0, c.width, c.height);
   // the dots: a bright core with a soft bleed, which is what a phosphor dot
   // actually looks like and what stops an 8x8 face reading as a spreadsheet
@@ -1598,9 +1599,9 @@ function isaoFaceTexture(id, frameIdx = 0) {
       const cx = PAD + q * DOT + DOT / 2;
       const cy = PAD + r * DOT + DOT / 2;
       const g = x.createRadialGradient(cx, cy, 0, cx, cy, DOT * 0.8);
-      g.addColorStop(0, '#dfffe9');
-      g.addColorStop(0.35, '#7dff9e');
-      g.addColorStop(1, 'rgba(125, 255, 158, 0)');
+      g.addColorStop(0, ph.core);
+      g.addColorStop(0.35, ph.mid);
+      g.addColorStop(1, `rgba(${ph.bleed}, 0)`);
       x.fillStyle = g;
       x.fillRect(cx - DOT, cy - DOT, DOT * 2, DOT * 2);
     }
