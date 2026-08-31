@@ -19,31 +19,32 @@
 
 import * as THREE from '../vendor/three.module.js';
 import GUI from '../vendor/lil-gui.esm.js';
-import { generateSphereMesh, relax } from './grid.js?v=b14423d1';
-import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=b14423d1';
-import { mulberry32, randomSeed } from './rng.js?v=b14423d1';
-import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3, segKey } from './vec3.js?v=b14423d1';
-import { CREATURES, waveJelly } from './creatures.js?v=b14423d1';
-import { UNITS, UNIT_NAMES, buildUnit, buildCreature, preloadMkcx, preloadServer, makeServerFixture, makeShieldShell, preloadContainer, makeContainerFixture, preloadFabricator, makeFabricatorDrone, makeBulletCloud, makeRewardSolid, makeShellSolid, makeDebris, makeDotBurst, makePortalCloud, makeHeartCloud, makeDotEnemy } from './units.js?v=b14423d1';
-import { LOOKS, LOOK_NAMES } from './looks.js?v=b14423d1';
-import { makeCellIndex } from './cellindex.js?v=b14423d1';
-import { CREATURE_TINTS, ENEMY_SPEC, INTROS, computeWavePlan } from './enemyspec.js?v=b14423d1';
-import { PICKUPS } from './pickups.js?v=b14423d1';
-import { rankFor, rankLabel, badgeSVG, killReq, eliteReq } from './ranks.js?v=b14423d1';
-import { makeScore } from './score.js?v=b14423d1';
-import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER } from './towers.js?v=b14423d1';
-import { makeEconomy, sellRefund } from './economy.js?v=b14423d1';
-import { makeBloom } from './postfx.js?v=b14423d1';
-import { TANK_FEEL, TANK_FEEL_KNOBS, makeTankFeel, stepTankFeel, landTankFeel, fireTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js?v=b14423d1';
-import { FEEL, loadFeel, saveFeel } from './feelstore.js?v=b14423d1';
+import { generateSphereMesh, relax } from './grid.js?v=f0e808d6';
+import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=f0e808d6';
+import { mulberry32, randomSeed } from './rng.js?v=f0e808d6';
+import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3, segKey } from './vec3.js?v=f0e808d6';
+import { CREATURES, waveJelly } from './creatures.js?v=f0e808d6';
+import { applyFontPack, currentFontPack, FONT_NAMES } from './fonts.js?v=f0e808d6';
+import { UNITS, UNIT_NAMES, buildUnit, buildCreature, preloadMkcx, preloadServer, makeServerFixture, makeShieldShell, preloadContainer, makeContainerFixture, preloadFabricator, makeFabricatorDrone, makeBulletCloud, makeRewardSolid, makeShellSolid, makeDebris, makeDotBurst, makePortalCloud, makeHeartCloud, makeDotEnemy } from './units.js?v=f0e808d6';
+import { LOOKS, LOOK_NAMES } from './looks.js?v=f0e808d6';
+import { makeCellIndex } from './cellindex.js?v=f0e808d6';
+import { CREATURE_TINTS, ENEMY_SPEC, INTROS, computeWavePlan } from './enemyspec.js?v=f0e808d6';
+import { PICKUPS } from './pickups.js?v=f0e808d6';
+import { rankFor, rankLabel, badgeSVG, killReq, eliteReq } from './ranks.js?v=f0e808d6';
+import { makeScore } from './score.js?v=f0e808d6';
+import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER } from './towers.js?v=f0e808d6';
+import { makeEconomy, sellRefund } from './economy.js?v=f0e808d6';
+import { makeBloom } from './postfx.js?v=f0e808d6';
+import { TANK_FEEL, TANK_FEEL_KNOBS, makeTankFeel, stepTankFeel, landTankFeel, fireTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js?v=f0e808d6';
+import { FEEL, loadFeel, saveFeel } from './feelstore.js?v=f0e808d6';
 import { STRIKE_KNOBS, makeStrike, makeStrikeParams, grantStrikes, stepStrike,
   toggleArm, paintTarget, launchStrike, stepFall, skipFall, fallProgress,
-  strikeDamage, retargetStrike, orbitProgress } from './strike.js?v=b14423d1';
-import { radarBasis, radarProject, radarBearing, sweepAngle, radarPhosphor } from './radar.js?v=b14423d1';
-import { BLOOM_GROUPS } from './bloomweights.js?v=b14423d1';
-import { TOWER_LOOK_NAMES, DEFAULT_TOWER_LOOK, buildTowerLook, preloadLook } from './towerlooks.js?v=b14423d1';
-import { makeAudio } from './audio.js?v=b14423d1';
-import { DEATH_KEYS } from './audiomanifest.js?v=b14423d1';
+  strikeDamage, retargetStrike, orbitProgress } from './strike.js?v=f0e808d6';
+import { radarBasis, radarProject, radarBearing, sweepAngle, radarPhosphor } from './radar.js?v=f0e808d6';
+import { BLOOM_GROUPS } from './bloomweights.js?v=f0e808d6';
+import { TOWER_LOOK_NAMES, DEFAULT_TOWER_LOOK, buildTowerLook, preloadLook } from './towerlooks.js?v=f0e808d6';
+import { makeAudio } from './audio.js?v=f0e808d6';
+import { DEATH_KEYS } from './audiomanifest.js?v=f0e808d6';
 
 export function initTdTab(root) {
   let active = false;
@@ -51,6 +52,9 @@ export function initTdTab(root) {
 
   const params = {
     towerLook: DEFAULT_TOWER_LOOK,
+    // app-wide, but it lives in this GUI because this is the tab whose
+    // messages the packs were chosen for (src/fonts.js owns the table)
+    font: currentFontPack(),
     seed: 7,
     // The whole unlock run — every wave until the last tower unlocks — is
     // a guided tutorial, and it should be played on a TIGHT board: at 3000
@@ -6268,6 +6272,10 @@ export function initTdTab(root) {
 
   const towerLookCtrl = gui.add(params, 'towerLook', TOWER_LOOK_NAMES)
     .name('tower look').onChange(applyTowerLook);
+  gui.add(params, 'font', FONT_NAMES).name('message font').onChange((n) => {
+    applyFontPack(n);
+    try { localStorage.setItem('ssg-font', n); } catch (e) { /* private mode */ }
+  });
   // Guessed wrong twice by eye, so they are dialled by hand — but the folder
   // is GENERATED from the shared schema and writes to the shared object. The
   // unit viewer's tuning modal is built from the same list over the same
@@ -7267,8 +7275,12 @@ export function initTdTab(root) {
 
   // ?callout=1 — one of each callout + a pinned combo, for layout checks
   if (urlParams.get('callout') === '1') {
-    showCallout(RECKLESS_MSGS[0], 'co-reckless', true);
-    showCallout(HEART_MSGS[0], 'co-heart', true);
+    // BOTH scripts on purpose: the callout layer speaks English and
+    // Japanese, and a typeface that only looks right in one of them is not
+    // a typeface this game can use. The stack holds three, so the heart
+    // line yields to the kana.
+    showCallout(RECKLESS_MSGS[0], 'co-reckless', true);   // RECKLESS!
+    showCallout(RECKLESS_MSGS[1], 'co-heart', true);      // すげ〜！
     showCallout('STREAK ×1.45', 'co-streak', true);
     ramCombo = 23; syncCombo();
     ramComboT = 9999; // pinned: the expiry timer outruns headless paints

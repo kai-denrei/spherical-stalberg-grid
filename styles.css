@@ -1,3 +1,40 @@
+/* --- vendored display faces (SIL OFL 1.1 — see assets/fonts/LICENSES.md) ---
+   No CDN: the repo vendors three.js for the same reason, and an installed
+   PWA must not reach the network for its typeface. DotGothic16 is a text=
+   SUBSET (latin + all kana + the kanji this app uses) — a new kanji falls
+   back to a system face until the subset is rebuilt. */
+@font-face {
+  font-family: 'VT323';
+  src: url('assets/fonts/VT323.woff2?v=f0e808d6') format('woff2');
+  font-weight: 400; font-style: normal; font-display: swap;
+}
+@font-face {
+  font-family: 'Press Start 2P';
+  src: url('assets/fonts/PressStart2P.woff2?v=f0e808d6') format('woff2');
+  font-weight: 400; font-style: normal; font-display: swap;
+}
+@font-face {
+  font-family: 'Share Tech Mono';
+  src: url('assets/fonts/ShareTechMono.woff2?v=f0e808d6') format('woff2');
+  font-weight: 400; font-style: normal; font-display: swap;
+}
+@font-face {
+  font-family: 'DotGothic16';
+  src: url('assets/fonts/DotGothic16.woff2?v=f0e808d6') format('woff2');
+  font-weight: 400; font-style: normal; font-display: swap;
+}
+
+/* The five knobs a font pack sets (src/fonts.js writes them onto <html>).
+   These defaults are the `field` pack, so the stylesheet stands up alone if
+   the module never runs. */
+:root {
+  --font-shout: "Share Tech Mono", "DotGothic16", ui-monospace, Menlo, monospace;
+  --font-ui: "Share Tech Mono", "DotGothic16", ui-monospace, Menlo, monospace;
+  --shout-track: 0.12em;
+  --shout-halo: 0 0 5px currentColor, 0 0 15px rgba(120, 220, 200, 0.3);
+  --shout-scale: 1.06;
+}
+
 /* kill iOS double-tap zoom EVERYWHERE: touch-action does NOT inherit, so
    a html/body rule never reaches the game canvases — the universal
    selector does. (OrbitControls sets inline touch-action:none on its own
@@ -76,7 +113,13 @@ html, body {
   top: 46px;
   left: 14px;
   color: #9aa7bd;
+  /* the instrument panel takes the pack's UI face. font-size-adjust keeps
+     a narrow face (VT323) from quietly shrinking the whole readout — the
+     rows are sized for three reading distances and that spacing is load
+     bearing. */
+  font-family: var(--font-ui);
   font-size: 12px;
+  font-size-adjust: var(--ui-adjust, none);
   line-height: 1.7;
   white-space: pre;
   pointer-events: none;
@@ -544,7 +587,8 @@ html, body {
 @keyframes holo-sweep { 0% { transform: translateY(-120%); } 55%, 100% { transform: translateY(320%); } }
 
 .msg-head {
-  font-size: 10px;
+  font-family: var(--font-shout);
+  font-size: calc(10px * var(--shout-scale));
   letter-spacing: 0.32em;
   text-transform: uppercase;
   opacity: 0.85;
@@ -588,22 +632,26 @@ html, body {
   border: 1px solid;
   border-radius: 10px;
   text-align: center;
-  font: 13px ui-monospace, Menlo, monospace;
+  font-family: var(--font-ui);
+  font-size: 13px;
+  font-size-adjust: var(--ui-adjust, none);
   pointer-events: none;
   animation: wave-pop 0.35s ease-out;
 }
 #h-wave.hidden, #td-wave.hidden { display: none; }
 #h-wave .wave-num, #td-wave .wave-num {
-  font-size: 10px;
+  font-family: var(--font-shout);
+  font-size: calc(10px * var(--shout-scale));
   letter-spacing: 0.32em;
   text-transform: uppercase;
   opacity: 0.8;
 }
 #h-wave .wave-name, #td-wave .wave-name {
-  font-size: 19px;
-  letter-spacing: 0.14em;
+  font-family: var(--font-shout);
+  font-size: calc(19px * var(--shout-scale));
+  letter-spacing: var(--shout-track);
   margin: 4px 0 2px;
-  text-shadow: 0 0 10px currentColor;
+  text-shadow: var(--shout-halo);
 }
 #h-wave .wave-role, #td-wave .wave-role {
   font-size: 12px;
@@ -617,10 +665,11 @@ html, body {
   height: 96px;
 }
 #h-wave .wave-ram, #td-wave .wave-ram {
-  font-size: 11px;
+  font-family: var(--font-shout);
+  font-size: calc(11px * var(--shout-scale));
   letter-spacing: 0.18em;
   margin-top: 5px;
-  text-shadow: 0 0 8px currentColor;
+  text-shadow: var(--shout-halo);
 }
 
 /* --- tower-unlock toast (#td-tower) — own element so it never clobbers   */
@@ -1017,7 +1066,9 @@ html, body {
   z-index: 10;
   max-width: min(80vw, 480px);
   text-align: center;
-  font: 13px ui-monospace, Menlo, monospace;
+  font-family: var(--font-ui);
+  font-size: 13px;
+  font-size-adjust: var(--ui-adjust, none);
   line-height: 1.5;
   color: #cfe9ff;
   background: rgba(6, 14, 22, 0.82);
@@ -2313,8 +2364,16 @@ body.playing:not(.chrome-open) #tabbar { display: none !important; }
   width: max-content;
 }
 .callout {
-  font: bold 21px ui-monospace, Menlo, monospace;
-  letter-spacing: 0.14em;
+  /* THE SHOUT LAYER. Everything the game raises its voice with reads from
+     the same four pack variables, so a typeface decision is one edit in
+     src/fonts.js and never a sweep through this file. calc() on the size
+     is what lets a bitmap face (which runs large) and a terminal face
+     (which runs small) sit at the same optical weight. */
+  font-family: var(--font-shout);
+  font-size: calc(21px * var(--shout-scale));
+  font-weight: bold;
+  letter-spacing: var(--shout-track);
+  text-shadow: var(--shout-halo);
   margin: 2px 0;
   animation: co-pop 1.2s ease-out forwards;
 }
@@ -2340,18 +2399,19 @@ body.playing:not(.chrome-open) #tabbar { display: none !important; }
   transform: translateX(-50%);
   z-index: 12;
   pointer-events: none;
-  font-family: ui-monospace, Menlo, monospace;
+  font-family: var(--font-shout);
   font-weight: bold;
-  letter-spacing: 0.1em;
+  letter-spacing: var(--shout-track);
+  text-shadow: var(--shout-halo);
 }
 #td-combo.hidden { display: none; }
-#td-combo[data-tier="0"] { font-size: 17px; color: #ffffff; text-shadow: 0 0 8px rgba(255, 255, 255, 0.5); }
-#td-combo[data-tier="1"] { font-size: 22px; color: #ffe066; text-shadow: 0 0 10px rgba(255, 224, 102, 0.7); }
-#td-combo[data-tier="2"] { font-size: 28px; color: #ffaa44; text-shadow: 0 0 13px rgba(255, 170, 68, 0.8); }
-#td-combo[data-tier="3"] { font-size: 34px; color: #ff6633; text-shadow: 0 0 16px rgba(255, 102, 51, 0.85); }
-#td-combo[data-tier="4"] { font-size: 40px; color: #ff3322; text-shadow: 0 0 20px rgba(255, 51, 34, 0.9); }
+#td-combo[data-tier="0"] { font-size: calc(17px * var(--shout-scale)); color: #ffffff; text-shadow: 0 0 8px rgba(255, 255, 255, 0.5); }
+#td-combo[data-tier="1"] { font-size: calc(22px * var(--shout-scale)); color: #ffe066; text-shadow: 0 0 10px rgba(255, 224, 102, 0.7); }
+#td-combo[data-tier="2"] { font-size: calc(28px * var(--shout-scale)); color: #ffaa44; text-shadow: 0 0 13px rgba(255, 170, 68, 0.8); }
+#td-combo[data-tier="3"] { font-size: calc(34px * var(--shout-scale)); color: #ff6633; text-shadow: 0 0 16px rgba(255, 102, 51, 0.85); }
+#td-combo[data-tier="4"] { font-size: calc(40px * var(--shout-scale)); color: #ff3322; text-shadow: 0 0 20px rgba(255, 51, 34, 0.9); }
 #td-combo[data-tier="5"] {
-  font-size: 48px;
+  font-size: calc(48px * var(--shout-scale));
   color: #ff2df0;
   text-shadow: 0 0 26px rgba(255, 45, 240, 0.95);
   animation: dg-flicker 0.14s steps(2) infinite;
@@ -2731,10 +2791,12 @@ tr.sim-timeout td:nth-child(2), tr.sim-stalled td:nth-child(2) { color: #ffb000;
 
 /* --- the last transmission (game over) ----------------------------------- */
 .go-verdict {
-  font: bold 19px ui-monospace, Menlo, monospace;
-  letter-spacing: 0.12em;
+  font-family: var(--font-shout);
+  font-size: calc(19px * var(--shout-scale));
+  font-weight: bold;
+  letter-spacing: var(--shout-track);
   color: #ffb000;
-  text-shadow: 0 0 12px rgba(255, 176, 0, 0.5);
+  text-shadow: var(--shout-halo);
   margin: 8px 0 2px;
   text-transform: uppercase;
 }
@@ -2876,8 +2938,11 @@ tr.sim-timeout td:nth-child(2), tr.sim-stalled td:nth-child(2) { color: #ffb000;
 .go-kinfo { margin-top: 5px; font-size: 12px; color: #cfe2ee; min-height: 18px; }
 .go-noram { color: #ff5340; font-weight: bold; }
 .go-snafu {
-  font: bold 13px ui-monospace, Menlo, monospace;
+  font-family: var(--font-shout);
+  font-size: calc(13px * var(--shout-scale));
+  font-weight: bold;
   letter-spacing: 0.22em;
+  text-shadow: var(--shout-halo);
   color: #ff5340;
   margin-top: 4px;
 }
