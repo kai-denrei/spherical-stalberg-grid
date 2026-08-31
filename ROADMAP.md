@@ -18,14 +18,22 @@ The run has ONE spine now, and it is sectors.
 
 ```
 SECTOR 1 ──► SECTOR 2 ──► … ──► SECTOR 5 = THE PLANET
-   │
-   ├─ HOLD    survive `wavesPerSector` waves. The gates are SEALED
-   │          and soak nothing — they are the thing pouring the wave
-   │          out, and ending that early is not on offer.
-   └─ BREACH  the seals drop. Kill every gate in the sector and it is
-              yours; the shell unseals one band further and you go
-              again with your towers and your biomass standing.
+
+  THE PROGRAMME   the sector sends `wavesPerSector` waves. That is how
+                  many it has; when they are spent, no more come.
+  THE GATES       kill every one and the sector is yours — at ANY point.
 ```
+
+**Nothing is immune.** The first cut sealed the gates during the wave phase
+and that was wrong: walls breach, towers fall, the strike vaporises, and a
+portal that shrugged off three well-placed shells was the only exception on
+the board. Get close, put three in it, it is down.
+
+It needs no rule to restrain it because it is **not free**. Every gate you
+close early is a wave that never arrives — and the kills, the biomass and
+the score in that wave never arrive either. Hold the line and you finish
+rich; end it early and you finish alive. The game balances that on its own,
+and the seal was not trusting it to.
 
 This replaced the TOURS layer, which was a second answer to the same
 question and did not nest with the first: a player could finish a tour while

@@ -19,36 +19,36 @@
 
 import * as THREE from '../vendor/three.module.js';
 import GUI from '../vendor/lil-gui.esm.js';
-import { generateSphereMesh, relax } from './grid.js?v=690fde1a';
-import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=690fde1a';
-import { mulberry32, randomSeed } from './rng.js?v=690fde1a';
-import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3, segKey } from './vec3.js?v=690fde1a';
-import { CREATURES, waveJelly } from './creatures.js?v=690fde1a';
+import { generateSphereMesh, relax } from './grid.js?v=1c81b777';
+import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=1c81b777';
+import { mulberry32, randomSeed } from './rng.js?v=1c81b777';
+import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3, segKey } from './vec3.js?v=1c81b777';
+import { CREATURES, waveJelly } from './creatures.js?v=1c81b777';
 import { ACHIEVEMENTS, ACHV_GROUPS, achievement, blankRun, earned, freshlyEarned,
   sanitiseRecord }
-  from './achievements.js?v=690fde1a';
+  from './achievements.js?v=1c81b777';
 import { applyFontPack, currentFontPack, FONT_NAMES,
-  loadTypeFeel } from './fonts.js?v=690fde1a';
-import { UNITS, UNIT_NAMES, buildUnit, buildCreature, preloadMkcx, preloadServer, makeServerFixture, makeShieldShell, preloadContainer, makeContainerFixture, preloadFabricator, makeIsaoDrone, makeBulletCloud, makeRewardSolid, makeShellSolid, makeDebris, makeDotBurst, makePortalCloud, makeHeartCloud, makeDotEnemy } from './units.js?v=690fde1a';
-import { LOOKS, LOOK_NAMES } from './looks.js?v=690fde1a';
-import { makeCellIndex } from './cellindex.js?v=690fde1a';
-import { CREATURE_TINTS, ENEMY_SPEC, INTROS, computeWavePlan, accentFor } from './enemyspec.js?v=690fde1a';
-import { PICKUPS } from './pickups.js?v=690fde1a';
-import { rankFor, rankLabel, badgeSVG, killReq, eliteReq } from './ranks.js?v=690fde1a';
-import { makeScore } from './score.js?v=690fde1a';
-import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER } from './towers.js?v=690fde1a';
-import { makeEconomy, sellRefund } from './economy.js?v=690fde1a';
-import { makeBloom } from './postfx.js?v=690fde1a';
-import { TANK_FEEL, TANK_FEEL_KNOBS, makeTankFeel, stepTankFeel, landTankFeel, fireTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js?v=690fde1a';
-import { FEEL, loadFeel, saveFeel } from './feelstore.js?v=690fde1a';
+  loadTypeFeel } from './fonts.js?v=1c81b777';
+import { UNITS, UNIT_NAMES, buildUnit, buildCreature, preloadMkcx, preloadServer, makeServerFixture, makeShieldShell, preloadContainer, makeContainerFixture, preloadFabricator, makeIsaoDrone, makeBulletCloud, makeRewardSolid, makeShellSolid, makeDebris, makeDotBurst, makePortalCloud, makeHeartCloud, makeDotEnemy } from './units.js?v=1c81b777';
+import { LOOKS, LOOK_NAMES } from './looks.js?v=1c81b777';
+import { makeCellIndex } from './cellindex.js?v=1c81b777';
+import { CREATURE_TINTS, ENEMY_SPEC, INTROS, computeWavePlan, accentFor } from './enemyspec.js?v=1c81b777';
+import { PICKUPS } from './pickups.js?v=1c81b777';
+import { rankFor, rankLabel, badgeSVG, killReq, eliteReq } from './ranks.js?v=1c81b777';
+import { makeScore } from './score.js?v=1c81b777';
+import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER } from './towers.js?v=1c81b777';
+import { makeEconomy, sellRefund } from './economy.js?v=1c81b777';
+import { makeBloom } from './postfx.js?v=1c81b777';
+import { TANK_FEEL, TANK_FEEL_KNOBS, makeTankFeel, stepTankFeel, landTankFeel, fireTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js?v=1c81b777';
+import { FEEL, loadFeel, saveFeel } from './feelstore.js?v=1c81b777';
 import { STRIKE_KNOBS, makeStrike, makeStrikeParams, grantStrikes, stepStrike,
   toggleArm, paintTarget, launchStrike, stepFall, skipFall, fallProgress,
-  strikeDamage, retargetStrike, orbitProgress } from './strike.js?v=690fde1a';
-import { radarBasis, radarProject, radarBearing, sweepAngle, radarPhosphor } from './radar.js?v=690fde1a';
-import { BLOOM_GROUPS } from './bloomweights.js?v=690fde1a';
-import { TOWER_LOOK_NAMES, DEFAULT_TOWER_LOOK, buildTowerLook, preloadLook } from './towerlooks.js?v=690fde1a';
-import { makeAudio } from './audio.js?v=690fde1a';
-import { DEATH_KEYS } from './audiomanifest.js?v=690fde1a';
+  strikeDamage, retargetStrike, orbitProgress } from './strike.js?v=1c81b777';
+import { radarBasis, radarProject, radarBearing, sweepAngle, radarPhosphor } from './radar.js?v=1c81b777';
+import { BLOOM_GROUPS } from './bloomweights.js?v=1c81b777';
+import { TOWER_LOOK_NAMES, DEFAULT_TOWER_LOOK, buildTowerLook, preloadLook } from './towerlooks.js?v=1c81b777';
+import { makeAudio } from './audio.js?v=1c81b777';
+import { DEATH_KEYS } from './audiomanifest.js?v=1c81b777';
 
 export function initTdTab(root) {
   let active = false;
@@ -434,12 +434,17 @@ export function initTdTab(root) {
   // --- THE SPINE -----------------------------------------------------------
   // A RUN IS FIVE SECTORS, and a sector has two phases in order:
   //
-  //   HOLD    survive `wavesPerSector` waves. The gates are SEALED — they
-  //           soak nothing, because they are the thing pouring the wave out
-  //           and you are not meant to be able to end it early.
-  //   BREACH  the seals drop. Kill every portal in the sector and it is
-  //           yours; the shell unseals one band further and you go again
-  //           with your towers and your biomass still standing.
+  //   THE PROGRAMME  the sector sends `wavesPerSector` waves. That is how
+  //                  many it has; when they are spent, no more come.
+  //   THE GATES      kill every one and the sector is yours, at ANY point.
+  //
+  // Gates are never immune. Drive out, put three shells in one, and it is
+  // down — that is the whole of the aggressive line, and it is meant to
+  // work. It is also NOT free, which is why it needs no rule to restrain
+  // it: every gate you close early is a wave that never arrives, and the
+  // kills, the biomass and the score in it never arrive either. Hold the
+  // line and you finish rich; end it early and you finish alive. The game
+  // balances that on its own, and an immune portal was me not trusting it.
   //
   // Clearing sector 5 is the planet, and the planet is the win.
   //
@@ -447,15 +452,13 @@ export function initTdTab(root) {
   // question — "what is a run made of" — that did not nest with the first.
   // A player could finish a tour while a sector sat half-cleared, so the
   // game announced TOUR 1 SURVIVED over a wave counter marching into 16.
-  // One spine, two phases, and the wave count is now a phase clock rather
-  // than a parallel career.
   const SECTORS_TOTAL = 5;
   let sectorStartWave = 0;       // the wave this sector's HOLD began at
-  let sealNoteT = 0;             // rate-limit on the sealed-gate note
   let sectorsCleared = 0;
   const sectorWave = () => Math.max(0, wave - sectorStartWave);
-  const sectorPhase = () => (sectorWave() >= params.wavesPerSector ? 'breach' : 'hold');
-  const gatesSealed = () => sectorPhase() === 'hold';
+  // the programme is spent: no more waves are sent, and whatever gates are
+  // still standing are a mop-up rather than a siege
+  const programmeDone = () => sectorWave() >= params.wavesPerSector;
 
   // --- THE RECORD ----------------------------------------------------------
   // One flat object of run facts, fed to a pure evaluator. Kept as a single
@@ -3273,6 +3276,7 @@ export function initTdTab(root) {
     if (cl.contains('msg-regen')) regenerate(); // retry the CURRENT round
     else if (cl.contains('msg-next')) {
       round++; hackedRound = false; syncHackBtn();
+      sectorStartWave = wave;   // the next sector's programme starts here
       strike.reserved += 1; // the platform restocks one round per sector
       expandRound(); syncArmUi();
     }
@@ -3749,7 +3753,9 @@ export function initTdTab(root) {
       + ` ×${eco.multiplier().toFixed(2)}</span>`
       + `<span class="hud-wave">WAVE <b>${wave}</b> · R${round}</span></div>`
       + `<div class="hud-obj">portals ${spAlive}/${spawnPoints.length}`
-      + ` · built ${towers.length} · ${unlockedTowerKeys(wave, hackedUnlocks).length}/8 towers</div>`
+      + ` · ${programmeDone() ? 'WAVES SPENT — CLOSE THE GATES'
+        : `wave ${sectorWave() + 1}/${params.wavesPerSector} of sector ${round}`}`
+      + ` · built ${towers.length}</div>`
       + isaoLine()
       + (alerts ? `<div class="hud-alert">${alerts}</div>` : '');
     if (dirBtnEl) {
@@ -4269,11 +4275,11 @@ export function initTdTab(root) {
 
   // One place a gate dies, however it died — shells ground it down before,
   // and now a strike vaporises it whole. Both end here.
+  // One place a gate dies, however it died. NOTHING on this board is immune —
+  // walls breach, towers fall, the strike vaporises. A gate that shrugged off
+  // three well-placed shells was the only exception, and it was mine, and it
+  // was wrong (operator). Get close, put three in it, and it is down.
   function killPortal(sp) {
-    // ONE door, and it is closed during the HOLD. Every route to a dead gate
-    // — shells, the orbital munition, anything added later — comes through
-    // here, so the seal is enforced in one place rather than at each caller.
-    if (gatesSealed()) return false;
     sp.alive = false;
     scene.remove(sp.obj);
     disposeObj(sp.obj);
@@ -4299,6 +4305,11 @@ export function initTdTab(root) {
 
   function armWave() {
     if (waveIn >= 0) return;
+    // THE SECTOR HAS A FIXED PROGRAMME. Once it is spent no more waves are
+    // sent, whatever the clock thinks — the remaining gates are a mop-up,
+    // not a siege, and a sector that kept sending waves forever would make
+    // the wave count meaningless again.
+    if (programmeDone()) return;
     hideSitrep(); // the telegraph outranks the recap
     waveIn = WAVE_WARN;
     warnBeat = 0;
@@ -4968,21 +4979,8 @@ export function initTdTab(root) {
         for (const sp of spawnPoints) {
           if (!sp.alive) continue;
           if (dist3(p.pos, graph.centers[sp.ci]) < cellSide * 0.6) {
-            sp.found = true;      // a hit still REVEALS it, sealed or not
+            sp.found = true;
             hit = true;
-            if (gatesSealed()) {
-              // the gate is pouring a wave out; it does not take damage
-              // while it is doing that. Said out loud, once in a while, so
-              // the refusal reads as a rule rather than a bug.
-              if (sealNoteT <= 0) {
-                sealNoteT = 6;
-                showToast(`<div class="wave-num">GATE SEALED</div>`
-                  + `<div class="wave-role">hold ${params.wavesPerSector - sectorWave()} more `
-                  + `wave${params.wavesPerSector - sectorWave() === 1 ? '' : 's'} and the seals drop</div>`, 2600);
-              }
-              updateHud();
-              break;
-            }
             sp.hp--;
             if (sp.hp <= 0) {
               killPortal(sp);
@@ -6586,17 +6584,15 @@ export function initTdTab(root) {
     return cellIndex([p.x, p.y, p.z]);
   }
 
-  // THE SEALS DROP. Not a modal: it is an event on the board, not a decision
-  // to make, and pausing for it would break a run that is going well. The
-  // gates stop being scenery and start being targets.
-  function unsealGates() {
-    for (const sp of spawnPoints) {
-      if (sp.alive && sp.obj.userData.setDim) sp.obj.userData.setDim(1);
-    }
+  // THE PROGRAMME IS SPENT. Not a modal — it is an event on the board, not a
+  // decision to make, and pausing for it would break a run that is going
+  // well. What changes is that nothing more is coming: the gates standing
+  // are the last of it.
+  function programmeSpent() {
     sfx.play('boss_tension');
-    showToast(`<div class="wave-num">SEALS DOWN &middot; SECTOR ${round}</div>`
-      + `<div class="wave-role">${params.wavesPerSector} waves held. the gates can be `
-      + `broken now &mdash; kill them all and the sector is yours</div>`, 4200);
+    showToast(`<div class="wave-num">THE WAVES ARE SPENT &middot; SECTOR ${round}</div>`
+      + `<div class="wave-role">${params.wavesPerSector} sent, ${params.wavesPerSector} held. `
+      + `nothing more is coming &mdash; close the gates and the sector is yours</div>`, 4200);
     updateHud();
   }
 
@@ -6676,8 +6672,10 @@ export function initTdTab(root) {
         // registered winning it. Nothing advances until a button is pressed.
         msgEl.innerHTML = `<div class="msg-head">transmission · sector cleared</div>`
           + `<div class="go-verdict">SECTOR ${round} OF ${SECTORS_TOTAL} IS YOURS</div>`
-          + `<div class="go-reason">every gate broken &middot; ${params.wavesPerSector} waves held, `
-          + `${wave} fought</div>`
+          + `<div class="go-reason">every gate broken &middot; `
+          + `${sectorWave()} of ${params.wavesPerSector} waves fought`
+          + `${programmeDone() ? ' &mdash; you held the whole programme'
+            : ' &mdash; you ended it early, and left biomass in the field'}</div>`
           + `<div class="go-grid">`
           + `<span>SCORE <b>${fmt(score.points)}</b> · best ${fmt(score.best)}</span>`
           + `<span>heart <b>${Math.max(0, heartHP)}</b>/${HEART_MAX} · hulls ${Math.max(0, playerHP)}/${PLAYER_MAX}</span>`
@@ -7012,7 +7010,6 @@ export function initTdTab(root) {
     // wave clock, motion, combat — while ambient life (portal twinkle,
     // heart moods, debris) and the camera transition keep breathing.
     // Mid-assault the same toggle is camera-only.
-    if (sealNoteT > 0) sealNoteT -= dt;
     if (cineLeft > 0) {
       if (!cineHold) {
         cineLeft -= dt;
@@ -7129,7 +7126,7 @@ export function initTdTab(root) {
             // the HOLD is over: the gates lose their seals and the sector
             // becomes a hunt. This is the loudest beat in a sector and it
             // gets the loudest card the toast layer has.
-            unsealGates();
+            programmeSpent();
           } else showSitrep(); // the recap IS the cleared card now
         } else if (waveAge >= params.waveCap && spawnPoints.some((s) => s.alive)) {
           armWave(); // safety: the field is stalled — but it still announces
