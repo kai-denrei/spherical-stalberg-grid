@@ -19,33 +19,33 @@
 
 import * as THREE from '../vendor/three.module.js';
 import GUI from '../vendor/lil-gui.esm.js';
-import { generateSphereMesh, relax } from './grid.js?v=e935f6b2';
-import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=e935f6b2';
-import { mulberry32, randomSeed } from './rng.js?v=e935f6b2';
-import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3, segKey } from './vec3.js?v=e935f6b2';
-import { CREATURES, waveJelly } from './creatures.js?v=e935f6b2';
+import { generateSphereMesh, relax } from './grid.js?v=f511b2e8';
+import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=f511b2e8';
+import { mulberry32, randomSeed } from './rng.js?v=f511b2e8';
+import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3, segKey } from './vec3.js?v=f511b2e8';
+import { CREATURES, waveJelly } from './creatures.js?v=f511b2e8';
 import { applyFontPack, currentFontPack, FONT_NAMES, TYPE_KNOBS,
-  makeTypeParams, clampTypeParams, formatTypeCode } from './fonts.js?v=e935f6b2';
-import { UNITS, UNIT_NAMES, buildUnit, buildCreature, preloadMkcx, preloadServer, makeServerFixture, makeShieldShell, preloadContainer, makeContainerFixture, preloadFabricator, makeFabricatorDrone, makeBulletCloud, makeRewardSolid, makeShellSolid, makeDebris, makeDotBurst, makePortalCloud, makeHeartCloud, makeDotEnemy } from './units.js?v=e935f6b2';
-import { LOOKS, LOOK_NAMES } from './looks.js?v=e935f6b2';
-import { makeCellIndex } from './cellindex.js?v=e935f6b2';
-import { CREATURE_TINTS, ENEMY_SPEC, INTROS, computeWavePlan } from './enemyspec.js?v=e935f6b2';
-import { PICKUPS } from './pickups.js?v=e935f6b2';
-import { rankFor, rankLabel, badgeSVG, killReq, eliteReq } from './ranks.js?v=e935f6b2';
-import { makeScore } from './score.js?v=e935f6b2';
-import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER } from './towers.js?v=e935f6b2';
-import { makeEconomy, sellRefund } from './economy.js?v=e935f6b2';
-import { makeBloom } from './postfx.js?v=e935f6b2';
-import { TANK_FEEL, TANK_FEEL_KNOBS, makeTankFeel, stepTankFeel, landTankFeel, fireTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js?v=e935f6b2';
-import { FEEL, loadFeel, saveFeel } from './feelstore.js?v=e935f6b2';
+  makeTypeParams, clampTypeParams, formatTypeCode } from './fonts.js?v=f511b2e8';
+import { UNITS, UNIT_NAMES, buildUnit, buildCreature, preloadMkcx, preloadServer, makeServerFixture, makeShieldShell, preloadContainer, makeContainerFixture, preloadFabricator, makeFabricatorDrone, makeBulletCloud, makeRewardSolid, makeShellSolid, makeDebris, makeDotBurst, makePortalCloud, makeHeartCloud, makeDotEnemy } from './units.js?v=f511b2e8';
+import { LOOKS, LOOK_NAMES } from './looks.js?v=f511b2e8';
+import { makeCellIndex } from './cellindex.js?v=f511b2e8';
+import { CREATURE_TINTS, ENEMY_SPEC, INTROS, computeWavePlan } from './enemyspec.js?v=f511b2e8';
+import { PICKUPS } from './pickups.js?v=f511b2e8';
+import { rankFor, rankLabel, badgeSVG, killReq, eliteReq } from './ranks.js?v=f511b2e8';
+import { makeScore } from './score.js?v=f511b2e8';
+import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER } from './towers.js?v=f511b2e8';
+import { makeEconomy, sellRefund } from './economy.js?v=f511b2e8';
+import { makeBloom } from './postfx.js?v=f511b2e8';
+import { TANK_FEEL, TANK_FEEL_KNOBS, makeTankFeel, stepTankFeel, landTankFeel, fireTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js?v=f511b2e8';
+import { FEEL, loadFeel, saveFeel } from './feelstore.js?v=f511b2e8';
 import { STRIKE_KNOBS, makeStrike, makeStrikeParams, grantStrikes, stepStrike,
   toggleArm, paintTarget, launchStrike, stepFall, skipFall, fallProgress,
-  strikeDamage, retargetStrike, orbitProgress } from './strike.js?v=e935f6b2';
-import { radarBasis, radarProject, radarBearing, sweepAngle, radarPhosphor } from './radar.js?v=e935f6b2';
-import { BLOOM_GROUPS } from './bloomweights.js?v=e935f6b2';
-import { TOWER_LOOK_NAMES, DEFAULT_TOWER_LOOK, buildTowerLook, preloadLook } from './towerlooks.js?v=e935f6b2';
-import { makeAudio } from './audio.js?v=e935f6b2';
-import { DEATH_KEYS } from './audiomanifest.js?v=e935f6b2';
+  strikeDamage, retargetStrike, orbitProgress } from './strike.js?v=f511b2e8';
+import { radarBasis, radarProject, radarBearing, sweepAngle, radarPhosphor } from './radar.js?v=f511b2e8';
+import { BLOOM_GROUPS } from './bloomweights.js?v=f511b2e8';
+import { TOWER_LOOK_NAMES, DEFAULT_TOWER_LOOK, buildTowerLook, preloadLook } from './towerlooks.js?v=f511b2e8';
+import { makeAudio } from './audio.js?v=f511b2e8';
+import { DEATH_KEYS } from './audiomanifest.js?v=f511b2e8';
 
 export function initTdTab(root) {
   let active = false;
@@ -1653,6 +1653,14 @@ export function initTdTab(root) {
   // follow-cam — mean exactly "is the free camera up", and that meaning is
   // unchanged. It is assigned in ONE place, here.
   function setView(v) {
+    // the drone view needs a drone: he is normally on shift from the first
+    // second, but a board that has not finished loading his bytes yet would
+    // hand you an empty camera. Ask for him, and fall through to orbit —
+    // the view he is the diegetic excuse for — until he arrives.
+    if (v === 'drone') {
+      spawnBobby();
+      if (!bobby) v = 'orbit';
+    }
     params.view = v;
     buildMode = v === 'orbit';
     watchTower = null;
@@ -1780,6 +1788,63 @@ export function initTdTab(root) {
       tmpCam.position.copy(camGoal.pos);
       tmpCam.up.set(up[0], up[1], up[2]);
       tmpCam.lookAt(0, 0, 0);
+      camGoal.quat.copy(tmpCam.quaternion);
+      return;
+    }
+    if (params.view === 'drone' && bobby) {
+      // RIDING BOBBY. Purely a camera for now — he still flies his own
+      // orders, you are just on board. The point is diegetic: a free look
+      // over the whole shell is a strange power for a tank commander to
+      // have, and an obvious one for the survey drone that is already up
+      // there. The board answers "how are you seeing this" without a menu.
+      //
+      // Framed from behind and slightly above his rotor plane, looking
+      // where HE is looking: the site on the way out, the print while he
+      // works, his drift while he waits. That means the shot is composed by
+      // the job rather than by the camera, which is the whole reason to
+      // hang a view on a working machine instead of on a free gimbal.
+      const bp = bobby.obj.position;
+      const up = bobby.dir;
+      // The frame comes from the SPHERE, not from the mesh's facing. Hanging
+      // it off his quaternion put the lens inside him whenever he was
+      // hovering nose-down over a print — the tangent is stable through
+      // every state he has.
+      const aimC = bobby.order ? norm3(graph.centers[bobby.order.ci]) : bobby.loiter;
+      let fwd = sub3(aimC, up);
+      fwd = sub3(fwd, scale3(up, dot3(fwd, up)));   // onto the tangent plane
+      const fl = len3(fwd);
+      fwd = fl > 1e-6 ? scale3(fwd, 1 / fl) : norm3(cross3(up, [0, 1, 0]));
+      const back = cellSide * 4.2, lift = cellSide * 1.6;
+      camGoal.pos.set(
+        bp.x - fwd[0] * back + up[0] * lift,
+        bp.y - fwd[1] * back + up[1] * lift,
+        bp.z - fwd[2] * back + up[2] * lift,
+      );
+      tmpCam.position.copy(camGoal.pos);
+      tmpCam.up.set(up[0], up[1], up[2]);
+      // Aim BETWEEN him and the job, not at either. Aimed at the machine
+      // you get a machine and no context; aimed at the site he drops out of
+      // frame entirely, which is what the first cut did while he was
+      // hovering directly over it. Just past him keeps both.
+      const aimCi = bobby.order ? bobby.order.ci : -1;
+      if (aimCi >= 0) {
+        const c = graph.centers[aimCi];
+        const top = 1 + params.wallHeight;
+        const k = 0.45;
+        tmpCam.lookAt(
+          bp.x + (c[0] * top - bp.x) * k,
+          bp.y + (c[1] * top - bp.y) * k,
+          bp.z + (c[2] * top - bp.z) * k,
+        );
+      } else {
+        // waiting: past him along the drift, tipped down at the shell —
+        // the loiter shot
+        tmpCam.lookAt(
+          bp.x + fwd[0] * cellSide * 2.2 - up[0] * cellSide * 1.3,
+          bp.y + fwd[1] * cellSide * 2.2 - up[1] * cellSide * 1.3,
+          bp.z + fwd[2] * cellSide * 2.2 - up[2] * cellSide * 1.3,
+        );
+      }
       camGoal.quat.copy(tmpCam.quaternion);
       return;
     }
@@ -2280,9 +2345,9 @@ export function initTdTab(root) {
   // T1 tank first person · T3 tank third person · O1 orbital. Bastion left
   // the cycle (tower-watching was a spectator mode nobody drove from), and
   // nothing auto-centres any more — the two CENTRE buttons do it on demand.
-  const VIEW_TAG = { pov: 'T1', third: 'T3', orbit: 'O1' };
+  const VIEW_TAG = { pov: 'T1', third: 'T3', orbit: 'O1', drone: 'BOB' };
   function toggleView() {
-    const cycle = ['pov', 'third', 'orbit'];
+    const cycle = ['pov', 'third', 'orbit', 'drone'];
     setView(cycle[(cycle.indexOf(params.view) + 1) % cycle.length]);
   }
 
@@ -5340,8 +5405,11 @@ export function initTdTab(root) {
     const p = bobbyPos(bobby.dir);
     bobby.obj.position.set(p[0], p[1], p[2]);
     // up is its own radial; face where it is going (or where it is working)
-    const aim = bobby.state === 'travel' && bobby.order
-      ? norm3(graph.centers[bobby.order.ci]) : bobby.loiter;
+    // he faces what he is doing: the site while flying to it AND while
+    // printing it, his drift when idle. The build case used to fall through
+    // to a stale loiter point, so he printed with his back to the work —
+    // invisible until a camera was hung off his facing.
+    const aim = bobby.order ? norm3(graph.centers[bobby.order.ci]) : bobby.loiter;
     tmpObj.position.copy(bobby.obj.position);
     tmpObj.up.set(bobby.dir[0], bobby.dir[1], bobby.dir[2]);
     const t = bobbyPos(aim);
@@ -6362,7 +6430,7 @@ export function initTdTab(root) {
   gui.add(params, 'look', LOOK_NAMES).onChange(applyLook);
   gui.add(params, 'wallTops', ['auto', 'bright', 'dim', 'black'])
     .name('wall tops').onChange(applyLook);
-  const viewCtrl = gui.add(params, 'view', ['pov', 'third', 'orbit'])
+  const viewCtrl = gui.add(params, 'view', ['pov', 'third', 'orbit', 'drone'])
     .name('camera (V)').onChange((v) => setView(v));
   const speedCtrl = gui.add(params, 'speed', 0.2, 4, 0.1).name('wander speed');
   const directiveCtrl = gui.add(params, 'directive', DIRECTIVES).name('auto directive').onChange(syncDirectiveChip);
@@ -7023,7 +7091,13 @@ export function initTdTab(root) {
   }
   if (Number.isFinite(wallOverride)) params.wallHeight = wallOverride;
   const viewOv = urlParams.get('view');
-  if (['pov', 'third', 'orbit'].includes(viewOv)) { setView(viewOv); }
+  if (['pov', 'third', 'orbit', 'drone'].includes(viewOv)) { setView(viewOv); }
+  // the drone view is the one that can be REFUSED at boot (his bytes are
+  // still in flight), so it is re-asked for once he lands rather than
+  // silently leaving you in orbit
+  if (viewOv === 'drone' && params.view !== 'drone') {
+    preloadFabricator().then(() => { spawnBobby().then(() => setView('drone')); });
+  }
   const lookOverride = urlParams.get('look');
   if (LOOKS[lookOverride]) params.look = lookOverride;
   const wtOverride = urlParams.get('walltops');
@@ -7145,6 +7219,10 @@ export function initTdTab(root) {
   if (orderSpec || bobbyN > 0) {
     (async () => {
       await spawnBobby();
+      // the view override is re-applied HERE because ?view=drone is asked
+      // for before his bytes have landed, and a probe that ticks his shift
+      // from the orbit camera is measuring the wrong camera
+      if (urlParams.get('view') === 'drone') setView('drone');
       if (orderSpec) {
         for (const key of orderSpec.split(',')) {
           if (!TOWER_BY_KEY[key]) continue;
@@ -7156,6 +7234,14 @@ export function initTdTab(root) {
       }
       for (let sT = 0; sT < bobbyN; sT += 0.05) updateBobby(0.05);
       const o = orders[0];
+      if (bobby) {
+        snapCamera();
+        console.log(`BOBBYCAM view=${params.view}`
+          + ` bobby=${bobby.obj.position.toArray().map((v) => v.toFixed(3)).join(',')}`
+          + ` cam=${camera.position.toArray().map((v) => v.toFixed(3)).join(',')}`
+          + ` dist=${camera.position.distanceTo(bobby.obj.position).toFixed(3)}`
+          + ` cellSide=${cellSide.toFixed(3)}`);
+      }
       console.log(`BOBBY state=${bobby ? bobby.state : 'absent'}`
         + ` queue=${orders.length} live=${o ? (o.key || 'upgrade') + '@' + o.ci : '-'}`
         + ` t=${bobby ? bobby.t.toFixed(2) : '-'}/${bobby ? bobby.dur.toFixed(2) : '-'}`
