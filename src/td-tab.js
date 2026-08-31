@@ -19,36 +19,38 @@
 
 import * as THREE from '../vendor/three.module.js';
 import GUI from '../vendor/lil-gui.esm.js';
-import { generateSphereMesh, relax } from './grid.js?v=4b8e9a6e';
-import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=4b8e9a6e';
-import { mulberry32, randomSeed } from './rng.js?v=4b8e9a6e';
-import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3, segKey } from './vec3.js?v=4b8e9a6e';
-import { CREATURES, waveJelly } from './creatures.js?v=4b8e9a6e';
+import { generateSphereMesh, relax } from './grid.js?v=69e4e1b6';
+import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=69e4e1b6';
+import { mulberry32, randomSeed } from './rng.js?v=69e4e1b6';
+import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3, segKey } from './vec3.js?v=69e4e1b6';
+import { CREATURES, waveJelly } from './creatures.js?v=69e4e1b6';
+import { brief } from './isaobriefs.js?v=69e4e1b6';
+import { drawEmotion } from './emotions.js?v=69e4e1b6';
 import { ACHIEVEMENTS, ACHV_GROUPS, achievement, blankRun, earned, freshlyEarned,
   sanitiseRecord }
-  from './achievements.js?v=4b8e9a6e';
+  from './achievements.js?v=69e4e1b6';
 import { applyFontPack, currentFontPack, FONT_NAMES,
-  loadTypeFeel } from './fonts.js?v=4b8e9a6e';
-import { UNITS, UNIT_NAMES, buildUnit, buildCreature, preloadMkcx, preloadServer, makeServerFixture, makeShieldShell, preloadContainer, makeContainerFixture, preloadFabricator, makeIsaoDrone, makeBulletCloud, makeRewardSolid, makeShellSolid, makeDebris, makeDotBurst, makePortalCloud, makeHeartCloud, makeDotEnemy } from './units.js?v=4b8e9a6e';
-import { LOOKS, LOOK_NAMES } from './looks.js?v=4b8e9a6e';
-import { makeCellIndex } from './cellindex.js?v=4b8e9a6e';
-import { CREATURE_TINTS, ENEMY_SPEC, INTROS, computeWavePlan, accentFor } from './enemyspec.js?v=4b8e9a6e';
-import { PICKUPS } from './pickups.js?v=4b8e9a6e';
-import { rankFor, rankLabel, badgeSVG, killReq, eliteReq } from './ranks.js?v=4b8e9a6e';
-import { makeScore } from './score.js?v=4b8e9a6e';
-import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER } from './towers.js?v=4b8e9a6e';
-import { makeEconomy, sellRefund } from './economy.js?v=4b8e9a6e';
-import { makeBloom } from './postfx.js?v=4b8e9a6e';
-import { TANK_FEEL, TANK_FEEL_KNOBS, makeTankFeel, stepTankFeel, landTankFeel, fireTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js?v=4b8e9a6e';
-import { FEEL, loadFeel, saveFeel } from './feelstore.js?v=4b8e9a6e';
+  loadTypeFeel } from './fonts.js?v=69e4e1b6';
+import { UNITS, UNIT_NAMES, buildUnit, buildCreature, preloadMkcx, preloadServer, makeServerFixture, makeShieldShell, preloadContainer, makeContainerFixture, preloadFabricator, makeIsaoDrone, makeBulletCloud, makeRewardSolid, makeShellSolid, makeDebris, makeDotBurst, makePortalCloud, makeHeartCloud, makeDotEnemy } from './units.js?v=69e4e1b6';
+import { LOOKS, LOOK_NAMES } from './looks.js?v=69e4e1b6';
+import { makeCellIndex } from './cellindex.js?v=69e4e1b6';
+import { CREATURE_TINTS, ENEMY_SPEC, INTROS, computeWavePlan, accentFor } from './enemyspec.js?v=69e4e1b6';
+import { PICKUPS } from './pickups.js?v=69e4e1b6';
+import { rankFor, rankLabel, badgeSVG, killReq, eliteReq } from './ranks.js?v=69e4e1b6';
+import { makeScore } from './score.js?v=69e4e1b6';
+import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER } from './towers.js?v=69e4e1b6';
+import { makeEconomy, sellRefund } from './economy.js?v=69e4e1b6';
+import { makeBloom } from './postfx.js?v=69e4e1b6';
+import { TANK_FEEL, TANK_FEEL_KNOBS, makeTankFeel, stepTankFeel, landTankFeel, fireTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js?v=69e4e1b6';
+import { FEEL, loadFeel, saveFeel } from './feelstore.js?v=69e4e1b6';
 import { STRIKE_KNOBS, makeStrike, makeStrikeParams, grantStrikes, stepStrike,
   toggleArm, paintTarget, launchStrike, stepFall, skipFall, fallProgress,
-  strikeDamage, retargetStrike, orbitProgress } from './strike.js?v=4b8e9a6e';
-import { radarBasis, radarProject, radarBearing, sweepAngle, radarPhosphor } from './radar.js?v=4b8e9a6e';
-import { BLOOM_GROUPS } from './bloomweights.js?v=4b8e9a6e';
-import { TOWER_LOOK_NAMES, DEFAULT_TOWER_LOOK, buildTowerLook, preloadLook } from './towerlooks.js?v=4b8e9a6e';
-import { makeAudio } from './audio.js?v=4b8e9a6e';
-import { DEATH_KEYS } from './audiomanifest.js?v=4b8e9a6e';
+  strikeDamage, retargetStrike, orbitProgress } from './strike.js?v=69e4e1b6';
+import { radarBasis, radarProject, radarBearing, sweepAngle, radarPhosphor } from './radar.js?v=69e4e1b6';
+import { BLOOM_GROUPS } from './bloomweights.js?v=69e4e1b6';
+import { TOWER_LOOK_NAMES, DEFAULT_TOWER_LOOK, buildTowerLook, preloadLook } from './towerlooks.js?v=69e4e1b6';
+import { makeAudio } from './audio.js?v=69e4e1b6';
+import { DEATH_KEYS } from './audiomanifest.js?v=69e4e1b6';
 
 export function initTdTab(root) {
   let active = false;
@@ -459,6 +461,56 @@ export function initTdTab(root) {
   // the programme is spent: no more waves are sent, and whatever gates are
   // still standing are a mop-up rather than a siege
   const programmeDone = () => sectorWave() >= params.wavesPerSector;
+
+  // --- ISAO SPEAKING -------------------------------------------------------
+  // A face, a title, and one line at a time. One line, because these are
+  // written to be spoken and a wall of text is the thing a voice pass would
+  // have to undo. Advancing is a tap anywhere on the panel.
+  //
+  // It does NOT pause the game. Isao talks between waves and while you
+  // drive; a modal for every remark would make him something to get past
+  // rather than someone in the vehicle with you.
+  const briefEl = root.querySelector('#td-brief');
+  const briefFace = root.querySelector('#td-brief-face');
+  const briefTitle = root.querySelector('#td-brief-title');
+  const briefLine = root.querySelector('#td-brief-line');
+  const briefDots = root.querySelector('#td-brief-dots');
+  const BRIEF_SEEN = 'td.briefs';
+  let briefQ = null, briefAt = 0, briefFaceT = 0;
+  const briefSeen = (() => {
+    try { const v = JSON.parse(localStorage.getItem(BRIEF_SEEN) || '[]'); return Array.isArray(v) ? v : []; }
+    catch { return []; }
+  })();
+
+  function paintBrief() {
+    if (!briefQ) return;
+    briefTitle.textContent = briefQ.title;
+    briefLine.textContent = briefQ.lines[briefAt];
+    briefDots.textContent = briefQ.lines.map((_, i) => (i === briefAt ? '●' : '○')).join(' ');
+    const ctx = briefFace.getContext('2d');
+    drawEmotion(ctx, briefQ.face, { w: briefFace.width, h: briefFace.height, t: briefFaceT });
+  }
+  function showBrief(id) {
+    const b = brief(id);
+    if (!b || !briefEl) return;
+    if (b.once && briefSeen.includes(id)) return;
+    if (b.once) {
+      briefSeen.push(id);
+      try { localStorage.setItem(BRIEF_SEEN, JSON.stringify(briefSeen)); } catch { /* private mode */ }
+    }
+    briefQ = b; briefAt = 0; briefFaceT = 0;
+    briefEl.classList.remove('hidden');
+    sfx.play('laser_click');
+    paintBrief();
+  }
+  function stepBrief() {
+    if (!briefQ) return;
+    briefAt++;
+    if (briefAt >= briefQ.lines.length) { briefQ = null; briefEl.classList.add('hidden'); return; }
+    sfx.play('laser_click');
+    paintBrief();
+  }
+  if (briefEl) briefEl.addEventListener('click', stepBrief);
 
   // --- THE RECORD ----------------------------------------------------------
   // One flat object of run facts, fed to a pure evaluator. Kept as a single
@@ -2402,6 +2454,12 @@ export function initTdTab(root) {
     // Q/E nudge the throttle lever from the keyboard — up for speed, down
     // through zero into reverse. Key auto-repeat does the holding.
     if (down && (k === 'q' || k === 'e')) {
+      // FLYING HIM: the same pair is altitude, which is the axis a ground
+      // vehicle never had and a drone obviously should
+      if (params.view === 'drone') {
+        isaoAlt = Math.max(1.2, Math.min(9, isaoAlt + (k === 'q' ? 0.35 : -0.35)));
+        return;
+      }
       const step = k === 'q' ? 0.12 : -0.12;
       let v2 = throttle + step;
       if (Math.abs(v2) < 0.07) v2 = 0;   // same detent the lever has
@@ -3511,6 +3569,97 @@ export function initTdTab(root) {
     } catch { /* frame still booting */ }
     if (tries < 40) setTimeout(() => reseedHdt(seed, tries + 1), 120);
   }
+  // THE BAR READS THE GAME OUT. The duel keeps a budget for each side and a
+  // clock, and showed none of it — the operator could not tell how many
+  // attempts they had left, how many the host had, or how close the thing
+  // was to ending, so it always ended abruptly. All three are already on
+  // the bridge; nobody was asking for them.
+  const hackReadEl = root.querySelector('#td-hack-readout');
+  function syncHackReadout() {
+    if (!hackReadEl) return;
+    let txt = '';
+    try {
+      const w = hackFrameEl && hackFrameEl.contentWindow;
+      if (hackGame === 'hdt' && w && w.__cx && w.__cx.game) {
+        const g = w.__cx.game();
+        if (g && g.pBudget !== undefined) {
+          const low = g.pBudget <= 2 ? ' low' : '';
+          txt = `<b class="hk-you${low}">YOU ${g.pBudget}</b>`
+            + `<b class="hk-them">HOST ${g.eBudget}</b>`
+            + (g.timeLeft !== undefined ? `<b class="hk-clock">${Math.ceil(g.timeLeft)}s</b>` : '')
+            + (g.phase ? `<b class="hk-phase">${g.phase}</b>` : '');
+        }
+      } else if (w && w.__pazoru) {
+        const ph = w.__pazoru.phase;
+        if (ph) txt = `<b class="hk-phase">${String(ph).toUpperCase()}</b>`;
+      }
+    } catch { /* frame still booting, or gone */ }
+    if (hackReadEl.innerHTML !== txt) hackReadEl.innerHTML = txt;
+  }
+
+  // FIT THE GAME TO THE FRAME. These are embedded pages with their own
+  // responsive layouts, and on a phone the board simply ran off the right
+  // edge — the operator saw the logo and a sliver of grid. Rather than
+  // fight three separate layouts, the frame is given the width the games
+  // were designed for and scaled down to whatever the wrapper actually is.
+  const HACK_LOGICAL_W = 560;   // the fallback, for a frame not yet readable
+  function fitHackFrame() {
+    if (!hackFrameEl || !hackWrapEl || hackWrapEl.classList.contains('hidden')) return;
+    const wrap = hackWrapEl.getBoundingClientRect();
+    const bar = hackWrapEl.querySelector('.hk-bar');
+    const barH = bar ? bar.getBoundingClientRect().height : 0;
+    const availW = wrap.width, availH = Math.max(120, wrap.height - barH);
+    // ASK THE GAME how wide it wants to be rather than guessing. 560 fitted
+    // the duel and left the pazorukore board hanging off the side — they are
+    // three different layouts and a single constant was never going to serve
+    // all of them. Same-origin, so the child's own scrollWidth is readable;
+    // the constant is only the fallback for a frame that has not painted.
+    let logical = HACK_LOGICAL_W;
+    try {
+      const d = hackFrameEl.contentDocument;
+      if (d && d.documentElement) {
+        logical = Math.max(logical, d.documentElement.scrollWidth, d.body ? d.body.scrollWidth : 0);
+      }
+    } catch { /* not readable yet */ }
+    const scale = Math.min(1, availW / logical);
+    if (scale >= 1) {
+      // desktop has the room: leave the frame alone entirely
+      hackFrameEl.style.width = '';
+      hackFrameEl.style.height = '';
+      hackFrameEl.style.transform = '';
+      return;
+    }
+    // AND CAP THE HEIGHT. The first cut scaled width only and handed the
+    // child a 560x866 viewport — phone-shaped. The pazorukore board sizes
+    // its cells from the AVAILABLE HEIGHT, so a very tall frame grew them
+    // until the board ran off the side, which is the clipping the operator
+    // saw. Capped to a shape those games were actually laid out in, and
+    // letterboxed down the middle rather than stretched.
+    const logicalH = Math.min(availH / scale, logical * 1.28);
+    const usedH = logicalH * scale;
+    const padY = Math.max(0, (availH - usedH) / 2);
+    hackFrameEl.style.width = `${logical}px`;
+    hackFrameEl.style.height = `${logicalH}px`;
+    hackFrameEl.style.transformOrigin = 'top left';
+    hackFrameEl.style.transform = `translateY(${padY / scale}px) scale(${scale})`;
+    if (urlParams.get('hack')) {
+      let child = '';
+      try {
+        const d = hackFrameEl.contentDocument;
+        const de = d && d.documentElement;
+        if (de) {
+          child = ` child=${de.scrollWidth}x${de.scrollHeight}`
+            + ` client=${de.clientWidth}x${de.clientHeight}`
+            + ` overflows=${de.scrollWidth > de.clientWidth + 1}`;
+        }
+      } catch { child = ' child=unreadable'; }
+      console.log(`HACKFIT avail=${Math.round(availW)}x${Math.round(availH)}`
+        + ` logical=${logical} scale=${scale.toFixed(3)}`
+        + ` frame=${Math.round(hackFrameEl.getBoundingClientRect().width)}` + child);
+    }
+  }
+  addEventListener('resize', fitHackFrame);
+
   function readHackPhase() {
     try {
       const w = hackFrameEl.contentWindow;
@@ -3544,12 +3693,42 @@ export function initTdTab(root) {
     hackOpens++;               // moves the seed: a new board every breach
     setHackGame(hackGame);
     hackWrapEl.classList.remove('hidden');
+    fitHackFrame();
+    if (hackFrameEl) {
+      hackFrameEl.addEventListener('load', () => {
+        // twice: once on load, once after the child has laid itself out.
+        // Measuring a document that has not painted returns the viewport
+        // width, which is the answer that makes the fit a no-op.
+        fitHackFrame();
+        setTimeout(fitHackFrame, 250);
+        setTimeout(fitHackFrame, 900);
+      }, { once: true });
+    }
     clearInterval(hackPoll);
     hackPoll = setInterval(() => {
+      syncHackReadout();
       const ph = readHackPhase();
-      if (ph === 'won') closeHack(true);
-      else if (ph === 'lost') closeHack(false);
+      if (ph === 'won' || ph === 'lost') endHack(ph === 'won');
     }, 600);
+  }
+
+  // A BREACH ENDS ON A BEAT, not on a cut. The overlay used to vanish the
+  // instant the game's phase flipped, so a win and a loss felt identical
+  // from the outside: the screen you were reading was simply gone
+  // (operator). The bar says what happened and holds it for a moment with
+  // the board still behind it, then closes.
+  let hackEnding = false;
+  function endHack(won) {
+    if (hackEnding) return;
+    hackEnding = true;
+    clearInterval(hackPoll); hackPoll = null;
+    if (hackReadEl) {
+      hackReadEl.innerHTML = won
+        ? `<b class="hk-won">&#10022; BREACHED</b>`
+        : `<b class="hk-lost">&#10005; TRACED &mdash; LOCKED OUT</b>`;
+    }
+    sfx.play(won ? 'tower_upgrade' : 'danger_alert');
+    setTimeout(() => { hackEnding = false; closeHack(won); }, 1600);
   }
   function setHackGame(g) {
     if (!HACK_GAMES[g]) g = 'hdt';
@@ -3571,6 +3750,7 @@ export function initTdTab(root) {
     b.addEventListener('click', () => setHackGame(b.dataset.hack));
   }
   function closeHack(won) {
+    hackEnding = false;
     clearInterval(hackPoll); hackPoll = null;
     if (hackWrapEl) hackWrapEl.classList.add('hidden');
     if (hackFrameEl) hackFrameEl.src = 'about:blank';
@@ -5548,6 +5728,7 @@ export function initTdTab(root) {
   // a real design lever and it belongs in a decision, not in a default.
   const ISAO_TINT = 0xbfe6ff;      // pale works blue — the CRT is the warm thing on him now
   const ISAO_ALT = 3.4;            // in wall-heights above the wall tops
+  let isaoAlt = ISAO_ALT;          // ...and where the pilot has put him
   const ISAO_CELLS_SEC = 2.6;      // cruise, in cells per second
   const ISAO_BUILD_BASE = 2.0;     // seconds before cost is considered
   const ISAO_BUILD_PER_KG = 1 / 55; // ...and per kg of biomass printed
@@ -5579,7 +5760,7 @@ export function initTdTab(root) {
   let printBeam = null;             // one Line, reused for every print
   const orders = [];                // FIFO; orders[0] is the live one
   const orderByCell = new Map();    // ci -> order, for the shop and the cancel
-  const isaoRadius = () => 1 + params.wallHeight * ISAO_ALT + cellSide * 0.5;
+  const isaoRadius = () => 1 + params.wallHeight * isaoAlt + cellSide * 0.5;
 
   function isaoPos(dir) {
     const r = isaoRadius();
@@ -5668,10 +5849,15 @@ export function initTdTab(root) {
     const err = placeError(ci);
     if (err) { flashShopNote(err); return false; }
     if (orderByCell.has(ci)) { flashShopNote('already on the list'); return false; }
-    if (!eco.spend(def.cost)) { flashShopNote('not enough biomass'); return false; }
+    if (!eco.spend(def.cost)) {
+      flashShopNote('not enough biomass');
+      showBrief('biomass');   // he has an opinion about this
+      return false;
+    }
     const order = { kind: 'tower', ci, key, def, cost: def.cost, ring: makeSiteRing(ci, def.color) };
     orders.push(order);
     orderByCell.set(ci, order);
+    showBrief('printer');   // the first order is when the mechanic is real
     run.maxQueue = Math.max(run.maxQueue, orders.length);
     checkAchievements();
     spawnIsao();
@@ -5744,8 +5930,61 @@ export function initTdTab(root) {
     updateHud();
   }
 
+  // --- FLYING HIM YOURSELF --------------------------------------------------
+  // The drone camera started as a view. The operator wants the machine: in
+  // drone view you have the stick, and Isao goes where you point him.
+  //
+  // His WORK is suspended while you fly — a drone cannot be halfway to a
+  // print and under your hand at the same time, and pretending otherwise
+  // would mean an order that never completes because you flew off with it.
+  // Leave the view and he picks the queue straight back up.
+  let isaoHeading = null;    // unit tangent at isao.dir; the way he is pointed
+  const ISAO_TURN = 1.9;     // rad/s
+  const ISAO_FLY = 3.4;      // cells/s under power
+  function pilotIsao(dt) {
+    const up = isao.dir;
+    // re-project the heading onto the tangent plane every frame: he is
+    // flying over a sphere, so "forward" drifts out of plane as he moves
+    if (!isaoHeading) {
+      const ref = Math.abs(up[1]) < 0.9 ? [0, 1, 0] : [1, 0, 0];
+      isaoHeading = norm3(cross3(up, ref));
+    }
+    let h = sub3(isaoHeading, scale3(up, dot3(isaoHeading, up)));
+    const hl = len3(h);
+    h = hl > 1e-6 ? scale3(h, 1 / hl) : norm3(cross3(up, [0, 1, 0]));
+    const steer = (keys.left ? 1 : 0) - (keys.right ? 1 : 0);
+    if (steer) {
+      // rotate the heading about the local up — Rodrigues, with the sin/cos
+      // of a small angle, which is all a turn on a sphere ever needs
+      const a = steer * ISAO_TURN * dt;
+      const ca = Math.cos(a), sa = Math.sin(a);
+      h = norm3(add3(scale3(h, ca), scale3(cross3(up, h), sa)));
+    }
+    isaoHeading = h;
+    const drive = keys.fast ? 1 : keys.slow ? -0.6 : (throttle !== 0 ? throttle : 0);
+    if (drive) {
+      const step = ISAO_FLY * cellSide * drive * dt;
+      isao.dir = norm3(add3(isao.dir, scale3(h, step)));
+      isao.loiter = isao.dir.slice();   // he holds where you left him
+    }
+    // Q/E are the tank's climb pair; up here they are altitude, which is the
+    // one axis a ground vehicle never had and a drone obviously should
+    // (altitude is on Q/E, handled at the key so a tap is a discrete step
+    // rather than a held ramp — a drone you cannot park at a height is not
+    // one you are flying)
+    isao.obj.userData.spinRotors(dt, Math.abs(drive) * 0.8 + 0.2);
+    if (isao.obj.userData.setFace) {
+      isao.obj.userData.setFace(drive ? 'focused' : 'curious');
+      isao.obj.userData.tickFace(dt);
+    }
+    placeIsao();
+  }
+
   function updateIsao(dt) {
     if (!isao) return;
+    // piloted: the queue waits, and so does everything else he does
+    if (params.view === 'drone') { pilotIsao(dt); return; }
+    isaoHeading = null;
     const speed = ISAO_CELLS_SEC * cellSide;   // radians per second
     if (isao.state === 'idle') {
       if (orders.length) {
@@ -7014,6 +7253,7 @@ export function initTdTab(root) {
     // wave clock, motion, combat — while ambient life (portal twinkle,
     // heart moods, debris) and the camera transition keep breathing.
     // Mid-assault the same toggle is camera-only.
+    if (briefQ) { briefFaceT += dt; paintBrief(); }
     if (cineLeft > 0) {
       if (!cineHold) {
         cineLeft -= dt;
@@ -7131,6 +7371,7 @@ export function initTdTab(root) {
             // becomes a hunt. This is the loudest beat in a sector and it
             // gets the loudest card the toast layer has.
             programmeSpent();
+            showBrief('gates');
           } else showSitrep(); // the recap IS the cleared card now
         } else if (waveAge >= params.waveCap && spawnPoints.some((s) => s.alive)) {
           armWave(); // safety: the field is stalled — but it still announces
@@ -7696,13 +7937,23 @@ export function initTdTab(root) {
     setTimeout(() => showRecord(), 400);
   }
 
+  // ?brief=<id> plays one of Isao's beats on demand, ignoring the once-only
+  // memory — otherwise a beat can be looked at exactly once per browser,
+  // ever, which is not a thing you can iterate on
+  const briefQ2 = urlParams.get('brief');
+  if (briefQ2) {
+    const i = briefSeen.indexOf(briefQ2);
+    if (i >= 0) briefSeen.splice(i, 1);
+    setTimeout(() => showBrief(briefQ2), 500);
+  }
+
   if (urlParams.get('audio') === '1') {
     setInterval(() => {
       console.log(`AUDIO voices=${sfx.voices} ctx=${sfx.contextState}`);
     }, 2000);
   }
 
-  const debugging = ['walk', 'tick', 'wave', 'blast', 'laser', 'found', 'recoil', 'mode', 'map', 'tower', 'biomass', 'credit', 'driveout', 'order', 'isao', 'bobby', 'record', 'debrief', 'armed', 'planet', 'shop', 'sector', 'reveal', 'portal', 'lose', 'charge', 'layout', 'perf', 'strike', 'strikefall', 'strikecam', 'gateprobe', 'rank', 'danger', 'callout', 'sitrep', 'server', 'hack', 'shield', 'sim']
+  const debugging = ['walk', 'tick', 'wave', 'blast', 'laser', 'found', 'recoil', 'mode', 'map', 'tower', 'biomass', 'credit', 'driveout', 'order', 'isao', 'bobby', 'record', 'debrief', 'armed', 'brief', 'planet', 'shop', 'sector', 'reveal', 'portal', 'lose', 'charge', 'layout', 'perf', 'strike', 'strikefall', 'strikecam', 'gateprobe', 'rank', 'danger', 'callout', 'sitrep', 'server', 'hack', 'shield', 'sim']
     .some((k) => urlParams.get(k));
   const tutParam = urlParams.get('tutorial');
   runTutorial = tutParam === '1' || (tutParam !== '0' && !debugging);
@@ -7934,6 +8185,7 @@ export function initTdTab(root) {
       + ` chamber=${clear}/${serverChamber.length} clear`
       + ` ground=${serverCi >= 0 && dungeon.tags[serverCi] !== BLOCKED ? 'OPEN' : 'sealed'}`);
     serverFound = true; run.serverFound = true; checkAchievements(); syncHackBtn();
+    showBrief('relay');
     hackPromptForce = true; // pin the prompt for the layout screenshot
     // the model loads async — report again once it should be in the scene
     setTimeout(() => console.log(`SERVER2 placed=${!!serverObj}`

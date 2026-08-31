@@ -102,3 +102,36 @@ export function emotionFrame(id, t = 0) {
 }
 
 export const isAnimated = (id) => emotion(id).frames.length > 1;
+
+// Draw an expression onto a 2D context. Lives here rather than in units.js
+// because the FACE is not a three.js thing — the CRT on the model and the
+// portrait beside a line of dialogue are the same drawing, and having two
+// of it is how they drift. units.js calls this into a texture canvas; the
+// briefing panel calls it into a DOM canvas.
+export function drawEmotion(ctx, id, { w, h, t = 0, dot = 0, pad = 0 } = {}) {
+  const grid = emotionFrame(id, t);
+  const rows = grid.length, cols = grid[0].length;
+  const ph = phosphorFor(id);
+  const d = dot || Math.floor(Math.min(w, h) / (Math.max(rows, cols) + 1));
+  const px = pad || Math.floor(d * 0.5);
+  ctx.fillStyle = ph.ground;
+  ctx.fillRect(0, 0, w, h);
+  const ox = Math.floor((w - cols * d) / 2), oy = Math.floor((h - rows * d) / 2);
+  for (let r = 0; r < rows; r++) {
+    for (let q = 0; q < cols; q++) {
+      if (!grid[r][q]) continue;
+      const cx = ox + q * d + d / 2, cy = oy + r * d + d / 2;
+      const g = ctx.createRadialGradient(cx, cy, 0, cx, cy, d * 0.8);
+      g.addColorStop(0, ph.core);
+      g.addColorStop(0.35, ph.mid);
+      g.addColorStop(1, `rgba(${ph.bleed}, 0)`);
+      ctx.fillStyle = g;
+      ctx.fillRect(cx - d, cy - d, d * 2, d * 2);
+    }
+  }
+  ctx.globalAlpha = 0.3;
+  ctx.fillStyle = '#000';
+  for (let y = 0; y < h; y += 4) ctx.fillRect(0, y, w, 2);
+  ctx.globalAlpha = 1;
+  return px;
+}

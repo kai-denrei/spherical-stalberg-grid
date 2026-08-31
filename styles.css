@@ -5,22 +5,22 @@
    back to a system face until the subset is rebuilt. */
 @font-face {
   font-family: 'VT323';
-  src: url('assets/fonts/VT323.woff2?v=4b8e9a6e') format('woff2');
+  src: url('assets/fonts/VT323.woff2?v=69e4e1b6') format('woff2');
   font-weight: 400; font-style: normal; font-display: swap;
 }
 @font-face {
   font-family: 'Press Start 2P';
-  src: url('assets/fonts/PressStart2P.woff2?v=4b8e9a6e') format('woff2');
+  src: url('assets/fonts/PressStart2P.woff2?v=69e4e1b6') format('woff2');
   font-weight: 400; font-style: normal; font-display: swap;
 }
 @font-face {
   font-family: 'Share Tech Mono';
-  src: url('assets/fonts/ShareTechMono.woff2?v=4b8e9a6e') format('woff2');
+  src: url('assets/fonts/ShareTechMono.woff2?v=69e4e1b6') format('woff2');
   font-weight: 400; font-style: normal; font-display: swap;
 }
 @font-face {
   font-family: 'DotGothic16';
-  src: url('assets/fonts/DotGothic16.woff2?v=4b8e9a6e') format('woff2');
+  src: url('assets/fonts/DotGothic16.woff2?v=69e4e1b6') format('woff2');
   font-weight: 400; font-style: normal; font-display: swap;
 }
 
@@ -98,6 +98,69 @@
 
 /* the run's new achievements, inline on a debrief card */
 .rec-inline { margin: 10px 0 4px; }
+
+/* --- ISAO SPEAKING -------------------------------------------------------
+   Bottom-left, out of the thumb zone and out of the HUD's corner. It does
+   not pause the game, so it must be readable at a glance and never in the
+   way of the thing being talked about. */
+#td-brief {
+  position: absolute;
+  left: max(12px, env(safe-area-inset-left));
+  bottom: 84px;
+  z-index: 15;
+  display: flex;
+  gap: 12px;
+  align-items: stretch;
+  width: min(440px, calc(100vw - 24px));
+  padding: 10px 12px;
+  background: rgba(4, 14, 9, 0.9);
+  border: 1px solid var(--p-green-dim);
+  border-left: 3px solid var(--p-green);
+  border-radius: 10px;
+  cursor: pointer;
+  animation: wave-pop 0.25s ease-out;
+}
+#td-brief.hidden { display: none; }
+#td-brief-face {
+  width: 72px; height: 72px;
+  flex: 0 0 auto;
+  border: 1px solid rgba(47, 187, 96, 0.4);
+  border-radius: 4px;
+  image-rendering: pixelated;
+}
+#td-brief-body { display: flex; flex-direction: column; gap: 4px; min-width: 0; flex: 1; }
+#td-brief-title {
+  font-family: var(--font-banner);
+  font-size: calc(var(--banner-unit) * 0.44);
+  letter-spacing: 0.2em;
+  color: var(--p-green);
+}
+#td-brief-line {
+  margin: 0;
+  font-family: var(--font-ui);
+  font-size: calc(var(--ui-unit) * 0.95);
+  font-size-adjust: var(--ui-adjust, none);
+  line-height: 1.45;
+  color: var(--p-green-hot);
+}
+#td-brief-foot {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-top: auto;
+}
+#td-brief-dots { font-size: 8px; letter-spacing: 3px; color: var(--p-green-dim); }
+#td-brief-next {
+  font: bold 14px ui-monospace, Menlo, monospace;
+  color: var(--p-white);
+  background: rgba(51, 255, 119, 0.14);
+  border: 1px solid var(--p-green-dim);
+  border-radius: 4px;
+  padding: 1px 12px;
+  cursor: pointer;
+}
+@media (pointer: coarse), (max-width: 700px) {
+  #td-brief { bottom: 150px; width: calc(100vw - 24px); padding: 8px 10px; gap: 9px; }
+  #td-brief-face { width: 54px; height: 54px; }
+}
 
 /* --- THE RECORD (achievements) ------------------------------------------
    A list read between runs, so it is set for reading rather than for
@@ -2942,6 +3005,28 @@ body.playing:not(.chrome-open) #tabbar { display: none !important; }
   padding: 4px 10px;
   cursor: pointer;
 }
+/* the bar's readout: what the game will not tell you itself */
+.hk-readout { display: flex; gap: 10px; align-items: baseline; margin-left: auto; margin-right: 10px; }
+.hk-readout b {
+  font: bold 11px ui-monospace, Menlo, monospace;
+  letter-spacing: 0.1em;
+  padding: 2px 7px;
+  border-radius: 4px;
+  border: 1px solid transparent;
+}
+.hk-you { color: #9dffbe; border-color: rgba(47, 187, 96, 0.45); }
+.hk-you.low { color: #ffd0d0; border-color: rgba(255, 70, 70, 0.6); background: rgba(255, 70, 70, 0.12); }
+.hk-them { color: #ff8f80; border-color: rgba(255, 100, 90, 0.35); }
+.hk-clock { color: #cfe6ff; }
+.hk-phase { color: #5f7180; }
+.hk-won { color: #33ff77; }
+.hk-lost { color: #ff5340; }
+@media (pointer: coarse), (max-width: 700px) {
+  .hk-readout { gap: 5px; margin-right: 4px; }
+  .hk-readout b { font-size: 9px; padding: 2px 4px; letter-spacing: 0.04em; }
+  .hk-phase { display: none; }   /* the two budgets and the clock are the read */
+}
+
 #td-hackframe {
   flex: 1;
   width: 100%;
