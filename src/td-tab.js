@@ -19,33 +19,33 @@
 
 import * as THREE from '../vendor/three.module.js';
 import GUI from '../vendor/lil-gui.esm.js';
-import { generateSphereMesh, relax } from './grid.js?v=7f948aa3';
-import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=7f948aa3';
-import { mulberry32, randomSeed } from './rng.js?v=7f948aa3';
-import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3, segKey } from './vec3.js?v=7f948aa3';
-import { CREATURES, waveJelly } from './creatures.js?v=7f948aa3';
+import { generateSphereMesh, relax } from './grid.js?v=fc2e9b59';
+import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=fc2e9b59';
+import { mulberry32, randomSeed } from './rng.js?v=fc2e9b59';
+import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3, segKey } from './vec3.js?v=fc2e9b59';
+import { CREATURES, waveJelly } from './creatures.js?v=fc2e9b59';
 import { applyFontPack, currentFontPack, FONT_NAMES, TYPE_KNOBS,
-  makeTypeParams, clampTypeParams, formatTypeCode } from './fonts.js?v=7f948aa3';
-import { UNITS, UNIT_NAMES, buildUnit, buildCreature, preloadMkcx, preloadServer, makeServerFixture, makeShieldShell, preloadContainer, makeContainerFixture, preloadFabricator, makeFabricatorDrone, makeBulletCloud, makeRewardSolid, makeShellSolid, makeDebris, makeDotBurst, makePortalCloud, makeHeartCloud, makeDotEnemy } from './units.js?v=7f948aa3';
-import { LOOKS, LOOK_NAMES } from './looks.js?v=7f948aa3';
-import { makeCellIndex } from './cellindex.js?v=7f948aa3';
-import { CREATURE_TINTS, ENEMY_SPEC, INTROS, computeWavePlan } from './enemyspec.js?v=7f948aa3';
-import { PICKUPS } from './pickups.js?v=7f948aa3';
-import { rankFor, rankLabel, badgeSVG, killReq, eliteReq } from './ranks.js?v=7f948aa3';
-import { makeScore } from './score.js?v=7f948aa3';
-import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER } from './towers.js?v=7f948aa3';
-import { makeEconomy, sellRefund } from './economy.js?v=7f948aa3';
-import { makeBloom } from './postfx.js?v=7f948aa3';
-import { TANK_FEEL, TANK_FEEL_KNOBS, makeTankFeel, stepTankFeel, landTankFeel, fireTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js?v=7f948aa3';
-import { FEEL, loadFeel, saveFeel } from './feelstore.js?v=7f948aa3';
+  makeTypeParams, clampTypeParams, formatTypeCode } from './fonts.js?v=fc2e9b59';
+import { UNITS, UNIT_NAMES, buildUnit, buildCreature, preloadMkcx, preloadServer, makeServerFixture, makeShieldShell, preloadContainer, makeContainerFixture, preloadFabricator, makeFabricatorDrone, makeBulletCloud, makeRewardSolid, makeShellSolid, makeDebris, makeDotBurst, makePortalCloud, makeHeartCloud, makeDotEnemy } from './units.js?v=fc2e9b59';
+import { LOOKS, LOOK_NAMES } from './looks.js?v=fc2e9b59';
+import { makeCellIndex } from './cellindex.js?v=fc2e9b59';
+import { CREATURE_TINTS, ENEMY_SPEC, INTROS, computeWavePlan } from './enemyspec.js?v=fc2e9b59';
+import { PICKUPS } from './pickups.js?v=fc2e9b59';
+import { rankFor, rankLabel, badgeSVG, killReq, eliteReq } from './ranks.js?v=fc2e9b59';
+import { makeScore } from './score.js?v=fc2e9b59';
+import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER } from './towers.js?v=fc2e9b59';
+import { makeEconomy, sellRefund } from './economy.js?v=fc2e9b59';
+import { makeBloom } from './postfx.js?v=fc2e9b59';
+import { TANK_FEEL, TANK_FEEL_KNOBS, makeTankFeel, stepTankFeel, landTankFeel, fireTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js?v=fc2e9b59';
+import { FEEL, loadFeel, saveFeel } from './feelstore.js?v=fc2e9b59';
 import { STRIKE_KNOBS, makeStrike, makeStrikeParams, grantStrikes, stepStrike,
   toggleArm, paintTarget, launchStrike, stepFall, skipFall, fallProgress,
-  strikeDamage, retargetStrike, orbitProgress } from './strike.js?v=7f948aa3';
-import { radarBasis, radarProject, radarBearing, sweepAngle, radarPhosphor } from './radar.js?v=7f948aa3';
-import { BLOOM_GROUPS } from './bloomweights.js?v=7f948aa3';
-import { TOWER_LOOK_NAMES, DEFAULT_TOWER_LOOK, buildTowerLook, preloadLook } from './towerlooks.js?v=7f948aa3';
-import { makeAudio } from './audio.js?v=7f948aa3';
-import { DEATH_KEYS } from './audiomanifest.js?v=7f948aa3';
+  strikeDamage, retargetStrike, orbitProgress } from './strike.js?v=fc2e9b59';
+import { radarBasis, radarProject, radarBearing, sweepAngle, radarPhosphor } from './radar.js?v=fc2e9b59';
+import { BLOOM_GROUPS } from './bloomweights.js?v=fc2e9b59';
+import { TOWER_LOOK_NAMES, DEFAULT_TOWER_LOOK, buildTowerLook, preloadLook } from './towerlooks.js?v=fc2e9b59';
+import { makeAudio } from './audio.js?v=fc2e9b59';
+import { DEATH_KEYS } from './audiomanifest.js?v=fc2e9b59';
 
 export function initTdTab(root) {
   let active = false;
@@ -4089,6 +4089,7 @@ export function initTdTab(root) {
     // battle reset — clear all enemies and gates, then seed the starting
     // neutral portals; the wave plan decides what pours out of them
     clearEnemies();
+    spawnQueue.length = 0; spawnClock = 0;
     for (const sp of spawnPoints) {
       scene.remove(sp.obj);
       disposeObj(sp.obj);
@@ -4217,34 +4218,70 @@ export function initTdTab(root) {
     if (wave >= 1 && wave <= TOWER_ORDER.length) showTowerToast(TOWER_ORDER[wave - 1]);
     const live = spawnPoints.filter((s) => s.alive);
     if (live.length) {
-      let pi = 0;
+      const total = plan.entries.reduce((n, e) => n + e.count, 0);
+      const gap = Math.min(SPAWN_GAP_MAX, SPAWN_SPREAD / Math.max(1, total));
+      spawnQueue.length = 0;
+      spawnClock = 0;
+      let pi = 0, n = 0;
       for (const { type, count } of plan.entries) {
-        const spec = ENEMY_SPEC[type];
         for (let k = 0; k < count; k++) {
-          const sp = live[pi % live.length]; pi++;
-          const obj = makeDotEnemy(type, { walker: CREATURE_TINTS[type], walkerHi: 0xffffff });
-          const size = spec.size * 0.7;
-          const scale0 = cellSide * size;
-          obj.scale.setScalar(scale0); obj.userData.s0 = scale0;
-          scene.add(obj);
-          const exits = openNeighbors(sp.ci);
-          enemies.push({
-            type, spec, scale0, size,
-            cur: sp.ci, prev: -1,
-            next: exits.length ? exits[Math.floor(whim() * exits.length)] : sp.ci,
-            prog: whim() * 0.4, pos: graph.centers[sp.ci].slice(), dir: [0, 1, 0],
-            obj, alive: true, phase: whim() * 6.283,
-            hp: spec.hp, behMult: 1, behUntil: -1, touchCd: -1,
-            slowFactor: 1, slowUntil: -1,
-          });
+          spawnQueue.push({ type, sp: live[pi % live.length], at: n * gap });
+          pi++; n++;
         }
       }
+      // the FIRST one is already through, so a wave never opens on an empty
+      // field while the clock counts
+      releaseSpawns(0);
     }
     updateHud();
   }
 
+  function releaseSpawns(dtSeconds) {
+    spawnClock += dtSeconds;
+    while (spawnQueue.length && spawnQueue[0].at <= spawnClock) {
+      const { type, sp } = spawnQueue.shift();
+      if (!sp.alive) continue;   // its gate died while it was queued
+      const spec = ENEMY_SPEC[type];
+      const obj = makeDotEnemy(type, { walker: CREATURE_TINTS[type], walkerHi: 0xffffff });
+      const size = spec.size * 0.7;
+      const scale0 = cellSide * size;
+      obj.scale.setScalar(scale0); obj.userData.s0 = scale0;
+      scene.add(obj);
+      const exits = openNeighbors(sp.ci);
+      enemies.push({
+        type, spec, scale0, size,
+        cur: sp.ci, prev: -1,
+        next: exits.length ? exits[Math.floor(whim() * exits.length)] : sp.ci,
+        prog: whim() * 0.4, pos: graph.centers[sp.ci].slice(), dir: [0, 1, 0],
+        obj, alive: true, phase: whim() * 6.283,
+        // a deterministic pace of its own: identical speeds are what let a
+        // clump that chose the same exit stay one silhouette all the way in
+        paceJitter: 0.9 + whim() * 0.22,
+        hp: spec.hp, behMult: 1, behUntil: -1, touchCd: -1,
+        slowFactor: 1, slowUntil: -1,
+      });
+    }
+  }
+
+  // THE WAVE ARRIVES, IT DOES NOT APPEAR. Every enemy in a wave used to be
+  // created in one frame, all of them standing on the two portal cells with
+  // the same speed — so four phage on two portals read as TWO contacts, and
+  // twenty-six read as two blobs. The towers shot at things nobody could
+  // see, because the things were inside each other. (Measured: wave 3,
+  // 26 alive, distinctCells=2.)
+  //
+  // Two fixes, and both are needed. The queue staggers WHEN they come
+  // through, so a wave walks out of a gate instead of materialising; the
+  // pace jitter stops a group that picks the same exit from travelling as
+  // one perfectly superimposed silhouette forever after.
+  const spawnQueue = [];
+  let spawnClock = 0;
+  const SPAWN_SPREAD = 3.2;   // seconds a whole wave takes to come through
+  const SPAWN_GAP_MAX = 0.45; // ...but never slower than this per contact
+
   const ENEMY_SPEED = 1.0; // cells/s toward the Heart — FASTER still
   function updateEnemies(dt, tNow) {
+    releaseSpawns(dt);
     for (const e of enemies) {
       if (!e.alive) continue;
       const spec = e.spec;
@@ -4256,7 +4293,7 @@ export function initTdTab(root) {
         e.obj.scale.setScalar(sv);
         e.obj.userData.s0 = sv;
       }
-      let pace = ENEMY_SPEED * spec.speed;
+      let pace = ENEMY_SPEED * spec.speed * (e.paceJitter ?? 1);
       if (tNow < e.behUntil) pace *= e.behMult; // on-hit reaction window
       if (tNow < e.slowUntil) pace *= e.slowFactor; // slow-tower debuff
       // the slow READS for its full duration: the whole cloud tints ice —
@@ -6893,7 +6930,7 @@ export function initTdTab(root) {
       }
       if (waveActive) {
         waveAge += dt;
-        if (enemies.every((e) => !e.alive)) {
+        if (!spawnQueue.length && enemies.every((e) => !e.alive)) {
           waveActive = false; interClock = 0; waveCharge = 0;
           score.addWave(wave); persistBest();
           if (simStyle) {
@@ -7261,6 +7298,7 @@ export function initTdTab(root) {
   const waveN = parseInt(urlParams.get('wave') || '0', 10);
   for (let i = 0; i < waveN; i++) spawnWave();
 
+
   // ?tour=1 stands at the end of a tour with the bank/press-on choice up;
   // ?tour=2 takes the gamble and stands at the end of the SECOND, carrying
   // the first. Neither is reachable by playing in a headless browser, and
@@ -7444,6 +7482,21 @@ export function initTdTab(root) {
     snapCamera();
   }
 
+  if (waveN > 0) {
+    // ?wave=N now REPORTS what it spawned. The operator sees one contact
+    // on a field the towers are clearly shooting into, and "how many are
+    // actually there" is not a thing a screenshot can answer.
+    const alive = enemies.filter((e) => e.alive);
+    const inScene = alive.filter((e) => e.obj && e.obj.parent === scene);
+    const visible = alive.filter((e) => e.obj && e.obj.visible);
+    const spots = new Set(alive.map((e) => e.cur));
+    const byType = {};
+    for (const e of alive) byType[e.type] = (byType[e.type] || 0) + 1;
+    console.log(`WAVEDUMP wave=${wave} alive=${alive.length} queued=${spawnQueue.length}`
+      + ` inScene=${inScene.length} visible=${visible.length}`
+      + ` distinctCells=${spots.size} portals=${spawnPoints.filter((s) => s.alive).length}`
+      + ` types=${Object.entries(byType).map(([k, v]) => `${k}x${v}`).join(',')}`);
+  }
   // opening briefing on a clean load; any debug hook means headless/demo,
   // where a frozen sim would break the verification flow
   // ?audio=1 — report the audio graph every two seconds: how many voices are
