@@ -42,18 +42,18 @@ console.log('each condition, on and off:');
     && !on({ handsOnByType: { knot: 9 } }).includes('blackbelt'));
   check('general is the top rank only',
     on({ maxRank: 15 }).includes('general') && !on({ maxRank: 14 }).includes('general'));
-  check('K-KILL 0 needs a BANKED tour, not just a clean one',
-    on({ tourBanked: true, hullsLost: 0 }).includes('kkill0')
+  check('K-KILL 0 needs a CLEARED sector, not just a clean run',
+    on({ sectorCleared: true, hullsLost: 0 }).includes('kkill0')
     && !on({ hullsLost: 0 }).includes('kkill0'));
   check('I LOVE YOU needs an untouched heart',
-    on({ tourBanked: true, heartHits: 0 }).includes('iloveyou')
-    && !on({ tourBanked: true, heartHits: 1 }).includes('iloveyou'));
-  check('double or nothing needs a second tour',
-    on({ tourBanked: true, toursCleared: 2 }).includes('doubleornothing')
-    && !on({ tourBanked: true, toursCleared: 1 }).includes('doubleornothing'));
-  check('desk officer needs a banked tour with NO hands-on kills',
-    on({ tourBanked: true, tankKills: 0 }).includes('nohands')
-    && !on({ tourBanked: true, tankKills: 1 }).includes('nohands'));
+    on({ sectorCleared: true, heartHits: 0 }).includes('iloveyou')
+    && !on({ sectorCleared: true, heartHits: 1 }).includes('iloveyou'));
+  check('half the shell needs three sectors',
+    on({ sectorsCleared: 3 }).includes('halfway')
+    && !on({ sectorsCleared: 2 }).includes('halfway'));
+  check('desk officer needs a cleared sector with NO hands-on kills',
+    on({ sectorCleared: true, tankKills: 0 }).includes('nohands')
+    && !on({ sectorCleared: true, tankKills: 1 }).includes('nohands'));
   check('retro-gamer needs all three protocols',
     on({ minigamesWon: ['hdt', 'bridges', 'shikaku'] }).includes('retrogamer')
     && !on({ minigamesWon: ['hdt', 'bridges'] }).includes('retrogamer'));

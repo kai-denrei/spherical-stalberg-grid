@@ -12,6 +12,32 @@ Three honest labels are used throughout:
 
 ---
 
+## The progression (settled 2026-08-31)
+
+The run has ONE spine now, and it is sectors.
+
+```
+SECTOR 1 ──► SECTOR 2 ──► … ──► SECTOR 5 = THE PLANET
+   │
+   ├─ HOLD    survive `wavesPerSector` waves. The gates are SEALED
+   │          and soak nothing — they are the thing pouring the wave
+   │          out, and ending that early is not on offer.
+   └─ BREACH  the seals drop. Kill every gate in the sector and it is
+              yours; the shell unseals one band further and you go
+              again with your towers and your biomass standing.
+```
+
+This replaced the TOURS layer, which was a second answer to the same
+question and did not nest with the first: a player could finish a tour while
+a sector sat half-cleared, so the game announced TOUR 1 SURVIVED over a wave
+counter marching into 16. The wave count is a phase clock now, not a
+parallel career. Bank-and-press-on is gone with it — finishing a sector IS
+the checkpoint, and the gamble it encoded can come back later as an optional
+sixth sector if it is missed.
+
+Clearing a sector pauses on a DEBRIEF that is dismissed by hand, never on a
+timer, and offers a lap of the board as Isao before you breach the next one.
+
 ## Now
 
 The tower-defence tab is the active front. Everything else is maintained,
