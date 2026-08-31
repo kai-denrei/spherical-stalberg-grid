@@ -19,32 +19,32 @@
 
 import * as THREE from '../vendor/three.module.js';
 import GUI from '../vendor/lil-gui.esm.js';
-import { generateSphereMesh, relax } from './grid.js?v=991ddfda';
-import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=991ddfda';
-import { mulberry32, randomSeed } from './rng.js?v=991ddfda';
-import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3, segKey } from './vec3.js?v=991ddfda';
-import { CREATURES, waveJelly } from './creatures.js?v=991ddfda';
-import { applyFontPack, currentFontPack, FONT_NAMES } from './fonts.js?v=991ddfda';
-import { UNITS, UNIT_NAMES, buildUnit, buildCreature, preloadMkcx, preloadServer, makeServerFixture, makeShieldShell, preloadContainer, makeContainerFixture, preloadFabricator, makeFabricatorDrone, makeBulletCloud, makeRewardSolid, makeShellSolid, makeDebris, makeDotBurst, makePortalCloud, makeHeartCloud, makeDotEnemy } from './units.js?v=991ddfda';
-import { LOOKS, LOOK_NAMES } from './looks.js?v=991ddfda';
-import { makeCellIndex } from './cellindex.js?v=991ddfda';
-import { CREATURE_TINTS, ENEMY_SPEC, INTROS, computeWavePlan } from './enemyspec.js?v=991ddfda';
-import { PICKUPS } from './pickups.js?v=991ddfda';
-import { rankFor, rankLabel, badgeSVG, killReq, eliteReq } from './ranks.js?v=991ddfda';
-import { makeScore } from './score.js?v=991ddfda';
-import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER } from './towers.js?v=991ddfda';
-import { makeEconomy, sellRefund } from './economy.js?v=991ddfda';
-import { makeBloom } from './postfx.js?v=991ddfda';
-import { TANK_FEEL, TANK_FEEL_KNOBS, makeTankFeel, stepTankFeel, landTankFeel, fireTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js?v=991ddfda';
-import { FEEL, loadFeel, saveFeel } from './feelstore.js?v=991ddfda';
+import { generateSphereMesh, relax } from './grid.js?v=8b67ad30';
+import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=8b67ad30';
+import { mulberry32, randomSeed } from './rng.js?v=8b67ad30';
+import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3, segKey } from './vec3.js?v=8b67ad30';
+import { CREATURES, waveJelly } from './creatures.js?v=8b67ad30';
+import { applyFontPack, currentFontPack, FONT_NAMES } from './fonts.js?v=8b67ad30';
+import { UNITS, UNIT_NAMES, buildUnit, buildCreature, preloadMkcx, preloadServer, makeServerFixture, makeShieldShell, preloadContainer, makeContainerFixture, preloadFabricator, makeFabricatorDrone, makeBulletCloud, makeRewardSolid, makeShellSolid, makeDebris, makeDotBurst, makePortalCloud, makeHeartCloud, makeDotEnemy } from './units.js?v=8b67ad30';
+import { LOOKS, LOOK_NAMES } from './looks.js?v=8b67ad30';
+import { makeCellIndex } from './cellindex.js?v=8b67ad30';
+import { CREATURE_TINTS, ENEMY_SPEC, INTROS, computeWavePlan } from './enemyspec.js?v=8b67ad30';
+import { PICKUPS } from './pickups.js?v=8b67ad30';
+import { rankFor, rankLabel, badgeSVG, killReq, eliteReq } from './ranks.js?v=8b67ad30';
+import { makeScore } from './score.js?v=8b67ad30';
+import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER } from './towers.js?v=8b67ad30';
+import { makeEconomy, sellRefund } from './economy.js?v=8b67ad30';
+import { makeBloom } from './postfx.js?v=8b67ad30';
+import { TANK_FEEL, TANK_FEEL_KNOBS, makeTankFeel, stepTankFeel, landTankFeel, fireTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js?v=8b67ad30';
+import { FEEL, loadFeel, saveFeel } from './feelstore.js?v=8b67ad30';
 import { STRIKE_KNOBS, makeStrike, makeStrikeParams, grantStrikes, stepStrike,
   toggleArm, paintTarget, launchStrike, stepFall, skipFall, fallProgress,
-  strikeDamage, retargetStrike, orbitProgress } from './strike.js?v=991ddfda';
-import { radarBasis, radarProject, radarBearing, sweepAngle, radarPhosphor } from './radar.js?v=991ddfda';
-import { BLOOM_GROUPS } from './bloomweights.js?v=991ddfda';
-import { TOWER_LOOK_NAMES, DEFAULT_TOWER_LOOK, buildTowerLook, preloadLook } from './towerlooks.js?v=991ddfda';
-import { makeAudio } from './audio.js?v=991ddfda';
-import { DEATH_KEYS } from './audiomanifest.js?v=991ddfda';
+  strikeDamage, retargetStrike, orbitProgress } from './strike.js?v=8b67ad30';
+import { radarBasis, radarProject, radarBearing, sweepAngle, radarPhosphor } from './radar.js?v=8b67ad30';
+import { BLOOM_GROUPS } from './bloomweights.js?v=8b67ad30';
+import { TOWER_LOOK_NAMES, DEFAULT_TOWER_LOOK, buildTowerLook, preloadLook } from './towerlooks.js?v=8b67ad30';
+import { makeAudio } from './audio.js?v=8b67ad30';
+import { DEATH_KEYS } from './audiomanifest.js?v=8b67ad30';
 
 export function initTdTab(root) {
   let active = false;
@@ -1245,9 +1245,28 @@ export function initTdTab(root) {
           }
         }
         if (!best) return;
-        const hc2 = graph.centers[dungeon.heart];
         for (let bi = 0; bi < best.length; bi++) {
           const ci = best[bi];
+          // THE DOORS FACE THE LANE THE HULL LEAVES BY. They used to face
+          // the Heart, which is only ever approximately the way out: the
+          // exit is a graph neighbour and can sit 40-odd degrees off that
+          // bearing, so the hull drove out on a diagonal and clipped its own
+          // door frame (operator, twice). Aim the box at the actual exit and
+          // the two are the same line by construction. Most-heartward escape
+          // wins, so the row still faces home.
+          const escapeOf = (c2) => {
+            const toHeart = tangentDirTo(c2, dungeon.heart);
+            let bestE = -1, bestD = -Infinity;
+            for (const nb of graph.adj[c2]) {
+              if (dungeon.tags[nb] === BLOCKED || best.includes(nb)) continue;
+              const d = dot3(tangentDirTo(c2, nb), toHeart);
+              if (d > bestD) { bestD = d; bestE = nb; }
+            }
+            return bestE;
+          };
+          const exitCi = escapeOf(ci);
+          if (exitCi < 0) continue;   // the escape rule above should prevent this
+          const ec = graph.centers[exitCi];
           const g = makeContainerFixture(bi + 1); // painted 1-2-3, left to right
           if (!g) break;
           const c = graph.centers[ci];
@@ -1257,10 +1276,11 @@ export function initTdTab(root) {
           // SEE it from the doors.
           g.scale.set(cellSide * 0.9, cellSide * 0.9, cellSide * 0.9 * 0.55);
           g.position.set(c[0], c[1], c[2]);
-          // doors toward the heart: the bays face home, the tanks nose out
+          // doors onto the exit lane: the bays still face home, and now the
+          // hull's first metre is a straight line through its own doorway
           tmpObj.position.copy(g.position);
           tmpObj.up.set(nrm2[0], nrm2[1], nrm2[2]);
-          tmpObj.lookAt(hc2[0], hc2[1], hc2[2]);
+          tmpObj.lookAt(ec[0], ec[1], ec[2]);
           g.quaternion.copy(tmpObj.quaternion);
           const tank = buildCreature('mkcx', look());
           tank.scale.setScalar(0.32);
@@ -1274,7 +1294,9 @@ export function initTdTab(root) {
           tank.position.set(0, 0.12, 0.52);
           g.add(tank);
           scene.add(g);
-          lifeContainers.push({ obj: g, tanks: [tank], ci });
+          // the exit is CARRIED, not re-derived: the doors point at it and
+          // the respawn drives at it, and those two must never disagree
+          lifeContainers.push({ obj: g, tanks: [tank], ci, exit: exitCi });
         }
         syncLifeContainers();
         // the FIRST SCENE: the opening hull drives out of its bay — if
@@ -5046,17 +5068,22 @@ export function initTdTab(root) {
     const pick = clear.length ? clear : exits;
     let e0 = pick[0] ?? ci;
     if (fromContainer) {
-      // OUT OF THE DOORS. The berths are staged with their doors facing the
-      // Heart, so the outward rule below — right for a respawn on open
-      // ground — aims a fresh hull at the BACK WALL of its own container.
-      // The operator watched it happen at the end of the cold open. Which
-      // way the doors point is geometry, not graph distance, so pick the
-      // exit best lined up with it.
-      const doorDir = tangentDirTo(ci, dungeon.heart);
-      let bestDot = -Infinity;
-      for (const e of pick) {
-        const d = dot3(tangentDirTo(ci, e), doorDir);
-        if (d > bestDot) { bestDot = d; e0 = e; }
+      // STRAIGHT OUT OF THE DOORS. The berth was rotated to face this exact
+      // cell when it was placed, so driving at it is driving down the
+      // doorway's own axis — no angle, no clipped frame. Reading the stored
+      // exit rather than re-deriving one is the point: two answers to "which
+      // way is out" is how the hull ended up leaving sideways.
+      const berth = lifeContainers.find((cc) => cc.ci === ci);
+      if (berth && berth.exit >= 0 && dungeon.tags[berth.exit] !== BLOCKED
+        && !towerCells.has(berth.exit)) {
+        e0 = berth.exit;
+      } else {
+        const doorDir = tangentDirTo(ci, dungeon.heart);
+        let bestDot = -Infinity;
+        for (const e of pick) {
+          const d = dot3(tangentDirTo(ci, e), doorDir);
+          if (d > bestDot) { bestDot = d; e0 = e; }
+        }
       }
     } else {
       // OUTWARD, not heartward: you respawn defending, so you are pointed
@@ -6563,9 +6590,20 @@ export function initTdTab(root) {
         updateHud();
       }
     }
-    // first laser input thaws the frozen tutorial opening — checked BEFORE the
-    // frozen gate, since updateLasers itself is skipped while frozen
-    if (tutorial.frozen && keys.laser) { tutorial.frozen = false; hideTutBanner(); }
+    // ANY control input thaws the frozen tutorial opening — checked BEFORE
+    // the frozen gate, since updateLasers itself is skipped while frozen.
+    //
+    // It used to be the LASER key alone, which is the one control the
+    // opening does not ask for: the banner says "RAM THEM · drive straight
+    // through them" and the throttle is pulsing. So a player who did exactly
+    // what they were told pressed W, got nothing back, and read the game as
+    // broken for the five or ten seconds it took to try something else
+    // (operator, 2026-08-31). The hold is there to give the lane time to
+    // matter, not to make the tank feel dead — so the moment a hand touches
+    // anything, it is over.
+    const tutInput = keys.laser || keys.fast || keys.slow || keys.left || keys.right
+      || cruise || throttle !== 0;
+    if (tutorial.frozen && tutInput) { tutorial.frozen = false; hideTutBanner(); }
     const frozen = buildFrozen() || revealLeft > 0 || tutorial.frozen || cineLeft > 0;
     // The BUILD pause holds the WORLD still, not the DRIVER. Planning with
     // the tank parked where the last wave left it meant switching out of
