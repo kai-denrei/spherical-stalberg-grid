@@ -1,21 +1,21 @@
 // main.js — tab shell. Each tab lazily initializes its own renderer/scene the
 // first time it's shown and pauses (skips its loop body) while hidden.
 
-import { wireDevlogBadge } from './devlog.js?v=f0e808d6';
-import { initHomeTab } from './home-tab.js?v=f0e808d6';
-import { initGridTab } from './grid-tab.js?v=f0e808d6';
-import { initMazeTab } from './maze-tab.js?v=f0e808d6';
-import { initOrganicTab } from './organic-tab.js?v=f0e808d6';
-import { initBattleTab } from './battle-tab.js?v=f0e808d6';
-import { initHeartTab } from './heart-tab.js?v=f0e808d6';
-import { initTdTab } from './td-tab.js?v=f0e808d6';
-import { initTankTab } from './tank-tab.js?v=f0e808d6';
-import { initTank2Tab } from './tank2-tab.js?v=f0e808d6';
-import { initTank3Tab } from './tank3-tab.js?v=f0e808d6';
-import { initUnitsTab } from './units-tab.js?v=f0e808d6';
-import { initHowTab, initStackTab, initLogTab } from './how-tab.js?v=f0e808d6';
-import { initSimTab } from './sim-tab.js?v=f0e808d6';
-import { applyFontPack, DEFAULT_FONT } from './fonts.js?v=f0e808d6';
+import { wireDevlogBadge } from './devlog.js?v=13c585f2';
+import { initHomeTab } from './home-tab.js?v=13c585f2';
+import { initGridTab } from './grid-tab.js?v=13c585f2';
+import { initMazeTab } from './maze-tab.js?v=13c585f2';
+import { initOrganicTab } from './organic-tab.js?v=13c585f2';
+import { initBattleTab } from './battle-tab.js?v=13c585f2';
+import { initHeartTab } from './heart-tab.js?v=13c585f2';
+import { initTdTab } from './td-tab.js?v=13c585f2';
+import { initTankTab } from './tank-tab.js?v=13c585f2';
+import { initTank2Tab } from './tank2-tab.js?v=13c585f2';
+import { initTank3Tab } from './tank3-tab.js?v=13c585f2';
+import { initUnitsTab } from './units-tab.js?v=13c585f2';
+import { initHowTab, initStackTab, initLogTab } from './how-tab.js?v=13c585f2';
+import { initSimTab } from './sim-tab.js?v=13c585f2';
+import { applyFontPack, DEFAULT_FONT } from './fonts.js?v=13c585f2';
 
 // The typeface pack is APP-WIDE and applied before any tab boots: it writes
 // custom properties onto <html>, and a tab that measures its own layout on

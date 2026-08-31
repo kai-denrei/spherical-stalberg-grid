@@ -184,6 +184,45 @@ actually been examined — whether waves 5–8 feel cramped on it is untested.
 
 ## Candidate
 
+### Operator's list (captured 2026-08-31, second playtest)
+
+Five items, in the order they were handed down. Two are bugs, three are
+design. Only the first is done.
+
+- ~~**Minigame seeds**~~ — DONE. Both engines shipped a constant seed, so
+  every breach served the identical puzzle. Fixed at the source in
+  pazorukore and through the duel's own bridge; the seed is derived from
+  the run's stream, so a replay breaches the same puzzles in the same
+  order.
+- **A real win condition.** Endless is a placeholder. The shape the
+  operator wants, in three stages: (1) a FINITE wave count — survive them
+  all and you have won; (2) among survivors, the ranking is by score, so
+  the game is "clear it, then clear it better"; (3) an optional
+  continue-and-enjoy-your-build mode afterwards, where each new portal
+  eats part of the map, and the true planet-level win is the board with
+  almost no walls left — the whole sphere under control.
+  **Unstarted, and it needs numbers before code**: how many waves is a
+  round, does score carry across rounds, and does continuing risk the win
+  already banked. It also retires the current sector-expansion loop, which
+  is today's substitute for an ending.
+- **Audio lags after the second game.** Reported on a MacBook Pro
+  AirPlay-casting to a TV — so a suspect chain of three: voices or nodes
+  accumulating across a regenerate, AirPlay's own latency, and a sample
+  rate mismatch when the output device is a TV. Not yet reproduced.
+  First thing to measure is whether the voice count climbs across runs.
+- **The build radial outstays its welcome.** Known from before: the tower
+  shop stays open when it should close — while driving in tank mode, and
+  when a missile is dropped. `closeShop()` exists and is called from view
+  changes; the gap is that nothing calls it on drive input or on a launch.
+- **Achievements.** The operator's list: STREAK 100/200/300/400/500;
+  **K-KILL0** (won without losing a tank); **GENERAL** (reached the
+  highest rank); **IT'S PERSONAL** (killed the boss with no tower
+  assistance); **I LOVE YOU** (won with the heart untouched); **HACKER**
+  (found the server); **RETRO-GAMER** (won at all three minigames) — plus
+  more in the same voice. Wants a persistence story (BEST already uses
+  localStorage) and a place to display them; the rank insignia in
+  `ranks.js` is the drawing idiom to copy.
+
 ### Rank-gated tank upgrades — *nice to have* (operator, 2026-08-31)
 
 The ladder in `ranks.js` currently pays in **respect only**: 15 ranks, hands-on

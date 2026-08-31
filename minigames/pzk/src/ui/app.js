@@ -636,7 +636,16 @@ function init() {
   document.getElementById('btn-action').onclick = onActionPress;
   window.addEventListener('resize', () => { if (_timer.disp) renderTimer(); if (_timer.actDisp && app.phase) renderAction(); });
   document.getElementById('btn-menu').addEventListener('contextmenu', (e) => e.preventDefault());
-  mountGame(app.gameId, app.skinId);
+  // A FRESH PUZZLE PER LOAD. mountGame with no params falls through to
+  // game.defaultParams(), which hardcodes `seed: 1` — so every visit got the
+  // same board forever (reported from the embedding game, where the same
+  // hashi layout came up every single hack). Passing `{ seed: undefined }`
+  // is the engine's own idiom for "roll one": load() only calls freshSeed()
+  // when params.seed is nullish, which is exactly what newGameWith already
+  // relies on. ?seed=N pins it instead, for a reproducible embed.
+  const seedQ = q.get('seed');
+  mountGame(app.gameId, app.skinId,
+    { seed: seedQ != null && seedQ !== '' ? (Number(seedQ) >>> 0) : undefined });
   if (q.has('recap')) setTimeout(() => {   // dev: simulate a 10-game run and show the recap dashboard
     const times = [7, 9, 22, 6, 11, 8, 30, 5, 13, 19], undos = [false, false, false, true, false, false, false, false, false, false];
     let r; for (let i = 0; i < 10; i++) r = app.score.record(times[i], undos[i], {});
