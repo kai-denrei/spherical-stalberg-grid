@@ -61,6 +61,11 @@ const PLAYER_UNITS = [
   { id: 'bobby', kind: 'fixture', label: 'bobby',
     note: 'construction drone — four rotors, a biomass reservoir, and the boom that prints every tower',
     sounds: [{ key: 'tower_upgrade', label: 'print' }] },
+  // ISAO is Bobby v2 and lives beside him rather than replacing him, so the
+  // two can be looked at together while the face earns its place.
+  { id: 'isao', kind: 'fixture', label: 'isao',
+    note: 'fabricator v2 — the lamp head swapped for a CRT that says what it thinks of the shift',
+    sounds: [{ key: 'tower_upgrade', label: 'print' }] },
 ];
 
 // Towers are the player's army too, so they belong on the friendly side.

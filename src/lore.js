@@ -176,6 +176,26 @@ export const LORE = {
       + 'molten material, hovering low over a half-printed gun emplacement, '
       + 'night work lighting, hard sci-fi realism, 8k',
   },
+  isao: {
+    name: 'FABRICATOR UNIT "ISAO"',
+    tag: 'the drone with a face',
+    body: 'The same airframe as Bobby with the sensor pod taken off and a '
+      + 'cathode-ray monitor bolted where it was. It is not a better sensor. '
+      + 'It is a face — two eyes and a mouth on a 16x12 grid, because the '
+      + 'unit has one font and no way to draw a curve — and it changes '
+      + 'without being asked. Bored between waves. Busy over a print. Wide '
+      + 'and square when the field fills up. The engineers who fitted it '
+      + 'wrote no justification in the log, which is itself the '
+      + 'justification: a machine you work beside for eleven months is '
+      + 'easier to work beside if it looks back. It talks, too, between '
+      + 'waves, mostly about biomass.',
+    visual: 'industrial quadcopter fabrication drone in pale blue works '
+      + 'paint, a small boxy cathode-ray monitor mounted on the nose where a '
+      + 'sensor pod would be, a simple pixelated green phosphor face on the '
+      + 'screen, visible scanlines and screen glow, articulated boom arm '
+      + 'with an extruder nozzle, hovering in a dark hangar, retro-futurist '
+      + 'hard sci-fi, 8k',
+  },
   single: {
     name: 'ARM, SIX-AXIS',
     tag: 'single-shot emplacement',

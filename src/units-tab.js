@@ -14,23 +14,23 @@ import { OrbitControls } from '../vendor/OrbitControls.js';
 import { buildUnit, preloadMkcx, makeDebris, makeDotBurst, makeBulletCloud,
   makeDotEnemy, makeRewardSolid, makeShellSolid, makePortalCloud,
   preloadServer, makeServerFixture, preloadContainer, makeContainerFixture,
-  preloadFabricator, makeFabricatorDrone } from './units.js?v=8bd87615';
+  preloadFabricator, makeFabricatorDrone, makeIsaoDrone } from './units.js?v=266f7220';
 import { TANK_FEEL, TANK_FEEL_KNOBS, formatFeelCode, makeTankFeel, stepTankFeel,
-  landTankFeel, fireTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js?v=8bd87615';
+  landTankFeel, fireTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js?v=266f7220';
 import { FEEL, loadFeel, saveFeel, resetFeel,
-  TOWER, HEADS, loadTower, saveTower, resetTower } from './feelstore.js?v=8bd87615';
+  TOWER, HEADS, loadTower, saveTower, resetTower } from './feelstore.js?v=266f7220';
 import { TOWER_FEEL_KNOBS, formatTowerFeel, clampTowerParams,
-  formatTowerHeads, HEAD_CHOICES, HEAD_AS_SHIPPED } from './towerfeel.js?v=8bd87615';
-import { CREATURE_TINTS } from './enemyspec.js?v=8bd87615';
+  formatTowerHeads, HEAD_CHOICES, HEAD_AS_SHIPPED } from './towerfeel.js?v=266f7220';
+import { CREATURE_TINTS } from './enemyspec.js?v=266f7220';
 import { buildTowerLook, TOWER_LOOK_NAMES, DEFAULT_TOWER_LOOK, preloadLook } from './towerlooks.js';
 import { TOWER_BY_KEY, TOWERS } from './towers.js';
 import { LOOKS } from './looks.js';
 import { makeBloom } from './postfx.js';
-import { makeAudio } from './audio.js?v=8bd87615';
+import { makeAudio } from './audio.js?v=266f7220';
 import { GROUPS, GROUP_LABELS, GROUP_EMPTY, entriesIn } from './unitcatalog.js';
 import { FONT_NAMES, TYPE_KNOBS, TYPE_FEEL, makeTypeParams, clampTypeParams,
-  formatTypeCode, applyFontPack, currentFontPack, currentShoutPack } from './fonts.js?v=8bd87615';
-import { LORE, LORE_WORLD, loreText, loreAll } from './lore.js?v=8bd87615';
+  formatTypeCode, applyFontPack, currentFontPack, currentShoutPack } from './fonts.js?v=266f7220';
+import { LORE, LORE_WORLD, loreText, loreAll } from './lore.js?v=266f7220';
 
 let roundTex = null;
 function roundDotTex() {
@@ -249,11 +249,14 @@ export function initUnitsTab(root) {
     if (e.kind === 'fixture') {
       // fixtures preload async; by the time anyone pages to them the
       // bytes have almost always landed — the placeholder covers the gap
-      const make = e.id === 'server' ? makeServerFixture
-        : e.id === 'bobby' ? makeFabricatorDrone : makeContainerFixture;
-      const pre = e.id === 'server' ? preloadServer
-        : e.id === 'bobby' ? preloadFabricator : preloadContainer;
-      const g = make(e.id === 'bobby' ? 0xffc24a : undefined);
+      const FIXTURES = {
+        server: [makeServerFixture, preloadServer, undefined],
+        bobby: [makeFabricatorDrone, preloadFabricator, 0xffc24a],
+        isao: [makeIsaoDrone, preloadFabricator, 0xbfe6ff],
+      };
+      const [make, pre, tint] = FIXTURES[e.id]
+        || [makeContainerFixture, preloadContainer, undefined];
+      const g = make(tint);
       if (g) {
         g.userData.baseScale = 1;
         // the rotors are the whole read on a drone: a still quadcopter looks
@@ -263,11 +266,25 @@ export function initUnitsTab(root) {
           g.userData.tick = (t2) => {
             g.userData.spinRotors(1 / 60, 0.4);
             if (g.userData.setWork) g.userData.setWork(0.5 + 0.5 * Math.sin(t2 * 0.9));
+            // Isao cycles his whole repertoire on the bench — the faces are
+            // the thing being looked at, and they are presets rather than
+            // an animation, so showing them means showing them in turn
+            if (g.userData.setFace) {
+              const f = g.userData.faces;
+              g.userData.setFace(f[Math.floor(t2 / 1.6) % f.length]);
+            }
           };
         }
         return g;
       }
-      pre();
+      // AND COME BACK WHEN IT LANDS. This used to fire and forget, on the
+      // reasoning that the bytes would have arrived by the time anyone paged
+      // to a fixture — true on a warm cache, and a permanent grey box on a
+      // cold one. Which made verifying Isao's face a coin flip: the model
+      // rendered on some runs and not others, and nothing said why.
+      pre().then((ok) => {
+        if (ok && currentEntry === e) show();
+      });
       const ph = new THREE.Group();
       ph.add(new THREE.Mesh(new THREE.BoxGeometry(0.6, 0.6, 0.6),
         new THREE.MeshLambertMaterial({ color: 0x2a3442 })));
@@ -375,6 +392,12 @@ export function initUnitsTab(root) {
     }, 1200);
   }
 
+  // ?yaw=<degrees> turns the model and stops the turntable. Any unit has a
+  // side that is the point of it — Isao's whole face is on his nose — and
+  // under a virtual-time budget the turntable barely moves, so without this
+  // the only reachable angle is whichever one the camera starts at.
+  const yawQ = parseFloat(new URLSearchParams(location.search).get('yaw') || 'NaN');
+
   function show() {
     clear();
     const list = entriesIn(state.group);
@@ -390,6 +413,10 @@ export function initUnitsTab(root) {
     currentEntry = e;
     if (tunerApi) tunerApi.setSubject(e.kind === 'tower' ? 'tower' : 'tank');
     current = buildEntry(e);
+    if (Number.isFinite(yawQ) && current) {
+      current.rotation.y = (yawQ * Math.PI) / 180;
+      state.spin = false;
+    }
     // ENEMIES default to their own game ANIMATION with the turntable OFF —
     // a swimmer under an added spin reads as neither (operator ruling).
     // The toggle still works; the default just re-lands per unit shown.

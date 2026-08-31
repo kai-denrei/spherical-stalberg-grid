@@ -16,12 +16,12 @@
 
 import * as THREE from '../vendor/three.module.js';
 import { loadGlb, mergeByMaterial, fitModel, tintModel, makeShellRack,
-  addEdgeOutlines, makeHeatSleeve } from './glbmodels.js?v=8bd87615';
-import { CREATURES, waveJelly, swimWave, spherePts, bulletPts, missilePts, heartPts, torusPts, towerHeadPts, enemyDotPts, portalPts } from './creatures.js?v=8bd87615';
-import { TOWER_FEEL, TOWER_HEADS, headKindFor } from './towerfeel.js?v=8bd87615';
+  addEdgeOutlines, makeHeatSleeve } from './glbmodels.js?v=266f7220';
+import { CREATURES, waveJelly, swimWave, spherePts, bulletPts, missilePts, heartPts, torusPts, towerHeadPts, enemyDotPts, portalPts } from './creatures.js?v=266f7220';
+import { TOWER_FEEL, TOWER_HEADS, headKindFor } from './towerfeel.js?v=266f7220';
 import { STARGATE_PTS, STARGATE_STROKE,
-  HORIZON_N, stargateHorizon } from './stargate.js?v=8bd87615';
-import { ENEMY_SPEC } from './enemyspec.js?v=8bd87615';
+  HORIZON_N, stargateHorizon } from './stargate.js?v=266f7220';
+import { ENEMY_SPEC } from './enemyspec.js?v=266f7220';
 
 function normalizeToUnit(group) {
   group.updateMatrixWorld(true);
@@ -1492,7 +1492,14 @@ export function makeContainerFixture(number = 0) {
 // starts, and a marker costs nothing.
 const FAB_URL = 'assets/models/fabricator.glb';
 const FAB_ROTORS = ['Rotor_FL_Spin', 'Rotor_FR_Spin', 'Rotor_RL_Spin', 'Rotor_RR_Spin'];
-const FAB_PIVOTS = [...FAB_ROTORS, 'Boom_Yaw', 'Boom_Pitch', 'Head_Pitch', 'Nozzle_Tip'];
+// Sensor_Pod and Sensor_Lens are preserved for a reason that is not
+// articulation: they are the HEAD, and Isao takes it off. mergeByMaterial
+// welds every non-pivot mesh into a batch by material, so a part that is
+// not listed here cannot be addressed by name afterwards — hiding it
+// silently does nothing, which is exactly what happened the first time.
+// Two extra draw calls on one object, against a tower's four.
+const FAB_PIVOTS = [...FAB_ROTORS, 'Boom_Yaw', 'Boom_Pitch', 'Head_Pitch', 'Nozzle_Tip',
+  'Sensor_Pod', 'Sensor_Lens'];
 const FAB_DROP = ['Workpiece_Group', 'Airframe_Collision'];
 let fabProto = null, fabLoad = null;
 export function preloadFabricator() {
@@ -1543,6 +1550,131 @@ export function makeFabricatorDrone(tint = 0x8fd8ff) {
   };
   g.userData.nozzle = tip || null;
   g.userData.kind = 'fixture';
+  return g;
+}
+
+// --- ISAO: Bobby with a face ---------------------------------------------
+// A second fabricator, kept as its own entity while it earns its place. The
+// square sensor pod with the yellow lamp comes off and a CRT goes on: a
+// small monitor that shows what the machine thinks about its shift.
+//
+// Deliberately NOT expressive. In play it wears a handful of preset shapes —
+// two eyes and a mouth built from rectangles, drawn the way a machine with
+// one font and no anti-aliasing would draw them. The character is in the
+// SWITCHING, not in the animation. (The cinematic register, where Isao
+// explains the Stålsphere protocol between waves, is the same faces held
+// longer and paired with text — nothing new to draw.)
+//
+// The pod is HIDDEN rather than deleted: the merge welds by material, so
+// the lamp lives in a batch with other lit parts and cannot be removed
+// without taking them too. Scale-to-nothing is the honest way to drop one
+// welded part.
+const ISAO_FACES = ['happy', 'bored', 'scared', 'working', 'alert', 'hungry', 'off'];
+const isaoFaceTex = new Map();
+function isaoFace(name) {
+  if (isaoFaceTex.has(name)) return isaoFaceTex.get(name);
+  const c = document.createElement('canvas');
+  c.width = 128; c.height = 96;
+  const x = c.getContext('2d');
+  const P = '#7dff9e';           // phosphor
+  const bg = name === 'off' ? '#05100a' : '#08170f';
+  x.fillStyle = bg; x.fillRect(0, 0, 128, 96);
+  x.fillStyle = P;
+  // one pixel unit, so every face is built from the same grid — a machine
+  // that draws its own expressions does not have curves
+  const px = (gx, gy, w, h) => x.fillRect(gx * 8, gy * 8, w * 8, h * 8);
+  const eyes = {
+    happy:   () => { px(2, 3, 2, 2); px(12, 3, 2, 2); },
+    bored:   () => { px(2, 5, 2, 1); px(12, 5, 2, 1); },
+    scared:  () => { px(2, 2, 3, 4); px(11, 2, 3, 4); },
+    working: () => { px(2, 3, 3, 2); px(11, 3, 3, 2); },
+    alert:   () => { px(2, 2, 2, 4); px(12, 2, 2, 4); },
+    hungry:  () => { px(2, 3, 2, 2); px(12, 3, 2, 2); },
+    off:     () => {},
+  };
+  const mouths = {
+    // a smile, drawn as a stepped grin because that is what a grid gives you
+    happy:   () => { px(4, 7, 1, 1); px(5, 8, 6, 1); px(11, 7, 1, 1); },
+    bored:   () => { px(5, 8, 6, 1); },
+    scared:  () => { px(6, 7, 4, 3); },
+    working: () => { px(5, 8, 2, 1); px(9, 8, 2, 1); },
+    alert:   () => { px(4, 8, 8, 1); px(4, 7, 1, 1); px(11, 7, 1, 1); },
+    // biomass: an open mouth, and the machine leaning into it
+    hungry:  () => { px(5, 7, 6, 3); px(6, 6, 4, 1); },
+    off:     () => {},
+  };
+  (eyes[name] || eyes.bored)();
+  (mouths[name] || mouths.bored)();
+  if (name !== 'off') {
+    // scanlines LAST, over the drawing, because that is where they are
+    x.globalAlpha = 0.28;
+    x.fillStyle = '#000';
+    for (let y = 0; y < 96; y += 3) x.fillRect(0, y, 128, 1);
+    x.globalAlpha = 1;
+  }
+  const tex = new THREE.CanvasTexture(c);
+  if (THREE.SRGBColorSpace) tex.colorSpace = THREE.SRGBColorSpace;
+  tex.magFilter = THREE.NearestFilter;   // a CRT is not smooth, it is coarse
+  isaoFaceTex.set(name, tex);
+  return tex;
+}
+
+export function makeIsaoDrone(tint = 0xbfe6ff) {
+  const g = makeFabricatorDrone(tint);
+  if (!g) return null;
+  // WHERE THE POD WAS. Read the position off the node rather than guessing
+  // it: the fit group's units are not the file's, and a hand-placed monitor
+  // hung off the belly instead of sitting on the nose. Same-source rule —
+  // if the model knows where its face goes, ask the model.
+  g.updateMatrixWorld(true);
+  const podAt = new THREE.Vector3();
+  const pod = g.getObjectByName('Sensor_Pod');
+  if (pod) { pod.getWorldPosition(podAt); g.worldToLocal(podAt); }
+  // off with the lamp head
+  for (const n of ['Sensor_Pod', 'Sensor_Lens']) {
+    const o = g.getObjectByName(n);
+    if (o) o.scale.setScalar(0.0001);
+  }
+  // the monitor, where the pod was: a shallow bezel with a lit screen. The
+  // fitted proto is ~0.55 tall, so these are in the same units the boom and
+  // the rotors already live in.
+  const crt = new THREE.Group();
+  const bezel = new THREE.Mesh(
+    new THREE.BoxGeometry(0.22, 0.17, 0.05),
+    new THREE.MeshStandardMaterial({ color: 0x2b3138, roughness: 0.8, metalness: 0.2 }),
+  );
+  crt.add(bezel);
+  const screen = new THREE.Mesh(
+    new THREE.PlaneGeometry(0.175, 0.13),
+    new THREE.MeshBasicMaterial({ map: isaoFace('bored'), toneMapped: false }),
+  );
+  screen.position.z = 0.026;
+  crt.add(screen);
+  crt.name = 'Isao_CRT';
+  // the pod's own place, or a sane nose position if the file ever loses it
+  if (pod) crt.position.copy(podAt);
+  else crt.position.set(0, 0.42, 0.28);
+  g.add(crt);
+
+  let face = 'bored';
+  g.userData.faces = ISAO_FACES;
+  g.userData.setFace = (name) => {
+    if (!ISAO_FACES.includes(name) || face === name) return;
+    face = name;
+    screen.material.map = isaoFace(name);
+    screen.material.needsUpdate = true;
+  };
+  g.userData.getFace = () => face;
+  if (typeof location !== 'undefined' && new URLSearchParams(location.search).get('isao') === '1') {
+    g.updateMatrixWorld(true);
+    const bb = new THREE.Box3().setFromObject(g);
+    const cb = new THREE.Box3().setFromObject(crt);
+    console.log(`ISAO pod=${pod ? 'found' : 'MISSING'}`
+      + ` crtLocal=${crt.position.toArray().map((v) => v.toFixed(3)).join(',')}`
+      + ` crtBox=${cb.min.toArray().map((v) => v.toFixed(2)).join(',')}..${cb.max.toArray().map((v) => v.toFixed(2)).join(',')}`
+      + ` droneBox=${bb.min.toArray().map((v) => v.toFixed(2)).join(',')}..${bb.max.toArray().map((v) => v.toFixed(2)).join(',')}`
+      + ` inTree=${!!g.getObjectByName('Isao_CRT')}`);
+  }
   return g;
 }
 
