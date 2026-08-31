@@ -6,6 +6,74 @@ Demo links assume `npm run serve` (port 8144) or the
 
 ---
 
+## `1bc9d73` — The cold open, and berths you can drive out of
+
+Three operator reports on the life containers, one of which was a real bug
+with a cause nobody had guessed, plus the opening cinematic.
+
+**The hull was invisible inside the box.** The spare sat at `z=0.05` — dead
+centre of a fixture that runs z ±0.80 — so it hid behind the door frame in
+its own shadow. It parks at `0.52` now: nose on the door plane, body lit.
+
+**It could not get out.** Three independent causes, all live at once:
+
+1. `respawnPlayerAtSpawn` aimed the fresh hull at `exits[0]`, and for a berth
+   in a row of three that is usually *another berth*. On the graph the tank
+   drives through a solid container; in free movement it noses into a wall.
+   Sibling berths are filtered out of the choice.
+2. **Manual is the default mode, and manual needs a held key.** So the hull
+   sat there — the whole of the "cannot get out by itself" report. A hull
+   leaving a berth now engages `cruise`, the existing rolls-forward-on-its-own
+   state, and idles out of the doors; steering takes the wheel back.
+3. The margin test in `freeBlocked` treats a solid neighbour as a no-go shell
+   around the lane, and between three boxes in a row that leaves a gap the
+   hull cannot thread. While the player is still IN a berth the boxes stop
+   crowding; clear of it they go solid again.
+
+And a placement rule the report earned: every berth must keep at least one
+open neighbour outside the chain. Scoring for minimum openness was doing its
+job too well and could pick a sealed garage — and each of the three becomes
+the spawn as lives run down.
+
+`?driveout=N` exists because the question could not otherwise be asked:
+headless cannot drive, and `?tick` runs at init — *before* the container GLB
+resolves. It simulates N seconds from the berth and logs the cells reached.
+Six seeds: every one stuck at one cell before, every one out and moving
+after.
+
+**The repaint.** Industrial grey on the proto — walls brightest, frame a
+shade under so the ribs still read, deck lighter so a parked hull has
+something to be a silhouette against. Base colour alone did nothing: the
+default look runs a hemi at 0.55 and a sun at 0.25, and a `MeshStandard`
+under that light is near-black whatever you paint it, so each rung carries
+its own emissive (the `tintModel` ladder, applied by hand — three material
+names are the whole model). Yellow-black hazard tape on both sills and
+around the doorway. A stencilled numeral on both flanks *and the roof*,
+because the roof is the face the orbit camera actually sees.
+
+The numeral runs on its own state, deliberately split from the lock lamps:
+`setStocked` says "a spare is racked here", `setAlive` says "this life still
+exists". Berth 3 stands empty from second one and still reads **3** — you
+are driving it.
+
+**The cold open** runs whether or not the tutorial does. Beat 1 pulls
+straight out along the berth's own normal until the whole vessel is in
+frame; beat 2 dives back onto the berth row; beat 3 lets go of the handbrake
+and the hull drives itself out. Beat three is not animation — driving is
+unfrozen and the tank is on its own nav, which is also the honest way to
+prove a berth can be left.
+
+The dive does **not** slerp between two camera framings. That swings the
+subject out of frame halfway (the first cut did exactly this): it moves the
+eye and keeps looking at the berth, so the box only ever grows. The seam
+with beat 1 is invisible because the wide eye sits *on* the berth's normal —
+from up there, looking at the planet's centre and looking at the berth are
+the same direction. In beat 3 the look point drifts onto the hull, so the
+shot ends on the tank rather than the box it left. Any key or tap skips it;
+`?cine=N` parks it on a beat and holds the clock there for stills.
+
+---
+
 ## `bb85201` — Credit becomes BIOMASS
 
 The currency changed substance. Kills paid *credit*, an abstraction the HUD
