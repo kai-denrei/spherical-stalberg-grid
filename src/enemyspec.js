@@ -5,23 +5,66 @@
 // Colors are HokorobiTawaa's palette (hue = class, brightness = threat
 // rank) for the borrowed types; our original three keep their tints.
 
-export const CREATURE_TINTS = {
-  phage: 0xffb84d,
-  ghost: 0xfff07a,    // HK E_YELLOW2 — agile flyer
-  scoutufo: 0xffe14a, // HK E_YELLOW — fast scout
-  amoeba: 0x66ff88,
-  jellyfish: 0xff5fd0,
-  gslime: 0x53ff8a,   // HK E_GREEN — regenerator
-  drifter: 0xffe14a,  // HK E_YELLOW body (+E_BLUE ring baked in the mesh)
-  corona: 0xff6a5a,   // HK E_RED — armored tier
-  barbed: 0xff3020,   // HK E_RED2 — dangerous tier
-  rolling: 0xff9a2e,  // HK E_ORANGE — epic
-  prime: 0xb44bff,    // HK E_PURPLE — epic-rare
-  knot: 0xff1f1f,     // boss: brightest red on the field
-  saucer: 0x8fe8ff,   // agile: pale interceptor cyan
-  shellback: 0xffb46b, // tactician: patient amber
-  phantom: 0xb9c4d9,  // camo: pale steel, mostly unseen anyway
+// COLOUR IS THE SAFETY RULE, AND THE RULE IS BELTS (operator, 2026-08-31).
+//
+// The first thing a player needs from a contact is whether it goes under the
+// treads, and they need it before they have parsed a shape. So the roster is
+// painted up the jiu-jitsu belt ladder: white at the bottom, red at the top,
+// and the line between "free kill" and "solid core" falls exactly where the
+// operator drew it.
+//
+//   WHITE · GREY · YELLOW · BLUE      → rammable. Free under the treads.
+//   ORANGE · GREEN · PURPLE · BROWN
+//   · BLACK · RED                     → solid core. Hurts to touch.
+//
+// Rank inside each side is threat order, so the ladder reads as a ladder:
+// the white belt is the wave-1 swarm and the red belt is the boss. Green
+// changed sides to make it work — it used to mean "slime" and now it means
+// "do not touch", which costs the green slime its name colour and is worth
+// it. The split is enforced by test/tdcore.mjs rather than trusted: a new
+// enemy painted from the wrong side is a lie the player pays for in hulls.
+export const SAFE_HUES = {
+  white: 0xf4f8ff,
+  grey: 0xa4b2c2,
+  yellowPale: 0xfff07a,
+  yellow: 0xffe14a,
+  bluePale: 0x8fe8ff,
+  blue: 0x5ea8ff,
 };
+export const ALARM_HUES = {
+  orange: 0xff9a2e,
+  green: 0x3fbf5a,
+  greenDeep: 0x2a8f47,
+  purple: 0xb44bff,
+  purpleDeep: 0x7a2ecc,
+  brown: 0x8a5a2b,
+  black: 0x3a3a46,
+  red: 0xd11414,
+};
+
+export const CREATURE_TINTS = {
+  // --- rammable, up the safe belts -----------------------------------------
+  phage: SAFE_HUES.white,          // wave 1 swarm — the white belt
+  amoeba: SAFE_HUES.grey,          // slow crawler
+  ghost: SAFE_HUES.yellowPale,     // agile flyer
+  scoutufo: SAFE_HUES.yellow,      // fast scout
+  saucer: SAFE_HUES.bluePale,      // interceptor — jinks
+  jellyfish: SAFE_HUES.blue,
+  gslime: SAFE_HUES.blue,          // 2 hp and regenerates: the top safe belt
+  // --- solid core, up the alarm belts --------------------------------------
+  drifter: ALARM_HUES.orange,      // the first thing you must NOT ram
+  corona: ALARM_HUES.green,
+  shellback: ALARM_HUES.greenDeep, // tactician — waits for cover
+  barbed: ALARM_HUES.purple,       // accelerates when hit
+  prime: ALARM_HUES.purpleDeep,    // epic-rare, 6 hp, regenerates
+  rolling: ALARM_HUES.brown,       // epic, heavy
+  phantom: ALARM_HUES.black,       // optical camo — dark by trade and by rank
+  knot: ALARM_HUES.red,            // the boss wears the red belt
+};
+
+// Pure predicates, so the rule can be asserted instead of remembered.
+export const isSafeHue = (hex) => Object.values(SAFE_HUES).includes(hex);
+export const isAlarmHue = (hex) => Object.values(ALARM_HUES).includes(hex);
 
 // per-type combat spec. speed multiplies the tab's base enemy speed; size
 // multiplies cellSide; rammable types die under the tank's treads for

@@ -17,9 +17,9 @@
 //    total. A failed fetch or decode logs once and that key becomes a
 //    permanent no-op for the session; the game keeps running silent.
 
-import { makeMixState, distanceGain, admit, addVoice, dropVoice } from './audiomix.js?v=b56e84c9';
-import { SOUNDS, BUSES, DEFAULT_LEVELS, GLOBAL_VOICE_CAP, DISTANCE_K } from './audiomanifest.js?v=b56e84c9';
-import { mulberry32 } from './rng.js?v=b56e84c9';
+import { makeMixState, distanceGain, admit, addVoice, dropVoice } from './audiomix.js?v=e935f6b2';
+import { SOUNDS, BUSES, DEFAULT_LEVELS, GLOBAL_VOICE_CAP, DISTANCE_K } from './audiomanifest.js?v=e935f6b2';
+import { mulberry32 } from './rng.js?v=e935f6b2';
 
 const STORE_KEY = 'ssg.audio.levels';
 const STEAL_FADE = 0.03; // s — a hard cut mid-waveform is an audible click
@@ -75,6 +75,14 @@ export function makeAudio(opts = {}) {
       master = ctx.createGain();
       master.gain.value = muted ? 0 : levels.master;
       master.connect(ctx.destination);
+      // An output-device change — plugging in headphones, or starting an
+      // AirPlay cast mid-session — can leave the context suspended or
+      // interrupted, and nothing here was listening. Cheap insurance, and
+      // it is the one AirPlay-specific thing this file can actually do:
+      // the ~2s buffer a TV adds is the receiver's, not ours.
+      ctx.onstatechange = () => {
+        if (ctx && ctx.state === 'suspended') ctx.resume().catch(() => {});
+      };
       for (const b of BUSES) {
         const g = ctx.createGain();
         g.gain.value = levels[b] ?? 1;
@@ -137,6 +145,11 @@ export function makeAudio(opts = {}) {
       v.gain.gain.setValueAtTime(v.gain.gain.value, t);
       v.gain.gain.linearRampToValueAtTime(0, t + fade);
       v.src.stop(t + fade + 0.01);
+      // a stolen or stopped voice unwires itself too — onended does not
+      // fire for a LOOP, so this is the only place a bed ever gets cleaned
+      v.src.onended = () => {
+        try { v.src.disconnect(); v.gain.disconnect(); } catch { /* already gone */ }
+      };
     } catch { /* already stopped */ }
   }
 
@@ -175,7 +188,18 @@ export function makeAudio(opts = {}) {
     addVoice(state, key, t, id);
     live.set(id, { src, gain });
     if (!looping) {
-      src.onended = () => { live.delete(id); dropVoice(state, id); };
+      src.onended = () => {
+        live.delete(id);
+        dropVoice(state, id);
+        // UNWIRE IT. Nothing here ever disconnected a finished voice, so
+        // every sound left a GainNode wired into its bus. The graph is
+        // walked every render quantum whether or not a node is doing
+        // anything, so a long session pays for every shot it has ever
+        // fired — which is what a second game sounding worse than the
+        // first looks like from the outside (operator report, laptop over
+        // AirPlay). Disconnecting is the whole fix and it costs nothing.
+        try { src.disconnect(); gain.disconnect(); } catch { /* already gone */ }
+      };
     }
     return { id, src, gain };
   }
@@ -184,6 +208,17 @@ export function makeAudio(opts = {}) {
     arm,
     load,
     get ready() { return !!ctx; },
+    // What the graph is actually carrying. Without this the only evidence
+    // of an audio leak is "it sounds worse now", which is not evidence.
+    get voices() { return live.size; },
+    get contextState() { return ctx ? `${ctx.state} @${ctx.sampleRate}Hz` : 'none'; },
+
+    // Stop everything and unwire it. A new run should not inherit the last
+    // run's graph — a bed whose owner was thrown away keeps playing, and
+    // keeps costing, for as long as the page is open.
+    panic() {
+      for (const id of [...live.keys()]) stopVoice(id, 0.02);
+    },
     levels,
     get muted() { return muted; },
 

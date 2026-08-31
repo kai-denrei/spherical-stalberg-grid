@@ -19,33 +19,33 @@
 
 import * as THREE from '../vendor/three.module.js';
 import GUI from '../vendor/lil-gui.esm.js';
-import { generateSphereMesh, relax } from './grid.js?v=b56e84c9';
-import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=b56e84c9';
-import { mulberry32, randomSeed } from './rng.js?v=b56e84c9';
-import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3, segKey } from './vec3.js?v=b56e84c9';
-import { CREATURES, waveJelly } from './creatures.js?v=b56e84c9';
+import { generateSphereMesh, relax } from './grid.js?v=e935f6b2';
+import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=e935f6b2';
+import { mulberry32, randomSeed } from './rng.js?v=e935f6b2';
+import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3, segKey } from './vec3.js?v=e935f6b2';
+import { CREATURES, waveJelly } from './creatures.js?v=e935f6b2';
 import { applyFontPack, currentFontPack, FONT_NAMES, TYPE_KNOBS,
-  makeTypeParams, clampTypeParams, formatTypeCode } from './fonts.js?v=b56e84c9';
-import { UNITS, UNIT_NAMES, buildUnit, buildCreature, preloadMkcx, preloadServer, makeServerFixture, makeShieldShell, preloadContainer, makeContainerFixture, preloadFabricator, makeFabricatorDrone, makeBulletCloud, makeRewardSolid, makeShellSolid, makeDebris, makeDotBurst, makePortalCloud, makeHeartCloud, makeDotEnemy } from './units.js?v=b56e84c9';
-import { LOOKS, LOOK_NAMES } from './looks.js?v=b56e84c9';
-import { makeCellIndex } from './cellindex.js?v=b56e84c9';
-import { CREATURE_TINTS, ENEMY_SPEC, INTROS, computeWavePlan } from './enemyspec.js?v=b56e84c9';
-import { PICKUPS } from './pickups.js?v=b56e84c9';
-import { rankFor, rankLabel, badgeSVG, killReq, eliteReq } from './ranks.js?v=b56e84c9';
-import { makeScore } from './score.js?v=b56e84c9';
-import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER } from './towers.js?v=b56e84c9';
-import { makeEconomy, sellRefund } from './economy.js?v=b56e84c9';
-import { makeBloom } from './postfx.js?v=b56e84c9';
-import { TANK_FEEL, TANK_FEEL_KNOBS, makeTankFeel, stepTankFeel, landTankFeel, fireTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js?v=b56e84c9';
-import { FEEL, loadFeel, saveFeel } from './feelstore.js?v=b56e84c9';
+  makeTypeParams, clampTypeParams, formatTypeCode } from './fonts.js?v=e935f6b2';
+import { UNITS, UNIT_NAMES, buildUnit, buildCreature, preloadMkcx, preloadServer, makeServerFixture, makeShieldShell, preloadContainer, makeContainerFixture, preloadFabricator, makeFabricatorDrone, makeBulletCloud, makeRewardSolid, makeShellSolid, makeDebris, makeDotBurst, makePortalCloud, makeHeartCloud, makeDotEnemy } from './units.js?v=e935f6b2';
+import { LOOKS, LOOK_NAMES } from './looks.js?v=e935f6b2';
+import { makeCellIndex } from './cellindex.js?v=e935f6b2';
+import { CREATURE_TINTS, ENEMY_SPEC, INTROS, computeWavePlan } from './enemyspec.js?v=e935f6b2';
+import { PICKUPS } from './pickups.js?v=e935f6b2';
+import { rankFor, rankLabel, badgeSVG, killReq, eliteReq } from './ranks.js?v=e935f6b2';
+import { makeScore } from './score.js?v=e935f6b2';
+import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER } from './towers.js?v=e935f6b2';
+import { makeEconomy, sellRefund } from './economy.js?v=e935f6b2';
+import { makeBloom } from './postfx.js?v=e935f6b2';
+import { TANK_FEEL, TANK_FEEL_KNOBS, makeTankFeel, stepTankFeel, landTankFeel, fireTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js?v=e935f6b2';
+import { FEEL, loadFeel, saveFeel } from './feelstore.js?v=e935f6b2';
 import { STRIKE_KNOBS, makeStrike, makeStrikeParams, grantStrikes, stepStrike,
   toggleArm, paintTarget, launchStrike, stepFall, skipFall, fallProgress,
-  strikeDamage, retargetStrike, orbitProgress } from './strike.js?v=b56e84c9';
-import { radarBasis, radarProject, radarBearing, sweepAngle, radarPhosphor } from './radar.js?v=b56e84c9';
-import { BLOOM_GROUPS } from './bloomweights.js?v=b56e84c9';
-import { TOWER_LOOK_NAMES, DEFAULT_TOWER_LOOK, buildTowerLook, preloadLook } from './towerlooks.js?v=b56e84c9';
-import { makeAudio } from './audio.js?v=b56e84c9';
-import { DEATH_KEYS } from './audiomanifest.js?v=b56e84c9';
+  strikeDamage, retargetStrike, orbitProgress } from './strike.js?v=e935f6b2';
+import { radarBasis, radarProject, radarBearing, sweepAngle, radarPhosphor } from './radar.js?v=e935f6b2';
+import { BLOOM_GROUPS } from './bloomweights.js?v=e935f6b2';
+import { TOWER_LOOK_NAMES, DEFAULT_TOWER_LOOK, buildTowerLook, preloadLook } from './towerlooks.js?v=e935f6b2';
+import { makeAudio } from './audio.js?v=e935f6b2';
+import { DEATH_KEYS } from './audiomanifest.js?v=e935f6b2';
 
 export function initTdTab(root) {
   let active = false;
@@ -2662,6 +2662,7 @@ export function initTdTab(root) {
       const ci = launchStrike(strike, strikeTune);
       if (ci >= 0) {
         strikeGrace = 0.25;   // the launching click must not skip its own cam
+        closeShop();          // the camera is about to ride a munition down
         hideRangeRing();
         sfx.play('tank_main');
         showToast('<div class="wave-num">MUNITION RELEASED</div>'
@@ -3715,6 +3716,13 @@ export function initTdTab(root) {
     // same world in place, towers standing.) Clear towers first: stale
     // towerCells would poison openNeighbors during board generation.
     round = 1;
+    // A FRESH RUN GETS A FRESH AUDIO GRAPH. Beds are owned by handles, and a
+    // regenerate throws the owners away — so anything still looping kept
+    // looping, and the next run layered its own on top. Two games in, that
+    // is two engine beds and every voice either has ever fired still wired
+    // to a bus (operator: "the sound started to lag after the second game").
+    sfx.panic();
+    stopEngine(0, true);
     clearTowers();
     // opening biomass: exactly a Rapid (70kg) + a Slow (100kg) — your first plan
     eco = makeEconomy({ startBiomass: 170 });
@@ -4564,6 +4572,7 @@ export function initTdTab(root) {
 
   // --- firing: the shot leaves along the turret's CURRENT sweep ------------
   function fire(aimDir = null) {
+    closeShop();   // you cannot be shopping and shooting at the same time
     if (player.won || playerDown || paused || ammo <= 0 || cannonHeat > 0) return;
     ammo--;
     sfx.play('tank_main'); // the player's own act — always at full presence
@@ -6657,6 +6666,12 @@ export function initTdTab(root) {
     // diegetic cannon gauge: the mid-barrel sleeve glows with the heat
     const sleeve = playerMesh && playerMesh.userData.heatSleeve;
     if (sleeve) sleeve.material.color.lerpColors(sleeveCool, sleeveHot, cannonHeat / CANNON_COOL);
+    // THE SHOP IS NOT A DRIVING AID. It is screen-anchored to a cell, so the
+    // moment the tank moves it is pointing at the wrong place — and a radial
+    // over the fight is a radial you shoot through (operator, twice). Any
+    // hand on the wheel closes it, same rule as the tutorial's opening hold.
+    if (shopCi !== -1 && (keys.fast || keys.slow || keys.left || keys.right
+      || cruise || throttle !== 0 || keys.fire || keys.laser)) closeShop();
     if (!driveFrozen) advanceMotion(dt);
     // Bobby keeps his shift through the build downtime — the war may be
     // frozen there, but construction is the thing you came to do. A
@@ -7206,6 +7221,15 @@ export function initTdTab(root) {
 
   // opening briefing on a clean load; any debug hook means headless/demo,
   // where a frozen sim would break the verification flow
+  // ?audio=1 — report the audio graph every two seconds: how many voices are
+  // live and what state the context is in. The leak this was written for is
+  // fixed, but "it sounds worse now" is not evidence and this is.
+  if (urlParams.get('audio') === '1') {
+    setInterval(() => {
+      console.log(`AUDIO voices=${sfx.voices} ctx=${sfx.contextState}`);
+    }, 2000);
+  }
+
   const debugging = ['walk', 'tick', 'wave', 'blast', 'laser', 'found', 'recoil', 'mode', 'map', 'tower', 'biomass', 'credit', 'driveout', 'order', 'bobby', 'shop', 'sector', 'reveal', 'portal', 'lose', 'charge', 'layout', 'perf', 'strike', 'strikefall', 'strikecam', 'gateprobe', 'rank', 'danger', 'callout', 'sitrep', 'server', 'hack', 'shield', 'sim']
     .some((k) => urlParams.get(k));
   const tutParam = urlParams.get('tutorial');

@@ -2,7 +2,8 @@
 // roster data), towers (configs + upgrade + targeting math), economy
 // (biomass/streak math). All pure modules; no DOM, no three.js.
 
-import { CREATURE_TINTS, ENEMY_SPEC, INTROS, computeWavePlan, typesByWave } from '../src/enemyspec.js';
+import { ENEMY_SPEC, INTROS, typesByWave, computeWavePlan, CREATURE_TINTS,
+  SAFE_HUES, ALARM_HUES, isSafeHue, isAlarmHue } from '../src/enemyspec.js';
 import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER, HACK_GATED } from '../src/towers.js';
 import { makeEconomy, sellRefund, waveClearBonus, earlyCallBonus, START_BIOMASS, RAM_PREMIUM } from '../src/economy.js';
 
@@ -76,6 +77,26 @@ check('upgrade costs HK-exact (70%/120%, then maxed)',
   check('targeting null when field empty',
     pickTarget(0, 10, [{ alive: true, pos: 99 }], dist) === null);
   check('shot interval = 1/rate', Math.abs(shotInterval(2) - 0.5) < 1e-12);
+}
+
+// --- the colour safety rule ----------------------------------------------
+// Colour tells the player whether a contact goes under the treads, before
+// they have parsed its shape. If a hue ever crosses sides the game is lying
+// about something that costs a hull, so it is asserted, not trusted.
+console.log('enemy colour rule:');
+{
+  let safeOk = true, alarmOk = true, covered = true;
+  for (const [key, spec] of Object.entries(ENEMY_SPEC)) {
+    const hex = CREATURE_TINTS[key];
+    if (hex === undefined) { covered = false; continue; }
+    if (spec.rammable && !isSafeHue(hex)) { safeOk = false; console.error(`    ${key} is rammable but not a safe hue`); }
+    if (!spec.rammable && !isAlarmHue(hex)) { alarmOk = false; console.error(`    ${key} is solid but not an alarm hue`); }
+  }
+  check('every enemy has a tint', covered);
+  check('rammable enemies wear a SAFE hue (grey/white/blue/yellow)', safeOk);
+  check('solid enemies wear an ALARM hue (orange/green/brown/purple/dark red)', alarmOk);
+  check('the two palettes never overlap',
+    !Object.values(SAFE_HUES).some((h) => Object.values(ALARM_HUES).includes(h)));
 }
 
 // --- economy -------------------------------------------------------------
