@@ -5,17 +5,17 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
   <title>spherical stålberg grid</title>
   <meta name="theme-color" content="#10131a">
-  <link rel="manifest" href="./manifest.webmanifest?v=64a7be97">
-  <link rel="apple-touch-icon" href="./icons/apple-touch-icon.png?v=64a7be97">
+  <link rel="manifest" href="./manifest.webmanifest?v=846df1be">
+  <link rel="apple-touch-icon" href="./icons/apple-touch-icon.png?v=846df1be">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="SphereGrid">
-  <link rel="stylesheet" href="./styles.css?v=64a7be97">
+  <link rel="stylesheet" href="./styles.css?v=846df1be">
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
-  <meta name="cb" content="64a7be97">
-  <link rel="icon" type="image/svg+xml" href="./cb-shapes/36.svg?v=64a7be97">
+  <meta name="cb" content="846df1be">
+  <link rel="icon" type="image/svg+xml" href="./cb-shapes/04.svg?v=846df1be">
   <!-- cb-badge retired from the game view (operator ruling): the build
        token lives in the DEV LOG tab, which reads meta[name="cb"] itself -->
 </head>
@@ -201,7 +201,7 @@
     <div id="td-launch" class="caution-frame" aria-label="launch control">
       <button id="td-safety" class="safety" type="button" aria-pressed="false" aria-label="safety">
         <span class="lbl-on">ON</span>
-        <img id="td-safety-img" class="switch-img" src="assets/ui/switch-off.png?v=64a7be97" alt="" width="120" height="200">
+        <img id="td-safety-img" class="switch-img" src="assets/ui/switch-off.png?v=846df1be" alt="" width="120" height="200">
         <span class="lbl-off">OFF</span>
       </button>
       <div id="td-launch-readout">
@@ -330,7 +330,13 @@
           <section class="fb-block">
             <p class="fb-cap">streak shouts &middot; 1.2s in game</p>
             <div class="callout co-reckless">RECKLESS!</div>
+            <!-- kana AND kanji, deliberately. Kana are open shapes that
+                 survive almost any face; a four-kanji compound at shout size
+                 is the hardest thing this layer ever has to draw, and if the
+                 type works there it works everywhere. Both are real strings
+                 from RECKLESS_MSGS. -->
             <div class="callout co-heart">&#12377;&#12370;&#12316;&#65281;</div>
+            <div class="callout co-reckless">&#21361;&#27231;&#19968;&#39658;</div>
             <div class="callout co-streak">STREAK &times;1.45</div>
             <div class="callout co-milestone">RAM &times;50</div>
           </section>
@@ -477,6 +483,6 @@
     </div>
   </div>
 
-  <script type="module" src="./src/main.js?v=64a7be97"></script>
+  <script type="module" src="./src/main.js?v=846df1be"></script>
 </body>
 </html>
