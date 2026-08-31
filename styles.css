@@ -5,22 +5,22 @@
    back to a system face until the subset is rebuilt. */
 @font-face {
   font-family: 'VT323';
-  src: url('assets/fonts/VT323.woff2?v=8b67ad30') format('woff2');
+  src: url('assets/fonts/VT323.woff2?v=e619d3ff') format('woff2');
   font-weight: 400; font-style: normal; font-display: swap;
 }
 @font-face {
   font-family: 'Press Start 2P';
-  src: url('assets/fonts/PressStart2P.woff2?v=8b67ad30') format('woff2');
+  src: url('assets/fonts/PressStart2P.woff2?v=e619d3ff') format('woff2');
   font-weight: 400; font-style: normal; font-display: swap;
 }
 @font-face {
   font-family: 'Share Tech Mono';
-  src: url('assets/fonts/ShareTechMono.woff2?v=8b67ad30') format('woff2');
+  src: url('assets/fonts/ShareTechMono.woff2?v=e619d3ff') format('woff2');
   font-weight: 400; font-style: normal; font-display: swap;
 }
 @font-face {
   font-family: 'DotGothic16';
-  src: url('assets/fonts/DotGothic16.woff2?v=8b67ad30') format('woff2');
+  src: url('assets/fonts/DotGothic16.woff2?v=e619d3ff') format('woff2');
   font-weight: 400; font-style: normal; font-display: swap;
 }
 
@@ -30,10 +30,32 @@
 :root {
   --font-shout: "VT323", "DotGothic16", ui-monospace, Menlo, monospace;
   --font-ui: "VT323", "DotGothic16", ui-monospace, Menlo, monospace;
+  /* SIZE IS RELATIVE. Every message size below is a ratio of these two
+     units, never a pixel count — a shout sized in px is either shouting on
+     a desktop or whispering on a phone. vmin is the intent; the clamp on
+     each end is the promise. src/fonts.js writes them, and the type tuner
+     in the TD panel moves them live. */
+  --shout-unit: clamp(15px, 2.94vmin, 30px);
+  --ui-unit: clamp(11px, 1.30vmin, 15px);
   --shout-track: 0.06em;
   --shout-halo: 0 0 3px currentColor, 0 0 9px rgba(120, 255, 170, 0.35);
   --shout-scale: 1.28;
   --ui-adjust: 0.53;
+}
+
+
+/* --- DESKTOP HAS A KEYBOARD ---------------------------------------------
+   The thumb pads — the two steer zones and the two fire buttons — are dead
+   weight on a laptop, where W/A/S/D, Space and Shift already do the job
+   (operator, 2026-08-31). Hidden behind THREE clauses on purpose: a fine
+   pointer AND real hover AND a wide viewport. Any one alone gets it wrong —
+   a touchscreen laptop reports a fine pointer for its mouse, and a width
+   test alone would strip the pads off a tablet that has nothing else.
+
+   The THROTTLE stays. It is a drag control that works fine with a mouse,
+   and on desktop it is the only visible thing that says the tank drives. */
+@media (hover: hover) and (pointer: fine) and (min-width: 900px) {
+  #td-pad-left, #td-pad-right, #td-pad-fire, #td-pad-laser { display: none; }
 }
 
 /* --- CRT PHOSPHOR PALETTE ------------------------------------------------
@@ -140,7 +162,7 @@ html, body {
      rows are sized for three reading distances and that spacing is load
      bearing. */
   font-family: var(--font-ui);
-  font-size: 12px;
+  font-size: calc(var(--ui-unit) * 0.92);
   font-size-adjust: var(--ui-adjust, none);
   line-height: 1.7;
   white-space: pre;
@@ -612,7 +634,7 @@ html, body {
 
 .msg-head {
   font-family: var(--font-shout);
-  font-size: calc(10px * var(--shout-scale));
+  font-size: calc(var(--shout-unit) * 0.48);
   letter-spacing: 0.32em;
   text-transform: uppercase;
   opacity: 0.85;
@@ -657,7 +679,7 @@ html, body {
   border-radius: 10px;
   text-align: center;
   font-family: var(--font-ui);
-  font-size: 13px;
+  font-size: calc(var(--ui-unit) * 1.0);
   font-size-adjust: var(--ui-adjust, none);
   pointer-events: none;
   animation: wave-pop 0.35s ease-out;
@@ -665,14 +687,16 @@ html, body {
 #h-wave.hidden, #td-wave.hidden { display: none; }
 #h-wave .wave-num, #td-wave .wave-num {
   font-family: var(--font-shout);
-  font-size: calc(10px * var(--shout-scale));
+  --r: 0.48;
+  font-size: calc(var(--shout-unit) * var(--r));
   letter-spacing: 0.32em;
   text-transform: uppercase;
   opacity: 0.8;
 }
 #h-wave .wave-name, #td-wave .wave-name {
   font-family: var(--font-shout);
-  font-size: calc(19px * var(--shout-scale));
+  --r: 0.90;
+  font-size: calc(var(--shout-unit) * var(--r));
   letter-spacing: var(--shout-track);
   margin: 4px 0 2px;
   text-shadow: var(--shout-halo);
@@ -690,7 +714,8 @@ html, body {
 }
 #h-wave .wave-ram, #td-wave .wave-ram {
   font-family: var(--font-shout);
-  font-size: calc(11px * var(--shout-scale));
+  --r: 0.52;
+  font-size: calc(var(--shout-unit) * var(--r));
   letter-spacing: 0.18em;
   margin-top: 5px;
   text-shadow: var(--shout-halo);
@@ -711,26 +736,32 @@ html, body {
   border: 1px solid #7fdfff;
   border-radius: 10px;
   text-align: center;
-  font: 13px ui-monospace, Menlo, monospace;
+  font-family: var(--font-ui);
+  font-size: calc(var(--ui-unit) * 1.0);
+  font-size-adjust: var(--ui-adjust, none);
   color: #7fdfff;
   pointer-events: none;
   animation: wave-pop 0.35s ease-out;
 }
 #td-tower.hidden { display: none; }
 #td-tower .wave-num {
-  font-size: 10px;
+  font-family: var(--font-shout);
+  --r: 0.48;
+  font-size: calc(var(--shout-unit) * var(--r));
   letter-spacing: 0.32em;
   text-transform: uppercase;
   opacity: 0.8;
 }
 #td-tower .wave-name {
-  font-size: 17px;
-  letter-spacing: 0.14em;
+  font-family: var(--font-shout);
+  --r: 0.81;
+  font-size: calc(var(--shout-unit) * var(--r));
+  letter-spacing: var(--shout-track);
   margin: 4px 0 2px;
-  text-shadow: 0 0 10px currentColor;
+  text-shadow: var(--shout-halo);
 }
 #td-tower .wave-role {
-  font-size: 12px;
+  font-size: calc(var(--ui-unit) * 0.92);
   opacity: 0.85;
 }
 
@@ -1091,7 +1122,7 @@ html, body {
   max-width: min(80vw, 480px);
   text-align: center;
   font-family: var(--font-ui);
-  font-size: 13px;
+  font-size: calc(var(--ui-unit) * 1.0);
   font-size-adjust: var(--ui-adjust, none);
   line-height: 1.5;
   color: var(--p-green-hot);
@@ -2394,7 +2425,7 @@ body.playing:not(.chrome-open) #tabbar { display: none !important; }
      is what lets a bitmap face (which runs large) and a terminal face
      (which runs small) sit at the same optical weight. */
   font-family: var(--font-shout);
-  font-size: calc(21px * var(--shout-scale));
+  font-size: calc(var(--shout-unit) * var(--r, 1));
   font-weight: bold;
   letter-spacing: var(--shout-track);
   text-shadow: var(--shout-halo);
@@ -2408,7 +2439,7 @@ body.playing:not(.chrome-open) #tabbar { display: none !important; }
 .co-streak { color: var(--p-blue); }
 .co-milestone {
   color: var(--p-white);
-  font-size: calc(27px * var(--shout-scale));
+  --r: 1.28;
   /* the one place the glow is allowed to run hot: a milestone is the
      screen being over-driven, and that is the whole read */
   text-shadow: 0 0 4px currentColor, 0 0 16px rgba(120, 255, 170, 0.55);
@@ -2433,14 +2464,14 @@ body.playing:not(.chrome-open) #tabbar { display: none !important; }
   text-shadow: var(--shout-halo);
 }
 #td-combo.hidden { display: none; }
-#td-combo[data-tier="0"] { font-size: calc(17px * var(--shout-scale)); color: var(--p-green-dim); text-shadow: 0 0 5px rgba(47, 187, 96, 0.5); }
-#td-combo[data-tier="1"] { font-size: calc(22px * var(--shout-scale)); color: var(--p-green); text-shadow: 0 0 7px rgba(51, 255, 119, 0.55); }
-#td-combo[data-tier="2"] { font-size: calc(28px * var(--shout-scale)); color: var(--p-green-hot); text-shadow: 0 0 9px rgba(157, 255, 190, 0.6); }
-#td-combo[data-tier="3"] { font-size: calc(34px * var(--shout-scale)); color: var(--p-white); text-shadow: 0 0 11px rgba(234, 255, 242, 0.65); }
-#td-combo[data-tier="4"] { font-size: calc(40px * var(--shout-scale)); color: var(--p-blue-hot); text-shadow: 0 0 13px rgba(207, 230, 255, 0.7); }
+#td-combo[data-tier="0"] { font-size: calc(var(--shout-unit) * 0.81); color: var(--p-green-dim); text-shadow: 0 0 5px rgba(47, 187, 96, 0.5); }
+#td-combo[data-tier="1"] { font-size: calc(var(--shout-unit) * 1.05); color: var(--p-green); text-shadow: 0 0 7px rgba(51, 255, 119, 0.55); }
+#td-combo[data-tier="2"] { font-size: calc(var(--shout-unit) * 1.33); color: var(--p-green-hot); text-shadow: 0 0 9px rgba(157, 255, 190, 0.6); }
+#td-combo[data-tier="3"] { font-size: calc(var(--shout-unit) * 1.62); color: var(--p-white); text-shadow: 0 0 11px rgba(234, 255, 242, 0.65); }
+#td-combo[data-tier="4"] { font-size: calc(var(--shout-unit) * 1.90); color: var(--p-blue-hot); text-shadow: 0 0 13px rgba(207, 230, 255, 0.7); }
 #td-combo[data-tier="5"] {
   /* the top rung is the tube giving up: full white, and it flickers */
-  font-size: calc(48px * var(--shout-scale));
+  font-size: calc(var(--shout-unit) * 2.29);
   color: #ffffff;
   text-shadow: 0 0 16px rgba(255, 255, 255, 0.85);
   animation: dg-flicker 0.14s steps(2) infinite;
@@ -2822,7 +2853,7 @@ tr.sim-timeout td:nth-child(2), tr.sim-stalled td:nth-child(2) { color: #ffb000;
 /* --- the last transmission (game over) ----------------------------------- */
 .go-verdict {
   font-family: var(--font-shout);
-  font-size: calc(19px * var(--shout-scale));
+  font-size: calc(var(--shout-unit) * 0.90);
   font-weight: bold;
   letter-spacing: var(--shout-track);
   color: var(--p-white);
@@ -2885,9 +2916,12 @@ tr.sim-timeout td:nth-child(2), tr.sim-stalled td:nth-child(2) { color: #ffb000;
     font-size: 10px;
     padding: 7px 10px;
   }
-  #td-wave .wave-num, #td-tower .wave-num { font-size: 13px; }
-  #td-wave .wave-name, #td-tower .wave-name { font-size: 12px; }
-  #td-wave .wave-role, #td-tower .wave-role { font-size: 10px; }
+  /* the banner's hierarchy INVERTS on a phone — the label grows, the name
+     shrinks — so these are ratio overrides, not a scale. Sizes stay
+     relative; only the proportions change. */
+  #td-wave .wave-num, #td-tower .wave-num { --r: 0.62; }
+  #td-wave .wave-name, #td-tower .wave-name { --r: 0.57; }
+  #td-wave .wave-role, #td-tower .wave-role { font-size: calc(var(--ui-unit) * 0.77); }
   #td-wave .wave-icon, #td-tower .wave-icon { width: 40px; height: 40px; }
   /* launch console: under the smaller radar, smaller itself */
   #td-launch { top: calc(max(8px, env(safe-area-inset-top)) + 172px); width: 106px; padding: 5px 5px; gap: 4px; }
@@ -2969,7 +3003,7 @@ tr.sim-timeout td:nth-child(2), tr.sim-stalled td:nth-child(2) { color: #ffb000;
 .go-noram { color: #ff5340; font-weight: bold; }
 .go-snafu {
   font-family: var(--font-shout);
-  font-size: calc(13px * var(--shout-scale));
+  font-size: calc(var(--shout-unit) * 0.62);
   font-weight: bold;
   letter-spacing: 0.22em;
   text-shadow: var(--shout-halo);

@@ -15,6 +15,8 @@
 //
 // Pure data plus one thin effectful call — the standing testability line.
 
+import { makeParams, clampParams, formatKnobs } from './knobs.js?v=e619d3ff';
+
 const MONO = 'ui-monospace, "SF Mono", SFMono-Regular, Menlo, monospace';
 const CJK = '"DotGothic16"';   // the shared Japanese voice, appended everywhere
 
@@ -25,10 +27,7 @@ export const FONT_PACKS = {
     label: 'system mono',
     shout: `${CJK}, ${MONO}`,
     ui: `${CJK}, ${MONO}`,
-    track: '0.14em',
-    // a halo, not a glow: two stops, the near one tight enough to thicken
-    // the stroke and the far one wide enough to sit the text ON the dark
-    halo: '0 0 4px currentColor, 0 0 10px rgba(120, 200, 255, 0.18)',
+    wash: '120, 200, 255',   // the far stop's hue; its size and alpha are knobs
     scale: 1,
     // font-size-adjust normalises x-height across families, so a UI
     // surface does not shrink when the pack changes. `none` = leave the
@@ -41,12 +40,7 @@ export const FONT_PACKS = {
     label: 'VT323 · terminal',
     shout: `"VT323", ${CJK}, ${MONO}`,
     ui: `"VT323", ${CJK}, ${MONO}`,
-    track: '0.06em',
-    // VT323 is a thin face at size, so the near stop still does structural
-    // work — but the operator wanted the glow pulled back, and a phosphor
-    // bloom that wide was reading as blur rather than as light. One tight
-    // stop to thicken the stroke, one short green wash, and stop.
-    halo: '0 0 3px currentColor, 0 0 9px rgba(120, 255, 170, 0.35)',
+    wash: '120, 255, 170',
     scale: 1.28,   // its cap height runs small — matched by eye, not by math
     uiAdjust: '0.53',   // VT323's x-height is ~0.40; without this the HUD shrinks
   },
@@ -56,8 +50,7 @@ export const FONT_PACKS = {
     label: 'Press Start 2P · arcade',
     shout: `"Press Start 2P", ${CJK}, ${MONO}`,
     ui: `${CJK}, ${MONO}`,
-    track: '0.02em',
-    halo: '0 0 3px currentColor, 0 0 11px rgba(120, 255, 170, 0.24)',
+    wash: '120, 255, 170',
     scale: 0.72,   // 8x8 bitmap runs LARGE for its point size
     uiAdjust: 'none',   // the UI stays system mono in this pack anyway
   },
@@ -67,8 +60,7 @@ export const FONT_PACKS = {
     label: 'Share Tech Mono · field',
     shout: `"Share Tech Mono", ${CJK}, ${MONO}`,
     ui: `"Share Tech Mono", ${CJK}, ${MONO}`,
-    track: '0.12em',
-    halo: '0 0 3px currentColor, 0 0 10px rgba(120, 220, 200, 0.2)',
+    wash: '120, 220, 200',
     scale: 1.06,
     uiAdjust: 'none',
   },
@@ -78,8 +70,7 @@ export const FONT_PACKS = {
     label: 'DotGothic16 · LED panel',
     shout: `${CJK}, ${MONO}`,
     ui: `${CJK}, ${MONO}`,
-    track: '0.10em',
-    halo: '0 0 2px currentColor, 0 0 9px rgba(90, 255, 200, 0.2)',
+    wash: '90, 255, 200',
     scale: 1.0,
     uiAdjust: 'none',
   },
@@ -88,16 +79,96 @@ export const FONT_PACKS = {
 export const FONT_NAMES = Object.keys(FONT_PACKS);
 export const DEFAULT_FONT = 'crt';
 
+// --- HOW the type is DISPLAYED, as knobs ----------------------------------
+// The pack decides which face speaks. This decides how it is lit, and it is
+// tunable at runtime for the same reason the tank's hover is: these are
+// judgement values, and a value nobody has judged is a placeholder wearing a
+// number. Same schema machinery as TANK_FEEL and the tower knobs.
+//
+// SIZE IS RELATIVE, never absolute px. A shout sized in pixels is either
+// shouting on a desktop or a whisper on a phone; sized in vmin with a clamp
+// on both ends it is the same fraction of the screen everywhere, and the
+// clamp stops it going microscopic on a watch or absurd on a monitor.
+// Every message size in styles.css is a RATIO of the unit this produces.
+export const TYPE_FEEL = {
+  size: 2.30,      // vmin — the shout unit
+  sizeMin: 15,     // px floor
+  sizeMax: 30,     // px ceiling
+  uiSize: 1.30,    // vmin — the readout unit
+  uiMin: 11,
+  uiMax: 15,
+  track: 0.06,     // em of letter-spacing on the shout layer
+  glow: 3,         // px — the tight stop; it thickens the stroke
+  halo: 9,         // px — the wide wash; it sits the text ON the dark
+  haloA: 0.35,     // ...and how strongly
+  bleed: 0,        // px — misconverged beam: red left, blue right
+  shadow: 0,       // px — a real cast shadow, for busy ground
+  shadowA: 0.55,
+  ink: 0,          // px — a hard dark outline, the last resort for contrast
+};
+
+export const TYPE_KNOBS = [
+  { key: 'size',    label: 'shout size (vmin)', group: 'type · size', min: 1.2, max: 5,  step: 0.05 },
+  { key: 'sizeMin', label: 'shout floor (px)',  group: 'type · size', min: 8,   max: 28, step: 1 },
+  { key: 'sizeMax', label: 'shout ceiling (px)', group: 'type · size', min: 16, max: 64, step: 1 },
+  { key: 'uiSize',  label: 'readout size (vmin)', group: 'type · size', min: 0.8, max: 3, step: 0.05 },
+  { key: 'uiMin',   label: 'readout floor (px)', group: 'type · size', min: 7,   max: 18, step: 1 },
+  { key: 'uiMax',   label: 'readout ceiling (px)', group: 'type · size', min: 10, max: 32, step: 1 },
+  { key: 'track',   label: 'tracking (em)',     group: 'type · light', min: 0,  max: 0.4, step: 0.005 },
+  { key: 'glow',    label: 'core glow',         group: 'type · light', min: 0,  max: 12, step: 0.5 },
+  { key: 'halo',    label: 'halo spread',       group: 'type · light', min: 0,  max: 40, step: 1 },
+  { key: 'haloA',   label: 'halo strength',     group: 'type · light', min: 0,  max: 1,  step: 0.02 },
+  { key: 'bleed',   label: 'beam misconverge',  group: 'type · light', min: 0,  max: 4,  step: 0.1 },
+  { key: 'shadow',  label: 'cast shadow',       group: 'type · light', min: 0,  max: 16, step: 0.5 },
+  { key: 'shadowA', label: 'shadow strength',   group: 'type · light', min: 0,  max: 1,  step: 0.02 },
+  { key: 'ink',     label: 'dark outline',      group: 'type · light', min: 0,  max: 3,  step: 0.25 },
+];
+
+export const makeTypeParams = (src = TYPE_FEEL) => makeParams(TYPE_KNOBS, src);
+export const clampTypeParams = (p, src) => clampParams(TYPE_KNOBS, p, src);
+export const formatTypeCode = (p) => formatKnobs('TYPE_FEEL', TYPE_KNOBS, p);
+
+// The text-shadow stack, built in the order light actually reaches the eye:
+// outline behind everything, then the cast shadow, then the misconverged
+// beam, then the core, then the wash. Pure string work — Node-testable, and
+// a typo here shows up as a failing test rather than as a shadow that
+// silently does not render.
+export function shoutShadow(p, wash) {
+  const parts = [];
+  if (p.ink > 0) {
+    const n = p.ink;
+    parts.push(`${-n}px 0 0 #000`, `${n}px 0 0 #000`,
+      `0 ${-n}px 0 #000`, `0 ${n}px 0 #000`);
+  }
+  if (p.shadow > 0) {
+    parts.push(`0 ${(p.shadow * 0.35).toFixed(2)}px ${p.shadow}px rgba(0, 0, 0, ${p.shadowA})`);
+  }
+  if (p.bleed > 0) {
+    parts.push(`${-p.bleed}px 0 0 rgba(255, 70, 70, 0.45)`,
+      `${p.bleed}px 0 0 rgba(70, 150, 255, 0.45)`);
+  }
+  if (p.glow > 0) parts.push(`0 0 ${p.glow}px currentColor`);
+  if (p.halo > 0 && p.haloA > 0) parts.push(`0 0 ${p.halo}px rgba(${wash}, ${p.haloA})`);
+  return parts.length ? parts.join(', ') : 'none';
+}
+
 // Pure: the CSS custom properties a pack becomes. Node-testable, and it is
 // where a typo in a pack shows up as a failing test rather than as a font
 // that silently does not apply.
-export function fontVars(name) {
+export function fontVars(name, t = TYPE_FEEL) {
   const p = FONT_PACKS[name] || FONT_PACKS[DEFAULT_FONT];
+  // clamp() rather than a bare vmin: the middle term is the intent, and the
+  // two ends are the promise that a phone never gets a whisper and a
+  // monitor never gets a billboard
+  const unit = `clamp(${t.sizeMin}px, ${(t.size * p.scale).toFixed(2)}vmin, ${t.sizeMax}px)`;
+  const uiUnit = `clamp(${t.uiMin}px, ${t.uiSize.toFixed(2)}vmin, ${t.uiMax}px)`;
   return {
     '--font-shout': p.shout,
     '--font-ui': p.ui,
-    '--shout-track': p.track,
-    '--shout-halo': p.halo,
+    '--shout-unit': unit,
+    '--ui-unit': uiUnit,
+    '--shout-track': `${t.track}em`,
+    '--shout-halo': shoutShadow(t, p.wash),
     '--shout-scale': String(p.scale),
     '--ui-adjust': p.uiAdjust || 'none',
   };
@@ -111,9 +182,9 @@ export function currentFontPack(root = document.documentElement) {
 }
 
 // Thin and effectful: the only part that touches the document.
-export function applyFontPack(name, root = document.documentElement) {
+export function applyFontPack(name, root = document.documentElement, t = TYPE_FEEL) {
   const pick = FONT_PACKS[name] ? name : DEFAULT_FONT;
-  const vars = fontVars(pick);
+  const vars = fontVars(pick, t);
   for (const [k, v] of Object.entries(vars)) root.style.setProperty(k, v);
   root.dataset.font = pick;
   return pick;
