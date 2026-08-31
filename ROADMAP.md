@@ -226,7 +226,16 @@ design. Only the first is done.
   shop stays open when it should close — while driving in tank mode, and
   when a missile is dropped. `closeShop()` exists and is called from view
   changes; the gap is that nothing calls it on drive input or on a launch.
-- **Achievements.** The operator's list: STREAK 100/200/300/400/500;
+- ~~**Achievements**~~ — DONE. Twenty-one, in `src/achievements.js`: pure
+  table plus a pure evaluator over one flat record of run facts, so every
+  condition is asserted in `test/achievements.mjs` both ways — fires on the
+  state it should, silent on the state it should not. The record persists;
+  the run's facts reset. Shown as THE RECORD from the briefing, unearned
+  entries keeping their name and losing their note, because the name is the
+  hint. `?record=all` lights every row. Original list below, all of it
+  built, plus ten more in the codex's voice.
+
+- **[built] Achievements.** The operator's list: STREAK 100/200/300/400/500;
   **K-KILL0** (won without losing a tank); **GENERAL** (reached the
   highest rank); **IT'S PERSONAL** (killed the boss with no tower
   assistance); **I LOVE YOU** (won with the heart untouched); **HACKER**

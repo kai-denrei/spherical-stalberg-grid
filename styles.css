@@ -5,22 +5,22 @@
    back to a system face until the subset is rebuilt. */
 @font-face {
   font-family: 'VT323';
-  src: url('assets/fonts/VT323.woff2?v=b8f3b1b2') format('woff2');
+  src: url('assets/fonts/VT323.woff2?v=dd6763ad') format('woff2');
   font-weight: 400; font-style: normal; font-display: swap;
 }
 @font-face {
   font-family: 'Press Start 2P';
-  src: url('assets/fonts/PressStart2P.woff2?v=b8f3b1b2') format('woff2');
+  src: url('assets/fonts/PressStart2P.woff2?v=dd6763ad') format('woff2');
   font-weight: 400; font-style: normal; font-display: swap;
 }
 @font-face {
   font-family: 'Share Tech Mono';
-  src: url('assets/fonts/ShareTechMono.woff2?v=b8f3b1b2') format('woff2');
+  src: url('assets/fonts/ShareTechMono.woff2?v=dd6763ad') format('woff2');
   font-weight: 400; font-style: normal; font-display: swap;
 }
 @font-face {
   font-family: 'DotGothic16';
-  src: url('assets/fonts/DotGothic16.woff2?v=b8f3b1b2') format('woff2');
+  src: url('assets/fonts/DotGothic16.woff2?v=dd6763ad') format('woff2');
   font-weight: 400; font-style: normal; font-display: swap;
 }
 
@@ -67,6 +67,45 @@
    and on desktop it is the only visible thing that says the tank drives. */
 @media (hover: hover) and (pointer: fine) and (min-width: 900px) {
   #td-pad-left, #td-pad-right, #td-pad-fire, #td-pad-laser { display: none; }
+}
+
+/* --- THE RECORD (achievements) ------------------------------------------
+   A list read between runs, so it is set for reading rather than for
+   glancing: one row per line, the mark and the name doing the scanning and
+   the note only present on what has actually been earned. */
+.rec { text-align: left; }
+.rec-group {
+  font-family: var(--font-banner);
+  font-size: calc(var(--banner-unit) * 0.44);
+  letter-spacing: 0.26em;
+  text-transform: uppercase;
+  color: var(--p-green-dim);
+  margin: 14px 0 6px;
+  border-bottom: 1px solid rgba(47, 187, 96, 0.22);
+  padding-bottom: 4px;
+}
+.rec-group i { font-style: normal; float: right; color: #4a5a68; }
+.rec-row {
+  display: grid;
+  grid-template-columns: 18px minmax(0, 11em) 1fr;
+  gap: 8px;
+  align-items: baseline;
+  padding: 3px 0;
+  font-family: var(--font-ui);
+  font-size: calc(var(--ui-unit) * 0.86);
+  font-size-adjust: var(--ui-adjust, none);
+  color: #4a5a68;
+}
+.rec-row.got { color: var(--p-green-hot); }
+.rec-mark { color: #33465a; }
+.rec-row.got .rec-mark { color: var(--p-white); }
+.rec-name { letter-spacing: 0.08em; }
+.rec-row.got .rec-name { color: var(--p-white); }
+.rec-note { color: #5f7180; }
+.rec-row.got .rec-note { color: var(--p-green-dim); }
+@media (max-width: 560px) {
+  .rec-row { grid-template-columns: 16px 1fr; }
+  .rec-note { grid-column: 2; }
 }
 
 /* --- THE TYPE BENCH (units tab) -----------------------------------------

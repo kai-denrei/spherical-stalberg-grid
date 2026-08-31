@@ -1,0 +1,83 @@
+// achievements.mjs — every condition fires on the state it should, and stays
+// quiet on the state it should not. The second half is the half that matters:
+// an achievement that triggers on a blank run is worse than one that never
+// triggers, because it is a lie the player cannot un-see.
+
+import { ACHIEVEMENTS, ACHV_IDS, ACHV_GROUPS, blankRun, earned, freshlyEarned }
+  from '../src/achievements.js';
+
+let failures = 0;
+const check = (name, cond, detail = '') => {
+  if (cond) console.log(`  ok   ${name}`);
+  else { console.error(`  FAIL ${name} ${detail}`); failures++; }
+};
+
+console.log('table:');
+check('ids are unique', new Set(ACHV_IDS).size === ACHV_IDS.length);
+check('every entry has a name and a note',
+  ACHIEVEMENTS.every((a) => a.name && a.note && a.note.length > 8));
+check('every group is a declared group',
+  ACHIEVEMENTS.every((a) => ACHV_GROUPS.includes(a.group)));
+
+console.log('nothing is earned by doing nothing:');
+{
+  const none = earned(blankRun());
+  check('a blank run earns nothing', none.length === 0, none.join(','));
+  // and a run object missing fields entirely must behave like a blank one —
+  // this is the undefined >= 100 trap the blank shape exists to close
+  check('an EMPTY object earns nothing', earned({}).length === 0);
+}
+
+console.log('each condition, on and off:');
+{
+  const on = (patch) => earned({ ...blankRun(), ...patch });
+  check('streak ladder is cumulative',
+    on({ bestStreak: 300 }).join(',') === 'streak100,streak200,streak300');
+  check('streak 99 earns nothing', on({ bestStreak: 99 }).length === 0);
+  check('the boss hands-on pays twice — personal AND the red belt',
+    on({ bossHandsOn: true }).includes('personal')
+    && on({ bossHandsOn: true }).includes('redbelt'));
+  check('black belt needs the cloaked one specifically',
+    on({ handsOnByType: { phantom: 1 } }).includes('blackbelt')
+    && !on({ handsOnByType: { knot: 9 } }).includes('blackbelt'));
+  check('general is the top rank only',
+    on({ maxRank: 15 }).includes('general') && !on({ maxRank: 14 }).includes('general'));
+  check('K-KILL 0 needs a BANKED tour, not just a clean one',
+    on({ tourBanked: true, hullsLost: 0 }).includes('kkill0')
+    && !on({ hullsLost: 0 }).includes('kkill0'));
+  check('I LOVE YOU needs an untouched heart',
+    on({ tourBanked: true, heartHits: 0 }).includes('iloveyou')
+    && !on({ tourBanked: true, heartHits: 1 }).includes('iloveyou'));
+  check('double or nothing needs a second tour',
+    on({ tourBanked: true, toursCleared: 2 }).includes('doubleornothing')
+    && !on({ tourBanked: true, toursCleared: 1 }).includes('doubleornothing'));
+  check('desk officer needs a banked tour with NO hands-on kills',
+    on({ tourBanked: true, tankKills: 0 }).includes('nohands')
+    && !on({ tourBanked: true, tankKills: 1 }).includes('nohands'));
+  check('retro-gamer needs all three protocols',
+    on({ minigamesWon: ['hdt', 'bridges', 'shikaku'] }).includes('retrogamer')
+    && !on({ minigamesWon: ['hdt', 'bridges'] }).includes('retrogamer'));
+  check('hacker is finding the relay, not beating it',
+    on({ serverFound: true }).includes('hacker'));
+  check('deepwatch needs a portal killed from orbit',
+    on({ strikePortalKills: 1 }).includes('orbital'));
+  check('the planet is its own thing', on({ planetCleared: true }).includes('planet'));
+  check('quartermaster is a peak, not a total',
+    on({ peakBiomass: 1000 }).includes('quartermaster')
+    && !on({ peakBiomass: 999 }).includes('quartermaster'));
+  check('the last berth means two hulls gone',
+    on({ hullsLost: 2 }).includes('lasthull') && !on({ hullsLost: 1 }).includes('lasthull'));
+}
+
+console.log('freshness:');
+{
+  const list = ['streak100', 'streak200', 'hacker'];
+  check('already-held ones are not re-announced',
+    freshlyEarned(['streak100'], list).join(',') === 'streak200,hacker');
+  check('order follows the table, so a ladder announces in order',
+    freshlyEarned([], ['streak200', 'streak100']).join(',') === 'streak100,streak200');
+  check('nothing new is an empty list', freshlyEarned(list, list).length === 0);
+}
+
+if (failures) { console.error(`\nachievements: ${failures} FAILED`); process.exit(1); }
+console.log('achievements: all good');

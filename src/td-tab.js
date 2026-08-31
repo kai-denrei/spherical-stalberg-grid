@@ -19,33 +19,35 @@
 
 import * as THREE from '../vendor/three.module.js';
 import GUI from '../vendor/lil-gui.esm.js';
-import { generateSphereMesh, relax } from './grid.js?v=b8f3b1b2';
-import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=b8f3b1b2';
-import { mulberry32, randomSeed } from './rng.js?v=b8f3b1b2';
-import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3, segKey } from './vec3.js?v=b8f3b1b2';
-import { CREATURES, waveJelly } from './creatures.js?v=b8f3b1b2';
+import { generateSphereMesh, relax } from './grid.js?v=dd6763ad';
+import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=dd6763ad';
+import { mulberry32, randomSeed } from './rng.js?v=dd6763ad';
+import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3, segKey } from './vec3.js?v=dd6763ad';
+import { CREATURES, waveJelly } from './creatures.js?v=dd6763ad';
+import { ACHIEVEMENTS, ACHV_GROUPS, achievement, blankRun, earned, freshlyEarned }
+  from './achievements.js?v=dd6763ad';
 import { applyFontPack, currentFontPack, FONT_NAMES, TYPE_KNOBS,
-  makeTypeParams, clampTypeParams, formatTypeCode } from './fonts.js?v=b8f3b1b2';
-import { UNITS, UNIT_NAMES, buildUnit, buildCreature, preloadMkcx, preloadServer, makeServerFixture, makeShieldShell, preloadContainer, makeContainerFixture, preloadFabricator, makeIsaoDrone, makeBulletCloud, makeRewardSolid, makeShellSolid, makeDebris, makeDotBurst, makePortalCloud, makeHeartCloud, makeDotEnemy } from './units.js?v=b8f3b1b2';
-import { LOOKS, LOOK_NAMES } from './looks.js?v=b8f3b1b2';
-import { makeCellIndex } from './cellindex.js?v=b8f3b1b2';
-import { CREATURE_TINTS, ENEMY_SPEC, INTROS, computeWavePlan } from './enemyspec.js?v=b8f3b1b2';
-import { PICKUPS } from './pickups.js?v=b8f3b1b2';
-import { rankFor, rankLabel, badgeSVG, killReq, eliteReq } from './ranks.js?v=b8f3b1b2';
-import { makeScore } from './score.js?v=b8f3b1b2';
-import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER } from './towers.js?v=b8f3b1b2';
-import { makeEconomy, sellRefund } from './economy.js?v=b8f3b1b2';
-import { makeBloom } from './postfx.js?v=b8f3b1b2';
-import { TANK_FEEL, TANK_FEEL_KNOBS, makeTankFeel, stepTankFeel, landTankFeel, fireTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js?v=b8f3b1b2';
-import { FEEL, loadFeel, saveFeel } from './feelstore.js?v=b8f3b1b2';
+  makeTypeParams, clampTypeParams, formatTypeCode } from './fonts.js?v=dd6763ad';
+import { UNITS, UNIT_NAMES, buildUnit, buildCreature, preloadMkcx, preloadServer, makeServerFixture, makeShieldShell, preloadContainer, makeContainerFixture, preloadFabricator, makeIsaoDrone, makeBulletCloud, makeRewardSolid, makeShellSolid, makeDebris, makeDotBurst, makePortalCloud, makeHeartCloud, makeDotEnemy } from './units.js?v=dd6763ad';
+import { LOOKS, LOOK_NAMES } from './looks.js?v=dd6763ad';
+import { makeCellIndex } from './cellindex.js?v=dd6763ad';
+import { CREATURE_TINTS, ENEMY_SPEC, INTROS, computeWavePlan } from './enemyspec.js?v=dd6763ad';
+import { PICKUPS } from './pickups.js?v=dd6763ad';
+import { rankFor, rankLabel, badgeSVG, killReq, eliteReq } from './ranks.js?v=dd6763ad';
+import { makeScore } from './score.js?v=dd6763ad';
+import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER } from './towers.js?v=dd6763ad';
+import { makeEconomy, sellRefund } from './economy.js?v=dd6763ad';
+import { makeBloom } from './postfx.js?v=dd6763ad';
+import { TANK_FEEL, TANK_FEEL_KNOBS, makeTankFeel, stepTankFeel, landTankFeel, fireTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js?v=dd6763ad';
+import { FEEL, loadFeel, saveFeel } from './feelstore.js?v=dd6763ad';
 import { STRIKE_KNOBS, makeStrike, makeStrikeParams, grantStrikes, stepStrike,
   toggleArm, paintTarget, launchStrike, stepFall, skipFall, fallProgress,
-  strikeDamage, retargetStrike, orbitProgress } from './strike.js?v=b8f3b1b2';
-import { radarBasis, radarProject, radarBearing, sweepAngle, radarPhosphor } from './radar.js?v=b8f3b1b2';
-import { BLOOM_GROUPS } from './bloomweights.js?v=b8f3b1b2';
-import { TOWER_LOOK_NAMES, DEFAULT_TOWER_LOOK, buildTowerLook, preloadLook } from './towerlooks.js?v=b8f3b1b2';
-import { makeAudio } from './audio.js?v=b8f3b1b2';
-import { DEATH_KEYS } from './audiomanifest.js?v=b8f3b1b2';
+  strikeDamage, retargetStrike, orbitProgress } from './strike.js?v=dd6763ad';
+import { radarBasis, radarProject, radarBearing, sweepAngle, radarPhosphor } from './radar.js?v=dd6763ad';
+import { BLOOM_GROUPS } from './bloomweights.js?v=dd6763ad';
+import { TOWER_LOOK_NAMES, DEFAULT_TOWER_LOOK, buildTowerLook, preloadLook } from './towerlooks.js?v=dd6763ad';
+import { makeAudio } from './audio.js?v=dd6763ad';
+import { DEATH_KEYS } from './audiomanifest.js?v=dd6763ad';
 
 export function initTdTab(root) {
   let active = false;
@@ -443,6 +445,33 @@ export function initTdTab(root) {
   // apart, because "every portal in this sector" and "every portal there
   // is" are the same test at different scopes and only one of them is a win.
   const SECTORS_TOTAL = 5;
+
+  // --- THE RECORD ----------------------------------------------------------
+  // One flat object of run facts, fed to a pure evaluator. Kept as a single
+  // mutable record rather than scattered counters so that adding an
+  // achievement never means adding a counter somewhere else and hoping the
+  // two stay in step.
+  const ACHV_KEY = 'td.achievements';
+  let run = blankRun();
+  const heldAchv = (() => {
+    try { return JSON.parse(localStorage.getItem(ACHV_KEY) || '[]'); } catch { return []; }
+  })();
+  function checkAchievements() {
+    const fresh = freshlyEarned(heldAchv, earned(run));
+    if (!fresh.length) return;
+    for (const id of fresh) heldAchv.push(id);
+    try { localStorage.setItem(ACHV_KEY, JSON.stringify(heldAchv)); } catch { /* private mode */ }
+    // one at a time, oldest first: a stack of five toasts is a stack nobody
+    // reads, and the streak ladder in particular fires in clumps
+    const a = achievement(fresh[0]);
+    if (a) {
+      sfx.play('tower_upgrade');
+      showToast(`<div class="wave-num">&#10022; ${a.name}</div>`
+        + `<div class="wave-role">${a.note}</div>`
+        + (fresh.length > 1 ? `<div class="wave-role">+${fresh.length - 1} more</div>` : ''),
+      3400);
+    }
+  }
   let toursOffered = 0;    // tours whose bank/press-on choice has been made
   let toursCleared = 0;    // tours survived this run — forfeit if you fall
   let clearAtRisk = false; // pressed on: a loss now takes the clears with it
@@ -2830,6 +2859,9 @@ export function initTdTab(root) {
     // tower anchors its wall (breachWallCell refuses it), so the order is
     // what lets one strike flatten a defended rampart. Walls batch into a
     // single BFS + rebuild — six breaches must not cost six rebuilds.
+    // DEEPWATCH is about portals specifically, so it is counted here rather
+    // than inferred from the log line below
+    strikePortalsBefore = before.portals;
     if (strikeTune.breakTowers) {
       for (const tw of [...towers]) {
         if (dist3(c, graph.centers[tw.ci]) < radius) destroyTower(tw);
@@ -2864,7 +2896,10 @@ export function initTdTab(root) {
       + ` enemies ${before.enemies}->${enemies.filter((e) => e.alive).length}`
       + ` towers ${before.towers}->${towers.length}`
       + ` walls ${before.walls}->${dungeon.tags.filter((tg) => tg === BLOCKED).length}`);
+    const killed = strikePortalsBefore - spawnPoints.filter((q) => q.alive).length;
+    if (killed > 0) { run.strikePortalKills += killed; checkAchievements(); }
   }
+  let strikePortalsBefore = 0;
 
   // ☆ flash the neighbouring cell that is one hop closer to the heart
   let hintTimer = null;
@@ -3238,6 +3273,7 @@ export function initTdTab(root) {
     }
     else if (cl.contains('msg-begin')) { paused = false; msgEl.classList.add('hidden'); }
     else if (cl.contains('msg-glenemy')) showEnemyGlossary();
+    else if (cl.contains('msg-glachv')) showRecord();
     else if (cl.contains('msg-glfriend')) showFriendGlossary();
     else if (cl.contains('msg-back')) showBriefing();
   });
@@ -3348,9 +3384,37 @@ export function initTdTab(root) {
       `</div>` +
       `<div class="msg-foot">` +
       `<button class="msg-glenemy">enemy glossary</button> ` +
+      `<button class="msg-glachv">the record</button> ` +
       `<button class="msg-glfriend">pickups</button><br>` +
       `<button class="msg-begin">&rsaquo; begin round ${round}</button>` +
       `</div>`;
+    msgEl.classList.remove('hidden');
+  }
+
+  // THE RECORD. Everything earned and everything not, in one list, grouped
+  // the way the table is. Unearned entries keep their NAME and lose their
+  // note — a list of question marks tells a player nothing about what to go
+  // and do, and a list that spells out every condition removes the reason to
+  // wonder. The name is the hint.
+  function showRecord() {
+    paused = true;
+    const held = new Set(heldAchv);
+    const rows = ACHV_GROUPS.map((grp) => {
+      const inGroup = ACHIEVEMENTS.filter((a) => a.group === grp);
+      const got = inGroup.filter((a) => held.has(a.id)).length;
+      return `<div class="rec-group">${grp} <i>${got}/${inGroup.length}</i></div>`
+        + inGroup.map((a) => {
+          const on = held.has(a.id);
+          return `<div class="rec-row${on ? ' got' : ''}">`
+            + `<span class="rec-mark">${on ? '&#10022;' : '&#9675;'}</span>`
+            + `<span class="rec-name">${a.name}</span>`
+            + `<span class="rec-note">${on ? a.note : '&mdash;'}</span></div>`;
+        }).join('');
+    }).join('');
+    msgEl.innerHTML = `<div class="msg-head">the record</div>`
+      + `<div class="msg-scroll"><div class="rec">${rows}</div></div>`
+      + `<div class="go-reason">${held.size}/${ACHIEVEMENTS.length} &middot; the record survives a run; the run does not</div>`
+      + `<button class="msg-back">&larr; back to briefing</button>`;
     msgEl.classList.remove('hidden');
   }
 
@@ -3500,6 +3564,8 @@ export function initTdTab(root) {
     if (won === true) {
       hackedRound = true;
       hackWins++;
+      if (!run.minigamesWon.includes(hackGame)) run.minigamesWon.push(hackGame);
+      checkAchievements();
       if (hackWins === 2) {
         // the SECOND win opens the black market: missiles for biomass
         missileShop = true;
@@ -3555,11 +3621,15 @@ export function initTdTab(root) {
   function noteStreak() {
     // a callout at every 5th consecutive kill — the multiplier made visible
     const st = eco.streak;
+    run.bestStreak = Math.max(run.bestStreak, st);
+    checkAchievements();
     if (st >= streakMark + 5) {
       streakMark = st - (st % 5);
       showCallout(`STREAK ×${eco.multiplier().toFixed(2)}`, 'co-streak');
     }
     if (rs) rs.maxRank = Math.max(rs.maxRank, tankRank);
+    run.maxRank = Math.max(run.maxRank, tankRank);
+    checkAchievements();
   }
   function noteKillContext(e, src) {
     noteStreak();
@@ -3654,6 +3724,7 @@ export function initTdTab(root) {
   // and objectives dim. The who-is-driving line is GONE from the panel —
   // control state lives ON the AUTO button now, where the control is.
   function updateHud() {
+    if (eco && eco.biomass > run.peakBiomass) { run.peakBiomass = eco.biomass; checkAchievements(); }
     if (lifeContainers.length) syncLifeContainers();
     const spAlive = spawnPoints.filter((s) => s.alive).length;
     const alerts = [shieldT > 0 ? `⛨ SHIELD ${Math.ceil(shieldT)}s` : '',
@@ -3855,6 +3926,8 @@ export function initTdTab(root) {
     sfx.panic();
     stopEngine(0, true);
     toursOffered = 0; toursCleared = 0; clearAtRisk = false;
+    // the record persists; the RUN's facts do not
+    run = blankRun();
     clearTowers();
     // opening biomass: exactly a Rapid (70kg) + a Slow (100kg) — your first plan
     eco = makeEconomy({ startBiomass: 170 });
@@ -4554,6 +4627,10 @@ export function initTdTab(root) {
   }
   function harvestTankKill(spec) {
     tankKills++;
+    run.tankKills++;
+    run.handsOnByType[spec.key || spec.type || ''] =
+      (run.handsOnByType[spec.key || spec.type || ''] || 0) + 1;
+    if (spec.boss) run.bossHandsOn = true;
     if (!spec.rammable) tankEliteKills++;
     const r = rankFor(tankKills, tankEliteKills);
     if (r !== tankRank) {
@@ -5178,6 +5255,8 @@ export function initTdTab(root) {
       return;
     }
     playerHP--;
+    run.hullsLost++;
+    checkAchievements();
     if (rs && killerType) rs.killers.push(killerType);
     updateHud();
     if (playerHP > 0) { loseTank(); return; }
@@ -5297,6 +5376,7 @@ export function initTdTab(root) {
   }
 
   function heartHit(dmg = 1) {
+    run.heartHits += dmg;
     eco.leak(); // a breach kills the streak — HK's rule, our Heart
     streakMark = 0;
     if (ws) ws.leaks++;
@@ -5574,6 +5654,8 @@ export function initTdTab(root) {
     const order = { kind: 'tower', ci, key, def, cost: def.cost, ring: makeSiteRing(ci, def.color) };
     orders.push(order);
     orderByCell.set(ci, order);
+    run.maxQueue = Math.max(run.maxQueue, orders.length);
+    checkAchievements();
     spawnIsao();
     sfx.play('laser_click');   // the order goes on the book, not a tower on the wall
     showRangeRing(ci, effectiveStats(def, 0).range, def.color, 1.6);
@@ -6515,6 +6597,9 @@ export function initTdTab(root) {
   // same ones either way — only the verdict at the top changes.
   function bankTour() {
     player.won = true;
+    run.tourBanked = true;
+    run.toursCleared = toursCleared;
+    checkAchievements();
     persistBest();
     let clears = 0;
     try { clears = (parseInt(localStorage.getItem('td.clears') || '0', 10) || 0) + 1; } catch (e) { /* private mode */ }
@@ -6541,6 +6626,8 @@ export function initTdTab(root) {
     if (spawnPoints.length > 0 && spawnPoints.every((s) => !s.alive) && enemies.every((e) => !e.alive)) {
       player.won = true;
       if (round >= SECTORS_TOTAL) {
+        run.planetCleared = true;
+        checkAchievements();
         // THE PLANET. Every portal dead with the whole shell open — there is
         // no sector left to breach, which is the only reading of "the entire
         // map free" this world actually supports.
@@ -7565,13 +7652,24 @@ export function initTdTab(root) {
   // ?audio=1 — report the audio graph every two seconds: how many voices are
   // live and what state the context is in. The leak this was written for is
   // fixed, but "it sounds worse now" is not evidence and this is.
+  // ?record=1 opens the record, and ?record=all fills it first — the only
+  // way to see every row lit without earning twenty-one of them
+  const recQ = urlParams.get('record');
+  if (recQ) {
+    if (recQ === 'all') {
+      heldAchv.length = 0;
+      for (const a of ACHIEVEMENTS) heldAchv.push(a.id);
+    }
+    setTimeout(() => showRecord(), 400);
+  }
+
   if (urlParams.get('audio') === '1') {
     setInterval(() => {
       console.log(`AUDIO voices=${sfx.voices} ctx=${sfx.contextState}`);
     }, 2000);
   }
 
-  const debugging = ['walk', 'tick', 'wave', 'blast', 'laser', 'found', 'recoil', 'mode', 'map', 'tower', 'biomass', 'credit', 'driveout', 'order', 'isao', 'bobby', 'tour', 'planet', 'shop', 'sector', 'reveal', 'portal', 'lose', 'charge', 'layout', 'perf', 'strike', 'strikefall', 'strikecam', 'gateprobe', 'rank', 'danger', 'callout', 'sitrep', 'server', 'hack', 'shield', 'sim']
+  const debugging = ['walk', 'tick', 'wave', 'blast', 'laser', 'found', 'recoil', 'mode', 'map', 'tower', 'biomass', 'credit', 'driveout', 'order', 'isao', 'bobby', 'record', 'tour', 'planet', 'shop', 'sector', 'reveal', 'portal', 'lose', 'charge', 'layout', 'perf', 'strike', 'strikefall', 'strikecam', 'gateprobe', 'rank', 'danger', 'callout', 'sitrep', 'server', 'hack', 'shield', 'sim']
     .some((k) => urlParams.get(k));
   const tutParam = urlParams.get('tutorial');
   runTutorial = tutParam === '1' || (tutParam !== '0' && !debugging);
@@ -7794,7 +7892,7 @@ export function initTdTab(root) {
     console.log(`SERVER ci=${serverCi} dot=${anti}`
       + ` chamber=${clear}/${serverChamber.length} clear`
       + ` ground=${serverCi >= 0 && dungeon.tags[serverCi] !== BLOCKED ? 'OPEN' : 'sealed'}`);
-    serverFound = true; syncHackBtn();
+    serverFound = true; run.serverFound = true; checkAchievements(); syncHackBtn();
     hackPromptForce = true; // pin the prompt for the layout screenshot
     // the model loads async — report again once it should be in the scene
     setTimeout(() => console.log(`SERVER2 placed=${!!serverObj}`
@@ -7803,7 +7901,7 @@ export function initTdTab(root) {
   // ?hack=1|hdt|bridges|shikaku — straight into the breach (boot checks)
   const hackParam = urlParams.get('hack');
   if (hackParam) {
-    serverFound = true; syncHackBtn();
+    serverFound = true; run.serverFound = true; checkAchievements(); syncHackBtn();
     if (HACK_GAMES[hackParam]) hackGame = hackParam;
     openHack();
   }
