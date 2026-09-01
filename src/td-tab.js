@@ -19,39 +19,39 @@
 
 import * as THREE from '../vendor/three.module.js';
 import GUI from '../vendor/lil-gui.esm.js';
-import { generateSphereMesh, relax } from './grid.js?v=4eeaa317';
-import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=4eeaa317';
-import { mulberry32, randomSeed } from './rng.js?v=4eeaa317';
-import { computeBerths, berthIndexFor } from './berths.js?v=4eeaa317';
-import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3, segKey } from './vec3.js?v=4eeaa317';
-import { CREATURES, waveJelly } from './creatures.js?v=4eeaa317';
-import { brief } from './isaobriefs.js?v=4eeaa317';
-import { drawEmotion } from './emotions.js?v=4eeaa317';
+import { generateSphereMesh, relax } from './grid.js?v=876f6631';
+import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=876f6631';
+import { mulberry32, randomSeed } from './rng.js?v=876f6631';
+import { computeBerths, berthIndexFor } from './berths.js?v=876f6631';
+import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3, segKey } from './vec3.js?v=876f6631';
+import { CREATURES, waveJelly } from './creatures.js?v=876f6631';
+import { brief } from './isaobriefs.js?v=876f6631';
+import { drawEmotion } from './emotions.js?v=876f6631';
 import { ACHIEVEMENTS, ACHV_GROUPS, achievement, blankRun, earned, freshlyEarned,
   sanitiseRecord }
-  from './achievements.js?v=4eeaa317';
+  from './achievements.js?v=876f6631';
 import { applyFontPack, currentFontPack, FONT_NAMES,
-  loadTypeFeel } from './fonts.js?v=4eeaa317';
-import { UNITS, UNIT_NAMES, buildUnit, buildCreature, preloadMkcx, preloadServer, makeServerFixture, makeShieldShell, preloadContainer, makeContainerFixture, preloadFabricator, makeIsaoDrone, makeBulletCloud, makeRewardSolid, makeShellSolid, makeDebris, makeDotBurst, makePortalCloud, makeHeartCloud, makeDotEnemy } from './units.js?v=4eeaa317';
-import { LOOKS, LOOK_NAMES } from './looks.js?v=4eeaa317';
-import { makeCellIndex } from './cellindex.js?v=4eeaa317';
-import { CREATURE_TINTS, ENEMY_SPEC, INTROS, computeWavePlan, accentFor } from './enemyspec.js?v=4eeaa317';
-import { PICKUPS } from './pickups.js?v=4eeaa317';
-import { rankFor, rankLabel, badgeSVG, killReq, eliteReq } from './ranks.js?v=4eeaa317';
-import { makeScore } from './score.js?v=4eeaa317';
-import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER } from './towers.js?v=4eeaa317';
-import { makeEconomy, sellRefund } from './economy.js?v=4eeaa317';
-import { makeBloom } from './postfx.js?v=4eeaa317';
-import { TANK_FEEL, TANK_FEEL_KNOBS, makeTankFeel, stepTankFeel, landTankFeel, fireTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js?v=4eeaa317';
-import { FEEL, loadFeel, saveFeel } from './feelstore.js?v=4eeaa317';
+  loadTypeFeel } from './fonts.js?v=876f6631';
+import { UNITS, UNIT_NAMES, buildUnit, buildCreature, preloadMkcx, preloadServer, makeServerFixture, makeShieldShell, preloadContainer, makeContainerFixture, preloadFabricator, makeIsaoDrone, makeBulletCloud, makeRewardSolid, makeShellSolid, makeDebris, makeDotBurst, makePortalCloud, makeHeartCloud, makeDotEnemy } from './units.js?v=876f6631';
+import { LOOKS, LOOK_NAMES } from './looks.js?v=876f6631';
+import { makeCellIndex } from './cellindex.js?v=876f6631';
+import { CREATURE_TINTS, ENEMY_SPEC, INTROS, computeWavePlan, accentFor } from './enemyspec.js?v=876f6631';
+import { PICKUPS } from './pickups.js?v=876f6631';
+import { rankFor, rankLabel, badgeSVG, killReq, eliteReq } from './ranks.js?v=876f6631';
+import { makeScore } from './score.js?v=876f6631';
+import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER } from './towers.js?v=876f6631';
+import { makeEconomy, sellRefund } from './economy.js?v=876f6631';
+import { makeBloom } from './postfx.js?v=876f6631';
+import { TANK_FEEL, TANK_FEEL_KNOBS, makeTankFeel, stepTankFeel, landTankFeel, fireTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js?v=876f6631';
+import { FEEL, loadFeel, saveFeel } from './feelstore.js?v=876f6631';
 import { STRIKE_KNOBS, makeStrike, makeStrikeParams, grantStrikes, stepStrike,
   toggleArm, paintTarget, launchStrike, stepFall, skipFall, fallProgress,
-  strikeDamage, retargetStrike, orbitProgress } from './strike.js?v=4eeaa317';
-import { radarBasis, radarProject, radarBearing, sweepAngle, radarPhosphor } from './radar.js?v=4eeaa317';
-import { BLOOM_GROUPS } from './bloomweights.js?v=4eeaa317';
-import { TOWER_LOOK_NAMES, DEFAULT_TOWER_LOOK, buildTowerLook, preloadLook } from './towerlooks.js?v=4eeaa317';
-import { makeAudio } from './audio.js?v=4eeaa317';
-import { DEATH_KEYS } from './audiomanifest.js?v=4eeaa317';
+  strikeDamage, retargetStrike, orbitProgress } from './strike.js?v=876f6631';
+import { radarBasis, radarProject, radarBearing, sweepAngle, radarPhosphor } from './radar.js?v=876f6631';
+import { BLOOM_GROUPS } from './bloomweights.js?v=876f6631';
+import { TOWER_LOOK_NAMES, DEFAULT_TOWER_LOOK, buildTowerLook, preloadLook } from './towerlooks.js?v=876f6631';
+import { makeAudio } from './audio.js?v=876f6631';
+import { DEATH_KEYS } from './audiomanifest.js?v=876f6631';
 
 export function initTdTab(root) {
   let active = false;
@@ -1090,14 +1090,14 @@ export function initTdTab(root) {
   // next: a timer that repositions the tank is a timer that can reposition
   // somebody else's tank. Bumped by regenerate.
   let runGen = 0;
-  let respawnCount = 0;
-  // counted separately: a death-hold respawn is the one that must never
-  // cross a run, and the run's own berth staging would mask it in a total
-  let tankLostRespawns = 0;
-  const ctlState = (tag) => `CTL[${tag}] gen=${runGen} respawns=${respawnCount}`
+  let deployCount = 0;
+  // counted separately: a death-hold deploy is the one that must never
+  // cross a run, and a fresh run's own deploy would mask it in a total
+  let tankLostDeploys = 0;
+  const ctlState = (tag) => `CTL[${tag}] gen=${runGen} deploys=${deployCount}`
     + ` won=${player.won} down=${playerDown} next=${player.next}`
     + ` free=${player.freeMode} cur=${player.cur}`
-    + ` auto=${autoMode} cruise=${cruise} exitCruise=${exitCruise}`
+    + ` auto=${autoMode} cruise=${cruise} deploying=${deployActive()}`
     + ` throttle=${throttle.toFixed(2)} keys=${Object.entries(keys)
       .filter(([, v]) => v).map(([k2]) => k2).join('+') || '-'}`
     + ` paused=${paused} tutFrozen=${tutorial.frozen}`
@@ -1159,8 +1159,9 @@ export function initTdTab(root) {
 
   const camGoal = { pos: new THREE.Vector3(), quat: new THREE.Quaternion() };
   // two more of the same, for blending between two framings (the cold open)
-  const cineA = { pos: new THREE.Vector3(), quat: new THREE.Quaternion() };
-  const cineB = { pos: new THREE.Vector3(), quat: new THREE.Quaternion() };
+  // two spare pose slots, for blending one framing into another
+  const camA = { pos: new THREE.Vector3(), quat: new THREE.Quaternion() };
+  const camB = { pos: new THREE.Vector3(), quat: new THREE.Quaternion() };
   const tmpObj = new THREE.Object3D();
   // lookAt convention trap: a plain Object3D faces +Z at the target, but a
   // camera renders down -Z (three.js special-cases isCamera in lookAt).
@@ -1942,7 +1943,33 @@ export function initTdTab(root) {
     return { hn, t1, t2 };
   }
 
+  // When true, updateCameraGoal skips its overrides and yields the PLAIN
+  // gameplay pose. That is how DEPLOY learns where the camera is going to
+  // end up without re-deriving it: the pose is READ from the one function
+  // that owns it, so the handover cannot drift from the shot that precedes
+  // it. Re-entrant by exactly one level, and only ever set here.
+  let camRaw = false;
+
   function updateCameraGoal() {
+    // DEPLOY eases the doorway framing into the gameplay framing over its own
+    // progress, so at u=1 the two ARE the same pose and handing the controls
+    // over changes nothing on screen.
+    if (deploy && !camRaw) {
+      const u = Math.min(1, deploy.travelled / deploy.segLen);
+      const w = u * u * (3 - 2 * u);
+      deployFramePoseFor(deploy.n, camA);
+      camRaw = true;
+      updateCameraGoal();          // camGoal is now the true gameplay pose
+      camRaw = false;
+      camB.pos.copy(camGoal.pos); camB.quat.copy(camGoal.quat);
+      camGoal.pos.lerpVectors(camA.pos, camB.pos, w);
+      camGoal.quat.copy(camA.quat).slerp(camB.quat, w);
+      return;
+    }
+    if (shot && !camRaw) {
+      shot.poseAt(Math.min(1, Math.max(0, 1 - shot.left / shot.dur)), camGoal);
+      return;
+    }
     if (strike.falling > 0) {
       // riding the munition down: straight along the target cell's normal,
       // altitude easing on a smoothstep — slow at first, fast near impact,
@@ -2024,12 +2051,6 @@ export function initTdTab(root) {
         tmpCam.lookAt(berthLook[0], berthLook[1], berthLook[2]);
         camGoal.quat.copy(tmpCam.quaternion);
       }
-      return;
-    }
-    if (shot) {
-      // a shot owns the goal outright while it runs; u is 0..1 over its own
-      // duration, so the pose function never has to know about dt
-      shot.poseAt(Math.min(1, Math.max(0, 1 - shot.left / shot.dur)), camGoal);
       return;
     }
     if (params.view === 'drone' && isao) {
@@ -4443,6 +4464,14 @@ export function initTdTab(root) {
     spawnOrbs();
     spawnEnemies();
     spawnRewards();
+    // EVERY RESET ENTERS THE WORLD THE SAME WAY. Brand-new game, browser
+    // reload, forced reset, retry after a loss — they all come through
+    // regenerate, so they all start with the hull in its berth driving out.
+    // Preludes only change what the camera was doing beforehand.
+    //
+    // Deliberately NOT in applyLook: a look swap is a cosmetic, and
+    // cosmetics never reset the run.
+    deployStart(berthIndexFor(playerHP));
     placeActors();
     // a fresh board earns a fresh framing — the first-entry courtesy resets
     buildCentered = false;
@@ -5616,7 +5645,8 @@ export function initTdTab(root) {
       if (deathGen !== runGen) return;         // this belonged to a run that is over
       if (player.won || !playerMesh) return;   // a real death happened meanwhile
       // back to the entry point, facing the heart, engine cold
-      respawnPlayerAtSpawn('tank-lost');
+      tankLostDeploys++;
+      deployStart(berthIndexFor(playerHP));
       playerMesh.visible = true;
       playerDown = false;
       feel.hoverT = 0;
@@ -5635,83 +5665,100 @@ export function initTdTab(root) {
   // the old respawn put the wreck straight back into the thing that made it
   // a wreck, and sometimes BEHIND a portal with the wave between you and
   // home. You come back at the thing you are defending, facing outward.
-  function respawnPlayerAtSpawn(why = 'unknown') {
-    respawnCount++;
-    if (why === 'tank-lost') tankLostRespawns++;
-    ctlLog(`respawn:${why}`);
-    let ci = dungeon.heart;
-    let fromContainer = false;
-    if (lifeContainers.length === 3) {
-      // commandeer the next hull AT its container — the berth just vacated
-      const k = Math.min(2, Math.max(0, playerHP - 1));
-      const cc = lifeContainers[k];
-      if (cc && dungeon.tags[cc.ci] !== BLOCKED) { ci = cc.ci; fromContainer = true; }
-    }
-    if (!fromContainer) {
-      outer:
-      for (let d = 1; d <= 3; d++) {
-        for (let i = 0; i < dungeon.tags.length; i++) {
-          if (dungeon.tags[i] !== BLOCKED && !towerCells.has(i)
-            && dungeon.distToHeart[i] === d) { ci = i; break outer; }
-        }
-      }
-    }
+  // --- DEPLOY: the one way a tank enters the world ------------------------
+  // Every reset lands here, whatever ran before it — a fresh page load, a
+  // retry after a loss, a forced reset, a hull lost mid-run. The hull starts
+  // at rest inside its berth, drives ENTIRELY OUT, and hands over in manual.
+  // Preludes (the CINEMATIC, the DOWN DASH) differ only in what the camera
+  // was doing beforehand; they all end on DEPLOY's first frame, which is what
+  // makes the opening state identical however you got to it.
+  //
+  // "Entirely out" is measured in CELLS, not in metres of model: the box
+  // occupies its berth cell, so a hull whose centre has reached the exit
+  // cell's centre is clear of it by construction. That stays true when the
+  // container model has not loaded at all — which it may not have, since the
+  // model is now decoration and DEPLOY does not wait for it.
+  //
+  // DEPLOY is NOT auto mode and NOT cruise. Auto stays something the player
+  // chooses (operator, 2026-09-01); and cruise left engaged by a berth
+  // respawn is precisely what made the throttle lever read as dead. It is its
+  // own short scripted beat, and it ends with the controls in the player's
+  // hands and the lever at zero.
+  let deploy = null;   // { n, from[3], to[3], segLen, travelled }
+  const deployActive = () => deploy !== null;
+
+  function deployStart(n) {
+    const b = berths[n];
+    if (!b || !graph) return false;
+    deployCount++;
+    ctlLog(`deploy:#${n + 1}`);
     player.freeMode = false;
     player.virtualStart = null;
-    player.cur = ci;
+    player.cur = b.ci;
     player.prev = -1;
-    player.pos = graph.centers[ci].slice();
+    player.pos = graph.centers[b.ci].slice();
     player.prog = 0;
-    const exits = openNeighbors(ci);
-    // NEVER AIM INTO A SIBLING BERTH. The three boxes stand in a row, so the
-    // cell straight ahead of a berth is usually another berth — and a
-    // respawn pointed at one either drives THROUGH the box on the graph or
-    // noses into a solid wall in free movement. Both are the operator's
-    // can't-get-out report.
-    const clear = exits.filter((e2) => !lifeContainers.some((cc) => cc.ci === e2));
-    const pick = clear.length ? clear : exits;
-    let e0 = pick[0] ?? ci;
-    if (fromContainer) {
-      // STRAIGHT OUT OF THE DOORS. The berth was rotated to face this exact
-      // cell when it was placed, so driving at it is driving down the
-      // doorway's own axis — no angle, no clipped frame. Reading the stored
-      // exit rather than re-deriving one is the point: two answers to "which
-      // way is out" is how the hull ended up leaving sideways.
-      const berth = lifeContainers.find((cc) => cc.ci === ci);
-      if (berth && berth.exit >= 0 && dungeon.tags[berth.exit] !== BLOCKED
-        && !towerCells.has(berth.exit)) {
-        e0 = berth.exit;
-      } else {
-        const doorDir = tangentDirTo(ci, dungeon.heart);
-        let bestDot = -Infinity;
-        for (const e of pick) {
-          const d = dot3(tangentDirTo(ci, e), doorDir);
-          if (d > bestDot) { bestDot = d; e0 = e; }
-        }
-      }
-    } else {
-      // OUTWARD, not heartward: you respawn defending, so you are pointed
-      // back at the war. Beside the heart, "toward" would aim you into the
-      // thing you are protecting.
-      for (const e of pick) {
-        if (dungeon.distToHeart[e] === dungeon.distToHeart[ci] + 1) { e0 = e; break; }
-      }
-    }
-    player.next = e0;
-    player.heading = tangentDirTo(ci, e0);
+    player.next = b.exit;
+    player.heading = tangentDirTo(b.ci, b.exit);
     player.travelDir = player.heading.slice();
     player.smoothDir = player.travelDir.slice();
-    player.segLen = Math.max(1e-9, dist3(graph.centers[ci], graph.centers[e0]));
-    throttle = 0; cruise = false; paintThrottle();
+    player.segLen = Math.max(1e-9, dist3(graph.centers[b.ci], graph.centers[b.exit]));
+    throttle = 0; cruise = false; autoMode = false;
+    paintThrottle();
     stopEngine(0.1, true);
-    // A HULL LEAVING A BERTH DRIVES ITSELF OUT. Manual is the default mode
-    // and manual needs a held key, so a fresh hull sat in its box until the
-    // player worked out that it had to be driven through a gap between two
-    // solid containers from a standstill — which is the whole of the
-    // operator's report. Cruise is the existing rolls-on-its-own state, so
-    // this is not a new mode: the hull idles out of the doors and the
-    // driver takes the wheel the moment they steer.
-    if (fromContainer) { cruise = true; exitCruise = true; paintThrottle(); }
+    deploy = {
+      n,
+      from: graph.centers[b.ci].slice(),
+      to: graph.centers[b.exit].slice(),
+      segLen: player.segLen,
+      travelled: 0,
+    };
+    return true;
+  }
+
+  // THE POSE THE WHOLE DESIGN HANGS OFF. Every prelude's last frame is this,
+  // so "the cinematic's last frame is the first frame of the reset state" is
+  // a property of the code rather than something tuned until it looks right.
+  // A low three-quarter standing where the doors face, so the hull rolls
+  // toward the lens.
+  function deployFramePoseFor(n, out) {
+    const b = berths[n];
+    if (!b) return;
+    const bc = graph.centers[b.ci];
+    const bn = graph.normals[b.ci];
+    const eye = add3(add3(bc, scale3(bn, params.wallHeight * 1.7 + cellSide * 0.55)),
+      scale3(tangentDirTo(b.ci, b.exit), cellSide * 2.1));
+    const look = add3(bc, scale3(bn, params.wallHeight * 0.55));
+    out.pos.set(eye[0], eye[1], eye[2]);
+    tmpCam.position.copy(out.pos);
+    tmpCam.up.set(bn[0], bn[1], bn[2]);
+    tmpCam.lookAt(look[0], look[1], look[2]);
+    out.quat.copy(tmpCam.quaternion);
+  }
+
+  function deployStep(dt) {
+    if (!deploy) return;
+    const b = berths[deploy.n];
+    if (!b) { deploy = null; return; }
+    const v = params.speed * speedBonus * cellSide * 1.6;
+    deploy.travelled += v * dt;
+    const u = Math.min(1, deploy.travelled / deploy.segLen);
+    const p = [0, 1, 2].map((i) => deploy.from[i] + (deploy.to[i] - deploy.from[i]) * u);
+    player.pos = norm3(p);
+    player.heading = tangentDirTo(b.ci, b.exit);
+    player.travelDir = player.heading.slice();
+    player.smoothDir = player.travelDir.slice();
+    const ci = cellIndex(player.pos);
+    if (ci !== -1 && ci !== player.cur) arriveAt(ci);
+    if (u >= 1) {
+      // hands over: manual, lever at zero, auto off. Because `keys` is HELD
+      // state, a player already leaning on W drives on without a beat — and
+      // forward is the direction the hull is already going, so the handover
+      // is continuous rather than a stop.
+      deploy = null;
+      throttle = 0; cruise = false; autoMode = false;
+      paintThrottle();
+    }
   }
 
   function heartHit(dmg = 1) {
@@ -5870,19 +5917,6 @@ export function initTdTab(root) {
   const ISAO_BUILD_BASE = 2.0;     // seconds before cost is considered
   const ISAO_BUILD_PER_KG = 1 / 55; // ...and per kg of biomass printed
   const buildSeconds = (cost) => ISAO_BUILD_BASE + cost * ISAO_BUILD_PER_KG;
-  // The berth exit's cruise is a NUDGE, not a setting. It rolls the hull
-  // out of the doorway and then gets out of the way — left engaged it made
-  // the tank drive itself forever, the throttle lever read as dead (cruise
-  // wins when the lever sits at zero), and the whole thing felt like the
-  // controls were gone. Which is exactly what the operator reported.
-  let exitCruise = false;
-  function releaseExitCruise() {
-    if (!exitCruise) return;
-    exitCruise = false;
-    cruise = false;
-    paintThrottle();
-  }
-
   // the live type-feel values the tuner writes into, restored from storage
   // through the schema's own clamp — our own localStorage is untrusted input
   // after a schema change, same rule as the feel store
@@ -7120,7 +7154,7 @@ export function initTdTab(root) {
     // the hull (operator bug report). If the shift entombed the tank,
     // redeploy it beside the heart and say so.
     if (player.cur >= 0 && dungeon.tags[player.cur] === BLOCKED && !playerDown) {
-      respawnPlayerAtSpawn('entombed-by-sector-shift');
+      deployStart(berthIndexFor(playerHP));
       showToast(`<div class="wave-num">REDEPLOYED</div>`
         + `<div class="wave-role">the frontier shifted over your position</div>`, 3000);
     }
@@ -7435,9 +7469,6 @@ export function initTdTab(root) {
     const handOn = keys.laser || keys.fast || keys.slow || keys.left || keys.right
       || throttle !== 0;
     if (tutorial.frozen && (handOn || cruise)) { tutorial.frozen = false; hideTutBanner(); }
-    // hand on the controls, or clear of the berth: either ends the nudge
-    if (exitCruise && (handOn
-      || !lifeContainers.some((cc) => cc.ci === player.cur))) releaseExitCruise();
     const frozen = buildFrozen() || shotActive() || tutorial.frozen || cineLeft > 0;
     // The BUILD pause holds the WORLD still, not the DRIVER. Planning with
     // the tank parked where the last wave left it meant switching out of
@@ -7460,7 +7491,8 @@ export function initTdTab(root) {
     // hand on the wheel closes it, same rule as the tutorial's opening hold.
     if (shopCi !== -1 && (keys.fast || keys.slow || keys.left || keys.right
       || cruise || throttle !== 0 || keys.fire || keys.laser)) closeShop();
-    if (!driveFrozen) advanceMotion(dt);
+    if (deploy) deployStep(dt);
+    else if (!driveFrozen) advanceMotion(dt);
     ctlWatch(dt);
     // Isao keeps his shift through the build downtime — the war may be
     // frozen there, but construction is the thing you came to do. A
@@ -8036,6 +8068,42 @@ export function initTdTab(root) {
   // the dead run's timer still lands on the live one: a respawn:tank-lost
   // printed AFTER regenerate:after is a repositioning nobody asked for, on
   // a run that has not lost anything.
+  // ?deployprobe=1 — THE CONSISTENCY QUESTION, made a check. The operator's
+  // report was that every reset produced a different opening state; this
+  // walks the reset paths in turn and asserts each lands in the SAME shape:
+  // the berth its hull count names, heading down that berth's own exit, auto
+  // off, cruise off. Then it runs the beat to completion and checks the hull
+  // actually left the box, which is what "ENTIRELY OUT" was pointing at.
+  if (urlParams.get('deployprobe') === '1') {
+    const rows = [];
+    const shape = (tag) => {
+      const n = berthIndexFor(playerHP);
+      const b = berths[n];
+      const good = !!b && player.cur === b.ci && player.next === b.exit
+        && !autoMode && !cruise;
+      rows.push(`${tag}: berth=#${n + 1} cur=${player.cur} want=${b ? b.ci : -1}`
+        + ` exit_ok=${!!b && player.next === b.exit}`
+        + ` auto=${autoMode} cruise=${cruise} ${good ? 'ok' : 'BAD'}`);
+      return good;
+    };
+    let ok = shape('fresh-load');
+    regenerate();               ok = shape('regenerate') && ok;
+    playerHP = 2; deployStart(berthIndexFor(playerHP)); ok = shape('hull-2') && ok;
+    playerHP = 1; deployStart(berthIndexFor(playerHP)); ok = shape('hull-1') && ok;
+    // and the beat itself: drive it to the end, check the hull is out
+    playerHP = PLAYER_MAX;
+    deployStart(berthIndexFor(playerHP));
+    const b0 = berths[berthIndexFor(playerHP)];
+    for (let i = 0; i < 600 && deployActive(); i++) deployStep(0.05);
+    const out = !!b0 && player.cur === b0.exit && !deployActive()
+      && !autoMode && !cruise && throttle === 0;
+    rows.forEach((r) => console.log(`DEPLOYPROBE ${r}`));
+    console.log(`DEPLOYPROBE shape=${ok ? 'PASS' : 'FAIL'}`
+      + ` entirely-out=${out ? 'PASS' : 'FAIL'}`
+      + ` (ended at ${player.cur}, wanted ${b0 ? b0.exit : -1},`
+      + ` deploying=${deployActive()} auto=${autoMode} cruise=${cruise})`);
+  }
+
   // ?shotprobe=1 — THE TEARDOWN REGRESSION GUARD, for camShot itself.
   // A shot installs a capture-phase keydown handler that stops the event
   // dead. If its teardown is ever skipped, the whole keyboard dies silently
@@ -8129,14 +8197,14 @@ export function initTdTab(root) {
     setTimeout(() => {
       console.log('CTL probe: RETRY pressed mid-hold');
       regenerate();
-      const afterRetry = tankLostRespawns;
+      const afterRetry = tankLostDeploys;
       // by now the dead run's DEATH_HOLD timer has had its chance. Only
       // tank-lost respawns count: the new run legitimately stages itself at
       // its berths, and a total would score that as the bug.
       setTimeout(() => {
-        const crossed = tankLostRespawns - afterRetry;
+        const crossed = tankLostDeploys - afterRetry;
         console.log(`CTLPROBE stale-death-timer=${crossed === 0 ? 'PASS' : 'FAIL'}`
-          + ` (tank-lost respawns after retry: ${crossed}, want 0)`);
+          + ` (tank-lost deploys after retry: ${crossed}, want 0)`);
         ctlLog('probe:end');
       }, (DEATH_HOLD + 0.8) * 1000);
     }, 200);
