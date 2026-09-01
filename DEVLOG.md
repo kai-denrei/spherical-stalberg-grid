@@ -1,3 +1,11 @@
+# Dev Log
+
+Newest first. Each entry: what landed, then how it works, for programmers.
+Demo links assume `npm run serve` (port 8144) or the
+[Pages deploy](https://kai-denrei.github.io/spherical-stalberg-grid/).
+
+---
+
 ## be4d6aa — the toe narrows, and rock bites the beam in proportion
 
 `SECONDARY_TOE` 0.157 → 0.085 (operator: "less wide"). The catch was that the
@@ -21,14 +29,6 @@ desync (0.33 vs 0.44) because the rock ahead of each differs.
 `?beamfire=1` gained a wall check that **finds** clear ground rather than
 assuming the spawn faces open air. It does not: that assumption was the
 INCONCLUSIVE that exposed all of the above.
-
-# Dev Log
-
-Newest first. Each entry: what landed, then how it works, for programmers.
-Demo links assume `npm run serve` (port 8144) or the
-[Pages deploy](https://kai-denrei.github.io/spherical-stalberg-grid/).
-
----
 
 ## `1f0b626`..`2bdeeca` — the First State
 
