@@ -1,0 +1,32 @@
+{
+  "schema": "laserfx/1",
+  "id": "beam-2026-09-01",
+  "generator": "lab-satisfying-lasers",
+  "generatedAt": "2026-09-01T09:27:22.488Z",
+  "beam": {
+    "coreColor": "#ffffff",
+    "coreWidth": 0.077,
+    "coreIntensity": 0,
+    "glowColor": "#006d8f",
+    "glowWidth": 0.47,
+    "glowIntensity": 5.05,
+    "glowFalloff": 3.2,
+    "capStart": 0.155,
+    "capEnd": 0.4,
+    "blast": 0,
+    "scrollSpeed": -4,
+    "noiseScale": 16.9,
+    "noiseAmount": 0.61,
+    "flicker": 0.5,
+    "jitterAmount": 0.041,
+    "jitterFreq": 118,
+    "burstRate": 0,
+    "burstDuty": 0.54,
+    "burstDecay": 3.15,
+    "burstAttack": 0
+  },
+  "scene": {
+    "bgBrightness": 0.015,
+    "exposure": 1
+  }
+}
