@@ -19,42 +19,42 @@
 
 import * as THREE from '../vendor/three.module.js';
 import GUI from '../vendor/lil-gui.esm.js';
-import { generateSphereMesh, relax } from './grid.js?v=37675847';
-import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=37675847';
-import { mulberry32, randomSeed } from './rng.js?v=37675847';
-import { computeBerths, berthIndexFor } from './berths.js?v=37675847';
-import { wantsSecondary, shellsForAll } from './autofire.js?v=37675847';
-import { printPhase, printOffset, printOn, patternSecsFor } from './printpath.js?v=37675847';
-import { createBeam } from './beamfx.js?v=37675847';
-import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3, segKey, tangentDir, tangentBasis } from './vec3.js?v=37675847';
-import { CREATURES, waveJelly } from './creatures.js?v=37675847';
-import { brief } from './isaobriefs.js?v=37675847';
-import { drawEmotion } from './emotions.js?v=37675847';
+import { generateSphereMesh, relax } from './grid.js?v=7059234a';
+import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=7059234a';
+import { mulberry32, randomSeed } from './rng.js?v=7059234a';
+import { computeBerths, berthIndexFor } from './berths.js?v=7059234a';
+import { wantsSecondary, shellsForAll } from './autofire.js?v=7059234a';
+import { printPhase, printOffset, printOn, patternSecsFor } from './printpath.js?v=7059234a';
+import { createBeam } from './beamfx.js?v=7059234a';
+import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3, segKey, tangentDir, tangentBasis } from './vec3.js?v=7059234a';
+import { CREATURES, waveJelly } from './creatures.js?v=7059234a';
+import { brief } from './isaobriefs.js?v=7059234a';
+import { drawEmotion } from './emotions.js?v=7059234a';
 import { ACHIEVEMENTS, ACHV_GROUPS, achievement, blankRun, earned, freshlyEarned,
   sanitiseRecord }
-  from './achievements.js?v=37675847';
+  from './achievements.js?v=7059234a';
 import { applyFontPack, currentFontPack, FONT_NAMES,
-  loadTypeFeel } from './fonts.js?v=37675847';
-import { UNITS, UNIT_NAMES, buildUnit, buildCreature, preloadMkcx, preloadServer, makeServerFixture, makeShieldShell, preloadContainer, makeContainerFixture, preloadFabricator, makeIsaoDrone, makeBulletCloud, makeRewardSolid, makeShellSolid, makeDebris, makeDotBurst, makePortalCloud, makeHeartCloud, makeDotEnemy, preloadTerraformer, makeTerraformerFixture } from './units.js?v=37675847';
-import { LOOKS, LOOK_NAMES } from './looks.js?v=37675847';
-import { makeCellIndex } from './cellindex.js?v=37675847';
-import { CREATURE_TINTS, ENEMY_SPEC, INTROS, computeWavePlan, accentFor } from './enemyspec.js?v=37675847';
-import { PICKUPS } from './pickups.js?v=37675847';
-import { rankFor, rankLabel, badgeSVG, killReq, eliteReq } from './ranks.js?v=37675847';
-import { makeScore } from './score.js?v=37675847';
-import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER } from './towers.js?v=37675847';
-import { makeEconomy, sellRefund } from './economy.js?v=37675847';
-import { makeBloom } from './postfx.js?v=37675847';
-import { TANK_FEEL, TANK_FEEL_KNOBS, makeTankFeel, stepTankFeel, landTankFeel, fireTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js?v=37675847';
-import { FEEL, loadFeel, saveFeel } from './feelstore.js?v=37675847';
+  loadTypeFeel } from './fonts.js?v=7059234a';
+import { UNITS, UNIT_NAMES, buildUnit, buildCreature, preloadMkcx, preloadServer, makeServerFixture, makeShieldShell, preloadContainer, makeContainerFixture, preloadFabricator, makeIsaoDrone, makeBulletCloud, makeRewardSolid, makeShellSolid, makeDebris, makeDotBurst, makePortalCloud, makeHeartCloud, makeDotEnemy, preloadTerraformer, makeTerraformerFixture } from './units.js?v=7059234a';
+import { LOOKS, LOOK_NAMES } from './looks.js?v=7059234a';
+import { makeCellIndex } from './cellindex.js?v=7059234a';
+import { CREATURE_TINTS, ENEMY_SPEC, INTROS, computeWavePlan, accentFor } from './enemyspec.js?v=7059234a';
+import { PICKUPS } from './pickups.js?v=7059234a';
+import { rankFor, rankLabel, badgeSVG, killReq, eliteReq } from './ranks.js?v=7059234a';
+import { makeScore } from './score.js?v=7059234a';
+import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER } from './towers.js?v=7059234a';
+import { makeEconomy, sellRefund } from './economy.js?v=7059234a';
+import { makeBloom } from './postfx.js?v=7059234a';
+import { TANK_FEEL, TANK_FEEL_KNOBS, makeTankFeel, stepTankFeel, landTankFeel, fireTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js?v=7059234a';
+import { FEEL, loadFeel, saveFeel } from './feelstore.js?v=7059234a';
 import { STRIKE_KNOBS, makeStrike, makeStrikeParams, grantStrikes, stepStrike,
   toggleArm, paintTarget, launchStrike, stepFall, skipFall, fallProgress,
-  strikeDamage, retargetStrike, orbitProgress } from './strike.js?v=37675847';
-import { radarBasis, radarProject, radarBearing, sweepAngle, radarPhosphor } from './radar.js?v=37675847';
-import { BLOOM_GROUPS } from './bloomweights.js?v=37675847';
-import { TOWER_LOOK_NAMES, DEFAULT_TOWER_LOOK, buildTowerLook, preloadLook } from './towerlooks.js?v=37675847';
-import { makeAudio } from './audio.js?v=37675847';
-import { DEATH_KEYS } from './audiomanifest.js?v=37675847';
+  strikeDamage, retargetStrike, orbitProgress } from './strike.js?v=7059234a';
+import { radarBasis, radarProject, radarBearing, sweepAngle, radarPhosphor } from './radar.js?v=7059234a';
+import { BLOOM_GROUPS } from './bloomweights.js?v=7059234a';
+import { TOWER_LOOK_NAMES, DEFAULT_TOWER_LOOK, buildTowerLook, preloadLook } from './towerlooks.js?v=7059234a';
+import { makeAudio } from './audio.js?v=7059234a';
+import { DEATH_KEYS } from './audiomanifest.js?v=7059234a';
 
 export function initTdTab(root) {
   let active = false;
@@ -875,6 +875,7 @@ export function initTdTab(root) {
   const tmpV = new THREE.Vector3();
   const tmpQ = new THREE.Quaternion();
   const Y_AXIS = new THREE.Vector3(0, 1, 0);
+  const X_AXIS = new THREE.Vector3(1, 0, 0);   // local pitch axis after a lookAt
   const tmpN = new THREE.Vector3();
 
   // groups (bullet triads, mesh units) carry geometry in children
@@ -1108,7 +1109,8 @@ export function initTdTab(root) {
   }
 
   // held-key state: steering and pace are continuous while held, not nudges
-  const keys = { left: false, right: false, fast: false, slow: false, laser: false };
+  const keys = { left: false, right: false, fast: false, slow: false, laser: false,
+    droneUp: false, droneDown: false };   // the last two only while flying Isao
   // CRUISE: player-triggered auto-forward. A quick double-tap of the
   // forward control (W / ▲) toggles it; S/▼ always kills it.
   let cruise = false;
@@ -2622,6 +2624,14 @@ export function initTdTab(root) {
     }
     if (down && k === 'escape') { togglePause(); ev.preventDefault(); return; }
     if (paused) return; // frozen: only ESC gets through
+    // FLYING HIM, SPACE AND SHIFT ARE ALTITUDE. Context-scoped exactly like
+    // the U-upgrade shortcut: the drone view is the only place these mean
+    // anything else, and a tank commander is not firing while he is a drone.
+    if (params.view === 'drone' && (k === ' ' || k === 'spacebar' || k === 'shift')) {
+      keys[k === 'shift' ? 'droneDown' : 'droneUp'] = down;
+      ev.preventDefault();
+      return;
+    }
     if (down && (k === ' ' || k === 'spacebar')) { fire(); ev.preventDefault(); return; }
     if (down && k === 'h') pulseHint();
     if (down && k === 'v') toggleView();
@@ -6228,9 +6238,33 @@ export function initTdTab(root) {
     // printing it, his drift when idle. The build case used to fall through
     // to a stale loiter point, so he printed with his back to the work —
     // invisible until a camera was hung off his facing.
-    const aim = isao.order ? norm3(graph.centers[isao.order.ci]) : isao.loiter;
     tmpObj.position.copy(isao.obj.position);
     tmpObj.up.set(isao.dir[0], isao.dir[1], isao.dir[2]);
+
+    // WHILE PILOTED HE FACES WHERE HE IS FLYING. This is the bug the operator
+    // saw as "rotates on an unnatural axis": the aim below falls back to
+    // isao.loiter, and pilotIsao sets loiter to his own POSITION, so the
+    // lookAt target sat on top of him, the distance guard skipped the lookAt
+    // entirely, and his quaternion was left stale from whatever it last was.
+    // He was not rotating oddly — he was not being oriented at all.
+    if (params.view === 'drone' && isaoHeading) {
+      const ahead = add3(p, scale3(isaoHeading, cellSide));
+      tmpObj.lookAt(ahead[0], ahead[1], ahead[2]);
+      isao.obj.quaternion.copy(tmpObj.quaternion);
+      // LEAN AND BANK, composed as quaternions onto the facing — never
+      // written as Euler on the same object, which would replace the whole
+      // orientation and put us straight back to an unnatural axis. This
+      // project has that dead end on record twice.
+      tmpQ.setFromAxisAngle(X_AXIS, isaoLean);
+      isao.obj.quaternion.multiply(tmpQ);
+      tmpQ.setFromAxisAngle(Z_AXIS, isaoRoll);
+      isao.obj.quaternion.multiply(tmpQ);
+      return;
+    }
+
+    // autonomous: he faces what he is doing — the site while flying to it AND
+    // while printing it, his drift when idle
+    const aim = isao.order ? norm3(graph.centers[isao.order.ci]) : isao.loiter;
     const t = isaoPos(aim);
     if (dist3(t, p) > 1e-4) tmpObj.lookAt(t[0], t[1], t[2]);
     isao.obj.quaternion.copy(tmpObj.quaternion);
@@ -6369,6 +6403,15 @@ export function initTdTab(root) {
   // Leave the view and he picks the queue straight back up.
   let isaoHeading = null;    // unit tangent at isao.dir; the way he is pointed
   const ISAO_TURN = 1.9;     // rad/s
+  const ISAO_CLIMB = 2.4;    // altitude units per second, held
+  // MEASURED. The demand maps about 1:1 to the tilt once it is measured
+  // against his CURRENT local up — the early readings of 52 and 37 degrees
+  // were the sphere's curvature leaking into the probe, not the model. 0.32
+  // rad is a visible ~18 degrees: enough to read as a quadcopter tipping into
+  // its acceleration, short of looking like a stall. ?droneprobe=1 prints it.
+  const ISAO_LEAN = 0.32;    // rad of nose-down at full forward
+  const ISAO_ROLL = 0.24;    // rad of bank into a turn
+  let isaoLean = 0, isaoRoll = 0;
   const ISAO_FLY = 3.4;      // cells/s under power
   function pilotIsao(dt) {
     const up = isao.dir;
@@ -6396,11 +6439,19 @@ export function initTdTab(root) {
       isao.dir = norm3(add3(isao.dir, scale3(h, step)));
       isao.loiter = isao.dir.slice();   // he holds where you left him
     }
-    // Q/E are the tank's climb pair; up here they are altitude, which is the
-    // one axis a ground vehicle never had and a drone obviously should
-    // (altitude is on Q/E, handled at the key so a tap is a discrete step
-    // rather than a held ramp — a drone you cannot park at a height is not
-    // one you are flying)
+    // ALTITUDE ON SPACE / SHIFT, held rather than tapped — a drone climbs
+    // while you hold the stick. Q/E still step it discretely for anyone who
+    // learned it that way.
+    const climb = (keys.droneUp ? 1 : 0) - (keys.droneDown ? 1 : 0);
+    if (climb) isaoAlt = Math.max(1.2, Math.min(9, isaoAlt + climb * ISAO_CLIMB * dt));
+    // LEAN. A quadcopter does not translate flat: it tips into the direction
+    // it is accelerating and rights itself when it stops. The lean EASES
+    // toward the demand rather than snapping, which is most of why it reads
+    // as a flying thing rather than a sliding one.
+    const wantLean = drive * ISAO_LEAN;
+    isaoLean += (wantLean - isaoLean) * Math.min(1, dt * 4.5);
+    const wantRoll = -steer * ISAO_ROLL;
+    isaoRoll += (wantRoll - isaoRoll) * Math.min(1, dt * 4.5);
     isao.obj.userData.spinRotors(dt, Math.abs(drive) * 0.8 + 0.2);
     if (isao.obj.userData.setFace) {
       isao.obj.userData.setFace(drive ? 'focused' : 'curious');
@@ -8621,6 +8672,67 @@ export function initTdTab(root) {
         const agree = dot3(scale3(moved, 1 / ml), camF);
         return `${label}=${agree.toFixed(2)}`;
       };
+      // DOES HE FLY LIKE A DRONE? Facing must follow the heading (the bug was
+      // that it followed nothing at all), the body must lean into the demand,
+      // and space/shift must climb.
+      {
+        const nose = () => new THREE.Vector3(0, 0, 1)
+          .applyQuaternion(isao.obj.getWorldQuaternion(new THREE.Quaternion()));
+        const level = () => {
+          keys.fast = keys.slow = keys.left = keys.right = false;
+          for (let i = 0; i < 90; i++) pilotIsao(0.05);
+        };
+        level();
+        const restNose = nose();
+        const restUp = new THREE.Vector3(0, 1, 0)
+          .applyQuaternion(isao.obj.getWorldQuaternion(new THREE.Quaternion()));
+        // FACING: the nose must lie along the heading, not somewhere stale
+        const hd = new THREE.Vector3(...isaoHeading);
+        const faces = restNose.dot(hd);
+
+        // LEAN: hold W and the nose must tip DOWN relative to the local up
+        keys.fast = true;
+        for (let i = 0; i < 40; i++) pilotIsao(0.05);
+        const leanNose = nose();
+        keys.fast = false;
+        const tipped = leanNose.dot(restUp) - restNose.dot(restUp);
+
+        // CLIMB: space must gain altitude, shift must lose it
+        level();
+        const a0 = isaoAlt;
+        keys.droneUp = true; for (let i = 0; i < 20; i++) pilotIsao(0.05); keys.droneUp = false;
+        const a1 = isaoAlt;
+        keys.droneDown = true; for (let i = 0; i < 40; i++) pilotIsao(0.05); keys.droneDown = false;
+        const a2 = isaoAlt;
+        level();
+
+        console.log(`DRONEPROBE facing=${faces > 0.99 ? 'PASS' : 'FAIL'}`
+          + ` (nose . heading = ${faces.toFixed(4)}, want 1.0000)`);
+        // REST TILT AND ADDED LEAN, separately. The first cut ran asin() over
+        // the DIFFERENCE of two dot products, which is not a sine of
+        // anything — it read 52 deg at ISAO_LEAN 0.42 and 37.6 at 0.16, a
+        // constant offset that is really the MODEL's own pose: this drone is
+        // authored nose-down, the way it hangs over a workpiece. The lean the
+        // code adds is the second number, and it is the only one tunable.
+        // AGAINST HIS CURRENT LOCAL UP, not a stale one. He flies forward for
+        // two seconds during this test and the board is a sphere, so the up
+        // captured before the run belongs to a different point on it — that
+        // curvature was landing in the answer and inflating a 9 degree demand
+        // into 37. Measure the tilt where he actually is.
+        const ang = (v, upVec) =>
+          Math.asin(Math.max(-1, Math.min(1, -v.dot(upVec)))) * 57.2958;
+        const restDeg = ang(restNose, restUp);
+        const leanUp = new THREE.Vector3(...isao.dir);
+        const leanDeg = ang(leanNose, leanUp);
+        console.log(`DRONEPROBE lean=${tipped < -0.05 ? 'PASS' : 'FAIL'}`
+          + ` rest pose=${restDeg.toFixed(1)} deg (the model's own)`
+          + ` -> under W ${leanDeg.toFixed(1)} deg`
+          + ` = ${(leanDeg - restDeg).toFixed(1)} deg of added lean`
+          + ` at ISAO_LEAN=${ISAO_LEAN}`);
+        console.log(`DRONEPROBE climb=${a1 > a0 + 0.1 && a2 < a1 - 0.1 ? 'PASS' : 'FAIL'}`
+          + ` (alt ${a0.toFixed(2)} -> space ${a1.toFixed(2)} -> shift ${a2.toFixed(2)})`);
+      }
+
       const fwd = run('W', 'fast');
       const back = run('S', 'slow');
       // and does steering actually swing the view?
