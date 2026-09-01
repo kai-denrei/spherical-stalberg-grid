@@ -121,6 +121,64 @@ document.
 
 ---
 
+## The tab-mute result, and what it points at (build `5c94b724`)
+
+Operator: **tab-mute works on a YouTube tab and does nothing on the game
+tab.** That is not a null result — it is the sharpest clue in the whole
+investigation.
+
+Safari only offers tab-mute for a tab it considers to be **playing audio**.
+If toggling it does nothing here, Safari does not think this tab is producing
+sound at all — even though the analyser measures `peak=0.418` leaving the
+graph. That combination has a specific meaning: **the context is processing
+but was never granted an audio session**, so its output is routed nowhere and
+the tab never registers as an audio source.
+
+### The candidate cause
+
+WebKit's *activation-triggering* event list does **not** include
+`pointerdown`, `mousedown` or `touchstart`. It is the "up" family plus
+`click` and keys. A context **created** on `pointerdown` can therefore run,
+resume, process, and feed an analyser real signal while Safari never grants
+the audio session.
+
+The gate was creating the context on whichever armed event fired first, and
+`pointerdown` always fires first.
+
+Fixed: resuming stays permissive, but **only `pointerup` / `mouseup` /
+`touchend` / `keydown` / `keyup` / `click` may create the context**. Verified:
+
+```
+AUDIO gesture (pointerdown): cannot create a context on this event in WebKit;
+                             waiting for a click/keyup/touchend
+AUDIO gesture 1 (pointerup): ctx=null -> rebuild
+AUDIO primed (silent buffer played inside the gesture)
+AUDIO gesture 2 (click): ctx=running -> done
+```
+
+### The control experiment: `/audiotest.html`
+
+A standalone page — no modules, no build step, no game — with two completely
+separate audio paths in one tab:
+
+1. **Web Audio**: an `AudioContext` created inside the click, primed, plus an
+   oscillator, with an analyser reporting the measured peak on screen.
+2. **`<audio>` element** playing `assets/audio/danger_alert.mp3` — *the path
+   YouTube uses*.
+
+This is the decisive comparison and it needs no game at all:
+
+| Result | Conclusion |
+|---|---|
+| `<audio>` plays, Web Audio silent | Web Audio specifically is broken in this Safari. Nothing in the game can fix it; it is a browser/profile issue. |
+| Both silent | The whole origin or tab is muted at the browser/OS level. Compare against a different origin. |
+| Both play | The bare path works — the difference is something the game does, and the gate's event handling is the first suspect. |
+| Web Audio plays, `<audio>` silent | Unexpected; report it, that inverts the assumption. |
+
+Run it at `/audiotest.html` on the same Safari, same window.
+
+---
+
 ## RESOLVED (as far as this repo goes) — build `a1d45038`
 
 The analyser answered it in one line, on the operator's own Safari:

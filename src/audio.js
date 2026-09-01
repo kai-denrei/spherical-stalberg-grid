@@ -17,10 +17,10 @@
 //    total. A failed fetch or decode logs once and that key becomes a
 //    permanent no-op for the session; the game keeps running silent.
 
-import { makeMixState, distanceGain, admit, addVoice, dropVoice } from './audiomix.js?v=a1d45038';
-import { SOUNDS, BUSES, DEFAULT_LEVELS, GLOBAL_VOICE_CAP, DISTANCE_K } from './audiomanifest.js?v=a1d45038';
-import { mulberry32 } from './rng.js?v=a1d45038';
-import { gateStep } from './audiogate.js?v=a1d45038';
+import { makeMixState, distanceGain, admit, addVoice, dropVoice } from './audiomix.js?v=5c94b724';
+import { SOUNDS, BUSES, DEFAULT_LEVELS, GLOBAL_VOICE_CAP, DISTANCE_K } from './audiomanifest.js?v=5c94b724';
+import { mulberry32 } from './rng.js?v=5c94b724';
+import { gateStep } from './audiogate.js?v=5c94b724';
 
 const STORE_KEY = 'ssg.audio.levels';
 const STEAL_FADE = 0.03; // s — a hard cut mid-waveform is an audible click
@@ -157,8 +157,19 @@ export function makeAudio(opts = {}) {
   //     browsers are least willing to start. Eager creation is still right
   //     for DECODING, but if resuming keeps failing the context is rebuilt
   //     inside a gesture, which is the historically reliable path.
-  const ARM_EVENTS = ['pointerdown', 'pointerup', 'touchstart', 'touchend',
-    'keydown', 'keyup', 'click'];
+  const ARM_EVENTS = ['pointerdown', 'pointerup', 'mouseup', 'touchstart',
+    'touchend', 'keydown', 'keyup', 'click'];
+  // WebKit's activation-triggering events do NOT include pointerdown,
+  // mousedown or touchstart — they are the "up" family plus click and keys.
+  // That distinction matters here: a context CREATED on pointerdown can run,
+  // process, and feed an analyser real signal while Safari never grants the
+  // page an audio session, so nothing reaches the speakers and the tab is
+  // never registered as playing audio. That is exactly the operator's report,
+  // including tab-mute having no effect on this tab while it works on
+  // YouTube. Resuming is permissive; CREATING is not, so only these may
+  // build the context.
+  const CREATE_EVENTS = new Set(['pointerup', 'mouseup', 'touchend',
+    'keydown', 'keyup', 'click']);
   const ARM_OPTS = { passive: true, capture: true };
   let failedResumes = 0;
   let rebuilds = 0;
@@ -269,14 +280,24 @@ export function makeAudio(opts = {}) {
 
   // Runs on EVERY gesture until the context is running. Cheap when it is.
   let attempts = 0;
-  function onGesture() {
+  function onGesture(ev) {
+    const type = ev && ev.type;
     const step = gateStep(stateNow(), failedResumes, rebuilds);
+    // A pointerdown may resume an existing context but must not be the thing
+    // that builds one — see CREATE_EVENTS. Wait for the click that follows.
+    if (step.action === 'rebuild' && type && !CREATE_EVENTS.has(type)) {
+      if (attempts < 3) {
+        console.log(`AUDIO gesture (${type}): cannot create a context on this`
+          + ' event in WebKit; waiting for a click/keyup/touchend');
+      }
+      return;
+    }
     // A blocked context's resume() promise often never SETTLES at all — it
     // neither resolves nor rejects until activation arrives — so outcome
     // logging alone can look identical to "the listener never fired". Log the
     // attempt too, capped so a stubborn session cannot flood the console.
     if (++attempts <= 3) {
-      console.log(`AUDIO gesture ${attempts}: ctx=${stateNow()} -> ${step.action}`);
+      console.log(`AUDIO gesture ${attempts} (${type}): ctx=${stateNow()} -> ${step.action}`);
     }
     if (step.action === 'done' || step.action === 'give-up') { stopListening(); return; }
     if (step.action === 'rebuild') { rebuildCtx(); }

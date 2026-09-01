@@ -1,0 +1,122 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>audio control test</title>
+<style>
+  body { font: 14px ui-monospace, Menlo, monospace; background: #0d1017; color: #cfe; margin: 0; padding: 20px; }
+  h1 { font-size: 16px; letter-spacing: .1em; color: #9fdcff; }
+  button { font: 600 16px ui-monospace, Menlo, monospace; padding: 18px 22px; margin: 6px 6px 6px 0;
+           background: #16324a; color: #cfe; border: 1px solid #2b6b96; border-radius: 8px; cursor: pointer; }
+  button:active { background: #1e4a6b; }
+  #log { white-space: pre-wrap; margin-top: 16px; line-height: 1.5; }
+  .ok { color: #66ff88; } .bad { color: #ff6a5a; } .dim { color: #7a8a99; }
+  p { max-width: 60ch; color: #9fb3c4; }
+</style>
+</head>
+<body>
+<h1>AUDIO CONTROL TEST</h1>
+<p>No game, no modules, no build step. Two completely separate audio paths in
+one tab. This exists to decide whether the problem is the game or the browser.</p>
+
+<button id="b1">1 · Web Audio oscillator</button>
+<button id="b2">2 · &lt;audio&gt; element (the path YouTube uses)</button>
+<button id="b3">3 · Both</button>
+
+<div id="log"></div>
+
+<script>
+const logEl = document.getElementById('log');
+function log(msg, cls) {
+  const d = document.createElement('div');
+  if (cls) d.className = cls;
+  d.textContent = msg;
+  logEl.appendChild(d);
+}
+
+log('ready — click a button. Nothing runs before you do.', 'dim');
+log('userAgent: ' + navigator.userAgent, 'dim');
+
+// ---- path 1: Web Audio, created inside the click -------------------------
+let ctx = null, analyser = null;
+function webAudio() {
+  try {
+    if (!ctx) {
+      const C = window.AudioContext || window.webkitAudioContext;
+      ctx = new C();
+      analyser = ctx.createAnalyser();
+      analyser.fftSize = 2048;
+      analyser.connect(ctx.destination);
+      log('created AudioContext in the click: state=' + ctx.state
+        + ' sampleRate=' + ctx.sampleRate);
+    }
+    // the canonical unlock: play a buffer inside the gesture
+    const b = ctx.createBuffer(1, 1, 22050);
+    const s0 = ctx.createBufferSource();
+    s0.buffer = b; s0.connect(ctx.destination); s0.start(0);
+
+    if (ctx.state === 'suspended') {
+      ctx.resume().then(
+        () => log('resume ok -> ' + ctx.state, 'ok'),
+        (e) => log('resume FAILED ' + (e && e.name), 'bad'));
+    }
+
+    const o = ctx.createOscillator();
+    const g = ctx.createGain();
+    o.frequency.value = 440;
+    g.gain.value = 0.3;
+    o.connect(g);
+    g.connect(ctx.destination);
+    g.connect(analyser);
+    o.start();
+    o.stop(ctx.currentTime + 1.2);
+    log('oscillator 440Hz started, gain 0.3, ctx=' + ctx.state);
+
+    // measure what is actually leaving the graph
+    const buf = new Float32Array(analyser.fftSize);
+    let peak = 0, frames = 0;
+    const t0 = performance.now();
+    (function tick() {
+      analyser.getFloatTimeDomainData(buf);
+      for (let i = 0; i < buf.length; i++) {
+        const a = buf[i] < 0 ? -buf[i] : buf[i];
+        if (a > peak) peak = a;
+      }
+      frames++;
+      if (performance.now() - t0 < 1400) requestAnimationFrame(tick);
+      else log('measured peak=' + peak.toFixed(5) + ' over ' + frames + ' frames'
+        + (frames < 10 ? ' (INCONCLUSIVE — too few frames)'
+          : peak > 0.0005 ? ' — signal IS leaving the graph' : ' — NO signal'),
+        frames < 10 ? 'dim' : peak > 0.0005 ? 'ok' : 'bad');
+    })();
+  } catch (e) {
+    log('Web Audio threw: ' + e, 'bad');
+  }
+}
+
+// ---- path 2: a plain media element ---------------------------------------
+// This is the path YouTube uses. If this plays and path 1 does not, the fault
+// is specific to Web Audio in this browser, not to the tab or the site.
+let el = null;
+function mediaElement() {
+  if (!el) {
+    el = new Audio('assets/audio/danger_alert.mp3');
+    el.addEventListener('playing', () => log('<audio> playing', 'ok'));
+    el.addEventListener('error', () => log('<audio> error: '
+      + (el.error && el.error.code), 'bad'));
+  }
+  el.currentTime = 0;
+  el.volume = 1;
+  const p = el.play();
+  if (p && p.catch) p.catch((e) => log('<audio> play() rejected: '
+    + (e && e.name) + ' — ' + (e && e.message), 'bad'));
+  log('<audio> play() called on assets/audio/danger_alert.mp3');
+}
+
+document.getElementById('b1').addEventListener('click', webAudio);
+document.getElementById('b2').addEventListener('click', mediaElement);
+document.getElementById('b3').addEventListener('click', () => { webAudio(); mediaElement(); });
+</script>
+</body>
+</html>
