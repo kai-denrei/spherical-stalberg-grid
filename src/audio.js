@@ -17,10 +17,10 @@
 //    total. A failed fetch or decode logs once and that key becomes a
 //    permanent no-op for the session; the game keeps running silent.
 
-import { makeMixState, distanceGain, admit, addVoice, dropVoice } from './audiomix.js?v=e5aa98cb';
-import { SOUNDS, BUSES, DEFAULT_LEVELS, GLOBAL_VOICE_CAP, DISTANCE_K } from './audiomanifest.js?v=e5aa98cb';
-import { mulberry32 } from './rng.js?v=e5aa98cb';
-import { gateStep } from './audiogate.js?v=e5aa98cb';
+import { makeMixState, distanceGain, admit, addVoice, dropVoice } from './audiomix.js?v=ef7ee4f5';
+import { SOUNDS, BUSES, DEFAULT_LEVELS, GLOBAL_VOICE_CAP, DISTANCE_K } from './audiomanifest.js?v=ef7ee4f5';
+import { mulberry32 } from './rng.js?v=ef7ee4f5';
+import { gateStep } from './audiogate.js?v=ef7ee4f5';
 
 const STORE_KEY = 'ssg.audio.levels';
 const STEAL_FADE = 0.03; // s — a hard cut mid-waveform is an audible click
@@ -189,20 +189,11 @@ export function makeAudio(opts = {}) {
     }
   }
 
-  // Buffers decoded on an OfflineAudioContext are spec-portable, but Safari
-  // has a long history of being strict about cross-context buffers. Once the
-  // real context exists, decode again onto IT — the files are in the browser
-  // cache by then, so this costs a decode and no network.
-  let redecoded = false;
-  function redecodeOnPlaybackCtx() {
-    if (!ctx || redecoded) return;
-    redecoded = true;
-    loadPromise = null;
-    loadStarted = false;
-    load().then(() => {
-      console.log('AUDIO re-decoded onto the playback context');
-      reportReady();
-    });
+  // Kicked off from the gesture, once the context exists. load() caches its
+  // promise, so calling it on every gesture is free after the first.
+  function startDecoding() {
+    if (!ctx) return;
+    load().then(reportReady);
   }
 
   function rebuildCtx() {
@@ -211,13 +202,19 @@ export function makeAudio(opts = {}) {
     const old = ctx;
     ctx = null; master = null;
     if (old) { try { old.close(); } catch { /* already gone */ } }
+    // the old context's buffers went with it; decode again on the new one
+    loadPromise = null;
+    loadStarted = false;
+    loadSettled = false;
+    for (const k of Object.keys(buffers)) delete buffers[k];
     ensureCtx();          // built inside the gesture this time
-    // buffers are kept: an AudioBuffer is data, not a child of the context
-    // that decoded it, so a rebuild costs nothing to re-fetch
   }
 
   function reportReady() {
     loadSettled = true;
+    if (ctx && ctx.state === 'running') {
+      while (readyCbs.length) { try { readyCbs.shift()(); } catch { /* caller's problem */ } }
+    }
     const total = Object.keys(SOUNDS).length;
     let ok = 0, failed = 0;
     for (const k of Object.keys(SOUNDS)) {
@@ -243,7 +240,7 @@ export function makeAudio(opts = {}) {
     if (step.action === 'rebuild') { rebuildCtx(); }
     if (!ctx) return;
     primeOutput();            // must happen INSIDE the gesture
-    redecodeOnPlaybackCtx();
+    startDecoding();
     ctx.resume().then(
       () => {
         if (stateNow() === 'running') {
@@ -266,32 +263,29 @@ export function makeAudio(opts = {}) {
   function arm() {
     if (armed) return;
     armed = true;
-    // Decode now, on an OFFLINE context. Do NOT create the playback context
-    // here: Safari will happily report a context created outside a gesture as
-    // `running` and then produce no output at all — measured, with 30 audible
-    // voices at gain 0.55 and silence (operator, 2026-09-01). The playback
-    // context is born in the gesture handler, which is the one place every
-    // browser agrees on.
-    load().then(reportReady);
-    console.log(`AUDIO armed (decoding; playback context waits for a gesture)`
+    // Nothing to do until a gesture: the context is born there (Safari will
+    // report one created outside a gesture as `running` and still produce no
+    // output), and the decode now rides the same context.
+    console.log('AUDIO armed (context and decode both wait for a gesture)'
       + ` muted=${muted} master=${levels.master}`);
     startListening();
   }
 
-  // DECODING DOES NOT NEED THE SPEAKERS. An OfflineAudioContext can be
-  // created without user activation and decodes exactly the same bytes, and
-  // an AudioBuffer is plain data — not bound to the context that produced
-  // it. So the samples download and decode during page load while the real
-  // playback context waits for a gesture, which is where Safari insists it
-  // be BORN, not merely resumed.
-  let decodeCtx = null;
+  // DECODE ON THE PLAYBACK CONTEXT, AND ONLY ON IT.
+  //
+  // This briefly decoded on an OfflineAudioContext so the samples could be
+  // fetched during page load rather than after the first click. Spec-wise
+  // that is fine — an AudioBuffer is data, not a child of a context — and
+  // Chrome and iOS Safari both play those buffers happily. Desktop Safari on
+  // the operator's machine went silent across the same change, with every
+  // measurement still reporting healthy, so the eager decode is reverted to
+  // exactly what worked before: one context, created in the gesture, that
+  // both decodes and plays.
+  //
+  // The cost is that decoding starts at the first gesture instead of at page
+  // load. That is what the working version did, and the samples are small.
   function decodeContext() {
-    if (ctx) return ctx;               // once it exists, use the real one
-    if (decodeCtx) return decodeCtx;
-    const OC = window.OfflineAudioContext || window.webkitOfflineAudioContext;
-    if (!OC) return null;
-    try { decodeCtx = new OC(1, 1, 44100); } catch { decodeCtx = null; }
-    return decodeCtx;
+    return ctx;
   }
 
   async function decodeOne(key) {
@@ -353,6 +347,7 @@ export function makeAudio(opts = {}) {
   let loadSettled = false;
   let summaryArmed = false;
   const runningCbs = [];
+  const readyCbs = [];
   let firstVoiceLogged = false;
   let firstAudibleLogged = false;
   // counters, so a summary can separate "nothing is asking for sound"
@@ -499,10 +494,20 @@ export function makeAudio(opts = {}) {
       }
     },
 
-    // Fires once, the moment the context is genuinely running.
+    // Fires once, the moment the context is genuinely running. The context
+    // is all an oscillator needs, so this is the right hook for a beep.
     whenRunning(cb) {
       if (ctx && ctx.state === 'running') { cb(); return; }
       runningCbs.push(cb);
+    },
+
+    // Fires once the context is running AND the samples have decoded. A
+    // SAMPLE needs both: decoding now rides the playback context, so it
+    // finishes after the unlock, and anything played on `running` alone
+    // would be refused for a buffer that does not exist yet.
+    whenReady(cb) {
+      if (ctx && ctx.state === 'running' && loadSettled) { cb(); return; }
+      readyCbs.push(cb);
     },
 
     panic() {

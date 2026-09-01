@@ -119,6 +119,31 @@ document.
 
 ---
 
+## UPDATE: offline decode REVERTED (build `ef7ee4f5`)
+
+Operator's call, and the right experiment. Decoding is back on the playback
+context — one context, created in the gesture, that both decodes and plays,
+exactly as the version that worked on Safari did. Everything else is kept:
+the persistent gate, the capture-phase listeners, the Safari prime, and the
+`start()` guard, all of which fixed real bugs.
+
+The cost is that decoding begins at the first gesture rather than at page
+load. That is what the working version did.
+
+One consequence worth knowing: the proof-of-life alarm now waits for
+`whenReady` (running AND decoded) rather than `whenRunning`, because the
+samples finish decoding *after* the unlock. The beep still fires on
+`whenRunning` — an oscillator needs no buffer. So on first tap you get the
+beep first, the alarm a moment later.
+
+**If Safari has sound again, the offline decode was the cause** and the
+sample-rate/cross-context question is answered. **If it is still silent, the
+audio lifecycle is exonerated entirely** — the graph was already proven
+byte-identical to the working version, and the remaining difference would be
+outside this file.
+
+---
+
 ## UPDATE 2026-09-01, late: iPhone WORKS
 
 The operator tested the Pages build (`e5aa98cb`) on iPhone: **sound works.**
