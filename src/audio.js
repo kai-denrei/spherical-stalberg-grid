@@ -17,10 +17,10 @@
 //    total. A failed fetch or decode logs once and that key becomes a
 //    permanent no-op for the session; the game keeps running silent.
 
-import { makeMixState, distanceGain, admit, addVoice, dropVoice } from './audiomix.js?v=eb6aab37';
-import { SOUNDS, BUSES, DEFAULT_LEVELS, GLOBAL_VOICE_CAP, DISTANCE_K } from './audiomanifest.js?v=eb6aab37';
-import { mulberry32 } from './rng.js?v=eb6aab37';
-import { gateStep } from './audiogate.js?v=eb6aab37';
+import { makeMixState, distanceGain, admit, addVoice, dropVoice } from './audiomix.js?v=69a99ae4';
+import { SOUNDS, BUSES, DEFAULT_LEVELS, GLOBAL_VOICE_CAP, DISTANCE_K } from './audiomanifest.js?v=69a99ae4';
+import { mulberry32 } from './rng.js?v=69a99ae4';
+import { gateStep } from './audiogate.js?v=69a99ae4';
 
 const STORE_KEY = 'ssg.audio.levels';
 const STEAL_FADE = 0.03; // s — a hard cut mid-waveform is an audible click
@@ -87,7 +87,21 @@ export function makeAudio(opts = {}) {
       ctx.onstatechange = () => {
         const st = ctx ? ctx.state : 'none';
         console.log(`AUDIO state -> ${st}`);
-        if (st === 'running') stopListening();
+        if (st === 'running') {
+          stopListening();
+          if (!summaryArmed) {
+            summaryArmed = true;
+            // eight seconds of real play is enough to have asked for
+            // something; one line, once, and then it is quiet
+            setTimeout(() => {
+              console.log(`AUDIO summary requested=${nRequested}`
+                + ` refused-by-mix=${nRefused} started=${nStarted}`
+                + ` audible=${nAudible} live=${live.size}`
+                + ` ctx=${ctx ? ctx.state : 'none'} muted=${muted}`
+                + ` master=${levels.master}`);
+            }, 8000);
+          }
+        }
         else if (armed) { startListening(); if (ctx) ctx.resume().catch(() => {}); }
       };
       for (const b of BUSES) {
@@ -266,6 +280,13 @@ export function makeAudio(opts = {}) {
   // returns null for all of them, silently and correctly. This says which.
   let mutedReport = false;
   let loadSettled = false;
+  let summaryArmed = false;
+  let firstVoiceLogged = false;
+  let firstAudibleLogged = false;
+  // counters, so a summary can separate "nothing is asking for sound"
+  // from "everything is asking and being refused" from "everything
+  // plays at zero gain" — three causes, one identical symptom
+  let nRequested = 0, nRefused = 0, nStarted = 0, nAudible = 0;
   function reportSilence(why, key) {
     if (mutedReport) return;
     // "not decoded yet" before the load settles is a TRANSIENT — the engine
@@ -282,8 +303,24 @@ export function makeAudio(opts = {}) {
   function start(key, o, looping) {
     const spec = SOUNDS[key];
     if (!spec) return null;
+    nRequested++;
     if (!ctx) { reportSilence('no AudioContext — the gesture never armed it', key); return null; }
-    if (ctx.state !== 'running') reportSilence(`context is ${ctx.state}, not running`, key);
+    // REFUSE UNTIL THE CONTEXT RUNS. This used to be implicit: there was no
+    // context at all before the first gesture, so start() returned null and
+    // no voice was ever built. Creating the context eagerly removed that
+    // guard by accident — sounds then got wired against a SUSPENDED context
+    // whose currentTime does not advance, so they occupied the voice budget,
+    // polluted the mix's timing state with a stalled clock, and never
+    // sounded. The engine bed was the worst of it: loop() handed back a
+    // handle to a voice that could never play, the caller cached it, and it
+    // never asked again.
+    //
+    // Returning null is the documented contract here — see loop() below: it
+    // makes the caller retry next frame, which costs nothing.
+    if (ctx.state !== 'running') {
+      reportSilence(`context is ${ctx.state}, not running`, key);
+      return null;
+    }
     const buf = buffers[key];
     if (!buf || buf === 'failed') {
       reportSilence(buf === 'failed' ? 'sample failed to decode' : 'sample not decoded yet', key);
@@ -293,7 +330,7 @@ export function makeAudio(opts = {}) {
     const t = now();
     const cfg = { maxVoices: spec.maxVoices, minInterval: spec.minInterval };
     const verdict = admit(state, key, t, cfg, GLOBAL_VOICE_CAP);
-    if (!verdict.ok) return null;
+    if (!verdict.ok) { nRefused++; return null; }
     if (verdict.steal !== null) stopVoice(verdict.steal);
 
     const jitterAmt = spec.rateJitter ? (jitter() * 2 - 1) * spec.rateJitter : 0;
@@ -315,6 +352,22 @@ export function makeAudio(opts = {}) {
       return null;
     }
 
+    // Two different questions. The first voice proves sounds are being
+    // wired at all; the first AUDIBLE one proves the gain chain survives to
+    // something you could hear. A bed at rest legitimately has gain 0 — the
+    // thruster rises with speed — so the first line alone says nothing about
+    // audibility, which is exactly the trap the earlier diagnostics fell in.
+    const line = (what) => `AUDIO ${what} '${key}' gain=${g.toFixed(3)}`
+      + ` bus=${spec.bus}(${(levels[spec.bus] ?? 1).toFixed(2)})`
+      + ` master=${levels.master} muted=${muted} rate=${rate.toFixed(2)}`
+      + ` live=${live.size} ctx=${ctx.state}`;
+    nStarted++;
+    if (g > 0.001) nAudible++;
+    if (!firstVoiceLogged) { firstVoiceLogged = true; console.log(line('first voice')); }
+    if (!firstAudibleLogged && g > 0.001) {
+      firstAudibleLogged = true;
+      console.log(line('first AUDIBLE voice'));
+    }
     const id = nextId++;
     addVoice(state, key, t, id);
     live.set(id, { src, gain });
