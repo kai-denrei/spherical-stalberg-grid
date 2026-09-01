@@ -1,3 +1,27 @@
+## be4d6aa — the toe narrows, and rock bites the beam in proportion
+
+`SECONDARY_TOE` 0.157 → 0.085 (operator: "less wide"). The catch was that the
+**procedural fallback tank had its own hardcoded 0.09** instead of reading the
+constant — and the fallback is what headless measures, because the mkcx GLB
+rarely finishes loading inside a virtual-time budget. So the tuning was
+invisible to every probe. Both tanks read one constant now, and `?beamfire=1`
+prints which tank it measured.
+
+Walls bog the beam like armour (operator), but **not** as the flat `DRAG_HARD`
+the first cut applied. Measured: a beam standing on ground whose entire two-hop
+neighbourhood is open still clips rock at 2.5 of its 2.6 cells — this map is
+dense. A flat penalty therefore bogged the weapon everywhere and the sweep
+never moved. Rock now bites proportionally, `wallBite = 1 - m / reach`: nothing
+at the tip, full armour-grade drag point-blank into a corner.
+
+That the flat version was wrong shows up in the neighbouring checks — `drag`'s
+own clear baseline went 0.45 → 0.88 once it came off, and the two beams now
+desync (0.33 vs 0.44) because the rock ahead of each differs.
+
+`?beamfire=1` gained a wall check that **finds** clear ground rather than
+assuming the spawn faces open air. It does not: that assumption was the
+INCONCLUSIVE that exposed all of the above.
+
 # Dev Log
 
 Newest first. Each entry: what landed, then how it works, for programmers.
