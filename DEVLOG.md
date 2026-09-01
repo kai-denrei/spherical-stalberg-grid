@@ -6,6 +6,88 @@ Demo links assume `npm run serve` (port 8144) or the
 
 ---
 
+## `e3d0713` — a run owns its deferred work
+
+The two reset bugs the last session left open — **controls dead after a
+reset** and **the cold open cuts to a repositioned tank** — turned out to be
+one defect with two instances: *work started by one run landing on a later
+one*. Neither was guessed at. `?ctlprobe=1` was written first, both were
+measured, and the fix was written against the measurement.
+
+**Instance 1 — the death timer crosses a run.** `loseTank()` arms a bare
+`setTimeout` for `DEATH_HOLD` (1.15s) and RETRY sits on a modal the player can
+hit inside that hold. The timer had no idea its run was over, so it fired
+anyway: `respawnPlayerAtSpawn()` on a brand-new tank, `setView('orbit')`,
+`snapCamera()`, and a *TANK LOST* toast on a run that had lost nothing. That
+is a tank that is suddenly somewhere else.
+
+**Instance 2 — the player was staged once per model, not once per run.**
+`buildActors()` re-runs whenever an async model lands, and mkcx (the default
+tank) always lands — so the berth callback fired **at least twice every run**,
+and each firing restaged the player: `throttle = 0`, `stopEngine()`, and the
+berth cruise nudge re-engaged, at whatever moment the bytes happened to
+arrive. If the second staging lands after the cold open's beat three has begun
+— beat three *is* the hull driving out — the tank is snapped back into the
+box mid-shot. And the throttle lever the player had just set returns silently
+to zero, which is what "the controls are dead, I fiddled with it and it came
+back" looks like from the driver's seat. AUTO frees it because AUTO does not
+read the lever.
+
+**The fix, one idea both times.** A `runGen` counter, bumped by `regenerate()`.
+Deferred work captures the generation it belongs to and bails if it moved:
+
+```js
+const deathGen = runGen;
+setTimeout(() => {
+  if (deathGen !== runGen) return;   // belonged to a run that is over
+  ...
+}, DEATH_HOLD * 1000);
+```
+
+Berth staging is keyed to the run rather than to the callback, so it happens
+once however many models land:
+
+```js
+if (t < 6 && player.moves <= 1 && stagedRun !== runGen) {
+  stagedRun = runGen;
+  respawnPlayerAtSpawn('berths-landed');
+}
+```
+
+`previewDestruction()` had the identical shape and got the identical guard.
+
+Note the existing `serverGen` guard on the container callback did **not** catch
+this, and looking at it explains why: it blocks a *stale board's* callback, but
+a second `buildActors()` on the *same* board registers a fresh, legitimate
+callback that passes its own check. The generation being guarded was the wrong
+noun. Staging is a property of the run, not of the board or of the load.
+
+**The probe self-asserts.** `?ctlprobe=1` loses a tank, presses RETRY inside
+the hold, and prints two verdicts. Run as a negative control with both guards
+disabled it reports `stale-death-timer=FAIL (1, want 0)` and
+`berth-staging=FAIL (2 stagings, want 1)`; with them, both PASS. A check that
+cannot fail proves nothing, so it was made to fail on purpose first.
+
+**The watchdog ships on.** The dead-controls report has never reproduced here
+— it lives on the operator's phone — so a probe behind a flag would never see
+it. `ctlWatch()` runs every frame and watches for the symptom *as described*:
+the player asking the tank to move (`keys.fast || keys.slow || cruise ||
+throttle !== 0`) and the tank not moving for more than a second. When that
+happens it prints the whole gate row in one line — `won / down / next / free /
+auto / cruise / exitCruise / throttle / keys / paused / tutFrozen / reveal /
+cine / buildMode / active` — so the next report names the latched gate instead
+of describing the feeling. One line per episode, re-armed only once the tank
+moves again, so a genuinely wedged hull cannot flood the console. `?ctl=1`
+logs the same row at every respawn (each tagged with *why*) and on both sides
+of a `regenerate()`.
+
+**Lesson.** A `setTimeout` that repositions the player is a piece of the run's
+state living outside the run. Any deferred work that writes game state needs
+to carry the generation it was started under — and the generation has to name
+the thing that actually changed.
+
+---
+
 ## `573fbb7` — BOBBY builds everything now
 
 The operator's fabricator `.glb`, cast as the machine that puts every tower
