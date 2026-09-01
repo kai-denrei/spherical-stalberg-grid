@@ -17,12 +17,12 @@
 import * as THREE from '../vendor/three.module.js';
 import { EMOTION_IDS, emotion, phosphorFor } from './emotions.js';
 import { loadGlb, mergeByMaterial, fitModel, tintModel, makeShellRack,
-  addEdgeOutlines, makeHeatSleeve } from './glbmodels.js?v=b57d6dac';
-import { CREATURES, waveJelly, swimWave, spherePts, bulletPts, missilePts, heartPts, torusPts, towerHeadPts, enemyDotPts, portalPts } from './creatures.js?v=b57d6dac';
-import { TOWER_FEEL, TOWER_HEADS, headKindFor } from './towerfeel.js?v=b57d6dac';
+  addEdgeOutlines, makeHeatSleeve } from './glbmodels.js?v=3ad3d9b6';
+import { CREATURES, waveJelly, swimWave, spherePts, bulletPts, missilePts, heartPts, torusPts, towerHeadPts, enemyDotPts, portalPts } from './creatures.js?v=3ad3d9b6';
+import { TOWER_FEEL, TOWER_HEADS, headKindFor } from './towerfeel.js?v=3ad3d9b6';
 import { STARGATE_PTS, STARGATE_STROKE,
-  HORIZON_N, stargateHorizon } from './stargate.js?v=b57d6dac';
-import { ENEMY_SPEC } from './enemyspec.js?v=b57d6dac';
+  HORIZON_N, stargateHorizon } from './stargate.js?v=3ad3d9b6';
+import { ENEMY_SPEC } from './enemyspec.js?v=3ad3d9b6';
 
 function normalizeToUnit(group) {
   group.updateMatrixWorld(true);
@@ -1465,10 +1465,37 @@ function terraPedestal(radius, height) {
 
 export function makeTerraformerFixture(bodyHex = 0xff6a88) {
   if (!terraProto) { preloadTerraformer(); return null; }
+  // TWO GROUPS, AND THE REASON MATTERS.
+  //
+  // The outer group is the tab's: placeActors sets its position, its scale,
+  // and — critically — a QUATERNION aligning it to the shell's normal. The
+  // inner rig is this file's, and it is the only thing tick() may rotate.
+  //
+  // The first cut of this had tick() write `g.rotation.z` directly. In
+  // three.js `rotation` (Euler) and `quaternion` are two views of ONE
+  // rotation, so assigning either replaces the whole orientation: every
+  // frame silently discarded the normal alignment and the machine stood in
+  // world-Y instead — upright at the pole, and leaning further the further
+  // from it, with its pad on edge (operator: "wrong angle"). This project
+  // already had that dead end on record from the bullet triads. Separating
+  // the groups makes it structurally impossible rather than remembered.
   const g = new THREE.Group();
+  const rig = new THREE.Group();
+  g.add(rig);
   const model = terraProto.clone(true);
-  g.add(model);
-  g.add(terraPedestal(0.86, 0.30));
+  rig.add(model);
+
+  // CENTRE THE MACHINE ON ITS PAD. fitModel seats the foot at y=0 but the
+  // rails run asymmetrically about the origin, so an uncentred model hangs
+  // off one side of the pedestal. Measure the real footprint and both
+  // centre it and size the pad from it, rather than guessing a radius.
+  const mb = new THREE.Box3().setFromObject(model);
+  const mc = new THREE.Vector3(); mb.getCenter(mc);
+  const ms = new THREE.Vector3(); mb.getSize(ms);
+  model.position.x -= mc.x;
+  model.position.z -= mc.z;
+  const padR = Math.max(ms.x, ms.z) * 0.5 * 1.12;   // a rim beyond the rails
+  rig.add(terraPedestal(padR, padR * 0.34));
 
   // the pivots this thing is animated by, resolved once
   const P = {};
@@ -1523,8 +1550,9 @@ export function makeTerraformerFixture(bodyHex = 0xff6a88) {
         else s.mat.emissive.copy(s.emi).multiplyScalar(beat);
       }
     }
-    // a struck machine rocks on its pad
-    g.rotation.z = hurting ? Math.sin(t * 26) * 0.02 : 0;
+    // a struck machine rocks on its pad — on the INNER rig, never on g,
+    // whose quaternion belongs to the shell's normal
+    rig.rotation.z = hurting ? Math.sin(t * 26) * 0.02 : 0;
   };
   return g;
 }

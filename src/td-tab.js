@@ -19,41 +19,41 @@
 
 import * as THREE from '../vendor/three.module.js';
 import GUI from '../vendor/lil-gui.esm.js';
-import { generateSphereMesh, relax } from './grid.js?v=b57d6dac';
-import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=b57d6dac';
-import { mulberry32, randomSeed } from './rng.js?v=b57d6dac';
-import { computeBerths, berthIndexFor } from './berths.js?v=b57d6dac';
-import { wantsSecondary, shellsForAll } from './autofire.js?v=b57d6dac';
-import { printPhase, printOffset, printOn, patternSecsFor } from './printpath.js?v=b57d6dac';
-import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3, segKey, tangentDir, tangentBasis } from './vec3.js?v=b57d6dac';
-import { CREATURES, waveJelly } from './creatures.js?v=b57d6dac';
-import { brief } from './isaobriefs.js?v=b57d6dac';
-import { drawEmotion } from './emotions.js?v=b57d6dac';
+import { generateSphereMesh, relax } from './grid.js?v=3ad3d9b6';
+import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=3ad3d9b6';
+import { mulberry32, randomSeed } from './rng.js?v=3ad3d9b6';
+import { computeBerths, berthIndexFor } from './berths.js?v=3ad3d9b6';
+import { wantsSecondary, shellsForAll } from './autofire.js?v=3ad3d9b6';
+import { printPhase, printOffset, printOn, patternSecsFor } from './printpath.js?v=3ad3d9b6';
+import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3, segKey, tangentDir, tangentBasis } from './vec3.js?v=3ad3d9b6';
+import { CREATURES, waveJelly } from './creatures.js?v=3ad3d9b6';
+import { brief } from './isaobriefs.js?v=3ad3d9b6';
+import { drawEmotion } from './emotions.js?v=3ad3d9b6';
 import { ACHIEVEMENTS, ACHV_GROUPS, achievement, blankRun, earned, freshlyEarned,
   sanitiseRecord }
-  from './achievements.js?v=b57d6dac';
+  from './achievements.js?v=3ad3d9b6';
 import { applyFontPack, currentFontPack, FONT_NAMES,
-  loadTypeFeel } from './fonts.js?v=b57d6dac';
-import { UNITS, UNIT_NAMES, buildUnit, buildCreature, preloadMkcx, preloadServer, makeServerFixture, makeShieldShell, preloadContainer, makeContainerFixture, preloadFabricator, makeIsaoDrone, makeBulletCloud, makeRewardSolid, makeShellSolid, makeDebris, makeDotBurst, makePortalCloud, makeHeartCloud, makeDotEnemy, preloadTerraformer, makeTerraformerFixture } from './units.js?v=b57d6dac';
-import { LOOKS, LOOK_NAMES } from './looks.js?v=b57d6dac';
-import { makeCellIndex } from './cellindex.js?v=b57d6dac';
-import { CREATURE_TINTS, ENEMY_SPEC, INTROS, computeWavePlan, accentFor } from './enemyspec.js?v=b57d6dac';
-import { PICKUPS } from './pickups.js?v=b57d6dac';
-import { rankFor, rankLabel, badgeSVG, killReq, eliteReq } from './ranks.js?v=b57d6dac';
-import { makeScore } from './score.js?v=b57d6dac';
-import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER } from './towers.js?v=b57d6dac';
-import { makeEconomy, sellRefund } from './economy.js?v=b57d6dac';
-import { makeBloom } from './postfx.js?v=b57d6dac';
-import { TANK_FEEL, TANK_FEEL_KNOBS, makeTankFeel, stepTankFeel, landTankFeel, fireTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js?v=b57d6dac';
-import { FEEL, loadFeel, saveFeel } from './feelstore.js?v=b57d6dac';
+  loadTypeFeel } from './fonts.js?v=3ad3d9b6';
+import { UNITS, UNIT_NAMES, buildUnit, buildCreature, preloadMkcx, preloadServer, makeServerFixture, makeShieldShell, preloadContainer, makeContainerFixture, preloadFabricator, makeIsaoDrone, makeBulletCloud, makeRewardSolid, makeShellSolid, makeDebris, makeDotBurst, makePortalCloud, makeHeartCloud, makeDotEnemy, preloadTerraformer, makeTerraformerFixture } from './units.js?v=3ad3d9b6';
+import { LOOKS, LOOK_NAMES } from './looks.js?v=3ad3d9b6';
+import { makeCellIndex } from './cellindex.js?v=3ad3d9b6';
+import { CREATURE_TINTS, ENEMY_SPEC, INTROS, computeWavePlan, accentFor } from './enemyspec.js?v=3ad3d9b6';
+import { PICKUPS } from './pickups.js?v=3ad3d9b6';
+import { rankFor, rankLabel, badgeSVG, killReq, eliteReq } from './ranks.js?v=3ad3d9b6';
+import { makeScore } from './score.js?v=3ad3d9b6';
+import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER } from './towers.js?v=3ad3d9b6';
+import { makeEconomy, sellRefund } from './economy.js?v=3ad3d9b6';
+import { makeBloom } from './postfx.js?v=3ad3d9b6';
+import { TANK_FEEL, TANK_FEEL_KNOBS, makeTankFeel, stepTankFeel, landTankFeel, fireTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js?v=3ad3d9b6';
+import { FEEL, loadFeel, saveFeel } from './feelstore.js?v=3ad3d9b6';
 import { STRIKE_KNOBS, makeStrike, makeStrikeParams, grantStrikes, stepStrike,
   toggleArm, paintTarget, launchStrike, stepFall, skipFall, fallProgress,
-  strikeDamage, retargetStrike, orbitProgress } from './strike.js?v=b57d6dac';
-import { radarBasis, radarProject, radarBearing, sweepAngle, radarPhosphor } from './radar.js?v=b57d6dac';
-import { BLOOM_GROUPS } from './bloomweights.js?v=b57d6dac';
-import { TOWER_LOOK_NAMES, DEFAULT_TOWER_LOOK, buildTowerLook, preloadLook } from './towerlooks.js?v=b57d6dac';
-import { makeAudio } from './audio.js?v=b57d6dac';
-import { DEATH_KEYS } from './audiomanifest.js?v=b57d6dac';
+  strikeDamage, retargetStrike, orbitProgress } from './strike.js?v=3ad3d9b6';
+import { radarBasis, radarProject, radarBearing, sweepAngle, radarPhosphor } from './radar.js?v=3ad3d9b6';
+import { BLOOM_GROUPS } from './bloomweights.js?v=3ad3d9b6';
+import { TOWER_LOOK_NAMES, DEFAULT_TOWER_LOOK, buildTowerLook, preloadLook } from './towerlooks.js?v=3ad3d9b6';
+import { makeAudio } from './audio.js?v=3ad3d9b6';
+import { DEATH_KEYS } from './audiomanifest.js?v=3ad3d9b6';
 
 export function initTdTab(root) {
   let active = false;
@@ -8219,6 +8219,20 @@ export function initTdTab(root) {
             heartSprite.userData.tick(3.3); } catch (e) { threw = String(e); }
       console.log(`HEARTPROBE contract=${threw ? 'FAIL ' + threw : 'PASS'}`
         + ` (tick + hit + tick survive)`);
+
+      // DOES IT STILL STAND ON THE SHELL AFTER TICKING? The first cut wrote
+      // g.rotation.z inside tick(), and in three.js writing rotation replaces
+      // the quaternion outright — so every frame discarded the normal
+      // alignment and the machine leaned over, pad on edge. Upright at the
+      // pole and wrong everywhere else is invisible to a probe that only
+      // checks the pole, so this compares the object's own up-axis against
+      // the shell normal at its cell, AFTER a tick and a hit.
+      const hn2 = graph.normals[dungeon.heart];
+      const up = new THREE.Vector3(0, 1, 0)
+        .applyQuaternion(heartSprite.getWorldQuaternion(new THREE.Quaternion()));
+      const align = up.x * hn2[0] + up.y * hn2[1] + up.z * hn2[2];
+      console.log(`HEARTPROBE upright=${align > 0.999 ? 'PASS' : 'FAIL'}`
+        + ` (up . normal = ${align.toFixed(4)}, want 1.0000)`);
     };
     run();
   }
