@@ -16,13 +16,14 @@
 
 import * as THREE from '../vendor/three.module.js';
 import { EMOTION_IDS, emotion, phosphorFor } from './emotions.js';
+import { printPhase, printOffset, printOn } from './printpath.js?v=049a422d';
 import { loadGlb, mergeByMaterial, fitModel, tintModel, makeShellRack,
-  addEdgeOutlines, makeHeatSleeve } from './glbmodels.js?v=3ad3d9b6';
-import { CREATURES, waveJelly, swimWave, spherePts, bulletPts, missilePts, heartPts, torusPts, towerHeadPts, enemyDotPts, portalPts } from './creatures.js?v=3ad3d9b6';
-import { TOWER_FEEL, TOWER_HEADS, headKindFor } from './towerfeel.js?v=3ad3d9b6';
+  addEdgeOutlines, makeHeatSleeve } from './glbmodels.js?v=049a422d';
+import { CREATURES, waveJelly, swimWave, spherePts, bulletPts, missilePts, heartPts, torusPts, towerHeadPts, enemyDotPts, portalPts } from './creatures.js?v=049a422d';
+import { TOWER_FEEL, TOWER_HEADS, headKindFor } from './towerfeel.js?v=049a422d';
 import { STARGATE_PTS, STARGATE_STROKE,
-  HORIZON_N, stargateHorizon } from './stargate.js?v=3ad3d9b6';
-import { ENEMY_SPEC } from './enemyspec.js?v=3ad3d9b6';
+  HORIZON_N, stargateHorizon } from './stargate.js?v=049a422d';
+import { ENEMY_SPEC } from './enemyspec.js?v=049a422d';
 
 function normalizeToUnit(group) {
   group.updateMatrixWorld(true);
@@ -1523,25 +1524,78 @@ export function makeTerraformerFixture(bodyHex = 0xff6a88) {
   g.userData.sizeScale = 1;
   g.userData.hit = () => { hitUntil = (g.userData.lastT ?? 0) + 0.9; };
 
-  // IDLE IS WORK. A terraformer that stands still is scenery; this one is
-  // always mid-job — the carriage tracks the rails, the mast breathes, the
-  // arm sways and the nozzle pulses. All transform-only on named pivots plus
-  // a colour lerp, so it costs nothing per frame.
+  // ACTIVITY IS INTERMITTENT, NOT CONSTANT (operator, 2026-09-01). A machine
+  // whose every joint sweeps a sine forever reads as a screensaver; a real
+  // one is still, then does a thing, then is still again. So each subsystem
+  // gets its own SHIFT: a long rest, a short move, its own period and its own
+  // offset so they never march in step.
+  //
+  // burst(t, period, dur, phase) is 0 while resting and a smooth 0..1..0 for
+  // `dur` seconds once every `period`. Deterministic — a function of the
+  // clock alone, no state, no rng — so it costs nothing and never drifts.
+  const burst = (t, period, dur, phase) => {
+    const u = ((t / period + phase) % 1 + 1) % 1;
+    const w = dur / period;
+    if (u > w) return 0;
+    const k = u / w;                       // 0..1 across the move
+    return Math.sin(k * Math.PI);          // ease in, ease out, rest at both ends
+  };
+  // and a signed version, for joints that swing one way and back
+  const swing = (t, period, dur, phase) => {
+    const u = ((t / period + phase) % 1 + 1) % 1;
+    const w = dur / period;
+    if (u > w) return 0;
+    return Math.sin((u / w) * Math.PI * 2);
+  };
+
+  g.userData.sizeScale = 1;
+  g.userData.hit = () => { hitUntil = (g.userData.lastT ?? 0) + 0.9; };
+
   g.userData.tick = (t) => {
     g.userData.lastT = t;
     g.scale.setScalar(g.userData.sizeScale);
     const hurting = t < hitUntil;
-    if (P.Travel_Carriage) P.Travel_Carriage.position.z = Math.sin(t * 0.21) * 0.30;
-    if (P.Traverse_Carriage) P.Traverse_Carriage.position.x = Math.sin(t * 0.34 + 1.1) * 0.22;
-    if (P.Mast_Stage_2) P.Mast_Stage_2.position.y = (rest.Mast_Stage_2 ?? 0)
-      + (0.5 + 0.5 * Math.sin(t * 0.5)) * 0.10;
-    if (P.Arm_Swing) P.Arm_Swing.rotation.y = Math.sin(t * 0.27) * 0.45;
-    if (P.Arm_Elbow) P.Arm_Elbow.rotation.x = -0.25 + Math.sin(t * 0.41 + 0.6) * 0.22;
-    if (P.Arm_Wrist) P.Arm_Wrist.rotation.x = Math.sin(t * 0.63) * 0.30;
-    // the print glow: a working pulse normally, hard red while it is hit
-    const beat = hurting
-      ? 0.55 + 0.45 * Math.abs(Math.sin(t * 18))
-      : 0.45 + 0.55 * (0.5 + 0.5 * Math.sin(t * 2.6));
+
+    // THE GANTRY: the whole travel carriage repositions down the rails, but
+    // rarely — it is the biggest, slowest thing here and it should read as an
+    // event, not a wobble. ~once every 23s, over 6s.
+    if (P.Travel_Carriage) {
+      P.Travel_Carriage.position.z = swing(t, 23, 6.0, 0.00) * 0.34;
+    }
+    // THE TRAVERSE: the arm rides across the beam more often than the gantry
+    // moves, and on its own period so the two are never in phase.
+    if (P.Traverse_Carriage) {
+      P.Traverse_Carriage.position.x = swing(t, 14, 4.5, 0.37) * 0.26;
+    }
+    // THE MAST: a short breath down and back as it sets its working height.
+    if (P.Mast_Stage_2) {
+      P.Mast_Stage_2.position.y = (rest.Mast_Stage_2 ?? 0)
+        - burst(t, 17, 3.2, 0.62) * 0.09;
+    }
+    // THE EXTRUSION ARM: shoulder, elbow and wrist each take a turn, offset
+    // so the limb articulates rather than pivoting as one rigid piece.
+    if (P.Arm_Swing) P.Arm_Swing.rotation.y = swing(t, 11, 3.6, 0.11) * 0.40;
+    if (P.Arm_Elbow) P.Arm_Elbow.rotation.x = -0.10 + swing(t, 9, 3.0, 0.44) * 0.26;
+    if (P.Arm_Wrist) P.Arm_Wrist.rotation.x = swing(t, 7, 2.2, 0.73) * 0.34;
+
+    // THE NOZZLE: the same three-pattern print cycle Isao's beam runs —
+    // zigzag raster, spiral, then travel moves with the extruder off — so
+    // the two machines on this board are visibly doing the same JOB. Only
+    // while the arm is actually working; dark and still the rest of the time.
+    const working = burst(t, 11, 3.6, 0.11) > 0.05;
+    const { pattern, u } = printPhase(t, 1.2);
+    const firing = working && printOn(pattern, u);
+    if (P.Nozzle_Cone) {
+      const [ox, oy] = printOffset(pattern, u);
+      P.Nozzle_Cone.rotation.z = ox * 0.16;
+      P.Nozzle_Cone.rotation.x = oy * 0.16;
+    }
+
+    // the glow follows the work: hot while printing, banked while resting,
+    // hard red and fast while the machine is being hit
+    const beat = hurting ? 0.55 + 0.45 * Math.abs(Math.sin(t * 18))
+      : firing ? 0.65 + 0.35 * (0.5 + 0.5 * Math.sin(t * 9))
+        : 0.16;
     for (const s of glow) {
       if (hurting) s.mat.color.copy(hurt);
       else s.mat.color.copy(s.base);

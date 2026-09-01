@@ -19,41 +19,41 @@
 
 import * as THREE from '../vendor/three.module.js';
 import GUI from '../vendor/lil-gui.esm.js';
-import { generateSphereMesh, relax } from './grid.js?v=3ad3d9b6';
-import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=3ad3d9b6';
-import { mulberry32, randomSeed } from './rng.js?v=3ad3d9b6';
-import { computeBerths, berthIndexFor } from './berths.js?v=3ad3d9b6';
-import { wantsSecondary, shellsForAll } from './autofire.js?v=3ad3d9b6';
-import { printPhase, printOffset, printOn, patternSecsFor } from './printpath.js?v=3ad3d9b6';
-import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3, segKey, tangentDir, tangentBasis } from './vec3.js?v=3ad3d9b6';
-import { CREATURES, waveJelly } from './creatures.js?v=3ad3d9b6';
-import { brief } from './isaobriefs.js?v=3ad3d9b6';
-import { drawEmotion } from './emotions.js?v=3ad3d9b6';
+import { generateSphereMesh, relax } from './grid.js?v=049a422d';
+import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=049a422d';
+import { mulberry32, randomSeed } from './rng.js?v=049a422d';
+import { computeBerths, berthIndexFor } from './berths.js?v=049a422d';
+import { wantsSecondary, shellsForAll } from './autofire.js?v=049a422d';
+import { printPhase, printOffset, printOn, patternSecsFor } from './printpath.js?v=049a422d';
+import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3, segKey, tangentDir, tangentBasis } from './vec3.js?v=049a422d';
+import { CREATURES, waveJelly } from './creatures.js?v=049a422d';
+import { brief } from './isaobriefs.js?v=049a422d';
+import { drawEmotion } from './emotions.js?v=049a422d';
 import { ACHIEVEMENTS, ACHV_GROUPS, achievement, blankRun, earned, freshlyEarned,
   sanitiseRecord }
-  from './achievements.js?v=3ad3d9b6';
+  from './achievements.js?v=049a422d';
 import { applyFontPack, currentFontPack, FONT_NAMES,
-  loadTypeFeel } from './fonts.js?v=3ad3d9b6';
-import { UNITS, UNIT_NAMES, buildUnit, buildCreature, preloadMkcx, preloadServer, makeServerFixture, makeShieldShell, preloadContainer, makeContainerFixture, preloadFabricator, makeIsaoDrone, makeBulletCloud, makeRewardSolid, makeShellSolid, makeDebris, makeDotBurst, makePortalCloud, makeHeartCloud, makeDotEnemy, preloadTerraformer, makeTerraformerFixture } from './units.js?v=3ad3d9b6';
-import { LOOKS, LOOK_NAMES } from './looks.js?v=3ad3d9b6';
-import { makeCellIndex } from './cellindex.js?v=3ad3d9b6';
-import { CREATURE_TINTS, ENEMY_SPEC, INTROS, computeWavePlan, accentFor } from './enemyspec.js?v=3ad3d9b6';
-import { PICKUPS } from './pickups.js?v=3ad3d9b6';
-import { rankFor, rankLabel, badgeSVG, killReq, eliteReq } from './ranks.js?v=3ad3d9b6';
-import { makeScore } from './score.js?v=3ad3d9b6';
-import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER } from './towers.js?v=3ad3d9b6';
-import { makeEconomy, sellRefund } from './economy.js?v=3ad3d9b6';
-import { makeBloom } from './postfx.js?v=3ad3d9b6';
-import { TANK_FEEL, TANK_FEEL_KNOBS, makeTankFeel, stepTankFeel, landTankFeel, fireTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js?v=3ad3d9b6';
-import { FEEL, loadFeel, saveFeel } from './feelstore.js?v=3ad3d9b6';
+  loadTypeFeel } from './fonts.js?v=049a422d';
+import { UNITS, UNIT_NAMES, buildUnit, buildCreature, preloadMkcx, preloadServer, makeServerFixture, makeShieldShell, preloadContainer, makeContainerFixture, preloadFabricator, makeIsaoDrone, makeBulletCloud, makeRewardSolid, makeShellSolid, makeDebris, makeDotBurst, makePortalCloud, makeHeartCloud, makeDotEnemy, preloadTerraformer, makeTerraformerFixture } from './units.js?v=049a422d';
+import { LOOKS, LOOK_NAMES } from './looks.js?v=049a422d';
+import { makeCellIndex } from './cellindex.js?v=049a422d';
+import { CREATURE_TINTS, ENEMY_SPEC, INTROS, computeWavePlan, accentFor } from './enemyspec.js?v=049a422d';
+import { PICKUPS } from './pickups.js?v=049a422d';
+import { rankFor, rankLabel, badgeSVG, killReq, eliteReq } from './ranks.js?v=049a422d';
+import { makeScore } from './score.js?v=049a422d';
+import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER } from './towers.js?v=049a422d';
+import { makeEconomy, sellRefund } from './economy.js?v=049a422d';
+import { makeBloom } from './postfx.js?v=049a422d';
+import { TANK_FEEL, TANK_FEEL_KNOBS, makeTankFeel, stepTankFeel, landTankFeel, fireTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js?v=049a422d';
+import { FEEL, loadFeel, saveFeel } from './feelstore.js?v=049a422d';
 import { STRIKE_KNOBS, makeStrike, makeStrikeParams, grantStrikes, stepStrike,
   toggleArm, paintTarget, launchStrike, stepFall, skipFall, fallProgress,
-  strikeDamage, retargetStrike, orbitProgress } from './strike.js?v=3ad3d9b6';
-import { radarBasis, radarProject, radarBearing, sweepAngle, radarPhosphor } from './radar.js?v=3ad3d9b6';
-import { BLOOM_GROUPS } from './bloomweights.js?v=3ad3d9b6';
-import { TOWER_LOOK_NAMES, DEFAULT_TOWER_LOOK, buildTowerLook, preloadLook } from './towerlooks.js?v=3ad3d9b6';
-import { makeAudio } from './audio.js?v=3ad3d9b6';
-import { DEATH_KEYS } from './audiomanifest.js?v=3ad3d9b6';
+  strikeDamage, retargetStrike, orbitProgress } from './strike.js?v=049a422d';
+import { radarBasis, radarProject, radarBearing, sweepAngle, radarPhosphor } from './radar.js?v=049a422d';
+import { BLOOM_GROUPS } from './bloomweights.js?v=049a422d';
+import { TOWER_LOOK_NAMES, DEFAULT_TOWER_LOOK, buildTowerLook, preloadLook } from './towerlooks.js?v=049a422d';
+import { makeAudio } from './audio.js?v=049a422d';
+import { DEATH_KEYS } from './audiomanifest.js?v=049a422d';
 
 export function initTdTab(root) {
   let active = false;
@@ -8227,6 +8227,41 @@ export function initTdTab(root) {
       // pole and wrong everywhere else is invisible to a probe that only
       // checks the pole, so this compares the object's own up-axis against
       // the shell normal at its cell, AFTER a tick and a hit.
+      // ACTIVITY IS SUPPOSED TO BE INTERMITTENT. A screensaver and a working
+      // machine both "move"; the difference is whether they ever REST. Sample
+      // each pivot across two minutes and report how much of that time it is
+      // actually moving — low duty with real range is the shape wanted.
+      if (params.heartLook === 'terraformer') {
+        const track = { Travel_Carriage: 'position.z', Traverse_Carriage: 'position.x',
+          Mast_Stage_2: 'position.y', Arm_Swing: 'rotation.y',
+          Arm_Elbow: 'rotation.x', Arm_Wrist: 'rotation.x' };
+        const read = (o, path) => path.split('.').reduce((a2, k) => a2[k], o);
+        const seen = {};
+        for (const k of Object.keys(track)) seen[k] = [];
+        for (let i = 0; i < 1200; i++) {
+          heartSprite.userData.tick(i * 0.1);
+          for (const [name, path] of Object.entries(track)) {
+            const o = heartSprite.getObjectByName(name);
+            if (o) seen[name].push(read(o, path));
+          }
+        }
+        for (const [name, vals] of Object.entries(seen)) {
+          if (!vals.length) { console.log(`HEARTPROBE motion ${name}=ABSENT`); continue; }
+          const mn = Math.min(...vals), mx = Math.max(...vals);
+          const span2 = mx - mn;
+          // "moving" = meaningfully away from its REST value this frame, and
+          // rest is the MEDIAN — not the value nearest zero, which was the
+          // first cut and read the elbow as 97% busy purely because it rests
+          // at a slight bend rather than at 0. With a low duty the median IS
+          // the resting pose, by definition.
+          const restV = [...vals].sort((a2, b2) => a2 - b2)[Math.floor(vals.length / 2)];
+          const busy = vals.filter((v) => Math.abs(v - restV) > span2 * 0.08).length / vals.length;
+          console.log(`HEARTPROBE motion ${name} range=${span2.toFixed(3)}`
+            + ` duty=${(busy * 100).toFixed(0)}%`
+            + ` ${span2 > 1e-4 && busy > 0.02 && busy < 0.6 ? 'OK' : 'CHECK'}`);
+        }
+      }
+
       const hn2 = graph.normals[dungeon.heart];
       const up = new THREE.Vector3(0, 1, 0)
         .applyQuaternion(heartSprite.getWorldQuaternion(new THREE.Quaternion()));

@@ -17,10 +17,10 @@
 //    total. A failed fetch or decode logs once and that key becomes a
 //    permanent no-op for the session; the game keeps running silent.
 
-import { makeMixState, distanceGain, admit, addVoice, dropVoice } from './audiomix.js?v=3ad3d9b6';
-import { SOUNDS, BUSES, DEFAULT_LEVELS, GLOBAL_VOICE_CAP, DISTANCE_K } from './audiomanifest.js?v=3ad3d9b6';
-import { mulberry32 } from './rng.js?v=3ad3d9b6';
-import { gateStep } from './audiogate.js?v=3ad3d9b6';
+import { makeMixState, distanceGain, admit, addVoice, dropVoice } from './audiomix.js?v=049a422d';
+import { SOUNDS, BUSES, DEFAULT_LEVELS, GLOBAL_VOICE_CAP, DISTANCE_K } from './audiomanifest.js?v=049a422d';
+import { mulberry32 } from './rng.js?v=049a422d';
+import { gateStep } from './audiogate.js?v=049a422d';
 
 const STORE_KEY = 'ssg.audio.levels';
 const STEAL_FADE = 0.03; // s — a hard cut mid-waveform is an audible click
@@ -342,11 +342,27 @@ export function makeAudio(opts = {}) {
   function hookUnload() {
     if (unloadHooked) return;
     unloadHooked = true;
-    addEventListener('pagehide', () => {
-      if (!ctx) return;
-      try { ctx.close(); } catch { /* already gone */ }
+    // RELEASE, THEN RE-ARM. The first cut of this released and stopped
+    // there, which was a one-way door: pagehide also fires for a bfcache
+    // navigation and, in some Safari versions, for a hidden tab — and by
+    // then `listening` is already false (the gate stops on success) and
+    // `armed` is true (so arm() returns early). The context was destroyed
+    // with no path back, and audio was gone for the rest of the session.
+    // That is a worse bug than the leak it was written to fix.
+    const release = () => {
+      if (ctx) {
+        try { ctx.close(); } catch { /* already gone */ }
+      }
       ctx = null; master = null; analyser = null;
-    });
+      loadPromise = null; loadStarted = false; loadSettled = false;
+      for (const k of Object.keys(buffers)) delete buffers[k];
+      failedResumes = 0;
+      if (armed) startListening();   // whatever happens next, we can rebuild
+    };
+    addEventListener('pagehide', release);
+    // restored from the back/forward cache: the context is gone, so listen
+    // for the gesture that will rebuild it
+    addEventListener('pageshow', (ev) => { if (ev.persisted && armed) startListening(); });
   }
 
   function arm() {
