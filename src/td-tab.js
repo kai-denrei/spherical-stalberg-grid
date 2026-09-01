@@ -19,39 +19,39 @@
 
 import * as THREE from '../vendor/three.module.js';
 import GUI from '../vendor/lil-gui.esm.js';
-import { generateSphereMesh, relax } from './grid.js?v=3d09ed22';
-import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=3d09ed22';
-import { mulberry32, randomSeed } from './rng.js?v=3d09ed22';
-import { computeBerths, berthIndexFor } from './berths.js?v=3d09ed22';
-import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3, segKey } from './vec3.js?v=3d09ed22';
-import { CREATURES, waveJelly } from './creatures.js?v=3d09ed22';
-import { brief } from './isaobriefs.js?v=3d09ed22';
-import { drawEmotion } from './emotions.js?v=3d09ed22';
+import { generateSphereMesh, relax } from './grid.js?v=4eeaa317';
+import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=4eeaa317';
+import { mulberry32, randomSeed } from './rng.js?v=4eeaa317';
+import { computeBerths, berthIndexFor } from './berths.js?v=4eeaa317';
+import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3, segKey } from './vec3.js?v=4eeaa317';
+import { CREATURES, waveJelly } from './creatures.js?v=4eeaa317';
+import { brief } from './isaobriefs.js?v=4eeaa317';
+import { drawEmotion } from './emotions.js?v=4eeaa317';
 import { ACHIEVEMENTS, ACHV_GROUPS, achievement, blankRun, earned, freshlyEarned,
   sanitiseRecord }
-  from './achievements.js?v=3d09ed22';
+  from './achievements.js?v=4eeaa317';
 import { applyFontPack, currentFontPack, FONT_NAMES,
-  loadTypeFeel } from './fonts.js?v=3d09ed22';
-import { UNITS, UNIT_NAMES, buildUnit, buildCreature, preloadMkcx, preloadServer, makeServerFixture, makeShieldShell, preloadContainer, makeContainerFixture, preloadFabricator, makeIsaoDrone, makeBulletCloud, makeRewardSolid, makeShellSolid, makeDebris, makeDotBurst, makePortalCloud, makeHeartCloud, makeDotEnemy } from './units.js?v=3d09ed22';
-import { LOOKS, LOOK_NAMES } from './looks.js?v=3d09ed22';
-import { makeCellIndex } from './cellindex.js?v=3d09ed22';
-import { CREATURE_TINTS, ENEMY_SPEC, INTROS, computeWavePlan, accentFor } from './enemyspec.js?v=3d09ed22';
-import { PICKUPS } from './pickups.js?v=3d09ed22';
-import { rankFor, rankLabel, badgeSVG, killReq, eliteReq } from './ranks.js?v=3d09ed22';
-import { makeScore } from './score.js?v=3d09ed22';
-import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER } from './towers.js?v=3d09ed22';
-import { makeEconomy, sellRefund } from './economy.js?v=3d09ed22';
-import { makeBloom } from './postfx.js?v=3d09ed22';
-import { TANK_FEEL, TANK_FEEL_KNOBS, makeTankFeel, stepTankFeel, landTankFeel, fireTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js?v=3d09ed22';
-import { FEEL, loadFeel, saveFeel } from './feelstore.js?v=3d09ed22';
+  loadTypeFeel } from './fonts.js?v=4eeaa317';
+import { UNITS, UNIT_NAMES, buildUnit, buildCreature, preloadMkcx, preloadServer, makeServerFixture, makeShieldShell, preloadContainer, makeContainerFixture, preloadFabricator, makeIsaoDrone, makeBulletCloud, makeRewardSolid, makeShellSolid, makeDebris, makeDotBurst, makePortalCloud, makeHeartCloud, makeDotEnemy } from './units.js?v=4eeaa317';
+import { LOOKS, LOOK_NAMES } from './looks.js?v=4eeaa317';
+import { makeCellIndex } from './cellindex.js?v=4eeaa317';
+import { CREATURE_TINTS, ENEMY_SPEC, INTROS, computeWavePlan, accentFor } from './enemyspec.js?v=4eeaa317';
+import { PICKUPS } from './pickups.js?v=4eeaa317';
+import { rankFor, rankLabel, badgeSVG, killReq, eliteReq } from './ranks.js?v=4eeaa317';
+import { makeScore } from './score.js?v=4eeaa317';
+import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER } from './towers.js?v=4eeaa317';
+import { makeEconomy, sellRefund } from './economy.js?v=4eeaa317';
+import { makeBloom } from './postfx.js?v=4eeaa317';
+import { TANK_FEEL, TANK_FEEL_KNOBS, makeTankFeel, stepTankFeel, landTankFeel, fireTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js?v=4eeaa317';
+import { FEEL, loadFeel, saveFeel } from './feelstore.js?v=4eeaa317';
 import { STRIKE_KNOBS, makeStrike, makeStrikeParams, grantStrikes, stepStrike,
   toggleArm, paintTarget, launchStrike, stepFall, skipFall, fallProgress,
-  strikeDamage, retargetStrike, orbitProgress } from './strike.js?v=3d09ed22';
-import { radarBasis, radarProject, radarBearing, sweepAngle, radarPhosphor } from './radar.js?v=3d09ed22';
-import { BLOOM_GROUPS } from './bloomweights.js?v=3d09ed22';
-import { TOWER_LOOK_NAMES, DEFAULT_TOWER_LOOK, buildTowerLook, preloadLook } from './towerlooks.js?v=3d09ed22';
-import { makeAudio } from './audio.js?v=3d09ed22';
-import { DEATH_KEYS } from './audiomanifest.js?v=3d09ed22';
+  strikeDamage, retargetStrike, orbitProgress } from './strike.js?v=4eeaa317';
+import { radarBasis, radarProject, radarBearing, sweepAngle, radarPhosphor } from './radar.js?v=4eeaa317';
+import { BLOOM_GROUPS } from './bloomweights.js?v=4eeaa317';
+import { TOWER_LOOK_NAMES, DEFAULT_TOWER_LOOK, buildTowerLook, preloadLook } from './towerlooks.js?v=4eeaa317';
+import { makeAudio } from './audio.js?v=4eeaa317';
+import { DEATH_KEYS } from './audiomanifest.js?v=4eeaa317';
 
 export function initTdTab(root) {
   let active = false;
@@ -1101,7 +1101,7 @@ export function initTdTab(root) {
     + ` throttle=${throttle.toFixed(2)} keys=${Object.entries(keys)
       .filter(([, v]) => v).map(([k2]) => k2).join('+') || '-'}`
     + ` paused=${paused} tutFrozen=${tutorial.frozen}`
-    + ` reveal=${revealLeft.toFixed(2)} cine=${cineLeft.toFixed(2)}`
+    + ` shot=${shotId() || '-'} cine=${cineLeft.toFixed(2)}`
     + ` buildMode=${buildMode} active=${active}`;
   const ctlLog = (tag) => { if (CTL_DEBUG) console.log(ctlState(tag)); };
   // THE WATCHDOG. It watches for the symptom as the player describes it —
@@ -1650,8 +1650,64 @@ export function initTdTab(root) {
   // SECTOR REVEAL: a short full-planet beat after each clear — the camera
   // pulls out to frame the whole world, aimed at the freshly-unsealed
   // band, whose floors burn hot until the beat ends (then build mode).
+  // --- camShot: ONE timed camera override, ONE teardown ------------------
+  // Every timed camera takeover in this tab used to own its own clock, its
+  // own skip listeners and its own teardown — and each teardown was a fresh
+  // chance to get it wrong. One did: endCinematic() guarded on
+  // `cineLeft <= 0` while the frame loop had already driven it there, so it
+  // returned BEFORE removing a capture-phase keydown handler that
+  // preventDefaults and stopImmediatePropagations. That handler then ate
+  // every key in the game, permanently, and the briefing it was fronting
+  // never opened (operator: "I still cannot move after the cinematic").
+  //
+  // So: one shot at a time, one teardown path, and the latch is the shot
+  // ITSELF — never a clock somebody else has already advanced past.
+  let shot = null;        // { id, dur, left, poseAt, onEnd, skippable }
+  let shotHold = false;   // ?cine=N parks the clock for a screenshot
+  const shotActive = () => shot !== null;
+  const shotId = () => (shot ? shot.id : null);
+
+  function startShot({ id, dur, poseAt, onEnd = null, skippable = true }) {
+    endShot();   // one at a time, and the outgoing one always tears down
+    shot = { id, dur: Math.max(1e-3, dur), left: Math.max(1e-3, dur),
+      poseAt, onEnd, skippable };
+    if (skippable) {
+      addEventListener('keydown', shotSkipKey, true);
+      root.addEventListener('pointerdown', shotSkipTap, true);
+    }
+    snapCamera();   // no glide in: the shot owns frame one
+  }
+
+  // Idempotent, and latched on `shot` — the RESOURCE — not on a countdown.
+  // `shot` is cleared before onEnd runs, so a shot whose ending starts
+  // another shot cannot recurse into its own teardown.
+  function endShot() {
+    if (!shot) return;
+    const s = shot;
+    shot = null;
+    removeEventListener('keydown', shotSkipKey, true);
+    root.removeEventListener('pointerdown', shotSkipTap, true);
+    if (s.onEnd) s.onEnd();
+  }
+
+  // skippable by anything: a shot you cannot cut is one you resent the
+  // second time you see it
+  const shotSkipKey = (ev) => {
+    if (!shot || !shot.skippable) return;
+    ev.preventDefault(); ev.stopImmediatePropagation(); endShot();
+  };
+  const shotSkipTap = (ev) => {
+    if (!shot || !shot.skippable) return;
+    ev.stopImmediatePropagation(); endShot();
+  };
+
+  function stepShot(dt) {
+    if (!shot || shotHold) return;
+    shot.left -= dt;
+    if (shot.left <= 0) endShot();
+  }
+
   const REVEAL_LEN = 3.2;
-  let revealLeft = 0;
   let revealDir = null;
   let revealCells = [];
 
@@ -1970,16 +2026,10 @@ export function initTdTab(root) {
       }
       return;
     }
-    if (revealLeft > 0 && revealDir) {
-      // cinematic: whole planet in frame, the new band centered
-      const ref = Math.abs(revealDir[1]) < 0.9 ? [0, 1, 0] : [1, 0, 0];
-      const up = norm3(cross3(revealDir, ref));
-      const eye = scale3(revealDir, 3.3);
-      camGoal.pos.set(eye[0], eye[1], eye[2]);
-      tmpCam.position.copy(camGoal.pos);
-      tmpCam.up.set(up[0], up[1], up[2]);
-      tmpCam.lookAt(0, 0, 0);
-      camGoal.quat.copy(tmpCam.quaternion);
+    if (shot) {
+      // a shot owns the goal outright while it runs; u is 0..1 over its own
+      // duration, so the pose function never has to know about dt
+      shot.poseAt(Math.min(1, Math.max(0, 1 - shot.left / shot.dur)), camGoal);
       return;
     }
     if (params.view === 'drone' && isao) {
@@ -4132,7 +4182,7 @@ export function initTdTab(root) {
       const nm = (INTROS.find((iv) => iv.type === e.type)?.label || e.type).toLowerCase();
       return `<span class="nx-chip" style="color:${tint}">${mark} ${nm} ×${e.count}</span>`;
     }).join('');
-    const frozen = buildFrozen() || revealLeft > 0;
+    const frozen = buildFrozen() || shotId() === 'reveal';
     let when;
     if (frozen) when = 'ready · leave BUILD to engage';
     else if (waveActive && !enemies.every((e) => !e.alive)) {
@@ -7040,7 +7090,28 @@ export function initTdTab(root) {
       }
     }
     revealDir = revealCells.length ? norm3([cx, cy, cz]) : norm3(graph.normals[dungeon.heart]);
-    revealLeft = REVEAL_LEN;
+    startShot({
+      id: 'reveal',
+      dur: REVEAL_LEN,
+      poseAt: (u, out) => {
+        // whole planet in frame, the new band centred — framing unchanged
+        const ref = Math.abs(revealDir[1]) < 0.9 ? [0, 1, 0] : [1, 0, 0];
+        const up = norm3(cross3(revealDir, ref));
+        const eye = scale3(revealDir, 3.3);
+        out.pos.set(eye[0], eye[1], eye[2]);
+        tmpCam.position.copy(out.pos);
+        tmpCam.up.set(up[0], up[1], up[2]);
+        tmpCam.lookAt(0, 0, 0);
+        out.quat.copy(tmpCam.quaternion);
+      },
+      onEnd: () => {
+        // the new ground cools back to its true colors; planning begins
+        for (const ci of revealCells) paintCell(ci, floorColorOf(ci));
+        revealCells = [];
+        if (!buildMode) setView('orbit');
+        updateHud();
+      },
+    });
     buildGeometry();
     syncServerLift();
     // THE SAFETY NET. Breach persistence keeps corridors open, but a tank
@@ -7349,17 +7420,7 @@ export function initTdTab(root) {
     } else if (cinePending && t > 5) {
       beginOpening();   // safety net: the berths never landed, open anyway
     }
-    if (revealLeft > 0) {
-      revealLeft -= dt;
-      if (revealLeft <= 0) {
-        revealLeft = 0;
-        // the new ground cools back to its true colors; planning begins
-        for (const ci of revealCells) paintCell(ci, floorColorOf(ci));
-        revealCells = [];
-        if (!buildMode) setView('orbit');
-        updateHud();
-      }
-    }
+    stepShot(dt);
     // ANY control input thaws the frozen tutorial opening — checked BEFORE
     // the frozen gate, since updateLasers itself is skipped while frozen.
     //
@@ -7377,7 +7438,7 @@ export function initTdTab(root) {
     // hand on the controls, or clear of the berth: either ends the nudge
     if (exitCruise && (handOn
       || !lifeContainers.some((cc) => cc.ci === player.cur))) releaseExitCruise();
-    const frozen = buildFrozen() || revealLeft > 0 || tutorial.frozen || cineLeft > 0;
+    const frozen = buildFrozen() || shotActive() || tutorial.frozen || cineLeft > 0;
     // The BUILD pause holds the WORLD still, not the DRIVER. Planning with
     // the tank parked where the last wave left it meant switching out of
     // build, repositioning, and switching back — three actions for one
@@ -7385,7 +7446,7 @@ export function initTdTab(root) {
     // those are the game speaking and it should not be driven over.
     // the cold open holds the hull for its first two beats and lets go for
     // the third — beat three IS the tank driving itself out of the berth
-    const driveFrozen = revealLeft > 0 || tutorial.frozen || cineLeft > CINE_WATCH;
+    const driveFrozen = shotActive() || tutorial.frozen || cineLeft > CINE_WATCH;
 
     bumpLeft = Math.max(0, bumpLeft - dt);
     recoilLeft = Math.max(0, recoilLeft - dt);
@@ -7975,6 +8036,49 @@ export function initTdTab(root) {
   // the dead run's timer still lands on the live one: a respawn:tank-lost
   // printed AFTER regenerate:after is a repositioning nobody asked for, on
   // a run that has not lost anything.
+  // ?shotprobe=1 — THE TEARDOWN REGRESSION GUARD, for camShot itself.
+  // A shot installs a capture-phase keydown handler that stops the event
+  // dead. If its teardown is ever skipped, the whole keyboard dies silently
+  // and the game looks like it has frozen — which is exactly what shipped
+  // for a week. So: start a shot, end it the way the frame loop does (drive
+  // the clock past zero, then step), and check a real key still lands.
+  if (urlParams.get('shotprobe') === '1') {
+    let tries = 0;
+    const run = () => {
+      if (!active && tries++ < 200) { setTimeout(run, 25); return; }
+      // clear the opening first: the briefing legitimately holds the keyboard
+      // until dismissed, and this probe is about camShot's teardown, not about
+      // the modal's. Testing through a modal measures the wrong thing.
+      dismissIntro();
+      if (msgEl && !msgEl.classList.contains('hidden')) {
+        paused = false; msgEl.classList.add('hidden');
+      }
+      let ended = 0;
+      startShot({
+        id: 'probe',
+        dur: 0.05,
+        poseAt: (u, out) => { out.pos.copy(camera.position); out.quat.copy(camera.quaternion); },
+        onEnd: () => { ended++; },
+      });
+      const wasActive = shotActive();
+      stepShot(0.2);   // precisely what animate does: decrement past zero
+      keys.fast = false;
+      // through the REAL phase order — a keydown aimed at window makes window
+      // the target, where the capture flag is ignored and registration order
+      // decides, which reverses the very ordering under test
+      document.body.dispatchEvent(
+        new KeyboardEvent('keydown', { key: 'w', bubbles: true, cancelable: true }));
+      const reached = keys.fast;
+      keys.fast = false;
+      ctlRawT = -9;   // the synthetic press must not trip the live watchdog
+      const ok = wasActive && !shotActive() && ended === 1 && reached;
+      console.log(`SHOTPROBE teardown=${ok ? 'PASS' : 'FAIL'}`
+        + ` (started ${wasActive}, cleared ${!shotActive()}, onEnd ${ended}x,`
+        + ` key reached ${reached})`);
+    };
+    run();
+  }
+
   // ?cineprobe=1 — CAN THE PLAYER MOVE AFTER THE INTRO. The operator's
   // report, made into a check. It cannot wait the cold open out: under a
   // virtual-time budget performance.now() does not advance, so the frame
