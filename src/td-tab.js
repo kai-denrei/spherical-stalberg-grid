@@ -19,38 +19,38 @@
 
 import * as THREE from '../vendor/three.module.js';
 import GUI from '../vendor/lil-gui.esm.js';
-import { generateSphereMesh, relax } from './grid.js?v=69e4e1b6';
-import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=69e4e1b6';
-import { mulberry32, randomSeed } from './rng.js?v=69e4e1b6';
-import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3, segKey } from './vec3.js?v=69e4e1b6';
-import { CREATURES, waveJelly } from './creatures.js?v=69e4e1b6';
-import { brief } from './isaobriefs.js?v=69e4e1b6';
-import { drawEmotion } from './emotions.js?v=69e4e1b6';
+import { generateSphereMesh, relax } from './grid.js?v=e99da83a';
+import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=e99da83a';
+import { mulberry32, randomSeed } from './rng.js?v=e99da83a';
+import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3, segKey } from './vec3.js?v=e99da83a';
+import { CREATURES, waveJelly } from './creatures.js?v=e99da83a';
+import { brief } from './isaobriefs.js?v=e99da83a';
+import { drawEmotion } from './emotions.js?v=e99da83a';
 import { ACHIEVEMENTS, ACHV_GROUPS, achievement, blankRun, earned, freshlyEarned,
   sanitiseRecord }
-  from './achievements.js?v=69e4e1b6';
+  from './achievements.js?v=e99da83a';
 import { applyFontPack, currentFontPack, FONT_NAMES,
-  loadTypeFeel } from './fonts.js?v=69e4e1b6';
-import { UNITS, UNIT_NAMES, buildUnit, buildCreature, preloadMkcx, preloadServer, makeServerFixture, makeShieldShell, preloadContainer, makeContainerFixture, preloadFabricator, makeIsaoDrone, makeBulletCloud, makeRewardSolid, makeShellSolid, makeDebris, makeDotBurst, makePortalCloud, makeHeartCloud, makeDotEnemy } from './units.js?v=69e4e1b6';
-import { LOOKS, LOOK_NAMES } from './looks.js?v=69e4e1b6';
-import { makeCellIndex } from './cellindex.js?v=69e4e1b6';
-import { CREATURE_TINTS, ENEMY_SPEC, INTROS, computeWavePlan, accentFor } from './enemyspec.js?v=69e4e1b6';
-import { PICKUPS } from './pickups.js?v=69e4e1b6';
-import { rankFor, rankLabel, badgeSVG, killReq, eliteReq } from './ranks.js?v=69e4e1b6';
-import { makeScore } from './score.js?v=69e4e1b6';
-import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER } from './towers.js?v=69e4e1b6';
-import { makeEconomy, sellRefund } from './economy.js?v=69e4e1b6';
-import { makeBloom } from './postfx.js?v=69e4e1b6';
-import { TANK_FEEL, TANK_FEEL_KNOBS, makeTankFeel, stepTankFeel, landTankFeel, fireTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js?v=69e4e1b6';
-import { FEEL, loadFeel, saveFeel } from './feelstore.js?v=69e4e1b6';
+  loadTypeFeel } from './fonts.js?v=e99da83a';
+import { UNITS, UNIT_NAMES, buildUnit, buildCreature, preloadMkcx, preloadServer, makeServerFixture, makeShieldShell, preloadContainer, makeContainerFixture, preloadFabricator, makeIsaoDrone, makeBulletCloud, makeRewardSolid, makeShellSolid, makeDebris, makeDotBurst, makePortalCloud, makeHeartCloud, makeDotEnemy } from './units.js?v=e99da83a';
+import { LOOKS, LOOK_NAMES } from './looks.js?v=e99da83a';
+import { makeCellIndex } from './cellindex.js?v=e99da83a';
+import { CREATURE_TINTS, ENEMY_SPEC, INTROS, computeWavePlan, accentFor } from './enemyspec.js?v=e99da83a';
+import { PICKUPS } from './pickups.js?v=e99da83a';
+import { rankFor, rankLabel, badgeSVG, killReq, eliteReq } from './ranks.js?v=e99da83a';
+import { makeScore } from './score.js?v=e99da83a';
+import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER } from './towers.js?v=e99da83a';
+import { makeEconomy, sellRefund } from './economy.js?v=e99da83a';
+import { makeBloom } from './postfx.js?v=e99da83a';
+import { TANK_FEEL, TANK_FEEL_KNOBS, makeTankFeel, stepTankFeel, landTankFeel, fireTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js?v=e99da83a';
+import { FEEL, loadFeel, saveFeel } from './feelstore.js?v=e99da83a';
 import { STRIKE_KNOBS, makeStrike, makeStrikeParams, grantStrikes, stepStrike,
   toggleArm, paintTarget, launchStrike, stepFall, skipFall, fallProgress,
-  strikeDamage, retargetStrike, orbitProgress } from './strike.js?v=69e4e1b6';
-import { radarBasis, radarProject, radarBearing, sweepAngle, radarPhosphor } from './radar.js?v=69e4e1b6';
-import { BLOOM_GROUPS } from './bloomweights.js?v=69e4e1b6';
-import { TOWER_LOOK_NAMES, DEFAULT_TOWER_LOOK, buildTowerLook, preloadLook } from './towerlooks.js?v=69e4e1b6';
-import { makeAudio } from './audio.js?v=69e4e1b6';
-import { DEATH_KEYS } from './audiomanifest.js?v=69e4e1b6';
+  strikeDamage, retargetStrike, orbitProgress } from './strike.js?v=e99da83a';
+import { radarBasis, radarProject, radarBearing, sweepAngle, radarPhosphor } from './radar.js?v=e99da83a';
+import { BLOOM_GROUPS } from './bloomweights.js?v=e99da83a';
+import { TOWER_LOOK_NAMES, DEFAULT_TOWER_LOOK, buildTowerLook, preloadLook } from './towerlooks.js?v=e99da83a';
+import { makeAudio } from './audio.js?v=e99da83a';
+import { DEATH_KEYS } from './audiomanifest.js?v=e99da83a';
 
 export function initTdTab(root) {
   let active = false;
@@ -1070,6 +1070,67 @@ export function initTdTab(root) {
   let autoMode = false; // AUTO is opt-in (the directive chip); MANUAL is sticky
   const manualActive = () => !autoMode;
 
+  // --- THE CONTROLS-DEAD PROBE --------------------------------------------
+  // Operator, recurring and never reproduced: after a game ends or a tank
+  // dies, WASD sometimes does nothing until they fiddle, and AUTO sometimes
+  // frees it. Every guess at a fix would be a guess at WHICH of eight gates
+  // is latched, so this reports the gate instead. CTL_DEBUG turns the log on
+  // for a session; the watchdog below fires on the symptom itself, so the
+  // report can come from a phone in real play rather than a repro here.
+  // read from location directly: urlParams is declared far below this point,
+  // and a const in its temporal dead zone throws at init rather than reading
+  // as undefined — the whole tab would fail to boot
+  const CTL_DEBUG = /[?&]ctl(probe)?=/.test(location.search);
+  // RUN GENERATION. Deferred work started by one run must never land on the
+  // next: a timer that repositions the tank is a timer that can reposition
+  // somebody else's tank. Bumped by regenerate.
+  let runGen = 0;
+  // the run whose berths have already staged the player — see the
+  // container callback; -1 so the first run always stages
+  let stagedRun = -1;
+  let respawnCount = 0;
+  // counted separately: a death-hold respawn is the one that must never
+  // cross a run, and the run's own berth staging would mask it in a total
+  let tankLostRespawns = 0;
+  let berthStagings = 0;   // must be exactly 1 per run, whatever loads when
+  const ctlState = (tag) => `CTL[${tag}] gen=${runGen} respawns=${respawnCount}`
+    + ` won=${player.won} down=${playerDown} next=${player.next}`
+    + ` free=${player.freeMode} cur=${player.cur}`
+    + ` auto=${autoMode} cruise=${cruise} exitCruise=${exitCruise}`
+    + ` throttle=${throttle.toFixed(2)} keys=${Object.entries(keys)
+      .filter(([, v]) => v).map(([k2]) => k2).join('+') || '-'}`
+    + ` paused=${paused} tutFrozen=${tutorial.frozen}`
+    + ` reveal=${revealLeft.toFixed(2)} cine=${cineLeft.toFixed(2)}`
+    + ` buildMode=${buildMode} active=${active}`;
+  const ctlLog = (tag) => { if (CTL_DEBUG) console.log(ctlState(tag)); };
+  // THE WATCHDOG. It watches for the symptom as the player describes it —
+  // asking the tank to move and the tank not moving — rather than for any
+  // one cause, and prints the whole gate row when it happens. Always on:
+  // the bug is rare and lives on the operator's phone, so a probe that only
+  // runs under a flag is a probe that will never see it. One line per
+  // episode (re-armed only after the tank moves again), so a genuinely
+  // wedged hull cannot flood the console.
+  let ctlStillFor = 0, ctlBarked = false;
+  const ctlLastPos = [0, 0, 0];
+  function ctlWatch(dt) {
+    // what the player is asking for, not what the game decided to do with it
+    const asking = keys.fast || keys.slow || cruise || throttle !== 0;
+    const moved = Math.abs(player.pos[0] - ctlLastPos[0])
+      + Math.abs(player.pos[1] - ctlLastPos[1])
+      + Math.abs(player.pos[2] - ctlLastPos[2]);
+    ctlLastPos[0] = player.pos[0]; ctlLastPos[1] = player.pos[1]; ctlLastPos[2] = player.pos[2];
+    // a real drive step is orders of magnitude above this; the threshold is
+    // here so hover bob and cushion nudges do not read as movement
+    if (moved > cellSide * 1e-4) { ctlStillFor = 0; ctlBarked = false; return; }
+    if (!asking || player.won || paused) { ctlStillFor = 0; return; }
+    ctlStillFor += dt;
+    // a second of asking is well past a wall bump or a frozen beat
+    if (ctlStillFor > 1.0 && !ctlBarked) {
+      ctlBarked = true;
+      console.log(`CTL-DEAD asked ${ctlStillFor.toFixed(1)}s, no motion — ${ctlState('dead')}`);
+    }
+  }
+
   const camGoal = { pos: new THREE.Vector3(), quat: new THREE.Quaternion() };
   // two more of the same, for blending between two framings (the cold open)
   const cineA = { pos: new THREE.Vector3(), quat: new THREE.Quaternion() };
@@ -1421,7 +1482,21 @@ export function initTdTab(root) {
         syncLifeContainers();
         // the FIRST SCENE: the opening hull drives out of its bay — if
         // the player has not yet gone anywhere, restage them at the doors
-        if (t < 6 && player.moves <= 1) respawnPlayerAtSpawn();
+        // ONCE PER RUN, NOT ONCE PER LOAD. buildActors() runs again every
+        // time an async model lands — and mkcx, the default tank, always
+        // lands — so this callback fires at least twice a run, and each
+        // firing used to restage the player: zeroing the throttle, killing
+        // the engine and re-engaging the berth nudge at whatever moment the
+        // bytes happened to arrive. That is the cold open cutting (the
+        // second staging lands mid-cinematic, after the hull has begun
+        // driving out) and a share of the dead-controls reports (the lever
+        // the player just set is silently returned to zero). Staging is a
+        // property of the RUN, so it is keyed to the run.
+        if (t < 6 && player.moves <= 1 && stagedRun !== runGen) {
+          stagedRun = runGen;
+          berthStagings++;
+          respawnPlayerAtSpawn('berths-landed');
+        }
         beginOpening();   // the cold open has its subject now
         // ?driveout=N — the operator's can't-get-out report, made testable.
         // Headless cannot drive, and ?tick runs at init, BEFORE this model
@@ -4109,6 +4184,8 @@ export function initTdTab(root) {
   // --- generation ----------------------------------------------------------
   function regenerate() {
     const t0 = performance.now();
+    ctlLog('regenerate:before');
+    runGen++;   // anything the old run left in flight is now stale by number
     // a regenerate is a FRESH RUN: sector 1, towers gone, fresh purse.
     // (Round expansion never comes through here — expandRound reveals the
     // same world in place, towers standing.) Clear towers first: stale
@@ -4328,6 +4405,7 @@ export function initTdTab(root) {
     cruise = false;
     msgEl.classList.add('hidden');
     updateHud();
+    ctlLog('regenerate:after');
     console.log(`heart sector in ${(performance.now() - t0).toFixed(0)}ms — ` +
       `${floorOffsets.size} open cells, ${orbMeshes.size} orbs, ` +
       `spawn→heart ${dungeon.distToHeart[dungeon.spawn]} hops`);
@@ -5334,7 +5412,9 @@ export function initTdTab(root) {
   function previewDestruction() {
     if (player.won || !playerMesh) return;
     destroyPlayer();
+    const previewGen = runGen;  // same rule as loseTank: a run owns its timers
     setTimeout(() => {
+      if (previewGen !== runGen) return;     // the run it was previewing is gone
       if (player.won || !playerMesh) return; // a real death happened meanwhile
       playerMesh.visible = true;
       playerDown = false;
@@ -5479,10 +5559,17 @@ export function initTdTab(root) {
     resetTankRank(); // the insignia belonged to that hull
     ramCombo = 0; ramComboT = 0; syncCombo(); // the combo died with it too
 
+    // THE DEAD RUN'S TIMER MUST NOT LAND ON THE LIVE ONE. This hold is
+    // 1.15s long and RETRY sits on a modal the player can hit inside it —
+    // and it used to fire regardless, repositioning a brand-new tank,
+    // snapping the camera to orbit and toasting TANK LOST on a run that had
+    // lost nothing. Measured, not supposed: ?ctlprobe=1.
+    const deathGen = runGen;
     setTimeout(() => {
+      if (deathGen !== runGen) return;         // this belonged to a run that is over
       if (player.won || !playerMesh) return;   // a real death happened meanwhile
       // back to the entry point, facing the heart, engine cold
-      respawnPlayerAtSpawn();
+      respawnPlayerAtSpawn('tank-lost');
       playerMesh.visible = true;
       playerDown = false;
       feel.hoverT = 0;
@@ -5501,7 +5588,10 @@ export function initTdTab(root) {
   // the old respawn put the wreck straight back into the thing that made it
   // a wreck, and sometimes BEHIND a portal with the wave between you and
   // home. You come back at the thing you are defending, facing outward.
-  function respawnPlayerAtSpawn() {
+  function respawnPlayerAtSpawn(why = 'unknown') {
+    respawnCount++;
+    if (why === 'tank-lost') tankLostRespawns++;
+    ctlLog(`respawn:${why}`);
     let ci = dungeon.heart;
     let fromContainer = false;
     if (lifeContainers.length === 3) {
@@ -6962,7 +7052,7 @@ export function initTdTab(root) {
     // the hull (operator bug report). If the shift entombed the tank,
     // redeploy it beside the heart and say so.
     if (player.cur >= 0 && dungeon.tags[player.cur] === BLOCKED && !playerDown) {
-      respawnPlayerAtSpawn();
+      respawnPlayerAtSpawn('entombed-by-sector-shift');
       showToast(`<div class="wave-num">REDEPLOYED</div>`
         + `<div class="wave-role">the frontier shifted over your position</div>`, 3000);
     }
@@ -7313,6 +7403,7 @@ export function initTdTab(root) {
     if (shopCi !== -1 && (keys.fast || keys.slow || keys.left || keys.right
       || cruise || throttle !== 0 || keys.fire || keys.laser)) closeShop();
     if (!driveFrozen) advanceMotion(dt);
+    ctlWatch(dt);
     // Isao keeps his shift through the build downtime — the war may be
     // frozen there, but construction is the thing you came to do. A
     // reveal or the cold open still stops him: those are the game
@@ -7881,6 +7972,38 @@ export function initTdTab(root) {
   // carve + debris + rebuild path without needing a live shot
   // ?lose=1 kills the tank on the spot, so the wreck can be screenshot
   if (urlParams.get('lose') === '1') loseGame('debug');
+  // ?ctlprobe=1 — the reset seam, made deterministic. Lose a tank (which
+  // arms the DEATH_HOLD respawn), then RETRY inside that hold, exactly as a
+  // player jabbing the button does. The question the log answers is whether
+  // the dead run's timer still lands on the live one: a respawn:tank-lost
+  // printed AFTER regenerate:after is a repositioning nobody asked for, on
+  // a run that has not lost anything.
+  if (urlParams.get('ctlprobe') === '1') {
+    ctlLog('probe:start');
+    loseTank();
+    setTimeout(() => {
+      console.log('CTL probe: RETRY pressed mid-hold');
+      regenerate();
+      const afterRetry = tankLostRespawns;
+      // by now the dead run's DEATH_HOLD timer has had its chance. Only
+      // tank-lost respawns count: the new run legitimately stages itself at
+      // its berths, and a total would score that as the bug.
+      setTimeout(() => {
+        const crossed = tankLostRespawns - afterRetry;
+        console.log(`CTLPROBE stale-death-timer=${crossed === 0 ? 'PASS' : 'FAIL'}`
+          + ` (tank-lost respawns after retry: ${crossed}, want 0)`);
+        ctlLog('probe:end');
+      }, (DEATH_HOLD + 0.8) * 1000);
+    }, 200);
+    // the staging count is the second question: one restage per run, however
+    // many models land. Asked late, so every preload has resolved.
+    setTimeout(() => {
+      // one staging per run: the container callback fires once per model
+      // that lands, and every extra firing yanks the controls
+      console.log(`CTLPROBE berth-staging=${berthStagings === 1 ? 'PASS' : 'FAIL'}`
+        + ` (stagings this run: ${berthStagings}, want 1)`);
+    }, 6000);
+  }
   const blastN = parseInt(urlParams.get('blast') || '0', 10);
   for (let i = 0; i < blastN; i++) {
     let best = -1, bd = Infinity;
