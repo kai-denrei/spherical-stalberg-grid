@@ -19,42 +19,42 @@
 
 import * as THREE from '../vendor/three.module.js';
 import GUI from '../vendor/lil-gui.esm.js';
-import { generateSphereMesh, relax } from './grid.js?v=7059234a';
-import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=7059234a';
-import { mulberry32, randomSeed } from './rng.js?v=7059234a';
-import { computeBerths, berthIndexFor } from './berths.js?v=7059234a';
-import { wantsSecondary, shellsForAll } from './autofire.js?v=7059234a';
-import { printPhase, printOffset, printOn, patternSecsFor } from './printpath.js?v=7059234a';
-import { createBeam } from './beamfx.js?v=7059234a';
-import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3, segKey, tangentDir, tangentBasis } from './vec3.js?v=7059234a';
-import { CREATURES, waveJelly } from './creatures.js?v=7059234a';
-import { brief } from './isaobriefs.js?v=7059234a';
-import { drawEmotion } from './emotions.js?v=7059234a';
+import { generateSphereMesh, relax } from './grid.js?v=8bbbd109';
+import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=8bbbd109';
+import { mulberry32, randomSeed } from './rng.js?v=8bbbd109';
+import { computeBerths, berthIndexFor } from './berths.js?v=8bbbd109';
+import { wantsSecondary, shellsForAll } from './autofire.js?v=8bbbd109';
+import { printPhase, printOffset, printOn, patternSecsFor } from './printpath.js?v=8bbbd109';
+import { createBeam } from './beamfx.js?v=8bbbd109';
+import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3, segKey, tangentDir, tangentBasis } from './vec3.js?v=8bbbd109';
+import { CREATURES, waveJelly } from './creatures.js?v=8bbbd109';
+import { brief } from './isaobriefs.js?v=8bbbd109';
+import { drawEmotion } from './emotions.js?v=8bbbd109';
 import { ACHIEVEMENTS, ACHV_GROUPS, achievement, blankRun, earned, freshlyEarned,
   sanitiseRecord }
-  from './achievements.js?v=7059234a';
+  from './achievements.js?v=8bbbd109';
 import { applyFontPack, currentFontPack, FONT_NAMES,
-  loadTypeFeel } from './fonts.js?v=7059234a';
-import { UNITS, UNIT_NAMES, buildUnit, buildCreature, preloadMkcx, preloadServer, makeServerFixture, makeShieldShell, preloadContainer, makeContainerFixture, preloadFabricator, makeIsaoDrone, makeBulletCloud, makeRewardSolid, makeShellSolid, makeDebris, makeDotBurst, makePortalCloud, makeHeartCloud, makeDotEnemy, preloadTerraformer, makeTerraformerFixture } from './units.js?v=7059234a';
-import { LOOKS, LOOK_NAMES } from './looks.js?v=7059234a';
-import { makeCellIndex } from './cellindex.js?v=7059234a';
-import { CREATURE_TINTS, ENEMY_SPEC, INTROS, computeWavePlan, accentFor } from './enemyspec.js?v=7059234a';
-import { PICKUPS } from './pickups.js?v=7059234a';
-import { rankFor, rankLabel, badgeSVG, killReq, eliteReq } from './ranks.js?v=7059234a';
-import { makeScore } from './score.js?v=7059234a';
-import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER } from './towers.js?v=7059234a';
-import { makeEconomy, sellRefund } from './economy.js?v=7059234a';
-import { makeBloom } from './postfx.js?v=7059234a';
-import { TANK_FEEL, TANK_FEEL_KNOBS, makeTankFeel, stepTankFeel, landTankFeel, fireTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js?v=7059234a';
-import { FEEL, loadFeel, saveFeel } from './feelstore.js?v=7059234a';
+  loadTypeFeel } from './fonts.js?v=8bbbd109';
+import { UNITS, UNIT_NAMES, buildUnit, buildCreature, preloadMkcx, preloadServer, makeServerFixture, makeShieldShell, preloadContainer, makeContainerFixture, preloadFabricator, makeIsaoDrone, makeBulletCloud, makeRewardSolid, makeShellSolid, makeDebris, makeDotBurst, makePortalCloud, makeHeartCloud, makeDotEnemy, preloadTerraformer, makeTerraformerFixture } from './units.js?v=8bbbd109';
+import { LOOKS, LOOK_NAMES } from './looks.js?v=8bbbd109';
+import { makeCellIndex } from './cellindex.js?v=8bbbd109';
+import { CREATURE_TINTS, ENEMY_SPEC, INTROS, computeWavePlan, accentFor } from './enemyspec.js?v=8bbbd109';
+import { PICKUPS } from './pickups.js?v=8bbbd109';
+import { rankFor, rankLabel, badgeSVG, killReq, eliteReq } from './ranks.js?v=8bbbd109';
+import { makeScore } from './score.js?v=8bbbd109';
+import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER } from './towers.js?v=8bbbd109';
+import { makeEconomy, sellRefund } from './economy.js?v=8bbbd109';
+import { makeBloom } from './postfx.js?v=8bbbd109';
+import { TANK_FEEL, TANK_FEEL_KNOBS, makeTankFeel, stepTankFeel, landTankFeel, fireTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js?v=8bbbd109';
+import { FEEL, loadFeel, saveFeel } from './feelstore.js?v=8bbbd109';
 import { STRIKE_KNOBS, makeStrike, makeStrikeParams, grantStrikes, stepStrike,
   toggleArm, paintTarget, launchStrike, stepFall, skipFall, fallProgress,
-  strikeDamage, retargetStrike, orbitProgress } from './strike.js?v=7059234a';
-import { radarBasis, radarProject, radarBearing, sweepAngle, radarPhosphor } from './radar.js?v=7059234a';
-import { BLOOM_GROUPS } from './bloomweights.js?v=7059234a';
-import { TOWER_LOOK_NAMES, DEFAULT_TOWER_LOOK, buildTowerLook, preloadLook } from './towerlooks.js?v=7059234a';
-import { makeAudio } from './audio.js?v=7059234a';
-import { DEATH_KEYS } from './audiomanifest.js?v=7059234a';
+  strikeDamage, retargetStrike, orbitProgress } from './strike.js?v=8bbbd109';
+import { radarBasis, radarProject, radarBearing, sweepAngle, radarPhosphor } from './radar.js?v=8bbbd109';
+import { BLOOM_GROUPS } from './bloomweights.js?v=8bbbd109';
+import { TOWER_LOOK_NAMES, DEFAULT_TOWER_LOOK, buildTowerLook, preloadLook } from './towerlooks.js?v=8bbbd109';
+import { makeAudio } from './audio.js?v=8bbbd109';
+import { DEATH_KEYS } from './audiomanifest.js?v=8bbbd109';
 
 export function initTdTab(root) {
   let active = false;
@@ -67,6 +67,7 @@ export function initTdTab(root) {
     font: currentFontPack(),
     seed: 7,
     heartLook: 'terraformer', // what stands at the pole — see HEART_LOOKS
+    callouts: true,           // the encouragement layer; numbers survive it going off
     // The whole unlock run — every wave until the last tower unlocks — is
     // a guided tutorial, and it should be played on a TIGHT board: at 3000
     // the opening sector was 146 open cells, at 500 it is 84. Cells are
@@ -3990,8 +3991,24 @@ export function initTdTab(root) {
   // callout pop-ups + the ram combo counter (both pointer-transparent)
   const calloutsEl = root.querySelector('#td-callouts');
   const comboEl = root.querySelector('#td-combo');
+  // WHAT SURVIVES THE ENCOURAGEMENT BEING SWITCHED OFF. The praise is the
+  // part the operator wants gone — RECKLESS!, すげ〜!, the heart's lines. The
+  // SCORING is not praise: a streak multiplier and a ram count are facts you
+  // are playing against, so they stay. With the words stripped, in every
+  // language, because "×1.45" is the whole message and "STREAK" was only ever
+  // decoration on it.
+  const CALLOUT_NUMERIC = { 'co-streak': true, 'co-milestone': true };
+  const numbersOnly = (t) => {
+    const m = String(t).match(/[×x]\s*[\d.]+/);
+    return m ? m[0].replace(/\s+/g, '') : t;
+  };
+
   function showCallout(text, cls, pin = false) {
     if (!calloutsEl) return;
+    if (!params.callouts) {
+      if (!CALLOUT_NUMERIC[cls]) return;   // the praise goes quiet
+      text = numbersOnly(text);
+    }
     while (calloutsEl.children.length >= 3) calloutsEl.firstChild.remove();
     const d = document.createElement('div');
     d.className = `callout ${cls}`;
@@ -4002,10 +4019,17 @@ export function initTdTab(root) {
     if (pin) d.style.animation = 'none';
     else setTimeout(() => d.remove(), 1200);
   }
+  // one class on the tab root moves both number slots off the middle of the
+  // screen; the CSS owns where, so this never has to know
+  function syncCalloutMode() {
+    root.classList.toggle('no-callouts', !params.callouts);
+    syncCombo();
+  }
+
   function syncCombo() {
     if (!comboEl) return;
     if (ramCombo < 2) { comboEl.classList.add('hidden'); return; }
-    comboEl.textContent = `RAM ×${ramCombo}`;
+    comboEl.textContent = params.callouts ? `RAM ×${ramCombo}` : `×${ramCombo}`;
     // the tier is the intensity dial: size and color climb every 10
     comboEl.dataset.tier = String(Math.min(5, Math.floor(ramCombo / 10)));
     comboEl.classList.remove('hidden');
@@ -7530,6 +7554,7 @@ export function initTdTab(root) {
   const speedCtrl = gui.add(params, 'speed', 0.2, 4, 0.1).name('wander speed');
   const directiveCtrl = gui.add(params, 'directive', DIRECTIVES).name('auto directive').onChange(syncDirectiveChip);
   gui.add(params, 'recoil', 0, 8, 0.1).name('shell recoil');
+  gui.add(params, 'callouts').name('callout messages').onChange(syncCalloutMode);
   gui.add(params, 'heartLook', Object.keys(HEART_LOOKS)).name('stalheart')
     .onFinishChange(() => { buildActors(); placeActors(); });
   gui.add(params, 'waveSize', 1, 6, 1).name('wave size').onFinishChange(regenerate);
@@ -8187,6 +8212,8 @@ export function initTdTab(root) {
   if (viewOv === 'drone' && params.view !== 'drone') {
     preloadFabricator().then(() => { spawnIsao().then(() => setView('drone')); });
   }
+  if (urlParams.get('callouts') === '0') params.callouts = false;
+  syncCalloutMode();
   const heartOverride = urlParams.get('heart');
   if (HEART_LOOKS[heartOverride]) params.heartLook = heartOverride;
   const lookOverride = urlParams.get('look');
@@ -9318,6 +9345,10 @@ export function initTdTab(root) {
         steerL: '#td-pad-left', steerR: '#td-pad-right',
         fire: '#td-pad-fire', laser: '#td-pad-laser',
         launch: '#td-launch', next: '#td-next', card: '#td-sitrep', hack: '#td-hack',
+        // the two number slots, which only leave the centre when the
+        // encouragement is switched off — and are exactly the pair most
+        // likely to land on the HUD when they move
+        shout: '#td-callouts', combo: '#td-combo',
       };
       const box = {};
       for (const [k, sel] of Object.entries(want)) {

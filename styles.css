@@ -5,22 +5,22 @@
    back to a system face until the subset is rebuilt. */
 @font-face {
   font-family: 'VT323';
-  src: url('assets/fonts/VT323.woff2?v=7059234a') format('woff2');
+  src: url('assets/fonts/VT323.woff2?v=8bbbd109') format('woff2');
   font-weight: 400; font-style: normal; font-display: swap;
 }
 @font-face {
   font-family: 'Press Start 2P';
-  src: url('assets/fonts/PressStart2P.woff2?v=7059234a') format('woff2');
+  src: url('assets/fonts/PressStart2P.woff2?v=8bbbd109') format('woff2');
   font-weight: 400; font-style: normal; font-display: swap;
 }
 @font-face {
   font-family: 'Share Tech Mono';
-  src: url('assets/fonts/ShareTechMono.woff2?v=7059234a') format('woff2');
+  src: url('assets/fonts/ShareTechMono.woff2?v=8bbbd109') format('woff2');
   font-weight: 400; font-style: normal; font-display: swap;
 }
 @font-face {
   font-family: 'DotGothic16';
-  src: url('assets/fonts/DotGothic16.woff2?v=7059234a') format('woff2');
+  src: url('assets/fonts/DotGothic16.woff2?v=8bbbd109') format('woff2');
   font-weight: 400; font-style: normal; font-display: swap;
 }
 
@@ -2821,6 +2821,39 @@ body.playing:not(.chrome-open) #tabbar { display: none !important; }
   text-shadow: var(--shout-halo);
 }
 #td-combo.hidden { display: none; }
+
+/* --- callouts off: numbers only, and off the middle of the screen --------
+   With the praise switched off what is left is scoring, and scoring does not
+   want the centre of the board — that space is where the player is actually
+   looking. The two numbers split to either side of it, high and a little in
+   from the edges: the streak multiplier left, the ram count right, both
+   readable in peripheral vision without ever sitting over the tank. */
+.no-callouts #td-callouts {
+  /* clear of the HUD: the score bar, the CTR buttons and the wave card own
+     the top ~22%, and 17% put the numbers straight through them */
+  top: 27%;
+  left: 28%;
+  text-align: right;
+}
+.no-callouts #td-combo {
+  /* 72, not 76: the lil-gui panel is pinned top-right on DESKTOP (it only
+     auto-hides on a phone) and is ~245px wide, so anything further out
+     disappears under it on a narrower window. */
+  top: 27%;
+  left: 72%;
+}
+/* a phone has no room to push them this far out — bring them back in rather
+   than off the edge */
+@media (max-width: 560px) {
+  .no-callouts #td-callouts { top: 30%; left: 27%; }
+  .no-callouts #td-combo { top: 30%; left: 73%; }
+}
+/* numbers alone can be smaller than a shout and still read */
+.no-callouts .callout {
+  font-size: calc(var(--shout-unit) * 0.72);
+  animation-duration: 0.9s;
+}
+
 /* the bench's ladder wears what #td-combo wears, minus the positioning */
 .combobox [data-tier] {
   font-family: var(--font-shout);
