@@ -5,7 +5,7 @@
 // factory rather than three near-identical files. No renderer, no loop.
 // Shares the markdown converter and .mdview styles with the devlog overlay.
 
-import { mdToHtml } from './devlog.js?v=8fa54452';
+import { mdToHtml } from './devlog.js?v=91c002bf';
 
 function makeDocTab(root, selector, file) {
   const el = root.querySelector(selector);

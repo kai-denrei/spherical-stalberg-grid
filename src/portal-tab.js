@@ -1,0 +1,543 @@
+// portal-tab.js — TEMPORARY. A sidequest bench, not a game tab.
+//
+// Two questions, and this tab exists to answer the second one:
+//
+//   1. Does XorDev's Coronal sit inside the authored portal ring and read as a
+//      wormhole? (An eye question. Look at it.)
+//   2. What does it COST — cinematic only, sometimes, or always? (A number
+//      question, and the whole reason this is an instrument and not a viewer.)
+//
+// THE ARCHITECTURE IS THE ANSWER TO 2. The corona is a fullscreen raymarch:
+// uSteps x uTurbOctaves sine-heavy iterations PER PIXEL, 240 at defaults, pure
+// ALU that does not batch. Run it as a fullscreen pass behind a gate and it
+// costs the whole frame. Run it the way this tab does — once, into a small
+// render target, shared by every gate on the board — and the cost is FIXED:
+// it depends on the target's size and the march parameters, and NOT on how
+// many portals are on screen, how big they are, or the display's resolution.
+//
+// That is the finding the decision hangs on, so the tab makes it falsifiable:
+// spawn N rings and watch the corona cost stay flat while the geometry cost
+// climbs.
+//
+// Ported per ~/Dev/procedural3dvisuals/docs/PORTING.md, which has a section
+// for exactly this case. Its two warnings are honoured below and marked.
+import * as THREE from '../vendor/three.module.js';
+import { OrbitControls } from '../vendor/OrbitControls.js';
+import GUI from '../vendor/lil-gui.esm.js';
+import { CORONA_FRAG } from './fx/corona.frag.js';
+import { WORMHOLE_FRAG } from './fx/wormhole.frag.js';
+import { loadGlb, bustToken } from './glbmodels.js';
+import { makeBloom } from './postfx.js';
+
+// TWO CANDIDATES, ONE MACHINE. Corona is XorDev's ring singularity seen from
+// outside; Wormhole is the same raymarch and the same singularity retargeted
+// to a tunnel you are flying down. The operator raised the second as the
+// alternative, and it is the more literal reading of "wormhole / teleportation"
+// — so this is a registry rather than a hard-coded effect, and the choice is
+// made by eye in the tab.
+//
+// Both cost the SAME SHAPE: uSteps x uTurbOctaves sine-folds per pixel. So the
+// measurement below is valid for either, and switching effects does not
+// invalidate a number already taken.
+//
+// Defaults are copied from the sandbox's own registry.mjs. Note wormhole's
+// exposure is ~5x corona's, and that is deliberate upstream: nearly every ray
+// crosses the throat, so far more rays hit the singularity.
+const SHARED = {
+  uSteps: 40,          // cost is linear; the sandbox notes detail saturates ~64
+  uTurbOctaves: 6,     // sine folds per step. TOTAL COST = steps x octaves
+  uTurbAmp: 1.0,
+  uTurbFreq: 2.0,
+  uStepScale: 1 / 3,
+  uColorBias: 1.1,     // NEVER below 1.0 — at exactly 1.0 the singularity
+                       // becomes 0/0 and returns real NaN (PORTING.md §3)
+  uEpsilon: 1e-4,
+};
+
+const EFFECTS = {
+  corona: {
+    label: 'Corona',
+    frag: CORONA_FRAG,
+    defaults: { ...SHARED, uRingRadius: 1.0, uExposure: 30.0 },
+    // the one knob whose name differs between the two, so the GUI can drive
+    // "the radius of the thing the ray grazes" without special-casing
+    radiusKey: 'uRingRadius',
+  },
+  wormhole: {
+    label: 'Wormhole',
+    frag: WORMHOLE_FRAG,
+    defaults: {
+      ...SHARED,
+      uThroatRadius: 1.0,
+      uExposure: 150.0,
+      uSpeed: 1.6,      // forward travel; negative flies backwards OUT of it
+      uTwist: 0.35,     // swirl per unit depth — the wormhole cue itself
+      uSpin: 0.15,
+      uHueSpread: 0.5,  // above ~0.8 it reads as a rainbow, not a portal
+      uDepthHue: 0.12,
+      uMinStep: 0.02,   // 0 stalls the march at the wall
+      uNear: 1.5,       // below ~1.2 the throat crossing leaves the frame
+    },
+    radiusKey: 'uThroatRadius',
+  },
+};
+
+export function initPortalTab(root) {
+  let active = false;
+  const container = root.querySelector('#portal-app');
+  const hud = root.querySelector('#portal-hud');
+
+  const renderer = new THREE.WebGLRenderer({ antialias: true });
+  renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+  container.appendChild(renderer.domElement);
+
+  const scene = new THREE.Scene();
+  scene.background = new THREE.Color(0x04070d);
+  const camera = new THREE.PerspectiveCamera(42, 1, 0.05, 500);
+  camera.position.set(0, 5.2, 16);
+
+  const hemi = new THREE.HemisphereLight(0xc8cfe0, 0x555060, 0.55);
+  scene.add(hemi);
+  const sun = new THREE.DirectionalLight(0xffe8c8, 0.35);
+  sun.position.set(4, 7, 5); scene.add(sun);
+
+  const postfx = makeBloom(renderer, scene, camera, {});
+  const controls = new OrbitControls(camera, renderer.domElement);
+  controls.enableDamping = true;
+  controls.dampingFactor = 0.08;
+  controls.target.set(0, 4.0, 0);
+
+  const grid = new THREE.GridHelper(80, 40, 0x1b6fa8, 0x0a2a3a);
+  grid.material.transparent = true; grid.material.opacity = 0.35;
+  scene.add(grid);
+
+  // --- THE CORONA, rendered ONCE into a target ----------------------------
+  // A fullscreen triangle, not a quad: one primitive, and no seam down the
+  // diagonal where derivatives go wrong. Vertices are already in clip space,
+  // so the vertex shader is a pass-through and no camera matrix is involved.
+  const fxScene = new THREE.Scene();
+  const fxCamera = new THREE.Camera();
+  const fxUniforms = {
+    uResolution: { value: new THREE.Vector3(1, 1, 1) },
+    uTime: { value: 0 },
+    uMouse: { value: new THREE.Vector4() },
+    uTimeScale: { value: 1 },
+  };
+  // The SUPERSET of both effects' uniforms. three.js warns (and the value is
+  // simply unused) for a uniform the current program does not declare, but a
+  // uniform the program DOES declare and the object lacks is a hard failure —
+  // so switching effects must never remove one. Union, then, not swap.
+  for (const spec of Object.values(EFFECTS)) {
+    for (const [k, v] of Object.entries(spec.defaults)) {
+      if (!fxUniforms[k]) fxUniforms[k] = { value: v };
+    }
+  }
+
+  const fxGeom = new THREE.BufferGeometry();
+  fxGeom.setAttribute('position', new THREE.BufferAttribute(
+    new Float32Array([-1, -1, 0, 3, -1, 0, -1, 3, 0]), 3));
+  const fxMat = new THREE.ShaderMaterial({
+    // NOT OPTIONAL: tanh() and `out` are GLSL ES 3.00 only, and the shader's
+    // tonemap is built on tanh. Under GLSL1 three.js also injects the
+    // gl_FragColor alias this shader deliberately does not use.
+    glslVersion: THREE.GLSL3,
+    vertexShader: 'void main() { gl_Position = vec4(position.xy, 0.0, 1.0); }',
+    fragmentShader: EFFECTS.corona.frag,
+    uniforms: fxUniforms,
+    depthTest: false,
+    depthWrite: false,
+  });
+  fxScene.add(new THREE.Mesh(fxGeom, fxMat));
+
+  let rt = null, rtSize = 0;
+  function sizeTarget(n) {
+    if (rtSize === n) return;
+    if (rt) rt.dispose();
+    rt = new THREE.WebGLRenderTarget(n, n, {
+      minFilter: THREE.LinearFilter, magFilter: THREE.LinearFilter,
+      depthBuffer: false, stencilBuffer: false,
+    });
+    // PORTING.md: the effect writes DISPLAY-REFERRED values. A material that
+    // samples it expects linear, so three must convert on read. Getting this
+    // backwards is named there as the single most common cause of "right in
+    // the sandbox, wrong in my scene."
+    rt.texture.colorSpace = THREE.SRGBColorSpace;
+    rtSize = n;
+    // ...and uResolution is the TARGET's size, never the canvas's, or the ring
+    // is sized for the wrong aspect and lands off-centre.
+    fxUniforms.uResolution.value.set(n, n, 1);
+    for (const d of discs) d.material.map = rt.texture;
+  }
+
+  // --- the ring ------------------------------------------------------------
+  const rings = new THREE.Group();
+  scene.add(rings);
+  const discs = [];      // the aperture faces, one per ring, all sharing ONE map
+  const spinners = [];   // {a, b, yaw} per ring
+
+  let apertureR = 1.8;   // measured from the model once it lands
+  let ringTemplate = null;
+
+  function buildRing() {
+    if (!ringTemplate) return null;
+    const g = ringTemplate.clone(true);
+    const rotorA = g.getObjectByName('Rotor_A_Spin');
+    const rotorB = g.getObjectByName('Rotor_B_Spin');
+    const yaw = g.getObjectByName('Yaw_Turntable');
+
+    // THE APERTURE IS LABELLED "KEEP EMPTY" on the operator's blueprint, and
+    // that is why it is the right place: the model reserves the hole for
+    // whatever fills it.
+    //
+    // It is an EMPTY node — no geometry — and the reserved volume lives in its
+    // SCALE (1.8, 1.8, 0.58). A Box3 over it is degenerate and returns nothing,
+    // which the first cut of this silently fell back from... to 1.8, the exact
+    // right answer by coincidence. That kind of luck hides a bug forever, so
+    // the disc is now parented to the node and left at unit radius: the model's
+    // own authored volume scales it, and if the ring is ever re-exported at a
+    // different size this follows without being touched.
+    const vol = g.getObjectByName('Aperture_Volume');
+    if (vol) apertureR = Math.max(vol.scale.x, vol.scale.y);
+
+    const disc = new THREE.Mesh(
+      new THREE.CircleGeometry(1, 64),
+      new THREE.MeshBasicMaterial({
+        map: rt ? rt.texture : null,
+        // The corona is authored on black. Additive means the black IS the
+        // transparency — no alpha channel needed, and the rim glow spills onto
+        // the ring's inner liner the way a real one would.
+        blending: THREE.AdditiveBlending,
+        transparent: true,
+        depthWrite: false,
+        side: THREE.DoubleSide,
+        toneMapped: false,
+      }));
+    // unit radius under the aperture node (which carries the size), or the
+    // measured radius if the model ever arrives without one
+    if (vol) { disc.scale.set(1, 1, 1); vol.add(disc); }
+    else { disc.scale.setScalar(apertureR); g.add(disc); }
+    discs.push(disc);
+    spinners.push({ a: rotorA, b: rotorB, yaw });
+    rings.add(g);
+    return g;
+  }
+
+  function setRingCount(n) {
+    while (rings.children.length > n) {
+      const g = rings.children[rings.children.length - 1];
+      rings.remove(g);
+      spinners.pop();
+      const d = discs.pop();
+      if (d) d.geometry.dispose();
+    }
+    while (rings.children.length < n && ringTemplate) buildRing();
+    // lay them out in a row so several are on screen at once — the point of
+    // the count knob is to watch the corona cost NOT move while it climbs
+    rings.children.forEach((g, i) => {
+      const span = 9.5;
+      g.position.x = (i - (rings.children.length - 1) / 2) * span;
+    });
+  }
+
+  loadGlb(`assets/models/portalring.glb`).then((src) => {
+    if (!src) { if (hud) hud.textContent = 'portalring.glb failed to load'; return; }
+    ringTemplate = src;
+    // 72 meshes over 7 materials. Left unmerged ON PURPOSE here: this bench
+    // reports draw calls, and merging would hide the geometry cost that the
+    // corona cost has to be compared against. In the game it would merge,
+    // preserving Rotor_A_Spin / Rotor_B_Spin / Yaw_Turntable / Aperture_Volume.
+    setRingCount(P.rings);
+    fitView();
+  });
+
+  function fitView() {
+    const box = new THREE.Box3().setFromObject(rings);
+    if (box.isEmpty()) return;
+    const c = box.getCenter(new THREE.Vector3());
+    const s = box.getSize(new THREE.Vector3());
+    controls.target.copy(c);
+    camera.position.set(c.x, c.y + s.y * 0.15, c.z + Math.max(s.x, s.y) * 1.9);
+    controls.update();
+  }
+
+  // --- the knobs -----------------------------------------------------------
+  const P = {
+    corona: true,
+    rtSize: 512,
+    updateHz: 60,        // the corona need not run at display rate
+    rings: 1,
+    effect: 'corona',
+    steps: SHARED.uSteps,
+    octaves: SHARED.uTurbOctaves,
+    radius: 1.0,
+    exposure: EFFECTS.corona.defaults.uExposure,
+    turbAmp: SHARED.uTurbAmp,
+    speed: EFFECTS.wormhole.defaults.uSpeed,
+    twist: EFFECTS.wormhole.defaults.uTwist,
+    hueSpread: EFFECTS.wormhole.defaults.uHueSpread,
+    timeScale: 1.0,
+    spinA: 0.35,
+    spinB: -0.22,
+    yaw: 0.0,
+    bloom: true,
+    autoOrbit: false,
+  };
+
+  const gui = new GUI({ container: root.querySelector('#portal-gui') || undefined, width: 268 });
+  gui.title('portal + corona');
+  const fx = gui.addFolder('effect');
+  fx.add(P, 'corona').name('effect on');
+  fx.add(P, 'effect', Object.keys(EFFECTS)).name('which').onChange(setEffect);
+  fx.add(P, 'rtSize', [128, 256, 512, 1024, 2048]).name('target px');
+  fx.add(P, 'updateHz', 5, 60, 1).name('update Hz');
+  fx.add(P, 'steps', 4, 120, 1).name('march steps');
+  fx.add(P, 'octaves', 1, 12, 1).name('turb octaves');
+  fx.add(P, 'radius', 0.1, 3, 0.01).name('ring / throat r');
+  fx.add(P, 'exposure', 2, 600, 0.5).name('exposure');
+  fx.add(P, 'turbAmp', 0, 3, 0.01).name('turb amount');
+  fx.add(P, 'timeScale', 0, 3, 0.01).name('time scale');
+  const wh = gui.addFolder('wormhole only');
+  wh.add(P, 'speed', -6, 6, 0.02).name('travel speed');
+  wh.add(P, 'twist', -2, 2, 0.005).name('twist / depth');
+  wh.add(P, 'hueSpread', 0, 3.2, 0.01).name('hue spread');
+  const st = gui.addFolder('stage');
+  st.add(P, 'rings', 1, 8, 1).name('portals').onChange((n) => { setRingCount(n); fitView(); });
+  st.add(P, 'spinA', -2, 2, 0.01).name('rotor A');
+  st.add(P, 'spinB', -2, 2, 0.01).name('rotor B');
+  st.add(P, 'yaw', -1, 1, 0.01).name('turntable');
+  st.add(P, 'bloom').name('bloom');
+  st.add(P, 'autoOrbit').name('auto orbit');
+
+  // Swapping the fragment source means a new program: three.js recompiles when
+  // material.fragmentShader changes AND needsUpdate is set. The uniform object
+  // is shared and is a union of both effects, so nothing has to be rebuilt.
+  function setEffect(name) {
+    const spec = EFFECTS[name];
+    if (!spec) return;
+    fxMat.fragmentShader = spec.frag;
+    fxMat.needsUpdate = true;
+    // carry the per-effect exposure across, since the two differ by ~5x and
+    // leaving corona's 30 on the wormhole renders a white disc
+    P.exposure = spec.defaults.uExposure;
+    gui.controllersRecursive().forEach((c) => c.updateDisplay());
+  }
+
+  // --- the measurement -----------------------------------------------------
+  // Two numbers, and they answer different questions.
+  //
+  // MEASURED ms is what this machine does today. It is the honest one, but it
+  // is hardware- and driver-specific, and under headless SwiftShader (a
+  // software rasteriser) it says nothing about an M4's GPU.
+  //
+  // FRAGMENT WORK is exact and hardware-independent: target pixels x steps x
+  // octaves = the sine-fold iterations the march performs per frame. It is the
+  // quantity the decision actually turns on, because it does not move when the
+  // display, the portal count, or the portal's size on screen move.
+  const times = [];
+  let coronaMs = 0, frameMs = 0, lastFxAt = -1e9;
+
+  function fragmentWork() {
+    return P.rtSize * P.rtSize * P.steps * P.octaves;
+  }
+
+  const syncPix = new Uint8Array(4);
+  // Timing a renderer.render() on the CPU measures SUBMISSION, not execution —
+  // GL commands are queued and return immediately, so the number comes back
+  // near zero however heavy the shader is. Reading a single pixel back from
+  // the target forces the pipeline to drain, which is the only portable way to
+  // put the GPU's work inside the interval being timed. It is a stall, so it
+  // is used by the bench ONLY and never on a live frame.
+  function syncGpu() {
+    if (rt) renderer.readRenderTargetPixels(rt, 0, 0, 1, 1, syncPix);
+  }
+
+  function renderCorona(t, sync) {
+    const t0 = performance.now();
+    sizeTarget(P.rtSize);
+    fxUniforms.uTime.value = t;
+    fxUniforms.uTimeScale.value = P.timeScale;
+    fxUniforms.uSteps.value = Math.round(P.steps);
+    fxUniforms.uTurbOctaves.value = Math.round(P.octaves);
+    fxUniforms[EFFECTS[P.effect].radiusKey].value = P.radius;
+    fxUniforms.uExposure.value = P.exposure;
+    fxUniforms.uTurbAmp.value = P.turbAmp;
+    fxUniforms.uSpeed.value = P.speed;
+    fxUniforms.uTwist.value = P.twist;
+    fxUniforms.uHueSpread.value = P.hueSpread;
+    renderer.setRenderTarget(rt);
+    renderer.render(fxScene, fxCamera);
+    renderer.setRenderTarget(null);
+    if (sync) syncGpu();
+    return performance.now() - t0;
+  }
+
+  function resize() {
+    const w = container.clientWidth || 800, h = container.clientHeight || 600;
+    renderer.setSize(w, h, false);
+    camera.aspect = w / Math.max(1, h);
+    camera.updateProjectionMatrix();
+    postfx.setSize(w, h);
+  }
+  addEventListener('resize', () => { if (active) resize(); });
+
+  const clock = new THREE.Clock();
+  let simT = 0;
+  // Own the counters explicitly. autoReset clears them at the start of every
+  // internal render pass, so a read after postfx.render() reports only the
+  // composer's LAST pass — that is the documented trap in this repo's ?perf
+  // hook. Off, plus one reset at the top of each frame, gives the whole frame
+  // including the effect pass and every bloom mip. (Leaving it off WITHOUT the
+  // per-frame reset is the other half of the trap: the numbers then accumulate
+  // forever and read as thousands of draw calls.)
+  renderer.info.autoReset = false;
+
+  function step(dt, t) {
+    simT = t;
+    for (const s of spinners) {
+      // counter-rotating, as the blueprint labels them — the ring's axis is Z
+      if (s.a) s.a.rotation.z += P.spinA * dt;
+      if (s.b) s.b.rotation.z += P.spinB * dt;
+      if (s.yaw) s.yaw.rotation.y += P.yaw * dt;
+    }
+    for (const d of discs) d.visible = P.corona;
+
+    coronaMs = 0;
+    if (P.corona) {
+      const period = 1 / Math.max(1, P.updateHz);
+      if (t - lastFxAt >= period) { coronaMs = renderCorona(t); lastFxAt = t; }
+    }
+    if (P.autoOrbit) {
+      const a = t * 0.15;
+      const r = camera.position.length();
+      camera.position.x = Math.sin(a) * r * 0.6;
+      camera.position.z = Math.cos(a) * r * 0.6;
+    }
+    controls.update();
+  }
+
+  function paintHud() {
+    if (!hud) return;
+    const r = renderer.info.render;
+    const work = fragmentWork();
+    const med = times.length ? times.slice().sort((a, b) => a - b)[times.length >> 1] : 0;
+    const timed = med > 0.005;
+    hud.innerHTML =
+      (timed ? `<b>${med.toFixed(2)} ms/frame</b> (${(1000 / med).toFixed(0)} fps)`
+        : `<b>no clock</b> (headless virtual time — ms unavailable)`)
+      + (timed ? ` &nbsp;·&nbsp; ${EFFECTS[P.effect].label} pass <b>${coronaMs.toFixed(2)} ms</b>`
+        : ` &nbsp;·&nbsp; ${EFFECTS[P.effect].label}`)
+      + ` @ ${P.rtSize}&sup2; &times; ${Math.round(P.steps)}&times;${Math.round(P.octaves)}`
+      + `<br>fragment work <b>${(work / 1e6).toFixed(1)}M</b> sine-folds/frame`
+      + ` &nbsp;·&nbsp; ${P.updateHz}Hz &rarr; ${(work * P.updateHz / 1e9).toFixed(2)}G/s`
+      + `<br>${rings.children.length} portal${rings.children.length === 1 ? '' : 's'}`
+      + ` &nbsp;·&nbsp; ${r.calls} draw calls &nbsp;·&nbsp; ${(r.triangles / 1000).toFixed(1)}k tris`
+      + ` &nbsp;·&nbsp; one shared target`;
+  }
+
+  function frame() {
+    requestAnimationFrame(frame);
+    if (!active) return;
+    renderer.info.reset();
+    const dt = Math.min(0.05, clock.getDelta());
+    const t0 = performance.now();
+    step(dt, simT + dt);
+    postfx.setEnabled(P.bloom);
+    postfx.render();
+    frameMs = performance.now() - t0;
+    times.push(frameMs);
+    if (times.length > 90) times.shift();
+    paintHud();
+  }
+  frame();
+
+  // ?portalperf=1 — THE DECISION, AS NUMBERS. Sweeps target size and march
+  // parameters and reports both costs: measured milliseconds (honest but
+  // hardware-specific — under headless SwiftShader, a SOFTWARE rasteriser,
+  // these say nothing about an M4's GPU) and fragment work (exact, and the
+  // quantity the decision actually turns on).
+  //
+  // The load-bearing claim it tests: cost does NOT scale with the number of
+  // portals, because they share one target. If that is false the whole
+  // "always on" option dies, so it is measured rather than asserted.
+  const urlParams = new URLSearchParams(location.search);
+  // ?portalfx=corona|wormhole — so a look can be linked rather than described,
+  // and so the perf probe can be pointed at either without touching a slider.
+  const fxWanted = urlParams.get('portalfx');
+  if (fxWanted && EFFECTS[fxWanted]) { P.effect = fxWanted; setEffect(fxWanted); }
+  if (urlParams.get('portalperf') === '1') {
+    setTimeout(() => {
+      // HEADLESS CANNOT TIME THIS. performance.now() does not advance under
+      // --virtual-time-budget, so every ms here comes back 0.00 in CI and the
+      // column is meaningless. Say so, loudly, rather than printing zeros that
+      // look like "free". The fragment-work column is exact either way, and
+      // the ms fill in when the operator opens the tab on real hardware.
+      let clockLive = false;
+      { const a0 = performance.now(); for (let i = 0; i < 5e6; i++) ; clockLive = performance.now() > a0; }
+      const bench = (label, fn) => {
+        fn();
+        renderCorona(1.0, true);                 // warm the program
+        const runs = [];
+        for (let i = 0; i < 12; i++) runs.push(renderCorona(2 + i * 0.05, true));
+        runs.sort((x, y) => x - y);
+        const med = runs[runs.length >> 1];
+        console.log(`PORTALPERF ${label.padEnd(30)} ${clockLive ? `${med.toFixed(2)} ms` : '  --  '}`
+          + `  | ${(fragmentWork() / 1e6).toFixed(1)}M sine-folds/frame`);
+        return med;
+      };
+      const reset = () => { P.rtSize = 512; P.steps = 40; P.octaves = 6; };
+      console.log(`PORTALPERF clock ${clockLive ? 'LIVE — ms are real' : 'FROZEN (headless virtual time) — ms column is meaningless here, read the sine-folds'}`);
+      console.log(`PORTALPERF model ${ringTemplate ? 'loaded' : 'NOT LOADED — scene counts below are void'}`
+        + ` | aperture radius ${apertureR.toFixed(2)} (from the node's own scale, not a guess)`);
+
+      console.log('PORTALPERF --- target size, at 40x6 ---');
+      for (const n of [128, 256, 512, 1024]) bench(`${n}x${n}`, () => { reset(); P.rtSize = n; });
+
+      console.log('PORTALPERF --- march cost, at 512x512 ---');
+      bench('steps 40 x oct 6 (default)', () => reset());
+      bench('steps 24 x oct 6', () => { reset(); P.steps = 24; });
+      bench('steps 40 x oct 4', () => { reset(); P.octaves = 4; });
+      bench('steps 24 x oct 4', () => { reset(); P.steps = 24; P.octaves = 4; });
+
+      console.log('PORTALPERF --- both effects, same settings ---');
+      for (const e of ['corona', 'wormhole']) bench(`${e} 512 40x6`, () => { reset(); setEffect(e); });
+      setEffect('corona');
+
+      // THE CLAIM. One target, N portals: the effect pass must not move.
+      console.log('PORTALPERF --- does portal count move the effect cost? ---');
+      for (const n of [1, 4, 8]) {
+        reset();
+        setRingCount(n);
+        const ms = bench(`${n} portal(s) on screen`, () => {});
+        renderer.info.reset();
+        postfx.render();
+        console.log(`PORTALPERF   ...and the SCENE at ${n}: ${renderer.info.render.calls} draw calls,`
+          + ` ${(renderer.info.render.triangles / 1000).toFixed(1)}k tris`
+          + ` — THIS is what climbs with portal count; the effect pass above does not`);
+      }
+      setRingCount(1);
+
+      // negative control: if the bench were not actually running the shader,
+      // every number above would be identical noise. 1 step must be far
+      // cheaper than 120, or the measurement is measuring nothing.
+      reset();
+      const lo = bench('CONTROL steps=1 oct=1', () => { reset(); P.steps = 1; P.octaves = 1; });
+      const hi = bench('CONTROL steps=120 oct=12', () => { reset(); P.steps = 120; P.octaves = 12; });
+      console.log(`PORTALPERF control: 1x1 vs 120x12 — `
+        + (!clockLive
+          ? 'SKIPPED (no clock: nothing to compare — this control only means something on real hardware)'
+          : `${hi > lo * 2 ? 'PASS' : 'FAIL'} (${lo.toFixed(2)}ms vs ${hi.toFixed(2)}ms;`
+            + ' the march must dominate or the bench is timing overhead)'));
+      reset();
+    }, 2500);   // after the glb has landed
+  }
+
+  return {
+    setActive(on) {
+      active = on;
+      if (on) { resize(); clock.getDelta(); }
+    },
+    // for the headless probe
+    _bench: { P, renderCorona, fragmentWork, renderer, rings, step,
+      render: () => postfx.render(), sizeTarget, times },
+  };
+}

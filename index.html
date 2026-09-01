@@ -5,18 +5,18 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
   <title>spherical stålberg grid</title>
   <meta name="theme-color" content="#10131a">
-  <link rel="manifest" href="./manifest.webmanifest?v=8fa54452">
-  <link rel="apple-touch-icon" href="./icons/apple-touch-icon.png?v=8fa54452">
+  <link rel="manifest" href="./manifest.webmanifest?v=91c002bf">
+  <link rel="apple-touch-icon" href="./icons/apple-touch-icon.png?v=91c002bf">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="SphereGrid">
-  <link rel="stylesheet" href="./styles.css?v=8fa54452">
+  <link rel="stylesheet" href="./styles.css?v=91c002bf">
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
-  <link rel="icon" href="favicon.svg?v=8fa54452" type="image/svg+xml">
-  <meta name="cb" content="8fa54452">
-  <link rel="icon" type="image/svg+xml" href="./cb-shapes/15.svg?v=8fa54452">
+  <link rel="icon" href="favicon.svg?v=91c002bf" type="image/svg+xml">
+  <meta name="cb" content="91c002bf">
+  <link rel="icon" type="image/svg+xml" href="./cb-shapes/17.svg?v=91c002bf">
   <!-- cb-badge retired from the game view (operator ruling): the build
        token lives in the DEV LOG tab, which reads meta[name="cb"] itself -->
 </head>
@@ -34,6 +34,7 @@
     <button data-tab="tank3">tank3</button>
     <button data-tab="units">units</button>
     <button data-tab="beam">beam</button>
+    <button data-tab="portal">portal</button>
     <button data-tab="how">how it works</button>
     <button data-tab="stack">tech stack</button>
     <button data-tab="sim">sim</button>
@@ -217,7 +218,7 @@
     <div id="td-launch" class="caution-frame" aria-label="launch control">
       <button id="td-safety" class="safety" type="button" aria-pressed="false" aria-label="safety">
         <span class="lbl-on">ON</span>
-        <img id="td-safety-img" class="switch-img" src="assets/ui/switch-off.png?v=8fa54452" alt="" width="120" height="200">
+        <img id="td-safety-img" class="switch-img" src="assets/ui/switch-off.png?v=91c002bf" alt="" width="120" height="200">
         <span class="lbl-off">OFF</span>
       </button>
       <div id="td-launch-readout">
@@ -309,7 +310,13 @@
     <button id="beam-copy" type="button" title="copy the preset to the clipboard">⧉</button>
   </div>
 
-  <div id="tab-units" class="tab tab-hidden">
+    <div id="tab-portal" class="tab tab-hidden">
+    <div id="portal-app"></div>
+    <div id="portal-gui"></div>
+    <div id="portal-hud"></div>
+  </div>
+
+<div id="tab-units" class="tab tab-hidden">
     <div id="units-app"></div>
     <div id="units-callouts" class="hidden" aria-hidden="true"></div>
     <div id="units-chrome">
@@ -520,6 +527,6 @@
     </div>
   </div>
 
-  <script type="module" src="./src/main.js?v=8fa54452"></script>
+  <script type="module" src="./src/main.js?v=91c002bf"></script>
 </body>
 </html>

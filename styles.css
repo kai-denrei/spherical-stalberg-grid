@@ -5,22 +5,22 @@
    back to a system face until the subset is rebuilt. */
 @font-face {
   font-family: 'VT323';
-  src: url('assets/fonts/VT323.woff2?v=8fa54452') format('woff2');
+  src: url('assets/fonts/VT323.woff2?v=91c002bf') format('woff2');
   font-weight: 400; font-style: normal; font-display: swap;
 }
 @font-face {
   font-family: 'Press Start 2P';
-  src: url('assets/fonts/PressStart2P.woff2?v=8fa54452') format('woff2');
+  src: url('assets/fonts/PressStart2P.woff2?v=91c002bf') format('woff2');
   font-weight: 400; font-style: normal; font-display: swap;
 }
 @font-face {
   font-family: 'Share Tech Mono';
-  src: url('assets/fonts/ShareTechMono.woff2?v=8fa54452') format('woff2');
+  src: url('assets/fonts/ShareTechMono.woff2?v=91c002bf') format('woff2');
   font-weight: 400; font-style: normal; font-display: swap;
 }
 @font-face {
   font-family: 'DotGothic16';
-  src: url('assets/fonts/DotGothic16.woff2?v=8fa54452') format('woff2');
+  src: url('assets/fonts/DotGothic16.woff2?v=91c002bf') format('woff2');
   font-weight: 400; font-style: normal; font-display: swap;
 }
 
@@ -3549,3 +3549,25 @@ tr.sim-timeout td:nth-child(2), tr.sim-stalled td:nth-child(2) { color: #ffb000;
   #td-launch-readout .status { font-size: 8px; }
   #td-launch-readout .target { font-size: 8px; }
 }
+
+
+/* --- PORTAL BENCH (temporary sidequest tab) ------------------------------
+   Same shape as the beam lab: the canvas fills the tab, lil-gui docks right,
+   and the readout sits bottom-left where the GUI cannot cover it. */
+#tab-portal { position: relative; width: 100%; height: 100%; overflow: hidden; }
+#portal-app { position: absolute; inset: 0; }
+#portal-app canvas { display: block; width: 100%; height: 100%; }
+#portal-gui { position: absolute; top: 8px; right: 8px; z-index: 6; }
+#portal-hud {
+  position: absolute; left: 12px; bottom: 12px; z-index: 6;
+  font: 12px/1.55 ui-monospace, Menlo, monospace;
+  color: var(--p-green-hot, #9f9);
+  background: rgba(4, 14, 9, 0.82);
+  border: 1px solid var(--p-green-dim, #274);
+  border-left: 3px solid var(--p-green, #3f7);
+  border-radius: 8px;
+  padding: 8px 12px;
+  pointer-events: none;
+  max-width: min(560px, calc(100vw - 24px));
+}
+#portal-hud b { color: var(--p-white, #fff); }
