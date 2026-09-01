@@ -112,7 +112,10 @@ raises every tower and performs every upgrade, and it works in **BIOMASS**
 
 Two commitments, one small and one structural.
 
-**1. Credit becomes Biomass.** A rename with teeth: the resource stops
+**1. Credit becomes Biomass.** — **SHIPPED** (2026-08-31). The unit suffix
+landed as **kg**, the substance the fiction points at. What follows is the
+plan as it was written, kept because it is the record of what the pass had
+to touch: a rename with teeth: the resource stops
 being an abstraction the HUD prints and becomes a *substance* the fiction
 can point at. Kills already pay it; now what they pay is the thing that
 died. Touch points, all of them known: `src/economy.js` (12 refs — the
@@ -125,8 +128,10 @@ three brightness tiers and the radial centre at once. The `?credit=N`
 debug hook should keep working under the old name as an alias — the DEVLOG
 and the two `simdata` batches are historical records and are NOT rewritten.
 
-**2. The drone builds.** — **SHIPPED** (`?order=`/`?bobby=` verify it). He is
-**BOBBY**, cast from the operator's fabricator .glb: order a tower and he
+**2. The drone builds.** — **SHIPPED** (`?order=`/`?isao=` verify it; the
+old `?bobby=` still works as an alias). He is **ISAO** — he shipped as BOBBY
+and was renamed with the CRT face — cast from the operator's fabricator .glb:
+order a tower and he
 flies to the cell, hangs there, and prints it out of biomass. Two clocks
 now stand between wanting a tower and having one — travel and build — and
 biomass leaves the purse at order time, so a queue cannot be spammed for
@@ -145,12 +150,12 @@ free. What follows was the argument for building it, and it held up:
 
 **Still open — do not guess these:**
 
-- **Is Bobby killable?** He currently flies at an altitude nothing reaches,
+- **Is ISAO killable?** He currently flies at an altitude nothing reaches,
   which was the operator's own framing ("typically too high to take any
   damage") and is shipped as a simplification, not a physics claim. A
-  vulnerable Bobby makes every build a risk and turns a leak into a real
+  vulnerable ISAO makes every build a risk and turns a leak into a real
   setback; an invulnerable one is a timer with a body.
-- **Clones.** The operator's idea: Bobby spends his downtime printing
+- **Clones.** The operator's idea: ISAO spends his downtime printing
   copies of himself, and a fleet builds in parallel. This is the best
   version of the biomass sink the sim batch asked for — it costs the
   resource, it buys throughput rather than power, and it is self-limiting
@@ -350,6 +355,24 @@ the rest rather than fight it, and a `voice` bus is one entry in BUSES.
 Worth generating one line first and hearing it against a live wave before
 committing to a script — a delivery that works in isolation and not over a
 klaxon is the usual way this goes wrong.
+
+### MANUAL OVERRIDE — specced, then SHELVED (2026-09-01)
+
+Losing your last tank stops being the end of the run: if the defences hold
+and the biomass is there, ISAO prints a replacement hull, and while it prints
+you may take **MANUAL OVERRIDE** — a Kika-centroid calibration ISAO runs to
+speed the print, higher score cutting more time. Full design, including the
+rejected pass/fail-gate version and the reasons, in
+`docs/superpowers/specs/2026-09-01-manual-override-design.md`.
+
+**Shelved deliberately, not dropped.** It closes three loose threads at once —
+it gives the Terraformer a mechanical job, answers the *Mode incentives* item
+below, and unblocks Kika-centroid by making it an accelerator rather than a
+third missile source (which is the objection recorded under the operator's
+evening list above — consider that one answered). But it adds a countdown
+panel, a button and an embedded minigame to a board that the 2026-09-01 device
+session found too busy already. It goes in after the subtraction pass in
+`docs/PLAYTEST-TODO.md`, not before it.
 
 ### Rank-gated tank upgrades — *nice to have* (operator, 2026-08-31)
 

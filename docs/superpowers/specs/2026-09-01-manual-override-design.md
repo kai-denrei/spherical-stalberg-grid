@@ -1,7 +1,15 @@
 # MANUAL OVERRIDE — design
 
 Date: 2026-09-01
-Status: awaiting operator review
+Status: **SHELVED 2026-09-01** by the operator, design intact and unbuilt.
+
+Not rejected — parked. The reason to hold it is in the design's own risk
+section: it ADDS surface (a countdown panel, a button, an embedded minigame)
+to a board the operator has just called too busy, where messages crowd the
+view and switching views is too hard. Building it now would build on top of
+the complaint. The subtraction pass in `docs/PLAYTEST-TODO.md` comes first;
+this lands on the cleaner board. Nothing here needs rework when it does — the
+open parameters were always going to be settled by play, not by code.
 Scope: `src/td-tab.js`, `src/economy.js`, a new pure module, and a vendored
 Kika-centroid embed.
 
