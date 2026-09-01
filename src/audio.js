@@ -17,9 +17,10 @@
 //    total. A failed fetch or decode logs once and that key becomes a
 //    permanent no-op for the session; the game keeps running silent.
 
-import { makeMixState, distanceGain, admit, addVoice, dropVoice } from './audiomix.js?v=761bfe76';
-import { SOUNDS, BUSES, DEFAULT_LEVELS, GLOBAL_VOICE_CAP, DISTANCE_K } from './audiomanifest.js?v=761bfe76';
-import { mulberry32 } from './rng.js?v=761bfe76';
+import { makeMixState, distanceGain, admit, addVoice, dropVoice } from './audiomix.js?v=eb6aab37';
+import { SOUNDS, BUSES, DEFAULT_LEVELS, GLOBAL_VOICE_CAP, DISTANCE_K } from './audiomanifest.js?v=eb6aab37';
+import { mulberry32 } from './rng.js?v=eb6aab37';
+import { gateStep } from './audiogate.js?v=eb6aab37';
 
 const STORE_KEY = 'ssg.audio.levels';
 const STEAL_FADE = 0.03; // s — a hard cut mid-waveform is an audible click
@@ -80,9 +81,14 @@ export function makeAudio(opts = {}) {
       // interrupted, and nothing here was listening. Cheap insurance, and
       // it is the one AirPlay-specific thing this file can actually do:
       // the ~2s buffer a TV adds is the receiver's, not ours.
+      // A context can lapse long after it started — tab hidden, headphones
+      // unplugged, an OS interruption. Re-arm rather than assume the unlock
+      // was a one-time event.
       ctx.onstatechange = () => {
-        console.log(`AUDIO state -> ${ctx ? ctx.state : 'none'}`);
-        if (ctx && ctx.state === 'suspended') ctx.resume().catch(() => {});
+        const st = ctx ? ctx.state : 'none';
+        console.log(`AUDIO state -> ${st}`);
+        if (st === 'running') stopListening();
+        else if (armed) { startListening(); if (ctx) ctx.resume().catch(() => {}); }
       };
       for (const b of BUSES) {
         const g = ctx.createGain();
@@ -96,63 +102,113 @@ export function makeAudio(opts = {}) {
     return ctx;
   }
 
-  // idempotent: the listeners remove themselves after the first gesture
+  // --- THE GATE ----------------------------------------------------------
+  // Getting a context RUNNING is a state to maintain, not an event that
+  // happens once. The policy lives in audiogate.js (pure, Node-tested); this
+  // half only performs it.
   //
-  // CAPTURE, NOT BUBBLE. The context can only be born on a user gesture, and
-  // these used to listen in the bubble phase — behind every game handler that
-  // deliberately stops propagation. A cinematic's skip handler is exactly
-  // that: window/capture + stopImmediatePropagation, so it ate the player's
-  // first keypress and the audio never woke up. Measured with
-  // ?gestureprobe=1: idle key=1 tap=1, during a shot key=0.
-  //
-  // Unlocking is a passive observation, not a claim on the event — it must be
-  // FIRST IN LINE and must never interfere. Hence capture, passive, and no
-  // preventDefault anywhere in here. The remove must carry the same capture
-  // flag or the listener leaks.
-  const ARM_EVENTS = ['pointerdown', 'keydown', 'touchstart'];
+  // What went wrong before, in order, because each is a trap worth naming:
+  //   - listeners in the BUBBLE phase sat behind every handler that calls
+  //     stopImmediatePropagation, and a cinematic's skip handler ate the
+  //     first keypress. Hence capture + passive, first in line, never
+  //     interfering.
+  //   - the listeners were removed SYNCHRONOUSLY, before resume() settled,
+  //     so a single rejected attempt killed audio for the session. Now they
+  //     stay until the context is genuinely running.
+  //   - creating the context eagerly, outside a gesture, produced the state
+  //     browsers are least willing to start. Eager creation is still right
+  //     for DECODING, but if resuming keeps failing the context is rebuilt
+  //     inside a gesture, which is the historically reliable path.
+  const ARM_EVENTS = ['pointerdown', 'pointerup', 'touchstart', 'touchend',
+    'keydown', 'keyup', 'click'];
   const ARM_OPTS = { passive: true, capture: true };
+  let failedResumes = 0;
+  let rebuilds = 0;
+  let listening = false;
+
+  function stateNow() { return ctx ? ctx.state : null; }
+
+  function stopListening() {
+    if (!listening) return;
+    listening = false;
+    for (const ev of ARM_EVENTS) window.removeEventListener(ev, onGesture, true);
+  }
+  function startListening() {
+    if (listening) return;
+    listening = true;
+    for (const ev of ARM_EVENTS) window.addEventListener(ev, onGesture, ARM_OPTS);
+  }
+
+  function rebuildCtx() {
+    rebuilds++;
+    failedResumes = 0;
+    const old = ctx;
+    ctx = null; master = null;
+    loadPromise = null; loadStarted = false; loadSettled = false;
+    for (const k of Object.keys(buffers)) delete buffers[k];
+    if (old) { try { old.close(); } catch { /* already gone */ } }
+    ensureCtx();          // built inside the gesture this time
+    load().then(reportReady);
+  }
+
+  function reportReady() {
+    loadSettled = true;
+    const total = Object.keys(SOUNDS).length;
+    let ok = 0, failed = 0;
+    for (const k of Object.keys(SOUNDS)) {
+      if (buffers[k] === 'failed') failed++;
+      else if (buffers[k]) ok++;
+    }
+    console.log(`AUDIO ready ctx=${stateNow()} decoded=${ok}/${total}`
+      + `${failed ? ` failed=${failed}` : ''}`);
+  }
+
+  // Runs on EVERY gesture until the context is running. Cheap when it is.
+  let attempts = 0;
+  function onGesture() {
+    const step = gateStep(stateNow(), failedResumes, rebuilds);
+    // A blocked context's resume() promise often never SETTLES at all — it
+    // neither resolves nor rejects until activation arrives — so outcome
+    // logging alone can look identical to "the listener never fired". Log the
+    // attempt too, capped so a stubborn session cannot flood the console.
+    if (++attempts <= 3) {
+      console.log(`AUDIO gesture ${attempts}: ctx=${stateNow()} -> ${step.action}`);
+    }
+    if (step.action === 'done' || step.action === 'give-up') { stopListening(); return; }
+    if (step.action === 'rebuild') { rebuildCtx(); }
+    if (!ctx) return;
+    ctx.resume().then(
+      () => {
+        if (stateNow() === 'running') {
+          console.log(`AUDIO running (after ${failedResumes} failed,`
+            + ` ${rebuilds} rebuild${rebuilds === 1 ? '' : 's'})`);
+          stopListening();
+        } else {
+          // resolved but NOT running — the case the old one-shot code read as
+          // success and then stopped listening on
+          failedResumes++;
+        }
+      },
+      (e) => {
+        failedResumes++;
+        console.log(`AUDIO resume rejected (${failedResumes}) ${(e && e.name) || e}`);
+      },
+    );
+  }
+
   function arm() {
     if (armed) return;
     armed = true;
-    // TRY IMMEDIATELY, DO NOT ONLY WAIT FOR A GESTURE. Creating a context is
-    // always allowed — it simply starts suspended — and decodeAudioData works
-    // on a suspended one, so the samples can be fetched and decoded during
-    // page load instead of after the first click. Waiting for a gesture to do
-    // BOTH made a swallowed gesture cost everything: no context, no decode,
-    // and a first sound that arrives late even when the click does land.
-    // Some contexts (localhost with media engagement, an installed PWA) will
-    // even resume here and never need the gesture at all.
+    // Eager, because decodeAudioData works on a suspended context: the samples
+    // download and decode during page load instead of after the first click.
     ensureCtx();
-    load().then(() => {
-      loadSettled = true;
-      const total = Object.keys(SOUNDS).length;
-      let ok = 0, failed = 0;
-      for (const k of Object.keys(SOUNDS)) {
-        if (buffers[k] === 'failed') failed++;
-        else if (buffers[k]) ok++;
-      }
-      console.log(`AUDIO ready ctx=${ctx ? ctx.state : 'none'} decoded=${ok}/${total}`
-        + `${failed ? ` failed=${failed}` : ''}`);
-    });
-    if (ctx && ctx.state === 'suspended') ctx.resume().catch(() => {});
-    const go = () => {
-      ensureCtx();
-      // resume() is a PROMISE. The first cut of this logged the state on the
-      // very next line, which always reads "suspended" — on a working page
-      // and a silent one alike — so the operator got identical output from
-      // both and it told us nothing. Report the OUTCOME.
-      console.log(`AUDIO unlock ctx=${ctx ? ctx.state : 'none'} (pre-resume)`
-        + ` muted=${muted} master=${levels.master}`);
-      if (ctx && ctx.state === 'suspended') {
-        ctx.resume().then(
-          () => console.log(`AUDIO resume ok -> ${ctx ? ctx.state : 'none'}`),
-          (e) => console.log(`AUDIO resume FAILED ${(e && e.name) || e}`),
-        );
-      }
-      load();
-      for (const ev of ARM_EVENTS) window.removeEventListener(ev, go, true);
-    };
-    for (const ev of ARM_EVENTS) window.addEventListener(ev, go, ARM_OPTS);
+    load().then(reportReady);
+    console.log(`AUDIO armed ctx=${stateNow()} muted=${muted} master=${levels.master}`);
+    if (stateNow() === 'running') return;   // some contexts start running
+    startListening();
+    // ...and try once now: a context can already be permitted (localhost with
+    // media engagement, an installed PWA) and then no gesture is needed.
+    if (ctx) ctx.resume().catch(() => { /* expected without activation */ });
   }
 
   async function decodeOne(key) {

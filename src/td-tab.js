@@ -19,41 +19,41 @@
 
 import * as THREE from '../vendor/three.module.js';
 import GUI from '../vendor/lil-gui.esm.js';
-import { generateSphereMesh, relax } from './grid.js?v=761bfe76';
-import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=761bfe76';
-import { mulberry32, randomSeed } from './rng.js?v=761bfe76';
-import { computeBerths, berthIndexFor } from './berths.js?v=761bfe76';
-import { wantsSecondary, shellsForAll } from './autofire.js?v=761bfe76';
-import { printPhase, printOffset, printOn, patternSecsFor } from './printpath.js?v=761bfe76';
-import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3, segKey, tangentDir, tangentBasis } from './vec3.js?v=761bfe76';
-import { CREATURES, waveJelly } from './creatures.js?v=761bfe76';
-import { brief } from './isaobriefs.js?v=761bfe76';
-import { drawEmotion } from './emotions.js?v=761bfe76';
+import { generateSphereMesh, relax } from './grid.js?v=eb6aab37';
+import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=eb6aab37';
+import { mulberry32, randomSeed } from './rng.js?v=eb6aab37';
+import { computeBerths, berthIndexFor } from './berths.js?v=eb6aab37';
+import { wantsSecondary, shellsForAll } from './autofire.js?v=eb6aab37';
+import { printPhase, printOffset, printOn, patternSecsFor } from './printpath.js?v=eb6aab37';
+import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3, segKey, tangentDir, tangentBasis } from './vec3.js?v=eb6aab37';
+import { CREATURES, waveJelly } from './creatures.js?v=eb6aab37';
+import { brief } from './isaobriefs.js?v=eb6aab37';
+import { drawEmotion } from './emotions.js?v=eb6aab37';
 import { ACHIEVEMENTS, ACHV_GROUPS, achievement, blankRun, earned, freshlyEarned,
   sanitiseRecord }
-  from './achievements.js?v=761bfe76';
+  from './achievements.js?v=eb6aab37';
 import { applyFontPack, currentFontPack, FONT_NAMES,
-  loadTypeFeel } from './fonts.js?v=761bfe76';
-import { UNITS, UNIT_NAMES, buildUnit, buildCreature, preloadMkcx, preloadServer, makeServerFixture, makeShieldShell, preloadContainer, makeContainerFixture, preloadFabricator, makeIsaoDrone, makeBulletCloud, makeRewardSolid, makeShellSolid, makeDebris, makeDotBurst, makePortalCloud, makeHeartCloud, makeDotEnemy } from './units.js?v=761bfe76';
-import { LOOKS, LOOK_NAMES } from './looks.js?v=761bfe76';
-import { makeCellIndex } from './cellindex.js?v=761bfe76';
-import { CREATURE_TINTS, ENEMY_SPEC, INTROS, computeWavePlan, accentFor } from './enemyspec.js?v=761bfe76';
-import { PICKUPS } from './pickups.js?v=761bfe76';
-import { rankFor, rankLabel, badgeSVG, killReq, eliteReq } from './ranks.js?v=761bfe76';
-import { makeScore } from './score.js?v=761bfe76';
-import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER } from './towers.js?v=761bfe76';
-import { makeEconomy, sellRefund } from './economy.js?v=761bfe76';
-import { makeBloom } from './postfx.js?v=761bfe76';
-import { TANK_FEEL, TANK_FEEL_KNOBS, makeTankFeel, stepTankFeel, landTankFeel, fireTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js?v=761bfe76';
-import { FEEL, loadFeel, saveFeel } from './feelstore.js?v=761bfe76';
+  loadTypeFeel } from './fonts.js?v=eb6aab37';
+import { UNITS, UNIT_NAMES, buildUnit, buildCreature, preloadMkcx, preloadServer, makeServerFixture, makeShieldShell, preloadContainer, makeContainerFixture, preloadFabricator, makeIsaoDrone, makeBulletCloud, makeRewardSolid, makeShellSolid, makeDebris, makeDotBurst, makePortalCloud, makeHeartCloud, makeDotEnemy } from './units.js?v=eb6aab37';
+import { LOOKS, LOOK_NAMES } from './looks.js?v=eb6aab37';
+import { makeCellIndex } from './cellindex.js?v=eb6aab37';
+import { CREATURE_TINTS, ENEMY_SPEC, INTROS, computeWavePlan, accentFor } from './enemyspec.js?v=eb6aab37';
+import { PICKUPS } from './pickups.js?v=eb6aab37';
+import { rankFor, rankLabel, badgeSVG, killReq, eliteReq } from './ranks.js?v=eb6aab37';
+import { makeScore } from './score.js?v=eb6aab37';
+import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER } from './towers.js?v=eb6aab37';
+import { makeEconomy, sellRefund } from './economy.js?v=eb6aab37';
+import { makeBloom } from './postfx.js?v=eb6aab37';
+import { TANK_FEEL, TANK_FEEL_KNOBS, makeTankFeel, stepTankFeel, landTankFeel, fireTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js?v=eb6aab37';
+import { FEEL, loadFeel, saveFeel } from './feelstore.js?v=eb6aab37';
 import { STRIKE_KNOBS, makeStrike, makeStrikeParams, grantStrikes, stepStrike,
   toggleArm, paintTarget, launchStrike, stepFall, skipFall, fallProgress,
-  strikeDamage, retargetStrike, orbitProgress } from './strike.js?v=761bfe76';
-import { radarBasis, radarProject, radarBearing, sweepAngle, radarPhosphor } from './radar.js?v=761bfe76';
-import { BLOOM_GROUPS } from './bloomweights.js?v=761bfe76';
-import { TOWER_LOOK_NAMES, DEFAULT_TOWER_LOOK, buildTowerLook, preloadLook } from './towerlooks.js?v=761bfe76';
-import { makeAudio } from './audio.js?v=761bfe76';
-import { DEATH_KEYS } from './audiomanifest.js?v=761bfe76';
+  strikeDamage, retargetStrike, orbitProgress } from './strike.js?v=eb6aab37';
+import { radarBasis, radarProject, radarBearing, sweepAngle, radarPhosphor } from './radar.js?v=eb6aab37';
+import { BLOOM_GROUPS } from './bloomweights.js?v=eb6aab37';
+import { TOWER_LOOK_NAMES, DEFAULT_TOWER_LOOK, buildTowerLook, preloadLook } from './towerlooks.js?v=eb6aab37';
+import { makeAudio } from './audio.js?v=eb6aab37';
+import { DEATH_KEYS } from './audiomanifest.js?v=eb6aab37';
 
 export function initTdTab(root) {
   let active = false;
@@ -8063,6 +8063,27 @@ export function initTdTab(root) {
   // shift. Both are needed because he is asynchronous twice over: the model
   // loads async, and the whole point of the mechanic is that a tower takes
   // wall-clock time to exist — neither of which ?tick can reach.
+  // ?audiogate=N — DOES THE UNLOCK KEEP TRYING? The regression that started
+  // all this was a one-shot gate: it removed its listeners synchronously,
+  // before resume() had settled, so a single rejected attempt killed audio
+  // for the session. Synthetic gestures are untrusted, so every resume here
+  // WILL be rejected — which is precisely the failure path worth exercising.
+  // Expect repeated "resume rejected (n)" and a rebuild, never silence.
+  const gateN = parseInt(urlParams.get('audiogate') || '0', 10);
+  if (gateN > 0) {
+    let fired = 0;
+    const tick = () => {
+      if (fired++ >= gateN) {
+        console.log(`AUDIOGATE dispatched=${fired - 1} gestures`
+          + ` — expect one 'resume rejected' per gesture until a rebuild`);
+        return;
+      }
+      window.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true }));
+      setTimeout(tick, 120);
+    };
+    tick();
+  }
+
   // ?droneprobe=1 — DOES W FLY ISAO TOWARDS THE SCREEN?
   // Operator: forward is back and sideways does nothing. Control and camera
   // must share one notion of "forward", so this measures them against each
