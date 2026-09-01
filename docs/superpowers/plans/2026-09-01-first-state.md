@@ -33,7 +33,9 @@
 
 ---
 
-## Task 1: `src/berths.js` — pure berth selection
+## Task 1: `src/berths.js` — pure berth selection  ✅ `1f0b626`
+
+*Outcome: 12 Node checks. Cross-checked against the live game before the tab was touched — the module returns cells 1002,1001,1069 on the game's own defaults, byte-identical to what it logs.*
 
 **Files:**
 - Create: `src/berths.js`
@@ -43,7 +45,7 @@
 **Interfaces:**
 - Produces: `computeBerths(dungeon, graph)` → `[{ ci, exit }, { ci, exit }, { ci, exit }]` in painted order #1, #2, #3, or `[]` when no valid chain exists. `berthIndexFor(hp, max = 3)` → integer index clamped to `[0, max - 1]`.
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 Create `test/berths.mjs`:
 
@@ -95,12 +97,12 @@ check('same board gives the same camp',
 console.log(berths.length === 3 ? 'berths: all good' : 'berths: NO CHAIN');
 ```
 
-- [ ] **Step 2: Run it and watch it fail**
+- [x] **Step 2: Run it and watch it fail**
 
 Run: `node test/berths.mjs`
 Expected: FAIL — `Cannot find module '../src/berths.js'`.
 
-- [ ] **Step 3: Write `src/berths.js`**
+- [x] **Step 3: Write `src/berths.js`**
 
 This is a **move, not a rewrite**: the body comes from the block currently inside `preloadContainer().then()` in `src/td-tab.js` (the `inRange` / `open` / `escapes` scoring loop and `escapeOf`). Note the import has **no `?v=` token** — Node reads these paths directly, and `bust.sh` only tokenises browser-reachable references.
 
@@ -176,19 +178,19 @@ export function computeBerths(dungeon, graph) {
 }
 ```
 
-- [ ] **Step 4: Run the test and watch it pass**
+- [x] **Step 4: Run the test and watch it pass**
 
 Run: `node test/berths.mjs`
 Expected: every line `ok`, final line `berths: all good`.
 
-- [ ] **Step 5: Wire into `npm test`**
+- [x] **Step 5: Wire into `npm test`**
 
 In `package.json`, append ` && node test/berths.mjs` to the `test` script, following the existing chain's style.
 
 Run: `npm test`
 Expected: all suites green, including `berths:`.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add src/berths.js test/berths.mjs package.json
@@ -197,7 +199,9 @@ git commit -m "berths: the camp becomes pure, synchronous and Node-tested"
 
 ---
 
-## Task 2: Consume `berths.js`; the container model stops touching player state
+## Task 2: Consume `berths.js`; the container model stops touching player state  ✅ `828d02e`
+
+*Outcome: camp unchanged (1002,1001,1069), zero staging respawns. The `t < 6` page-lifetime guard is gone.*
 
 **Files:**
 - Modify: `src/td-tab.js` — `buildActors()` (~1400), the container callback (~1421-1520), `regenerate()` (~4110)
@@ -206,7 +210,7 @@ git commit -m "berths: the camp becomes pure, synchronous and Node-tested"
 - Consumes: `computeBerths`, `berthIndexFor` from Task 1.
 - Produces: module-level `let berths = []` populated synchronously in `regenerate()`; `lifeContainers[i].ci === berths[i].ci` always.
 
-- [ ] **Step 1: Import and add module state**
+- [x] **Step 1: Import and add module state**
 
 Add to the import block in `src/td-tab.js` (tokenised — `bust.sh` will rewrite it):
 
@@ -222,7 +226,7 @@ Beside `let lifeContainers = [];` add:
 let berths = [];
 ```
 
-- [ ] **Step 2: Populate berths in the synchronous board build**
+- [x] **Step 2: Populate berths in the synchronous board build**
 
 In `regenerate()`, immediately after `graph = dungeon.graph;` and the `cellSide` assignment, add:
 
@@ -230,7 +234,7 @@ In `regenerate()`, immediately after `graph = dungeon.graph;` and the `cellSide`
 berths = computeBerths(dungeon, graph);
 ```
 
-- [ ] **Step 3: Gut the container callback down to decoration**
+- [x] **Step 3: Gut the container callback down to decoration**
 
 Inside `preloadContainer().then()`, delete the entire selection block (`inRange` / `open` / `escapes` / the triple loop / `if (!best) return;` / `escapeOf`) and drive the placement loop from `berths` instead. The loop body that builds `g`, scales, orients and adds the tank is **unchanged**; only its source of `ci` / `exitCi` changes, and the player-staging block goes:
 
@@ -255,7 +259,7 @@ Also delete the now-unused `let stagedRun = -1;` and `let berthStagings = 0;` de
 
 Keep the `CONTAINERS placed=… escapes=…` log — it is the standing invariant that every berth has a lane.
 
-- [ ] **Step 4: Verify the camp is unchanged and staging is gone**
+- [x] **Step 4: Verify the camp is unchanged and staging is gone**
 
 Run:
 ```bash
@@ -267,7 +271,7 @@ Run:
 ```
 Expected: exactly one `CONTAINERS placed=3 … escapes=` line with **the same three cells as before this task** (record them from a run on `HEAD~1`), and **zero** `respawn:berths-landed` lines.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 ./scripts/bust.sh --quiet
@@ -277,7 +281,9 @@ git commit -m "td: the camp is known before the model lands"
 
 ---
 
-## Task 3: `camShot` — one timed camera override
+## Task 3: `camShot` — one timed camera override  ✅ `eba64fb`
+
+*Outcome: reveal ported first, as planned. `?shotprobe=1` negative control reproduced last week's bug exactly — cleared false, onEnd 0x, key reached false.*
 
 **Files:**
 - Modify: `src/td-tab.js` — add the primitive near the cinematic block (~1717); port the sector reveal (`revealLeft`, ~1703 / ~2020 / ~7265)
@@ -287,7 +293,7 @@ git commit -m "td: the camp is known before the model lands"
 
 Port the **sector reveal** first: it is the smallest existing consumer, so the primitive is proven before the CINEMATIC depends on it.
 
-- [ ] **Step 1: Write the primitive**
+- [x] **Step 1: Write the primitive**
 
 ```js
 // --- camShot: ONE timed camera override -------------------------------
@@ -357,7 +363,7 @@ if (shot) {
 
 In `animate()`, replace the `cineLeft`/`revealLeft` decrement blocks with `stepShot(dt);`.
 
-- [ ] **Step 2: Port the sector reveal onto it**
+- [x] **Step 2: Port the sector reveal onto it**
 
 Where the reveal is armed (`revealLeft = REVEAL_LEN;` in the sector-clear block), call instead:
 
@@ -387,7 +393,7 @@ const frozen = buildFrozen() || shotActive() || tutorial.frozen;
 const driveFrozen = shotActive() || tutorial.frozen;
 ```
 
-- [ ] **Step 3: Verify the reveal still plays and still hands back**
+- [x] **Step 3: Verify the reveal still plays and still hands back**
 
 Run with the existing hook:
 ```bash
@@ -395,7 +401,7 @@ Run with the existing hook:
 ```
 Expected: the reveal screenshot still frames the whole planet, and a `?ctl=1` run afterwards shows no `CTL-SWALLOWED` line (the shot removed its own listeners).
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 ./scripts/bust.sh --quiet
@@ -405,7 +411,9 @@ git commit -m "td: one camShot, one teardown — the reveal moves onto it first"
 
 ---
 
-## Task 4: DEPLOY
+## Task 4: DEPLOY  ✅ `3de86f4`
+
+*Outcome: all four reset paths land identically (#3 / #2 / #1). The probe caught `deployStart` landing in `applyLook()` instead of `regenerate()` — a look swap would have redeployed the tank, breaking the "cosmetics never reset the run" rule.*
 
 **Files:**
 - Modify: `src/td-tab.js` — replace `respawnPlayerAtSpawn()` (~5504), delete `exitCruise` (~5742 and its release in `animate`), add the DEPLOY step to `animate`
@@ -414,7 +422,7 @@ git commit -m "td: one camShot, one teardown — the reveal moves onto it first"
 - Consumes: `berths`, `berthIndexFor` (Tasks 1-2); `startShot`/`endShot` (Task 3).
 - Produces: `deployStart(n)` places the tank at `DEPLOY_START(n)`; `deployStep(dt)` runs it; `deployActive()`.
 
-- [ ] **Step 1: Add the DEPLOY state**
+- [x] **Step 1: Add the DEPLOY state**
 
 ```js
 // --- DEPLOY: the one way a tank enters the world -----------------------
@@ -527,7 +535,7 @@ if (deploy && !camRaw) {
 
 Reuse the existing `cineA` / `cineB` temporaries, renamed `camA` / `camB`. At `w = 1` the two poses are identical, so control handover changes nothing on screen.
 
-- [ ] **Step 2: Replace `respawnPlayerAtSpawn` with DEPLOY**
+- [x] **Step 2: Replace `respawnPlayerAtSpawn` with DEPLOY**
 
 Delete `respawnPlayerAtSpawn()` entirely. Replace all three call sites:
 
@@ -537,11 +545,11 @@ Delete `respawnPlayerAtSpawn()` entirely. Replace all three call sites:
 
 Keep the `runGen` guard on the death timer — it is orthogonal and still correct.
 
-- [ ] **Step 3: Delete `exitCruise`**
+- [x] **Step 3: Delete `exitCruise`**
 
 Remove `let exitCruise = false;`, `releaseExitCruise()`, and the `if (exitCruise && (handOn || !lifeContainers.some(…))) releaseExitCruise();` line in `animate`. Nothing replaces it: DEPLOY owns the drive-out now.
 
-- [ ] **Step 4: Call DEPLOY from the frame loop**
+- [x] **Step 4: Call DEPLOY from the frame loop**
 
 In `animate`, where `advanceMotion(dt)` is called:
 
@@ -552,7 +560,7 @@ else if (!driveFrozen) advanceMotion(dt);
 
 DEPLOY runs even while a shot is active — that is how the CINEMATIC's final frame and DEPLOY's first frame meet.
 
-- [ ] **Step 5: Add `?deployprobe=1`**
+- [x] **Step 5: Add `?deployprobe=1`**
 
 ```js
 // ?deployprobe=1 — the operator's consistency question, made a check. Runs
@@ -583,7 +591,7 @@ if (urlParams.get('deployprobe') === '1') {
 }
 ```
 
-- [ ] **Step 6: Negative control, then the real run**
+- [x] **Step 6: Negative control, then the real run**
 
 First disable the fix — in `deployStart`, temporarily `return false;` before the placement — and run:
 ```bash
@@ -593,7 +601,7 @@ Expected: `shape=FAIL`. **If it passes, the probe is broken — fix the probe be
 
 Restore, rerun. Expected: `shape=PASS entirely-out=PASS`, and every row showing `berth=#3` at full life, `#2` at two hulls, `#1` at one.
 
-- [ ] **Step 7: Commit**
+- [x] **Step 7: Commit**
 
 ```bash
 ./scripts/bust.sh --quiet
@@ -603,12 +611,14 @@ git commit -m "td: DEPLOY — one way into the world, ending in the player's han
 
 ---
 
-## Task 5: CINEMATIC onto `camShot`, ending at `DEPLOY_START(3)`
+## Task 5: CINEMATIC onto `camShot`, ending at `DEPLOY_START(3)`  ✅ `03d422c`
+
+*Outcome: continuity measured at pos 1.57e-16 / angle 4.21e-8. Negative control (dive endpoint x1.05): 4.11e-2 / 2.37e-1, FAIL. 55 references of superseded machinery deleted.*
 
 **Files:**
 - Modify: `src/td-tab.js` — the cinematic block (~1717-1790), `updateCameraGoal` (~1960-2020), the opening chain (~8167-8190)
 
-- [ ] **Step 1: Replace the cinematic with a two-beat shot**
+- [x] **Step 1: Replace the cinematic with a two-beat shot**
 
 Delete `startCinematic`, `endCinematic`, `beginOpening`, `cineSkipKey`, `cineSkipTap`, `cineRunning`, and the state `cineLeft / cineCi / cineAfter / cineOn / cinePending`. Keep `cineScrub` / `cineHold` for the `?cine=N` screenshot hook. Replace with:
 
@@ -673,7 +683,7 @@ function playCinematic(after) {
 
 Generalise `deployFramePose(out)` from Task 4 into `deployFramePoseFor(n, out)` and have `deployFramePose(out)` call it — the cinematic needs the pose *before* `deploy` exists.
 
-- [ ] **Step 2: Rewire the opening chain**
+- [x] **Step 2: Rewire the opening chain**
 
 At the bottom of the file, replace the `if (wantCine) { cinePending = …; }` block with:
 
@@ -684,7 +694,7 @@ else { deployStart(berthIndexFor(playerHP)); if (opening) opening(); }
 
 Delete the `else if (cinePending && t > 5) beginOpening();` safety net in `animate` — with berths known synchronously there is nothing left to wait for.
 
-- [ ] **Step 3: Extend `?cineprobe=1`**
+- [x] **Step 3: Extend `?cineprobe=1`**
 
 Keep the existing move-after-intro and handoff-ran checks (they guard the teardown regression). Add the continuity check — the whole point of the task:
 
@@ -699,7 +709,7 @@ console.log(`CINEPROBE continuity=${dp < 1e-6 && dq < 1e-6 ? 'PASS' : 'FAIL'}`
   + ` (pos ${dp.toExponential(2)}, angle ${dq.toExponential(2)}, want ~0)`);
 ```
 
-- [ ] **Step 4: Negative control, then the real run**
+- [x] **Step 4: Negative control, then the real run**
 
 Break continuity on purpose — multiply the dive's end position by `1.05` — and run **without `?cine=0`**:
 ```bash
@@ -707,7 +717,7 @@ Break continuity on purpose — multiply the dive's end position by `1.05` — a
 ```
 Expected: `continuity=FAIL`. Restore; expected `continuity=PASS`, `move-after-intro=PASS`, `handoff-ran=PASS`.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 ./scripts/bust.sh --quiet
