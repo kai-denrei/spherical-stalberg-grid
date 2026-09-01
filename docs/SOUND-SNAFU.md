@@ -1,6 +1,6 @@
 # The sound SNAFU — a handover
 
-**Status: UNRESOLVED.** Written 2026-09-01 so whoever picks this up next does
+**Status: UNRESOLVED on desktop Safari. WORKS on Chrome and on iPhone.** Written 2026-09-01 so whoever picks this up next does
 not repeat six attempts that are already known not to work.
 
 The symptom: **the TD tab produces no audible sound in Safari on the
@@ -116,6 +116,36 @@ document.
   spec-portable, but Safari has a history of strictness about cross-context
   buffers. Once the real context exists, the samples are decoded again onto
   it — cached files, so a decode and no network.
+
+---
+
+## UPDATE 2026-09-01, late: iPhone WORKS
+
+The operator tested the Pages build (`e5aa98cb`) on iPhone: **sound works.**
+
+That is the single biggest narrowing so far, and it cuts against the leading
+theory. iOS Safari is WebKit too, and it runs the same offline-decode path,
+the same gate, the same prime. If cross-context `AudioBuffer`s or the
+44100/48000 sample-rate mismatch were the cause, iPhone should fail as well.
+
+So the remaining fault is specific to **desktop Safari on the operator's
+machine** — not to WebKit, and not obviously to this code.
+
+**That moves the free checks to the top of the list, not the bottom:**
+
+1. **Safari → Settings for This Website… → Auto-Play** for localhost /
+   github.io. Per-site, which is why YouTube is unaffected.
+2. **Per-tab mute** — the speaker icon in the address bar.
+3. **Output device routing** for that specific Safari window.
+
+Also still worth having, and cheap: the operator's report that **sound used to
+work on Safari before this session** makes a bisection the most direct route.
+The audio GRAPH is byte-identical to `71dab14` (verified by diff: `master`,
+the buses and `connect(ctx.destination)` never changed). Only the lifecycle
+around it did, and the one materially different behaviour is that samples are
+now decoded on an `OfflineAudioContext` rather than on the playback context.
+Reverting exactly that — decode in the gesture, as the working version did —
+is a one-line experiment that keeps every genuine fix.
 
 ---
 
