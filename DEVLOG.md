@@ -6,6 +6,107 @@ Demo links assume `npm run serve` (port 8144) or the
 
 ---
 
+## `1f0b626`..`2bdeeca` — the First State
+
+One canonical opening. Whatever ran beforehand, every reset now lands the tank
+in the berth its hull count names and drives it **entirely out**, ending in the
+player's hands. Brand-new game, browser reload, forced reset, retry after a
+loss, hull lost mid-run — they differ only in which prelude ran, never in what
+they land on.
+
+### The two root causes
+
+Berth cells were chosen **inside the container model's async callback**. So at
+reset the game did not know where the camp was: it placed the tank beside the
+Heart and teleported it into a berth once the bytes arrived. That teleport was
+the jump cut.
+
+And the teleport was gated on `t < 6`, where `t` is **page-lifetime** (`t += dt`
+in `animate`, never reset by `regenerate`). Only the first six seconds of the
+page's life ever staged the player at a berth. A retry three minutes in was left
+standing beside the Heart. That is the whole of "every reset is different."
+
+### The invariant
+
+```
+First page load:        CINEMATIC ──┐
+Any full-life reset:  ──────────────┼──► DEPLOY_START(3) ──► DEPLOY ──► control
+Hull loss:              DOWN DASH ──┴──► DEPLOY_START(2|1) ─► DEPLOY ──► control
+```
+
+`DEPLOY_START(N)` is one derived thing, and **every prelude's last frame is it**.
+A browser reload still gets the cinematic — it *is* a first load — and that is
+still consistent, because consistency lives in the state, not the prelude.
+
+### Continuity by construction, not by tuning
+
+The trick worth keeping. `updateCameraGoal()` gained a `camRaw` flag that makes
+it yield the **plain gameplay pose** with every override skipped, wrapped as
+`gameplayCameraPose(out)`. DEPLOY blends the doorway framing into that over its
+own progress, so at `u = 1` the two poses are *the same object's output* rather
+than two authored values that happen to agree. The cinematic's dive and the down
+dash both land on `deployFramePoseFor(n)` for the same reason.
+
+Measured: pos `1.57e-16`, angle `4.21e-8`. Negative control with the dive
+endpoint scaled by 1.05: `4.11e-2` / `2.37e-1`.
+
+This is the CLAUDE.md rule about deriving render-coupled values from the render
+transform, applied to a camera hand-off: read the pose, never re-derive it.
+
+### `camShot`
+
+Every timed camera takeover — cinematic, sector reveal, down dash — is now one
+primitive with **one teardown path**, latched on the shot itself rather than on a
+clock the caller has already advanced past. That is exactly the bug that shipped
+last week (`6d79bdd`), made structurally impossible.
+
+The altitude review then found the same class one level up: `regenerate()` never
+called `endShot()`. It is on the GUI *and* on Retry, so it can land mid-reveal,
+and a surviving shot keeps its capture-phase keydown listener registered — the
+keyboard dead after a reset, arriving by a third route. One line.
+
+### `berths.js`
+
+`computeBerths(dungeon, graph)` is a move, not a rewrite: same distToHeart 3–4
+chain, same hard escape-lane requirement, same openness tie-break. Being pure and
+DOM-free makes it the first part of this feature with real unit tests, and it was
+proven faithful **before `td-tab.js` was touched at all** — on the game's own
+defaults it returns cells `1002,1001,1069`, byte-identical to what the live game
+logs. `berthIndexFor(hp)` carries the ordering rule (1st tank out of #3, 2nd #2,
+last #1), tested because the array is 0-based while the paint is 1-based.
+
+### Deleted
+
+`respawnPlayerAtSpawn`, `exitCruise`/`releaseExitCruise` (a confirmed
+dead-controls cause — a berth respawn left `cruise` engaged so the throttle lever
+read as dead), `startCinematic`, `endCinematic`, `beginOpening`, `cinePending`,
+`cineLeft`/`cineCi`/`cineAfter`/`cineOn`/`cineHold`, `CINE_WATCH`, `revealLeft`,
+the `t < 6` staging window, `stagedRun`, and the `t > 5` safety net. That last
+existed only to cope with berths landing late; nothing waits for the model now.
+
+The cold open also lost its third beat — watching the hull drive itself out *is*
+the game.
+
+### What the probes caught that review would not have
+
+Six probes, each negative-controlled. Two earned their keep immediately:
+
+- `?deployprobe=1` caught `deployStart` landing in **`applyLook()`** instead of
+  `regenerate()` — a look swap would have redeployed the tank, breaking this
+  project's standing "cosmetics never reset the run" rule.
+- `?shotprobe=1`'s negative control reproduced last week's keyboard-eating bug
+  exactly: `cleared false, onEnd 0x, key reached false`.
+
+**Lessons.** A verification flag that disables the feature under test is not a
+verification — `?cine=0` is now banned from any run touching the cinematic. A
+synthetic event dispatched *on* a target collapses capture and bubble into
+at-target ordering and can reverse the very listener order under test; dispatch
+on a descendant. And `node --check` does not resolve imports: a `vec3` import
+edit silently missed because `bust.sh` had rotated the `?v=` token out from under
+the match string, and only running the page caught it.
+
+---
+
 ## `6d79bdd` — the cold open ate the keyboard
 
 The operator, testing `e99da83a` on localhost: *"I still cannot move after the
