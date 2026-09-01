@@ -19,39 +19,40 @@
 
 import * as THREE from '../vendor/three.module.js';
 import GUI from '../vendor/lil-gui.esm.js';
-import { generateSphereMesh, relax } from './grid.js?v=268c90d2';
-import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=268c90d2';
-import { mulberry32, randomSeed } from './rng.js?v=268c90d2';
-import { computeBerths, berthIndexFor } from './berths.js?v=268c90d2';
-import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3, segKey, tangentDir } from './vec3.js?v=268c90d2';
-import { CREATURES, waveJelly } from './creatures.js?v=268c90d2';
-import { brief } from './isaobriefs.js?v=268c90d2';
-import { drawEmotion } from './emotions.js?v=268c90d2';
+import { generateSphereMesh, relax } from './grid.js?v=2b8c068e';
+import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=2b8c068e';
+import { mulberry32, randomSeed } from './rng.js?v=2b8c068e';
+import { computeBerths, berthIndexFor } from './berths.js?v=2b8c068e';
+import { wantsSecondary, shellsForAll } from './autofire.js?v=2b8c068e';
+import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3, segKey, tangentDir } from './vec3.js?v=2b8c068e';
+import { CREATURES, waveJelly } from './creatures.js?v=2b8c068e';
+import { brief } from './isaobriefs.js?v=2b8c068e';
+import { drawEmotion } from './emotions.js?v=2b8c068e';
 import { ACHIEVEMENTS, ACHV_GROUPS, achievement, blankRun, earned, freshlyEarned,
   sanitiseRecord }
-  from './achievements.js?v=268c90d2';
+  from './achievements.js?v=2b8c068e';
 import { applyFontPack, currentFontPack, FONT_NAMES,
-  loadTypeFeel } from './fonts.js?v=268c90d2';
-import { UNITS, UNIT_NAMES, buildUnit, buildCreature, preloadMkcx, preloadServer, makeServerFixture, makeShieldShell, preloadContainer, makeContainerFixture, preloadFabricator, makeIsaoDrone, makeBulletCloud, makeRewardSolid, makeShellSolid, makeDebris, makeDotBurst, makePortalCloud, makeHeartCloud, makeDotEnemy } from './units.js?v=268c90d2';
-import { LOOKS, LOOK_NAMES } from './looks.js?v=268c90d2';
-import { makeCellIndex } from './cellindex.js?v=268c90d2';
-import { CREATURE_TINTS, ENEMY_SPEC, INTROS, computeWavePlan, accentFor } from './enemyspec.js?v=268c90d2';
-import { PICKUPS } from './pickups.js?v=268c90d2';
-import { rankFor, rankLabel, badgeSVG, killReq, eliteReq } from './ranks.js?v=268c90d2';
-import { makeScore } from './score.js?v=268c90d2';
-import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER } from './towers.js?v=268c90d2';
-import { makeEconomy, sellRefund } from './economy.js?v=268c90d2';
-import { makeBloom } from './postfx.js?v=268c90d2';
-import { TANK_FEEL, TANK_FEEL_KNOBS, makeTankFeel, stepTankFeel, landTankFeel, fireTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js?v=268c90d2';
-import { FEEL, loadFeel, saveFeel } from './feelstore.js?v=268c90d2';
+  loadTypeFeel } from './fonts.js?v=2b8c068e';
+import { UNITS, UNIT_NAMES, buildUnit, buildCreature, preloadMkcx, preloadServer, makeServerFixture, makeShieldShell, preloadContainer, makeContainerFixture, preloadFabricator, makeIsaoDrone, makeBulletCloud, makeRewardSolid, makeShellSolid, makeDebris, makeDotBurst, makePortalCloud, makeHeartCloud, makeDotEnemy } from './units.js?v=2b8c068e';
+import { LOOKS, LOOK_NAMES } from './looks.js?v=2b8c068e';
+import { makeCellIndex } from './cellindex.js?v=2b8c068e';
+import { CREATURE_TINTS, ENEMY_SPEC, INTROS, computeWavePlan, accentFor } from './enemyspec.js?v=2b8c068e';
+import { PICKUPS } from './pickups.js?v=2b8c068e';
+import { rankFor, rankLabel, badgeSVG, killReq, eliteReq } from './ranks.js?v=2b8c068e';
+import { makeScore } from './score.js?v=2b8c068e';
+import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER } from './towers.js?v=2b8c068e';
+import { makeEconomy, sellRefund } from './economy.js?v=2b8c068e';
+import { makeBloom } from './postfx.js?v=2b8c068e';
+import { TANK_FEEL, TANK_FEEL_KNOBS, makeTankFeel, stepTankFeel, landTankFeel, fireTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js?v=2b8c068e';
+import { FEEL, loadFeel, saveFeel } from './feelstore.js?v=2b8c068e';
 import { STRIKE_KNOBS, makeStrike, makeStrikeParams, grantStrikes, stepStrike,
   toggleArm, paintTarget, launchStrike, stepFall, skipFall, fallProgress,
-  strikeDamage, retargetStrike, orbitProgress } from './strike.js?v=268c90d2';
-import { radarBasis, radarProject, radarBearing, sweepAngle, radarPhosphor } from './radar.js?v=268c90d2';
-import { BLOOM_GROUPS } from './bloomweights.js?v=268c90d2';
-import { TOWER_LOOK_NAMES, DEFAULT_TOWER_LOOK, buildTowerLook, preloadLook } from './towerlooks.js?v=268c90d2';
-import { makeAudio } from './audio.js?v=268c90d2';
-import { DEATH_KEYS } from './audiomanifest.js?v=268c90d2';
+  strikeDamage, retargetStrike, orbitProgress } from './strike.js?v=2b8c068e';
+import { radarBasis, radarProject, radarBearing, sweepAngle, radarPhosphor } from './radar.js?v=2b8c068e';
+import { BLOOM_GROUPS } from './bloomweights.js?v=2b8c068e';
+import { TOWER_LOOK_NAMES, DEFAULT_TOWER_LOOK, buildTowerLook, preloadLook } from './towerlooks.js?v=2b8c068e';
+import { makeAudio } from './audio.js?v=2b8c068e';
+import { DEATH_KEYS } from './audiomanifest.js?v=2b8c068e';
 
 export function initTdTab(root) {
   let active = false;
@@ -4051,16 +4052,42 @@ export function initTdTab(root) {
   // directives shape it: 'conserve' and 'ram' spend shells only on the
   // unrammable tier; portals are always worth a shell when nothing else
   // is pressing. Manual mode leaves the trigger entirely to the player.
+  // AUTO SECONDARY (operator, 2026-09-01). The lasers cost nothing — no
+  // ammo, only heat — so auto uses them in EVERY directive. That is why
+  // this does not touch the shell rules below: 'conserve' is conserving
+  // limited shells, and there is nothing to conserve about the secondary.
+  //
+  // RAM is the one exception, and only half an exception: it will not burn
+  // a target it is lining up to ram, but it still answers the hard tier it
+  // refuses to charge.
+  let autoLaserWant = false;
+  function autoSecondary() {
+    autoLaserWant = false;
+    if (manualActive() || player.won || playerDown || paused) return;
+    if (!playerMesh || laserOverheat) return;
+    const R = 2.6 * cellSide;   // the bolt's own reach, same constant it flies
+    // this half only MEASURES; wantsSecondary decides, and is Node-tested
+    const cands = [];
+    for (const e of enemies) {
+      if (!e.alive) continue;
+      const d = dist3(player.pos, e.pos);
+      if (d > R) continue;
+      const to = norm3(sub3(e.pos, player.pos));
+      cands.push({ inRange: true, ahead: dot3(to, player.heading), rammable: e.spec.rammable });
+    }
+    autoLaserWant = wantsSecondary(params.directive, cands);
+  }
+
   function autoGunner(tNow) {
     // any camera: watching from orbit must not stand your own gun down
     if (manualActive() || player.won || playerDown || paused) return;
     if (ammo <= 0 || cannonHeat > 0) return;
     const R = cellSide * 3.0;
-    const shellsForAll = params.directive !== 'conserve' && params.directive !== 'ram';
+    const shellsAll = shellsForAll(params.directive);
     let target = null, bd = R;
     for (const e of enemies) {
       if (!e.alive) continue;
-      if (!shellsForAll && e.spec.rammable) continue;
+      if (!shellsAll && e.spec.rammable) continue;
       const d = dist3(player.pos, e.pos);
       if (d < bd) { bd = d; target = e.pos; }
     }
@@ -5019,7 +5046,10 @@ export function initTdTab(root) {
 
   function updateLasers(dt, tNow) {
     const guns = playerMesh && playerMesh.userData.laserGuns;
-    const wantFire = keys.laser && guns && !player.won && !playerDown;
+    // auto holds the SAME trigger the player does, so there is one firing
+    // path, one heat model and one overheat lockout — not a parallel copy
+    const wantFire = (keys.laser || autoLaserWant) && guns
+      && !player.won && !playerDown;
     // heat: build while firing, shed otherwise; overheat locks the trigger
     // until the tubes are fully cold (no feathering the cap)
     if (laserOverheat) {
@@ -7647,6 +7677,7 @@ export function initTdTab(root) {
       if (!sp.found && dist3(player.pos, graph.centers[sp.ci]) < cellSide * 5) sp.found = true;
     }
     if (simStyle && !simDone) simPolicy(dt);
+    autoSecondary();
     autoGunner(t);
     checkVictory(); // ram kills and heart-contact deaths can end it too
     // DOM is the sim's tax collector: an innerHTML rebuild per SIM STEP
