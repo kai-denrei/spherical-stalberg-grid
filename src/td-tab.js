@@ -19,42 +19,42 @@
 
 import * as THREE from '../vendor/three.module.js';
 import GUI from '../vendor/lil-gui.esm.js';
-import { generateSphereMesh, relax } from './grid.js?v=a593ecd9';
-import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=a593ecd9';
-import { mulberry32, randomSeed } from './rng.js?v=a593ecd9';
-import { computeBerths, berthIndexFor } from './berths.js?v=a593ecd9';
-import { wantsSecondary, shellsForAll } from './autofire.js?v=a593ecd9';
-import { printPhase, printOffset, printOn, patternSecsFor } from './printpath.js?v=a593ecd9';
-import { createBeam } from './beamfx.js?v=a593ecd9';
-import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3, segKey, tangentDir, tangentBasis } from './vec3.js?v=a593ecd9';
-import { CREATURES, waveJelly } from './creatures.js?v=a593ecd9';
-import { brief } from './isaobriefs.js?v=a593ecd9';
-import { drawEmotion } from './emotions.js?v=a593ecd9';
+import { generateSphereMesh, relax } from './grid.js?v=8a678d79';
+import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=8a678d79';
+import { mulberry32, randomSeed } from './rng.js?v=8a678d79';
+import { computeBerths, berthIndexFor } from './berths.js?v=8a678d79';
+import { wantsSecondary, shellsForAll } from './autofire.js?v=8a678d79';
+import { printPhase, printOffset, printOn, patternSecsFor } from './printpath.js?v=8a678d79';
+import { createBeam } from './beamfx.js?v=8a678d79';
+import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3, segKey, tangentDir, tangentBasis } from './vec3.js?v=8a678d79';
+import { CREATURES, waveJelly } from './creatures.js?v=8a678d79';
+import { brief } from './isaobriefs.js?v=8a678d79';
+import { drawEmotion } from './emotions.js?v=8a678d79';
 import { ACHIEVEMENTS, ACHV_GROUPS, achievement, blankRun, earned, freshlyEarned,
   sanitiseRecord }
-  from './achievements.js?v=a593ecd9';
+  from './achievements.js?v=8a678d79';
 import { applyFontPack, currentFontPack, FONT_NAMES,
-  loadTypeFeel } from './fonts.js?v=a593ecd9';
-import { UNITS, UNIT_NAMES, buildUnit, buildCreature, preloadMkcx, preloadServer, makeServerFixture, makeShieldShell, preloadContainer, makeContainerFixture, preloadFabricator, makeIsaoDrone, makeBulletCloud, makeRewardSolid, makeShellSolid, makeDebris, makeDotBurst, makePortalCloud, makeHeartCloud, makeDotEnemy, preloadTerraformer, makeTerraformerFixture } from './units.js?v=a593ecd9';
-import { LOOKS, LOOK_NAMES } from './looks.js?v=a593ecd9';
-import { makeCellIndex } from './cellindex.js?v=a593ecd9';
-import { CREATURE_TINTS, ENEMY_SPEC, INTROS, computeWavePlan, accentFor } from './enemyspec.js?v=a593ecd9';
-import { PICKUPS } from './pickups.js?v=a593ecd9';
-import { rankFor, rankLabel, badgeSVG, killReq, eliteReq } from './ranks.js?v=a593ecd9';
-import { makeScore } from './score.js?v=a593ecd9';
-import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER } from './towers.js?v=a593ecd9';
-import { makeEconomy, sellRefund } from './economy.js?v=a593ecd9';
-import { makeBloom } from './postfx.js?v=a593ecd9';
-import { TANK_FEEL, TANK_FEEL_KNOBS, makeTankFeel, stepTankFeel, landTankFeel, fireTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js?v=a593ecd9';
-import { FEEL, loadFeel, saveFeel } from './feelstore.js?v=a593ecd9';
+  loadTypeFeel } from './fonts.js?v=8a678d79';
+import { UNITS, UNIT_NAMES, buildUnit, buildCreature, preloadMkcx, preloadServer, makeServerFixture, makeShieldShell, preloadContainer, makeContainerFixture, preloadFabricator, makeIsaoDrone, makeBulletCloud, makeRewardSolid, makeShellSolid, makeDebris, makeDotBurst, makePortalCloud, makeHeartCloud, makeDotEnemy, preloadTerraformer, makeTerraformerFixture } from './units.js?v=8a678d79';
+import { LOOKS, LOOK_NAMES } from './looks.js?v=8a678d79';
+import { makeCellIndex } from './cellindex.js?v=8a678d79';
+import { CREATURE_TINTS, ENEMY_SPEC, INTROS, computeWavePlan, accentFor } from './enemyspec.js?v=8a678d79';
+import { PICKUPS } from './pickups.js?v=8a678d79';
+import { rankFor, rankLabel, badgeSVG, killReq, eliteReq } from './ranks.js?v=8a678d79';
+import { makeScore } from './score.js?v=8a678d79';
+import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER } from './towers.js?v=8a678d79';
+import { makeEconomy, sellRefund } from './economy.js?v=8a678d79';
+import { makeBloom } from './postfx.js?v=8a678d79';
+import { TANK_FEEL, TANK_FEEL_KNOBS, makeTankFeel, stepTankFeel, landTankFeel, fireTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js?v=8a678d79';
+import { FEEL, loadFeel, saveFeel } from './feelstore.js?v=8a678d79';
 import { STRIKE_KNOBS, makeStrike, makeStrikeParams, grantStrikes, stepStrike,
   toggleArm, paintTarget, launchStrike, stepFall, skipFall, fallProgress,
-  strikeDamage, retargetStrike, orbitProgress } from './strike.js?v=a593ecd9';
-import { radarBasis, radarProject, radarBearing, sweepAngle, radarPhosphor } from './radar.js?v=a593ecd9';
-import { BLOOM_GROUPS } from './bloomweights.js?v=a593ecd9';
-import { TOWER_LOOK_NAMES, DEFAULT_TOWER_LOOK, buildTowerLook, preloadLook } from './towerlooks.js?v=a593ecd9';
-import { makeAudio } from './audio.js?v=a593ecd9';
-import { DEATH_KEYS } from './audiomanifest.js?v=a593ecd9';
+  strikeDamage, retargetStrike, orbitProgress } from './strike.js?v=8a678d79';
+import { radarBasis, radarProject, radarBearing, sweepAngle, radarPhosphor } from './radar.js?v=8a678d79';
+import { BLOOM_GROUPS } from './bloomweights.js?v=8a678d79';
+import { TOWER_LOOK_NAMES, DEFAULT_TOWER_LOOK, buildTowerLook, preloadLook } from './towerlooks.js?v=8a678d79';
+import { makeAudio } from './audio.js?v=8a678d79';
+import { DEATH_KEYS } from './audiomanifest.js?v=8a678d79';
 
 export function initTdTab(root) {
   let active = false;
@@ -5141,6 +5141,16 @@ export function initTdTab(root) {
     burstRate: 0, burstDuty: 1, burstDecay: 1, burstAttack: 0,
   };
   const BEAM_PEAK = 8.15;        // intensity at the midpoint of the burst
+  // THE SWEEP (operator, 2026-09-01). Across the six seconds the toe-in runs
+  // 0 -> BEAM_SWEEP -> 0, so the pair opens parallel, scissors inward through
+  // the midpoint and opens again: the beams sweep the ground in front instead
+  // of burning one fixed line. Damage follows for free, because it is
+  // measured against the same swept direction the beam is drawn along.
+  //
+  // Radians. The operator said "0 to 4 to 0"; on this slider that reads as
+  // 0.4 rad — about 23 degrees each side, a wide and obvious sweep. If they
+  // meant something else this is the one number to move.
+  const BEAM_SWEEP = 0.40;
   const CELL_WIDTH_KEYS = ['coreWidth', 'glowWidth', 'jitterAmount'];
   // `beams` is taken by the tower/slow-tether fx pool — these are the tank's
   let tankBeams = null, beamOn = false, beamVoice = null;
@@ -5305,7 +5315,26 @@ export function initTdTab(root) {
         gun.getWorldQuaternion(tmpQ);
         tmpV.set(0, 0, 1).applyQuaternion(tmpQ);
         const d0 = [tmpV.x, tmpV.y, tmpV.z];
-        const dir = norm3(sub3(d0, scale3(from, dot3(d0, from))));
+        let dir = norm3(sub3(d0, scale3(from, dot3(d0, from))));
+        // SWEEP IT INWARD, by the bell, toward the hull's centreline. Which
+        // way "inward" is comes from the gun's own offset from the hull —
+        // never from its L/R name, which is exactly what made the model's
+        // toe-in ambiguous in the first place.
+        const swing = BEAM_SWEEP * Math.sin(Math.min(1, laserHeat / LASER_MAX_HEAT) * Math.PI);
+        if (swing > 1e-4) {
+          const lat = sub3(from, player.pos);                     // gun -> out
+          const latT = sub3(lat, scale3(from, dot3(lat, from)));  // onto tangent
+          const right = norm3(cross3(from, dir));
+          // Toward the centreline. This sign was briefly flipped on the
+          // strength of a probe that measured separation at FULL REACH — but
+          // the guns are already toed in, so the pair crosses before then and
+          // the far-end gap grows for BOTH signs. The metric was the bug, not
+          // the sign; fixing the probe to measure the crossing point put this
+          // back where it started.
+          const sgn = dot3(latT, right) > 0 ? -1 : 1;             // toward centre
+          const c = Math.cos(swing), sn = Math.sin(swing) * sgn;
+          dir = norm3(add3(scale3(dir, c), scale3(right, sn)));
+        }
         // WALLS STOP IT, enemies do not. March in half-cells to the first
         // blocked cell so a beam cannot reach through the maze you built.
         let len = reach;
@@ -8300,6 +8329,63 @@ export function initTdTab(root) {
       for (let i = 0; i < 30; i++) updateLasers(step, 200 + i * step);
       keys.laser = false;
       const hit = live.map((e, k) => e.hp < before[k]);
+      // THE SWEEP: does the pair actually scissor, and inward? Sample the two
+      // beam directions across the burst and watch the angle between them.
+      // Parallel at the ends, narrowest at the midpoint, and narrowing (not
+      // widening) is what "inward" means — a sign error would still sweep.
+      {
+        const dirAt = (gi2, hf) => {
+          laserHeat = hf * LASER_MAX_HEAT;
+          const g3 = playerMesh.userData.laserGuns[gi2];
+          g3.getWorldPosition(tmpV);
+          const f2 = norm3([tmpV.x, tmpV.y, tmpV.z]);
+          g3.getWorldQuaternion(tmpQ);
+          tmpV.set(0, 0, 1).applyQuaternion(tmpQ);
+          let d2 = norm3(sub3([tmpV.x, tmpV.y, tmpV.z],
+            scale3(f2, dot3([tmpV.x, tmpV.y, tmpV.z], f2))));
+          const sw = BEAM_SWEEP * Math.sin(Math.min(1, hf) * Math.PI);
+          if (sw > 1e-4) {
+            const lat = sub3(f2, player.pos);
+            const latT = sub3(lat, scale3(f2, dot3(lat, f2)));
+            const rg = norm3(cross3(f2, d2));
+            const sg = dot3(latT, rg) > 0 ? -1 : 1;
+            d2 = norm3(add3(scale3(d2, Math.cos(sw)), scale3(rg, Math.sin(sw) * sg)));
+          }
+          return { f: f2, d: d2 };
+        };
+        // WHERE THEY CROSS, not how far apart they end up. The guns are
+        // already toed in, so the pair crosses before full reach even at
+        // sweep 0 — and past the crossing the separation grows again whether
+        // the sweep turns them in OR out. Measuring the far end therefore
+        // reports FAIL for both signs, which is exactly what it did. The
+        // honest signal is the distance at which they are closest: sweeping
+        // inward brings the crossing NEARER the tank.
+        // Distance AND gap. "Closest at 0" is also what DIVERGING looks
+        // like — the muzzles are then the nearest the beams ever get — so a
+        // location alone passes a fan-out trivially. The pair must actually
+        // MEET: minimum gap near zero, at a positive distance.
+        const crossAt = (hf) => {
+          const A = dirAt(0, hf), B = dirAt(1, hf);
+          let best = Infinity, at = 0;
+          const reach2 = LASER_REACH * cellSide;
+          for (let i = 0; i <= 300; i++) {
+            const d3 = (i / 300) * reach2;
+            const gp = dist3(add3(A.f, scale3(A.d, d3)), add3(B.f, scale3(B.d, d3)));
+            if (gp < best) { best = gp; at = d3; }
+          }
+          return { at: at / cellSide, gap: best / cellSide };
+        };
+        const c0 = crossAt(0.02), cM = crossAt(0.5), c1 = crossAt(0.98);
+        const meets = cM.gap < 0.05 && cM.at > 0.05;     // really crosses, ahead
+        const nearer = cM.at < c0.at * 0.9 && cM.at < c1.at * 0.9;
+        console.log(`BEAMFIRE sweep=${meets && nearer ? 'PASS' : 'FAIL'}`
+          + ` crossing start=${c0.at.toFixed(2)} mid=${cM.at.toFixed(2)}`
+          + ` end=${c1.at.toFixed(2)} cells`
+          + ` | gap at mid=${cM.gap.toFixed(3)} cells`
+          + ` (must MEET ahead of the tank, nearer at the midpoint)`);
+        laserHeat = 0;
+      }
+
       console.log(`BEAMFIRE pierce=${hit.every(Boolean) ? 'PASS' : 'FAIL'}`
         + ` (${hit.map((h, k) => `#${k}:${h ? 'burned' : 'untouched'}`).join(' ')})`
         + ` — the old bolts stopped at the first`);

@@ -116,6 +116,18 @@ export function initBeamTab(root) {
     // point — they converge because the guns are toed in, or they do not.
     beamLength: 12.0,
     muzzleNudge: 0.0,           // seat the origin exactly at the tip
+    // LEVEL BY DEFAULT. The gun pivots carry a real downward pitch, so a beam
+    // that honours it faithfully drills straight into the ground — which is
+    // truthful and useless. The GAME already projects the beam onto the
+    // tangent plane (a sphere has no other sane answer), so the lab levels
+    // too and matches what the weapon will actually do. Turn it off to see
+    // the raw barrel angle.
+    levelBeams: true,
+    // THE SWEEP. Across one burst the toe-in runs 0 -> amplitude -> 0, so the
+    // pair opens parallel, scissors inward to the midpoint and opens again —
+    // the beams sweeping the ground in front rather than sitting in one line.
+    sweep: true,
+    sweepAmplitude: 0.40,       // radians of inward toe at the peak
     spread: 1.0,                // how far apart the emitters read
     toeIn: SECONDARY_TOE,       // live, so convergence can be tuned by eye
     autoFire: true,
@@ -186,12 +198,13 @@ export function initBeamTab(root) {
     else fail('unavailable');
   }
 
-  function applyToe() {
+  function applyToe(angle) {
     if (!tank) return;
+    const a4 = angle === undefined ? P.toeIn : angle;
     for (const name of ['Secondary_L_Pivot', 'Secondary_R_Pivot']) {
       const piv = tank.getObjectByName(name);
       if (!piv) continue;
-      piv.rotation.set(0, (piv.position.x < 0 ? 1 : -1) * P.toeIn, 0);
+      piv.rotation.set(0, (piv.position.x < 0 ? 1 : -1) * a4, 0);
     }
   }
 
@@ -233,7 +246,10 @@ export function initBeamTab(root) {
   gg.add(P, 'beamLength', 0.4, 40, 0.1).name('beam length');
   gg.add(P, 'muzzleNudge', -0.5, 0.5, 0.005).name('muzzle offset');
   gg.add(P, 'spread', 0.2, 3, 0.05);
-  gg.add(P, 'toeIn', 0, 0.6, 0.005).name('secondary toe-in').onChange(applyToe);
+  gg.add(P, 'toeIn', 0, 0.8, 0.005).name('secondary toe-in').onChange(() => applyToe());
+  gg.add(P, 'levelBeams').name('level with ground').onChange(() => applyToe());
+  gg.add(P, 'sweep').name('sweep across burst');
+  gg.add(P, 'sweepAmplitude', 0, 0.8, 0.005).name('sweep amplitude');
   gg.open();
 
   const gc = gui.addFolder('core');
@@ -321,7 +337,9 @@ export function initBeamTab(root) {
   const qq = new THREE.Quaternion();
   function aimOne(pivot, start, dir, end) {
     pivot.getWorldQuaternion(qq);
-    dir.set(0, 0, 1).applyQuaternion(qq).normalize();
+    dir.set(0, 0, 1).applyQuaternion(qq);
+    if (P.levelBeams) { dir.y = 0; if (dir.lengthSq() < 1e-9) dir.set(0, 0, 1); }
+    dir.normalize();
     start.set(0, 0, gunTipZ(pivot) + P.muzzleNudge);
     pivot.localToWorld(start);
     end.copy(start).addScaledVector(dir, P.beamLength);
@@ -412,6 +430,9 @@ export function initBeamTab(root) {
     const dt = Math.min(clock.getDelta(), 0.1);
     const t = clock.getElapsedTime();
     const alpha = envelope(dt);
+    // the sweep rides the SAME bell as the intensity, so the pair is widest
+    // open exactly when the beam is faintest and scissored in at full power
+    applyToe(P.sweep ? P.sweepAmplitude * (alpha ?? 1) : P.toeIn);
     aimBeams();
     pushParams(alpha);
     beamL.update(t); beamR.update(t);
