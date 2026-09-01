@@ -76,11 +76,12 @@ export function initBeamTab(root) {
   buildTank('tronColors');
   preloadMkcx().then(() => { buildTank(P.look); applyToe(); });  // swap in when the bytes land
 
-  // --- the two beams, an inverted V meeting at an apex ---------------------
-  // Emitter positions come from the gun world transforms, never from a stored
-  // heading: the standing rule in this project, and the trap it has hit three
-  // times. The apex is one shared point ahead of the hull, which is what makes
-  // the V a V rather than two independent beams.
+  // --- the two beams -------------------------------------------------------
+  // Each one belongs to a gun: it leaves that gun's muzzle and runs straight
+  // down that gun's own barrel. Both the origin and the direction come from
+  // the gun's world transform — the standing rule here, and the trap this
+  // project has hit three times. Whether they converge is then the toe-in's
+  // business, not the beam code's.
   const beamL = createBeam(new THREE.Vector3(), new THREE.Vector3(), DEFAULTS);
   const beamR = createBeam(new THREE.Vector3(), new THREE.Vector3(), DEFAULTS);
   scene.add(beamL.mesh, beamR.mesh);
@@ -111,10 +112,10 @@ export function initBeamTab(root) {
     envelope: 'bell',           // bell = 0 -> peak -> 0 across one burst
     peakIntensity: 8.0,
     burstSeconds: LASER_MAX_HEAT,
-    // LENGTH. The apex is where the two beams meet, so this IS the beam
-    // length — a long reach was the point of the weapon and 2.2 was barely
-    // past the hull. Ranges to 40 so "much longer" is actually reachable.
-    apexDistance: 12.0,
+    // LENGTH along each barrel. The beams no longer meet at an imposed
+    // point — they converge because the guns are toed in, or they do not.
+    beamLength: 12.0,
+    muzzleNudge: 0.0,           // seat the origin exactly at the tip
     spread: 1.0,                // how far apart the emitters read
     toeIn: SECONDARY_TOE,       // live, so convergence can be tuned by eye
     autoFire: true,
@@ -124,7 +125,8 @@ export function initBeamTab(root) {
       const json = JSON.stringify({ schema: 'laserfx/1', id: 'beam-in-world',
         beam: out, world: { toneMapping: P.toneMapping, exposure: P.exposure,
           bloom: P.bloom, bloomStrength: P.bloomStrength,
-          peakIntensity: P.peakIntensity, burstSeconds: P.burstSeconds } }, null, 2);
+          peakIntensity: P.peakIntensity, burstSeconds: P.burstSeconds,
+          beamLength: P.beamLength, toeIn: P.toeIn } }, null, 2);
       navigator.clipboard?.writeText(json).then(
         () => console.log('BEAMLAB preset copied to clipboard\n' + json),
         () => console.log('BEAMLAB preset (clipboard refused):\n' + json));
@@ -178,7 +180,8 @@ export function initBeamTab(root) {
   ge.open();
 
   const gg = gui.addFolder('geometry');
-  gg.add(P, 'apexDistance', 0.4, 40, 0.1).name('beam length (apex)');
+  gg.add(P, 'beamLength', 0.4, 40, 0.1).name('beam length');
+  gg.add(P, 'muzzleNudge', -0.5, 0.5, 0.005).name('muzzle offset');
   gg.add(P, 'spread', 0.2, 3, 0.05);
   gg.add(P, 'toeIn', 0, 0.6, 0.005).name('secondary toe-in').onChange(applyToe);
   gg.open();
@@ -227,33 +230,66 @@ export function initBeamTab(root) {
     return Math.sin(x * Math.PI);                    // 0 -> 1 -> 0
   }
 
-  const a = new THREE.Vector3(), b = new THREE.Vector3(), apex = new THREE.Vector3();
-  const fwd = new THREE.Vector3(), q = new THREE.Quaternion();
+  // --- aiming: out of the muzzle, straight down the barrel ----------------
+  //
+  // NOT a shared apex. Each beam leaves its own gun's TIP and continues along
+  // that gun's OWN world direction; the inverted V is then a consequence of
+  // the toe-in rather than something imposed on top of it. Forcing both beams
+  // onto one computed apex point was drawing a shape the guns were not making,
+  // which is the same class of mistake as re-deriving a heading instead of
+  // reading the transform.
+  //
+  // No flattening either. The gun pivots carry a real pitch (~10 degrees on
+  // this model) and the beam should follow the barrel it comes out of.
+  const tipLocal = new WeakMap();
+  const bb = new THREE.Box3();
+  function gunTipZ(pivot) {
+    if (tipLocal.has(pivot)) return tipLocal.get(pivot);
+    // the +Z extent of the gun's own subtree, in the pivot's local frame:
+    // measured off the model rather than guessed at as an offset
+    pivot.updateWorldMatrix(true, true);
+    const inv = new THREE.Matrix4().copy(pivot.matrixWorld).invert();
+    bb.makeEmpty();
+    pivot.traverse((o) => {
+      if (!o.isMesh || !o.geometry) return;
+      o.updateWorldMatrix(true, false);
+      const g2 = o.geometry.clone();
+      g2.applyMatrix4(new THREE.Matrix4().multiplyMatrices(inv, o.matrixWorld));
+      g2.computeBoundingBox();
+      bb.union(g2.boundingBox);
+      g2.dispose();
+    });
+    const z = Number.isFinite(bb.max.z) ? bb.max.z : 0.5;
+    tipLocal.set(pivot, z);
+    return z;
+  }
+
+  const sA = new THREE.Vector3(), sB = new THREE.Vector3();
+  const eA = new THREE.Vector3(), eB = new THREE.Vector3();
+  const dA = new THREE.Vector3(), dB = new THREE.Vector3();
+  const qq = new THREE.Quaternion();
+  function aimOne(pivot, start, dir, end) {
+    pivot.getWorldQuaternion(qq);
+    dir.set(0, 0, 1).applyQuaternion(qq).normalize();
+    start.set(0, 0, gunTipZ(pivot) + P.muzzleNudge);
+    pivot.localToWorld(start);
+    end.copy(start).addScaledVector(dir, P.beamLength);
+  }
   function aimBeams() {
-    // FROM THE RENDER TRANSFORM. If the guns exist, their world quaternion is
-    // where the tank is pointing; falling back to the tank's own is still a
-    // read of the transform, never a re-derived heading.
-    const src = gunL || tank;
-    if (!src) return;
-    src.getWorldQuaternion(q);
-    fwd.set(0, 0, 1).applyQuaternion(q);
-    // FLATTEN IT, exactly as the weapon does. In game the bolt direction is
-    // projected onto the tangent plane at the hull before it flies; without
-    // the same projection here the guns' own downward toe-in drives the apex
-    // through the floor and the tuning is done on geometry the tank will
-    // never produce.
-    fwd.y = 0;
-    if (fwd.lengthSq() < 1e-9) fwd.set(0, 0, 1);
-    fwd.normalize();
-    if (gunL && gunR) { gunL.getWorldPosition(a); gunR.getWorldPosition(b); }
-    else {
-      a.set(-0.18 * P.spread, 0.22, 0.35); b.set(0.18 * P.spread, 0.22, 0.35);
-      tank.localToWorld(a); tank.localToWorld(b);
-    }
-    // one shared endpoint: that is what makes it a V and not two beams
-    apex.copy(a).add(b).multiplyScalar(0.5).addScaledVector(fwd, P.apexDistance);
-    beamL.setEndpoints(a, apex);
-    beamR.setEndpoints(b, apex);
+    if (gunL && gunR) {
+      aimOne(gunL, sA, dA, eA);
+      aimOne(gunR, sB, dB, eB);
+    } else if (tank) {
+      // procedural fallback has no gun pivots: two emitters at the hull front
+      tank.getWorldQuaternion(qq);
+      dA.set(0, 0, 1).applyQuaternion(qq).normalize(); dB.copy(dA);
+      sA.set(-0.18 * P.spread, 0.22, 0.35); tank.localToWorld(sA);
+      sB.set(0.18 * P.spread, 0.22, 0.35); tank.localToWorld(sB);
+      eA.copy(sA).addScaledVector(dA, P.beamLength);
+      eB.copy(sB).addScaledVector(dB, P.beamLength);
+    } else return;
+    beamL.setEndpoints(sA, eA);
+    beamR.setEndpoints(sB, eB);
   }
 
   function pushParams(alpha) {
@@ -270,6 +306,40 @@ export function initBeamTab(root) {
       if (gi2 && alpha !== undefined) gi2.value = P.peakIntensity * alpha;
       if (alpha !== undefined) beam.setAlpha(alpha > 0 ? 1 : 0);
     }
+  }
+
+  // ?beamprobe=1 — where the beams actually start, point and end. A beam that
+  // is long but aimed into the screen looks exactly like a short one, and the
+  // difference is three numbers.
+  if (new URLSearchParams(location.search).get('beamprobe') === '1') {
+    setTimeout(() => {
+      aimBeams();
+      const fmt = (v) => `${v.x.toFixed(2)},${v.y.toFixed(2)},${v.z.toFixed(2)}`;
+      const guns = gunL && gunR ? 'mkcx pivots' : 'procedural fallback';
+      console.log(`BEAMPROBE source=${guns} beamLength=${P.beamLength}`);
+      console.log(`BEAMPROBE L start=${fmt(sA)} dir=${fmt(dA)} end=${fmt(eA)}`
+        + ` len=${sA.distanceTo(eA).toFixed(2)}`);
+      console.log(`BEAMPROBE R start=${fmt(sB)} dir=${fmt(dB)} end=${fmt(eB)}`
+        + ` len=${sB.distanceTo(eB).toFixed(2)}`);
+      // WHERE THEY MEET, which is the number worth tuning. The first cut of
+      // this compared the gap at the muzzles against the gap at the far ends
+      // and reported "diverging" — but toed-in beams CROSS and then separate
+      // again, so at full length they are wide apart for the right reason. The
+      // meaningful figure is the distance at which they are closest.
+      const tmpA = new THREE.Vector3(), tmpB = new THREE.Vector3();
+      let best = Infinity, bestAt = 0;
+      for (let i = 0; i <= 400; i++) {
+        const d = (i / 400) * P.beamLength;
+        tmpA.copy(sA).addScaledVector(dA, d);
+        tmpB.copy(sB).addScaledVector(dB, d);
+        const gap = tmpA.distanceTo(tmpB);
+        if (gap < best) { best = gap; bestAt = d; }
+      }
+      console.log(`BEAMPROBE dirs-dot=${dA.dot(dB).toFixed(4)}`
+        + ` muzzle-gap=${sA.distanceTo(sB).toFixed(3)}`
+        + ` closest=${best.toFixed(3)} at ${bestAt.toFixed(2)} units`
+        + ` (the apex the toe-in produces; ${best < 0.05 ? 'they cross' : 'they never meet'})`);
+    }, 1200);
   }
 
   const clock = new THREE.Clock();
