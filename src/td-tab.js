@@ -19,40 +19,41 @@
 
 import * as THREE from '../vendor/three.module.js';
 import GUI from '../vendor/lil-gui.esm.js';
-import { generateSphereMesh, relax } from './grid.js?v=2b8c068e';
-import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=2b8c068e';
-import { mulberry32, randomSeed } from './rng.js?v=2b8c068e';
-import { computeBerths, berthIndexFor } from './berths.js?v=2b8c068e';
-import { wantsSecondary, shellsForAll } from './autofire.js?v=2b8c068e';
-import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3, segKey, tangentDir } from './vec3.js?v=2b8c068e';
-import { CREATURES, waveJelly } from './creatures.js?v=2b8c068e';
-import { brief } from './isaobriefs.js?v=2b8c068e';
-import { drawEmotion } from './emotions.js?v=2b8c068e';
+import { generateSphereMesh, relax } from './grid.js?v=c6641e60';
+import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=c6641e60';
+import { mulberry32, randomSeed } from './rng.js?v=c6641e60';
+import { computeBerths, berthIndexFor } from './berths.js?v=c6641e60';
+import { wantsSecondary, shellsForAll } from './autofire.js?v=c6641e60';
+import { printPhase, printOffset, printOn, patternSecsFor } from './printpath.js?v=c6641e60';
+import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3, segKey, tangentDir, tangentBasis } from './vec3.js?v=c6641e60';
+import { CREATURES, waveJelly } from './creatures.js?v=c6641e60';
+import { brief } from './isaobriefs.js?v=c6641e60';
+import { drawEmotion } from './emotions.js?v=c6641e60';
 import { ACHIEVEMENTS, ACHV_GROUPS, achievement, blankRun, earned, freshlyEarned,
   sanitiseRecord }
-  from './achievements.js?v=2b8c068e';
+  from './achievements.js?v=c6641e60';
 import { applyFontPack, currentFontPack, FONT_NAMES,
-  loadTypeFeel } from './fonts.js?v=2b8c068e';
-import { UNITS, UNIT_NAMES, buildUnit, buildCreature, preloadMkcx, preloadServer, makeServerFixture, makeShieldShell, preloadContainer, makeContainerFixture, preloadFabricator, makeIsaoDrone, makeBulletCloud, makeRewardSolid, makeShellSolid, makeDebris, makeDotBurst, makePortalCloud, makeHeartCloud, makeDotEnemy } from './units.js?v=2b8c068e';
-import { LOOKS, LOOK_NAMES } from './looks.js?v=2b8c068e';
-import { makeCellIndex } from './cellindex.js?v=2b8c068e';
-import { CREATURE_TINTS, ENEMY_SPEC, INTROS, computeWavePlan, accentFor } from './enemyspec.js?v=2b8c068e';
-import { PICKUPS } from './pickups.js?v=2b8c068e';
-import { rankFor, rankLabel, badgeSVG, killReq, eliteReq } from './ranks.js?v=2b8c068e';
-import { makeScore } from './score.js?v=2b8c068e';
-import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER } from './towers.js?v=2b8c068e';
-import { makeEconomy, sellRefund } from './economy.js?v=2b8c068e';
-import { makeBloom } from './postfx.js?v=2b8c068e';
-import { TANK_FEEL, TANK_FEEL_KNOBS, makeTankFeel, stepTankFeel, landTankFeel, fireTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js?v=2b8c068e';
-import { FEEL, loadFeel, saveFeel } from './feelstore.js?v=2b8c068e';
+  loadTypeFeel } from './fonts.js?v=c6641e60';
+import { UNITS, UNIT_NAMES, buildUnit, buildCreature, preloadMkcx, preloadServer, makeServerFixture, makeShieldShell, preloadContainer, makeContainerFixture, preloadFabricator, makeIsaoDrone, makeBulletCloud, makeRewardSolid, makeShellSolid, makeDebris, makeDotBurst, makePortalCloud, makeHeartCloud, makeDotEnemy } from './units.js?v=c6641e60';
+import { LOOKS, LOOK_NAMES } from './looks.js?v=c6641e60';
+import { makeCellIndex } from './cellindex.js?v=c6641e60';
+import { CREATURE_TINTS, ENEMY_SPEC, INTROS, computeWavePlan, accentFor } from './enemyspec.js?v=c6641e60';
+import { PICKUPS } from './pickups.js?v=c6641e60';
+import { rankFor, rankLabel, badgeSVG, killReq, eliteReq } from './ranks.js?v=c6641e60';
+import { makeScore } from './score.js?v=c6641e60';
+import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER } from './towers.js?v=c6641e60';
+import { makeEconomy, sellRefund } from './economy.js?v=c6641e60';
+import { makeBloom } from './postfx.js?v=c6641e60';
+import { TANK_FEEL, TANK_FEEL_KNOBS, makeTankFeel, stepTankFeel, landTankFeel, fireTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js?v=c6641e60';
+import { FEEL, loadFeel, saveFeel } from './feelstore.js?v=c6641e60';
 import { STRIKE_KNOBS, makeStrike, makeStrikeParams, grantStrikes, stepStrike,
   toggleArm, paintTarget, launchStrike, stepFall, skipFall, fallProgress,
-  strikeDamage, retargetStrike, orbitProgress } from './strike.js?v=2b8c068e';
-import { radarBasis, radarProject, radarBearing, sweepAngle, radarPhosphor } from './radar.js?v=2b8c068e';
-import { BLOOM_GROUPS } from './bloomweights.js?v=2b8c068e';
-import { TOWER_LOOK_NAMES, DEFAULT_TOWER_LOOK, buildTowerLook, preloadLook } from './towerlooks.js?v=2b8c068e';
-import { makeAudio } from './audio.js?v=2b8c068e';
-import { DEATH_KEYS } from './audiomanifest.js?v=2b8c068e';
+  strikeDamage, retargetStrike, orbitProgress } from './strike.js?v=c6641e60';
+import { radarBasis, radarProject, radarBearing, sweepAngle, radarPhosphor } from './radar.js?v=c6641e60';
+import { BLOOM_GROUPS } from './bloomweights.js?v=c6641e60';
+import { TOWER_LOOK_NAMES, DEFAULT_TOWER_LOOK, buildTowerLook, preloadLook } from './towerlooks.js?v=c6641e60';
+import { makeAudio } from './audio.js?v=c6641e60';
+import { DEATH_KEYS } from './audiomanifest.js?v=c6641e60';
 
 export function initTdTab(root) {
   let active = false;
@@ -5956,6 +5957,8 @@ export function initTdTab(root) {
 
   let isao = null;                 // { obj, dir[3], state, t, dur, order }
   let printBeam = null;             // one Line, reused for every print
+  const PRINT_TRAIL = 8;            // bead segments behind the head
+  const PRINT_TRAIL_STEP = 0.014;   // how far back along the path each one sits
   const orders = [];                // FIFO; orders[0] is the live one
   const orderByCell = new Map();    // ci -> order, for the shop and the cancel
   const isaoRadius = () => 1 + params.wallHeight * isaoAlt + cellSide * 0.5;
@@ -6271,18 +6274,42 @@ export function initTdTab(root) {
       const top = 1 + params.wallHeight;
       if (!printBeam) {
         printBeam = new THREE.Line(new THREE.BufferGeometry().setAttribute('position',
-          new THREE.BufferAttribute(new Float32Array(6), 3)),
+          new THREE.BufferAttribute(new Float32Array((PRINT_TRAIL + 2) * 3), 3)),
           new THREE.LineBasicMaterial({
             color: ISAO_TINT, transparent: true, opacity: 0.85,
             blending: THREE.AdditiveBlending, depthWrite: false,
           }));
         scene.add(printBeam);
       }
+      // THE HEAD MOVES. A steady line from the nozzle to the middle of the
+      // cell reads as a laser; a printer rasters, walks a perimeter, and
+      // stops extruding while it travels. printpath.js owns those three
+      // patterns and the cycle between them; this only lays them on the
+      // cell's tangent plane. The trail is sampled BACKWARDS along the same
+      // path rather than remembered, so it stays deterministic and costs no
+      // state — and it is what makes a zigzag legible as a zigzag.
+      // sized to THIS build, so even the shortest job shows all three
+      const { pattern, u } = printPhase(isao.t, patternSecsFor(isao.dur));
+      const nrm = graph.normals[isao.order.ci];
+      const [t1, t2] = tangentBasis(nrm);
+      const R = cellSide * 0.38;
+      const bed = (uu) => {
+        const [ox, oy] = printOffset(pattern, uu);
+        return [0, 1, 2].map((i) =>
+          c[i] * top + t1[i] * ox * R + t2[i] * oy * R);
+      };
       const pa = printBeam.geometry.attributes.position;
-      pa.setXYZ(0, a.x, a.y, a.z);
-      pa.setXYZ(1, c[0] * top, c[1] * top, c[2] * top);
+      pa.setXYZ(0, a.x, a.y, a.z);            // the nozzle
+      for (let k = 0; k <= PRINT_TRAIL; k++) {
+        // clamped at 0 so a trail never wraps into the previous pattern
+        const p = bed(Math.max(0, u - k * PRINT_TRAIL_STEP));
+        pa.setXYZ(k + 1, p[0], p[1], p[2]);
+      }
       pa.needsUpdate = true;
-      printBeam.visible = true;
+      // the gaps are the point: a nozzle that never stops extruding is a
+      // laser again. Retractions at the raster turnarounds, and the whole
+      // third pattern is travel moves.
+      printBeam.visible = printOn(pattern, u);
       // a printer's flow is not steady; the flicker is deterministic
       printBeam.material.opacity = 0.55 + 0.35 * Math.abs(Math.sin(isao.t * 21));
     } else if (printBeam) printBeam.visible = false;
@@ -8018,6 +8045,48 @@ export function initTdTab(root) {
   // shift. Both are needed because he is asynchronous twice over: the model
   // loads async, and the whole point of the mechanic is that a tower takes
   // wall-clock time to exist — neither of which ?tick can reach.
+  // ?printprobe=1 — ISAO'S PRINT BEAM, swept across a full pattern cycle.
+  // The path maths is Node-tested in printpath.mjs; what this checks is the
+  // WIRING: that the head actually moves over the cell (the bed points
+  // spread, rather than all landing on one dot the way the old straight
+  // beam did) and that the beam blanks during retractions and travel moves.
+  if (urlParams.get('printprobe') === '1') {
+    (async () => {
+      await spawnIsao();
+      eco.addBiomass(TOWER_BY_KEY.single.cost);
+      for (let ci = 0; ci < dungeon.tags.length; ci++) {
+        if (!placeError(ci) && !orderByCell.has(ci)) { orderTower('single', ci); break; }
+      }
+      // tick until he is actually printing, rather than guessing a number
+      let guard = 0;
+      while (isao && isao.state !== 'build' && guard++ < 4000) updateIsao(0.02);
+      if (!isao || isao.state !== 'build') {
+        console.log('PRINTPROBE inconclusive=never reached build state'); return;
+      }
+      const seen = new Set();
+      let offs = 0, spreadMax = 0;
+      // sample across three pattern slices, well inside the build
+      for (let i = 0; i < 90; i++) {
+        updateIsao(0.05);
+        if (!printBeam || isao.state !== 'build') break;
+        const ph = printPhase(isao.t, patternSecsFor(isao.dur));
+        seen.add(ph.pattern);
+        if (!printBeam.visible) offs++;
+        const pa2 = printBeam.geometry.attributes.position;
+        let mnX = Infinity, mxX = -Infinity, mnY = Infinity, mxY = -Infinity;
+        for (let k = 1; k < pa2.count; k++) {
+          mnX = Math.min(mnX, pa2.getX(k)); mxX = Math.max(mxX, pa2.getX(k));
+          mnY = Math.min(mnY, pa2.getY(k)); mxY = Math.max(mxY, pa2.getY(k));
+        }
+        spreadMax = Math.max(spreadMax, Math.hypot(mxX - mnX, mxY - mnY) / cellSide);
+      }
+      const all = ['zigzag', 'spiral', 'blink'].every((k) => seen.has(k));
+      console.log(`PRINTPROBE patterns=${all ? 'PASS' : 'FAIL'} (${[...seen].join('+')})`
+        + ` blanks=${offs > 0 ? 'PASS' : 'FAIL'} (${offs} frames off)`
+        + ` head-moves=${spreadMax > 0.05 ? 'PASS' : 'FAIL'} (max spread ${spreadMax.toFixed(3)} cells)`);
+    })();
+  }
+
   const orderSpec = urlParams.get('order');
   const isaoN = parseFloat(urlParams.get('isao') || urlParams.get('bobby') || '0');
   if (orderSpec || isaoN > 0) {
@@ -8045,6 +8114,21 @@ export function initTdTab(root) {
           + ` cam=${camera.position.toArray().map((v) => v.toFixed(3)).join(',')}`
           + ` dist=${camera.position.distanceTo(isao.obj.position).toFixed(3)}`
           + ` cellSide=${cellSide.toFixed(3)}`);
+      }
+      // the beam is the thing being verified here: is the head MOVING (bed
+      // points spread out, not one repeated dot) and does it blank
+      if (printBeam && isao) {
+        const ph = printPhase(isao.t, patternSecsFor(isao.dur));
+        const pa2 = printBeam.geometry.attributes.position;
+        let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+        for (let k = 1; k < pa2.count; k++) {
+          minX = Math.min(minX, pa2.getX(k)); maxX = Math.max(maxX, pa2.getX(k));
+          minY = Math.min(minY, pa2.getY(k)); maxY = Math.max(maxY, pa2.getY(k));
+        }
+        const spread = Math.hypot(maxX - minX, maxY - minY);
+        console.log(`PRINTBEAM pattern=${ph.pattern} u=${ph.u.toFixed(2)}`
+          + ` on=${printBeam.visible} pts=${pa2.count}`
+          + ` spread=${(spread / cellSide).toFixed(3)}cells`);
       }
       console.log(`ISAO state=${isao ? isao.state : 'absent'}`
         + ` queue=${orders.length} live=${o ? (o.key || 'upgrade') + '@' + o.ci : '-'}`
