@@ -19,41 +19,41 @@
 
 import * as THREE from '../vendor/three.module.js';
 import GUI from '../vendor/lil-gui.esm.js';
-import { generateSphereMesh, relax } from './grid.js?v=ef7ee4f5';
-import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=ef7ee4f5';
-import { mulberry32, randomSeed } from './rng.js?v=ef7ee4f5';
-import { computeBerths, berthIndexFor } from './berths.js?v=ef7ee4f5';
-import { wantsSecondary, shellsForAll } from './autofire.js?v=ef7ee4f5';
-import { printPhase, printOffset, printOn, patternSecsFor } from './printpath.js?v=ef7ee4f5';
-import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3, segKey, tangentDir, tangentBasis } from './vec3.js?v=ef7ee4f5';
-import { CREATURES, waveJelly } from './creatures.js?v=ef7ee4f5';
-import { brief } from './isaobriefs.js?v=ef7ee4f5';
-import { drawEmotion } from './emotions.js?v=ef7ee4f5';
+import { generateSphereMesh, relax } from './grid.js?v=a1d45038';
+import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=a1d45038';
+import { mulberry32, randomSeed } from './rng.js?v=a1d45038';
+import { computeBerths, berthIndexFor } from './berths.js?v=a1d45038';
+import { wantsSecondary, shellsForAll } from './autofire.js?v=a1d45038';
+import { printPhase, printOffset, printOn, patternSecsFor } from './printpath.js?v=a1d45038';
+import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3, segKey, tangentDir, tangentBasis } from './vec3.js?v=a1d45038';
+import { CREATURES, waveJelly } from './creatures.js?v=a1d45038';
+import { brief } from './isaobriefs.js?v=a1d45038';
+import { drawEmotion } from './emotions.js?v=a1d45038';
 import { ACHIEVEMENTS, ACHV_GROUPS, achievement, blankRun, earned, freshlyEarned,
   sanitiseRecord }
-  from './achievements.js?v=ef7ee4f5';
+  from './achievements.js?v=a1d45038';
 import { applyFontPack, currentFontPack, FONT_NAMES,
-  loadTypeFeel } from './fonts.js?v=ef7ee4f5';
-import { UNITS, UNIT_NAMES, buildUnit, buildCreature, preloadMkcx, preloadServer, makeServerFixture, makeShieldShell, preloadContainer, makeContainerFixture, preloadFabricator, makeIsaoDrone, makeBulletCloud, makeRewardSolid, makeShellSolid, makeDebris, makeDotBurst, makePortalCloud, makeHeartCloud, makeDotEnemy } from './units.js?v=ef7ee4f5';
-import { LOOKS, LOOK_NAMES } from './looks.js?v=ef7ee4f5';
-import { makeCellIndex } from './cellindex.js?v=ef7ee4f5';
-import { CREATURE_TINTS, ENEMY_SPEC, INTROS, computeWavePlan, accentFor } from './enemyspec.js?v=ef7ee4f5';
-import { PICKUPS } from './pickups.js?v=ef7ee4f5';
-import { rankFor, rankLabel, badgeSVG, killReq, eliteReq } from './ranks.js?v=ef7ee4f5';
-import { makeScore } from './score.js?v=ef7ee4f5';
-import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER } from './towers.js?v=ef7ee4f5';
-import { makeEconomy, sellRefund } from './economy.js?v=ef7ee4f5';
-import { makeBloom } from './postfx.js?v=ef7ee4f5';
-import { TANK_FEEL, TANK_FEEL_KNOBS, makeTankFeel, stepTankFeel, landTankFeel, fireTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js?v=ef7ee4f5';
-import { FEEL, loadFeel, saveFeel } from './feelstore.js?v=ef7ee4f5';
+  loadTypeFeel } from './fonts.js?v=a1d45038';
+import { UNITS, UNIT_NAMES, buildUnit, buildCreature, preloadMkcx, preloadServer, makeServerFixture, makeShieldShell, preloadContainer, makeContainerFixture, preloadFabricator, makeIsaoDrone, makeBulletCloud, makeRewardSolid, makeShellSolid, makeDebris, makeDotBurst, makePortalCloud, makeHeartCloud, makeDotEnemy } from './units.js?v=a1d45038';
+import { LOOKS, LOOK_NAMES } from './looks.js?v=a1d45038';
+import { makeCellIndex } from './cellindex.js?v=a1d45038';
+import { CREATURE_TINTS, ENEMY_SPEC, INTROS, computeWavePlan, accentFor } from './enemyspec.js?v=a1d45038';
+import { PICKUPS } from './pickups.js?v=a1d45038';
+import { rankFor, rankLabel, badgeSVG, killReq, eliteReq } from './ranks.js?v=a1d45038';
+import { makeScore } from './score.js?v=a1d45038';
+import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER } from './towers.js?v=a1d45038';
+import { makeEconomy, sellRefund } from './economy.js?v=a1d45038';
+import { makeBloom } from './postfx.js?v=a1d45038';
+import { TANK_FEEL, TANK_FEEL_KNOBS, makeTankFeel, stepTankFeel, landTankFeel, fireTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js?v=a1d45038';
+import { FEEL, loadFeel, saveFeel } from './feelstore.js?v=a1d45038';
 import { STRIKE_KNOBS, makeStrike, makeStrikeParams, grantStrikes, stepStrike,
   toggleArm, paintTarget, launchStrike, stepFall, skipFall, fallProgress,
-  strikeDamage, retargetStrike, orbitProgress } from './strike.js?v=ef7ee4f5';
-import { radarBasis, radarProject, radarBearing, sweepAngle, radarPhosphor } from './radar.js?v=ef7ee4f5';
-import { BLOOM_GROUPS } from './bloomweights.js?v=ef7ee4f5';
-import { TOWER_LOOK_NAMES, DEFAULT_TOWER_LOOK, buildTowerLook, preloadLook } from './towerlooks.js?v=ef7ee4f5';
-import { makeAudio } from './audio.js?v=ef7ee4f5';
-import { DEATH_KEYS } from './audiomanifest.js?v=ef7ee4f5';
+  strikeDamage, retargetStrike, orbitProgress } from './strike.js?v=a1d45038';
+import { radarBasis, radarProject, radarBearing, sweepAngle, radarPhosphor } from './radar.js?v=a1d45038';
+import { BLOOM_GROUPS } from './bloomweights.js?v=a1d45038';
+import { TOWER_LOOK_NAMES, DEFAULT_TOWER_LOOK, buildTowerLook, preloadLook } from './towerlooks.js?v=a1d45038';
+import { makeAudio } from './audio.js?v=a1d45038';
+import { DEATH_KEYS } from './audiomanifest.js?v=a1d45038';
 
 export function initTdTab(root) {
   let active = false;
@@ -190,9 +190,11 @@ export function initTdTab(root) {
   // ask for a buffer that does not exist yet and be refused.
   sfx.whenReady(() => {
     sfx.play('danger_alert');
-    console.log('AUDIO proof-of-life B: danger_alert (decoded sample, full graph).'
-      + ' Beep only => the sample path is at fault.'
-      + ' Neither => the context never reaches the speakers.');
+    console.log('AUDIO proof-of-life B: danger_alert (decoded sample, full graph)');
+    // ...and then MEASURE it, rather than asking anyone to listen. Seven
+    // rounds of this bug have ended with "can you tell me what you hear";
+    // the analyser on master answers it from inside the page.
+    sfx.measureOutput(1500);
   });
 
   // Which things bloom how much. Read fresh every frame from the live

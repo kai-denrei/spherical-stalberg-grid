@@ -17,10 +17,10 @@
 //    total. A failed fetch or decode logs once and that key becomes a
 //    permanent no-op for the session; the game keeps running silent.
 
-import { makeMixState, distanceGain, admit, addVoice, dropVoice } from './audiomix.js?v=ef7ee4f5';
-import { SOUNDS, BUSES, DEFAULT_LEVELS, GLOBAL_VOICE_CAP, DISTANCE_K } from './audiomanifest.js?v=ef7ee4f5';
-import { mulberry32 } from './rng.js?v=ef7ee4f5';
-import { gateStep } from './audiogate.js?v=ef7ee4f5';
+import { makeMixState, distanceGain, admit, addVoice, dropVoice } from './audiomix.js?v=a1d45038';
+import { SOUNDS, BUSES, DEFAULT_LEVELS, GLOBAL_VOICE_CAP, DISTANCE_K } from './audiomanifest.js?v=a1d45038';
+import { mulberry32 } from './rng.js?v=a1d45038';
+import { gateStep } from './audiogate.js?v=a1d45038';
 
 const STORE_KEY = 'ssg.audio.levels';
 const STEAL_FADE = 0.03; // s — a hard cut mid-waveform is an audible click
@@ -39,6 +39,7 @@ export function makeAudio(opts = {}) {
   const base = opts.base ?? '';
   let ctx = null;
   let master = null;
+  let analyser = null;
   const busGain = Object.create(null);
   const buffers = Object.create(null); // key -> AudioBuffer | 'failed'
   const state = makeMixState();
@@ -75,7 +76,17 @@ export function makeAudio(opts = {}) {
       ctx = new Ctor();
       master = ctx.createGain();
       master.gain.value = muted ? 0 : levels.master;
-      master.connect(ctx.destination);
+      // A TAP ON THE WAY OUT. Every layer this file can see has reported
+      // healthy through seven attempts while the operator heard nothing, and
+      // each round ended by asking them to listen. An analyser measures the
+      // signal actually leaving master, so the page can answer that itself:
+      // level > 0 with silence in the room means the graph is fine and the
+      // fault is the browser or the device; level == 0 means the graph is
+      // producing silence despite everything claiming otherwise.
+      analyser = ctx.createAnalyser();
+      analyser.fftSize = 2048;
+      master.connect(analyser);
+      analyser.connect(ctx.destination);
       // An output-device change — plugging in headphones, or starting an
       // AirPlay cast mid-session — can leave the context suspended or
       // interrupted, and nothing here was listening. Cheap insurance, and
@@ -196,11 +207,42 @@ export function makeAudio(opts = {}) {
     load().then(reportReady);
   }
 
+  // Sample the output for a while and report the loudest thing seen. Uses
+  // rAF rather than a timer so it follows real frames.
+  function measureOutput(ms = 1500) {
+    if (!analyser) { console.log('AUDIO LEVEL: no analyser'); return; }
+    const buf = new Float32Array(analyser.fftSize);
+    let peak = 0, frames = 0;
+    const t0 = performance.now();
+    const tick = () => {
+      analyser.getFloatTimeDomainData(buf);
+      for (let i = 0; i < buf.length; i++) {
+        const a = buf[i] < 0 ? -buf[i] : buf[i];
+        if (a > peak) peak = a;
+      }
+      frames++;
+      if (performance.now() - t0 < ms) requestAnimationFrame(tick);
+      else {
+        const verdict = frames < 10
+          ? 'INCONCLUSIVE — too few frames sampled to trust this (a headless '
+            + 'or backgrounded tab rations requestAnimationFrame).'
+          : peak > 0.0005
+            ? 'SIGNAL IS REACHING THE OUTPUT. If the room is silent, the graph '
+              + 'is fine and the fault is the browser or the device.'
+            : 'NO SIGNAL. The graph is producing silence despite every other '
+              + 'measurement reporting healthy.';
+        console.log(`AUDIO LEVEL peak=${peak.toFixed(5)} over ${frames} frames`
+          + ` ctx=${ctx ? ctx.state : 'none'} — ${verdict}`);
+      }
+    };
+    requestAnimationFrame(tick);
+  }
+
   function rebuildCtx() {
     rebuilds++;
     failedResumes = 0;
     const old = ctx;
-    ctx = null; master = null;
+    ctx = null; master = null; analyser = null;
     if (old) { try { old.close(); } catch { /* already gone */ } }
     // the old context's buffers went with it; decode again on the new one
     loadPromise = null;
@@ -482,7 +524,11 @@ export function makeAudio(opts = {}) {
         o.frequency.value = freq;
         g.gain.value = 0.25;
         o.connect(g);
-        g.connect(ctx.destination);   // deliberately bypassing master
+        g.connect(ctx.destination);   // deliberately bypassing buses/master
+        // ...but still measured: the analyser sits after master, so without
+        // this tap the level reading would miss the one route that proves
+        // the output stage independently of the sample path
+        if (analyser) g.connect(analyser);
         o.start();
         o.stop(ctx.currentTime + ms / 1000);
         console.log(`AUDIO beep ${freq}Hz for ${ms}ms, ctx=${ctx.state},`
@@ -493,6 +539,8 @@ export function makeAudio(opts = {}) {
         return false;
       }
     },
+
+    measureOutput,
 
     // Fires once, the moment the context is genuinely running. The context
     // is all an oscillator needs, so this is the right hook for a beep.

@@ -119,6 +119,53 @@ document.
 
 ---
 
+## UPDATE: the audio lifecycle is EXONERATED (build `a1d45038`)
+
+`ef7ee4f5` reverted the offline decode. **Safari is still silent; Chrome on
+the same build has sound.**
+
+That closes the question the revert was designed to answer. The audio graph
+was already proven byte-identical to the last known-good version (`71dab14`,
+by diff: `master`, the buses and `connect(ctx.destination)` never changed),
+and the lifecycle now matches it too — one context, born in the gesture,
+that both decodes and plays. **Nothing meaningful in `src/audio.js` still
+differs from the version that worked on Safari.**
+
+So the remaining fault is not in this file, and probably not in this repo.
+
+### The instrument that should have existed on day one
+
+Seven rounds of this bug ended by asking the operator what they could hear.
+The page can measure it itself. There is now an `AnalyserNode` between
+`master` and `ctx.destination`, with the oscillator tapped into it as well,
+and after the proof-of-life sounds it reports:
+
+```
+AUDIO LEVEL peak=<n> over <frames> frames ctx=<state> — <verdict>
+```
+
+| Verdict | Meaning |
+|---|---|
+| **SIGNAL IS REACHING THE OUTPUT** | The graph is generating audio. If the room is silent the fault is the **browser or the device**, not this code. |
+| **NO SIGNAL** | The graph is producing silence while every other measurement claims health — the fault is inside the graph after all. |
+| **INCONCLUSIVE** | Fewer than 10 frames sampled; a headless or backgrounded tab rations `requestAnimationFrame`. Deliberately refuses to give a number it cannot stand behind. |
+
+That last row matters. Three earlier diagnostics in this investigation
+reported something confident and untrue before they reported something true;
+this one declines instead.
+
+### What to do with the answer
+
+- **SIGNAL + silence** → stop reading this file. Go to Safari's per-site
+  Auto-Play setting for the origin, per-tab mute, and the output device for
+  that window. The free checks below become the entire investigation.
+- **NO SIGNAL** → the graph is at fault despite `decoded=26/26`,
+  `audible=28`, `master=0.7`, `muted=false`. Next suspects would be the
+  `master`/bus wiring in `ensureCtx`, or Safari refusing something in the
+  node graph silently.
+
+---
+
 ## UPDATE: offline decode REVERTED (build `ef7ee4f5`)
 
 Operator's call, and the right experiment. Decoding is back on the playback
