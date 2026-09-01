@@ -19,41 +19,41 @@
 
 import * as THREE from '../vendor/three.module.js';
 import GUI from '../vendor/lil-gui.esm.js';
-import { generateSphereMesh, relax } from './grid.js?v=c6641e60';
-import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=c6641e60';
-import { mulberry32, randomSeed } from './rng.js?v=c6641e60';
-import { computeBerths, berthIndexFor } from './berths.js?v=c6641e60';
-import { wantsSecondary, shellsForAll } from './autofire.js?v=c6641e60';
-import { printPhase, printOffset, printOn, patternSecsFor } from './printpath.js?v=c6641e60';
-import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3, segKey, tangentDir, tangentBasis } from './vec3.js?v=c6641e60';
-import { CREATURES, waveJelly } from './creatures.js?v=c6641e60';
-import { brief } from './isaobriefs.js?v=c6641e60';
-import { drawEmotion } from './emotions.js?v=c6641e60';
+import { generateSphereMesh, relax } from './grid.js?v=91e71656';
+import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=91e71656';
+import { mulberry32, randomSeed } from './rng.js?v=91e71656';
+import { computeBerths, berthIndexFor } from './berths.js?v=91e71656';
+import { wantsSecondary, shellsForAll } from './autofire.js?v=91e71656';
+import { printPhase, printOffset, printOn, patternSecsFor } from './printpath.js?v=91e71656';
+import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3, segKey, tangentDir, tangentBasis } from './vec3.js?v=91e71656';
+import { CREATURES, waveJelly } from './creatures.js?v=91e71656';
+import { brief } from './isaobriefs.js?v=91e71656';
+import { drawEmotion } from './emotions.js?v=91e71656';
 import { ACHIEVEMENTS, ACHV_GROUPS, achievement, blankRun, earned, freshlyEarned,
   sanitiseRecord }
-  from './achievements.js?v=c6641e60';
+  from './achievements.js?v=91e71656';
 import { applyFontPack, currentFontPack, FONT_NAMES,
-  loadTypeFeel } from './fonts.js?v=c6641e60';
-import { UNITS, UNIT_NAMES, buildUnit, buildCreature, preloadMkcx, preloadServer, makeServerFixture, makeShieldShell, preloadContainer, makeContainerFixture, preloadFabricator, makeIsaoDrone, makeBulletCloud, makeRewardSolid, makeShellSolid, makeDebris, makeDotBurst, makePortalCloud, makeHeartCloud, makeDotEnemy } from './units.js?v=c6641e60';
-import { LOOKS, LOOK_NAMES } from './looks.js?v=c6641e60';
-import { makeCellIndex } from './cellindex.js?v=c6641e60';
-import { CREATURE_TINTS, ENEMY_SPEC, INTROS, computeWavePlan, accentFor } from './enemyspec.js?v=c6641e60';
-import { PICKUPS } from './pickups.js?v=c6641e60';
-import { rankFor, rankLabel, badgeSVG, killReq, eliteReq } from './ranks.js?v=c6641e60';
-import { makeScore } from './score.js?v=c6641e60';
-import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER } from './towers.js?v=c6641e60';
-import { makeEconomy, sellRefund } from './economy.js?v=c6641e60';
-import { makeBloom } from './postfx.js?v=c6641e60';
-import { TANK_FEEL, TANK_FEEL_KNOBS, makeTankFeel, stepTankFeel, landTankFeel, fireTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js?v=c6641e60';
-import { FEEL, loadFeel, saveFeel } from './feelstore.js?v=c6641e60';
+  loadTypeFeel } from './fonts.js?v=91e71656';
+import { UNITS, UNIT_NAMES, buildUnit, buildCreature, preloadMkcx, preloadServer, makeServerFixture, makeShieldShell, preloadContainer, makeContainerFixture, preloadFabricator, makeIsaoDrone, makeBulletCloud, makeRewardSolid, makeShellSolid, makeDebris, makeDotBurst, makePortalCloud, makeHeartCloud, makeDotEnemy } from './units.js?v=91e71656';
+import { LOOKS, LOOK_NAMES } from './looks.js?v=91e71656';
+import { makeCellIndex } from './cellindex.js?v=91e71656';
+import { CREATURE_TINTS, ENEMY_SPEC, INTROS, computeWavePlan, accentFor } from './enemyspec.js?v=91e71656';
+import { PICKUPS } from './pickups.js?v=91e71656';
+import { rankFor, rankLabel, badgeSVG, killReq, eliteReq } from './ranks.js?v=91e71656';
+import { makeScore } from './score.js?v=91e71656';
+import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER } from './towers.js?v=91e71656';
+import { makeEconomy, sellRefund } from './economy.js?v=91e71656';
+import { makeBloom } from './postfx.js?v=91e71656';
+import { TANK_FEEL, TANK_FEEL_KNOBS, makeTankFeel, stepTankFeel, landTankFeel, fireTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js?v=91e71656';
+import { FEEL, loadFeel, saveFeel } from './feelstore.js?v=91e71656';
 import { STRIKE_KNOBS, makeStrike, makeStrikeParams, grantStrikes, stepStrike,
   toggleArm, paintTarget, launchStrike, stepFall, skipFall, fallProgress,
-  strikeDamage, retargetStrike, orbitProgress } from './strike.js?v=c6641e60';
-import { radarBasis, radarProject, radarBearing, sweepAngle, radarPhosphor } from './radar.js?v=c6641e60';
-import { BLOOM_GROUPS } from './bloomweights.js?v=c6641e60';
-import { TOWER_LOOK_NAMES, DEFAULT_TOWER_LOOK, buildTowerLook, preloadLook } from './towerlooks.js?v=c6641e60';
-import { makeAudio } from './audio.js?v=c6641e60';
-import { DEATH_KEYS } from './audiomanifest.js?v=c6641e60';
+  strikeDamage, retargetStrike, orbitProgress } from './strike.js?v=91e71656';
+import { radarBasis, radarProject, radarBearing, sweepAngle, radarPhosphor } from './radar.js?v=91e71656';
+import { BLOOM_GROUPS } from './bloomweights.js?v=91e71656';
+import { TOWER_LOOK_NAMES, DEFAULT_TOWER_LOOK, buildTowerLook, preloadLook } from './towerlooks.js?v=91e71656';
+import { makeAudio } from './audio.js?v=91e71656';
+import { DEATH_KEYS } from './audiomanifest.js?v=91e71656';
 
 export function initTdTab(root) {
   let active = false;
@@ -8045,6 +8045,56 @@ export function initTdTab(root) {
   // shift. Both are needed because he is asynchronous twice over: the model
   // loads async, and the whole point of the mechanic is that a tower takes
   // wall-clock time to exist — neither of which ?tick can reach.
+  // ?gestureprobe=1 — DOES THE FIRST GESTURE REACH THE AUDIO UNLOCK?
+  // The context can only be born on a user gesture, and audio.js listens on
+  // window in the BUBBLE phase. A shot's skip handlers sit in CAPTURE and
+  // call stopImmediatePropagation, so this asks the only question that
+  // matters: with a shot running, does a gesture still get through?
+  if (urlParams.get('gestureprobe') === '1') {
+    let tries = 0;
+    const run = () => {
+      if (!active && tries++ < 200) { setTimeout(run, 25); return; }
+      dismissIntro();
+      if (msgEl && !msgEl.classList.contains('hidden')) {
+        paused = false; msgEl.classList.add('hidden');
+      }
+      // stand-ins registered exactly the way audio.js registers its own
+      let gotKey = 0, gotTap = 0;
+      const onKey = () => { gotKey++; };
+      const onTap = () => { gotTap++; };
+      for (const [ev, fn] of [['keydown', onKey], ['pointerdown', onTap]]) {
+        window.addEventListener(ev, fn, { passive: true, capture: true });
+      }
+      const fire = () => {
+        document.body.dispatchEvent(
+          new KeyboardEvent('keydown', { key: 'w', bubbles: true, cancelable: true }));
+        // dispatched INSIDE root — that is where a real tap lands, and where
+        // a shot's pointerdown skip handler is listening
+        root.dispatchEvent(
+          new PointerEvent('pointerdown', { bubbles: true, cancelable: true }));
+      };
+      endShot();
+      fire();
+      const baseK = gotKey, baseT = gotTap;
+      startShot({
+        id: 'probe-gesture',
+        dur: 99,
+        poseAt: (u, out) => { out.pos.copy(camera.position); out.quat.copy(camera.quaternion); },
+      });
+      fire();
+      const duringK = gotKey - baseK, duringT = gotTap - baseT;
+      endShot();
+      for (const [ev, fn] of [['keydown', onKey], ['pointerdown', onTap]]) {
+        window.removeEventListener(ev, fn, true);
+      }
+      ctlRawT = -9;
+      console.log(`GESTUREPROBE idle key=${baseK} tap=${baseT}`
+        + ` | during-shot key=${duringK} tap=${duringT}`
+        + ` => ${duringK && duringT ? 'PASS' : 'FAIL'} (audio unlock must hear both)`);
+    };
+    run();
+  }
+
   // ?printprobe=1 — ISAO'S PRINT BEAM, swept across a full pattern cycle.
   // The path maths is Node-tested in printpath.mjs; what this checks is the
   // WIRING: that the head actually moves over the cell (the bed points

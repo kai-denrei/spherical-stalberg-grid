@@ -17,9 +17,9 @@
 //    total. A failed fetch or decode logs once and that key becomes a
 //    permanent no-op for the session; the game keeps running silent.
 
-import { makeMixState, distanceGain, admit, addVoice, dropVoice } from './audiomix.js?v=c6641e60';
-import { SOUNDS, BUSES, DEFAULT_LEVELS, GLOBAL_VOICE_CAP, DISTANCE_K } from './audiomanifest.js?v=c6641e60';
-import { mulberry32 } from './rng.js?v=c6641e60';
+import { makeMixState, distanceGain, admit, addVoice, dropVoice } from './audiomix.js?v=91e71656';
+import { SOUNDS, BUSES, DEFAULT_LEVELS, GLOBAL_VOICE_CAP, DISTANCE_K } from './audiomanifest.js?v=91e71656';
+import { mulberry32 } from './rng.js?v=91e71656';
 
 const STORE_KEY = 'ssg.audio.levels';
 const STEAL_FADE = 0.03; // s — a hard cut mid-waveform is an audible click
@@ -96,6 +96,20 @@ export function makeAudio(opts = {}) {
   }
 
   // idempotent: the listeners remove themselves after the first gesture
+  //
+  // CAPTURE, NOT BUBBLE. The context can only be born on a user gesture, and
+  // these used to listen in the bubble phase — behind every game handler that
+  // deliberately stops propagation. A cinematic's skip handler is exactly
+  // that: window/capture + stopImmediatePropagation, so it ate the player's
+  // first keypress and the audio never woke up. Measured with
+  // ?gestureprobe=1: idle key=1 tap=1, during a shot key=0.
+  //
+  // Unlocking is a passive observation, not a claim on the event — it must be
+  // FIRST IN LINE and must never interfere. Hence capture, passive, and no
+  // preventDefault anywhere in here. The remove must carry the same capture
+  // flag or the listener leaks.
+  const ARM_EVENTS = ['pointerdown', 'keydown', 'touchstart'];
+  const ARM_OPTS = { passive: true, capture: true };
   function arm() {
     if (armed) return;
     armed = true;
@@ -103,13 +117,9 @@ export function makeAudio(opts = {}) {
       ensureCtx();
       if (ctx && ctx.state === 'suspended') ctx.resume().catch(() => {});
       load();
-      for (const ev of ['pointerdown', 'keydown', 'touchstart']) {
-        window.removeEventListener(ev, go);
-      }
+      for (const ev of ARM_EVENTS) window.removeEventListener(ev, go, true);
     };
-    for (const ev of ['pointerdown', 'keydown', 'touchstart']) {
-      window.addEventListener(ev, go, { passive: true });
-    }
+    for (const ev of ARM_EVENTS) window.addEventListener(ev, go, ARM_OPTS);
   }
 
   async function decodeOne(key) {
