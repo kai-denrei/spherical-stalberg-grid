@@ -1,6 +1,8 @@
 # The sound SNAFU — a handover
 
-**Status: UNRESOLVED on desktop Safari. WORKS on Chrome and on iPhone.** Written 2026-09-01 so whoever picks this up next does
+**Status: MEASURED AND LOCALISED — the fault is OUTSIDE this codebase.**
+Works on Chrome and on iPhone. On desktop Safari the graph produces full-level
+audio and the browser does not output it. Written 2026-09-01 so whoever picks this up next does
 not repeat six attempts that are already known not to work.
 
 The symptom: **the TD tab produces no audible sound in Safari on the
@@ -116,6 +118,59 @@ document.
   spec-portable, but Safari has a history of strictness about cross-context
   buffers. Once the real context exists, the samples are decoded again onto
   it — cached files, so a decode and no network.
+
+---
+
+## RESOLVED (as far as this repo goes) — build `a1d45038`
+
+The analyser answered it in one line, on the operator's own Safari:
+
+```
+AUDIO LEVEL peak=0.41811 over 76 frames ctx=running
+  — SIGNAL IS REACHING THE OUTPUT.
+```
+
+**76 frames** is a trustworthy sample, and **0.418** is roughly half full
+scale — a loud signal, not noise or a rounding artifact. Alongside it, in the
+same session: `ctx=running`, `decoded=26/26`, `master=0.7`, `muted=false`,
+`sampleRate=48000`, `channels=2/2`, `ctor=AudioContext`.
+
+**The audio graph is generating real audio and desktop Safari is not putting
+it out of the speakers.** Nothing in `src/audio.js` can do anything about
+that. Stop debugging this repo.
+
+### What to check on the machine, in order of likelihood
+
+1. **Per-tab mute — the most likely, and free.** Safari mutes *per tab*. If
+   "Mute Other Tabs" was ever used from a YouTube tab, or the speaker icon in
+   the address bar was clicked on this tab, that tab is silent while every
+   other tab in the same browser plays normally. **This fits every observation
+   exactly**: YouTube fine, this page silent, Chrome fine, iPhone fine, and
+   every in-page measurement healthy.
+2. **Safari → Settings for This Website… → Auto-Play** for the origin. Set it
+   to *Allow All Auto-Play*. Per-site, which is again why YouTube is
+   unaffected.
+3. **Output device for that window** — macOS Sound settings, and any
+   per-application routing (Audio MIDI Setup, aggregate devices, virtual
+   devices like Loopback/BlackHole).
+4. **A stale Safari page/audio session** — fully quit Safari, not just close
+   the tab.
+
+### Why it took eight attempts
+
+Every layer this code can observe reported healthy from the very first
+report, and I kept reading "healthy" as "therefore look at the next layer
+inward" instead of "therefore the fault is outward". The measurement that
+settled it — an `AnalyserNode` on `master` reporting the peak actually
+leaving the graph — could have been written in the first ten minutes and
+would have pointed outside the codebase immediately.
+
+Two fixes along the way were real and are worth keeping regardless of this
+outcome: the one-shot unlock gate (it tore down its listeners before
+`resume()` had settled, so a single rejected attempt killed audio for the
+session) and `start()` building voices against a suspended context (which
+left the engine bed holding a cached handle to a voice that could never
+sound). Both were genuine, both are fixed, neither was this.
 
 ---
 
