@@ -119,9 +119,78 @@ document.
 
 ---
 
+## CONFIRMED 2026-09-01: it is Safari-specific
+
+The operator ran the **same build at the same URL** in both browsers:
+
+- **Chrome — works.**
+- **Safari — silent**, with every measurement healthy:
+
+```
+AUDIO primed (silent buffer played inside the gesture)
+AUDIO running (after 0 failed, 1 rebuild)
+AUDIO first AUDIBLE voice 'danger_alert' gain=1.000 bus=ui(0.40) master=0.7 muted=false
+AUDIO re-decoded onto the playback context
+AUDIO summary requested=128 refused-by-mix=18 started=30 audible=28 live=2 ctx=running
+```
+
+So the context is born in the gesture, primed with a silent buffer, running,
+re-decoded onto itself, and playing 28 audible voices — into silence, in
+Safari only.
+
+### Also ruled out since the first draft
+
+| Hypothesis | How it was ruled out |
+|---|---|
+| Two `AudioContext`s per page (units-tab + td-tab) exhausting Safari's limit | Tabs initialise **lazily** — `main.js: if (on && !tab.api) tab.api = tab.init(...)`. On a `#td` load, `units-tab` never runs. One playback context. |
+| The Safari silent-buffer prime was missing | It is there now and logs `AUDIO primed`. Still silent. |
+| Cross-context buffers (offline decode) | Buffers are re-decoded onto the playback context; the log confirms it. Still silent. |
+
+### Free things to check before writing any more code
+
+These cost nothing and would explain "Chrome works, Safari doesn't, YouTube
+works in Safari" exactly:
+
+1. **Safari → Settings for This Website… → Auto-Play.** If localhost is set to
+   *Stop Media with Sound* or *Never Auto-Play*, set it to **Allow All
+   Auto-Play**. This is per-site, which is why YouTube is unaffected.
+2. **Per-tab mute.** Safari shows a speaker icon in the address bar; a muted
+   tab is silent while every other tab plays normally.
+3. **Safari → Settings → Advanced → "Show features for web developers"**, then
+   Develop → check no experimental Web Audio feature is toggled.
+
+### The measurement that has never been taken
+
+`?beep=1` was added for this and **has not been run in Safari**. As of the
+current build it no longer needs a flag: **every unlock now fires both routes**
+
+- an **oscillator** straight to `ctx.destination` (no buffer, no bus, no
+  master, no mix), and
+- **`danger_alert`**, a decoded sample through the full graph.
+
+| What you hear in Safari | Conclusion |
+|---|---|
+| Beep only | The **sample path** is at fault — buffers or the gain graph. Chrome tolerating it and Safari not points at buffer handling. |
+| Neither | The context **never reaches the speakers** despite `state === 'running'`. Browser/OS level; the free checks above become the whole investigation. |
+| Both | Audio is fine and the fault is elsewhere entirely. |
+
+### One concrete mismatch, now measured
+
+Chrome reports `sampleRate=48000`; the OfflineAudioContext used for eager
+decoding is created at **44100**. `AudioBufferSourceNode` is specified to
+resample, and Chrome clearly does. **Safari's history here is worse.** The
+re-decode onto the playback context is meant to cover this, but the first
+sounds after unlock still use offline buffers. If Safari returns and sounds
+*wrong in tone rather than absent*, this is the cause; if the beep is audible
+and samples are not, this is the first thing to change (decode only on the
+playback context, accepting the later start).
+
+---
+
 ## Where to start next — in this order
 
-**1. Run `?beep=1` and click.** This bisects the whole problem:
+**1. Listen to the unlock.** Both routes now fire automatically on every
+load — no flag needed. This bisects the whole problem:
 
 | Result | Conclusion |
 |---|---|

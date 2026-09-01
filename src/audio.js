@@ -17,10 +17,10 @@
 //    total. A failed fetch or decode logs once and that key becomes a
 //    permanent no-op for the session; the game keeps running silent.
 
-import { makeMixState, distanceGain, admit, addVoice, dropVoice } from './audiomix.js?v=5469ee75';
-import { SOUNDS, BUSES, DEFAULT_LEVELS, GLOBAL_VOICE_CAP, DISTANCE_K } from './audiomanifest.js?v=5469ee75';
-import { mulberry32 } from './rng.js?v=5469ee75';
-import { gateStep } from './audiogate.js?v=5469ee75';
+import { makeMixState, distanceGain, admit, addVoice, dropVoice } from './audiomix.js?v=e5aa98cb';
+import { SOUNDS, BUSES, DEFAULT_LEVELS, GLOBAL_VOICE_CAP, DISTANCE_K } from './audiomanifest.js?v=e5aa98cb';
+import { mulberry32 } from './rng.js?v=e5aa98cb';
+import { gateStep } from './audiogate.js?v=e5aa98cb';
 
 const STORE_KEY = 'ssg.audio.levels';
 const STEAL_FADE = 0.03; // s — a hard cut mid-waveform is an audible click
@@ -89,6 +89,18 @@ export function makeAudio(opts = {}) {
         console.log(`AUDIO state -> ${st}`);
         if (st === 'running') {
           stopListening();
+          // Everything Safari-specific we can see about the OUTPUT itself.
+          // The graph has measured healthy six times over; these are the
+          // properties beyond ctx.destination that we have never looked at.
+          try {
+            const d = ctx.destination;
+            console.log(`AUDIO output sampleRate=${ctx.sampleRate}`
+              + ` channels=${d.channelCount}/${d.maxChannelCount}`
+              + ` interp=${d.channelInterpretation} mode=${d.countMode}`
+              + ` baseLatency=${ctx.baseLatency ?? 'n/a'}`
+              + ` outputLatency=${ctx.outputLatency ?? 'n/a'}`
+              + ` ctor=${ctx.constructor && ctx.constructor.name}`);
+          } catch (e) { console.log(`AUDIO output facts failed ${(e && e.name) || e}`); }
           while (runningCbs.length) { try { runningCbs.shift()(); } catch { /* caller's problem */ } }
           if (!summaryArmed) {
             summaryArmed = true;

@@ -19,41 +19,41 @@
 
 import * as THREE from '../vendor/three.module.js';
 import GUI from '../vendor/lil-gui.esm.js';
-import { generateSphereMesh, relax } from './grid.js?v=5469ee75';
-import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=5469ee75';
-import { mulberry32, randomSeed } from './rng.js?v=5469ee75';
-import { computeBerths, berthIndexFor } from './berths.js?v=5469ee75';
-import { wantsSecondary, shellsForAll } from './autofire.js?v=5469ee75';
-import { printPhase, printOffset, printOn, patternSecsFor } from './printpath.js?v=5469ee75';
-import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3, segKey, tangentDir, tangentBasis } from './vec3.js?v=5469ee75';
-import { CREATURES, waveJelly } from './creatures.js?v=5469ee75';
-import { brief } from './isaobriefs.js?v=5469ee75';
-import { drawEmotion } from './emotions.js?v=5469ee75';
+import { generateSphereMesh, relax } from './grid.js?v=e5aa98cb';
+import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=e5aa98cb';
+import { mulberry32, randomSeed } from './rng.js?v=e5aa98cb';
+import { computeBerths, berthIndexFor } from './berths.js?v=e5aa98cb';
+import { wantsSecondary, shellsForAll } from './autofire.js?v=e5aa98cb';
+import { printPhase, printOffset, printOn, patternSecsFor } from './printpath.js?v=e5aa98cb';
+import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3, segKey, tangentDir, tangentBasis } from './vec3.js?v=e5aa98cb';
+import { CREATURES, waveJelly } from './creatures.js?v=e5aa98cb';
+import { brief } from './isaobriefs.js?v=e5aa98cb';
+import { drawEmotion } from './emotions.js?v=e5aa98cb';
 import { ACHIEVEMENTS, ACHV_GROUPS, achievement, blankRun, earned, freshlyEarned,
   sanitiseRecord }
-  from './achievements.js?v=5469ee75';
+  from './achievements.js?v=e5aa98cb';
 import { applyFontPack, currentFontPack, FONT_NAMES,
-  loadTypeFeel } from './fonts.js?v=5469ee75';
-import { UNITS, UNIT_NAMES, buildUnit, buildCreature, preloadMkcx, preloadServer, makeServerFixture, makeShieldShell, preloadContainer, makeContainerFixture, preloadFabricator, makeIsaoDrone, makeBulletCloud, makeRewardSolid, makeShellSolid, makeDebris, makeDotBurst, makePortalCloud, makeHeartCloud, makeDotEnemy } from './units.js?v=5469ee75';
-import { LOOKS, LOOK_NAMES } from './looks.js?v=5469ee75';
-import { makeCellIndex } from './cellindex.js?v=5469ee75';
-import { CREATURE_TINTS, ENEMY_SPEC, INTROS, computeWavePlan, accentFor } from './enemyspec.js?v=5469ee75';
-import { PICKUPS } from './pickups.js?v=5469ee75';
-import { rankFor, rankLabel, badgeSVG, killReq, eliteReq } from './ranks.js?v=5469ee75';
-import { makeScore } from './score.js?v=5469ee75';
-import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER } from './towers.js?v=5469ee75';
-import { makeEconomy, sellRefund } from './economy.js?v=5469ee75';
-import { makeBloom } from './postfx.js?v=5469ee75';
-import { TANK_FEEL, TANK_FEEL_KNOBS, makeTankFeel, stepTankFeel, landTankFeel, fireTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js?v=5469ee75';
-import { FEEL, loadFeel, saveFeel } from './feelstore.js?v=5469ee75';
+  loadTypeFeel } from './fonts.js?v=e5aa98cb';
+import { UNITS, UNIT_NAMES, buildUnit, buildCreature, preloadMkcx, preloadServer, makeServerFixture, makeShieldShell, preloadContainer, makeContainerFixture, preloadFabricator, makeIsaoDrone, makeBulletCloud, makeRewardSolid, makeShellSolid, makeDebris, makeDotBurst, makePortalCloud, makeHeartCloud, makeDotEnemy } from './units.js?v=e5aa98cb';
+import { LOOKS, LOOK_NAMES } from './looks.js?v=e5aa98cb';
+import { makeCellIndex } from './cellindex.js?v=e5aa98cb';
+import { CREATURE_TINTS, ENEMY_SPEC, INTROS, computeWavePlan, accentFor } from './enemyspec.js?v=e5aa98cb';
+import { PICKUPS } from './pickups.js?v=e5aa98cb';
+import { rankFor, rankLabel, badgeSVG, killReq, eliteReq } from './ranks.js?v=e5aa98cb';
+import { makeScore } from './score.js?v=e5aa98cb';
+import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER } from './towers.js?v=e5aa98cb';
+import { makeEconomy, sellRefund } from './economy.js?v=e5aa98cb';
+import { makeBloom } from './postfx.js?v=e5aa98cb';
+import { TANK_FEEL, TANK_FEEL_KNOBS, makeTankFeel, stepTankFeel, landTankFeel, fireTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js?v=e5aa98cb';
+import { FEEL, loadFeel, saveFeel } from './feelstore.js?v=e5aa98cb';
 import { STRIKE_KNOBS, makeStrike, makeStrikeParams, grantStrikes, stepStrike,
   toggleArm, paintTarget, launchStrike, stepFall, skipFall, fallProgress,
-  strikeDamage, retargetStrike, orbitProgress } from './strike.js?v=5469ee75';
-import { radarBasis, radarProject, radarBearing, sweepAngle, radarPhosphor } from './radar.js?v=5469ee75';
-import { BLOOM_GROUPS } from './bloomweights.js?v=5469ee75';
-import { TOWER_LOOK_NAMES, DEFAULT_TOWER_LOOK, buildTowerLook, preloadLook } from './towerlooks.js?v=5469ee75';
-import { makeAudio } from './audio.js?v=5469ee75';
-import { DEATH_KEYS } from './audiomanifest.js?v=5469ee75';
+  strikeDamage, retargetStrike, orbitProgress } from './strike.js?v=e5aa98cb';
+import { radarBasis, radarProject, radarBearing, sweepAngle, radarPhosphor } from './radar.js?v=e5aa98cb';
+import { BLOOM_GROUPS } from './bloomweights.js?v=e5aa98cb';
+import { TOWER_LOOK_NAMES, DEFAULT_TOWER_LOOK, buildTowerLook, preloadLook } from './towerlooks.js?v=e5aa98cb';
+import { makeAudio } from './audio.js?v=e5aa98cb';
+import { DEATH_KEYS } from './audiomanifest.js?v=e5aa98cb';
 
 export function initTdTab(root) {
   let active = false;
@@ -177,8 +177,16 @@ export function initTdTab(root) {
   // It also doubles as a diagnostic: if this is silent but ?beep=1 is
   // audible, the fault is in the sample path, not the output.
   sfx.whenRunning(() => {
-    sfx.play('danger_alert');
-    console.log("AUDIO proof-of-life: played 'danger_alert' on unlock");
+    // TWO sounds, deliberately, by two completely different routes. The
+    // oscillator uses NONE of the sample path — no decoded buffer, no bus,
+    // no master, no mix admission — so hearing one and not the other
+    // localises the fault without needing a special URL or another round
+    // trip. Six attempts failed to ask this question; now every load asks it.
+    sfx.beep(880, 220);            // route A: oscillator -> destination
+    sfx.play('danger_alert');      // route B: decoded buffer -> bus -> master
+    console.log("AUDIO proof-of-life: beep (oscillator) + danger_alert (sample)."
+      + ' Hearing ONLY the beep means the sample path is at fault;'
+      + ' hearing NEITHER means the context never reaches the speakers.');
   });
 
   // Which things bloom how much. Read fresh every frame from the live
