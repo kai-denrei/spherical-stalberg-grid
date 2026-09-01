@@ -13,6 +13,79 @@
 // single time per browser, ever, and is remembered; the rest can repeat.
 
 export const BRIEFS = {
+  // --- THE STORY -----------------------------------------------------------
+  // Four beats the game had no way of saying. All of this was already written
+  // — in src/lore.js, the codex — and none of it was reachable from the TD
+  // tab, because lore.js is imported by units-tab.js and nowhere else. So this
+  // is delivery, not invention: the lines are drawn from the codex entries
+  // (world, heart, biomass, portal) so the game and the book cannot drift.
+  //
+  // Short on purpose. Three lines each, because the operator's note was that
+  // Isao crowds the view, and the cure for that is not only the auto-advance —
+  // it is having less to say.
+
+  // Fires once the player is actually on the shell, driving. Answers WHERE
+  // and WHO, which the cold open shows and never states.
+  arrival: {
+    id: 'arrival',
+    face: 'scan',
+    title: 'OBJECT STÅLBERG-9',
+    once: true,
+    lines: [
+      'Object Stålberg-9. Eleven kilometres of engineered shell, found dark '
+        + 'and cold on a slow orbit of a dead world.',
+      'Nothing about it is natural. Nothing about it is finished.',
+      'One tank, landed light, weapons free. That is the entire survey.',
+    ],
+  },
+
+  // The thing at the pole, and the stakes. Fires the first time the player
+  // pulls out to the build view, which is the first time it is in frame.
+  stalheart: {
+    id: 'stalheart',
+    face: 'awe',
+    title: 'THE STÅLHEART',
+    once: true,
+    lines: [
+      'At the pole: the Stålheart. A terraformer, and the only one.',
+      'It is what turns this shell into somewhere that can be lived on. The '
+        + 'colony is downstream of it — all of it.',
+      'It does not defend itself. That part is us.',
+    ],
+  },
+
+  // The economy, taught at the first kill — PROACTIVELY. The existing biomass
+  // beat only fires on a refused order, which is a complaint and arrives
+  // after the player needed to know.
+  harvest: {
+    id: 'harvest',
+    face: 'focused',
+    title: 'WHAT WE BUILD WITH',
+    once: true,
+    lines: [
+      'You killed something. Good. That was income.',
+      'The lattice renders the tissue down and sends it back up the lanes — '
+        + 'warm grey slurry, and I can print with it.',
+      'Every tower on this shell is paid for in the bodies of the things it '
+        + 'was built to stop.',
+    ],
+  },
+
+  // Motive, as distinct from the `gates` beat below, which is about the wave
+  // economy — the RULES of a gate rather than the reason for one.
+  motive: {
+    id: 'motive',
+    face: 'determined',
+    title: 'WHY THEY COME',
+    once: true,
+    lines: [
+      'The gates dial from somewhere I cannot see. Whatever is on the far '
+        + 'side wants the Stålheart stopped.',
+      'Not taken. Not used. Stopped.',
+      'Why, I do not know. That is all the tactical picture requires.',
+    ],
+  },
+
   // 0 — the printer. Fires the first time an order goes on the book, which
   // is the first moment the mechanic is a thing the player has DONE rather
   // than a thing they have been told.
@@ -49,7 +122,7 @@ export const BRIEFS = {
   // is the moment the sentence is useful rather than merely charming.
   biomass: {
     id: 'biomass',
-    face: 'hungry',
+    face: 'frustrated',
     title: 'BRING ME MORE BIOMASS',
     lines: [
       'Empty. The reservoir is empty.',

@@ -49,21 +49,25 @@ export const LORE_WORLD = [
   },
   {
     id: 'heart',
-    name: 'THE CARDION',
-    tag: 'the pulsating heart · north pole',
-    body: 'At the north pole, a heart. Not a metaphor: a four-chambered '
-      + 'anatomical heart three storeys tall, projected in coherent light '
-      + 'above a socket the vessel grew for it, beating sixty to the minute '
-      + 'and faster when threatened. It is a hologram that casts shadows. '
-      + 'Instruments disagree about whether it is a reactor readout, a '
-      + 'terraforming seed, or the vessel dreaming of the crew it never '
-      + 'had. The organisms want it stopped. That is all the tactical '
-      + 'picture requires.',
-    visual: 'colossal holographic human heart hovering above an alien '
-      + 'mechanical socket, translucent magenta-red volumetric projection, '
-      + 'anatomically detailed, gentle pulse mid-beat, light spilling over '
-      + 'grey engineered stone, particles drifting upward, dark sci-fi '
-      + 'cathedral atmosphere, cinematic lighting, hyperrealistic, 8k',
+    name: 'THE STÅLHEART',
+    tag: 'the terraformer · north pole',
+    body: 'At the north pole, the Stålheart. Earlier survey logs called it '
+      + 'the Cardion and argued about it — a reactor readout, a terraforming '
+      + 'seed, the vessel dreaming of the crew it never had. Landing settled '
+      + 'it. The seed reading was the right one. What stands on the pad is a '
+      + 'terraformer: a gantry six storeys tall over a poured flat, hazard '
+      + 'striped in the same yellow as the cargo it came with, extruding the '
+      + 'shell into something that can be lived on one slow layer at a time. '
+      + 'It works whether or not anyone is watching, and it has no opinion '
+      + 'about being defended. The colony is downstream of it — all of it. '
+      + 'The organisms want it stopped. That is all the tactical picture '
+      + 'requires.',
+    visual: 'colossal industrial terraforming gantry on a poured concrete '
+      + 'pad, black and yellow hazard stripes, six-axis extrusion arm on a '
+      + 'traverse, nozzle laying a glowing bead of material, steam venting '
+      + 'at the base, grey engineered stone around it, work lighting and '
+      + 'long shadows, dark sci-fi industrial atmosphere, cinematic, '
+      + 'hyperrealistic, 8k',
   },
   {
     id: 'biomass',

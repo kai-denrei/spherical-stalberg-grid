@@ -1,6 +1,7 @@
 // isaobriefs — the script is data, so the invariants that matter are shape
 // (a beat the presenter cannot paint is a crash, not a typo) and the dwell
 // curve that now decides how long each line holds without a tap.
+import { EMOTION_IDS } from '../src/emotions.js';
 import { BRIEFS, BRIEF_IDS, brief, dwellFor, BRIEF_MIN, BRIEF_MAX, BRIEF_LEAD, BRIEF_WPS } from '../src/isaobriefs.js';
 
 let n = 0, bad = 0;
@@ -17,6 +18,15 @@ for (const id of BRIEF_IDS) {
     b.lines.every((l) => typeof l === 'string' && l.trim().length > 0));
 }
 ok('brief() returns null for an unknown id', brief('nope') === null);
+
+// FACES MUST EXIST. `hungry` sat in the biomass beat and is not an emotion —
+// emotionFrame falls back to neutral SILENTLY, so Isao delivered "Biomass!
+// ISAO happy!" with a blank face and nothing ever said so.
+for (const id of BRIEF_IDS) {
+  ok(`${id} uses a real emotion (${BRIEFS[id].face})`, EMOTION_IDS.includes(BRIEFS[id].face));
+}
+ok('the face check can fail — a made-up id is not in the roster',
+  !EMOTION_IDS.includes('hungry'));
 
 // --- the dwell curve
 ok('an empty line still holds the floor', dwellFor('') === BRIEF_MIN);

@@ -8,8 +8,8 @@
 //
 // Pure: no DOM, no three.js.
 
-import { TOWER_HEAD_KINDS } from './creatures.js?v=fbced82c';
-import { makeParams, clampParams, formatKnobs, knobProblems } from './knobs.js?v=fbced82c';
+import { TOWER_HEAD_KINDS } from './creatures.js?v=8fa54452';
+import { makeParams, clampParams, formatKnobs, knobProblems } from './knobs.js?v=8fa54452';
 
 // 'as shipped' means "use whatever shape towers.js gave this one".
 export const HEAD_AS_SHIPPED = 'as shipped';

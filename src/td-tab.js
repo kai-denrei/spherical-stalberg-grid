@@ -19,43 +19,43 @@
 
 import * as THREE from '../vendor/three.module.js';
 import GUI from '../vendor/lil-gui.esm.js';
-import { generateSphereMesh, relax } from './grid.js?v=fbced82c';
-import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=fbced82c';
-import { mulberry32, randomSeed } from './rng.js?v=fbced82c';
-import { computeBerths, berthIndexFor } from './berths.js?v=fbced82c';
-import { wantsSecondary, shellsForAll } from './autofire.js?v=fbced82c';
-import { printPhase, printOffset, printOn, patternSecsFor } from './printpath.js?v=fbced82c';
-import { createBeam } from './beamfx.js?v=fbced82c';
-import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3, segKey, tangentDir, tangentBasis } from './vec3.js?v=fbced82c';
-import { CREATURES, waveJelly } from './creatures.js?v=fbced82c';
-import { brief, dwellFor } from './isaobriefs.js?v=fbced82c';
-import { drawEmotion } from './emotions.js?v=fbced82c';
+import { generateSphereMesh, relax } from './grid.js?v=8fa54452';
+import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=8fa54452';
+import { mulberry32, randomSeed } from './rng.js?v=8fa54452';
+import { computeBerths, berthIndexFor } from './berths.js?v=8fa54452';
+import { wantsSecondary, shellsForAll } from './autofire.js?v=8fa54452';
+import { printPhase, printOffset, printOn, patternSecsFor } from './printpath.js?v=8fa54452';
+import { createBeam } from './beamfx.js?v=8fa54452';
+import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3, segKey, tangentDir, tangentBasis } from './vec3.js?v=8fa54452';
+import { CREATURES, waveJelly } from './creatures.js?v=8fa54452';
+import { brief, dwellFor } from './isaobriefs.js?v=8fa54452';
+import { drawEmotion } from './emotions.js?v=8fa54452';
 import { ACHIEVEMENTS, ACHV_GROUPS, achievement, blankRun, earned, freshlyEarned,
   sanitiseRecord }
-  from './achievements.js?v=fbced82c';
+  from './achievements.js?v=8fa54452';
 import { applyFontPack, currentFontPack, FONT_NAMES,
-  loadTypeFeel } from './fonts.js?v=fbced82c';
-import { SECONDARY_TOE } from './units.js?v=fbced82c';
-import { UNITS, UNIT_NAMES, buildUnit, buildCreature, preloadMkcx, preloadServer, makeServerFixture, makeShieldShell, preloadContainer, makeContainerFixture, preloadFabricator, makeIsaoDrone, makeBulletCloud, makeRewardSolid, makeShellSolid, makeDebris, makeDotBurst, makePortalCloud, makeHeartCloud, makeDotEnemy, preloadTerraformer, makeTerraformerFixture } from './units.js?v=fbced82c';
-import { LOOKS, LOOK_NAMES } from './looks.js?v=fbced82c';
-import { makeCellIndex } from './cellindex.js?v=fbced82c';
-import { CREATURE_TINTS, ENEMY_SPEC, INTROS, computeWavePlan, accentFor } from './enemyspec.js?v=fbced82c';
-import { PICKUPS } from './pickups.js?v=fbced82c';
-import { rankFor, rankLabel, badgeSVG, killReq, eliteReq } from './ranks.js?v=fbced82c';
-import { makeScore } from './score.js?v=fbced82c';
-import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER } from './towers.js?v=fbced82c';
-import { makeEconomy, sellRefund } from './economy.js?v=fbced82c';
-import { makeBloom } from './postfx.js?v=fbced82c';
-import { TANK_FEEL, TANK_FEEL_KNOBS, makeTankFeel, stepTankFeel, landTankFeel, fireTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js?v=fbced82c';
-import { FEEL, loadFeel, saveFeel } from './feelstore.js?v=fbced82c';
+  loadTypeFeel } from './fonts.js?v=8fa54452';
+import { SECONDARY_TOE } from './units.js?v=8fa54452';
+import { UNITS, UNIT_NAMES, buildUnit, buildCreature, preloadMkcx, preloadServer, makeServerFixture, makeShieldShell, preloadContainer, makeContainerFixture, preloadFabricator, makeIsaoDrone, makeBulletCloud, makeRewardSolid, makeShellSolid, makeDebris, makeDotBurst, makePortalCloud, makeHeartCloud, makeDotEnemy, preloadTerraformer, makeTerraformerFixture } from './units.js?v=8fa54452';
+import { LOOKS, LOOK_NAMES } from './looks.js?v=8fa54452';
+import { makeCellIndex } from './cellindex.js?v=8fa54452';
+import { CREATURE_TINTS, ENEMY_SPEC, INTROS, computeWavePlan, accentFor } from './enemyspec.js?v=8fa54452';
+import { PICKUPS } from './pickups.js?v=8fa54452';
+import { rankFor, rankLabel, badgeSVG, killReq, eliteReq } from './ranks.js?v=8fa54452';
+import { makeScore } from './score.js?v=8fa54452';
+import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER } from './towers.js?v=8fa54452';
+import { makeEconomy, sellRefund } from './economy.js?v=8fa54452';
+import { makeBloom } from './postfx.js?v=8fa54452';
+import { TANK_FEEL, TANK_FEEL_KNOBS, makeTankFeel, stepTankFeel, landTankFeel, fireTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js?v=8fa54452';
+import { FEEL, loadFeel, saveFeel } from './feelstore.js?v=8fa54452';
 import { STRIKE_KNOBS, makeStrike, makeStrikeParams, grantStrikes, stepStrike,
   toggleArm, paintTarget, launchStrike, stepFall, skipFall, fallProgress,
-  strikeDamage, retargetStrike, orbitProgress } from './strike.js?v=fbced82c';
-import { radarBasis, radarProject, radarBearing, sweepAngle, radarPhosphor } from './radar.js?v=fbced82c';
-import { BLOOM_GROUPS } from './bloomweights.js?v=fbced82c';
-import { TOWER_LOOK_NAMES, DEFAULT_TOWER_LOOK, buildTowerLook, preloadLook } from './towerlooks.js?v=fbced82c';
-import { makeAudio } from './audio.js?v=fbced82c';
-import { DEATH_KEYS } from './audiomanifest.js?v=fbced82c';
+  strikeDamage, retargetStrike, orbitProgress } from './strike.js?v=8fa54452';
+import { radarBasis, radarProject, radarBearing, sweepAngle, radarPhosphor } from './radar.js?v=8fa54452';
+import { BLOOM_GROUPS } from './bloomweights.js?v=8fa54452';
+import { TOWER_LOOK_NAMES, DEFAULT_TOWER_LOOK, buildTowerLook, preloadLook } from './towerlooks.js?v=8fa54452';
+import { makeAudio } from './audio.js?v=8fa54452';
+import { DEATH_KEYS } from './audiomanifest.js?v=8fa54452';
 
 export function initTdTab(root) {
   let active = false;
@@ -546,6 +546,7 @@ export function initTdTab(root) {
   // fired after a retry), and a frame-loop accumulator cannot outlive
   // anything. `briefDwell` is kept only to size the progress bar.
   let briefLeft = 0, briefDwell = 1;
+  let briefPending = null;   // at most one beat waiting its turn
   const briefSeen = (() => {
     try { const v = JSON.parse(localStorage.getItem(BRIEF_SEEN) || '[]'); return Array.isArray(v) ? v : []; }
     catch { return []; }
@@ -567,6 +568,15 @@ export function initTdTab(root) {
     const b = brief(id);
     if (!b || !briefEl) return;
     if (b.once && briefSeen.includes(id)) return;
+    if (b.once && briefPending === id) return;
+    // ONE DEEP, AND NO DEEPER. With eight beats two can come due together —
+    // the first kill of a wave that has only just been announced, say. Showing
+    // the new one on top loses the old one for good, because a `once` beat is
+    // marked seen the moment it appears; queueing everything turns Isao into
+    // the wall of messages this work exists to remove. So: hold exactly one,
+    // and drop any further arrivals on the floor. A beat worth saying twice
+    // should not be `once` in the first place.
+    if (briefQ) { if (!briefPending) briefPending = id; return; }
     if (b.once) {
       briefSeen.push(id);
       try { localStorage.setItem(BRIEF_SEEN, JSON.stringify(briefSeen)); } catch { /* private mode */ }
@@ -602,7 +612,9 @@ export function initTdTab(root) {
   function endBrief() {
     briefQ = null; briefLeft = 0;
     if (briefEl) briefEl.classList.add('hidden');
+    if (briefPending) { const nxt = briefPending; briefPending = null; showBrief(nxt); }
   }
+  function clearBriefs() { briefPending = null; endBrief(); }
   if (briefEl) briefEl.addEventListener('click', () => stepBrief(false));
 
   // --- THE RECORD ----------------------------------------------------------
@@ -891,6 +903,9 @@ export function initTdTab(root) {
       bins: new Array(16).fill(0) };
   }
   function noteWaveKill(type, src) {
+    // the economy, taught at the moment the player has just earned some and
+    // not a second before — every kill in the game passes through here
+    showBrief('harvest');
     if (rs) {
       rs.kills[type] = (rs.kills[type] || 0) + 1;
       rs.bySrc[src] = (rs.bySrc[src] || 0) + 1;
@@ -2018,6 +2033,9 @@ export function initTdTab(root) {
       spawnIsao();
       if (!isao) v = 'orbit';
     }
+    // the Stålheart is only worth explaining once it is IN FRAME, and the
+    // build view is the first time the player looks down at the pole
+    if (v === 'orbit') showBrief('stalheart');
     params.view = v;
     buildMode = v === 'orbit';
     watchTower = null;
@@ -3572,7 +3590,10 @@ export function initTdTab(root) {
       expandRound(); syncArmUi();
     }
     else if (cl.contains('msg-lap')) startLap();
-    else if (cl.contains('msg-begin')) { paused = false; msgEl.classList.add('hidden'); }
+    else if (cl.contains('msg-begin')) {
+      paused = false; msgEl.classList.add('hidden');
+      showBrief('arrival');   // where you are, said once you are actually there
+    }
     else if (cl.contains('msg-glenemy')) showEnemyGlossary();
     else if (cl.contains('msg-glachv')) showRecord();
     else if (cl.contains('msg-glfriend')) showFriendGlossary();
@@ -4623,10 +4644,11 @@ export function initTdTab(root) {
     // Same rule as runGen for timers, one level up: work started by the dead
     // run must not land on the live one.
     endShot();
-    // ...and any brief mid-sentence. A reset that leaves Isao talking over the
-    // new run is the same defect class as a camera shot surviving one: state
-    // from the old run painted on top of the new board.
-    endBrief();
+    // ...and any brief mid-sentence, plus whatever was queued behind it. A
+    // reset that leaves Isao talking over the new run is the same defect class
+    // as a camera shot surviving one: state from the old run painted on top of
+    // the new board.
+    clearBriefs();
     revealCells = [];
     deployStart(berthIndexFor(playerHP));
     placeActors();
@@ -4806,6 +4828,7 @@ export function initTdTab(root) {
     // the wave count meaningless again.
     if (programmeDone()) return;
     hideSitrep(); // the telegraph outranks the recap
+    showBrief('motive');   // why they come, as the first one is dialled
     waveIn = WAVE_WARN;
     warnBeat = 0;
     waveCharge = 0;
@@ -8502,6 +8525,37 @@ export function initTdTab(root) {
       + ` still up=${briefQ !== null}`
       + ` — ${up0 && briefAt === at0 && briefQ !== null ? 'PASS (the clock is dt, not calls)' : 'FAIL'}`);
     endBrief();
+
+    // ARE THE NEW BEATS ACTUALLY REACHABLE? A beat with no trigger is a file
+    // nobody reads. Each is invoked through the REAL seam it is wired to, not
+    // through showBrief, so a mis-wired trigger fails here.
+    const trig = [
+      ['stalheart', () => setView('orbit')],
+      ['motive', () => { waveIn = -1; armWave(); }],
+      ['harvest', () => noteWaveKill('phage', 'tank')],
+    ];
+    for (const [id, fire] of trig) {
+      clearBriefs();
+      const i = briefSeen.indexOf(id);
+      if (i >= 0) briefSeen.splice(i, 1);   // un-see it for the test
+      fire();
+      console.log(`BRIEFPROBE trigger ${id} — ${briefQ && briefQ.id === id ? 'PASS' : `FAIL (got ${briefQ ? briefQ.id : 'nothing'})`}`);
+    }
+    clearBriefs();
+
+    // THE ONE-DEEP QUEUE. Two beats coming due together must not lose one:
+    // a `once` beat is marked seen the moment it shows, so an interrupted one
+    // is gone for good. The second must be held and play next.
+    for (const id of ['arrival', 'stalheart']) {
+      const i = briefSeen.indexOf(id); if (i >= 0) briefSeen.splice(i, 1);
+    }
+    showBrief('arrival');
+    showBrief('stalheart');
+    const first = briefQ && briefQ.id;
+    for (let i = 0; i < 600 && briefQ && briefQ.id === first; i++) stepBriefClock(0.1);
+    console.log(`BRIEFPROBE queue: showed ${first}, then ${briefQ ? briefQ.id : 'nothing'}`
+      + ` — ${first === 'arrival' && briefQ && briefQ.id === 'stalheart' ? 'PASS (the second was held, not lost)' : 'FAIL'}`);
+    clearBriefs();
 
     // ...and the reset teardown, which regenerate() did not have: a beat
     // mid-sentence when the run restarts must not survive onto the new board.
