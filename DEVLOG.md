@@ -6,6 +6,57 @@ Demo links assume `npm run serve` (port 8144) or the
 
 ---
 
+## `d88471c`..`e7b75d3` — Isao stops asking, and starts explaining
+
+Two halves of playtest item 3, in the order the operator chose: fix the
+channel, then write into it.
+
+**The channel.** His lines used to wait for a tap — per LINE, so a four-line
+beat was four taps over the board, and it never left on its own. `dwellFor()`
+in `isaobriefs.js` is pure and Node-tested: 0.9s to notice the panel changed,
+plus `words / 3.2` (an unhurried 190wpm, because these get spoken eventually
+and a caption that outruns the voice is worse than one that lingers), floored
+at 2.4s and capped at 7s. A drain bar rides under the text — without it a
+player who has learned to tap keeps tapping and the auto-advance buys nothing.
+
+The clock is a **frame-loop countdown, not a `setTimeout`** (this file has
+already paid for deferred work outliving its run), and a **named function
+rather than four lines inside `animate`**, because a probe never runs `animate`
+and anything buried there is unverifiable by construction.
+
+**The writing was already done.** `src/lore.js` is a 590-line codex covering
+the vessel, the Stålheart, biomass and the gates — imported by `units-tab.js`
+and nowhere else, so a TD player never saw a word of it. The four new beats
+(`arrival`, `stalheart`, `harvest`, `motive`) are drawn from it so the game and
+the book cannot drift. `harvest` is the economy taught at the first kill;
+the pre-existing `biomass` beat only fires on a *refused* order, which is a
+complaint arriving after the player needed to know.
+
+**The codex was describing something not on the board.** Its `heart` entry was
+a holographic anatomical heart. The Stålheart IS the Terraformer — and the
+entry had hedged on exactly that ("a reactor readout, a terraforming seed, or
+the vessel dreaming"), so landing settles the hedge instead of retconning it.
+
+Three bugs surfaced on the way:
+
+- `regenerate()` tore down a camera shot but **not a brief**, so a beat
+  mid-sentence survived a reset. Third instance of that shape.
+- `face: 'hungry'` is not an emotion. `emotionFrame` falls back to neutral
+  **silently**, so "Biomass! ISAO happy!" has always been delivered with a
+  blank face. The test now asserts every face is in the roster.
+- `showBrief` marks a `once` beat seen the moment it appears, so two beats
+  coming due together lost one **permanently**. Queue is now exactly one deep:
+  enough that nothing is lost, shallow enough that Isao cannot become the wall
+  of messages this work exists to remove.
+
+`?briefprobe=1` fires each beat through its real seam (`setView`, `armWave`,
+`noteWaveKill`) rather than through `showBrief`, so a mis-wired trigger fails
+there. Negative control: stepping the clock by `dt=0` fifty times must leave it
+exactly where it was, or a clock that ignored `dt` would pass everything else
+by galloping to the end. 66 checks in `test/isaobriefs.mjs`.
+
+Budget: **133s of Isao across a whole run**, longest single beat 23.6s.
+
 ## be4d6aa — the toe narrows, and rock bites the beam in proportion
 
 `SECONDARY_TOE` 0.157 → 0.085 (operator: "less wide"). The catch was that the
