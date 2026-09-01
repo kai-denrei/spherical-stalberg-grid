@@ -17,9 +17,9 @@
 //    total. A failed fetch or decode logs once and that key becomes a
 //    permanent no-op for the session; the game keeps running silent.
 
-import { makeMixState, distanceGain, admit, addVoice, dropVoice } from './audiomix.js?v=b628f2ba';
-import { SOUNDS, BUSES, DEFAULT_LEVELS, GLOBAL_VOICE_CAP, DISTANCE_K } from './audiomanifest.js?v=b628f2ba';
-import { mulberry32 } from './rng.js?v=b628f2ba';
+import { makeMixState, distanceGain, admit, addVoice, dropVoice } from './audiomix.js?v=761bfe76';
+import { SOUNDS, BUSES, DEFAULT_LEVELS, GLOBAL_VOICE_CAP, DISTANCE_K } from './audiomanifest.js?v=761bfe76';
+import { mulberry32 } from './rng.js?v=761bfe76';
 
 const STORE_KEY = 'ssg.audio.levels';
 const STEAL_FADE = 0.03; // s — a hard cut mid-waveform is an audible click
@@ -114,6 +114,27 @@ export function makeAudio(opts = {}) {
   function arm() {
     if (armed) return;
     armed = true;
+    // TRY IMMEDIATELY, DO NOT ONLY WAIT FOR A GESTURE. Creating a context is
+    // always allowed — it simply starts suspended — and decodeAudioData works
+    // on a suspended one, so the samples can be fetched and decoded during
+    // page load instead of after the first click. Waiting for a gesture to do
+    // BOTH made a swallowed gesture cost everything: no context, no decode,
+    // and a first sound that arrives late even when the click does land.
+    // Some contexts (localhost with media engagement, an installed PWA) will
+    // even resume here and never need the gesture at all.
+    ensureCtx();
+    load().then(() => {
+      loadSettled = true;
+      const total = Object.keys(SOUNDS).length;
+      let ok = 0, failed = 0;
+      for (const k of Object.keys(SOUNDS)) {
+        if (buffers[k] === 'failed') failed++;
+        else if (buffers[k]) ok++;
+      }
+      console.log(`AUDIO ready ctx=${ctx ? ctx.state : 'none'} decoded=${ok}/${total}`
+        + `${failed ? ` failed=${failed}` : ''}`);
+    });
+    if (ctx && ctx.state === 'suspended') ctx.resume().catch(() => {});
     const go = () => {
       ensureCtx();
       // resume() is a PROMISE. The first cut of this logged the state on the
@@ -128,23 +149,7 @@ export function makeAudio(opts = {}) {
           (e) => console.log(`AUDIO resume FAILED ${(e && e.name) || e}`),
         );
       }
-      load().then(() => {
-        // ONE LINE, ONCE, ALWAYS ON. Silence has three completely different
-        // causes that look identical from the outside — the gesture never
-        // reached us (no context), the context exists but is parked
-        // (suspended/interrupted), or it is running and the samples never
-        // decoded. Guessing between them costs a round trip with whoever is
-        // hearing nothing; this says which it is.
-        const total = Object.keys(SOUNDS).length;
-        let ok = 0, failed = 0;
-        for (const k of Object.keys(SOUNDS)) {
-          if (buffers[k] === 'failed') failed++;
-          else if (buffers[k]) ok++;
-        }
-        console.log(`AUDIO ready ctx=${ctx ? ctx.state : 'none'} decoded=${ok}/${total}`
-          + `${failed ? ` failed=${failed}` : ''}`
-          + ` muted=${muted} master=${levels.master}`);
-      });
+      load();
       for (const ev of ARM_EVENTS) window.removeEventListener(ev, go, true);
     };
     for (const ev of ARM_EVENTS) window.addEventListener(ev, go, ARM_OPTS);
@@ -166,10 +171,18 @@ export function makeAudio(opts = {}) {
     }
   }
 
+  // Idempotent AND awaitable. It used to return a bare Promise.resolve() on
+  // any call after the first, so a second caller was told "done" while the
+  // decodes were still in flight — which is exactly how the ready report
+  // came back decoded=0/26 on a session that went on to decode all 26.
+  // Cache the promise so every caller awaits the same real work.
+  let loadPromise = null;
   function load() {
-    if (loadStarted || !ensureCtx()) return Promise.resolve();
+    if (loadPromise) return loadPromise;
+    if (!ensureCtx()) return Promise.resolve();
     loadStarted = true;
-    return Promise.all(Object.keys(SOUNDS).map(decodeOne));
+    loadPromise = Promise.all(Object.keys(SOUNDS).map(decodeOne));
+    return loadPromise;
   }
 
   function stopVoice(id, fade = STEAL_FADE) {
@@ -196,8 +209,14 @@ export function makeAudio(opts = {}) {
   // parked context, samples that never decoded, or a muted mix. start()
   // returns null for all of them, silently and correctly. This says which.
   let mutedReport = false;
+  let loadSettled = false;
   function reportSilence(why, key) {
     if (mutedReport) return;
+    // "not decoded yet" before the load settles is a TRANSIENT — the engine
+    // asks to spool at t=0, every session, on a perfectly healthy page. The
+    // reporter fires once, so letting a transient claim it would mask the
+    // real cause for the rest of the session.
+    if (!loadSettled && why.startsWith('sample not decoded')) return;
     mutedReport = true;
     console.log(`AUDIO silent: ${why} (first blocked sound: ${key})`
       + ` ctx=${ctx ? ctx.state : 'none'} muted=${muted} master=${levels.master}`
