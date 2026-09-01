@@ -19,41 +19,42 @@
 
 import * as THREE from '../vendor/three.module.js';
 import GUI from '../vendor/lil-gui.esm.js';
-import { generateSphereMesh, relax } from './grid.js?v=03c0ebe2';
-import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=03c0ebe2';
-import { mulberry32, randomSeed } from './rng.js?v=03c0ebe2';
-import { computeBerths, berthIndexFor } from './berths.js?v=03c0ebe2';
-import { wantsSecondary, shellsForAll } from './autofire.js?v=03c0ebe2';
-import { printPhase, printOffset, printOn, patternSecsFor } from './printpath.js?v=03c0ebe2';
-import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3, segKey, tangentDir, tangentBasis } from './vec3.js?v=03c0ebe2';
-import { CREATURES, waveJelly } from './creatures.js?v=03c0ebe2';
-import { brief } from './isaobriefs.js?v=03c0ebe2';
-import { drawEmotion } from './emotions.js?v=03c0ebe2';
+import { generateSphereMesh, relax } from './grid.js?v=a593ecd9';
+import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=a593ecd9';
+import { mulberry32, randomSeed } from './rng.js?v=a593ecd9';
+import { computeBerths, berthIndexFor } from './berths.js?v=a593ecd9';
+import { wantsSecondary, shellsForAll } from './autofire.js?v=a593ecd9';
+import { printPhase, printOffset, printOn, patternSecsFor } from './printpath.js?v=a593ecd9';
+import { createBeam } from './beamfx.js?v=a593ecd9';
+import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3, segKey, tangentDir, tangentBasis } from './vec3.js?v=a593ecd9';
+import { CREATURES, waveJelly } from './creatures.js?v=a593ecd9';
+import { brief } from './isaobriefs.js?v=a593ecd9';
+import { drawEmotion } from './emotions.js?v=a593ecd9';
 import { ACHIEVEMENTS, ACHV_GROUPS, achievement, blankRun, earned, freshlyEarned,
   sanitiseRecord }
-  from './achievements.js?v=03c0ebe2';
+  from './achievements.js?v=a593ecd9';
 import { applyFontPack, currentFontPack, FONT_NAMES,
-  loadTypeFeel } from './fonts.js?v=03c0ebe2';
-import { UNITS, UNIT_NAMES, buildUnit, buildCreature, preloadMkcx, preloadServer, makeServerFixture, makeShieldShell, preloadContainer, makeContainerFixture, preloadFabricator, makeIsaoDrone, makeBulletCloud, makeRewardSolid, makeShellSolid, makeDebris, makeDotBurst, makePortalCloud, makeHeartCloud, makeDotEnemy, preloadTerraformer, makeTerraformerFixture } from './units.js?v=03c0ebe2';
-import { LOOKS, LOOK_NAMES } from './looks.js?v=03c0ebe2';
-import { makeCellIndex } from './cellindex.js?v=03c0ebe2';
-import { CREATURE_TINTS, ENEMY_SPEC, INTROS, computeWavePlan, accentFor } from './enemyspec.js?v=03c0ebe2';
-import { PICKUPS } from './pickups.js?v=03c0ebe2';
-import { rankFor, rankLabel, badgeSVG, killReq, eliteReq } from './ranks.js?v=03c0ebe2';
-import { makeScore } from './score.js?v=03c0ebe2';
-import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER } from './towers.js?v=03c0ebe2';
-import { makeEconomy, sellRefund } from './economy.js?v=03c0ebe2';
-import { makeBloom } from './postfx.js?v=03c0ebe2';
-import { TANK_FEEL, TANK_FEEL_KNOBS, makeTankFeel, stepTankFeel, landTankFeel, fireTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js?v=03c0ebe2';
-import { FEEL, loadFeel, saveFeel } from './feelstore.js?v=03c0ebe2';
+  loadTypeFeel } from './fonts.js?v=a593ecd9';
+import { UNITS, UNIT_NAMES, buildUnit, buildCreature, preloadMkcx, preloadServer, makeServerFixture, makeShieldShell, preloadContainer, makeContainerFixture, preloadFabricator, makeIsaoDrone, makeBulletCloud, makeRewardSolid, makeShellSolid, makeDebris, makeDotBurst, makePortalCloud, makeHeartCloud, makeDotEnemy, preloadTerraformer, makeTerraformerFixture } from './units.js?v=a593ecd9';
+import { LOOKS, LOOK_NAMES } from './looks.js?v=a593ecd9';
+import { makeCellIndex } from './cellindex.js?v=a593ecd9';
+import { CREATURE_TINTS, ENEMY_SPEC, INTROS, computeWavePlan, accentFor } from './enemyspec.js?v=a593ecd9';
+import { PICKUPS } from './pickups.js?v=a593ecd9';
+import { rankFor, rankLabel, badgeSVG, killReq, eliteReq } from './ranks.js?v=a593ecd9';
+import { makeScore } from './score.js?v=a593ecd9';
+import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER } from './towers.js?v=a593ecd9';
+import { makeEconomy, sellRefund } from './economy.js?v=a593ecd9';
+import { makeBloom } from './postfx.js?v=a593ecd9';
+import { TANK_FEEL, TANK_FEEL_KNOBS, makeTankFeel, stepTankFeel, landTankFeel, fireTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js?v=a593ecd9';
+import { FEEL, loadFeel, saveFeel } from './feelstore.js?v=a593ecd9';
 import { STRIKE_KNOBS, makeStrike, makeStrikeParams, grantStrikes, stepStrike,
   toggleArm, paintTarget, launchStrike, stepFall, skipFall, fallProgress,
-  strikeDamage, retargetStrike, orbitProgress } from './strike.js?v=03c0ebe2';
-import { radarBasis, radarProject, radarBearing, sweepAngle, radarPhosphor } from './radar.js?v=03c0ebe2';
-import { BLOOM_GROUPS } from './bloomweights.js?v=03c0ebe2';
-import { TOWER_LOOK_NAMES, DEFAULT_TOWER_LOOK, buildTowerLook, preloadLook } from './towerlooks.js?v=03c0ebe2';
-import { makeAudio } from './audio.js?v=03c0ebe2';
-import { DEATH_KEYS } from './audiomanifest.js?v=03c0ebe2';
+  strikeDamage, retargetStrike, orbitProgress } from './strike.js?v=a593ecd9';
+import { radarBasis, radarProject, radarBearing, sweepAngle, radarPhosphor } from './radar.js?v=a593ecd9';
+import { BLOOM_GROUPS } from './bloomweights.js?v=a593ecd9';
+import { TOWER_LOOK_NAMES, DEFAULT_TOWER_LOOK, buildTowerLook, preloadLook } from './towerlooks.js?v=a593ecd9';
+import { makeAudio } from './audio.js?v=a593ecd9';
+import { DEATH_KEYS } from './audiomanifest.js?v=a593ecd9';
 
 export function initTdTab(root) {
   let active = false;
@@ -5124,12 +5125,85 @@ export function initTdTab(root) {
   const laserShots = []; // { pos, dir, dist, mesh }
   let laserClock = 0, laserSide = 0;
   let laserHeat = 0, laserOverheat = false;
+
+  // --- the twin beams -----------------------------------------------------
+  // ONE PLACE for the preset, so a tuning session in the beam tab drops in as
+  // a paste rather than a hunt. Widths are expressed in CELLS and multiplied
+  // by cellSide at use: the lab tunes against a 1-unit tank, the board runs a
+  // tank about 0.85 of a cell wide, and a width copied across raw is either
+  // invisible or swallows the screen.
+  const BEAM_PRESET = {
+    coreColor: '#ffffff', coreWidth: 0.06, coreIntensity: 0.35,
+    glowColor: '#ff6a00', glowWidth: 1.0, glowIntensity: 6.25, glowFalloff: 8,
+    capStart: 0.28, capEnd: 0.175, blast: 0,
+    scrollSpeed: -8, noiseScale: 22.5, noiseAmount: 0.51, flicker: 0.34,
+    jitterAmount: 0.19, jitterFreq: 41,
+    burstRate: 0, burstDuty: 1, burstDecay: 1, burstAttack: 0,
+  };
+  const BEAM_PEAK = 8.15;        // intensity at the midpoint of the burst
+  const CELL_WIDTH_KEYS = ['coreWidth', 'glowWidth', 'jitterAmount'];
+  // `beams` is taken by the tower/slow-tether fx pool — these are the tank's
+  let tankBeams = null, beamOn = false, beamVoice = null;
+  const beamA = new THREE.Vector3(), beamB = new THREE.Vector3();
+
+  function ensureBeams() {
+    if (tankBeams) return tankBeams;
+    tankBeams = [0, 1].map(() => {
+      const bm = createBeam(new THREE.Vector3(), new THREE.Vector3(), BEAM_PRESET);
+      bm.mesh.visible = false;
+      scene.add(bm.mesh);
+      return bm;
+    });
+    return tankBeams;
+  }
+
+  function drawBeam(i, from, dir, len, heatFrac) {
+    const bm = ensureBeams()[i];
+    if (!bm) return;
+    const lift = 1 + params.wallHeight * 0.5;
+    beamA.set(from[0] * lift, from[1] * lift, from[2] * lift);
+    beamB.set((from[0] + dir[0] * len) * lift,
+      (from[1] + dir[1] * len) * lift,
+      (from[2] + dir[2] * len) * lift);
+    bm.setEndpoints(beamA, beamB);
+    for (const k of CELL_WIDTH_KEYS) {
+      const u = bm.uniforms['u' + k[0].toUpperCase() + k.slice(1)];
+      if (u) u.value = BEAM_PRESET[k] * cellSide;
+    }
+    // THE BELL. 0 at the trigger, peak at the midpoint of the 6 seconds, 0 as
+    // the tubes lock — the operator's shape, driving INTENSITY rather than
+    // opacity because the two read very differently under bloom.
+    const gi = bm.uniforms.uGlowIntensity;
+    if (gi) gi.value = BEAM_PEAK * Math.sin(Math.min(1, heatFrac) * Math.PI);
+    bm.mesh.visible = true;
+    bm.update(simTime);
+    bm.setAlpha(1);
+  }
+
+  function hideBeams() {
+    if (!tankBeams) return;
+    for (const bm of tankBeams) bm.mesh.visible = false;
+  }
   const laserBtnEl = root.querySelector('#td-pad-laser');
   let laserBtnBand = -1, laserDrainPct = -1;
-  const LASER_RATE = 0.14;    // s between bursts (guns alternate)
-  const LASER_DMG = 0.4;      // fodder: 3 grazes; corona: 5 — weak on purpose
-  const LASER_MAX_HEAT = 2.4; // s of continuous fire before lockout
-  const LASER_COOL = 1.4;     // heat shed per second (lockout ≈ 1.7 s)
+  // THE SECONDARY IS A BEAM (operator, 2026-09-01). Twin sustained beams out
+  // of the secondary muzzles, running straight down each barrel and passing
+  // THROUGH everything they touch.
+  //
+  // 6 seconds is not a feel number: the burst is exactly as long as
+  // assets/audio/tank_beam.mp3, so the sound and the fire begin and end
+  // together. Change one and the other has to move.
+  const LASER_MAX_HEAT = 6.0; // s of fire — the length of the sound
+  // COOLDOWN DURATION IS UNCHANGED. It was MAX_HEAT / COOL = 2.4 / 1.4 ≈
+  // 1.71 s, and the operator asked for the same cooldown, so the shed rate
+  // rises with the budget instead of the lockout stretching to 4.3 s.
+  const LASER_COOL = LASER_MAX_HEAT / 1.71;
+  // Damage is SUSTAINED, not per bolt. The old stream was 0.4 every 0.14 s —
+  // about 2.86/s into a single target. This is a touch above that per target
+  // and hits every enemy along the beam, which is where "more powerful"
+  // actually comes from: the multiplier is targets, not the number.
+  const LASER_DPS = 3.2;
+  const LASER_REACH = 2.6;    // cells, unchanged — reach is not a silent buff
   // Bolts were BoxGeometry — literally blocky (operator ruling). They are
   // round tracers now, the same idiom every tower shot speaks: a hot head
   // with three ghosts strung behind it along the flight line.
@@ -5212,57 +5286,51 @@ export function initTdTab(root) {
     // holding the trigger against locked tubes CLICKS — the gun says no
     if (wantFire && laserOverheat) sfx.play('laser_click');
     if (wantFire && !laserOverheat) {
-      laserClock += dt;
-      if (laserClock >= LASER_RATE) {
-        laserClock = 0;
-        sfx.play('tank_secondary'); // 7/s — a tick, not a blast
-        const gun = guns[laserSide ^= 1];
+      // THE BEAMS. One per secondary, each leaving its own muzzle and running
+      // straight down its own barrel — the direction is read from the gun's
+      // world quaternion, never re-derived, and then flattened onto the
+      // tangent plane because the board is a sphere and the weapon has to
+      // agree with the ground it fires over.
+      if (!beamOn) {
+        beamOn = true;
+        // one 6-second take, started as a loop so the burst can stop it the
+        // moment the trigger releases or the tubes lock
+        beamVoice = sfx.loop('tank_beam', { gain: 1 });
+      }
+      const reach = LASER_REACH * cellSide;
+      for (let gi = 0; gi < 2 && gi < guns.length; gi++) {
+        const gun = guns[gi];
         gun.getWorldPosition(tmpV);
-        const pos = norm3([tmpV.x, tmpV.y, tmpV.z]); // down to the unit sphere
+        const from = norm3([tmpV.x, tmpV.y, tmpV.z]);
         gun.getWorldQuaternion(tmpQ);
         tmpV.set(0, 0, 1).applyQuaternion(tmpQ);
-        const n = pos;
-        const d = [tmpV.x, tmpV.y, tmpV.z];
-        const dir = norm3(sub3(d, scale3(n, dot3(d, n))));
-        const mesh = makeTracer(0xbfefff, 7, 3);
-        scene.add(mesh);
-        laserShots.push({ pos, dir, dist: 0, mesh });
-      }
-    } else {
-      laserClock = LASER_RATE; // first bolt leaves the instant you squeeze
-    }
-    const v = 5.2 * cellSide;
-    const maxDist = 2.6 * cellSide;
-    for (let i = laserShots.length - 1; i >= 0; i--) {
-      const p = laserShots[i];
-      p.pos = norm3(add3(p.pos, scale3(p.dir, v * dt)));
-      const n = p.pos;
-      p.dir = norm3(sub3(p.dir, scale3(n, dot3(p.dir, n))));
-      p.dist += v * dt;
-      const lift = 1 + params.wallHeight * 0.5;
-      // head at the bolt, ghosts strung behind along the flight line
-      const attr = p.mesh.geometry.getAttribute('position');
-      for (let k = 0; k < attr.count; k++) {
-        const off = k * cellSide * 0.085;
-        attr.setXYZ(k, (p.pos[0] - p.dir[0] * off) * lift,
-          (p.pos[1] - p.dir[1] * off) * lift,
-          (p.pos[2] - p.dir[2] * off) * lift);
-      }
-      attr.needsUpdate = true;
-      let dead = false;
-      for (const e of enemies) {
-        if (!e.alive) continue;
-        if (dist3(p.pos, e.pos) < cellSide * Math.max(0.4, (e.size ?? e.spec.size) * 0.8)) {
-          damageEnemy(e, tNow, LASER_DMG, false, 'tank');
-          dead = true;
-          break;
+        const d0 = [tmpV.x, tmpV.y, tmpV.z];
+        const dir = norm3(sub3(d0, scale3(from, dot3(d0, from))));
+        // WALLS STOP IT, enemies do not. March in half-cells to the first
+        // blocked cell so a beam cannot reach through the maze you built.
+        let len = reach;
+        for (let m = cellSide * 0.5; m <= reach; m += cellSide * 0.5) {
+          const q = norm3(add3(from, scale3(dir, m)));
+          const ci = cellIndex(q);
+          if (ci !== -1 && dungeon.tags[ci] === BLOCKED) { len = m; break; }
+        }
+        drawBeam(gi, from, dir, len, laserHeat / LASER_MAX_HEAT);
+        // SUSTAINED AND PIERCING: every live enemy whose centre falls within
+        // its own radius of the segment takes LASER_DPS * dt. No break — the
+        // beam does not stop at the first thing it burns.
+        for (const e of enemies) {
+          if (!e.alive) continue;
+          const w = sub3(e.pos, from);
+          const t2 = Math.max(0, Math.min(len, dot3(w, dir)));
+          const near = add3(from, scale3(dir, t2));
+          const r = cellSide * Math.max(0.4, (e.size ?? e.spec.size) * 0.8);
+          if (dist3(near, e.pos) < r) damageEnemy(e, tNow, LASER_DPS * dt, false, 'tank');
         }
       }
-      if (!dead) {
-        const ci = cellIndex(p.pos);
-        if ((ci !== -1 && dungeon.tags[ci] === BLOCKED) || p.dist > maxDist) dead = true;
-      }
-      if (dead) killLaser(i);
+    } else if (beamOn) {
+      beamOn = false;
+      if (beamVoice) { beamVoice.stop(); beamVoice = null; }
+      hideBeams();
     }
   }
 
@@ -8183,6 +8251,59 @@ export function initTdTab(root) {
       setTimeout(tick, 120);
     };
     tick();
+  }
+
+  // ?beamfire=1 — THE SECONDARY, measured. A beam that renders proves nothing
+  // about a weapon: what matters is that the burst is as long as the sound,
+  // that the cooldown did not change, and that it burns everything it passes
+  // through rather than stopping at the first thing.
+  if (urlParams.get('beamfire') === '1') {
+    (async () => {
+      const step = 1 / 60;
+      keys.laser = true;
+      let rise = 0, fell = 0, peakSeen = 0;
+      // hold the trigger until the tubes lock: that duration IS the burst
+      for (let i = 0; i < 60 * 12 && !laserOverheat; i++) {
+        updateLasers(step, i * step);
+        rise += step;
+        peakSeen = Math.max(peakSeen, laserHeat / LASER_MAX_HEAT);
+      }
+      keys.laser = false;
+      // ...then release and time the lockout
+      for (let i = 0; i < 60 * 20 && laserOverheat; i++) {
+        updateLasers(step, 100 + i * step);
+        fell += step;
+      }
+      const okBurst = Math.abs(rise - LASER_MAX_HEAT) < 0.2;
+      const okCool = Math.abs(fell - 1.71) < 0.25;
+      console.log(`BEAMFIRE burst=${rise.toFixed(2)}s want ${LASER_MAX_HEAT}`
+        + ` ${okBurst ? 'PASS' : 'FAIL'}`
+        + ` | cooldown=${fell.toFixed(2)}s want ~1.71 ${okCool ? 'PASS' : 'FAIL'}`
+        + ` | peak=${peakSeen.toFixed(2)}`);
+
+      // PIERCING: line three live enemies up along one beam and check the far
+      // ones take damage too. The old bolts stopped at the first.
+      const live = enemies.filter((e) => e.alive).slice(0, 3);
+      if (live.length < 2) { console.log('BEAMFIRE pierce=INCONCLUSIVE (need 2+ live enemies)'); return; }
+      const gunsNow = playerMesh && playerMesh.userData.laserGuns;
+      if (!gunsNow || !gunsNow.length) { console.log('BEAMFIRE pierce=INCONCLUSIVE (no guns)'); return; }
+      gunsNow[0].getWorldPosition(tmpV);
+      const from = norm3([tmpV.x, tmpV.y, tmpV.z]);
+      gunsNow[0].getWorldQuaternion(tmpQ);
+      tmpV.set(0, 0, 1).applyQuaternion(tmpQ);
+      const d0 = [tmpV.x, tmpV.y, tmpV.z];
+      const dir = norm3(sub3(d0, scale3(from, dot3(d0, from))));
+      // stand them in a row down the beam
+      live.forEach((e, k) => { e.pos = norm3(add3(from, scale3(dir, cellSide * (0.7 + k * 0.7)))); });
+      const before = live.map((e) => e.hp);
+      laserHeat = 0; laserOverheat = false; keys.laser = true;
+      for (let i = 0; i < 30; i++) updateLasers(step, 200 + i * step);
+      keys.laser = false;
+      const hit = live.map((e, k) => e.hp < before[k]);
+      console.log(`BEAMFIRE pierce=${hit.every(Boolean) ? 'PASS' : 'FAIL'}`
+        + ` (${hit.map((h, k) => `#${k}:${h ? 'burned' : 'untouched'}`).join(' ')})`
+        + ` — the old bolts stopped at the first`);
+    })();
   }
 
   // ?heartprobe=1 — WHAT IS ACTUALLY STANDING AT THE POLE. Headless crops, so

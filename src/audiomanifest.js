@@ -43,6 +43,11 @@ export const SOUNDS = {
   tank_main:      { file: `${A}/tank_main.mp3`,      bus: 'tank', gain: 1.00, maxVoices: 2, minInterval: 0.10, rateJitter: 0.03 },
   // LASER_RATE is 0.14 (7 bursts/s) -- a tick, not a blast
   tank_secondary: { file: `${A}/tank_secondary.mp3`, bus: 'tank', gain: 0.30, maxVoices: 3, minInterval: 0.11, rateJitter: 0.10 },
+  // THE BEAM. A single 6-second take that the burst is timed to: the weapon's
+  // heat budget is LASER_MAX_HEAT = 6 s precisely so the sound and the fire
+  // start and stop together. Started as a LOOP so the burst can stop it on
+  // overheat or on the trigger release; at one voice it can never stack.
+  tank_beam:     { file: `${A}/tank_beam.mp3`,      bus: 'tank', gain: 0.55, maxVoices: 1, minInterval: 0.20, rateJitter: 0 },
   // your tank dying happens once a run — it gets to be the loudest thing
   tank_destroyed: { file: `${A}/tank_destroyed.mp3`, bus: 'tank', gain: 1.0, maxVoices: 1, minInterval: 0.5, rateJitter: 0 },
   tank_pickup:    { file: `${A}/tank_pickup.mp3`,    bus: 'tank', gain: 0.65, maxVoices: 2, minInterval: 0.05, rateJitter: 0.04 },
