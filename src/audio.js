@@ -17,9 +17,9 @@
 //    total. A failed fetch or decode logs once and that key becomes a
 //    permanent no-op for the session; the game keeps running silent.
 
-import { makeMixState, distanceGain, admit, addVoice, dropVoice } from './audiomix.js?v=91e71656';
-import { SOUNDS, BUSES, DEFAULT_LEVELS, GLOBAL_VOICE_CAP, DISTANCE_K } from './audiomanifest.js?v=91e71656';
-import { mulberry32 } from './rng.js?v=91e71656';
+import { makeMixState, distanceGain, admit, addVoice, dropVoice } from './audiomix.js?v=c94d8f0e';
+import { SOUNDS, BUSES, DEFAULT_LEVELS, GLOBAL_VOICE_CAP, DISTANCE_K } from './audiomanifest.js?v=c94d8f0e';
+import { mulberry32 } from './rng.js?v=c94d8f0e';
 
 const STORE_KEY = 'ssg.audio.levels';
 const STEAL_FADE = 0.03; // s — a hard cut mid-waveform is an audible click
@@ -116,7 +116,28 @@ export function makeAudio(opts = {}) {
     const go = () => {
       ensureCtx();
       if (ctx && ctx.state === 'suspended') ctx.resume().catch(() => {});
-      load();
+      // the unlock itself is reported IMMEDIATELY — the decode summary can
+      // take a while, and a diagnostic that only prints on success is no
+      // use to whoever is hearing nothing
+      console.log(`AUDIO unlock ctx=${ctx ? ctx.state : 'none'}`
+        + ` muted=${muted} master=${levels.master}`);
+      load().then(() => {
+        // ONE LINE, ONCE, ALWAYS ON. Silence has three completely different
+        // causes that look identical from the outside — the gesture never
+        // reached us (no context), the context exists but is parked
+        // (suspended/interrupted), or it is running and the samples never
+        // decoded. Guessing between them costs a round trip with whoever is
+        // hearing nothing; this says which it is.
+        const total = Object.keys(SOUNDS).length;
+        let ok = 0, failed = 0;
+        for (const k of Object.keys(SOUNDS)) {
+          if (buffers[k] === 'failed') failed++;
+          else if (buffers[k]) ok++;
+        }
+        console.log(`AUDIO ready ctx=${ctx ? ctx.state : 'none'} decoded=${ok}/${total}`
+          + `${failed ? ` failed=${failed}` : ''}`
+          + ` muted=${muted} master=${levels.master}`);
+      });
       for (const ev of ARM_EVENTS) window.removeEventListener(ev, go, true);
     };
     for (const ev of ARM_EVENTS) window.addEventListener(ev, go, ARM_OPTS);

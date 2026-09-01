@@ -1,23 +1,23 @@
 // main.js — tab shell. Each tab lazily initializes its own renderer/scene the
 // first time it's shown and pauses (skips its loop body) while hidden.
 
-import { wireDevlogBadge } from './devlog.js?v=91e71656';
-import { initHomeTab } from './home-tab.js?v=91e71656';
-import { initGridTab } from './grid-tab.js?v=91e71656';
-import { initMazeTab } from './maze-tab.js?v=91e71656';
-import { initOrganicTab } from './organic-tab.js?v=91e71656';
-import { initBattleTab } from './battle-tab.js?v=91e71656';
-import { initHeartTab } from './heart-tab.js?v=91e71656';
-import { initTdTab } from './td-tab.js?v=91e71656';
-import { initTankTab } from './tank-tab.js?v=91e71656';
-import { initTank2Tab } from './tank2-tab.js?v=91e71656';
-import { initTank3Tab } from './tank3-tab.js?v=91e71656';
-import { initUnitsTab } from './units-tab.js?v=91e71656';
-import { initHowTab, initStackTab, initLogTab } from './how-tab.js?v=91e71656';
-import { initSimTab } from './sim-tab.js?v=91e71656';
-import { initRecordTab } from './recordtab.js?v=91e71656';
+import { wireDevlogBadge } from './devlog.js?v=c94d8f0e';
+import { initHomeTab } from './home-tab.js?v=c94d8f0e';
+import { initGridTab } from './grid-tab.js?v=c94d8f0e';
+import { initMazeTab } from './maze-tab.js?v=c94d8f0e';
+import { initOrganicTab } from './organic-tab.js?v=c94d8f0e';
+import { initBattleTab } from './battle-tab.js?v=c94d8f0e';
+import { initHeartTab } from './heart-tab.js?v=c94d8f0e';
+import { initTdTab } from './td-tab.js?v=c94d8f0e';
+import { initTankTab } from './tank-tab.js?v=c94d8f0e';
+import { initTank2Tab } from './tank2-tab.js?v=c94d8f0e';
+import { initTank3Tab } from './tank3-tab.js?v=c94d8f0e';
+import { initUnitsTab } from './units-tab.js?v=c94d8f0e';
+import { initHowTab, initStackTab, initLogTab } from './how-tab.js?v=c94d8f0e';
+import { initSimTab } from './sim-tab.js?v=c94d8f0e';
+import { initRecordTab } from './recordtab.js?v=c94d8f0e';
 import { applyFontPack, DEFAULT_FONT, DEFAULT_SHOUT_FONT,
-  loadTypeFeel } from './fonts.js?v=91e71656';
+  loadTypeFeel } from './fonts.js?v=c94d8f0e';
 
 // The typeface pack is APP-WIDE and applied before any tab boots: it writes
 // custom properties onto <html>, and a tab that measures its own layout on
