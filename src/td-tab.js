@@ -19,42 +19,43 @@
 
 import * as THREE from '../vendor/three.module.js';
 import GUI from '../vendor/lil-gui.esm.js';
-import { generateSphereMesh, relax } from './grid.js?v=f75a1377';
-import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=f75a1377';
-import { mulberry32, randomSeed } from './rng.js?v=f75a1377';
-import { computeBerths, berthIndexFor } from './berths.js?v=f75a1377';
-import { wantsSecondary, shellsForAll } from './autofire.js?v=f75a1377';
-import { printPhase, printOffset, printOn, patternSecsFor } from './printpath.js?v=f75a1377';
-import { createBeam } from './beamfx.js?v=f75a1377';
-import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3, segKey, tangentDir, tangentBasis } from './vec3.js?v=f75a1377';
-import { CREATURES, waveJelly } from './creatures.js?v=f75a1377';
-import { brief } from './isaobriefs.js?v=f75a1377';
-import { drawEmotion } from './emotions.js?v=f75a1377';
+import { generateSphereMesh, relax } from './grid.js?v=522a8553';
+import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=522a8553';
+import { mulberry32, randomSeed } from './rng.js?v=522a8553';
+import { computeBerths, berthIndexFor } from './berths.js?v=522a8553';
+import { wantsSecondary, shellsForAll } from './autofire.js?v=522a8553';
+import { printPhase, printOffset, printOn, patternSecsFor } from './printpath.js?v=522a8553';
+import { createBeam } from './beamfx.js?v=522a8553';
+import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3, segKey, tangentDir, tangentBasis } from './vec3.js?v=522a8553';
+import { CREATURES, waveJelly } from './creatures.js?v=522a8553';
+import { brief } from './isaobriefs.js?v=522a8553';
+import { drawEmotion } from './emotions.js?v=522a8553';
 import { ACHIEVEMENTS, ACHV_GROUPS, achievement, blankRun, earned, freshlyEarned,
   sanitiseRecord }
-  from './achievements.js?v=f75a1377';
+  from './achievements.js?v=522a8553';
 import { applyFontPack, currentFontPack, FONT_NAMES,
-  loadTypeFeel } from './fonts.js?v=f75a1377';
-import { UNITS, UNIT_NAMES, buildUnit, buildCreature, preloadMkcx, preloadServer, makeServerFixture, makeShieldShell, preloadContainer, makeContainerFixture, preloadFabricator, makeIsaoDrone, makeBulletCloud, makeRewardSolid, makeShellSolid, makeDebris, makeDotBurst, makePortalCloud, makeHeartCloud, makeDotEnemy, preloadTerraformer, makeTerraformerFixture } from './units.js?v=f75a1377';
-import { LOOKS, LOOK_NAMES } from './looks.js?v=f75a1377';
-import { makeCellIndex } from './cellindex.js?v=f75a1377';
-import { CREATURE_TINTS, ENEMY_SPEC, INTROS, computeWavePlan, accentFor } from './enemyspec.js?v=f75a1377';
-import { PICKUPS } from './pickups.js?v=f75a1377';
-import { rankFor, rankLabel, badgeSVG, killReq, eliteReq } from './ranks.js?v=f75a1377';
-import { makeScore } from './score.js?v=f75a1377';
-import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER } from './towers.js?v=f75a1377';
-import { makeEconomy, sellRefund } from './economy.js?v=f75a1377';
-import { makeBloom } from './postfx.js?v=f75a1377';
-import { TANK_FEEL, TANK_FEEL_KNOBS, makeTankFeel, stepTankFeel, landTankFeel, fireTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js?v=f75a1377';
-import { FEEL, loadFeel, saveFeel } from './feelstore.js?v=f75a1377';
+  loadTypeFeel } from './fonts.js?v=522a8553';
+import { SECONDARY_TOE } from './units.js?v=522a8553';
+import { UNITS, UNIT_NAMES, buildUnit, buildCreature, preloadMkcx, preloadServer, makeServerFixture, makeShieldShell, preloadContainer, makeContainerFixture, preloadFabricator, makeIsaoDrone, makeBulletCloud, makeRewardSolid, makeShellSolid, makeDebris, makeDotBurst, makePortalCloud, makeHeartCloud, makeDotEnemy, preloadTerraformer, makeTerraformerFixture } from './units.js?v=522a8553';
+import { LOOKS, LOOK_NAMES } from './looks.js?v=522a8553';
+import { makeCellIndex } from './cellindex.js?v=522a8553';
+import { CREATURE_TINTS, ENEMY_SPEC, INTROS, computeWavePlan, accentFor } from './enemyspec.js?v=522a8553';
+import { PICKUPS } from './pickups.js?v=522a8553';
+import { rankFor, rankLabel, badgeSVG, killReq, eliteReq } from './ranks.js?v=522a8553';
+import { makeScore } from './score.js?v=522a8553';
+import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER } from './towers.js?v=522a8553';
+import { makeEconomy, sellRefund } from './economy.js?v=522a8553';
+import { makeBloom } from './postfx.js?v=522a8553';
+import { TANK_FEEL, TANK_FEEL_KNOBS, makeTankFeel, stepTankFeel, landTankFeel, fireTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js?v=522a8553';
+import { FEEL, loadFeel, saveFeel } from './feelstore.js?v=522a8553';
 import { STRIKE_KNOBS, makeStrike, makeStrikeParams, grantStrikes, stepStrike,
   toggleArm, paintTarget, launchStrike, stepFall, skipFall, fallProgress,
-  strikeDamage, retargetStrike, orbitProgress } from './strike.js?v=f75a1377';
-import { radarBasis, radarProject, radarBearing, sweepAngle, radarPhosphor } from './radar.js?v=f75a1377';
-import { BLOOM_GROUPS } from './bloomweights.js?v=f75a1377';
-import { TOWER_LOOK_NAMES, DEFAULT_TOWER_LOOK, buildTowerLook, preloadLook } from './towerlooks.js?v=f75a1377';
-import { makeAudio } from './audio.js?v=f75a1377';
-import { DEATH_KEYS } from './audiomanifest.js?v=f75a1377';
+  strikeDamage, retargetStrike, orbitProgress } from './strike.js?v=522a8553';
+import { radarBasis, radarProject, radarBearing, sweepAngle, radarPhosphor } from './radar.js?v=522a8553';
+import { BLOOM_GROUPS } from './bloomweights.js?v=522a8553';
+import { TOWER_LOOK_NAMES, DEFAULT_TOWER_LOOK, buildTowerLook, preloadLook } from './towerlooks.js?v=522a8553';
+import { makeAudio } from './audio.js?v=522a8553';
+import { DEATH_KEYS } from './audiomanifest.js?v=522a8553';
 
 export function initTdTab(root) {
   let active = false;
@@ -5207,6 +5208,7 @@ export function initTdTab(root) {
   // A BOGGED BEAM FALLS BEHIND AND STAYS BEHIND. It does not catch up at the
   // end of the burst — that would hide the cost, which is the point of it.
   const beamPhase = [0, 0];
+  let beamHitWall = false;   // did either beam clip on rock this frame?
   const CELL_WIDTH_KEYS = ['coreWidth', 'glowWidth', 'jitterAmount'];
   // `beams` is taken by the tower/slow-tether fx pool — these are the tank's
   let tankBeams = null, beamOn = false, beamVoice = null;
@@ -5398,10 +5400,21 @@ export function initTdTab(root) {
         // WALLS STOP IT, enemies do not. March in half-cells to the first
         // blocked cell so a beam cannot reach through the maze you built.
         let len = reach;
+        let wallBite = 0;
         for (let m = cellSide * 0.5; m <= reach; m += cellSide * 0.5) {
           const q = norm3(add3(from, scale3(dir, m)));
           const ci = cellIndex(q);
-          if (ci !== -1 && dungeon.tags[ci] === BLOCKED) { len = m; break; }
+          if (ci !== -1 && dungeon.tags[ci] === BLOCKED) {
+            len = m;
+            // HOW MUCH of the beam the rock is eating, not merely THAT there
+            // is rock. This map is dense — measured, a beam standing on
+            // all-open ground still clips rock at 2.5 of its 2.6 cells, so a
+            // flat penalty on contact would bog the weapon EVERYWHERE and the
+            // sweep would never move. Bite is the same currency a body pays
+            // in: 0 when the wall is out at the tip, 1 at point-blank.
+            wallBite = Math.max(0, 1 - m / reach);
+            break;
+          }
         }
         // IT PIERCES, BUT IT PAYS TO. Every body the beam passes through eats
         // into what is left of its reach, so it visibly SHORTENS against a
@@ -5424,7 +5437,13 @@ export function initTdTab(root) {
         }
         along.sort((x, y) => x.t - y.t);
 
-        let drag = 0;
+        // A WALL BOGS IT LIKE ARMOUR DOES (operator). Burning into rock is
+        // the same job as burning through a solid core — the sweep labours,
+        // and firing across a corner drags exactly as it should. It is the
+        // harsher of the two, in fact: a wall also ends the beam outright,
+        // where a body only takes a bite out of the reach.
+        if (wallBite > 0.05) beamHitWall = true;
+        let drag = DRAG_HARD * wallBite;
         let reachLeft = len;
         for (const hit of along) {
           if (hit.t > reachLeft) break;          // the beam died before this one
@@ -8574,6 +8593,109 @@ export function initTdTab(root) {
               : 'independent, so the pair desyncs'}`);
           for (const e of liveAll) e.alive = false;   // tidy the probe's props
         } else console.log('BEAMFIRE drag=INCONCLUSIVE (need one soft and one hard enemy)');
+      }
+
+      // IS THE MODEL'S TOE EVEN REACHING THE BEAM? The beam direction is read
+      // off Secondary_*_Gun_Pivot, but the toe is applied to
+      // Secondary_*_Pivot — its parent. mergeByMaterial can REPARENT
+      // preserved pivots, and if it did, the two are no longer related and
+      // the toe is decoration.
+      {
+        // WHICH TANK IS THIS? headless often never finishes the mkcx load and
+        // measures the PROCEDURAL fallback instead — so a reading here can be
+        // about a different tank from the one the operator is playing. Say so
+        // rather than let the number pass for the model's.
+        const gp = playerMesh.getObjectByName('Secondary_L_Gun_Pivot');
+        console.log(`BEAMFIRE tank=${gp ? 'mkcx (model pivots)' : 'procedural fallback'}`
+          + ` guns=${(playerMesh.userData.laserGuns || []).length}`
+          + ` SECONDARY_TOE=${SECONDARY_TOE}`);
+      }
+
+      // A WALL MUST BOG IT LIKE ARMOUR. Point him at rock and the sweep should
+      // labour exactly as it does inside a solid core — otherwise firing into
+      // a corner is free, which is the one place it obviously should not be.
+      {
+        const liveW = enemies.filter((e) => e.alive);
+        for (const e of liveW) e.pos = norm3(add3(player.pos, [0.6, 0.6, 0.6]));
+        const sweepFrom = (place) => {
+          place();
+          // the probe drives updateLasers directly, with no render between —
+          // the gun world quaternions the beam reads are only as fresh as the
+          // matrices, and placeActors() writes locals, not world matrices
+          if (playerMesh) playerMesh.updateMatrixWorld(true);
+          laserHeat = 0; laserOverheat = false; beamOn = false;
+          beamPhase[0] = 0; beamPhase[1] = 0;
+          keys.laser = true;
+          for (let i = 0; i < 60 * 6; i++) updateLasers(1 / 60, 500 + i / 60);
+          keys.laser = false;
+          return beamPhase[0];
+        };
+        const here = player.cur, heldHeading = player.heading.slice();
+        // "open ground" was an ASSUMPTION, and a wrong one — the tank spawns
+        // beside the Heart facing rock, so the baseline was ALREADY bogged and
+        // the comparison read as no-difference. Go and FIND clear ground: an
+        // open cell whose whole 2-hop neighbourhood is open, aimed at an open
+        // neighbour, which covers the 2.6-cell reach.
+        let openCell = -1, aimCell = -1;
+        for (let i = 0; i < dungeon.tags.length && openCell < 0; i++) {
+          if (dungeon.tags[i] === BLOCKED) continue;
+          const ring1 = graph.adj[i];
+          if (ring1.some((nb) => dungeon.tags[nb] === BLOCKED)) continue;
+          if (!ring1.every((nb) => graph.adj[nb].every((n2) => dungeon.tags[n2] !== BLOCKED))) continue;
+          openCell = i; aimCell = ring1[0];
+        }
+        if (openCell < 0) { console.log('BEAMFIRE wall=INCONCLUSIVE (no clear ground on this map)'); return; }
+        beamHitWall = false;
+        const clearRun = sweepFrom(() => {
+          player.cur = openCell;
+          player.pos = graph.centers[openCell].slice();
+          player.heading = tangentDirTo(openCell, aimCell);
+          placeActors();
+        });
+        const clearHitWall = beamHitWall;
+        {
+          const gW = playerMesh.userData.laserGuns[0];
+          gW.getWorldPosition(tmpV);
+          const fW = norm3([tmpV.x, tmpV.y, tmpV.z]);
+          gW.getWorldQuaternion(tmpQ);
+          tmpV.set(0, 0, 1).applyQuaternion(tmpQ);
+          const dW = norm3(sub3([tmpV.x, tmpV.y, tmpV.z], scale3(fW, dot3([tmpV.x, tmpV.y, tmpV.z], fW))));
+          const walk = [];
+          for (let m = cellSide * 0.5; m <= cellSide * LASER_REACH; m += cellSide * 0.5) {
+            const ci = cellIndex(norm3(add3(fW, scale3(dW, m))));
+            walk.push(ci === -1 ? 'off' : (dungeon.tags[ci] === BLOCKED ? 'ROCK' : 'open'));
+          }
+          console.log(`BEAMFIRE walk from cell ${openCell} (all-open 2-hop): ${walk.join(' ')}`
+            + ` | gunCell=${cellIndex(fW)} standCell=${player.cur}`);
+        }
+        // now stand him against a wall and aim into it
+        let wallCell = -1;
+        for (let i = 0; i < dungeon.tags.length && wallCell < 0; i++) {
+          if (dungeon.tags[i] !== BLOCKED) continue;
+          if (graph.adj[i].some((nb) => dungeon.tags[nb] !== BLOCKED)) wallCell = i;
+        }
+        let wallRun = clearRun, wallHitWall = false;
+        if (wallCell >= 0) {
+          beamHitWall = false;
+          const open = graph.adj[wallCell].find((nb) => dungeon.tags[nb] !== BLOCKED);
+          wallRun = sweepFrom(() => {
+            player.cur = open;
+            player.pos = graph.centers[open].slice();
+            player.heading = tangentDirTo(open, wallCell);
+            placeActors();
+          });
+          wallHitWall = beamHitWall;
+        }
+        player.cur = here; player.heading = heldHeading;
+        // clipping rock at the far tip is the NORMAL case on this map, so it
+        // cannot veto the baseline — what must differ is how hard the rock
+        // bites, which is exactly what the sweep records.
+        const verdict = !wallHitWall ? 'INCONCLUSIVE (never actually faced rock)'
+          : wallRun < clearRun - 0.05 ? 'PASS' : 'FAIL';
+        console.log(`BEAMFIRE wall=${verdict}`
+          + ` sweep reached: baseline=${clearRun.toFixed(2)} (hit rock: ${clearHitWall})`
+          + ` into a wall=${wallRun.toFixed(2)} (hit rock: ${wallHitWall})`
+          + ` — rock must labour it like a solid core`);
       }
 
       // THE SWEEP: does the pair actually scissor, and inward? Sample the two

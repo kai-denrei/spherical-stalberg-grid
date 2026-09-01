@@ -16,14 +16,14 @@
 
 import * as THREE from '../vendor/three.module.js';
 import { EMOTION_IDS, emotion, phosphorFor } from './emotions.js';
-import { printPhase, printOffset, printOn } from './printpath.js?v=f75a1377';
+import { printPhase, printOffset, printOn } from './printpath.js?v=522a8553';
 import { loadGlb, mergeByMaterial, fitModel, tintModel, makeShellRack,
-  addEdgeOutlines, makeHeatSleeve } from './glbmodels.js?v=f75a1377';
-import { CREATURES, waveJelly, swimWave, spherePts, bulletPts, missilePts, heartPts, torusPts, towerHeadPts, enemyDotPts, portalPts } from './creatures.js?v=f75a1377';
-import { TOWER_FEEL, TOWER_HEADS, headKindFor } from './towerfeel.js?v=f75a1377';
+  addEdgeOutlines, makeHeatSleeve } from './glbmodels.js?v=522a8553';
+import { CREATURES, waveJelly, swimWave, spherePts, bulletPts, missilePts, heartPts, torusPts, towerHeadPts, enemyDotPts, portalPts } from './creatures.js?v=522a8553';
+import { TOWER_FEEL, TOWER_HEADS, headKindFor } from './towerfeel.js?v=522a8553';
 import { STARGATE_PTS, STARGATE_STROKE,
-  HORIZON_N, stargateHorizon } from './stargate.js?v=f75a1377';
-import { ENEMY_SPEC } from './enemyspec.js?v=f75a1377';
+  HORIZON_N, stargateHorizon } from './stargate.js?v=522a8553';
+import { ENEMY_SPEC } from './enemyspec.js?v=522a8553';
 
 function normalizeToUnit(group) {
   group.updateMatrixWorld(true);
@@ -101,7 +101,11 @@ function makeTank(cols) {
   for (const side of [-1, 1]) {
     const gun = new THREE.Group();
     gun.position.set(side * 0.42, 0.42, 1.02);
-    gun.rotation.y = -side * 0.09; // +Z toed toward the centerline
+    // ONE CONSTANT FOR BOTH TANKS. The procedural fallback used to carry its
+    // own hardcoded 0.09, so narrowing the mkcx's toe changed nothing on the
+    // fallback — and the fallback is what a headless run measures, which made
+    // the tuning invisible to every probe.
+    gun.rotation.y = -side * SECONDARY_TOE; // +Z toed toward the centerline
     const tube = new THREE.Mesh(gunGeo, gunMat);
     tube.position.z = 0.12;
     gun.add(tube);
@@ -1153,7 +1157,12 @@ const MKCX_LIFTERS = ['LiftEmitter_L1', 'LiftEmitter_L2', 'LiftEmitter_L3',
 // How far the twin secondaries toe in, in radians. The model authors ~9deg
 // but applies it the same way round on both sides; this is the magnitude,
 // applied inward per side. Tunable in the beam tab.
-export const SECONDARY_TOE = 0.157;
+//
+// Narrowed from 0.157 (operator: less wide). The base toe is only half the
+// story — BEAM_SWEEP in td-tab adds to it across the burst — so a wide base
+// plus a wide sweep had the pair crossing almost at the muzzle at the
+// midpoint. This opens the V out and lets the sweep do the work.
+export const SECONDARY_TOE = 0.085;
 
 const MKCX_PIVOTS = ['Turret_Pivot', 'Secondary_L_Gun_Pivot', 'Secondary_R_Gun_Pivot',
   'Hover_Gear', ...MKCX_LIFTERS];
