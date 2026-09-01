@@ -5,22 +5,22 @@
    back to a system face until the subset is rebuilt. */
 @font-face {
   font-family: 'VT323';
-  src: url('assets/fonts/VT323.woff2?v=eb137f37') format('woff2');
+  src: url('assets/fonts/VT323.woff2?v=03c0ebe2') format('woff2');
   font-weight: 400; font-style: normal; font-display: swap;
 }
 @font-face {
   font-family: 'Press Start 2P';
-  src: url('assets/fonts/PressStart2P.woff2?v=eb137f37') format('woff2');
+  src: url('assets/fonts/PressStart2P.woff2?v=03c0ebe2') format('woff2');
   font-weight: 400; font-style: normal; font-display: swap;
 }
 @font-face {
   font-family: 'Share Tech Mono';
-  src: url('assets/fonts/ShareTechMono.woff2?v=eb137f37') format('woff2');
+  src: url('assets/fonts/ShareTechMono.woff2?v=03c0ebe2') format('woff2');
   font-weight: 400; font-style: normal; font-display: swap;
 }
 @font-face {
   font-family: 'DotGothic16';
-  src: url('assets/fonts/DotGothic16.woff2?v=eb137f37') format('woff2');
+  src: url('assets/fonts/DotGothic16.woff2?v=03c0ebe2') format('woff2');
   font-weight: 400; font-style: normal; font-display: swap;
 }
 
@@ -1512,6 +1512,21 @@ html, body {
 /* --- the beam lab ------------------------------------------------------- */
 #beam-app { position: absolute; inset: 0; }
 #beam-app canvas { display: block; width: 100%; height: 100%; }
+/* the little double-square: copy the whole preset to the clipboard. Sits on
+   the stage rather than in the panel so it is reachable without scrolling the
+   controls, which is where it was buried before. */
+#beam-copy {
+  /* LEFT, not right: the lil-gui panel owns the right edge and swallowed it
+     there — the button existed and could not be clicked. */
+  position: absolute; left: 12px; bottom: 40px; z-index: 7;
+  width: 40px; height: 40px; padding: 0;
+  font: 600 18px ui-monospace, Menlo, monospace; line-height: 1;
+  color: #9fdcff; background: rgba(12, 26, 38, 0.85);
+  border: 1px solid #2b6b96; border-radius: 8px; cursor: pointer;
+}
+#beam-copy:hover { background: rgba(22, 50, 74, 0.95); color: #dff4ff; }
+#beam-copy:active { transform: translateY(1px); }
+#beam-hud.flash { color: #66ff88; text-shadow: 0 0 10px rgba(102, 255, 136, 0.6); }
 #beam-hud {
   position: absolute; left: 12px; bottom: 12px; z-index: 6;
   font: 600 12px ui-monospace, Menlo, monospace; letter-spacing: 0.08em;

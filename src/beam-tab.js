@@ -119,23 +119,73 @@ export function initBeamTab(root) {
     spread: 1.0,                // how far apart the emitters read
     toeIn: SECONDARY_TOE,       // live, so convergence can be tuned by eye
     autoFire: true,
-    copyPreset: () => {
-      const out = {};
-      for (const k of Object.keys(DEFAULTS)) out[k] = P[k];
-      const json = JSON.stringify({ schema: 'laserfx/1', id: 'beam-in-world',
-        beam: out, world: { toneMapping: P.toneMapping, exposure: P.exposure,
-          bloom: P.bloom, bloomStrength: P.bloomStrength,
-          peakIntensity: P.peakIntensity, burstSeconds: P.burstSeconds,
-          beamLength: P.beamLength, toeIn: P.toeIn } }, null, 2);
-      navigator.clipboard?.writeText(json).then(
-        () => console.log('BEAMLAB preset copied to clipboard\n' + json),
-        () => console.log('BEAMLAB preset (clipboard refused):\n' + json));
+    copyPreset: () => copyPreset(),
+    downloadPreset: () => {
+      // ...because "copied to the clipboard" is invisible, and a preset you
+      // cannot find later is a preset you did not save
+      const blob = new Blob([presetJson()], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a2 = document.createElement('a');
+      a2.href = url;
+      a2.download = `beam-in-world-${new Date().toISOString().slice(0, 10)}.json`;
+      document.body.appendChild(a2); a2.click(); a2.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+      flash('saved .json');
     },
     reset: () => { Object.assign(P, DEFAULTS, WORLD_SCALED); gui.controllersRecursive().forEach((c) => c.updateDisplay()); },
   };
 
   // Same rule as the model fix-up: inward is decided by the turret's own
   // side, never by its name.
+  // --- the preset, and saying so ------------------------------------------
+  function presetJson() {
+    const out = {};
+    for (const k of Object.keys(DEFAULTS)) out[k] = P[k];
+    return JSON.stringify({
+      schema: 'laserfx/1',
+      id: 'beam-in-world',
+      generatedAt: new Date().toISOString(),
+      beam: out,
+      // the world side is part of the preset HERE in a way it was not in the
+      // lab: this beam's look depends on tone mapping and bloom
+      world: {
+        toneMapping: P.toneMapping, exposure: P.exposure,
+        bloom: P.bloom, bloomStrength: P.bloomStrength,
+        bgBrightness: P.bgBrightness, look: P.look,
+      },
+      weapon: {
+        envelope: P.envelope, peakIntensity: P.peakIntensity,
+        burstSeconds: P.burstSeconds, beamLength: P.beamLength,
+        toeIn: P.toeIn, muzzleNudge: P.muzzleNudge,
+      },
+    }, null, 2);
+  }
+
+  // FEEDBACK, because a silent copy is indistinguishable from a broken one —
+  // which is exactly how the operator experienced the first version.
+  let flashT = 0, flashMsg = '';
+  function flash(msg) { flashMsg = msg; flashT = 2.0; }
+
+  function copyPreset() {
+    const json = presetJson();
+    const ok = () => { flash('preset copied to clipboard'); console.log('BEAMLAB preset:\n' + json); };
+    const fail = (why) => {
+      // clipboard can refuse on an unfocused document; the textarea route
+      // still works there, and the console always has it either way
+      try {
+        const ta = document.createElement('textarea');
+        ta.value = json; ta.style.position = 'fixed'; ta.style.opacity = '0';
+        document.body.appendChild(ta); ta.select();
+        const done = document.execCommand('copy');
+        ta.remove();
+        flash(done ? 'preset copied (fallback)' : 'copy refused — see console');
+      } catch { flash('copy refused — see console'); }
+      console.log(`BEAMLAB preset (clipboard ${why}):\n` + json);
+    };
+    if (navigator.clipboard?.writeText) navigator.clipboard.writeText(json).then(ok, () => fail('refused'));
+    else fail('unavailable');
+  }
+
   function applyToe() {
     if (!tank) return;
     for (const name of ['Secondary_L_Pivot', 'Secondary_R_Pivot']) {
@@ -207,7 +257,8 @@ export function initBeamTab(root) {
   const gj = gui.addFolder('instability');
   gj.add(P, 'jitterAmount', 0, 0.40, 0.0005);
   gj.add(P, 'jitterFreq', 1, 200, 1);
-  gui.add(P, 'copyPreset').name('copy preset (.json)');
+  gui.add(P, 'copyPreset').name('⧉ copy preset');
+  gui.add(P, 'downloadPreset').name('⇩ save .json');
   gui.add(P, 'reset').name('reset to lab defaults');
 
   // --- the heat clock -----------------------------------------------------
@@ -342,6 +393,9 @@ export function initBeamTab(root) {
     }, 1200);
   }
 
+  const copyBtn = root.querySelector('#beam-copy');
+  if (copyBtn) copyBtn.addEventListener('click', copyPreset);
+
   const clock = new THREE.Clock();
   const hud = root.querySelector('#beam-hud');
   function resize() {
@@ -363,11 +417,14 @@ export function initBeamTab(root) {
     beamL.update(t); beamR.update(t);
     if (alpha !== undefined) pushParams(alpha);   // update() rewrites uAlpha
     controls.update();
+    if (flashT > 0) flashT -= dt;
     if (hud) {
-      hud.textContent = `heat ${heat.toFixed(2)}/${P.burstSeconds.toFixed(1)}s`
+      hud.textContent = flashT > 0 ? flashMsg
+        : `heat ${heat.toFixed(2)}/${P.burstSeconds.toFixed(1)}s`
         + `  ${lock ? 'COOLING' : 'FIRING'}`
         + `  intensity ${(P.peakIntensity * (alpha ?? 1)).toFixed(2)}`
         + `  tone ${P.toneMapping}`;
+      hud.classList.toggle('flash', flashT > 0);
     }
     postfx.render();
   }
