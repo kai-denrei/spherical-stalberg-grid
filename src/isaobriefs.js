@@ -78,5 +78,27 @@ export const BRIEFS = {
   },
 };
 
+// HOW LONG A LINE HOLDS. Isao's running commentary used to wait for a tap —
+// per LINE, so a four-line beat was four taps over the board, and the operator's
+// note was exactly that: "always need to dismiss messages that cover the view."
+// A status report from a drone should not need acknowledging. Each line now
+// holds for as long as it takes to read and then moves on by itself.
+//
+// ~3.2 words/second is a deliberately unhurried 190wpm — these are spoken
+// lines (the fish-audio pass is coming) and a caption that outruns the voice
+// is worse than one that lingers. The floor stops a three-word line from
+// flashing past; the ceiling stops a long one from becoming a wall.
+export const BRIEF_WPS = 3.2;
+export const BRIEF_MIN = 2.4;   // seconds
+export const BRIEF_MAX = 7.0;
+export const BRIEF_LEAD = 0.9;  // fixed cost to notice the panel changed at all
+
+export function dwellFor(line) {
+  const words = String(line || '').trim().split(/\s+/).filter(Boolean).length;
+  if (!words) return BRIEF_MIN;
+  const secs = BRIEF_LEAD + words / BRIEF_WPS;
+  return Math.max(BRIEF_MIN, Math.min(BRIEF_MAX, secs));
+}
+
 export const BRIEF_IDS = Object.keys(BRIEFS);
 export const brief = (id) => BRIEFS[id] || null;

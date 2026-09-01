@@ -5,22 +5,22 @@
    back to a system face until the subset is rebuilt. */
 @font-face {
   font-family: 'VT323';
-  src: url('assets/fonts/VT323.woff2?v=44620486') format('woff2');
+  src: url('assets/fonts/VT323.woff2?v=fbced82c') format('woff2');
   font-weight: 400; font-style: normal; font-display: swap;
 }
 @font-face {
   font-family: 'Press Start 2P';
-  src: url('assets/fonts/PressStart2P.woff2?v=44620486') format('woff2');
+  src: url('assets/fonts/PressStart2P.woff2?v=fbced82c') format('woff2');
   font-weight: 400; font-style: normal; font-display: swap;
 }
 @font-face {
   font-family: 'Share Tech Mono';
-  src: url('assets/fonts/ShareTechMono.woff2?v=44620486') format('woff2');
+  src: url('assets/fonts/ShareTechMono.woff2?v=fbced82c') format('woff2');
   font-weight: 400; font-style: normal; font-display: swap;
 }
 @font-face {
   font-family: 'DotGothic16';
-  src: url('assets/fonts/DotGothic16.woff2?v=44620486') format('woff2');
+  src: url('assets/fonts/DotGothic16.woff2?v=fbced82c') format('woff2');
   font-weight: 400; font-style: normal; font-display: swap;
 }
 
@@ -148,6 +148,22 @@
   margin-top: auto;
 }
 #td-brief-dots { font-size: 8px; letter-spacing: 3px; color: var(--p-green-dim); }
+/* The line's remaining time, draining left. It is the affordance that says the
+   panel will leave on its own — without it a player who learned to tap keeps
+   tapping and the auto-advance buys nothing. */
+#td-brief-track {
+  height: 2px;
+  margin-top: 5px;
+  background: rgba(47, 187, 96, 0.18);
+  border-radius: 1px;
+  overflow: hidden;
+}
+#td-brief-bar {
+  height: 100%;
+  width: 100%;
+  background: var(--p-green);
+  opacity: 0.75;
+}
 #td-brief-next {
   font: bold 14px ui-monospace, Menlo, monospace;
   color: var(--p-white);

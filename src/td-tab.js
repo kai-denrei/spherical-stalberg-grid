@@ -19,43 +19,43 @@
 
 import * as THREE from '../vendor/three.module.js';
 import GUI from '../vendor/lil-gui.esm.js';
-import { generateSphereMesh, relax } from './grid.js?v=44620486';
-import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=44620486';
-import { mulberry32, randomSeed } from './rng.js?v=44620486';
-import { computeBerths, berthIndexFor } from './berths.js?v=44620486';
-import { wantsSecondary, shellsForAll } from './autofire.js?v=44620486';
-import { printPhase, printOffset, printOn, patternSecsFor } from './printpath.js?v=44620486';
-import { createBeam } from './beamfx.js?v=44620486';
-import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3, segKey, tangentDir, tangentBasis } from './vec3.js?v=44620486';
-import { CREATURES, waveJelly } from './creatures.js?v=44620486';
-import { brief } from './isaobriefs.js?v=44620486';
-import { drawEmotion } from './emotions.js?v=44620486';
+import { generateSphereMesh, relax } from './grid.js?v=fbced82c';
+import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=fbced82c';
+import { mulberry32, randomSeed } from './rng.js?v=fbced82c';
+import { computeBerths, berthIndexFor } from './berths.js?v=fbced82c';
+import { wantsSecondary, shellsForAll } from './autofire.js?v=fbced82c';
+import { printPhase, printOffset, printOn, patternSecsFor } from './printpath.js?v=fbced82c';
+import { createBeam } from './beamfx.js?v=fbced82c';
+import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3, segKey, tangentDir, tangentBasis } from './vec3.js?v=fbced82c';
+import { CREATURES, waveJelly } from './creatures.js?v=fbced82c';
+import { brief, dwellFor } from './isaobriefs.js?v=fbced82c';
+import { drawEmotion } from './emotions.js?v=fbced82c';
 import { ACHIEVEMENTS, ACHV_GROUPS, achievement, blankRun, earned, freshlyEarned,
   sanitiseRecord }
-  from './achievements.js?v=44620486';
+  from './achievements.js?v=fbced82c';
 import { applyFontPack, currentFontPack, FONT_NAMES,
-  loadTypeFeel } from './fonts.js?v=44620486';
-import { SECONDARY_TOE } from './units.js?v=44620486';
-import { UNITS, UNIT_NAMES, buildUnit, buildCreature, preloadMkcx, preloadServer, makeServerFixture, makeShieldShell, preloadContainer, makeContainerFixture, preloadFabricator, makeIsaoDrone, makeBulletCloud, makeRewardSolid, makeShellSolid, makeDebris, makeDotBurst, makePortalCloud, makeHeartCloud, makeDotEnemy, preloadTerraformer, makeTerraformerFixture } from './units.js?v=44620486';
-import { LOOKS, LOOK_NAMES } from './looks.js?v=44620486';
-import { makeCellIndex } from './cellindex.js?v=44620486';
-import { CREATURE_TINTS, ENEMY_SPEC, INTROS, computeWavePlan, accentFor } from './enemyspec.js?v=44620486';
-import { PICKUPS } from './pickups.js?v=44620486';
-import { rankFor, rankLabel, badgeSVG, killReq, eliteReq } from './ranks.js?v=44620486';
-import { makeScore } from './score.js?v=44620486';
-import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER } from './towers.js?v=44620486';
-import { makeEconomy, sellRefund } from './economy.js?v=44620486';
-import { makeBloom } from './postfx.js?v=44620486';
-import { TANK_FEEL, TANK_FEEL_KNOBS, makeTankFeel, stepTankFeel, landTankFeel, fireTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js?v=44620486';
-import { FEEL, loadFeel, saveFeel } from './feelstore.js?v=44620486';
+  loadTypeFeel } from './fonts.js?v=fbced82c';
+import { SECONDARY_TOE } from './units.js?v=fbced82c';
+import { UNITS, UNIT_NAMES, buildUnit, buildCreature, preloadMkcx, preloadServer, makeServerFixture, makeShieldShell, preloadContainer, makeContainerFixture, preloadFabricator, makeIsaoDrone, makeBulletCloud, makeRewardSolid, makeShellSolid, makeDebris, makeDotBurst, makePortalCloud, makeHeartCloud, makeDotEnemy, preloadTerraformer, makeTerraformerFixture } from './units.js?v=fbced82c';
+import { LOOKS, LOOK_NAMES } from './looks.js?v=fbced82c';
+import { makeCellIndex } from './cellindex.js?v=fbced82c';
+import { CREATURE_TINTS, ENEMY_SPEC, INTROS, computeWavePlan, accentFor } from './enemyspec.js?v=fbced82c';
+import { PICKUPS } from './pickups.js?v=fbced82c';
+import { rankFor, rankLabel, badgeSVG, killReq, eliteReq } from './ranks.js?v=fbced82c';
+import { makeScore } from './score.js?v=fbced82c';
+import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER } from './towers.js?v=fbced82c';
+import { makeEconomy, sellRefund } from './economy.js?v=fbced82c';
+import { makeBloom } from './postfx.js?v=fbced82c';
+import { TANK_FEEL, TANK_FEEL_KNOBS, makeTankFeel, stepTankFeel, landTankFeel, fireTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js?v=fbced82c';
+import { FEEL, loadFeel, saveFeel } from './feelstore.js?v=fbced82c';
 import { STRIKE_KNOBS, makeStrike, makeStrikeParams, grantStrikes, stepStrike,
   toggleArm, paintTarget, launchStrike, stepFall, skipFall, fallProgress,
-  strikeDamage, retargetStrike, orbitProgress } from './strike.js?v=44620486';
-import { radarBasis, radarProject, radarBearing, sweepAngle, radarPhosphor } from './radar.js?v=44620486';
-import { BLOOM_GROUPS } from './bloomweights.js?v=44620486';
-import { TOWER_LOOK_NAMES, DEFAULT_TOWER_LOOK, buildTowerLook, preloadLook } from './towerlooks.js?v=44620486';
-import { makeAudio } from './audio.js?v=44620486';
-import { DEATH_KEYS } from './audiomanifest.js?v=44620486';
+  strikeDamage, retargetStrike, orbitProgress } from './strike.js?v=fbced82c';
+import { radarBasis, radarProject, radarBearing, sweepAngle, radarPhosphor } from './radar.js?v=fbced82c';
+import { BLOOM_GROUPS } from './bloomweights.js?v=fbced82c';
+import { TOWER_LOOK_NAMES, DEFAULT_TOWER_LOOK, buildTowerLook, preloadLook } from './towerlooks.js?v=fbced82c';
+import { makeAudio } from './audio.js?v=fbced82c';
+import { DEATH_KEYS } from './audiomanifest.js?v=fbced82c';
 
 export function initTdTab(root) {
   let active = false;
@@ -540,16 +540,26 @@ export function initTdTab(root) {
   const briefDots = root.querySelector('#td-brief-dots');
   const BRIEF_SEEN = 'td.briefs';
   let briefQ = null, briefAt = 0, briefFaceT = 0;
+  // Seconds left on the current LINE. A countdown driven from the frame loop,
+  // deliberately not a setTimeout: this file has already paid once for
+  // deferred work outliving the run that scheduled it (the death timer that
+  // fired after a retry), and a frame-loop accumulator cannot outlive
+  // anything. `briefDwell` is kept only to size the progress bar.
+  let briefLeft = 0, briefDwell = 1;
   const briefSeen = (() => {
     try { const v = JSON.parse(localStorage.getItem(BRIEF_SEEN) || '[]'); return Array.isArray(v) ? v : []; }
     catch { return []; }
   })();
 
+  const briefBar = root.querySelector('#td-brief-bar');
   function paintBrief() {
     if (!briefQ) return;
     briefTitle.textContent = briefQ.title;
     briefLine.textContent = briefQ.lines[briefAt];
     briefDots.textContent = briefQ.lines.map((_, i) => (i === briefAt ? '●' : '○')).join(' ');
+    // The bar is the affordance that says THIS WILL PASS. Without it a player
+    // who has learned to tap keeps tapping, and the auto-advance buys nothing.
+    if (briefBar) briefBar.style.width = `${Math.max(0, Math.min(1, briefLeft / briefDwell)) * 100}%`;
     const ctx = briefFace.getContext('2d');
     drawEmotion(ctx, briefQ.face, { w: briefFace.width, h: briefFace.height, t: briefFaceT });
   }
@@ -562,18 +572,38 @@ export function initTdTab(root) {
       try { localStorage.setItem(BRIEF_SEEN, JSON.stringify(briefSeen)); } catch { /* private mode */ }
     }
     briefQ = b; briefAt = 0; briefFaceT = 0;
+    briefDwell = briefLeft = dwellFor(b.lines[0]);
     briefEl.classList.remove('hidden');
     sfx.play('laser_click');
     paintBrief();
   }
-  function stepBrief() {
+  // `auto` = the line ran out of time rather than being tapped through. The
+  // click is the player's, so it keeps its click; a line retiring on its own
+  // must not make a noise, or the panel is still demanding attention — which
+  // is the whole thing being fixed.
+  function stepBrief(auto) {
     if (!briefQ) return;
     briefAt++;
-    if (briefAt >= briefQ.lines.length) { briefQ = null; briefEl.classList.add('hidden'); return; }
-    sfx.play('laser_click');
+    if (briefAt >= briefQ.lines.length) { endBrief(); return; }
+    if (!auto) sfx.play('laser_click');
+    briefDwell = briefLeft = dwellFor(briefQ.lines[briefAt]);
     paintBrief();
   }
-  if (briefEl) briefEl.addEventListener('click', stepBrief);
+  // The line clock, as a named function rather than four lines inside animate:
+  // a probe never runs animate, so anything buried in the frame loop is
+  // unverifiable by construction — and this project has already reported a
+  // PASS against a fix it had never exercised for exactly that reason.
+  function stepBriefClock(dt) {
+    if (!briefQ) return;
+    briefFaceT += dt;
+    briefLeft -= dt;
+    if (briefLeft <= 0) stepBrief(true); else paintBrief();
+  }
+  function endBrief() {
+    briefQ = null; briefLeft = 0;
+    if (briefEl) briefEl.classList.add('hidden');
+  }
+  if (briefEl) briefEl.addEventListener('click', () => stepBrief(false));
 
   // --- THE RECORD ----------------------------------------------------------
   // One flat object of run facts, fed to a pure evaluator. Kept as a single
@@ -4593,6 +4623,10 @@ export function initTdTab(root) {
     // Same rule as runGen for timers, one level up: work started by the dead
     // run must not land on the live one.
     endShot();
+    // ...and any brief mid-sentence. A reset that leaves Isao talking over the
+    // new run is the same defect class as a camera shot surviving one: state
+    // from the old run painted on top of the new board.
+    endBrief();
     revealCells = [];
     deployStart(berthIndexFor(playerHP));
     placeActors();
@@ -7847,7 +7881,7 @@ export function initTdTab(root) {
     // wave clock, motion, combat — while ambient life (portal twinkle,
     // heart moods, debris) and the camera transition keep breathing.
     // Mid-assault the same toggle is camera-only.
-    if (briefQ) { briefFaceT += dt; paintBrief(); }
+    stepBriefClock(dt);
     stepShot(dt);
     // ANY control input thaws the frozen tutorial opening — checked BEFORE
     // the frozen gate, since updateLasers itself is skipped while frozen.
@@ -8430,6 +8464,52 @@ export function initTdTab(root) {
       setTimeout(tick, 120);
     };
     tick();
+  }
+
+  // ?briefprobe=1 — DOES ISAO LEAVE ON HIS OWN? The operator's complaint was
+  // that his lines had to be dismissed by hand, one tap per line, over the
+  // board. The fix is only real if a beat plays through and clears itself with
+  // NO input at all — which no screenshot can show, because a screenshot of a
+  // panel looks the same whether it is about to leave or waiting forever.
+  if (urlParams.get('briefprobe') === '1') {
+    const beat = brief('gates');
+    const total = beat.lines.reduce((a2, l) => a2 + dwellFor(l), 0);
+    showBrief('gates');
+    const shown = !briefEl.classList.contains('hidden');
+    const startAt = briefAt;
+    // half a line in: still up, and it must NOT have advanced yet
+    stepBriefClock(dwellFor(beat.lines[0]) * 0.5);
+    const heldEarly = briefAt === startAt && !briefEl.classList.contains('hidden');
+    // past the first line: advanced, with nobody touching it
+    stepBriefClock(dwellFor(beat.lines[0]) * 0.6);
+    const advanced = briefAt > startAt;
+    // run out the rest of the beat
+    for (let i = 0; i < 400 && briefQ; i++) stepBriefClock(0.1);
+    const cleared = briefQ === null && briefEl.classList.contains('hidden');
+    console.log(`BRIEFPROBE shown=${shown} heldForTheFirstLine=${heldEarly}`
+      + ` advancedWithNoInput=${advanced} clearedItself=${cleared}`
+      + ` | beat=${beat.lines.length} lines, ${total.toFixed(1)}s unattended`
+      + ` — ${shown && heldEarly && advanced && cleared ? 'PASS' : 'FAIL'}`);
+
+    // NEGATIVE CONTROL. A clock that ran regardless of dt would pass every
+    // assertion above by simply galloping to the end. Show a fresh beat, step
+    // it by ZERO, and it must sit exactly where it was put.
+    showBrief('printer');
+    const at0 = briefAt, up0 = !briefEl.classList.contains('hidden');
+    for (let i = 0; i < 50; i++) stepBriefClock(0);
+    console.log(`BRIEFPROBE control: stepping by dt=0 fifty times`
+      + ` leaves it at line ${briefAt} of ${briefQ ? briefQ.lines.length : 0},`
+      + ` still up=${briefQ !== null}`
+      + ` — ${up0 && briefAt === at0 && briefQ !== null ? 'PASS (the clock is dt, not calls)' : 'FAIL'}`);
+    endBrief();
+
+    // ...and the reset teardown, which regenerate() did not have: a beat
+    // mid-sentence when the run restarts must not survive onto the new board.
+    showBrief('relay');
+    const upBefore = !briefEl.classList.contains('hidden');
+    regenerate();
+    console.log(`BRIEFPROBE reset: up before=${upBefore} up after regenerate=${!briefEl.classList.contains('hidden')}`
+      + ` — ${upBefore && briefEl.classList.contains('hidden') ? 'PASS' : 'FAIL'}`);
   }
 
   // ?beamfire=1 — THE SECONDARY, measured. A beam that renders proves nothing
