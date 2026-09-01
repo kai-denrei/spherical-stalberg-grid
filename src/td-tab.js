@@ -19,38 +19,38 @@
 
 import * as THREE from '../vendor/three.module.js';
 import GUI from '../vendor/lil-gui.esm.js';
-import { generateSphereMesh, relax } from './grid.js?v=e99da83a';
-import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=e99da83a';
-import { mulberry32, randomSeed } from './rng.js?v=e99da83a';
-import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3, segKey } from './vec3.js?v=e99da83a';
-import { CREATURES, waveJelly } from './creatures.js?v=e99da83a';
-import { brief } from './isaobriefs.js?v=e99da83a';
-import { drawEmotion } from './emotions.js?v=e99da83a';
+import { generateSphereMesh, relax } from './grid.js?v=fe5345ef';
+import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=fe5345ef';
+import { mulberry32, randomSeed } from './rng.js?v=fe5345ef';
+import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3, segKey } from './vec3.js?v=fe5345ef';
+import { CREATURES, waveJelly } from './creatures.js?v=fe5345ef';
+import { brief } from './isaobriefs.js?v=fe5345ef';
+import { drawEmotion } from './emotions.js?v=fe5345ef';
 import { ACHIEVEMENTS, ACHV_GROUPS, achievement, blankRun, earned, freshlyEarned,
   sanitiseRecord }
-  from './achievements.js?v=e99da83a';
+  from './achievements.js?v=fe5345ef';
 import { applyFontPack, currentFontPack, FONT_NAMES,
-  loadTypeFeel } from './fonts.js?v=e99da83a';
-import { UNITS, UNIT_NAMES, buildUnit, buildCreature, preloadMkcx, preloadServer, makeServerFixture, makeShieldShell, preloadContainer, makeContainerFixture, preloadFabricator, makeIsaoDrone, makeBulletCloud, makeRewardSolid, makeShellSolid, makeDebris, makeDotBurst, makePortalCloud, makeHeartCloud, makeDotEnemy } from './units.js?v=e99da83a';
-import { LOOKS, LOOK_NAMES } from './looks.js?v=e99da83a';
-import { makeCellIndex } from './cellindex.js?v=e99da83a';
-import { CREATURE_TINTS, ENEMY_SPEC, INTROS, computeWavePlan, accentFor } from './enemyspec.js?v=e99da83a';
-import { PICKUPS } from './pickups.js?v=e99da83a';
-import { rankFor, rankLabel, badgeSVG, killReq, eliteReq } from './ranks.js?v=e99da83a';
-import { makeScore } from './score.js?v=e99da83a';
-import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER } from './towers.js?v=e99da83a';
-import { makeEconomy, sellRefund } from './economy.js?v=e99da83a';
-import { makeBloom } from './postfx.js?v=e99da83a';
-import { TANK_FEEL, TANK_FEEL_KNOBS, makeTankFeel, stepTankFeel, landTankFeel, fireTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js?v=e99da83a';
-import { FEEL, loadFeel, saveFeel } from './feelstore.js?v=e99da83a';
+  loadTypeFeel } from './fonts.js?v=fe5345ef';
+import { UNITS, UNIT_NAMES, buildUnit, buildCreature, preloadMkcx, preloadServer, makeServerFixture, makeShieldShell, preloadContainer, makeContainerFixture, preloadFabricator, makeIsaoDrone, makeBulletCloud, makeRewardSolid, makeShellSolid, makeDebris, makeDotBurst, makePortalCloud, makeHeartCloud, makeDotEnemy } from './units.js?v=fe5345ef';
+import { LOOKS, LOOK_NAMES } from './looks.js?v=fe5345ef';
+import { makeCellIndex } from './cellindex.js?v=fe5345ef';
+import { CREATURE_TINTS, ENEMY_SPEC, INTROS, computeWavePlan, accentFor } from './enemyspec.js?v=fe5345ef';
+import { PICKUPS } from './pickups.js?v=fe5345ef';
+import { rankFor, rankLabel, badgeSVG, killReq, eliteReq } from './ranks.js?v=fe5345ef';
+import { makeScore } from './score.js?v=fe5345ef';
+import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER } from './towers.js?v=fe5345ef';
+import { makeEconomy, sellRefund } from './economy.js?v=fe5345ef';
+import { makeBloom } from './postfx.js?v=fe5345ef';
+import { TANK_FEEL, TANK_FEEL_KNOBS, makeTankFeel, stepTankFeel, landTankFeel, fireTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js?v=fe5345ef';
+import { FEEL, loadFeel, saveFeel } from './feelstore.js?v=fe5345ef';
 import { STRIKE_KNOBS, makeStrike, makeStrikeParams, grantStrikes, stepStrike,
   toggleArm, paintTarget, launchStrike, stepFall, skipFall, fallProgress,
-  strikeDamage, retargetStrike, orbitProgress } from './strike.js?v=e99da83a';
-import { radarBasis, radarProject, radarBearing, sweepAngle, radarPhosphor } from './radar.js?v=e99da83a';
-import { BLOOM_GROUPS } from './bloomweights.js?v=e99da83a';
-import { TOWER_LOOK_NAMES, DEFAULT_TOWER_LOOK, buildTowerLook, preloadLook } from './towerlooks.js?v=e99da83a';
-import { makeAudio } from './audio.js?v=e99da83a';
-import { DEATH_KEYS } from './audiomanifest.js?v=e99da83a';
+  strikeDamage, retargetStrike, orbitProgress } from './strike.js?v=fe5345ef';
+import { radarBasis, radarProject, radarBearing, sweepAngle, radarPhosphor } from './radar.js?v=fe5345ef';
+import { BLOOM_GROUPS } from './bloomweights.js?v=fe5345ef';
+import { TOWER_LOOK_NAMES, DEFAULT_TOWER_LOOK, buildTowerLook, preloadLook } from './towerlooks.js?v=fe5345ef';
+import { makeAudio } from './audio.js?v=fe5345ef';
+import { DEATH_KEYS } from './audiomanifest.js?v=fe5345ef';
 
 export function initTdTab(root) {
   let active = false;
@@ -1112,6 +1112,20 @@ export function initTdTab(root) {
   // wedged hull cannot flood the console.
   let ctlStillFor = 0, ctlBarked = false;
   const ctlLastPos = [0, 0, 0];
+  // RAW INPUT, READ BEFORE ANYTHING CAN SWALLOW IT. The first cut of this
+  // watchdog asked `keys.fast || ...`, which is the game's BELIEF about the
+  // input — so the one failure mode that matters most, a capture-phase
+  // listener eating keydown before the game ever sees it, made the watchdog
+  // go quiet instead of loud. Registered at init, so it sits ahead of any
+  // listener a cinematic adds later and records the press either way.
+  let ctlRawT = -9, ctlRawKey = '';
+  const CTL_DRIVE_KEYS = ['w', 's', 'a', 'd',
+    'arrowup', 'arrowdown', 'arrowleft', 'arrowright'];
+  addEventListener('keydown', (ev) => {
+    const k = (ev.key || '').toLowerCase();
+    if (CTL_DRIVE_KEYS.includes(k)) { ctlRawT = performance.now() / 1000; ctlRawKey = k; }
+  }, true);
+  let ctlSwallowBarked = false;
   function ctlWatch(dt) {
     // what the player is asking for, not what the game decided to do with it
     const asking = keys.fast || keys.slow || cruise || throttle !== 0;
@@ -1124,6 +1138,17 @@ export function initTdTab(root) {
     if (moved > cellSide * 1e-4) { ctlStillFor = 0; ctlBarked = false; return; }
     if (!asking || player.won || paused) { ctlStillFor = 0; return; }
     ctlStillFor += dt;
+    // INPUT SWALLOWED: the player is pressing a drive key and the game's
+    // key state never sees it. Reported separately because it is a different
+    // fault from a latched gate — something is eating the event.
+    const rawAge = performance.now() / 1000 - ctlRawT;
+    const gameSees = keys.fast || keys.slow || keys.left || keys.right;
+    if (rawAge < 0.5 && !gameSees && !ctlSwallowBarked) {
+      ctlSwallowBarked = true;
+      console.log(`CTL-SWALLOWED raw '${ctlRawKey}' pressed but keys are all`
+        + ` false — something is eating keydown. ${ctlState('swallowed')}`);
+    }
+    if (gameSees) ctlSwallowBarked = false;
     // a second of asking is well past a wall bump or a frozen beat
     if (ctlStillFor > 1.0 && !ctlBarked) {
       ctlBarked = true;
@@ -1695,6 +1720,8 @@ export function initTdTab(root) {
   // ?cine=N also HOLDS the clock there, so a headless still can be taken
   // at a named beat instead of wherever the virtual-time budget lands
   let cineHold = false;
+  let cineOn = false;   // listeners installed + handoff still owed
+
   const cineRunning = () => cineLeft > 0;
   let cinePending = null;   // the opening (manual/tutorial/briefing) it fronts
 
@@ -1710,12 +1737,26 @@ export function initTdTab(root) {
     cineAfter = after || null;
     cineLeft = Math.max(0.001, CINE_LEN - cineScrub);
     cineScrub = 0;
+    cineOn = true;      // the teardown latch — NOT the countdown, see endCinematic
     addEventListener('keydown', cineSkipKey, true);
     root.addEventListener('pointerdown', cineSkipTap, true);
     snapCamera();       // no glide in: the cold open owns frame one
   }
+  // TEARDOWN IS LATCHED ON ITS OWN FLAG, NOT ON THE CLOCK. This used to
+  // guard on `cineLeft <= 0` — but the frame loop subtracts dt and THEN
+  // calls this, so on the natural end (the cold open running to completion
+  // rather than being skipped) cineLeft was already <= 0 and the guard
+  // returned before the removeEventListener lines. cineSkipKey is a
+  // capture-phase keydown that preventDefaults and stopImmediatePropagations,
+  // so it then ate EVERY key in the game, for good: WASD dead after the
+  // intro, mouse and touch still fine because `click` is not the
+  // `pointerdown` the tap handler stops — which is exactly why AUTO freed it.
+  // cineAfter never ran either, so the briefing the cold open fronts never
+  // opened. Skipping the intro tore down correctly, which is why this hid
+  // from every headless run that passed ?cine=0.
   function endCinematic() {
-    if (cineLeft <= 0) return;
+    if (!cineOn) return;
+    cineOn = false;
     cineLeft = 0;
     removeEventListener('keydown', cineSkipKey, true);
     root.removeEventListener('pointerdown', cineSkipTap, true);
@@ -7978,6 +8019,50 @@ export function initTdTab(root) {
   // the dead run's timer still lands on the live one: a respawn:tank-lost
   // printed AFTER regenerate:after is a repositioning nobody asked for, on
   // a run that has not lost anything.
+  // ?cineprobe=1 — CAN THE PLAYER MOVE AFTER THE INTRO. The operator's
+  // report, made into a check. It cannot wait the cold open out: under a
+  // virtual-time budget performance.now() does not advance, so the frame
+  // loop's dt stays ~0 and the cinematic never ends on its own. So it
+  // reproduces the NATURAL END exactly as animate leaves it — clock driven
+  // to <= 0, then endCinematic() — and asks the only question that matters:
+  // does a real keydown still reach the game's key state.
+  if (urlParams.get('cineprobe') === '1') {
+    let tries = 0;
+    const run = () => {
+      if (!cineOn && tries++ < 200) { setTimeout(run, 25); return; }  // wait for the cold open
+      if (!cineOn) { console.log('CINEPROBE inconclusive=no cinematic started'); return; }
+      cineLeft = 0.0001;
+      cineLeft -= 0.05;      // exactly what `cineLeft -= dt` leaves behind
+      endCinematic();        // ...and exactly what animate calls next
+      // AFTER THE INTRO MEANS AFTER ITS HANDOFF TOO. The cold open hands to
+      // the briefing, which legitimately captures the keyboard until it is
+      // dismissed — so testing the key the instant the cinematic ends tests
+      // the wrong moment. Dismiss it the way a player does, then ask.
+      const introUp = introEl && !introEl.classList.contains('hidden');
+      dismissIntro();
+      const msgUp = msgEl && !msgEl.classList.contains('hidden');
+      if (msgUp) { paused = false; msgEl.classList.add('hidden'); }
+      console.log(`CINEPROBE handoff-shape introUp=${introUp} briefingUp=${msgUp}`);
+      keys.fast = false;
+      // DISPATCH ON A DESCENDANT, NOT ON WINDOW. A keydown aimed straight at
+      // window makes window the TARGET, and at-target listeners run in
+      // registration order with the capture flag ignored — which puts the
+      // game's own handler (registered at init) ahead of a cinematic's
+      // capture handler (registered later) and reverses the very ordering
+      // under test. A real key lands on the focused element and travels
+      // capture -> target -> bubble, so the probe has to as well.
+      document.body.dispatchEvent(
+        new KeyboardEvent('keydown', { key: 'w', bubbles: true, cancelable: true }));
+      const reached = keys.fast;
+      keys.fast = false;
+      ctlRawT = -9;   // the synthetic press must not trip the live watchdog
+      console.log(`CINEPROBE move-after-intro=${reached ? 'PASS' : 'FAIL'}`
+        + ` (W reached the game: ${reached}, want true)`);
+      console.log(`CINEPROBE handoff-ran=${cineAfter === null ? 'PASS' : 'FAIL'}`
+        + ` (the briefing the cold open fronts must not be stranded)`);
+    };
+    run();
+  }
   if (urlParams.get('ctlprobe') === '1') {
     ctlLog('probe:start');
     loseTank();
