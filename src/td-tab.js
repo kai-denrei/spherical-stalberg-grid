@@ -19,38 +19,39 @@
 
 import * as THREE from '../vendor/three.module.js';
 import GUI from '../vendor/lil-gui.esm.js';
-import { generateSphereMesh, relax } from './grid.js?v=fe5345ef';
-import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=fe5345ef';
-import { mulberry32, randomSeed } from './rng.js?v=fe5345ef';
-import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3, segKey } from './vec3.js?v=fe5345ef';
-import { CREATURES, waveJelly } from './creatures.js?v=fe5345ef';
-import { brief } from './isaobriefs.js?v=fe5345ef';
-import { drawEmotion } from './emotions.js?v=fe5345ef';
+import { generateSphereMesh, relax } from './grid.js?v=3d09ed22';
+import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=3d09ed22';
+import { mulberry32, randomSeed } from './rng.js?v=3d09ed22';
+import { computeBerths, berthIndexFor } from './berths.js?v=3d09ed22';
+import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3, segKey } from './vec3.js?v=3d09ed22';
+import { CREATURES, waveJelly } from './creatures.js?v=3d09ed22';
+import { brief } from './isaobriefs.js?v=3d09ed22';
+import { drawEmotion } from './emotions.js?v=3d09ed22';
 import { ACHIEVEMENTS, ACHV_GROUPS, achievement, blankRun, earned, freshlyEarned,
   sanitiseRecord }
-  from './achievements.js?v=fe5345ef';
+  from './achievements.js?v=3d09ed22';
 import { applyFontPack, currentFontPack, FONT_NAMES,
-  loadTypeFeel } from './fonts.js?v=fe5345ef';
-import { UNITS, UNIT_NAMES, buildUnit, buildCreature, preloadMkcx, preloadServer, makeServerFixture, makeShieldShell, preloadContainer, makeContainerFixture, preloadFabricator, makeIsaoDrone, makeBulletCloud, makeRewardSolid, makeShellSolid, makeDebris, makeDotBurst, makePortalCloud, makeHeartCloud, makeDotEnemy } from './units.js?v=fe5345ef';
-import { LOOKS, LOOK_NAMES } from './looks.js?v=fe5345ef';
-import { makeCellIndex } from './cellindex.js?v=fe5345ef';
-import { CREATURE_TINTS, ENEMY_SPEC, INTROS, computeWavePlan, accentFor } from './enemyspec.js?v=fe5345ef';
-import { PICKUPS } from './pickups.js?v=fe5345ef';
-import { rankFor, rankLabel, badgeSVG, killReq, eliteReq } from './ranks.js?v=fe5345ef';
-import { makeScore } from './score.js?v=fe5345ef';
-import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER } from './towers.js?v=fe5345ef';
-import { makeEconomy, sellRefund } from './economy.js?v=fe5345ef';
-import { makeBloom } from './postfx.js?v=fe5345ef';
-import { TANK_FEEL, TANK_FEEL_KNOBS, makeTankFeel, stepTankFeel, landTankFeel, fireTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js?v=fe5345ef';
-import { FEEL, loadFeel, saveFeel } from './feelstore.js?v=fe5345ef';
+  loadTypeFeel } from './fonts.js?v=3d09ed22';
+import { UNITS, UNIT_NAMES, buildUnit, buildCreature, preloadMkcx, preloadServer, makeServerFixture, makeShieldShell, preloadContainer, makeContainerFixture, preloadFabricator, makeIsaoDrone, makeBulletCloud, makeRewardSolid, makeShellSolid, makeDebris, makeDotBurst, makePortalCloud, makeHeartCloud, makeDotEnemy } from './units.js?v=3d09ed22';
+import { LOOKS, LOOK_NAMES } from './looks.js?v=3d09ed22';
+import { makeCellIndex } from './cellindex.js?v=3d09ed22';
+import { CREATURE_TINTS, ENEMY_SPEC, INTROS, computeWavePlan, accentFor } from './enemyspec.js?v=3d09ed22';
+import { PICKUPS } from './pickups.js?v=3d09ed22';
+import { rankFor, rankLabel, badgeSVG, killReq, eliteReq } from './ranks.js?v=3d09ed22';
+import { makeScore } from './score.js?v=3d09ed22';
+import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER } from './towers.js?v=3d09ed22';
+import { makeEconomy, sellRefund } from './economy.js?v=3d09ed22';
+import { makeBloom } from './postfx.js?v=3d09ed22';
+import { TANK_FEEL, TANK_FEEL_KNOBS, makeTankFeel, stepTankFeel, landTankFeel, fireTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js?v=3d09ed22';
+import { FEEL, loadFeel, saveFeel } from './feelstore.js?v=3d09ed22';
 import { STRIKE_KNOBS, makeStrike, makeStrikeParams, grantStrikes, stepStrike,
   toggleArm, paintTarget, launchStrike, stepFall, skipFall, fallProgress,
-  strikeDamage, retargetStrike, orbitProgress } from './strike.js?v=fe5345ef';
-import { radarBasis, radarProject, radarBearing, sweepAngle, radarPhosphor } from './radar.js?v=fe5345ef';
-import { BLOOM_GROUPS } from './bloomweights.js?v=fe5345ef';
-import { TOWER_LOOK_NAMES, DEFAULT_TOWER_LOOK, buildTowerLook, preloadLook } from './towerlooks.js?v=fe5345ef';
-import { makeAudio } from './audio.js?v=fe5345ef';
-import { DEATH_KEYS } from './audiomanifest.js?v=fe5345ef';
+  strikeDamage, retargetStrike, orbitProgress } from './strike.js?v=3d09ed22';
+import { radarBasis, radarProject, radarBearing, sweepAngle, radarPhosphor } from './radar.js?v=3d09ed22';
+import { BLOOM_GROUPS } from './bloomweights.js?v=3d09ed22';
+import { TOWER_LOOK_NAMES, DEFAULT_TOWER_LOOK, buildTowerLook, preloadLook } from './towerlooks.js?v=3d09ed22';
+import { makeAudio } from './audio.js?v=3d09ed22';
+import { DEATH_KEYS } from './audiomanifest.js?v=3d09ed22';
 
 export function initTdTab(root) {
   let active = false;
@@ -387,6 +388,10 @@ export function initTdTab(root) {
   // the LIFE CONTAINERS: 3 near the heart, each { obj, tank } — the spare
   // hulls ARE the lives counter (playerHP - 1 spares stocked)
   let lifeContainers = [];
+  // WHERE THE CAMP IS — known synchronously, from the board alone. The
+  // container models decorate these cells; they never choose them, which is
+  // what lets a reset place the tank once instead of teleporting it later.
+  let berths = [];
   let serverChamber = []; // the carved vault: floor cells, walls all round
   // walls the PLAYER opened (shells, strikes) stay open across rounds —
   // demolition is permanent (operator ruling: a breach you paid for does
@@ -1085,14 +1090,10 @@ export function initTdTab(root) {
   // next: a timer that repositions the tank is a timer that can reposition
   // somebody else's tank. Bumped by regenerate.
   let runGen = 0;
-  // the run whose berths have already staged the player — see the
-  // container callback; -1 so the first run always stages
-  let stagedRun = -1;
   let respawnCount = 0;
   // counted separately: a death-hold respawn is the one that must never
   // cross a run, and the run's own berth staging would mask it in a total
   let tankLostRespawns = 0;
-  let berthStagings = 0;   // must be exactly 1 per run, whatever loads when
   const ctlState = (tag) => `CTL[${tag}] gen=${runGen} respawns=${respawnCount}`
     + ` won=${player.won} down=${playerDown} next=${player.next}`
     + ` free=${player.freeMode} cur=${player.cur}`
@@ -1421,38 +1422,10 @@ export function initTdTab(root) {
       const cgen = serverGen + 1; // the value ++serverGen produces below
       preloadContainer().then(() => {
         if (cgen !== serverGen || !dungeon) return; // board changed since
-        // v3: a CHAIN of three cells (i-j-k, each adjacent to the next)
-        // at distToHeart 3-4 — further out than v2, per the operator —
-        // scored by total openness so the row hugs a wall
-        const inRange = (c2) => dungeon.tags[c2] !== BLOCKED && c2 !== dungeon.spawn
-          && dungeon.distToHeart[c2] >= 3 && dungeon.distToHeart[c2] <= 4;
-        const open = (c2) => graph.adj[c2].filter((k2) => dungeon.tags[k2] !== BLOCKED).length;
-        // EVERY BERTH KEEPS A LANE (operator field report, 2026-08-31: a
-        // hull could not get out of the first box on its own, and auto mode
-        // sat there forever). Scoring for minimum openness was doing its job
-        // too well — a berth whose only open neighbours are its two sibling
-        // berths is a sealed garage, and each of the three gets used as the
-        // spawn as lives run down. So an escape lane is now a HARD
-        // requirement, and openness only breaks ties among chains that have
-        // one. It still hugs a wall; it can no longer wall itself in.
-        const escapes = (c2, chain) => graph.adj[c2]
-          .filter((k2) => dungeon.tags[k2] !== BLOCKED && !chain.includes(k2)).length;
-        let best = null, bestScore = Infinity;
-        for (let j = 0; j < dungeon.tags.length; j++) {
-          if (!inRange(j)) continue;
-          const nbs = graph.adj[j].filter(inRange);
-          for (let a = 0; a < nbs.length; a++) {
-            for (let b = a + 1; b < nbs.length; b++) {
-              const chain = [nbs[a], j, nbs[b]];
-              if (chain.some((c2) => escapes(c2, chain) === 0)) continue;
-              const sc = open(nbs[a]) + open(j) + open(nbs[b]);
-              if (sc < bestScore) { bestScore = sc; best = chain; }
-            }
-          }
-        }
-        if (!best) return;
-        for (let bi = 0; bi < best.length; bi++) {
-          const ci = best[bi];
+        // the camp was chosen with the board; this only casts the boxes
+        if (berths.length !== 3) return;
+        for (let bi = 0; bi < berths.length; bi++) {
+          const ci = berths[bi].ci;
           // THE DOORS FACE THE LANE THE HULL LEAVES BY. They used to face
           // the Heart, which is only ever approximately the way out: the
           // exit is a graph neighbour and can sit 40-odd degrees off that
@@ -1460,18 +1433,10 @@ export function initTdTab(root) {
           // door frame (operator, twice). Aim the box at the actual exit and
           // the two are the same line by construction. Most-heartward escape
           // wins, so the row still faces home.
-          const escapeOf = (c2) => {
-            const toHeart = tangentDirTo(c2, dungeon.heart);
-            let bestE = -1, bestD = -Infinity;
-            for (const nb of graph.adj[c2]) {
-              if (dungeon.tags[nb] === BLOCKED || best.includes(nb)) continue;
-              const d = dot3(tangentDirTo(c2, nb), toHeart);
-              if (d > bestD) { bestD = d; bestE = nb; }
-            }
-            return bestE;
-          };
-          const exitCi = escapeOf(ci);
-          if (exitCi < 0) continue;   // the escape rule above should prevent this
+          // the exit is CARRIED, not re-derived here: computeBerths picked
+          // it, the doors point at it and DEPLOY drives at it, and those
+          // three must never disagree
+          const exitCi = berths[bi].exit;
           const ec = graph.centers[exitCi];
           const g = makeContainerFixture(bi + 1); // painted 1-2-3, left to right
           if (!g) break;
@@ -1507,21 +1472,6 @@ export function initTdTab(root) {
         syncLifeContainers();
         // the FIRST SCENE: the opening hull drives out of its bay — if
         // the player has not yet gone anywhere, restage them at the doors
-        // ONCE PER RUN, NOT ONCE PER LOAD. buildActors() runs again every
-        // time an async model lands — and mkcx, the default tank, always
-        // lands — so this callback fires at least twice a run, and each
-        // firing used to restage the player: zeroing the throttle, killing
-        // the engine and re-engaging the berth nudge at whatever moment the
-        // bytes happened to arrive. That is the cold open cutting (the
-        // second staging lands mid-cinematic, after the hull has begun
-        // driving out) and a share of the dead-controls reports (the lever
-        // the player just set is silently returned to zero). Staging is a
-        // property of the RUN, so it is keyed to the run.
-        if (t < 6 && player.moves <= 1 && stagedRun !== runGen) {
-          stagedRun = runGen;
-          berthStagings++;
-          respawnPlayerAtSpawn('berths-landed');
-        }
         beginOpening();   // the cold open has its subject now
         // ?driveout=N — the operator's can't-get-out report, made testable.
         // Headless cannot drive, and ?tick runs at init, BEFORE this model
@@ -1548,8 +1498,9 @@ export function initTdTab(root) {
         // turned into a rule: every berth must show at least 1, or auto-nav
         // has nowhere to steer and the hull sits in the box forever
         console.log(`CONTAINERS placed=${lifeContainers.length}`
-          + ` cells=${best.join(',')} spares=${Math.max(0, playerHP - 1)}`
-          + ` escapes=${best.map((c2) => escapes(c2, best)).join(',')}`);
+          + ` cells=${berths.map((b2) => b2.ci).join(',')}`
+          + ` spares=${Math.max(0, playerHP - 1)}`
+          + ` exits=${berths.map((b2) => b2.exit).join(',')}`);
       });
       const gen = ++serverGen;
       preloadServer().then(() => {
@@ -4283,6 +4234,11 @@ export function initTdTab(root) {
     });
     graph = dungeon.graph;
     cellSide = mesh.defaultSide;
+    // THE CAMP, BEFORE ANY ACTOR IS PLACED. Berth cells are graph maths,
+    // so they are known now rather than whenever the container model
+    // happens to land — which is what lets a reset place the tank once
+    // instead of standing it beside the Heart and teleporting it later.
+    berths = computeBerths(dungeon, graph);
     // LANES (HT): keep the dungeon carve — rooms joined by WIDE corridors
     // are the monster lanes, and the wall mass between them is the HIGH
     // GROUND where towers mount. generateDungeon already supplies heart,
@@ -8080,14 +8036,6 @@ export function initTdTab(root) {
         ctlLog('probe:end');
       }, (DEATH_HOLD + 0.8) * 1000);
     }, 200);
-    // the staging count is the second question: one restage per run, however
-    // many models land. Asked late, so every preload has resolved.
-    setTimeout(() => {
-      // one staging per run: the container callback fires once per model
-      // that lands, and every extra firing yanks the controls
-      console.log(`CTLPROBE berth-staging=${berthStagings === 1 ? 'PASS' : 'FAIL'}`
-        + ` (stagings this run: ${berthStagings}, want 1)`);
-    }, 6000);
   }
   const blastN = parseInt(urlParams.get('blast') || '0', 10);
   for (let i = 0; i < blastN; i++) {
