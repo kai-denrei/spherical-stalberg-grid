@@ -19,41 +19,41 @@
 
 import * as THREE from '../vendor/three.module.js';
 import GUI from '../vendor/lil-gui.esm.js';
-import { generateSphereMesh, relax } from './grid.js?v=c94d8f0e';
-import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=c94d8f0e';
-import { mulberry32, randomSeed } from './rng.js?v=c94d8f0e';
-import { computeBerths, berthIndexFor } from './berths.js?v=c94d8f0e';
-import { wantsSecondary, shellsForAll } from './autofire.js?v=c94d8f0e';
-import { printPhase, printOffset, printOn, patternSecsFor } from './printpath.js?v=c94d8f0e';
-import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3, segKey, tangentDir, tangentBasis } from './vec3.js?v=c94d8f0e';
-import { CREATURES, waveJelly } from './creatures.js?v=c94d8f0e';
-import { brief } from './isaobriefs.js?v=c94d8f0e';
-import { drawEmotion } from './emotions.js?v=c94d8f0e';
+import { generateSphereMesh, relax } from './grid.js?v=c3d61f2b';
+import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=c3d61f2b';
+import { mulberry32, randomSeed } from './rng.js?v=c3d61f2b';
+import { computeBerths, berthIndexFor } from './berths.js?v=c3d61f2b';
+import { wantsSecondary, shellsForAll } from './autofire.js?v=c3d61f2b';
+import { printPhase, printOffset, printOn, patternSecsFor } from './printpath.js?v=c3d61f2b';
+import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3, segKey, tangentDir, tangentBasis } from './vec3.js?v=c3d61f2b';
+import { CREATURES, waveJelly } from './creatures.js?v=c3d61f2b';
+import { brief } from './isaobriefs.js?v=c3d61f2b';
+import { drawEmotion } from './emotions.js?v=c3d61f2b';
 import { ACHIEVEMENTS, ACHV_GROUPS, achievement, blankRun, earned, freshlyEarned,
   sanitiseRecord }
-  from './achievements.js?v=c94d8f0e';
+  from './achievements.js?v=c3d61f2b';
 import { applyFontPack, currentFontPack, FONT_NAMES,
-  loadTypeFeel } from './fonts.js?v=c94d8f0e';
-import { UNITS, UNIT_NAMES, buildUnit, buildCreature, preloadMkcx, preloadServer, makeServerFixture, makeShieldShell, preloadContainer, makeContainerFixture, preloadFabricator, makeIsaoDrone, makeBulletCloud, makeRewardSolid, makeShellSolid, makeDebris, makeDotBurst, makePortalCloud, makeHeartCloud, makeDotEnemy } from './units.js?v=c94d8f0e';
-import { LOOKS, LOOK_NAMES } from './looks.js?v=c94d8f0e';
-import { makeCellIndex } from './cellindex.js?v=c94d8f0e';
-import { CREATURE_TINTS, ENEMY_SPEC, INTROS, computeWavePlan, accentFor } from './enemyspec.js?v=c94d8f0e';
-import { PICKUPS } from './pickups.js?v=c94d8f0e';
-import { rankFor, rankLabel, badgeSVG, killReq, eliteReq } from './ranks.js?v=c94d8f0e';
-import { makeScore } from './score.js?v=c94d8f0e';
-import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER } from './towers.js?v=c94d8f0e';
-import { makeEconomy, sellRefund } from './economy.js?v=c94d8f0e';
-import { makeBloom } from './postfx.js?v=c94d8f0e';
-import { TANK_FEEL, TANK_FEEL_KNOBS, makeTankFeel, stepTankFeel, landTankFeel, fireTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js?v=c94d8f0e';
-import { FEEL, loadFeel, saveFeel } from './feelstore.js?v=c94d8f0e';
+  loadTypeFeel } from './fonts.js?v=c3d61f2b';
+import { UNITS, UNIT_NAMES, buildUnit, buildCreature, preloadMkcx, preloadServer, makeServerFixture, makeShieldShell, preloadContainer, makeContainerFixture, preloadFabricator, makeIsaoDrone, makeBulletCloud, makeRewardSolid, makeShellSolid, makeDebris, makeDotBurst, makePortalCloud, makeHeartCloud, makeDotEnemy } from './units.js?v=c3d61f2b';
+import { LOOKS, LOOK_NAMES } from './looks.js?v=c3d61f2b';
+import { makeCellIndex } from './cellindex.js?v=c3d61f2b';
+import { CREATURE_TINTS, ENEMY_SPEC, INTROS, computeWavePlan, accentFor } from './enemyspec.js?v=c3d61f2b';
+import { PICKUPS } from './pickups.js?v=c3d61f2b';
+import { rankFor, rankLabel, badgeSVG, killReq, eliteReq } from './ranks.js?v=c3d61f2b';
+import { makeScore } from './score.js?v=c3d61f2b';
+import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER } from './towers.js?v=c3d61f2b';
+import { makeEconomy, sellRefund } from './economy.js?v=c3d61f2b';
+import { makeBloom } from './postfx.js?v=c3d61f2b';
+import { TANK_FEEL, TANK_FEEL_KNOBS, makeTankFeel, stepTankFeel, landTankFeel, fireTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js?v=c3d61f2b';
+import { FEEL, loadFeel, saveFeel } from './feelstore.js?v=c3d61f2b';
 import { STRIKE_KNOBS, makeStrike, makeStrikeParams, grantStrikes, stepStrike,
   toggleArm, paintTarget, launchStrike, stepFall, skipFall, fallProgress,
-  strikeDamage, retargetStrike, orbitProgress } from './strike.js?v=c94d8f0e';
-import { radarBasis, radarProject, radarBearing, sweepAngle, radarPhosphor } from './radar.js?v=c94d8f0e';
-import { BLOOM_GROUPS } from './bloomweights.js?v=c94d8f0e';
-import { TOWER_LOOK_NAMES, DEFAULT_TOWER_LOOK, buildTowerLook, preloadLook } from './towerlooks.js?v=c94d8f0e';
-import { makeAudio } from './audio.js?v=c94d8f0e';
-import { DEATH_KEYS } from './audiomanifest.js?v=c94d8f0e';
+  strikeDamage, retargetStrike, orbitProgress } from './strike.js?v=c3d61f2b';
+import { radarBasis, radarProject, radarBearing, sweepAngle, radarPhosphor } from './radar.js?v=c3d61f2b';
+import { BLOOM_GROUPS } from './bloomweights.js?v=c3d61f2b';
+import { TOWER_LOOK_NAMES, DEFAULT_TOWER_LOOK, buildTowerLook, preloadLook } from './towerlooks.js?v=c3d61f2b';
+import { makeAudio } from './audio.js?v=c3d61f2b';
+import { DEATH_KEYS } from './audiomanifest.js?v=c3d61f2b';
 
 export function initTdTab(root) {
   let active = false;
@@ -2020,12 +2020,30 @@ export function initTdTab(root) {
       // hang a view on a working machine instead of on a free gimbal.
       const bp = isao.obj.position;
       const up = isao.dir;
-      // The frame comes from the SPHERE, not from the mesh's facing. Hanging
-      // it off his quaternion put the lens inside him whenever he was
-      // hovering nose-down over a print — the tangent is stable through
-      // every state he has.
-      const aimC = isao.order ? norm3(graph.centers[isao.order.ci]) : isao.loiter;
-      let fwd = sub3(aimC, up);
+      // FORWARD IS WHERE THE PILOT IS POINTING — one notion of forward,
+      // shared by the stick and the lens.
+      //
+      // This used to be derived from the JOB (the order's cell, or
+      // isao.loiter), which was right when the comment above was written and
+      // this view really was only a camera riding along. Piloting arrived
+      // later and the camera was never told. Two consequences, both reported
+      // by the operator and both measured by ?droneprobe=1: steering swung
+      // his heading and the view never followed (camera-swing 0.0deg, so
+      // sideways felt dead), and after a turn W flew him off the BACK of the
+      // screen (W-after-turn -0.92, so forward was back). With no order,
+      // isao.loiter is his own position, so `sub3(aimC, up)` was literally
+      // the zero vector and the frame fell through to an arbitrary tangent.
+      //
+      // The frame still comes from the SPHERE, not from the mesh's facing:
+      // hanging it off his quaternion put the lens inside him whenever he
+      // was hovering nose-down over a print, and the tangent is stable
+      // through every state he has.
+      let fwd;
+      if (isaoHeading) fwd = isaoHeading.slice();
+      else {
+        const aimC = isao.order ? norm3(graph.centers[isao.order.ci]) : isao.loiter;
+        fwd = sub3(aimC, up);
+      }
       fwd = sub3(fwd, scale3(up, dot3(fwd, up)));   // onto the tangent plane
       const fl = len3(fwd);
       fwd = fl > 1e-6 ? scale3(fwd, 1 / fl) : norm3(cross3(up, [0, 1, 0]));
@@ -8045,6 +8063,70 @@ export function initTdTab(root) {
   // shift. Both are needed because he is asynchronous twice over: the model
   // loads async, and the whole point of the mechanic is that a tower takes
   // wall-clock time to exist — neither of which ?tick can reach.
+  // ?droneprobe=1 — DOES W FLY ISAO TOWARDS THE SCREEN?
+  // Operator: forward is back and sideways does nothing. Control and camera
+  // must share one notion of "forward", so this measures them against each
+  // other: fly him a step, take the camera's actual forward FROM its
+  // quaternion (never re-derived — the standing rule in this repo), flatten
+  // both onto the tangent plane and compare. +1 is agreement, -1 is inverted,
+  // ~0 is the camera pointing somewhere unrelated to the stick.
+  if (urlParams.get('droneprobe') === '1') {
+    (async () => {
+      await spawnIsao();
+      if (!isao) { console.log('DRONEPROBE inconclusive=no isao'); return; }
+      setView('drone');
+      // ISOLATE THE DRONE CAMERA. updateCameraGoal answers shots and DEPLOY
+      // first, and the probe never runs animate, so DEPLOY was still live and
+      // every reading came from the deploy blend instead of the drone branch.
+      endShot();
+      deploy = null;
+      const camFwdTangent = () => {
+        updateCameraGoal();
+        const f = new THREE.Vector3(0, 0, -1).applyQuaternion(camGoal.quat); // cameras look down -Z
+        const up = isao.dir;
+        const d = [f.x, f.y, f.z];
+        const t = sub3(d, scale3(up, dot3(d, up)));
+        const l = len3(t);
+        return l > 1e-6 ? scale3(t, 1 / l) : null;
+      };
+      const run = (label, k) => {
+        keys.fast = keys.slow = keys.left = keys.right = false;
+        keys[k] = true;
+        const before = isao.dir.slice();
+        const camF = camFwdTangent();
+        for (let i = 0; i < 10; i++) pilotIsao(0.05);
+        const moved = sub3(isao.dir, before);
+        const ml = len3(moved);
+        keys[k] = false;
+        if (!camF || ml < 1e-9) return `${label}=NOMOVE`;
+        const agree = dot3(scale3(moved, 1 / ml), camF);
+        return `${label}=${agree.toFixed(2)}`;
+      };
+      const fwd = run('W', 'fast');
+      const back = run('S', 'slow');
+      // and does steering actually swing the view?
+      keys.left = true;
+      const c0 = camFwdTangent();
+      for (let i = 0; i < 10; i++) pilotIsao(0.05);
+      keys.left = false;
+      const c1 = camFwdTangent();
+      const swung = c0 && c1 ? Math.acos(Math.max(-1, Math.min(1, dot3(c0, c1)))) : 0;
+      // THE PREDICTION: if the camera ignores the pilot's heading, then after
+      // steering a half-turn, W must move him AWAY from the screen. Turning
+      // the operator's "forward = back" into something falsifiable.
+      keys.right = true;
+      for (let i = 0; i < 40; i++) pilotIsao(0.05);   // swing him around
+      keys.right = false;
+      const afterTurn = run('W-after-turn', 'fast');
+      const fv = parseFloat(fwd.split('=')[1]);
+      console.log(`DRONEPROBE ${fwd} ${back} ${afterTurn}`
+        + ` camera-swing=${(swung * 57.3).toFixed(1)}deg`
+        + ` => forward=${fv > 0.8 ? 'PASS' : 'FAIL'}`
+        + ` after-turn=${parseFloat(afterTurn.split('=')[1]) > 0.8 ? 'PASS' : 'FAIL'}`
+        + ` steering=${swung > 0.1 ? 'PASS' : 'FAIL'}`);
+    })();
+  }
+
   // ?gestureprobe=1 — DOES THE FIRST GESTURE REACH THE AUDIO UNLOCK?
   // The context can only be born on a user gesture, and audio.js listens on
   // window in the BUBBLE phase. A shot's skip handlers sit in CAPTURE and
