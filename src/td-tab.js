@@ -19,39 +19,39 @@
 
 import * as THREE from '../vendor/three.module.js';
 import GUI from '../vendor/lil-gui.esm.js';
-import { generateSphereMesh, relax } from './grid.js?v=5a399688';
-import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=5a399688';
-import { mulberry32, randomSeed } from './rng.js?v=5a399688';
-import { computeBerths, berthIndexFor } from './berths.js?v=5a399688';
-import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3, segKey, tangentDir } from './vec3.js?v=5a399688';
-import { CREATURES, waveJelly } from './creatures.js?v=5a399688';
-import { brief } from './isaobriefs.js?v=5a399688';
-import { drawEmotion } from './emotions.js?v=5a399688';
+import { generateSphereMesh, relax } from './grid.js?v=268c90d2';
+import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=268c90d2';
+import { mulberry32, randomSeed } from './rng.js?v=268c90d2';
+import { computeBerths, berthIndexFor } from './berths.js?v=268c90d2';
+import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3, segKey, tangentDir } from './vec3.js?v=268c90d2';
+import { CREATURES, waveJelly } from './creatures.js?v=268c90d2';
+import { brief } from './isaobriefs.js?v=268c90d2';
+import { drawEmotion } from './emotions.js?v=268c90d2';
 import { ACHIEVEMENTS, ACHV_GROUPS, achievement, blankRun, earned, freshlyEarned,
   sanitiseRecord }
-  from './achievements.js?v=5a399688';
+  from './achievements.js?v=268c90d2';
 import { applyFontPack, currentFontPack, FONT_NAMES,
-  loadTypeFeel } from './fonts.js?v=5a399688';
-import { UNITS, UNIT_NAMES, buildUnit, buildCreature, preloadMkcx, preloadServer, makeServerFixture, makeShieldShell, preloadContainer, makeContainerFixture, preloadFabricator, makeIsaoDrone, makeBulletCloud, makeRewardSolid, makeShellSolid, makeDebris, makeDotBurst, makePortalCloud, makeHeartCloud, makeDotEnemy } from './units.js?v=5a399688';
-import { LOOKS, LOOK_NAMES } from './looks.js?v=5a399688';
-import { makeCellIndex } from './cellindex.js?v=5a399688';
-import { CREATURE_TINTS, ENEMY_SPEC, INTROS, computeWavePlan, accentFor } from './enemyspec.js?v=5a399688';
-import { PICKUPS } from './pickups.js?v=5a399688';
-import { rankFor, rankLabel, badgeSVG, killReq, eliteReq } from './ranks.js?v=5a399688';
-import { makeScore } from './score.js?v=5a399688';
-import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER } from './towers.js?v=5a399688';
-import { makeEconomy, sellRefund } from './economy.js?v=5a399688';
-import { makeBloom } from './postfx.js?v=5a399688';
-import { TANK_FEEL, TANK_FEEL_KNOBS, makeTankFeel, stepTankFeel, landTankFeel, fireTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js?v=5a399688';
-import { FEEL, loadFeel, saveFeel } from './feelstore.js?v=5a399688';
+  loadTypeFeel } from './fonts.js?v=268c90d2';
+import { UNITS, UNIT_NAMES, buildUnit, buildCreature, preloadMkcx, preloadServer, makeServerFixture, makeShieldShell, preloadContainer, makeContainerFixture, preloadFabricator, makeIsaoDrone, makeBulletCloud, makeRewardSolid, makeShellSolid, makeDebris, makeDotBurst, makePortalCloud, makeHeartCloud, makeDotEnemy } from './units.js?v=268c90d2';
+import { LOOKS, LOOK_NAMES } from './looks.js?v=268c90d2';
+import { makeCellIndex } from './cellindex.js?v=268c90d2';
+import { CREATURE_TINTS, ENEMY_SPEC, INTROS, computeWavePlan, accentFor } from './enemyspec.js?v=268c90d2';
+import { PICKUPS } from './pickups.js?v=268c90d2';
+import { rankFor, rankLabel, badgeSVG, killReq, eliteReq } from './ranks.js?v=268c90d2';
+import { makeScore } from './score.js?v=268c90d2';
+import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER } from './towers.js?v=268c90d2';
+import { makeEconomy, sellRefund } from './economy.js?v=268c90d2';
+import { makeBloom } from './postfx.js?v=268c90d2';
+import { TANK_FEEL, TANK_FEEL_KNOBS, makeTankFeel, stepTankFeel, landTankFeel, fireTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js?v=268c90d2';
+import { FEEL, loadFeel, saveFeel } from './feelstore.js?v=268c90d2';
 import { STRIKE_KNOBS, makeStrike, makeStrikeParams, grantStrikes, stepStrike,
   toggleArm, paintTarget, launchStrike, stepFall, skipFall, fallProgress,
-  strikeDamage, retargetStrike, orbitProgress } from './strike.js?v=5a399688';
-import { radarBasis, radarProject, radarBearing, sweepAngle, radarPhosphor } from './radar.js?v=5a399688';
-import { BLOOM_GROUPS } from './bloomweights.js?v=5a399688';
-import { TOWER_LOOK_NAMES, DEFAULT_TOWER_LOOK, buildTowerLook, preloadLook } from './towerlooks.js?v=5a399688';
-import { makeAudio } from './audio.js?v=5a399688';
-import { DEATH_KEYS } from './audiomanifest.js?v=5a399688';
+  strikeDamage, retargetStrike, orbitProgress } from './strike.js?v=268c90d2';
+import { radarBasis, radarProject, radarBearing, sweepAngle, radarPhosphor } from './radar.js?v=268c90d2';
+import { BLOOM_GROUPS } from './bloomweights.js?v=268c90d2';
+import { TOWER_LOOK_NAMES, DEFAULT_TOWER_LOOK, buildTowerLook, preloadLook } from './towerlooks.js?v=268c90d2';
+import { makeAudio } from './audio.js?v=268c90d2';
+import { DEATH_KEYS } from './audiomanifest.js?v=268c90d2';
 
 export function initTdTab(root) {
   let active = false;
@@ -5587,34 +5587,60 @@ export function initTdTab(root) {
   // at the whole board, with the wall you did not have time to buy still
   // unbought. That is the decision the loss should hand you, and it is the
   // one place the game can make you take it.
+  const DOWN_DASH = 1.0;   // seconds of camera, wreck -> camp
+
   function loseTank() {
     const stripped = tankRank > 0 ? rankLabel(tankRank) : '';
     destroyPlayer();
     resetTankRank(); // the insignia belonged to that hull
     ramCombo = 0; ramComboT = 0; syncCombo(); // the combo died with it too
 
+    // BEAT 1 — the wreck, and the word for it. Losing a hull is the most
+    // consequential thing that happens to you and it used to be a toast the
+    // size of a wave announcement.
+    showToast(`<div class="td-down">MK-CX DOWN!</div>`
+      + `<div class="td-down-sub">${playerHP} left`
+      + `${stripped ? ` · ${stripped} insignia lost` : ''}</div>`,
+      (DEATH_HOLD + DOWN_DASH) * 1000);
+
     // THE DEAD RUN'S TIMER MUST NOT LAND ON THE LIVE ONE. This hold is
     // 1.15s long and RETRY sits on a modal the player can hit inside it —
     // and it used to fire regardless, repositioning a brand-new tank,
-    // snapping the camera to orbit and toasting TANK LOST on a run that had
-    // lost nothing. Measured, not supposed: ?ctlprobe=1.
+    // snapping the camera to orbit and toasting on a run that had lost
+    // nothing. Measured, not supposed: ?ctlprobe=1.
     const deathGen = runGen;
     setTimeout(() => {
       if (deathGen !== runGen) return;         // this belonged to a run that is over
       if (player.won || !playerMesh) return;   // a real death happened meanwhile
-      // back to the entry point, facing the heart, engine cold
-      tankLostDeploys++;
-      deployStart(berthIndexFor(playerHP));
-      playerMesh.visible = true;
-      playerDown = false;
-      feel.hoverT = 0;
-      landTankFeel(feel);
-      applyTankHealth(playerMesh, playerHP / PLAYER_MAX);
-      if (!buildMode) { setView('orbit'); snapCamera(); }
-      showToast(`<div class="wave-num">TANK LOST</div>`
-        + `<div class="wave-role">${playerHP} left`
-        + `${stripped ? ` · ${stripped} insignia lost` : ''}`
-        + ` — regroup, then drive out</div>`, 2600);
+      const n = berthIndexFor(playerHP);
+      // the view the next hull will be driven in — chosen BEFORE the dash, so
+      // the pose the dash flies to is the pose the game is about to use
+      if (!buildMode) setView('orbit');
+      const from = { pos: camera.position.clone(), quat: camera.quaternion.clone() };
+      // BEAT 2 — THE DOWN DASH. The camera runs home from the wreck and
+      // lands on DEPLOY's opening pose. It used to cut: setView + snapCamera,
+      // and you were suddenly somewhere else. Same join the cinematic uses,
+      // so a death and a fresh load arrive at an identical frame.
+      startShot({
+        id: 'downdash',
+        dur: DOWN_DASH,
+        poseAt: (u, out) => {
+          const w = u * u * (3 - 2 * u);
+          deployFramePoseFor(n, camA);
+          out.pos.lerpVectors(from.pos, camA.pos, w);
+          out.quat.copy(from.quat).slerp(camA.quat, w);
+        },
+        // BEAT 3 — the next hull rolls out of its berth, live.
+        onEnd: () => {
+          tankLostDeploys++;
+          playerMesh.visible = true;
+          playerDown = false;
+          feel.hoverT = 0;
+          landTankFeel(feel);
+          applyTankHealth(playerMesh, playerHP / PLAYER_MAX);
+          deployStart(n);   // no snapCamera: DEPLOY blends on from here
+        },
+      });
     }, DEATH_HOLD * 1000);
   }
 
@@ -8086,6 +8112,40 @@ export function initTdTab(root) {
       + ` entirely-out=${out ? 'PASS' : 'FAIL'}`
       + ` (ended at ${player.cur}, wanted ${b0 ? b0.exit : -1},`
       + ` deploying=${deployActive()} auto=${autoMode} cruise=${cruise})`);
+  }
+
+  // ?downprobe=1 — LOSING A HULL IS THREE BEATS, NOT A CUT. Asserts the
+  // camera actually runs home (a 'downdash' shot exists) and that when it
+  // lands the next hull is deploying from the RIGHT berth: lose one and you
+  // come out of #2, as the operator specified.
+  if (urlParams.get('downprobe') === '1') {
+    let tries = 0;
+    const run = () => {
+      if (!active && tries++ < 200) { setTimeout(run, 25); return; }
+      dismissIntro();
+      if (msgEl && !msgEl.classList.contains('hidden')) {
+        paused = false; msgEl.classList.add('hidden');
+      }
+      endShot();                 // clear the opening so only the dash is in play
+      playerHP = PLAYER_MAX - 1; // the damage path decrements BEFORE loseTank
+      loseTank();
+      let waits = 0;
+      const check = () => {
+        if (shotId() !== 'downdash' && waits++ < 300) { setTimeout(check, 20); return; }
+        const dashed = shotId() === 'downdash';
+        endShot();               // run it to its end, as the frame loop would
+        const n = berthIndexFor(playerHP);
+        const b = berths[n];
+        const ok = dashed && !!b && player.cur === b.ci && deployActive()
+          && !playerDown && !autoMode && !cruise;
+        console.log(`DOWNPROBE dash=${dashed ? 'PASS' : 'FAIL'}`
+          + ` handoff=${ok ? 'PASS' : 'FAIL'}`
+          + ` (berth #${n + 1}, cur=${player.cur}, want=${b ? b.ci : -1},`
+          + ` deploying=${deployActive()}, down=${playerDown})`);
+      };
+      check();
+    };
+    run();
   }
 
   // ?resetprobe=1 — A RESET ENDS WHATEVER WAS RUNNING. regenerate() is on the
