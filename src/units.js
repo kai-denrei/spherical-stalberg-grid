@@ -16,14 +16,14 @@
 
 import * as THREE from '../vendor/three.module.js';
 import { EMOTION_IDS, emotion, phosphorFor } from './emotions.js';
-import { printPhase, printOffset, printOn } from './printpath.js?v=522a8553';
+import { printPhase, printOffset, printOn } from './printpath.js?v=44620486';
 import { loadGlb, mergeByMaterial, fitModel, tintModel, makeShellRack,
-  addEdgeOutlines, makeHeatSleeve } from './glbmodels.js?v=522a8553';
-import { CREATURES, waveJelly, swimWave, spherePts, bulletPts, missilePts, heartPts, torusPts, towerHeadPts, enemyDotPts, portalPts } from './creatures.js?v=522a8553';
-import { TOWER_FEEL, TOWER_HEADS, headKindFor } from './towerfeel.js?v=522a8553';
+  addEdgeOutlines, makeHeatSleeve } from './glbmodels.js?v=44620486';
+import { CREATURES, waveJelly, swimWave, spherePts, bulletPts, missilePts, heartPts, torusPts, towerHeadPts, enemyDotPts, portalPts } from './creatures.js?v=44620486';
+import { TOWER_FEEL, TOWER_HEADS, headKindFor } from './towerfeel.js?v=44620486';
 import { STARGATE_PTS, STARGATE_STROKE,
-  HORIZON_N, stargateHorizon } from './stargate.js?v=522a8553';
-import { ENEMY_SPEC } from './enemyspec.js?v=522a8553';
+  HORIZON_N, stargateHorizon } from './stargate.js?v=44620486';
+import { ENEMY_SPEC } from './enemyspec.js?v=44620486';
 
 function normalizeToUnit(group) {
   group.updateMatrixWorld(true);
@@ -1158,11 +1158,19 @@ const MKCX_LIFTERS = ['LiftEmitter_L1', 'LiftEmitter_L2', 'LiftEmitter_L3',
 // but applies it the same way round on both sides; this is the magnitude,
 // applied inward per side. Tunable in the beam tab.
 //
-// Narrowed from 0.157 (operator: less wide). The base toe is only half the
-// story — BEAM_SWEEP in td-tab adds to it across the burst — so a wide base
-// plus a wide sweep had the pair crossing almost at the muzzle at the
-// midpoint. This opens the V out and lets the sweep do the work.
-export const SECONDARY_TOE = 0.085;
+// Narrowed twice on the operator's eye: 0.157 -> 0.085 -> 0.035.
+//
+// The number that matters is not the angle, it is where the beams CROSS, and
+// that goes as 1/toe: apex = muzzleGap / (2 * tan(toe)). With a measured
+// muzzle gap of 0.773 the first cut only moved the apex 4.29 -> 4.56 units,
+// which is why halving the angle looked like it did nothing. 0.035 puts the
+// apex out past 11 units — the pair reads near-parallel over the length a
+// player actually sees, and the wide X past the crossing goes away.
+//
+// The base toe is only half the story: BEAM_SWEEP in td-tab adds to it across
+// the burst. But the sweep runs INWARD, so it cannot be what reads as splayed
+// — it is the divergence past the apex, which is this constant alone.
+export const SECONDARY_TOE = 0.035;
 
 const MKCX_PIVOTS = ['Turret_Pivot', 'Secondary_L_Gun_Pivot', 'Secondary_R_Gun_Pivot',
   'Hover_Gear', ...MKCX_LIFTERS];
