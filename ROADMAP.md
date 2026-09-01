@@ -502,15 +502,69 @@ twice.
 The tutorial's small board is a deliberate choice. Post-tutorial scale is
 named but not designed, and it runs into the generation cost below.
 
-### Coronal shader for the portals
+### Raymarched gates — PoC LANDED, and the operator likes it (2026-09-02)
 
-A raymarched corona around the gate, from a golfed GLSL sketch the operator
-supplied. It would need a `ShaderMaterial` on a shell or quad — a different
-rendering path from everything else here, and one real draw call plus
-per-pixel cost per portal. Affordable precisely because there are never more
-than a few gates open at once. Parked deliberately: the gate already got its
-horizon, and this is the next thing to try on it rather than the next thing
-to build.
+Unparked. `#portal` is a temporary bench: the operator's authored ring
+(`assets/models/portalring.glb` — clear aperture, counter-rotating rotors, 8
+power cores) with the effect running inside the aperture. **WORMHOLE is the
+preferred candidate over Corona** — same raymarch and same singularity,
+retargeted to a tunnel, which is the more literal reading of a gate you travel
+through. `?portalfx=corona|wormhole` switches; `?portalperf=1` sweeps the cost.
+
+**The cost objection in the old note was wrong, and that changes the decision.**
+It assumed "per-pixel cost per portal", which is what a `ShaderMaterial` on a
+quad would give you. Rendered ONCE into a small target shared by every gate,
+the cost is FIXED — independent of portal count, of how large a gate is on
+screen, and of display resolution. Measured: 1 → 4 portals took the scene from
+165 to 341 draw calls while the effect pass did not move. So "affordable
+because there are never more than a few gates" was the wrong reason to be
+comfortable; the right one is that gates are identical and can share one
+texture.
+
+Cost, exactly, and hardware-independent:
+
+| target | sine-folds/frame | | march | sine-folds/frame |
+|---|---|---|---|---|
+| 128² | 3.9M | | 40 × 6 (default) | 62.9M |
+| 256² | 15.7M | | 24 × 6 | 37.7M |
+| 512² | 62.9M | | 40 × 4 | 41.9M |
+| 1024² | 251.7M | | 24 × 4 | 25.2M |
+
+There is also an update-Hz knob: the effect need not run at display rate, and
+30Hz halves everything above.
+
+**Open, and only the operator can close it: the effect pass in ms at 512² on
+the M4.** `performance.now()` does not advance under headless virtual time, so
+CI cannot produce that number and the probe says so rather than printing zeros.
+That single figure decides cinematic-only vs sometimes vs always.
+
+Then the integration questions, none of them started: does the gate carry it
+always or only while dialling; does it die with the gate (the gates already dim
+as they are wounded, and the effect has an exposure knob that would ride that);
+and does the authored ring replace the current portal cloud on the board or
+stay a set piece.
+
+### Raymarched creatures — for the CODEX, not the board (2026-09-02)
+
+`organic-jelly.frag` (same sandbox) renders amoeba, adenovirus, jellyfish and
+bacteriophage as translucent refracting bodies. Our `creatures.js` opens with
+"fun-shapes (half-dotted > organic): amoeba, bacteriophage, jellyfish" — the
+same three specimens, from the same lab, by the other philosophy.
+
+**It is not a candidate for the board.** A dot cloud costs per VERTEX (amoeba
+692 points, phage 494, one draw call, fixed however large it gets); the jelly
+costs per PIXEL — 110 march steps + 28 refraction steps + 6 map() calls for the
+normal, so ~144 SDF evaluations per covered pixel, growing with the square of
+apparent size. One amoeba at 200×200px is ~5.8M SDF evaluations, against a
+whole wave-8 board that draws 67,252 points total. And the shared-target trick
+that makes the gates cheap does not apply, because creatures differ in pose.
+
+**Where it belongs is the codex.** `lore.js` already states the dot render is
+an in-fiction APPROXIMATION — "the tank does not see. It samples… the real ones
+have surfaces, membranes." A raymarched, refracting specimen is literally what
+the codex claims is behind the constellation, and every entry carries a
+`visual:` field that is a txt2img prompt nobody has generated. One hero
+specimen, still camera, on demand: that is the shape the effect is cheap in.
 
 ### Attract mode
 
