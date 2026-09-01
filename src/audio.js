@@ -17,9 +17,9 @@
 //    total. A failed fetch or decode logs once and that key becomes a
 //    permanent no-op for the session; the game keeps running silent.
 
-import { makeMixState, distanceGain, admit, addVoice, dropVoice } from './audiomix.js?v=c3d61f2b';
-import { SOUNDS, BUSES, DEFAULT_LEVELS, GLOBAL_VOICE_CAP, DISTANCE_K } from './audiomanifest.js?v=c3d61f2b';
-import { mulberry32 } from './rng.js?v=c3d61f2b';
+import { makeMixState, distanceGain, admit, addVoice, dropVoice } from './audiomix.js?v=b628f2ba';
+import { SOUNDS, BUSES, DEFAULT_LEVELS, GLOBAL_VOICE_CAP, DISTANCE_K } from './audiomanifest.js?v=b628f2ba';
+import { mulberry32 } from './rng.js?v=b628f2ba';
 
 const STORE_KEY = 'ssg.audio.levels';
 const STEAL_FADE = 0.03; // s — a hard cut mid-waveform is an audible click
@@ -81,6 +81,7 @@ export function makeAudio(opts = {}) {
       // it is the one AirPlay-specific thing this file can actually do:
       // the ~2s buffer a TV adds is the receiver's, not ours.
       ctx.onstatechange = () => {
+        console.log(`AUDIO state -> ${ctx ? ctx.state : 'none'}`);
         if (ctx && ctx.state === 'suspended') ctx.resume().catch(() => {});
       };
       for (const b of BUSES) {
@@ -115,12 +116,18 @@ export function makeAudio(opts = {}) {
     armed = true;
     const go = () => {
       ensureCtx();
-      if (ctx && ctx.state === 'suspended') ctx.resume().catch(() => {});
-      // the unlock itself is reported IMMEDIATELY — the decode summary can
-      // take a while, and a diagnostic that only prints on success is no
-      // use to whoever is hearing nothing
-      console.log(`AUDIO unlock ctx=${ctx ? ctx.state : 'none'}`
+      // resume() is a PROMISE. The first cut of this logged the state on the
+      // very next line, which always reads "suspended" — on a working page
+      // and a silent one alike — so the operator got identical output from
+      // both and it told us nothing. Report the OUTCOME.
+      console.log(`AUDIO unlock ctx=${ctx ? ctx.state : 'none'} (pre-resume)`
         + ` muted=${muted} master=${levels.master}`);
+      if (ctx && ctx.state === 'suspended') {
+        ctx.resume().then(
+          () => console.log(`AUDIO resume ok -> ${ctx ? ctx.state : 'none'}`),
+          (e) => console.log(`AUDIO resume FAILED ${(e && e.name) || e}`),
+        );
+      }
       load().then(() => {
         // ONE LINE, ONCE, ALWAYS ON. Silence has three completely different
         // causes that look identical from the outside — the gesture never
@@ -184,11 +191,29 @@ export function makeAudio(opts = {}) {
     } catch { /* already stopped */ }
   }
 
+  // WHY A SOUND DID NOT SOUND — once per session, not per call. A silent
+  // game has several causes that look identical from outside: no context, a
+  // parked context, samples that never decoded, or a muted mix. start()
+  // returns null for all of them, silently and correctly. This says which.
+  let mutedReport = false;
+  function reportSilence(why, key) {
+    if (mutedReport) return;
+    mutedReport = true;
+    console.log(`AUDIO silent: ${why} (first blocked sound: ${key})`
+      + ` ctx=${ctx ? ctx.state : 'none'} muted=${muted} master=${levels.master}`
+      + ` loadStarted=${loadStarted}`);
+  }
+
   function start(key, o, looping) {
     const spec = SOUNDS[key];
-    if (!spec || !ctx) return null;
+    if (!spec) return null;
+    if (!ctx) { reportSilence('no AudioContext — the gesture never armed it', key); return null; }
+    if (ctx.state !== 'running') reportSilence(`context is ${ctx.state}, not running`, key);
     const buf = buffers[key];
-    if (!buf || buf === 'failed') return null;
+    if (!buf || buf === 'failed') {
+      reportSilence(buf === 'failed' ? 'sample failed to decode' : 'sample not decoded yet', key);
+      return null;
+    }
 
     const t = now();
     const cfg = { maxVoices: spec.maxVoices, minInterval: spec.minInterval };
