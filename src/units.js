@@ -17,12 +17,12 @@
 import * as THREE from '../vendor/three.module.js';
 import { EMOTION_IDS, emotion, phosphorFor } from './emotions.js';
 import { loadGlb, mergeByMaterial, fitModel, tintModel, makeShellRack,
-  addEdgeOutlines, makeHeatSleeve } from './glbmodels.js?v=3dd0aa59';
-import { CREATURES, waveJelly, swimWave, spherePts, bulletPts, missilePts, heartPts, torusPts, towerHeadPts, enemyDotPts, portalPts } from './creatures.js?v=3dd0aa59';
-import { TOWER_FEEL, TOWER_HEADS, headKindFor } from './towerfeel.js?v=3dd0aa59';
+  addEdgeOutlines, makeHeatSleeve } from './glbmodels.js?v=b57d6dac';
+import { CREATURES, waveJelly, swimWave, spherePts, bulletPts, missilePts, heartPts, torusPts, towerHeadPts, enemyDotPts, portalPts } from './creatures.js?v=b57d6dac';
+import { TOWER_FEEL, TOWER_HEADS, headKindFor } from './towerfeel.js?v=b57d6dac';
 import { STARGATE_PTS, STARGATE_STROKE,
-  HORIZON_N, stargateHorizon } from './stargate.js?v=3dd0aa59';
-import { ENEMY_SPEC } from './enemyspec.js?v=3dd0aa59';
+  HORIZON_N, stargateHorizon } from './stargate.js?v=b57d6dac';
+import { ENEMY_SPEC } from './enemyspec.js?v=b57d6dac';
 
 function normalizeToUnit(group) {
   group.updateMatrixWorld(true);
@@ -1376,6 +1376,157 @@ function hazardBand(w, h, tiles) {
   m.map.wrapS = THREE.RepeatWrapping;
   m.map.repeat.set(tiles, 1);
   return new THREE.Mesh(new THREE.PlaneGeometry(w, h), m);
+}
+
+// --- THE STALHEART: a Terraformer, cast from GLB --------------------------
+//
+// Operator, 2026-09-01: the thing at the pole is not a literal heart. It is a
+// TERRAFORMER — the machine that makes the colony survivable. Without it the
+// colony dies, which is the same rule the Heart always had, told properly.
+//
+// It replaces makeHeartCloud rather than editing it: both satisfy the same
+// three-call contract the tab uses (sizeScale, tick, hit), so which one is on
+// the board is a registry choice and nothing downstream changes. See
+// HEART_LOOKS in td-tab.js.
+let terraProto = null, terraLoad = null;
+// the pivots that must survive the merge — a part is only addressable
+// afterwards if it was named BEFORE (learned the hard way on the mkcx)
+const TERRA_PIVOTS = ['Travel_Carriage', 'Traverse_Carriage', 'Mast_Stage_1',
+  'Mast_Stage_2', 'Arm_Swing', 'Arm_Shoulder', 'Arm_Elbow', 'Arm_Wrist',
+  'Nozzle_Cone', 'Nozzle_Heater'];
+
+export function preloadTerraformer() {
+  if (terraLoad) return terraLoad;
+  terraLoad = loadGlb('assets/models/terraformer.glb').then((scene) => {
+    if (!scene) { terraLoad = null; return false; }
+    hideCollisionNodes(scene);
+    // Same repaint problem the containers had: every authored material here
+    // is near-black (baseColor 0.006-0.12 linear), and under this board's
+    // light — hemi 0.55, sun 0.25 — a standard material that dark reads as a
+    // silhouette. Each rung carries its own emissive for the same reason.
+    const REPAINT = {
+      M_Armour: [0xb9bfc4, 0x3c4247],   // the big plated surfaces
+      M_Steel:  [0x848b91, 0x242a2e],   // towers, beams, rails
+      M_Detail: [0x9ea4a8, 0x2f3337],   // walkways, ladders, handrails
+      M_Turret: [0x9aa1a6, 0x2b3034],   // carriage and arm housings
+      M_Track:  [0x4a5054, 0x15181a],   // bogies and track pods
+      M_Rubber: [0x2a2e31, 0x0c0e10],
+      M_Glow2:  [0x7df9ff, 0x2aa8bf],   // the cool status glow
+      M_Glow4:  [0xffb000, 0x8a5b00],   // the warm nozzle glow
+    };
+    const painted = new Set();
+    scene.traverse((o) => {
+      if (!o.isMesh || !o.material) return;
+      for (const m of Array.isArray(o.material) ? o.material : [o.material]) {
+        const rung = REPAINT[m.name];
+        if (!rung || painted.has(m)) continue;
+        painted.add(m);
+        m.color.setHex(rung[0]);
+        if (m.emissive) m.emissive.setHex(rung[1]);
+        if (m.metalness !== undefined) m.metalness = Math.min(m.metalness, 0.45);
+        if (m.roughness !== undefined) m.roughness = Math.max(m.roughness, 0.55);
+      }
+    });
+    // wide, low machine: the span cap binds, not the height
+    terraProto = fitModel(scene, { height: 1, maxSpan: 2.0 });
+    return true;
+  });
+  return terraLoad;
+}
+
+// A FLAT PEDESTAL ON A ROUND FLOOR. The shell is a sphere, so a machine this
+// wide would have its rails hanging in the air at both ends and its middle
+// buried. The colony pours a pad first: a shallow cylinder sunk into the
+// shell, flat on top, hazard-striped around the rim like everything else
+// industrial on this board.
+function terraPedestal(radius, height) {
+  const g = new THREE.Group();
+  const deck = new THREE.Mesh(
+    new THREE.CylinderGeometry(radius, radius * 0.96, height, 40, 1, false),
+    new THREE.MeshStandardMaterial({
+      color: 0x6f767c, emissive: 0x22262a, metalness: 0.35, roughness: 0.75,
+    }));
+  deck.position.y = -height / 2;
+  g.add(deck);
+  // the striped rim: one cylinder wall wearing the hazard tape, so the pad
+  // reads as poured industrial concrete rather than a grey disc
+  const bandH = height * 0.42;
+  const tex = hazardTexture().clone();
+  tex.needsUpdate = true;
+  tex.wrapS = THREE.RepeatWrapping;
+  tex.repeat.set(Math.max(6, Math.round(radius * 14)), 1);
+  const band = new THREE.Mesh(
+    new THREE.CylinderGeometry(radius * 1.004, radius * 1.004, bandH, 40, 1, true),
+    new THREE.MeshBasicMaterial({ map: tex, toneMapped: false, side: THREE.DoubleSide }));
+  band.position.y = -bandH * 0.62;
+  g.add(band);
+  return g;
+}
+
+export function makeTerraformerFixture(bodyHex = 0xff6a88) {
+  if (!terraProto) { preloadTerraformer(); return null; }
+  const g = new THREE.Group();
+  const model = terraProto.clone(true);
+  g.add(model);
+  g.add(terraPedestal(0.86, 0.30));
+
+  // the pivots this thing is animated by, resolved once
+  const P = {};
+  for (const name of TERRA_PIVOTS) P[name] = model.getObjectByName(name);
+  const rest = {};
+  for (const k of Object.keys(P)) if (P[k]) rest[k] = P[k].position.y;
+
+  // the glow materials get PRIVATE clones: the hit flare repaints them, and
+  // a shared material would flare every other model using the same name
+  const glow = [];
+  model.traverse((o) => {
+    if (!o.isMesh || !o.material) return;
+    const mats = Array.isArray(o.material) ? o.material : [o.material];
+    o.material = mats.map((m) => {
+      if (!/^M_Glow/.test(m.name || '')) return m;
+      const c = m.clone();
+      glow.push({ mat: c, base: c.color.clone(), emi: c.emissive ? c.emissive.clone() : null });
+      return c;
+    });
+    if (o.material.length === 1) o.material = o.material[0];
+  });
+
+  let hitUntil = -1;
+  const hurt = new THREE.Color(0xff2a1a);
+  g.userData.sizeScale = 1;
+  g.userData.hit = () => { hitUntil = (g.userData.lastT ?? 0) + 0.9; };
+
+  // IDLE IS WORK. A terraformer that stands still is scenery; this one is
+  // always mid-job — the carriage tracks the rails, the mast breathes, the
+  // arm sways and the nozzle pulses. All transform-only on named pivots plus
+  // a colour lerp, so it costs nothing per frame.
+  g.userData.tick = (t) => {
+    g.userData.lastT = t;
+    g.scale.setScalar(g.userData.sizeScale);
+    const hurting = t < hitUntil;
+    if (P.Travel_Carriage) P.Travel_Carriage.position.z = Math.sin(t * 0.21) * 0.30;
+    if (P.Traverse_Carriage) P.Traverse_Carriage.position.x = Math.sin(t * 0.34 + 1.1) * 0.22;
+    if (P.Mast_Stage_2) P.Mast_Stage_2.position.y = (rest.Mast_Stage_2 ?? 0)
+      + (0.5 + 0.5 * Math.sin(t * 0.5)) * 0.10;
+    if (P.Arm_Swing) P.Arm_Swing.rotation.y = Math.sin(t * 0.27) * 0.45;
+    if (P.Arm_Elbow) P.Arm_Elbow.rotation.x = -0.25 + Math.sin(t * 0.41 + 0.6) * 0.22;
+    if (P.Arm_Wrist) P.Arm_Wrist.rotation.x = Math.sin(t * 0.63) * 0.30;
+    // the print glow: a working pulse normally, hard red while it is hit
+    const beat = hurting
+      ? 0.55 + 0.45 * Math.abs(Math.sin(t * 18))
+      : 0.45 + 0.55 * (0.5 + 0.5 * Math.sin(t * 2.6));
+    for (const s of glow) {
+      if (hurting) s.mat.color.copy(hurt);
+      else s.mat.color.copy(s.base);
+      if (s.mat.emissive) {
+        if (hurting) s.mat.emissive.copy(hurt).multiplyScalar(beat);
+        else s.mat.emissive.copy(s.emi).multiplyScalar(beat);
+      }
+    }
+    // a struck machine rocks on its pad
+    g.rotation.z = hurting ? Math.sin(t * 26) * 0.02 : 0;
+  };
+  return g;
 }
 
 export function makeContainerFixture(number = 0) {

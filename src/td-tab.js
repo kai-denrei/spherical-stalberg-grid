@@ -19,41 +19,41 @@
 
 import * as THREE from '../vendor/three.module.js';
 import GUI from '../vendor/lil-gui.esm.js';
-import { generateSphereMesh, relax } from './grid.js?v=3dd0aa59';
-import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=3dd0aa59';
-import { mulberry32, randomSeed } from './rng.js?v=3dd0aa59';
-import { computeBerths, berthIndexFor } from './berths.js?v=3dd0aa59';
-import { wantsSecondary, shellsForAll } from './autofire.js?v=3dd0aa59';
-import { printPhase, printOffset, printOn, patternSecsFor } from './printpath.js?v=3dd0aa59';
-import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3, segKey, tangentDir, tangentBasis } from './vec3.js?v=3dd0aa59';
-import { CREATURES, waveJelly } from './creatures.js?v=3dd0aa59';
-import { brief } from './isaobriefs.js?v=3dd0aa59';
-import { drawEmotion } from './emotions.js?v=3dd0aa59';
+import { generateSphereMesh, relax } from './grid.js?v=b57d6dac';
+import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=b57d6dac';
+import { mulberry32, randomSeed } from './rng.js?v=b57d6dac';
+import { computeBerths, berthIndexFor } from './berths.js?v=b57d6dac';
+import { wantsSecondary, shellsForAll } from './autofire.js?v=b57d6dac';
+import { printPhase, printOffset, printOn, patternSecsFor } from './printpath.js?v=b57d6dac';
+import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3, segKey, tangentDir, tangentBasis } from './vec3.js?v=b57d6dac';
+import { CREATURES, waveJelly } from './creatures.js?v=b57d6dac';
+import { brief } from './isaobriefs.js?v=b57d6dac';
+import { drawEmotion } from './emotions.js?v=b57d6dac';
 import { ACHIEVEMENTS, ACHV_GROUPS, achievement, blankRun, earned, freshlyEarned,
   sanitiseRecord }
-  from './achievements.js?v=3dd0aa59';
+  from './achievements.js?v=b57d6dac';
 import { applyFontPack, currentFontPack, FONT_NAMES,
-  loadTypeFeel } from './fonts.js?v=3dd0aa59';
-import { UNITS, UNIT_NAMES, buildUnit, buildCreature, preloadMkcx, preloadServer, makeServerFixture, makeShieldShell, preloadContainer, makeContainerFixture, preloadFabricator, makeIsaoDrone, makeBulletCloud, makeRewardSolid, makeShellSolid, makeDebris, makeDotBurst, makePortalCloud, makeHeartCloud, makeDotEnemy } from './units.js?v=3dd0aa59';
-import { LOOKS, LOOK_NAMES } from './looks.js?v=3dd0aa59';
-import { makeCellIndex } from './cellindex.js?v=3dd0aa59';
-import { CREATURE_TINTS, ENEMY_SPEC, INTROS, computeWavePlan, accentFor } from './enemyspec.js?v=3dd0aa59';
-import { PICKUPS } from './pickups.js?v=3dd0aa59';
-import { rankFor, rankLabel, badgeSVG, killReq, eliteReq } from './ranks.js?v=3dd0aa59';
-import { makeScore } from './score.js?v=3dd0aa59';
-import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER } from './towers.js?v=3dd0aa59';
-import { makeEconomy, sellRefund } from './economy.js?v=3dd0aa59';
-import { makeBloom } from './postfx.js?v=3dd0aa59';
-import { TANK_FEEL, TANK_FEEL_KNOBS, makeTankFeel, stepTankFeel, landTankFeel, fireTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js?v=3dd0aa59';
-import { FEEL, loadFeel, saveFeel } from './feelstore.js?v=3dd0aa59';
+  loadTypeFeel } from './fonts.js?v=b57d6dac';
+import { UNITS, UNIT_NAMES, buildUnit, buildCreature, preloadMkcx, preloadServer, makeServerFixture, makeShieldShell, preloadContainer, makeContainerFixture, preloadFabricator, makeIsaoDrone, makeBulletCloud, makeRewardSolid, makeShellSolid, makeDebris, makeDotBurst, makePortalCloud, makeHeartCloud, makeDotEnemy, preloadTerraformer, makeTerraformerFixture } from './units.js?v=b57d6dac';
+import { LOOKS, LOOK_NAMES } from './looks.js?v=b57d6dac';
+import { makeCellIndex } from './cellindex.js?v=b57d6dac';
+import { CREATURE_TINTS, ENEMY_SPEC, INTROS, computeWavePlan, accentFor } from './enemyspec.js?v=b57d6dac';
+import { PICKUPS } from './pickups.js?v=b57d6dac';
+import { rankFor, rankLabel, badgeSVG, killReq, eliteReq } from './ranks.js?v=b57d6dac';
+import { makeScore } from './score.js?v=b57d6dac';
+import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER } from './towers.js?v=b57d6dac';
+import { makeEconomy, sellRefund } from './economy.js?v=b57d6dac';
+import { makeBloom } from './postfx.js?v=b57d6dac';
+import { TANK_FEEL, TANK_FEEL_KNOBS, makeTankFeel, stepTankFeel, landTankFeel, fireTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js?v=b57d6dac';
+import { FEEL, loadFeel, saveFeel } from './feelstore.js?v=b57d6dac';
 import { STRIKE_KNOBS, makeStrike, makeStrikeParams, grantStrikes, stepStrike,
   toggleArm, paintTarget, launchStrike, stepFall, skipFall, fallProgress,
-  strikeDamage, retargetStrike, orbitProgress } from './strike.js?v=3dd0aa59';
-import { radarBasis, radarProject, radarBearing, sweepAngle, radarPhosphor } from './radar.js?v=3dd0aa59';
-import { BLOOM_GROUPS } from './bloomweights.js?v=3dd0aa59';
-import { TOWER_LOOK_NAMES, DEFAULT_TOWER_LOOK, buildTowerLook, preloadLook } from './towerlooks.js?v=3dd0aa59';
-import { makeAudio } from './audio.js?v=3dd0aa59';
-import { DEATH_KEYS } from './audiomanifest.js?v=3dd0aa59';
+  strikeDamage, retargetStrike, orbitProgress } from './strike.js?v=b57d6dac';
+import { radarBasis, radarProject, radarBearing, sweepAngle, radarPhosphor } from './radar.js?v=b57d6dac';
+import { BLOOM_GROUPS } from './bloomweights.js?v=b57d6dac';
+import { TOWER_LOOK_NAMES, DEFAULT_TOWER_LOOK, buildTowerLook, preloadLook } from './towerlooks.js?v=b57d6dac';
+import { makeAudio } from './audio.js?v=b57d6dac';
+import { DEATH_KEYS } from './audiomanifest.js?v=b57d6dac';
 
 export function initTdTab(root) {
   let active = false;
@@ -65,6 +65,7 @@ export function initTdTab(root) {
     // messages the packs were chosen for (src/fonts.js owns the table)
     font: currentFontPack(),
     seed: 7,
+    heartLook: 'terraformer', // what stands at the pole — see HEART_LOOKS
     // The whole unlock run — every wave until the last tower unlocks — is
     // a guided tutorial, and it should be played on a TIGHT board: at 3000
     // the opening sector was 146 open cells, at 500 it is 84. Cells are
@@ -411,6 +412,30 @@ export function initTdTab(root) {
   let topGeo = null, topMesh = null; // interior wall-top wires, dimmable
   let floorOffsets = null; // cell -> [start,count] into floor color attr (verts)
   let heartSprite = null, playerMesh = null, markerMesh = null;
+  // WHAT STANDS AT THE POLE. Both entries satisfy one contract — sizeScale,
+  // tick(t), hit() — so swapping them changes how the Stalheart LOOKS and
+  // never what it DOES. Same registry seam as looks / towerlooks /
+  // unitcatalog, and the reason this could be tried without touching
+  // heartHit, the minimap, the bastion camera or the win condition.
+  const HEART_LOOKS = {
+    terraformer: {
+      label: 'terraformer',
+      preload: preloadTerraformer,
+      make: () => makeTerraformerFixture(new THREE.Color(look().heart).getHex()),
+      // a wide machine on a pad wants more room than a dot cloud
+      scale: 1.9,
+      lift: 0.16,
+    },
+    cloud: {
+      label: 'dot cloud',
+      preload: () => Promise.resolve(true),
+      make: () => makeHeartCloud(new THREE.Color(look().heart).getHex()),
+      scale: 1.15,
+      lift: 0.55,
+    },
+  };
+  const heartLook = () => HEART_LOOKS[params.heartLook] || HEART_LOOKS.cloud;
+  let heartGen = 0;   // a board rebuild invalidates an in-flight model load
   // THE SERVER: an invincible fixture at the heart's exact antipode.
   // Finding it offers the HACK — the HDT circuit duel in an overlay —
   // and a win decrypts the next tower ahead of its wave gate.
@@ -1437,8 +1462,27 @@ export function initTdTab(root) {
 
     // the Braille heart: dot-cloud cycling twinkle → breathe → jelly,
     // flaring orange/red under Wave when hit
-    heartSprite = makeHeartCloud(new THREE.Color(look().heart).getHex());
+    // the fallback is always the dot cloud: an async model must never leave
+    // the pole empty, and the Heart is the thing the whole board defends
+    const hl = heartLook();
+    const built = hl.make();          // null while an async model is still loading
+    heartSprite = built || makeHeartCloud(new THREE.Color(look().heart).getHex());
     scene.add(heartSprite);
+    if (!built) {
+      // bytes not in yet — build the cloud now, swap when they land
+      const want = params.heartLook;
+      const hgen = ++heartGen;
+      hl.preload().then(() => {
+        if (hgen !== heartGen || want !== params.heartLook) return; // board moved on
+        const built = hl.make();
+        if (!built) return;
+        scene.remove(heartSprite);
+        heartSprite = built;
+        scene.add(heartSprite);
+        heartSprite.layers.enable(MAP_LAYER);
+        placeActors();
+      });
+    }
     // the server sits at the cell whose centre is FARTHEST round the
     // sphere from the heart — the literal antipode, found by minimum dot
     {
@@ -1605,9 +1649,16 @@ export function initTdTab(root) {
   function placeActors() {
     const hc = graph.centers[dungeon.heart];
     const hn = graph.normals[dungeon.heart];
-    const hPos = add3(hc, scale3(hn, params.wallHeight * 0.6 + cellSide * 0.55));
+    const hlp = heartLook();
+    const hPos = add3(hc, scale3(hn, params.wallHeight * 0.6 + cellSide * hlp.lift));
     heartSprite.position.set(hPos[0], hPos[1], hPos[2]);
-    heartSprite.userData.sizeScale = cellSide * 1.15;
+    heartSprite.userData.sizeScale = cellSide * hlp.scale;
+    // APPLY IT NOW, not on the next frame. Both looks only read sizeScale
+    // inside tick(), so a freshly built Stalheart stands at its raw model
+    // size until the frame loop reaches it — which for the Terraformer is
+    // 2 world units, about THIRTY cells across. One tick settles it before
+    // anything is drawn.
+    if (heartSprite.userData.tick) heartSprite.userData.tick(simTime);
     tmpN.set(hn[0], hn[1], hn[2]);
     heartSprite.quaternion.setFromUnitVectors(Y_AXIS, tmpN);
 
@@ -3520,10 +3571,14 @@ export function initTdTab(root) {
     return g;
   }
 
+  // the briefing card draws whatever is ACTUALLY at the pole, so the picture
+  // can never disagree with the board — the same rule the hostiles glossary
+  // follows by generating itself from ENEMY_SPEC
   const heartIcon = () => {
-    const h = makeHeartCloud(new THREE.Color(look().heart).getHex());
+    const h = heartLook().make()
+      || makeHeartCloud(new THREE.Color(look().heart).getHex());
     h.userData.kind = 'heart';
-    h.userData.tick(1.2);
+    if (h.userData.tick) h.userData.tick(1.2);
     return h;
   };
   const unitIcon = (type, tint) => () => buildCreature(type, { walker: tint, walkerHi: 0xffffff });
@@ -3578,7 +3633,7 @@ export function initTdTab(root) {
     msgEl.innerHTML = `<div class="msg-head">transmission · briefing</div>` +
       `<div class="msg-scroll">` +
       `<div class="gcards">` +
-      glossCard('#ff6a88', spriteShot('heart', heartIcon), 'the heart', 'at the pole — its fall is the only defeat') +
+      glossCard('#ff6a88', spriteShot('heart', heartIcon), 'the stalheart', 'the terraformer at the pole — without it the colony dies') +
       glossCard('#9fdcff', spriteShot('tank', unitIcon('tank', look().walker)), 'your tank', 'W/Q-E drive · A/D steer · SPACE shell · SHIFT lasers · 1/2/3 views · U upgrade · ESC pause') +
       glossCard('#9fdcff', spriteShot('tower-' + params.towerLook, () => buildTowerLook(params.towerLook, TOWER_BY_KEY.single)), 'towers', 'your army — build them on the HIGH GROUND (walls) in BUILD mode') +
       glossCard('#ffb000', spriteShot('triad', makeTriadIcon), 'missile triads', 'drive over = +3 shells · shells also blast walls open') +
@@ -3648,7 +3703,7 @@ export function initTdTab(root) {
     const orbIcon = (shape, body) => () => makeRewardSolid(shape, { body, hi: 0xffffff }, 1.7);
     msgEl.innerHTML = `<div class="msg-head">glossary · pickups</div>` +
       `<div class="gcards">` +
-      glossCard('#ff6a88', spriteShot('heart', heartIcon), 'the heart', `${HEART_MAX} hp · enemy contact drains it · regen charges heal it`) +
+      glossCard('#ff6a88', spriteShot('heart', heartIcon), 'the stalheart', `${HEART_MAX} hp · enemy contact drains it · regen charges heal it`) +
       glossCard('#9fdcff', spriteShot('tower-' + params.towerLook, () => buildTowerLook(params.towerLook, TOWER_BY_KEY.single)), 'towers', 'mount on walls only · tap high ground in BUILD mode · upgrade twice · sell 75%') +
       glossCard('#ffb000', spriteShot('triad', makeTriadIcon), 'missile triad', '+3 shells on touch (rack caps at 9) — the ONLY ammo pickup') +
       glossCard('#9ff8ff', spriteShot('orb-power', orbIcon('star', 0x9ff8ff)), 'power sphere', 'far-field reward · +8% speed, permanent') +
@@ -7297,6 +7352,8 @@ export function initTdTab(root) {
   const speedCtrl = gui.add(params, 'speed', 0.2, 4, 0.1).name('wander speed');
   const directiveCtrl = gui.add(params, 'directive', DIRECTIVES).name('auto directive').onChange(syncDirectiveChip);
   gui.add(params, 'recoil', 0, 8, 0.1).name('shell recoil');
+  gui.add(params, 'heartLook', Object.keys(HEART_LOOKS)).name('stalheart')
+    .onFinishChange(() => { buildActors(); placeActors(); });
   gui.add(params, 'waveSize', 1, 6, 1).name('wave size').onFinishChange(regenerate);
   gui.add(params, 'wavesPerSector', 5, 40, 1).name('waves per sector');
   gui.add(params, 'waveGap', 3, 20, 1).name('wave gap (s)');
@@ -7952,6 +8009,8 @@ export function initTdTab(root) {
   if (viewOv === 'drone' && params.view !== 'drone') {
     preloadFabricator().then(() => { spawnIsao().then(() => setView('drone')); });
   }
+  const heartOverride = urlParams.get('heart');
+  if (HEART_LOOKS[heartOverride]) params.heartLook = heartOverride;
   const lookOverride = urlParams.get('look');
   if (LOOKS[lookOverride]) params.look = lookOverride;
   const wtOverride = urlParams.get('walltops');
@@ -8124,6 +8183,44 @@ export function initTdTab(root) {
       setTimeout(tick, 120);
     };
     tick();
+  }
+
+  // ?heartprobe=1 — WHAT IS ACTUALLY STANDING AT THE POLE. Headless crops, so
+  // a screenshot cannot answer whether the Terraformer loaded, how big it is
+  // on the board, or whether it is the fallback cloud wearing its name.
+  // Rectangles can.
+  if (urlParams.get('heartprobe') === '1') {
+    let tries = 0;
+    const run = () => {
+      const isTerra = heartSprite && heartSprite.type === 'Group';
+      if (!isTerra && params.heartLook === 'terraformer' && tries++ < 200) {
+        setTimeout(run, 25); return;      // bytes still in flight
+      }
+      placeActors();                       // seat and scale it as the board does
+      heartSprite.updateMatrixWorld(true);
+      const box = new THREE.Box3().setFromObject(heartSprite);
+      const size = new THREE.Vector3(); box.getSize(size);
+      let meshes = 0, named = [];
+      heartSprite.traverse((o) => {
+        if (o.isMesh) meshes++;
+        if (/Carriage|Mast|Arm_|Nozzle|Silo/.test(o.name || '')) named.push(o.name);
+      });
+      const span = Math.max(size.x, size.y, size.z);
+      console.log(`HEARTPROBE look=${params.heartLook}`
+        + ` node=${heartSprite.type} meshes=${meshes}`
+        + ` span=${(span / cellSide).toFixed(2)}cells`
+        + ` sizeScale=${(heartSprite.userData.sizeScale / cellSide).toFixed(2)}`
+        + ` hasTick=${typeof heartSprite.userData.tick === 'function'}`
+        + ` hasHit=${typeof heartSprite.userData.hit === 'function'}`
+        + ` pivots=${named.length}`);
+      // the contract the registry promises — exercised, not assumed
+      let threw = '';
+      try { heartSprite.userData.tick(3.2); heartSprite.userData.hit();
+            heartSprite.userData.tick(3.3); } catch (e) { threw = String(e); }
+      console.log(`HEARTPROBE contract=${threw ? 'FAIL ' + threw : 'PASS'}`
+        + ` (tick + hit + tick survive)`);
+    };
+    run();
   }
 
   // ?droneprobe=1 — DOES W FLY ISAO TOWARDS THE SCREEN?

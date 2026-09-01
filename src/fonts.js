@@ -15,7 +15,7 @@
 //
 // Pure data plus one thin effectful call — the standing testability line.
 
-import { makeParams, clampParams, formatKnobs } from './knobs.js?v=3dd0aa59';
+import { makeParams, clampParams, formatKnobs } from './knobs.js?v=b57d6dac';
 
 const MONO = 'ui-monospace, "SF Mono", SFMono-Regular, Menlo, monospace';
 const CJK = '"DotGothic16"';   // the shared Japanese voice, appended everywhere
