@@ -23,6 +23,15 @@ export const mean3 = (ps) => {
 
 // Orthonormal tangent basis at unit normal n (sphere centered at origin:
 // n = normalize(surface point)). Returns [u, v] with u ⊥ v ⊥ n.
+// Direction from `from` to `to`, flattened into the tangent plane at normal
+// `n`. On a sphere this is "which way do I steer", and it had drifted into
+// four independent copies. Kept GRAPH-FREE on purpose: callers pass the three
+// vectors, so this module still knows nothing about cells or adjacency.
+export const tangentDir = (n, from, to) => {
+  const d = sub3(to, from);
+  return norm3(sub3(d, scale3(n, dot3(d, n))));
+};
+
 export function tangentBasis(n) {
   // pick the axis least aligned with n to avoid degeneracy
   const ref = Math.abs(n[0]) < 0.9 ? [1, 0, 0] : [0, 1, 0];

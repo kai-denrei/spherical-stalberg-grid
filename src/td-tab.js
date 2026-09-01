@@ -19,39 +19,39 @@
 
 import * as THREE from '../vendor/three.module.js';
 import GUI from '../vendor/lil-gui.esm.js';
-import { generateSphereMesh, relax } from './grid.js?v=98d82b39';
-import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=98d82b39';
-import { mulberry32, randomSeed } from './rng.js?v=98d82b39';
-import { computeBerths, berthIndexFor } from './berths.js?v=98d82b39';
-import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3, segKey } from './vec3.js?v=98d82b39';
-import { CREATURES, waveJelly } from './creatures.js?v=98d82b39';
-import { brief } from './isaobriefs.js?v=98d82b39';
-import { drawEmotion } from './emotions.js?v=98d82b39';
+import { generateSphereMesh, relax } from './grid.js?v=5a399688';
+import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=5a399688';
+import { mulberry32, randomSeed } from './rng.js?v=5a399688';
+import { computeBerths, berthIndexFor } from './berths.js?v=5a399688';
+import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3, segKey, tangentDir } from './vec3.js?v=5a399688';
+import { CREATURES, waveJelly } from './creatures.js?v=5a399688';
+import { brief } from './isaobriefs.js?v=5a399688';
+import { drawEmotion } from './emotions.js?v=5a399688';
 import { ACHIEVEMENTS, ACHV_GROUPS, achievement, blankRun, earned, freshlyEarned,
   sanitiseRecord }
-  from './achievements.js?v=98d82b39';
+  from './achievements.js?v=5a399688';
 import { applyFontPack, currentFontPack, FONT_NAMES,
-  loadTypeFeel } from './fonts.js?v=98d82b39';
-import { UNITS, UNIT_NAMES, buildUnit, buildCreature, preloadMkcx, preloadServer, makeServerFixture, makeShieldShell, preloadContainer, makeContainerFixture, preloadFabricator, makeIsaoDrone, makeBulletCloud, makeRewardSolid, makeShellSolid, makeDebris, makeDotBurst, makePortalCloud, makeHeartCloud, makeDotEnemy } from './units.js?v=98d82b39';
-import { LOOKS, LOOK_NAMES } from './looks.js?v=98d82b39';
-import { makeCellIndex } from './cellindex.js?v=98d82b39';
-import { CREATURE_TINTS, ENEMY_SPEC, INTROS, computeWavePlan, accentFor } from './enemyspec.js?v=98d82b39';
-import { PICKUPS } from './pickups.js?v=98d82b39';
-import { rankFor, rankLabel, badgeSVG, killReq, eliteReq } from './ranks.js?v=98d82b39';
-import { makeScore } from './score.js?v=98d82b39';
-import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER } from './towers.js?v=98d82b39';
-import { makeEconomy, sellRefund } from './economy.js?v=98d82b39';
-import { makeBloom } from './postfx.js?v=98d82b39';
-import { TANK_FEEL, TANK_FEEL_KNOBS, makeTankFeel, stepTankFeel, landTankFeel, fireTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js?v=98d82b39';
-import { FEEL, loadFeel, saveFeel } from './feelstore.js?v=98d82b39';
+  loadTypeFeel } from './fonts.js?v=5a399688';
+import { UNITS, UNIT_NAMES, buildUnit, buildCreature, preloadMkcx, preloadServer, makeServerFixture, makeShieldShell, preloadContainer, makeContainerFixture, preloadFabricator, makeIsaoDrone, makeBulletCloud, makeRewardSolid, makeShellSolid, makeDebris, makeDotBurst, makePortalCloud, makeHeartCloud, makeDotEnemy } from './units.js?v=5a399688';
+import { LOOKS, LOOK_NAMES } from './looks.js?v=5a399688';
+import { makeCellIndex } from './cellindex.js?v=5a399688';
+import { CREATURE_TINTS, ENEMY_SPEC, INTROS, computeWavePlan, accentFor } from './enemyspec.js?v=5a399688';
+import { PICKUPS } from './pickups.js?v=5a399688';
+import { rankFor, rankLabel, badgeSVG, killReq, eliteReq } from './ranks.js?v=5a399688';
+import { makeScore } from './score.js?v=5a399688';
+import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER } from './towers.js?v=5a399688';
+import { makeEconomy, sellRefund } from './economy.js?v=5a399688';
+import { makeBloom } from './postfx.js?v=5a399688';
+import { TANK_FEEL, TANK_FEEL_KNOBS, makeTankFeel, stepTankFeel, landTankFeel, fireTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js?v=5a399688';
+import { FEEL, loadFeel, saveFeel } from './feelstore.js?v=5a399688';
 import { STRIKE_KNOBS, makeStrike, makeStrikeParams, grantStrikes, stepStrike,
   toggleArm, paintTarget, launchStrike, stepFall, skipFall, fallProgress,
-  strikeDamage, retargetStrike, orbitProgress } from './strike.js?v=98d82b39';
-import { radarBasis, radarProject, radarBearing, sweepAngle, radarPhosphor } from './radar.js?v=98d82b39';
-import { BLOOM_GROUPS } from './bloomweights.js?v=98d82b39';
-import { TOWER_LOOK_NAMES, DEFAULT_TOWER_LOOK, buildTowerLook, preloadLook } from './towerlooks.js?v=98d82b39';
-import { makeAudio } from './audio.js?v=98d82b39';
-import { DEATH_KEYS } from './audiomanifest.js?v=98d82b39';
+  strikeDamage, retargetStrike, orbitProgress } from './strike.js?v=5a399688';
+import { radarBasis, radarProject, radarBearing, sweepAngle, radarPhosphor } from './radar.js?v=5a399688';
+import { BLOOM_GROUPS } from './bloomweights.js?v=5a399688';
+import { TOWER_LOOK_NAMES, DEFAULT_TOWER_LOOK, buildTowerLook, preloadLook } from './towerlooks.js?v=5a399688';
+import { makeAudio } from './audio.js?v=5a399688';
+import { DEATH_KEYS } from './audiomanifest.js?v=5a399688';
 
 export function initTdTab(root) {
   let active = false;
@@ -1725,9 +1725,8 @@ export function initTdTab(root) {
   // and its last frame is the game's first frame.
   const CINE_OUT = 3.0, CINE_DIVE = 3.4;
   const CINE_LEN = CINE_OUT + CINE_DIVE;
-  let cineScrub = 0;   // ?cine=N scrubs in; shotHold parks the clock there
 
-  function playCinematic(after) {
+  function playCinematic(after, scrub = 0) {
     const n = berthIndexFor(playerHP);
     if (!graph || !dungeon || !berths[n]) { if (after) after(); return; }
     const b = berths[n];
@@ -1739,9 +1738,9 @@ export function initTdTab(root) {
     const look = add3(bc, scale3(bn, params.wallHeight * 0.55));
     startShot({
       id: 'cinematic',
-      dur: Math.max(0.001, CINE_LEN - cineScrub),
+      dur: Math.max(0.001, CINE_LEN - scrub),
       poseAt: (u, out) => {
-        const e = cineScrub + u * (CINE_LEN - cineScrub);
+        const e = scrub + u * (CINE_LEN - scrub);
         if (e < CINE_OUT) {
           // BEAT 1 pulls straight out along the berth's own normal, so the
           // wide shot is still centred on the place it is about to dive back
@@ -1949,18 +1948,28 @@ export function initTdTab(root) {
   // it. Re-entrant by exactly one level, and only ever set here.
   let camRaw = false;
 
+  // WHERE THE CAMERA WOULD BE WITH NOTHING OVERRIDING IT. Reading the pose
+  // instead of authoring a matching one is what makes every hand-off exact:
+  // a prelude that ends here cannot drift from the gameplay camera, because
+  // it IS the gameplay camera. DEPLOY blends into it; the DOWN DASH will
+  // blend into it too, which is why this is a named function and not a trick
+  // inside one `if`.
+  function gameplayCameraPose(out) {
+    camRaw = true;
+    updateCameraGoal();
+    camRaw = false;
+    out.pos.copy(camGoal.pos);
+    out.quat.copy(camGoal.quat);
+  }
+
   function updateCameraGoal() {
     // DEPLOY eases the doorway framing into the gameplay framing over its own
     // progress, so at u=1 the two ARE the same pose and handing the controls
     // over changes nothing on screen.
     if (deploy && !camRaw) {
-      const u = Math.min(1, deploy.travelled / deploy.segLen);
-      const w = u * u * (3 - 2 * u);
+      const w = deployEase();
       deployFramePoseFor(deploy.n, camA);
-      camRaw = true;
-      updateCameraGoal();          // camGoal is now the true gameplay pose
-      camRaw = false;
-      camB.pos.copy(camGoal.pos); camB.quat.copy(camGoal.quat);
+      gameplayCameraPose(camB);
       camGoal.pos.lerpVectors(camA.pos, camB.pos, w);
       camGoal.quat.copy(camA.quat).slerp(camB.quat, w);
       return;
@@ -2134,12 +2143,10 @@ export function initTdTab(root) {
   }
 
   // --- movement over the cell graph ---------------------------------------
-  function tangentDirTo(from, to) {
-    const n = graph.normals[from];
-    const d = sub3(graph.centers[to], graph.centers[from]);
-    const t = sub3(d, scale3(n, dot3(d, n))); // project onto tangent plane
-    return norm3(t);
-  }
+  // the projection itself lives in vec3.js, so berths.js (pure, Node-tested)
+  // and this file cannot drift apart; the wrapper just supplies `graph`
+  const tangentDirTo = (from, to) =>
+    tangentDir(graph.normals[from], graph.centers[from], graph.centers[to]);
 
   function openNeighbors(ci) {
     // towers block PATHING for everyone — they are the walls you buy
@@ -4413,6 +4420,15 @@ export function initTdTab(root) {
     //
     // Deliberately NOT in applyLook: a look swap is a cosmetic, and
     // cosmetics never reset the run.
+    //
+    // A RESET ALSO ENDS WHATEVER SHOT WAS RUNNING. Regenerate is on the GUI
+    // and on Retry, so it can land mid-reveal — and a reveal that survives a
+    // reset keeps its skip listeners registered and then fires its onEnd
+    // against revealCells captured from the board that no longer exists.
+    // Same rule as runGen for timers, one level up: work started by the dead
+    // run must not land on the live one.
+    endShot();
+    revealCells = [];
     deployStart(berthIndexFor(playerHP));
     placeActors();
     // a fresh board earns a fresh framing — the first-entry courtesy resets
@@ -5648,13 +5664,9 @@ export function initTdTab(root) {
     throttle = 0; cruise = false; autoMode = false;
     paintThrottle();
     stopEngine(0.1, true);
-    deploy = {
-      n,
-      from: graph.centers[b.ci].slice(),
-      to: graph.centers[b.exit].slice(),
-      segLen: player.segLen,
-      travelled: 0,
-    };
+    // only what is NOT derivable: which berth, and how far out we are. from,
+    // to and segLen were all functions of `n` and drifted-by-construction.
+    deploy = { n, travelled: 0 };
     return true;
   }
 
@@ -5678,14 +5690,31 @@ export function initTdTab(root) {
     out.quat.copy(tmpCam.quaternion);
   }
 
+  // how far through the drive-out we are, eased — the camera blend and the
+  // motion share one progress value so they cannot disagree
+  function deployProgress() {
+    if (!deploy) return 1;
+    const b = berths[deploy.n];
+    if (!b) return 1;
+    const segLen = Math.max(1e-9,
+      dist3(graph.centers[b.ci], graph.centers[b.exit]));
+    return Math.min(1, deploy.travelled / segLen);
+  }
+  function deployEase() {
+    const u = deployProgress();
+    return u * u * (3 - 2 * u);
+  }
+
   function deployStep(dt) {
     if (!deploy) return;
     const b = berths[deploy.n];
     if (!b) { deploy = null; return; }
     const v = params.speed * speedBonus * cellSide * 1.6;
     deploy.travelled += v * dt;
-    const u = Math.min(1, deploy.travelled / deploy.segLen);
-    const p = [0, 1, 2].map((i) => deploy.from[i] + (deploy.to[i] - deploy.from[i]) * u);
+    const u = deployProgress();
+    const from = graph.centers[b.ci];
+    const to = graph.centers[b.exit];
+    const p = [0, 1, 2].map((i) => from[i] + (to[i] - from[i]) * u);
     player.pos = norm3(p);
     player.heading = tangentDirTo(b.ci, b.exit);
     player.travelDir = player.heading.slice();
@@ -8004,6 +8033,25 @@ export function initTdTab(root) {
   // the dead run's timer still lands on the live one: a respawn:tank-lost
   // printed AFTER regenerate:after is a repositioning nobody asked for, on
   // a run that has not lost anything.
+  // Does a real keydown still reach the game? Shared by every probe that
+  // asks it, so the reasoning below lives in exactly one place.
+  //
+  // DISPATCH ON A DESCENDANT, NOT ON WINDOW. A keydown aimed straight at
+  // window makes window the TARGET, and at-target listeners run in
+  // registration order with the capture flag IGNORED — which puts the game's
+  // own handler (registered at init) ahead of a shot's capture handler
+  // (registered later) and reverses the very ordering under test. A real key
+  // travels capture -> target -> bubble; so must this.
+  function probeKeyReaches() {
+    keys.fast = false;
+    document.body.dispatchEvent(
+      new KeyboardEvent('keydown', { key: 'w', bubbles: true, cancelable: true }));
+    const reached = keys.fast;
+    keys.fast = false;
+    ctlRawT = -9;   // the synthetic press must not trip the live watchdog
+    return reached;
+  }
+
   // ?deployprobe=1 — THE CONSISTENCY QUESTION, made a check. The operator's
   // report was that every reset produced a different opening state; this
   // walks the reset paths in turn and asserts each lands in the SAME shape:
@@ -8040,6 +8088,35 @@ export function initTdTab(root) {
       + ` deploying=${deployActive()} auto=${autoMode} cruise=${cruise})`);
   }
 
+  // ?resetprobe=1 — A RESET ENDS WHATEVER WAS RUNNING. regenerate() is on the
+  // GUI and on Retry, so it can land mid-reveal; a shot that survives it keeps
+  // its capture-phase skip listener registered and later fires its onEnd
+  // against cells from a board that no longer exists.
+  if (urlParams.get('resetprobe') === '1') {
+    let tries = 0;
+    const run = () => {
+      if (!active && tries++ < 200) { setTimeout(run, 25); return; }
+      dismissIntro();
+      if (msgEl && !msgEl.classList.contains('hidden')) {
+        paused = false; msgEl.classList.add('hidden');
+      }
+      let ended = 0;
+      startShot({
+        id: 'probe-reveal',
+        dur: 99,          // long enough that only a reset can end it
+        poseAt: (u, out) => { out.pos.copy(camera.position); out.quat.copy(camera.quaternion); },
+        onEnd: () => { ended++; },
+      });
+      const before = shotId();
+      regenerate();
+      const cleared = !shotActive();
+      const reached = probeKeyReaches();
+      console.log(`RESETPROBE shot-torn-down=${cleared && ended === 1 && reached ? 'PASS' : 'FAIL'}`
+        + ` (was '${before}', cleared ${cleared}, onEnd ${ended}x, key reached ${reached})`);
+    };
+    run();
+  }
+
   // ?shotprobe=1 — THE TEARDOWN REGRESSION GUARD, for camShot itself.
   // A shot installs a capture-phase keydown handler that stops the event
   // dead. If its teardown is ever skipped, the whole keyboard dies silently
@@ -8066,15 +8143,7 @@ export function initTdTab(root) {
       });
       const wasActive = shotActive();
       stepShot(0.2);   // precisely what animate does: decrement past zero
-      keys.fast = false;
-      // through the REAL phase order — a keydown aimed at window makes window
-      // the target, where the capture flag is ignored and registration order
-      // decides, which reverses the very ordering under test
-      document.body.dispatchEvent(
-        new KeyboardEvent('keydown', { key: 'w', bubbles: true, cancelable: true }));
-      const reached = keys.fast;
-      keys.fast = false;
-      ctlRawT = -9;   // the synthetic press must not trip the live watchdog
+      const reached = probeKeyReaches();
       const ok = wasActive && !shotActive() && ended === 1 && reached;
       console.log(`SHOTPROBE teardown=${ok ? 'PASS' : 'FAIL'}`
         + ` (started ${wasActive}, cleared ${!shotActive()}, onEnd ${ended}x,`
@@ -8122,18 +8191,7 @@ export function initTdTab(root) {
       const msgUp = msgEl && !msgEl.classList.contains('hidden');
       if (msgUp) { paused = false; msgEl.classList.add('hidden'); }
       console.log(`CINEPROBE handoff-shape introUp=${introUp} briefingUp=${msgUp}`);
-      keys.fast = false;
-      // DISPATCH ON A DESCENDANT, NOT ON WINDOW. A keydown aimed straight at
-      // window makes window the TARGET, and at-target listeners run in
-      // registration order with the capture flag IGNORED — which puts the
-      // game's own handler (registered at init) ahead of a shot's capture
-      // handler (registered later) and reverses the very ordering under
-      // test. A real key travels capture -> target -> bubble; so must this.
-      document.body.dispatchEvent(
-        new KeyboardEvent('keydown', { key: 'w', bubbles: true, cancelable: true }));
-      const reached = keys.fast;
-      keys.fast = false;
-      ctlRawT = -9;   // the synthetic press must not trip the live watchdog
+      const reached = probeKeyReaches();
       console.log(`CINEPROBE move-after-intro=${reached ? 'PASS' : 'FAIL'}`
         + ` (W reached the game: ${reached}, want true)`);
       console.log(`CINEPROBE handoff-ran=${deployed ? 'PASS' : 'FAIL'}`
@@ -8255,10 +8313,10 @@ export function initTdTab(root) {
     // held until the berths land (or the frame loop's safety net fires) —
     // the opening shot needs the thing it is a shot OF
     const scrub = parseFloat(cineParam || '0');
-    if (scrub > 0) { cineScrub = scrub; shotHold = true; }
+    if (scrub > 0) shotHold = true;   // ?cine=N parks the clock on that beat
     // nothing to wait for any more: the camp is known with the board, so the
     // opening shot has its subject the moment the tab exists
-    playCinematic(opening || (() => {}));
+    playCinematic(opening || (() => {}), scrub);
   } else {
     deployStart(berthIndexFor(playerHP));
     if (opening) opening();

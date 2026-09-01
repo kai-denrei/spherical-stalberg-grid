@@ -9,14 +9,11 @@
 //
 // None of this needs the model. It is graph maths over cells, so it runs
 // synchronously with the board and the model merely decorates the answer.
-import { sub3, dot3, norm3, scale3 } from './vec3.js';
+import { dot3, tangentDir } from './vec3.js';
 import { BLOCKED } from './dungeon.js';
 
-function tangentDirTo(graph, from, to) {
-  const n = graph.normals[from];
-  const d = sub3(graph.centers[to], graph.centers[from]);
-  return norm3(sub3(d, scale3(n, dot3(d, n)))); // onto the tangent plane
-}
+const tangentDirTo = (graph, from, to) =>
+  tangentDir(graph.normals[from], graph.centers[from], graph.centers[to]);
 
 // Which container this hull drives out of. The operator's rule: the FIRST
 // tank leaves Container #3, the second #2, the last #1 — so a full hull count
