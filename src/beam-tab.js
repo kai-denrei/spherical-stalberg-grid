@@ -19,7 +19,7 @@ import GUI from '../vendor/lil-gui.esm.js';
 import { createBeam, DEFAULTS } from './beamfx.js';
 import { makeBloom } from './postfx.js';
 import { LOOKS } from './looks.js';
-import { buildCreature, preloadMkcx } from './units.js';
+import { buildCreature, preloadMkcx, SECONDARY_TOE } from './units.js';
 
 // the heat clock the secondary actually runs on, mirrored from td-tab so the
 // envelope tuned here is the envelope the weapon will fire
@@ -34,8 +34,8 @@ export function initBeamTab(root) {
   container.appendChild(renderer.domElement);
 
   const scene = new THREE.Scene();
-  const camera = new THREE.PerspectiveCamera(42, 1, 0.005, 200);
-  camera.position.set(2.4, 1.5, 3.0);
+  const camera = new THREE.PerspectiveCamera(42, 1, 0.005, 400);
+  camera.position.set(4.5, 2.6, 6.0);
 
   // THE GAME'S LIGHT RIG, not an inspection rig. A beam tuned under gentle
   // studio light will be wrong the moment it fires on the board.
@@ -53,10 +53,10 @@ export function initBeamTab(root) {
   const world = new THREE.Group();
   scene.add(world);
   const floor = new THREE.Mesh(
-    new THREE.CircleGeometry(6, 64).rotateX(-Math.PI / 2),
+    new THREE.CircleGeometry(30, 64).rotateX(-Math.PI / 2),
     new THREE.MeshStandardMaterial({ color: 0x0b1016, roughness: 0.95, metalness: 0.05 }));
   world.add(floor);
-  const grid = new THREE.GridHelper(12, 24, 0x00d0ff, 0x0a3a4a);
+  const grid = new THREE.GridHelper(60, 60, 0x00d0ff, 0x0a3a4a);
   grid.material.transparent = true; grid.material.opacity = 0.5;
   world.add(grid);
 
@@ -74,7 +74,7 @@ export function initBeamTab(root) {
     if (guns && guns.length >= 2) { [gunL, gunR] = guns; }
   }
   buildTank('tronColors');
-  preloadMkcx().then(() => buildTank(P.look));   // swap in when the bytes land
+  preloadMkcx().then(() => { buildTank(P.look); applyToe(); });  // swap in when the bytes land
 
   // --- the two beams, an inverted V meeting at an apex ---------------------
   // Emitter positions come from the gun world transforms, never from a stored
@@ -111,8 +111,12 @@ export function initBeamTab(root) {
     envelope: 'bell',           // bell = 0 -> peak -> 0 across one burst
     peakIntensity: 8.0,
     burstSeconds: LASER_MAX_HEAT,
-    apexDistance: 2.2,          // where the two beams meet, in world units
+    // LENGTH. The apex is where the two beams meet, so this IS the beam
+    // length — a long reach was the point of the weapon and 2.2 was barely
+    // past the hull. Ranges to 40 so "much longer" is actually reachable.
+    apexDistance: 12.0,
     spread: 1.0,                // how far apart the emitters read
+    toeIn: SECONDARY_TOE,       // live, so convergence can be tuned by eye
     autoFire: true,
     copyPreset: () => {
       const out = {};
@@ -127,6 +131,17 @@ export function initBeamTab(root) {
     },
     reset: () => { Object.assign(P, DEFAULTS, WORLD_SCALED); gui.controllersRecursive().forEach((c) => c.updateDisplay()); },
   };
+
+  // Same rule as the model fix-up: inward is decided by the turret's own
+  // side, never by its name.
+  function applyToe() {
+    if (!tank) return;
+    for (const name of ['Secondary_L_Pivot', 'Secondary_R_Pivot']) {
+      const piv = tank.getObjectByName(name);
+      if (!piv) continue;
+      piv.rotation.set(0, (piv.position.x < 0 ? 1 : -1) * P.toeIn, 0);
+    }
+  }
 
   function applyWorld() {
     const bg = P.bgBrightness;
@@ -163,8 +178,10 @@ export function initBeamTab(root) {
   ge.open();
 
   const gg = gui.addFolder('geometry');
-  gg.add(P, 'apexDistance', 0.4, 6, 0.05);
+  gg.add(P, 'apexDistance', 0.4, 40, 0.1).name('beam length (apex)');
   gg.add(P, 'spread', 0.2, 3, 0.05);
+  gg.add(P, 'toeIn', 0, 0.6, 0.005).name('secondary toe-in').onChange(applyToe);
+  gg.open();
 
   const gc = gui.addFolder('core');
   gc.addColor(P, 'coreColor');

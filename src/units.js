@@ -16,14 +16,14 @@
 
 import * as THREE from '../vendor/three.module.js';
 import { EMOTION_IDS, emotion, phosphorFor } from './emotions.js';
-import { printPhase, printOffset, printOn } from './printpath.js?v=cfa1b31d';
+import { printPhase, printOffset, printOn } from './printpath.js?v=e5cbd473';
 import { loadGlb, mergeByMaterial, fitModel, tintModel, makeShellRack,
-  addEdgeOutlines, makeHeatSleeve } from './glbmodels.js?v=cfa1b31d';
-import { CREATURES, waveJelly, swimWave, spherePts, bulletPts, missilePts, heartPts, torusPts, towerHeadPts, enemyDotPts, portalPts } from './creatures.js?v=cfa1b31d';
-import { TOWER_FEEL, TOWER_HEADS, headKindFor } from './towerfeel.js?v=cfa1b31d';
+  addEdgeOutlines, makeHeatSleeve } from './glbmodels.js?v=e5cbd473';
+import { CREATURES, waveJelly, swimWave, spherePts, bulletPts, missilePts, heartPts, torusPts, towerHeadPts, enemyDotPts, portalPts } from './creatures.js?v=e5cbd473';
+import { TOWER_FEEL, TOWER_HEADS, headKindFor } from './towerfeel.js?v=e5cbd473';
 import { STARGATE_PTS, STARGATE_STROKE,
-  HORIZON_N, stargateHorizon } from './stargate.js?v=cfa1b31d';
-import { ENEMY_SPEC } from './enemyspec.js?v=cfa1b31d';
+  HORIZON_N, stargateHorizon } from './stargate.js?v=e5cbd473';
+import { ENEMY_SPEC } from './enemyspec.js?v=e5cbd473';
 
 function normalizeToUnit(group) {
   group.updateMatrixWorld(true);
@@ -1150,6 +1150,11 @@ const MKCX_URL = 'assets/models/mkcx.glb';
 // the glow accents, which is exactly what makes the health tint cheap.
 const MKCX_LIFTERS = ['LiftEmitter_L1', 'LiftEmitter_L2', 'LiftEmitter_L3',
   'LiftEmitter_R1', 'LiftEmitter_R2', 'LiftEmitter_R3'];
+// How far the twin secondaries toe in, in radians. The model authors ~9deg
+// but applies it the same way round on both sides; this is the magnitude,
+// applied inward per side. Tunable in the beam tab.
+export const SECONDARY_TOE = 0.157;
+
 const MKCX_PIVOTS = ['Turret_Pivot', 'Secondary_L_Gun_Pivot', 'Secondary_R_Gun_Pivot',
   'Hover_Gear', ...MKCX_LIFTERS];
 // The barrel glow strips are authored floating +0.20 above the barrel axis.
@@ -2001,6 +2006,25 @@ function makeMkcx(cols) {
   const guns = ['Secondary_L_Gun_Pivot', 'Secondary_R_Gun_Pivot']
     .map((n) => g.getObjectByName(n))
     .filter(Boolean);
+
+  // TOE THEM IN, SYMMETRICALLY (operator, 2026-09-01).
+  //
+  // The authored model gives both secondary turrets the SAME yaw:
+  // Secondary_L_Pivot and Secondary_R_Pivot both carry
+  // [0, -0.0785, 0, 0.9969] — about 9 degrees the same way round. One of
+  // them therefore toes IN and the other toes OUT, which is why the pair
+  // never converged and why the two beams could not meet at an apex.
+  //
+  // Corrected from each turret's OWN SIDE rather than from its name: a gun
+  // left of the centreline must yaw toward +X and one right of it toward -X.
+  // Deriving it from position means the fix cannot be defeated by an
+  // L/R naming convention, in the model or in my head.
+  for (const name of ['Secondary_L_Pivot', 'Secondary_R_Pivot']) {
+    const piv = g.getObjectByName(name);
+    if (!piv) continue;
+    const side = piv.position.x < 0 ? 1 : -1;    // sign that points inward
+    piv.rotation.set(0, side * SECONDARY_TOE, 0);
+  }
 
   // Split the tank in two so the hull can lift while the skirt stays down.
   // Raising the WHOLE unit reads as flight; raising only the body off a
