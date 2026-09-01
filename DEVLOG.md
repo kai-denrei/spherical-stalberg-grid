@@ -6,6 +6,85 @@ Demo links assume `npm run serve` (port 8144) or the
 
 ---
 
+## `6d79bdd` — the cold open ate the keyboard
+
+The operator, testing `e99da83a` on localhost: *"I still cannot move after the
+cinematic intro."* Right — and the previous entry's verification could never
+have caught it, because **every headless run passed `?cine=0`**, which skips
+the exact feature in the repro path. Skipping the intro tears down correctly.
+Finishing it did not.
+
+```js
+cineLeft -= dt;
+if (cineLeft <= 0) endCinematic();   // already <= 0 by the time we call
+
+function endCinematic() {
+  if (cineLeft <= 0) return;         // ...so it returns, before the teardown
+  removeEventListener('keydown', cineSkipKey, true);
+```
+
+When the cold open **runs to completion** rather than being skipped, the frame
+loop drives the clock to `<= 0` and *then* calls `endCinematic()`, which bails
+at its own guard. `cineSkipKey` is a capture-phase `keydown` handler that calls
+`preventDefault()` and `stopImmediatePropagation()` — so from that moment it ate
+**every key in the game, permanently**. Mouse and touch kept working, because
+`click` is not the `pointerdown` the tap handler stops. That is the whole shape
+of the report: WASD dead, AUTO frees it.
+
+`cineAfter` never ran either, so the briefing the cold open fronts never
+opened — no modal to explain the dead keyboard, and nothing to dismiss.
+
+**The fix.** Latch teardown on its own flag, set when the listeners go on:
+
+```js
+function endCinematic() {
+  if (!cineOn) return;
+  cineOn = false;
+  cineLeft = 0;
+  removeEventListener('keydown', cineSkipKey, true);
+  ...
+```
+
+A countdown the caller has already zeroed cannot also be the thing that decides
+whether cleanup has run. The guard has to track *"are the listeners installed
+and is the handoff still owed"*, which is not the same question as *"is there
+time left"*.
+
+**`?cineprobe=1`** asks the operator's question directly: can the player move
+after the intro. It cannot wait the nine seconds out — under a virtual-time
+budget `performance.now()` does not advance, so the frame loop's `dt` stays ~0
+and the cinematic never ends on its own — so it reproduces the natural end
+exactly as `animate` leaves it (`cineLeft` driven below zero, then
+`endCinematic()`), dismisses the handoff the way a player does, and dispatches
+a real `w`. Negative control on the old guard: `introUp=false`,
+`move-after-intro=FAIL`, `handoff-ran=FAIL`. With the fix, all PASS.
+
+**Two probe bugs, both worth keeping in mind.** The first cut dispatched the
+keydown *on* `window` — which makes window the **target**, and at-target
+listeners run in registration order with the capture flag ignored. That put the
+game's own handler (registered at init) ahead of the cinematic's capture
+handler (registered later) and reversed the very ordering under test: it
+reported PASS on code that was broken. A real key lands on the focused element
+and travels capture → target → bubble, so the probe dispatches on
+`document.body`. The second cut asserted the key the instant the cinematic
+ended, which tests the wrong moment — the briefing legitimately holds the
+keyboard until dismissed.
+
+**The watchdog was blind to this too.** It asked
+`keys.fast || keys.slow || cruise || throttle !== 0` — the game's *belief* about
+the input. So the one failure mode that matters most, something eating keydown
+before the game ever sees it, made the watchdog go **quiet instead of loud**. It
+now reads raw keydown from a listener registered at init (ahead of anything a
+cinematic adds later) and prints `CTL-SWALLOWED` when the player is pressing a
+drive key the game never receives. Verified firing on the buggy build.
+
+**Lessons.** A teardown guard must track the resource, not a clock the caller
+already advanced past. A verification flag that disables the feature under test
+(`?cine=0`) is not a verification. And instrumentation that reads a *derived*
+signal cannot see a fault in the layer that derives it — read the raw input.
+
+---
+
 ## `e3d0713` — a run owns its deferred work
 
 The two reset bugs the last session left open — **controls dead after a
