@@ -1,8 +1,8 @@
 # The sound SNAFU — a handover
 
-**Status: MEASURED AND LOCALISED — the fault is OUTSIDE this codebase.**
-Works on Chrome and on iPhone. On desktop Safari the graph produces full-level
-audio and the browser does not output it. Written 2026-09-01 so whoever picks this up next does
+**Status: CLOSED for this repo. Web Audio is broken in the operator's desktop
+Safari.** Proven with a bare control page containing no game code at all.
+Works on Chrome and on iPhone. Written 2026-09-01 so whoever picks this up next does
 not repeat six attempts that are already known not to work.
 
 The symptom: **the TD tab produces no audible sound in Safari on the
@@ -118,6 +118,53 @@ document.
   spec-portable, but Safari has a history of strictness about cross-context
   buffers. Once the real context exists, the samples are decoded again onto
   it — cached files, so a decode and no network.
+
+---
+
+## CLOSED — proven with a control page, 2026-09-01
+
+`/audiotest.html` is a standalone page: no modules, no build step, no game.
+It creates an `AudioContext` inside a real click handler, primes it with a
+silent buffer, and plays an oscillator at gain 0.3 straight to
+`ctx.destination`. Alongside it, a plain `<audio>` element plays
+`danger_alert.mp3`.
+
+Result on the operator's desktop Safari:
+
+| Path | Result |
+|---|---|
+| `<audio>` element (what YouTube uses) | **works** |
+| Web Audio oscillator | **silent** |
+
+**Web Audio is broken in that Safari installation.** Roughly twenty lines of
+textbook Web Audio, with no part of this project involved, produce no sound.
+Nothing in `src/audio.js` can affect that, and no further change to this
+repo will fix it.
+
+### Confirming it, then fixing the machine
+
+1. **Check it is Safari-wide, not origin-specific.** Open any public Web Audio
+   demo (MDN's oscillator example will do) in that Safari. If it is also
+   silent, the diagnosis is complete.
+2. **Private Window**, and **disable all extensions** — an extension
+   intercepting or an injected script is the most common cause of a
+   subsystem-specific break.
+3. **Develop → Experimental Features → Reset All to Defaults.** A stray
+   Web Audio toggle here will do exactly this.
+4. **Quit Safari fully** (not just the tab) and relaunch.
+5. **Audio MIDI Setup** — Web Audio and media elements can take different
+   output routes. A virtual or aggregate device (Loopback, BlackHole,
+   Soundflower) selected somewhere in the chain will silence one and not the
+   other, which fits this signature precisely.
+
+### If it cannot be fixed on that machine
+
+The game could be given an `HTMLAudioElement` fallback path — the `<audio>`
+route demonstrably works there. It is a real amount of work: no bus mixing,
+no per-voice gain graph, cruder voice management, and the mix layer in
+`audiomix.js` would need a second backend. **Not recommended for one broken
+browser install**, but it is a genuine option and the measurement above is
+what would justify it.
 
 ---
 
