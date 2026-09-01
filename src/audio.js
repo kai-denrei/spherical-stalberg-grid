@@ -17,10 +17,10 @@
 //    total. A failed fetch or decode logs once and that key becomes a
 //    permanent no-op for the session; the game keeps running silent.
 
-import { makeMixState, distanceGain, admit, addVoice, dropVoice } from './audiomix.js?v=bd425e5e';
-import { SOUNDS, BUSES, DEFAULT_LEVELS, GLOBAL_VOICE_CAP, DISTANCE_K } from './audiomanifest.js?v=bd425e5e';
-import { mulberry32 } from './rng.js?v=bd425e5e';
-import { gateStep } from './audiogate.js?v=bd425e5e';
+import { makeMixState, distanceGain, admit, addVoice, dropVoice } from './audiomix.js?v=5469ee75';
+import { SOUNDS, BUSES, DEFAULT_LEVELS, GLOBAL_VOICE_CAP, DISTANCE_K } from './audiomanifest.js?v=5469ee75';
+import { mulberry32 } from './rng.js?v=5469ee75';
+import { gateStep } from './audiogate.js?v=5469ee75';
 
 const STORE_KEY = 'ssg.audio.levels';
 const STEAL_FADE = 0.03; // s — a hard cut mid-waveform is an audible click
@@ -89,6 +89,7 @@ export function makeAudio(opts = {}) {
         console.log(`AUDIO state -> ${st}`);
         if (st === 'running') {
           stopListening();
+          while (runningCbs.length) { try { runningCbs.shift()(); } catch { /* caller's problem */ } }
           if (!summaryArmed) {
             summaryArmed = true;
             // eight seconds of real play is enough to have asked for
@@ -153,6 +154,45 @@ export function makeAudio(opts = {}) {
     for (const ev of ARM_EVENTS) window.addEventListener(ev, onGesture, ARM_OPTS);
   }
 
+  // THE SAFARI UNLOCK. Creating a context in a gesture and resuming it is
+  // still not enough on Safari: the output stays dead until a buffer has
+  // actually been PLAYED inside that gesture. One sample of silence is
+  // enough, and it is what every audio library does. This should have been
+  // here from the start — it is the single most standard thing in browser
+  // audio and its absence is why five other fixes all measured healthy and
+  // sounded like nothing.
+  let primed = false;
+  function primeOutput() {
+    if (!ctx || primed) return;
+    try {
+      const b = ctx.createBuffer(1, 1, 22050);
+      const src = ctx.createBufferSource();
+      src.buffer = b;
+      src.connect(ctx.destination);
+      src.start(0);
+      primed = true;
+      console.log('AUDIO primed (silent buffer played inside the gesture)');
+    } catch (e) {
+      console.log(`AUDIO prime failed ${(e && e.name) || e}`);
+    }
+  }
+
+  // Buffers decoded on an OfflineAudioContext are spec-portable, but Safari
+  // has a long history of being strict about cross-context buffers. Once the
+  // real context exists, decode again onto IT — the files are in the browser
+  // cache by then, so this costs a decode and no network.
+  let redecoded = false;
+  function redecodeOnPlaybackCtx() {
+    if (!ctx || redecoded) return;
+    redecoded = true;
+    loadPromise = null;
+    loadStarted = false;
+    load().then(() => {
+      console.log('AUDIO re-decoded onto the playback context');
+      reportReady();
+    });
+  }
+
   function rebuildCtx() {
     rebuilds++;
     failedResumes = 0;
@@ -190,6 +230,8 @@ export function makeAudio(opts = {}) {
     if (step.action === 'done' || step.action === 'give-up') { stopListening(); return; }
     if (step.action === 'rebuild') { rebuildCtx(); }
     if (!ctx) return;
+    primeOutput();            // must happen INSIDE the gesture
+    redecodeOnPlaybackCtx();
     ctx.resume().then(
       () => {
         if (stateNow() === 'running') {
@@ -298,6 +340,7 @@ export function makeAudio(opts = {}) {
   let mutedReport = false;
   let loadSettled = false;
   let summaryArmed = false;
+  const runningCbs = [];
   let firstVoiceLogged = false;
   let firstAudibleLogged = false;
   // counters, so a summary can separate "nothing is asking for sound"
@@ -417,6 +460,39 @@ export function makeAudio(opts = {}) {
     // Stop everything and unwire it. A new run should not inherit the last
     // run's graph — a bed whose owner was thrown away keeps playing, and
     // keeps costing, for as long as the page is open.
+    // A TONE THAT USES NONE OF THE SAMPLE PATH. Straight oscillator ->
+    // destination: no decoded buffer, no bus, no master, no mix admission.
+    // If this is audible and the game is not, the fault is in buffers or the
+    // gain graph. If neither is audible, the context is not reaching the
+    // speakers at all. That is the one question five rounds of fixes never
+    // managed to ask.
+    beep(freq = 880, ms = 300) {
+      if (!ensureCtx()) { console.log('AUDIO beep: no context'); return false; }
+      primeOutput();
+      try {
+        const o = ctx.createOscillator();
+        const g = ctx.createGain();
+        o.frequency.value = freq;
+        g.gain.value = 0.25;
+        o.connect(g);
+        g.connect(ctx.destination);   // deliberately bypassing master
+        o.start();
+        o.stop(ctx.currentTime + ms / 1000);
+        console.log(`AUDIO beep ${freq}Hz for ${ms}ms, ctx=${ctx.state},`
+          + ' straight to destination (bypasses buses/master/mix)');
+        return true;
+      } catch (e) {
+        console.log(`AUDIO beep failed ${(e && e.name) || e}`);
+        return false;
+      }
+    },
+
+    // Fires once, the moment the context is genuinely running.
+    whenRunning(cb) {
+      if (ctx && ctx.state === 'running') { cb(); return; }
+      runningCbs.push(cb);
+    },
+
     panic() {
       for (const id of [...live.keys()]) stopVoice(id, 0.02);
     },
