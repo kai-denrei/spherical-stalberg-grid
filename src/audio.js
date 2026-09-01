@@ -17,10 +17,10 @@
 //    total. A failed fetch or decode logs once and that key becomes a
 //    permanent no-op for the session; the game keeps running silent.
 
-import { makeMixState, distanceGain, admit, addVoice, dropVoice } from './audiomix.js?v=69a99ae4';
-import { SOUNDS, BUSES, DEFAULT_LEVELS, GLOBAL_VOICE_CAP, DISTANCE_K } from './audiomanifest.js?v=69a99ae4';
-import { mulberry32 } from './rng.js?v=69a99ae4';
-import { gateStep } from './audiogate.js?v=69a99ae4';
+import { makeMixState, distanceGain, admit, addVoice, dropVoice } from './audiomix.js?v=bd425e5e';
+import { SOUNDS, BUSES, DEFAULT_LEVELS, GLOBAL_VOICE_CAP, DISTANCE_K } from './audiomanifest.js?v=bd425e5e';
+import { mulberry32 } from './rng.js?v=bd425e5e';
+import { gateStep } from './audiogate.js?v=bd425e5e';
 
 const STORE_KEY = 'ssg.audio.levels';
 const STEAL_FADE = 0.03; // s — a hard cut mid-waveform is an audible click
@@ -158,11 +158,10 @@ export function makeAudio(opts = {}) {
     failedResumes = 0;
     const old = ctx;
     ctx = null; master = null;
-    loadPromise = null; loadStarted = false; loadSettled = false;
-    for (const k of Object.keys(buffers)) delete buffers[k];
     if (old) { try { old.close(); } catch { /* already gone */ } }
     ensureCtx();          // built inside the gesture this time
-    load().then(reportReady);
+    // buffers are kept: an AudioBuffer is data, not a child of the context
+    // that decoded it, so a rebuild costs nothing to re-fetch
   }
 
   function reportReady() {
@@ -213,16 +212,32 @@ export function makeAudio(opts = {}) {
   function arm() {
     if (armed) return;
     armed = true;
-    // Eager, because decodeAudioData works on a suspended context: the samples
-    // download and decode during page load instead of after the first click.
-    ensureCtx();
+    // Decode now, on an OFFLINE context. Do NOT create the playback context
+    // here: Safari will happily report a context created outside a gesture as
+    // `running` and then produce no output at all — measured, with 30 audible
+    // voices at gain 0.55 and silence (operator, 2026-09-01). The playback
+    // context is born in the gesture handler, which is the one place every
+    // browser agrees on.
     load().then(reportReady);
-    console.log(`AUDIO armed ctx=${stateNow()} muted=${muted} master=${levels.master}`);
-    if (stateNow() === 'running') return;   // some contexts start running
+    console.log(`AUDIO armed (decoding; playback context waits for a gesture)`
+      + ` muted=${muted} master=${levels.master}`);
     startListening();
-    // ...and try once now: a context can already be permitted (localhost with
-    // media engagement, an installed PWA) and then no gesture is needed.
-    if (ctx) ctx.resume().catch(() => { /* expected without activation */ });
+  }
+
+  // DECODING DOES NOT NEED THE SPEAKERS. An OfflineAudioContext can be
+  // created without user activation and decodes exactly the same bytes, and
+  // an AudioBuffer is plain data — not bound to the context that produced
+  // it. So the samples download and decode during page load while the real
+  // playback context waits for a gesture, which is where Safari insists it
+  // be BORN, not merely resumed.
+  let decodeCtx = null;
+  function decodeContext() {
+    if (ctx) return ctx;               // once it exists, use the real one
+    if (decodeCtx) return decodeCtx;
+    const OC = window.OfflineAudioContext || window.webkitOfflineAudioContext;
+    if (!OC) return null;
+    try { decodeCtx = new OC(1, 1, 44100); } catch { decodeCtx = null; }
+    return decodeCtx;
   }
 
   async function decodeOne(key) {
@@ -231,7 +246,9 @@ export function makeAudio(opts = {}) {
       const res = await fetch(`${base}${spec.file}${bustToken()}`);
       if (!res.ok) throw new Error(`${res.status}`);
       const bytes = await res.arrayBuffer();
-      buffers[key] = await ctx.decodeAudioData(bytes);
+      const dc = decodeContext();
+      if (!dc) throw new Error('no context to decode with');
+      buffers[key] = await dc.decodeAudioData(bytes);
     } catch (err) {
       buffers[key] = 'failed';
       if (!loggedFail) {
@@ -249,7 +266,7 @@ export function makeAudio(opts = {}) {
   let loadPromise = null;
   function load() {
     if (loadPromise) return loadPromise;
-    if (!ensureCtx()) return Promise.resolve();
+    if (!decodeContext()) return Promise.resolve();
     loadStarted = true;
     loadPromise = Promise.all(Object.keys(SOUNDS).map(decodeOne));
     return loadPromise;
