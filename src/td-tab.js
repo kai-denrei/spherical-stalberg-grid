@@ -19,39 +19,39 @@
 
 import * as THREE from '../vendor/three.module.js';
 import GUI from '../vendor/lil-gui.esm.js';
-import { generateSphereMesh, relax } from './grid.js?v=876f6631';
-import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=876f6631';
-import { mulberry32, randomSeed } from './rng.js?v=876f6631';
-import { computeBerths, berthIndexFor } from './berths.js?v=876f6631';
-import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3, segKey } from './vec3.js?v=876f6631';
-import { CREATURES, waveJelly } from './creatures.js?v=876f6631';
-import { brief } from './isaobriefs.js?v=876f6631';
-import { drawEmotion } from './emotions.js?v=876f6631';
+import { generateSphereMesh, relax } from './grid.js?v=98d82b39';
+import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=98d82b39';
+import { mulberry32, randomSeed } from './rng.js?v=98d82b39';
+import { computeBerths, berthIndexFor } from './berths.js?v=98d82b39';
+import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3, segKey } from './vec3.js?v=98d82b39';
+import { CREATURES, waveJelly } from './creatures.js?v=98d82b39';
+import { brief } from './isaobriefs.js?v=98d82b39';
+import { drawEmotion } from './emotions.js?v=98d82b39';
 import { ACHIEVEMENTS, ACHV_GROUPS, achievement, blankRun, earned, freshlyEarned,
   sanitiseRecord }
-  from './achievements.js?v=876f6631';
+  from './achievements.js?v=98d82b39';
 import { applyFontPack, currentFontPack, FONT_NAMES,
-  loadTypeFeel } from './fonts.js?v=876f6631';
-import { UNITS, UNIT_NAMES, buildUnit, buildCreature, preloadMkcx, preloadServer, makeServerFixture, makeShieldShell, preloadContainer, makeContainerFixture, preloadFabricator, makeIsaoDrone, makeBulletCloud, makeRewardSolid, makeShellSolid, makeDebris, makeDotBurst, makePortalCloud, makeHeartCloud, makeDotEnemy } from './units.js?v=876f6631';
-import { LOOKS, LOOK_NAMES } from './looks.js?v=876f6631';
-import { makeCellIndex } from './cellindex.js?v=876f6631';
-import { CREATURE_TINTS, ENEMY_SPEC, INTROS, computeWavePlan, accentFor } from './enemyspec.js?v=876f6631';
-import { PICKUPS } from './pickups.js?v=876f6631';
-import { rankFor, rankLabel, badgeSVG, killReq, eliteReq } from './ranks.js?v=876f6631';
-import { makeScore } from './score.js?v=876f6631';
-import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER } from './towers.js?v=876f6631';
-import { makeEconomy, sellRefund } from './economy.js?v=876f6631';
-import { makeBloom } from './postfx.js?v=876f6631';
-import { TANK_FEEL, TANK_FEEL_KNOBS, makeTankFeel, stepTankFeel, landTankFeel, fireTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js?v=876f6631';
-import { FEEL, loadFeel, saveFeel } from './feelstore.js?v=876f6631';
+  loadTypeFeel } from './fonts.js?v=98d82b39';
+import { UNITS, UNIT_NAMES, buildUnit, buildCreature, preloadMkcx, preloadServer, makeServerFixture, makeShieldShell, preloadContainer, makeContainerFixture, preloadFabricator, makeIsaoDrone, makeBulletCloud, makeRewardSolid, makeShellSolid, makeDebris, makeDotBurst, makePortalCloud, makeHeartCloud, makeDotEnemy } from './units.js?v=98d82b39';
+import { LOOKS, LOOK_NAMES } from './looks.js?v=98d82b39';
+import { makeCellIndex } from './cellindex.js?v=98d82b39';
+import { CREATURE_TINTS, ENEMY_SPEC, INTROS, computeWavePlan, accentFor } from './enemyspec.js?v=98d82b39';
+import { PICKUPS } from './pickups.js?v=98d82b39';
+import { rankFor, rankLabel, badgeSVG, killReq, eliteReq } from './ranks.js?v=98d82b39';
+import { makeScore } from './score.js?v=98d82b39';
+import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER } from './towers.js?v=98d82b39';
+import { makeEconomy, sellRefund } from './economy.js?v=98d82b39';
+import { makeBloom } from './postfx.js?v=98d82b39';
+import { TANK_FEEL, TANK_FEEL_KNOBS, makeTankFeel, stepTankFeel, landTankFeel, fireTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js?v=98d82b39';
+import { FEEL, loadFeel, saveFeel } from './feelstore.js?v=98d82b39';
 import { STRIKE_KNOBS, makeStrike, makeStrikeParams, grantStrikes, stepStrike,
   toggleArm, paintTarget, launchStrike, stepFall, skipFall, fallProgress,
-  strikeDamage, retargetStrike, orbitProgress } from './strike.js?v=876f6631';
-import { radarBasis, radarProject, radarBearing, sweepAngle, radarPhosphor } from './radar.js?v=876f6631';
-import { BLOOM_GROUPS } from './bloomweights.js?v=876f6631';
-import { TOWER_LOOK_NAMES, DEFAULT_TOWER_LOOK, buildTowerLook, preloadLook } from './towerlooks.js?v=876f6631';
-import { makeAudio } from './audio.js?v=876f6631';
-import { DEATH_KEYS } from './audiomanifest.js?v=876f6631';
+  strikeDamage, retargetStrike, orbitProgress } from './strike.js?v=98d82b39';
+import { radarBasis, radarProject, radarBearing, sweepAngle, radarPhosphor } from './radar.js?v=98d82b39';
+import { BLOOM_GROUPS } from './bloomweights.js?v=98d82b39';
+import { TOWER_LOOK_NAMES, DEFAULT_TOWER_LOOK, buildTowerLook, preloadLook } from './towerlooks.js?v=98d82b39';
+import { makeAudio } from './audio.js?v=98d82b39';
+import { DEATH_KEYS } from './audiomanifest.js?v=98d82b39';
 
 export function initTdTab(root) {
   let active = false;
@@ -1101,7 +1101,7 @@ export function initTdTab(root) {
     + ` throttle=${throttle.toFixed(2)} keys=${Object.entries(keys)
       .filter(([, v]) => v).map(([k2]) => k2).join('+') || '-'}`
     + ` paused=${paused} tutFrozen=${tutorial.frozen}`
-    + ` shot=${shotId() || '-'} cine=${cineLeft.toFixed(2)}`
+    + ` shot=${shotId() || '-'}`
     + ` buildMode=${buildMode} active=${active}`;
   const ctlLog = (tag) => { if (CTL_DEBUG) console.log(ctlState(tag)); };
   // THE WATCHDOG. It watches for the symptom as the player describes it —
@@ -1473,7 +1473,6 @@ export function initTdTab(root) {
         syncLifeContainers();
         // the FIRST SCENE: the opening hull drives out of its bay — if
         // the player has not yet gone anywhere, restage them at the doors
-        beginOpening();   // the cold open has its subject now
         // ?driveout=N — the operator's can't-get-out report, made testable.
         // Headless cannot drive, and ?tick runs at init, BEFORE this model
         // has loaded, so the one moment the question can be asked is here:
@@ -1720,68 +1719,68 @@ export function initTdTab(root) {
   // hero hull drives itself out of berth 3 while you watch).
   //
   // Beat three is not animation. Driving is unfrozen for it and the tank is
-  // on its own auto-nav — what you watch is the game playing itself for two
-  // seconds, which is also the honest way to prove the berth can be left.
-  const CINE_OUT = 3.0, CINE_DIVE = 3.4, CINE_WATCH = 2.6;
-  const CINE_LEN = CINE_OUT + CINE_DIVE + CINE_WATCH;
-  let cineLeft = 0, cineCi = -1, cineAfter = null, cineScrub = 0;
-  // ?cine=N also HOLDS the clock there, so a headless still can be taken
-  // at a named beat instead of wherever the virtual-time budget lands
-  let cineHold = false;
-  let cineOn = false;   // listeners installed + handoff still owed
+  // Two beats now, not three. The old beat 3 — hold the hull frozen and
+  // watch it drive itself out — IS the game: DEPLOY does that live, with the
+  // player's hand a moment away. So the cinematic ends where DEPLOY begins,
+  // and its last frame is the game's first frame.
+  const CINE_OUT = 3.0, CINE_DIVE = 3.4;
+  const CINE_LEN = CINE_OUT + CINE_DIVE;
+  let cineScrub = 0;   // ?cine=N scrubs in; shotHold parks the clock there
 
-  const cineRunning = () => cineLeft > 0;
-  let cinePending = null;   // the opening (manual/tutorial/briefing) it fronts
+  function playCinematic(after) {
+    const n = berthIndexFor(playerHP);
+    if (!graph || !dungeon || !berths[n]) { if (after) after(); return; }
+    const b = berths[n];
+    const bc = graph.centers[b.ci];
+    const bn = graph.normals[b.ci];
+    const ref = Math.abs(bn[1]) < 0.9 ? [0, 1, 0] : [1, 0, 0];
+    const wUp = norm3(cross3(bn, ref));
+    const smooth = (x) => x * x * (3 - 2 * x);
+    const look = add3(bc, scale3(bn, params.wallHeight * 0.55));
+    startShot({
+      id: 'cinematic',
+      dur: Math.max(0.001, CINE_LEN - cineScrub),
+      poseAt: (u, out) => {
+        const e = cineScrub + u * (CINE_LEN - cineScrub);
+        if (e < CINE_OUT) {
+          // BEAT 1 pulls straight out along the berth's own normal, so the
+          // wide shot is still centred on the place it is about to dive back
+          // into and the pull-back reads as one continuous move.
+          const r = 1.26 + (3.30 - 1.26) * smooth(e / CINE_OUT);
+          out.pos.set(bn[0] * r, bn[1] * r, bn[2] * r);
+          tmpCam.position.copy(out.pos);
+          tmpCam.up.set(wUp[0], wUp[1], wUp[2]);
+          tmpCam.lookAt(0, 0, 0);
+          out.quat.copy(tmpCam.quaternion);
+          return;
+        }
+        // BEAT 2 does NOT slerp between two framings — that swings the
+        // subject out of frame in the middle, which is what the first cut of
+        // this did. It moves the EYE and keeps looking at the camp the whole
+        // way down, so the box only ever grows. The seam with beat 1 is
+        // invisible because the wide eye sits ON the berth's normal.
+        //
+        // It lands on deployFramePoseFor — the SAME pose DEPLOY opens with,
+        // read from one place rather than authored twice. That is what makes
+        // "the cinematic's last frame is the first frame of the reset state"
+        // true by construction instead of true until someone edits one of
+        // them.
+        const w = smooth(Math.min(1, (e - CINE_OUT) / CINE_DIVE));
+        deployFramePoseFor(n, camA);
+        const wide = scale3(bn, 3.30);
+        out.pos.set(wide[0] + (camA.pos.x - wide[0]) * w,
+          wide[1] + (camA.pos.y - wide[1]) * w,
+          wide[2] + (camA.pos.z - wide[2]) * w);
+        tmpCam.position.copy(out.pos);
+        const up = norm3([0, 1, 2].map((i) => wUp[i] + (bn[i] - wUp[i]) * w));
+        tmpCam.up.set(up[0], up[1], up[2]);
+        tmpCam.lookAt(look[0], look[1], look[2]);
+        out.quat.copy(tmpCam.quaternion);
+      },
+      onEnd: () => { deployStart(n); if (after) after(); },
+    });
+  }
 
-  function startCinematic(after) {
-    if (!graph || !dungeon) { if (after) after(); return; }
-    // the berth the hull is actually sitting in — the one it will drive out
-    // of — falling back to the last placed, then to the Heart if the model
-    // never loaded
-    const berth = lifeContainers.find((cc) => cc.ci === player.cur);
-    cineCi = berth ? berth.ci
-      : (lifeContainers.length ? lifeContainers[lifeContainers.length - 1].ci
-        : dungeon.heart);
-    cineAfter = after || null;
-    cineLeft = Math.max(0.001, CINE_LEN - cineScrub);
-    cineScrub = 0;
-    cineOn = true;      // the teardown latch — NOT the countdown, see endCinematic
-    addEventListener('keydown', cineSkipKey, true);
-    root.addEventListener('pointerdown', cineSkipTap, true);
-    snapCamera();       // no glide in: the cold open owns frame one
-  }
-  // TEARDOWN IS LATCHED ON ITS OWN FLAG, NOT ON THE CLOCK. This used to
-  // guard on `cineLeft <= 0` — but the frame loop subtracts dt and THEN
-  // calls this, so on the natural end (the cold open running to completion
-  // rather than being skipped) cineLeft was already <= 0 and the guard
-  // returned before the removeEventListener lines. cineSkipKey is a
-  // capture-phase keydown that preventDefaults and stopImmediatePropagations,
-  // so it then ate EVERY key in the game, for good: WASD dead after the
-  // intro, mouse and touch still fine because `click` is not the
-  // `pointerdown` the tap handler stops — which is exactly why AUTO freed it.
-  // cineAfter never ran either, so the briefing the cold open fronts never
-  // opened. Skipping the intro tore down correctly, which is why this hid
-  // from every headless run that passed ?cine=0.
-  function endCinematic() {
-    if (!cineOn) return;
-    cineOn = false;
-    cineLeft = 0;
-    removeEventListener('keydown', cineSkipKey, true);
-    root.removeEventListener('pointerdown', cineSkipTap, true);
-    const a = cineAfter; cineAfter = null;
-    if (a) a();
-  }
-  // skippable by anything: a cinematic you cannot cut is a cinematic you
-  // resent the second time you see it
-  const cineSkipKey = (ev) => { ev.preventDefault(); ev.stopImmediatePropagation(); endCinematic(); };
-  const cineSkipTap = (ev) => { ev.stopImmediatePropagation(); endCinematic(); };
-  // called once, from wherever gets there first: the berths landing, or the
-  // safety net in the frame loop if the model never arrives
-  function beginOpening() {
-    if (!cinePending) return;
-    const after = cinePending; cinePending = null;
-    startCinematic(after);
-  }
   // AUTO DIRECTIVES: high-level orders for the wanderer
   const DIRECTIVES = ['wander', 'avoid', 'ram', 'conserve', 'home', 'portal'];
   const DIRECTIVE_LABEL = {
@@ -1994,63 +1993,6 @@ export function initTdTab(root) {
       tmpCam.up.set(t1[0], t1[1], t1[2]);
       tmpCam.lookAt(c[0], c[1], c[2]);
       camGoal.quat.copy(tmpCam.quaternion);
-      return;
-    }
-    if (cineLeft > 0) {
-      // THE COLD OPEN. Beat 1 pulls straight out along the berth's own
-      // normal — so the wide shot is still centred on the place it is about
-      // to dive back into, and the pull-back reads as one continuous move
-      // rather than two shots. Beat 2 blends that wide framing into a
-      // low three-quarter on the berth doors. Beat 3 holds it and lets go
-      // of the handbrake.
-      const e = CINE_LEN - cineLeft;
-      const smooth = (u) => u * u * (3 - 2 * u);
-      const bc = graph.centers[cineCi];
-      const bn = graph.normals[cineCi];
-      const ref = Math.abs(bn[1]) < 0.9 ? [0, 1, 0] : [1, 0, 0];
-      const wUp = norm3(cross3(bn, ref));
-      const wideAt = (r, out) => {
-        out.pos.set(bn[0] * r, bn[1] * r, bn[2] * r);
-        tmpCam.position.copy(out.pos);
-        tmpCam.up.set(wUp[0], wUp[1], wUp[2]);
-        tmpCam.lookAt(0, 0, 0);
-        out.quat.copy(tmpCam.quaternion);
-      };
-      // stand where the doors face (they open toward the Heart), low and
-      // close, so the hull rolls straight at the lens
-      let berthLook = add3(bc, scale3(bn, params.wallHeight * 0.55));
-      // beat 3 lets the look point drift onto the hull as it rolls out, so
-      // the shot ends on the tank rather than on the empty box it left
-      if (e > CINE_OUT + CINE_DIVE) {
-        const w = Math.min(1, (e - CINE_OUT - CINE_DIVE) / CINE_WATCH) * 0.85;
-        const pp = add3(player.pos, scale3(norm3(player.pos), params.wallHeight * 0.5));
-        berthLook = [0, 1, 2].map((i) => berthLook[i] + (pp[i] - berthLook[i]) * w);
-      }
-      const berthEye = add3(add3(bc, scale3(bn, params.wallHeight * 1.7 + cellSide * 0.55)),
-        scale3(tangentDirTo(cineCi, dungeon.heart), cellSide * 2.1));
-      if (e < CINE_OUT) {
-        wideAt(1.26 + (3.30 - 1.26) * smooth(e / CINE_OUT), camGoal);
-      } else {
-        // The dive does NOT slerp between two framings: that swings the
-        // subject out of frame in the middle, which is exactly what the
-        // first cut did. It moves the EYE and keeps looking at the berth
-        // the whole way down, so the box only ever grows. The seam with
-        // beat 1 is invisible because the wide eye sits ON the berth's
-        // normal — looking at the planet's centre and looking at the berth
-        // are the same direction from up there.
-        const u = e < CINE_OUT + CINE_DIVE
-          ? smooth((e - CINE_OUT) / CINE_DIVE) : 1;
-        const wide = scale3(bn, 3.30);
-        const eye = [0, 1, 2].map((i) => wide[i] + (berthEye[i] - wide[i]) * u);
-        // up rolls from the wide shot's tangent to the berth's normal —
-        // they are perpendicular, so a plain lerp behaves
-        const up = norm3([0, 1, 2].map((i) => wUp[i] + (bn[i] - wUp[i]) * u));
-        camGoal.pos.set(eye[0], eye[1], eye[2]);
-        tmpCam.position.copy(camGoal.pos);
-        tmpCam.up.set(up[0], up[1], up[2]);
-        tmpCam.lookAt(berthLook[0], berthLook[1], berthLook[2]);
-        camGoal.quat.copy(tmpCam.quaternion);
-      }
       return;
     }
     if (params.view === 'drone' && isao) {
@@ -7446,14 +7388,6 @@ export function initTdTab(root) {
     // heart moods, debris) and the camera transition keep breathing.
     // Mid-assault the same toggle is camera-only.
     if (briefQ) { briefFaceT += dt; paintBrief(); }
-    if (cineLeft > 0) {
-      if (!cineHold) {
-        cineLeft -= dt;
-        if (cineLeft <= 0) endCinematic();
-      }
-    } else if (cinePending && t > 5) {
-      beginOpening();   // safety net: the berths never landed, open anyway
-    }
     stepShot(dt);
     // ANY control input thaws the frozen tutorial opening — checked BEFORE
     // the frozen gate, since updateLasers itself is skipped while frozen.
@@ -7469,7 +7403,7 @@ export function initTdTab(root) {
     const handOn = keys.laser || keys.fast || keys.slow || keys.left || keys.right
       || throttle !== 0;
     if (tutorial.frozen && (handOn || cruise)) { tutorial.frozen = false; hideTutBanner(); }
-    const frozen = buildFrozen() || shotActive() || tutorial.frozen || cineLeft > 0;
+    const frozen = buildFrozen() || shotActive() || tutorial.frozen;
     // The BUILD pause holds the WORLD still, not the DRIVER. Planning with
     // the tank parked where the last wave left it meant switching out of
     // build, repositioning, and switching back — three actions for one
@@ -7477,7 +7411,9 @@ export function initTdTab(root) {
     // those are the game speaking and it should not be driven over.
     // the cold open holds the hull for its first two beats and lets go for
     // the third — beat three IS the tank driving itself out of the berth
-    const driveFrozen = shotActive() || tutorial.frozen || cineLeft > CINE_WATCH;
+    // DEPLOY drives THROUGH a shot — that is how the cinematic's last frame
+    // and DEPLOY's first frame meet — so the gate only stops free driving
+    const driveFrozen = shotActive() || tutorial.frozen;
 
     bumpLeft = Math.max(0, bumpLeft - dt);
     recoilLeft = Math.max(0, recoilLeft - dt);
@@ -8147,25 +8083,40 @@ export function initTdTab(root) {
     run();
   }
 
-  // ?cineprobe=1 — CAN THE PLAYER MOVE AFTER THE INTRO. The operator's
-  // report, made into a check. It cannot wait the cold open out: under a
-  // virtual-time budget performance.now() does not advance, so the frame
-  // loop's dt stays ~0 and the cinematic never ends on its own. So it
-  // reproduces the NATURAL END exactly as animate leaves it — clock driven
-  // to <= 0, then endCinematic() — and asks the only question that matters:
-  // does a real keydown still reach the game's key state.
+  // ?cineprobe=1 — TWO QUESTIONS ABOUT THE COLD OPEN.
+  //
+  // 1. CAN THE PLAYER MOVE AFTER IT. The operator's report, made a check.
+  //    It cannot wait the shot out: under a virtual-time budget
+  //    performance.now() does not advance, so the frame loop's dt stays ~0
+  //    and the shot never ends on its own. So it reproduces the NATURAL END
+  //    exactly as animate leaves it — clock past zero, then stepShot.
+  // 2. IS THE LAST FRAME THE FIRST FRAME. The cinematic's final pose must BE
+  //    the pose DEPLOY opens on, or the hand-off is a cut.
   if (urlParams.get('cineprobe') === '1') {
     let tries = 0;
     const run = () => {
-      if (!cineOn && tries++ < 200) { setTimeout(run, 25); return; }  // wait for the cold open
-      if (!cineOn) { console.log('CINEPROBE inconclusive=no cinematic started'); return; }
-      cineLeft = 0.0001;
-      cineLeft -= 0.05;      // exactly what `cineLeft -= dt` leaves behind
-      endCinematic();        // ...and exactly what animate calls next
+      if (shotId() !== 'cinematic' && tries++ < 200) { setTimeout(run, 25); return; }
+      if (shotId() !== 'cinematic') {
+        console.log('CINEPROBE inconclusive=no cinematic started'); return;
+      }
+      // asked BEFORE the shot ends, while its poseAt still exists
+      const n = berthIndexFor(playerHP);
+      shot.poseAt(1, camB);
+      deployFramePoseFor(n, camA);
+      const dp = camB.pos.distanceTo(camA.pos);
+      const dq = camB.quat.angleTo(camA.quat);
+      const cont = dp < 1e-6 && dq < 1e-6;
+      console.log(`CINEPROBE continuity=${cont ? 'PASS' : 'FAIL'}`
+        + ` (pos ${dp.toExponential(2)}, angle ${dq.toExponential(2)}, want ~0)`);
+
+      shot.left = -0.05;   // exactly what `shot.left -= dt` leaves behind
+      stepShot(0);         // ...and exactly what animate calls next
+      const deployed = deployActive();
+
       // AFTER THE INTRO MEANS AFTER ITS HANDOFF TOO. The cold open hands to
       // the briefing, which legitimately captures the keyboard until it is
-      // dismissed — so testing the key the instant the cinematic ends tests
-      // the wrong moment. Dismiss it the way a player does, then ask.
+      // dismissed — so testing the key the instant the shot ends tests the
+      // wrong moment. Dismiss it the way a player does, then ask.
       const introUp = introEl && !introEl.classList.contains('hidden');
       dismissIntro();
       const msgUp = msgEl && !msgEl.classList.contains('hidden');
@@ -8174,11 +8125,10 @@ export function initTdTab(root) {
       keys.fast = false;
       // DISPATCH ON A DESCENDANT, NOT ON WINDOW. A keydown aimed straight at
       // window makes window the TARGET, and at-target listeners run in
-      // registration order with the capture flag ignored — which puts the
-      // game's own handler (registered at init) ahead of a cinematic's
-      // capture handler (registered later) and reverses the very ordering
-      // under test. A real key lands on the focused element and travels
-      // capture -> target -> bubble, so the probe has to as well.
+      // registration order with the capture flag IGNORED — which puts the
+      // game's own handler (registered at init) ahead of a shot's capture
+      // handler (registered later) and reverses the very ordering under
+      // test. A real key travels capture -> target -> bubble; so must this.
       document.body.dispatchEvent(
         new KeyboardEvent('keydown', { key: 'w', bubbles: true, cancelable: true }));
       const reached = keys.fast;
@@ -8186,8 +8136,8 @@ export function initTdTab(root) {
       ctlRawT = -9;   // the synthetic press must not trip the live watchdog
       console.log(`CINEPROBE move-after-intro=${reached ? 'PASS' : 'FAIL'}`
         + ` (W reached the game: ${reached}, want true)`);
-      console.log(`CINEPROBE handoff-ran=${cineAfter === null ? 'PASS' : 'FAIL'}`
-        + ` (the briefing the cold open fronts must not be stranded)`);
+      console.log(`CINEPROBE handoff-ran=${deployed ? 'PASS' : 'FAIL'}`
+        + ` (the cinematic must hand straight to DEPLOY, not strand it)`);
     };
     run();
   }
@@ -8304,10 +8254,15 @@ export function initTdTab(root) {
   if (wantCine) {
     // held until the berths land (or the frame loop's safety net fires) —
     // the opening shot needs the thing it is a shot OF
-    cinePending = opening || (() => {});
     const scrub = parseFloat(cineParam || '0');
-    if (scrub > 0) { cineScrub = scrub; cineHold = true; }
-  } else if (opening) opening();
+    if (scrub > 0) { cineScrub = scrub; shotHold = true; }
+    // nothing to wait for any more: the camp is known with the board, so the
+    // opening shot has its subject the moment the tab exists
+    playCinematic(opening || (() => {}));
+  } else {
+    deployStart(berthIndexFor(playerHP));
+    if (opening) opening();
+  }
 
   // ?tutstep=N — clear N scripted pairs, so the later tutorial beats can be
   // reached without a pair of hands. Every other phase here is gated on
