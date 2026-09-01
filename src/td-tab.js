@@ -19,42 +19,42 @@
 
 import * as THREE from '../vendor/three.module.js';
 import GUI from '../vendor/lil-gui.esm.js';
-import { generateSphereMesh, relax } from './grid.js?v=8bbbd109';
-import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=8bbbd109';
-import { mulberry32, randomSeed } from './rng.js?v=8bbbd109';
-import { computeBerths, berthIndexFor } from './berths.js?v=8bbbd109';
-import { wantsSecondary, shellsForAll } from './autofire.js?v=8bbbd109';
-import { printPhase, printOffset, printOn, patternSecsFor } from './printpath.js?v=8bbbd109';
-import { createBeam } from './beamfx.js?v=8bbbd109';
-import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3, segKey, tangentDir, tangentBasis } from './vec3.js?v=8bbbd109';
-import { CREATURES, waveJelly } from './creatures.js?v=8bbbd109';
-import { brief } from './isaobriefs.js?v=8bbbd109';
-import { drawEmotion } from './emotions.js?v=8bbbd109';
+import { generateSphereMesh, relax } from './grid.js?v=f75a1377';
+import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=f75a1377';
+import { mulberry32, randomSeed } from './rng.js?v=f75a1377';
+import { computeBerths, berthIndexFor } from './berths.js?v=f75a1377';
+import { wantsSecondary, shellsForAll } from './autofire.js?v=f75a1377';
+import { printPhase, printOffset, printOn, patternSecsFor } from './printpath.js?v=f75a1377';
+import { createBeam } from './beamfx.js?v=f75a1377';
+import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3, segKey, tangentDir, tangentBasis } from './vec3.js?v=f75a1377';
+import { CREATURES, waveJelly } from './creatures.js?v=f75a1377';
+import { brief } from './isaobriefs.js?v=f75a1377';
+import { drawEmotion } from './emotions.js?v=f75a1377';
 import { ACHIEVEMENTS, ACHV_GROUPS, achievement, blankRun, earned, freshlyEarned,
   sanitiseRecord }
-  from './achievements.js?v=8bbbd109';
+  from './achievements.js?v=f75a1377';
 import { applyFontPack, currentFontPack, FONT_NAMES,
-  loadTypeFeel } from './fonts.js?v=8bbbd109';
-import { UNITS, UNIT_NAMES, buildUnit, buildCreature, preloadMkcx, preloadServer, makeServerFixture, makeShieldShell, preloadContainer, makeContainerFixture, preloadFabricator, makeIsaoDrone, makeBulletCloud, makeRewardSolid, makeShellSolid, makeDebris, makeDotBurst, makePortalCloud, makeHeartCloud, makeDotEnemy, preloadTerraformer, makeTerraformerFixture } from './units.js?v=8bbbd109';
-import { LOOKS, LOOK_NAMES } from './looks.js?v=8bbbd109';
-import { makeCellIndex } from './cellindex.js?v=8bbbd109';
-import { CREATURE_TINTS, ENEMY_SPEC, INTROS, computeWavePlan, accentFor } from './enemyspec.js?v=8bbbd109';
-import { PICKUPS } from './pickups.js?v=8bbbd109';
-import { rankFor, rankLabel, badgeSVG, killReq, eliteReq } from './ranks.js?v=8bbbd109';
-import { makeScore } from './score.js?v=8bbbd109';
-import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER } from './towers.js?v=8bbbd109';
-import { makeEconomy, sellRefund } from './economy.js?v=8bbbd109';
-import { makeBloom } from './postfx.js?v=8bbbd109';
-import { TANK_FEEL, TANK_FEEL_KNOBS, makeTankFeel, stepTankFeel, landTankFeel, fireTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js?v=8bbbd109';
-import { FEEL, loadFeel, saveFeel } from './feelstore.js?v=8bbbd109';
+  loadTypeFeel } from './fonts.js?v=f75a1377';
+import { UNITS, UNIT_NAMES, buildUnit, buildCreature, preloadMkcx, preloadServer, makeServerFixture, makeShieldShell, preloadContainer, makeContainerFixture, preloadFabricator, makeIsaoDrone, makeBulletCloud, makeRewardSolid, makeShellSolid, makeDebris, makeDotBurst, makePortalCloud, makeHeartCloud, makeDotEnemy, preloadTerraformer, makeTerraformerFixture } from './units.js?v=f75a1377';
+import { LOOKS, LOOK_NAMES } from './looks.js?v=f75a1377';
+import { makeCellIndex } from './cellindex.js?v=f75a1377';
+import { CREATURE_TINTS, ENEMY_SPEC, INTROS, computeWavePlan, accentFor } from './enemyspec.js?v=f75a1377';
+import { PICKUPS } from './pickups.js?v=f75a1377';
+import { rankFor, rankLabel, badgeSVG, killReq, eliteReq } from './ranks.js?v=f75a1377';
+import { makeScore } from './score.js?v=f75a1377';
+import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER } from './towers.js?v=f75a1377';
+import { makeEconomy, sellRefund } from './economy.js?v=f75a1377';
+import { makeBloom } from './postfx.js?v=f75a1377';
+import { TANK_FEEL, TANK_FEEL_KNOBS, makeTankFeel, stepTankFeel, landTankFeel, fireTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js?v=f75a1377';
+import { FEEL, loadFeel, saveFeel } from './feelstore.js?v=f75a1377';
 import { STRIKE_KNOBS, makeStrike, makeStrikeParams, grantStrikes, stepStrike,
   toggleArm, paintTarget, launchStrike, stepFall, skipFall, fallProgress,
-  strikeDamage, retargetStrike, orbitProgress } from './strike.js?v=8bbbd109';
-import { radarBasis, radarProject, radarBearing, sweepAngle, radarPhosphor } from './radar.js?v=8bbbd109';
-import { BLOOM_GROUPS } from './bloomweights.js?v=8bbbd109';
-import { TOWER_LOOK_NAMES, DEFAULT_TOWER_LOOK, buildTowerLook, preloadLook } from './towerlooks.js?v=8bbbd109';
-import { makeAudio } from './audio.js?v=8bbbd109';
-import { DEATH_KEYS } from './audiomanifest.js?v=8bbbd109';
+  strikeDamage, retargetStrike, orbitProgress } from './strike.js?v=f75a1377';
+import { radarBasis, radarProject, radarBearing, sweepAngle, radarPhosphor } from './radar.js?v=f75a1377';
+import { BLOOM_GROUPS } from './bloomweights.js?v=f75a1377';
+import { TOWER_LOOK_NAMES, DEFAULT_TOWER_LOOK, buildTowerLook, preloadLook } from './towerlooks.js?v=f75a1377';
+import { makeAudio } from './audio.js?v=f75a1377';
+import { DEATH_KEYS } from './audiomanifest.js?v=f75a1377';
 
 export function initTdTab(root) {
   let active = false;
@@ -5198,6 +5198,12 @@ export function initTdTab(root) {
   const DRAG_SOFT = 0.10;   // per rammable body in the beam
   const DRAG_HARD = 0.55;   // per unrammable one — the solid core bites
   const DRAG_CAP = 0.90;    // never a full stall: it always creeps forward
+  // ...and the same idea along the OTHER axis: every body burned eats into
+  // the reach that is left, so the beam shortens as it struggles through.
+  // In cells, against a 2.6-cell reach: fodder is nearly free, three solid
+  // cores stop it dead.
+  const PEN_SOFT = 0.30;
+  const PEN_HARD = 1.10;
   // A BOGGED BEAM FALLS BEHIND AND STAYS BEHIND. It does not catch up at the
   // end of the burst — that would hide the cost, which is the point of it.
   const beamPhase = [0, 0];
@@ -5258,12 +5264,12 @@ export function initTdTab(root) {
   // 1.71 s, and the operator asked for the same cooldown, so the shed rate
   // rises with the budget instead of the lockout stretching to 4.3 s.
   const LASER_COOL = LASER_MAX_HEAT / 1.71;
-  // Damage is SUSTAINED, not per bolt. The old stream was 0.4 every 0.14 s —
-  // about 2.86/s into a single target. This sits just UNDER that per target
-  // (operator: slightly less strong) and hits every enemy along the beam.
-  // The power was never in the number — it is in the target count, and now in
-  // what the drag costs you for collecting them.
-  const LASER_DPS = 2.6;
+  // Damage is SUSTAINED, not per bolt. The old bolt stream was about 2.86/s
+  // into ONE target. This is well under it (operator: currently overpowered)
+  // and the multi-target advantage is now paid for twice — the sweep bogs,
+  // and the reach chokes. A beam that reaches three bodies is working hard
+  // for them.
+  const LASER_DPS = 1.7;
   const LASER_REACH = 2.6;    // cells, unchanged — reach is not a silent buff
   // Bolts were BoxGeometry — literally blocky (operator ruling). They are
   // round tracers now, the same idiom every tower shot speaks: a hot head
@@ -5397,22 +5403,39 @@ export function initTdTab(root) {
           const ci = cellIndex(q);
           if (ci !== -1 && dungeon.tags[ci] === BLOCKED) { len = m; break; }
         }
-        drawBeam(gi, from, dir, len, laserHeat / LASER_MAX_HEAT);
-        let drag = 0;
-        // SUSTAINED AND PIERCING: every live enemy whose centre falls within
-        // its own radius of the segment takes LASER_DPS * dt. No break — the
-        // beam does not stop at the first thing it burns.
+        // IT PIERCES, BUT IT PAYS TO. Every body the beam passes through eats
+        // into what is left of its reach, so it visibly SHORTENS against a
+        // crowd — struggling to punch through rather than sailing on. Fodder
+        // barely costs it; a solid core takes a big bite. Three of those and
+        // the beam dies in the queue.
+        //
+        // Nearest first, because the order is the whole mechanic: what stops
+        // the beam is what is in FRONT, and something behind a wall of armour
+        // is simply never reached.
+        const along = [];
         for (const e of enemies) {
           if (!e.alive) continue;
           const w = sub3(e.pos, from);
-          const t2 = Math.max(0, Math.min(len, dot3(w, dir)));
-          const near = add3(from, scale3(dir, t2));
+          const t2 = dot3(w, dir);
+          if (t2 < 0 || t2 > len) continue;
           const r = cellSide * Math.max(0.4, (e.size ?? e.spec.size) * 0.8);
-          if (dist3(near, e.pos) >= r) continue;
-          damageEnemy(e, tNow, LASER_DPS * dt, false, 'tank');
-          // what it costs to be burning this one
-          drag += e.spec.rammable ? DRAG_SOFT : DRAG_HARD;
+          if (dist3(add3(from, scale3(dir, t2)), e.pos) >= r) continue;
+          along.push({ e, t: t2 });
         }
+        along.sort((x, y) => x.t - y.t);
+
+        let drag = 0;
+        let reachLeft = len;
+        for (const hit of along) {
+          if (hit.t > reachLeft) break;          // the beam died before this one
+          damageEnemy(hit.e, tNow, LASER_DPS * dt, false, 'tank');
+          drag += hit.e.spec.rammable ? DRAG_SOFT : DRAG_HARD;
+          reachLeft -= (hit.e.spec.rammable ? PEN_SOFT : PEN_HARD) * cellSide;
+          if (reachLeft <= hit.t) { reachLeft = hit.t; break; }   // stops in it
+        }
+        // draw the CHOKED length, not the clear-air one
+        drawBeam(gi, from, dir, Math.max(cellSide * 0.15, reachLeft),
+          laserHeat / LASER_MAX_HEAT);
         // ADVANCE THIS BEAM'S SWEEP, slowed by what it is chewing through.
         // Capped so it always creeps, never freezes; uncapped at the top so a
         // beam that spends the burst inside a hard cluster simply does not
@@ -8437,6 +8460,49 @@ export function initTdTab(root) {
       for (let i = 0; i < 30; i++) updateLasers(step, 200 + i * step);
       keys.laser = false;
       const hit = live.map((e, k) => e.hp < before[k]);
+      // THE CHOKE: does the beam SHORTEN against bodies, and does something
+      // behind armour actually go unreached? Piercing that costs nothing is
+      // the overpowered version; this measures the price.
+      {
+        const gunsC = playerMesh && playerMesh.userData.laserGuns;
+        const liveC = enemies.filter((e) => e.alive);
+        const hardC = liveC.filter((e) => !e.spec.rammable);
+        if (gunsC && gunsC.length && hardC.length >= 3) {
+          const g6 = gunsC[0];
+          g6.getWorldPosition(tmpV);
+          const f5 = norm3([tmpV.x, tmpV.y, tmpV.z]);
+          g6.getWorldQuaternion(tmpQ);
+          tmpV.set(0, 0, 1).applyQuaternion(tmpQ);
+          const d5 = norm3(sub3([tmpV.x, tmpV.y, tmpV.z],
+            scale3(f5, dot3([tmpV.x, tmpV.y, tmpV.z], f5))));
+          // park everything out of the way, then queue three solid cores up
+          // the beam with the LAST one just inside the clear-air reach
+          for (const e of liveC) e.pos = norm3(add3(player.pos, [0.6, 0.6, 0.6]));
+          const at = [0.5, 1.1, 1.9];
+          hardC.slice(0, 3).forEach((e, k) => {
+            e.hp = 9e9;
+            e.pos = norm3(add3(f5, scale3(d5, cellSide * at[k])));
+          });
+          const last = hardC[2];
+          const hp0 = last.hp;
+          laserHeat = 0; laserOverheat = false; beamOn = false;
+          keys.laser = true;
+          for (let i = 0; i < 60; i++) updateLasers(1 / 60, 400 + i / 60);
+          keys.laser = false;
+          const reached = last.hp < hp0;
+          // 3 hard bodies cost 3.3 cells of a 2.6 cell reach: the third is
+          // past the end of what is left and must never be touched
+          console.log(`BEAMFIRE choke=${!reached ? 'PASS' : 'FAIL'}`
+            + ` (three solid cores at ${at.join('/')} cells;`
+            + ` the one at ${at[2]} must be UNREACHED — PEN_HARD=${PEN_HARD}`
+            + ` eats the 2.6-cell reach)`);
+          // park them, do NOT kill them: the drag check below needs live
+          // bodies, and the first cut of this tidied up by killing everything
+          // and turned the next check INCONCLUSIVE
+          for (const e of liveC) e.pos = norm3(add3(player.pos, [0.6, 0.6, 0.6]));
+        } else console.log('BEAMFIRE choke=INCONCLUSIVE (need 3 unrammable enemies)');
+      }
+
       // DRAG: does a solid core bog the beam harder than soft fodder, and do
       // the two beams genuinely decouple? Run the same burst twice — once
       // with the beam clear, once with a body parked in it — and compare how
