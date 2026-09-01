@@ -19,42 +19,42 @@
 
 import * as THREE from '../vendor/three.module.js';
 import GUI from '../vendor/lil-gui.esm.js';
-import { generateSphereMesh, relax } from './grid.js?v=8a678d79';
-import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=8a678d79';
-import { mulberry32, randomSeed } from './rng.js?v=8a678d79';
-import { computeBerths, berthIndexFor } from './berths.js?v=8a678d79';
-import { wantsSecondary, shellsForAll } from './autofire.js?v=8a678d79';
-import { printPhase, printOffset, printOn, patternSecsFor } from './printpath.js?v=8a678d79';
-import { createBeam } from './beamfx.js?v=8a678d79';
-import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3, segKey, tangentDir, tangentBasis } from './vec3.js?v=8a678d79';
-import { CREATURES, waveJelly } from './creatures.js?v=8a678d79';
-import { brief } from './isaobriefs.js?v=8a678d79';
-import { drawEmotion } from './emotions.js?v=8a678d79';
+import { generateSphereMesh, relax } from './grid.js?v=37675847';
+import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=37675847';
+import { mulberry32, randomSeed } from './rng.js?v=37675847';
+import { computeBerths, berthIndexFor } from './berths.js?v=37675847';
+import { wantsSecondary, shellsForAll } from './autofire.js?v=37675847';
+import { printPhase, printOffset, printOn, patternSecsFor } from './printpath.js?v=37675847';
+import { createBeam } from './beamfx.js?v=37675847';
+import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3, segKey, tangentDir, tangentBasis } from './vec3.js?v=37675847';
+import { CREATURES, waveJelly } from './creatures.js?v=37675847';
+import { brief } from './isaobriefs.js?v=37675847';
+import { drawEmotion } from './emotions.js?v=37675847';
 import { ACHIEVEMENTS, ACHV_GROUPS, achievement, blankRun, earned, freshlyEarned,
   sanitiseRecord }
-  from './achievements.js?v=8a678d79';
+  from './achievements.js?v=37675847';
 import { applyFontPack, currentFontPack, FONT_NAMES,
-  loadTypeFeel } from './fonts.js?v=8a678d79';
-import { UNITS, UNIT_NAMES, buildUnit, buildCreature, preloadMkcx, preloadServer, makeServerFixture, makeShieldShell, preloadContainer, makeContainerFixture, preloadFabricator, makeIsaoDrone, makeBulletCloud, makeRewardSolid, makeShellSolid, makeDebris, makeDotBurst, makePortalCloud, makeHeartCloud, makeDotEnemy, preloadTerraformer, makeTerraformerFixture } from './units.js?v=8a678d79';
-import { LOOKS, LOOK_NAMES } from './looks.js?v=8a678d79';
-import { makeCellIndex } from './cellindex.js?v=8a678d79';
-import { CREATURE_TINTS, ENEMY_SPEC, INTROS, computeWavePlan, accentFor } from './enemyspec.js?v=8a678d79';
-import { PICKUPS } from './pickups.js?v=8a678d79';
-import { rankFor, rankLabel, badgeSVG, killReq, eliteReq } from './ranks.js?v=8a678d79';
-import { makeScore } from './score.js?v=8a678d79';
-import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER } from './towers.js?v=8a678d79';
-import { makeEconomy, sellRefund } from './economy.js?v=8a678d79';
-import { makeBloom } from './postfx.js?v=8a678d79';
-import { TANK_FEEL, TANK_FEEL_KNOBS, makeTankFeel, stepTankFeel, landTankFeel, fireTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js?v=8a678d79';
-import { FEEL, loadFeel, saveFeel } from './feelstore.js?v=8a678d79';
+  loadTypeFeel } from './fonts.js?v=37675847';
+import { UNITS, UNIT_NAMES, buildUnit, buildCreature, preloadMkcx, preloadServer, makeServerFixture, makeShieldShell, preloadContainer, makeContainerFixture, preloadFabricator, makeIsaoDrone, makeBulletCloud, makeRewardSolid, makeShellSolid, makeDebris, makeDotBurst, makePortalCloud, makeHeartCloud, makeDotEnemy, preloadTerraformer, makeTerraformerFixture } from './units.js?v=37675847';
+import { LOOKS, LOOK_NAMES } from './looks.js?v=37675847';
+import { makeCellIndex } from './cellindex.js?v=37675847';
+import { CREATURE_TINTS, ENEMY_SPEC, INTROS, computeWavePlan, accentFor } from './enemyspec.js?v=37675847';
+import { PICKUPS } from './pickups.js?v=37675847';
+import { rankFor, rankLabel, badgeSVG, killReq, eliteReq } from './ranks.js?v=37675847';
+import { makeScore } from './score.js?v=37675847';
+import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER } from './towers.js?v=37675847';
+import { makeEconomy, sellRefund } from './economy.js?v=37675847';
+import { makeBloom } from './postfx.js?v=37675847';
+import { TANK_FEEL, TANK_FEEL_KNOBS, makeTankFeel, stepTankFeel, landTankFeel, fireTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js?v=37675847';
+import { FEEL, loadFeel, saveFeel } from './feelstore.js?v=37675847';
 import { STRIKE_KNOBS, makeStrike, makeStrikeParams, grantStrikes, stepStrike,
   toggleArm, paintTarget, launchStrike, stepFall, skipFall, fallProgress,
-  strikeDamage, retargetStrike, orbitProgress } from './strike.js?v=8a678d79';
-import { radarBasis, radarProject, radarBearing, sweepAngle, radarPhosphor } from './radar.js?v=8a678d79';
-import { BLOOM_GROUPS } from './bloomweights.js?v=8a678d79';
-import { TOWER_LOOK_NAMES, DEFAULT_TOWER_LOOK, buildTowerLook, preloadLook } from './towerlooks.js?v=8a678d79';
-import { makeAudio } from './audio.js?v=8a678d79';
-import { DEATH_KEYS } from './audiomanifest.js?v=8a678d79';
+  strikeDamage, retargetStrike, orbitProgress } from './strike.js?v=37675847';
+import { radarBasis, radarProject, radarBearing, sweepAngle, radarPhosphor } from './radar.js?v=37675847';
+import { BLOOM_GROUPS } from './bloomweights.js?v=37675847';
+import { TOWER_LOOK_NAMES, DEFAULT_TOWER_LOOK, buildTowerLook, preloadLook } from './towerlooks.js?v=37675847';
+import { makeAudio } from './audio.js?v=37675847';
+import { DEATH_KEYS } from './audiomanifest.js?v=37675847';
 
 export function initTdTab(root) {
   let active = false;
@@ -5151,6 +5151,22 @@ export function initTdTab(root) {
   // 0.4 rad — about 23 degrees each side, a wide and obvious sweep. If they
   // meant something else this is the one number to move.
   const BEAM_SWEEP = 0.40;
+  // THE SWEEP IS A MOTOR UNDER LOAD (operator, 2026-09-01). Mass in the beam
+  // slows its traverse — per beam, independently — so the pair falls out of
+  // step and the tank visibly labours through a crowd. This is the inverse of
+  // knock-back: nothing is pushed, something is HELD.
+  //
+  // The drag is keyed to the tier the whole board already reads by colour:
+  // soft rammable things barely slow it, a solid core bogs it hard. So a beam
+  // lagging its twin is a DANGER READOUT — the weapon's own motion saying
+  // "there is something in here you should not ram", a third channel beside
+  // the belt colour and the DO-NOT-RAM badge.
+  const DRAG_SOFT = 0.10;   // per rammable body in the beam
+  const DRAG_HARD = 0.55;   // per unrammable one — the solid core bites
+  const DRAG_CAP = 0.90;    // never a full stall: it always creeps forward
+  // A BOGGED BEAM FALLS BEHIND AND STAYS BEHIND. It does not catch up at the
+  // end of the burst — that would hide the cost, which is the point of it.
+  const beamPhase = [0, 0];
   const CELL_WIDTH_KEYS = ['coreWidth', 'glowWidth', 'jitterAmount'];
   // `beams` is taken by the tower/slow-tether fx pool — these are the tank's
   let tankBeams = null, beamOn = false, beamVoice = null;
@@ -5209,10 +5225,11 @@ export function initTdTab(root) {
   // rises with the budget instead of the lockout stretching to 4.3 s.
   const LASER_COOL = LASER_MAX_HEAT / 1.71;
   // Damage is SUSTAINED, not per bolt. The old stream was 0.4 every 0.14 s —
-  // about 2.86/s into a single target. This is a touch above that per target
-  // and hits every enemy along the beam, which is where "more powerful"
-  // actually comes from: the multiplier is targets, not the number.
-  const LASER_DPS = 3.2;
+  // about 2.86/s into a single target. This sits just UNDER that per target
+  // (operator: slightly less strong) and hits every enemy along the beam.
+  // The power was never in the number — it is in the target count, and now in
+  // what the drag costs you for collecting them.
+  const LASER_DPS = 2.6;
   const LASER_REACH = 2.6;    // cells, unchanged — reach is not a silent buff
   // Bolts were BoxGeometry — literally blocky (operator ruling). They are
   // round tracers now, the same idiom every tower shot speaks: a hot head
@@ -5303,6 +5320,7 @@ export function initTdTab(root) {
       // agree with the ground it fires over.
       if (!beamOn) {
         beamOn = true;
+        beamPhase[0] = 0; beamPhase[1] = 0;   // both sweeps start together
         // one 6-second take, started as a loop so the burst can stop it the
         // moment the trigger releases or the tubes lock
         beamVoice = sfx.loop('tank_beam', { gain: 1 });
@@ -5320,7 +5338,9 @@ export function initTdTab(root) {
         // way "inward" is comes from the gun's own offset from the hull —
         // never from its L/R name, which is exactly what made the model's
         // toe-in ambiguous in the first place.
-        const swing = BEAM_SWEEP * Math.sin(Math.min(1, laserHeat / LASER_MAX_HEAT) * Math.PI);
+        // ...by this beam's OWN phase, which is where the two decouple: the
+        // heat clock is shared, the sweeps are not.
+        const swing = BEAM_SWEEP * Math.sin(Math.min(1, beamPhase[gi]) * Math.PI);
         if (swing > 1e-4) {
           const lat = sub3(from, player.pos);                     // gun -> out
           const latT = sub3(lat, scale3(from, dot3(lat, from)));  // onto tangent
@@ -5344,6 +5364,7 @@ export function initTdTab(root) {
           if (ci !== -1 && dungeon.tags[ci] === BLOCKED) { len = m; break; }
         }
         drawBeam(gi, from, dir, len, laserHeat / LASER_MAX_HEAT);
+        let drag = 0;
         // SUSTAINED AND PIERCING: every live enemy whose centre falls within
         // its own radius of the segment takes LASER_DPS * dt. No break — the
         // beam does not stop at the first thing it burns.
@@ -5353,8 +5374,17 @@ export function initTdTab(root) {
           const t2 = Math.max(0, Math.min(len, dot3(w, dir)));
           const near = add3(from, scale3(dir, t2));
           const r = cellSide * Math.max(0.4, (e.size ?? e.spec.size) * 0.8);
-          if (dist3(near, e.pos) < r) damageEnemy(e, tNow, LASER_DPS * dt, false, 'tank');
+          if (dist3(near, e.pos) >= r) continue;
+          damageEnemy(e, tNow, LASER_DPS * dt, false, 'tank');
+          // what it costs to be burning this one
+          drag += e.spec.rammable ? DRAG_SOFT : DRAG_HARD;
         }
+        // ADVANCE THIS BEAM'S SWEEP, slowed by what it is chewing through.
+        // Capped so it always creeps, never freezes; uncapped at the top so a
+        // beam that spends the burst inside a hard cluster simply does not
+        // finish its arc.
+        beamPhase[gi] = Math.min(1, beamPhase[gi]
+          + (dt / LASER_MAX_HEAT) * (1 - Math.min(DRAG_CAP, drag)));
       }
     } else if (beamOn) {
       beamOn = false;
@@ -8329,6 +8359,79 @@ export function initTdTab(root) {
       for (let i = 0; i < 30; i++) updateLasers(step, 200 + i * step);
       keys.laser = false;
       const hit = live.map((e, k) => e.hp < before[k]);
+      // DRAG: does a solid core bog the beam harder than soft fodder, and do
+      // the two beams genuinely decouple? Run the same burst twice — once
+      // with the beam clear, once with a body parked in it — and compare how
+      // far the sweep got. A danger readout that reads the same for both
+      // tiers is not a readout.
+      {
+        const gunsD = playerMesh && playerMesh.userData.laserGuns;
+        const liveAll = enemies.filter((e) => e.alive);
+        const soft = liveAll.find((e) => e.spec.rammable);
+        const hard = liveAll.find((e) => !e.spec.rammable);
+        if (gunsD && gunsD.length && soft && hard) {
+          const parkAt = (e, gi3, dcell) => {
+            const g4 = gunsD[gi3];
+            g4.getWorldPosition(tmpV);
+            const f3 = norm3([tmpV.x, tmpV.y, tmpV.z]);
+            g4.getWorldQuaternion(tmpQ);
+            tmpV.set(0, 0, 1).applyQuaternion(tmpQ);
+            const dd = norm3(sub3([tmpV.x, tmpV.y, tmpV.z],
+              scale3(f3, dot3([tmpV.x, tmpV.y, tmpV.z], f3))));
+            e.pos = norm3(add3(f3, scale3(dd, cellSide * dcell)));
+          };
+          const runBurst = () => {
+            laserHeat = 0; laserOverheat = false; beamOn = false;
+            beamPhase[0] = 0; beamPhase[1] = 0;
+            keys.laser = true;
+            for (let i = 0; i < 60 * 6; i++) updateLasers(1 / 60, 300 + i / 60);
+            keys.laser = false;
+            return [beamPhase[0], beamPhase[1]];
+          };
+          // park everything far away, then bring one body into beam 0
+          for (const e of liveAll) e.pos = norm3(add3(player.pos, [0.6, 0.6, 0.6]));
+          const clear = runBurst()[0];
+          for (const e of liveAll) e.pos = norm3(add3(player.pos, [0.6, 0.6, 0.6]));
+          soft.hp = 9e9; parkAt(soft, 0, 0.8);
+          const withSoft = runBurst()[0];
+          for (const e of liveAll) e.pos = norm3(add3(player.pos, [0.6, 0.6, 0.6]));
+          hard.hp = 9e9; parkAt(hard, 0, 0.8);
+          const withHard = runBurst()[0];
+          const ok = withHard < withSoft - 0.02 && withSoft <= clear + 0.001;
+          console.log(`BEAMFIRE drag=${ok ? 'PASS' : 'FAIL'}`
+            + ` sweep reached: clear=${clear.toFixed(2)}`
+            + ` soft=${withSoft.toFixed(2)} hard=${withHard.toFixed(2)}`
+            + ` (a solid core must bog it harder than fodder)`);
+
+          // DO THE TWO BEAMS ACTUALLY FALL OUT OF STEP? Only if a body is in
+          // one and not the other — and that is a GEOMETRY question, not an
+          // arithmetic one. The beams converge and the enemies are wide, so a
+          // single target parked ahead usually sits in BOTH. Report how many
+          // beams a lone body loads, because "they desync" is a claim about
+          // the board, not about the code.
+          const p0 = beamPhase[0], p1 = beamPhase[1];
+          const lit = [0, 1].filter((gi4) => {
+            const g5 = gunsD[gi4];
+            g5.getWorldPosition(tmpV);
+            const f4 = norm3([tmpV.x, tmpV.y, tmpV.z]);
+            g5.getWorldQuaternion(tmpQ);
+            tmpV.set(0, 0, 1).applyQuaternion(tmpQ);
+            const dd2 = norm3(sub3([tmpV.x, tmpV.y, tmpV.z],
+              scale3(f4, dot3([tmpV.x, tmpV.y, tmpV.z], f4))));
+            const w2 = sub3(hard.pos, f4);
+            const t3 = Math.max(0, Math.min(LASER_REACH * cellSide, dot3(w2, dd2)));
+            const r2 = cellSide * Math.max(0.4, (hard.size ?? hard.spec.size) * 0.8);
+            return dist3(add3(f4, scale3(dd2, t3)), hard.pos) < r2;
+          }).length;
+          console.log(`BEAMFIRE decouple beam0=${p0.toFixed(2)} beam1=${p1.toFixed(2)}`
+            + ` | one body loaded ${lit} of 2 beams`
+            + ` — ${lit === 2 ? 'SHARED, so the pair bogs together (expected: the'
+              + ' beams converge and bodies are wide relative to the muzzle gap)'
+              : 'independent, so the pair desyncs'}`);
+          for (const e of liveAll) e.alive = false;   // tidy the probe's props
+        } else console.log('BEAMFIRE drag=INCONCLUSIVE (need one soft and one hard enemy)');
+      }
+
       // THE SWEEP: does the pair actually scissor, and inward? Sample the two
       // beam directions across the burst and watch the angle between them.
       // Parallel at the ends, narrowest at the midpoint, and narrowing (not
