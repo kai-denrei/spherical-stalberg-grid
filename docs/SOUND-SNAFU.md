@@ -1,8 +1,8 @@
 # The sound SNAFU — a handover
 
-**Status: CLOSED for this repo. Web Audio is broken in the operator's desktop
-Safari.** Proven with a bare control page containing no game code at all.
-Works on Chrome and on iPhone. Written 2026-09-01 so whoever picks this up next does
+**Status: RESOLVED. A wedged Safari audio session, very likely caused by this
+code never closing its AudioContext.** Quitting Safari cleared it. A fix that
+releases the context on `pagehide` has shipped. Written 2026-09-01 so whoever picks this up next does
 not repeat six attempts that are already known not to work.
 
 The symptom: **the TD tab produces no audible sound in Safari on the
@@ -121,7 +121,59 @@ document.
 
 ---
 
-## CLOSED — proven with a control page, 2026-09-01
+## WHAT IT ACTUALLY WAS — and my wrong conclusion
+
+I claimed Web Audio was broken in the operator's Safari and closed the
+investigation. **That was wrong, and the operator was right to reject it.**
+`https://webaudioapi.com/samples/oscillator/` played correctly in that same
+Safari at that same moment. Web Audio was fine; my control page's failure was
+a fact about my page and that browser's *state*, not about Web Audio.
+
+Quitting and reopening Safari fixed everything — the game and the test page
+both.
+
+### The likely cause, and it is ours
+
+`src/audio.js` **never closed its AudioContext.** Not on unload, not ever.
+
+WebKit has a hard cap on concurrent AudioContexts and is known to hold them
+across page loads. A session spent reloading — which is precisely what
+debugging this looked like, dozens of reloads — accumulates contexts until
+Safari quietly stops granting new ones an audio session.
+
+A context in that state has exactly the signature that was measured, item for
+item:
+
+- `state === 'running'` ✓
+- an analyser on `master` reads `peak=0.418` ✓ (it really is processing)
+- nothing reaches the speakers ✓
+- **the tab is never registered as playing audio, so tab-mute does nothing to
+  it** ✓ — the observation that should have pointed here immediately
+- a fresh page in the same browser still works ✓ (webaudioapi.com, under the
+  cap at that moment)
+- quitting Safari clears it ✓
+
+Fixed: the context is now closed on `pagehide` (the event Safari actually
+fires, including into the back/forward cache). If the page is restored from
+bfcache the context is `closed`, and `gateStep` already answers that state
+with a rebuild on the next gesture.
+
+### The lesson, which is mine and not Safari's
+
+Nine attempts measured layer after layer inside the graph and every one came
+back healthy. I read that as *look further in*, then as *therefore the browser
+is broken*. Both were wrong. **A resource this code allocates and never
+releases was never on my list at all** — and "the tab isn't registered as
+playing audio" was a direct pointer to exactly that, sitting in the operator's
+report, unused, for three rounds.
+
+Blaming the platform is what I did instead of finding the leak. The operator's
+pushback — *"we cannot simply claim our code has nothing to do with it"* — was
+the correction that produced the answer.
+
+---
+
+## Superseded: the "Web Audio is broken in Safari" conclusion, 2026-09-01
 
 `/audiotest.html` is a standalone page: no modules, no build step, no game.
 It creates an `AudioContext` inside a real click handler, primes it with a

@@ -17,10 +17,10 @@
 //    total. A failed fetch or decode logs once and that key becomes a
 //    permanent no-op for the session; the game keeps running silent.
 
-import { makeMixState, distanceGain, admit, addVoice, dropVoice } from './audiomix.js?v=7f53d79a';
-import { SOUNDS, BUSES, DEFAULT_LEVELS, GLOBAL_VOICE_CAP, DISTANCE_K } from './audiomanifest.js?v=7f53d79a';
-import { mulberry32 } from './rng.js?v=7f53d79a';
-import { gateStep } from './audiogate.js?v=7f53d79a';
+import { makeMixState, distanceGain, admit, addVoice, dropVoice } from './audiomix.js?v=3dd0aa59';
+import { SOUNDS, BUSES, DEFAULT_LEVELS, GLOBAL_VOICE_CAP, DISTANCE_K } from './audiomanifest.js?v=3dd0aa59';
+import { mulberry32 } from './rng.js?v=3dd0aa59';
+import { gateStep } from './audiogate.js?v=3dd0aa59';
 
 const STORE_KEY = 'ssg.audio.levels';
 const STEAL_FADE = 0.03; // s — a hard cut mid-waveform is an audible click
@@ -323,9 +323,36 @@ export function makeAudio(opts = {}) {
     );
   }
 
+  // RELEASE THE CONTEXT WHEN THE PAGE GOES AWAY.
+  //
+  // Nothing here ever closed one. WebKit has a hard cap on concurrent
+  // AudioContexts and is known to hold them across page loads, so a session
+  // spent reloading — which is exactly what debugging this bug looked like —
+  // accumulates contexts until Safari quietly stops granting audio sessions.
+  // A context in that state RUNS, PROCESSES, and feeds an analyser real
+  // signal while outputting nothing, and the tab is never registered as
+  // playing audio so tab-mute does nothing to it. That is the operator's
+  // report, item for item, and quitting Safari cleared it.
+  //
+  // pagehide rather than beforeunload: it is the event Safari actually fires,
+  // including into the back/forward cache. If the page is restored from
+  // bfcache the context is `closed`, and gateStep already answers that state
+  // with a rebuild on the next gesture.
+  let unloadHooked = false;
+  function hookUnload() {
+    if (unloadHooked) return;
+    unloadHooked = true;
+    addEventListener('pagehide', () => {
+      if (!ctx) return;
+      try { ctx.close(); } catch { /* already gone */ }
+      ctx = null; master = null; analyser = null;
+    });
+  }
+
   function arm() {
     if (armed) return;
     armed = true;
+    hookUnload();
     // Nothing to do until a gesture: the context is born there (Safari will
     // report one created outside a gesture as `running` and still produce no
     // output), and the decode now rides the same context.
