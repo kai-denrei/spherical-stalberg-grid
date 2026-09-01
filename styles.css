@@ -5,22 +5,22 @@
    back to a system face until the subset is rebuilt. */
 @font-face {
   font-family: 'VT323';
-  src: url('assets/fonts/VT323.woff2?v=a6567c7e') format('woff2');
+  src: url('assets/fonts/VT323.woff2?v=cfa1b31d') format('woff2');
   font-weight: 400; font-style: normal; font-display: swap;
 }
 @font-face {
   font-family: 'Press Start 2P';
-  src: url('assets/fonts/PressStart2P.woff2?v=a6567c7e') format('woff2');
+  src: url('assets/fonts/PressStart2P.woff2?v=cfa1b31d') format('woff2');
   font-weight: 400; font-style: normal; font-display: swap;
 }
 @font-face {
   font-family: 'Share Tech Mono';
-  src: url('assets/fonts/ShareTechMono.woff2?v=a6567c7e') format('woff2');
+  src: url('assets/fonts/ShareTechMono.woff2?v=cfa1b31d') format('woff2');
   font-weight: 400; font-style: normal; font-display: swap;
 }
 @font-face {
   font-family: 'DotGothic16';
-  src: url('assets/fonts/DotGothic16.woff2?v=a6567c7e') format('woff2');
+  src: url('assets/fonts/DotGothic16.woff2?v=cfa1b31d') format('woff2');
   font-weight: 400; font-style: normal; font-display: swap;
 }
 
@@ -1509,6 +1509,16 @@ html, body {
 /* NOTE: no position override here — .tab is already `position: fixed;
    inset: 0`, and re-declaring it as relative collapses the tab to zero
    height, which renders a perfectly black screen with no error. */
+/* --- the beam lab ------------------------------------------------------- */
+#beam-app { position: absolute; inset: 0; }
+#beam-app canvas { display: block; width: 100%; height: 100%; }
+#beam-hud {
+  position: absolute; left: 12px; bottom: 12px; z-index: 6;
+  font: 600 12px ui-monospace, Menlo, monospace; letter-spacing: 0.08em;
+  color: #9fdcff; text-shadow: 0 0 8px rgba(0, 180, 255, 0.5);
+  pointer-events: none;
+}
+
 #units-app { position: absolute; inset: 0; }
 #units-app canvas { display: block; width: 100%; height: 100%; }
 #units-chrome {
