@@ -6,6 +6,103 @@ Demo links assume `npm run serve` (port 8144) or the
 
 ---
 
+## `a1acc6a`..`a596b7d` — the gates wear the portal ring
+
+Fourteen commits. The thread through them: the portal bench got honest, then
+the board got its model, then the model got everything a gate needs to do.
+
+**The wormhole's sliders "had no effect", and one of them really didn't.**
+Measured with `?fxprobe=1` — same frame twice, one knob moved, pixels diffed
+— twist and hue spread came back at 30 and 40 mean delta. They were reaching
+the shader all along. Travel speed was the defect, and it was in the shader:
+`travel = T * uSpeed` multiplies *accumulated* time by the rate, so moving the
+rate rewrites where the field has *been* rather than how fast it flows from
+now on. One 0.02 step moved the image 12.1 at t=2s, 19.4 at t=20s, **28.1 at
+t=200s** — a jump control that got more violent with page uptime. Into
+turbulence that reads as a reshuffle, which is exactly "no effect". It also
+made a ramp impossible. Travel and spin are integrated **phases** now (host
+does `phase += rate * dt`); at a pinned phase a 0.02 step moves 0.000 at all
+three times. The bench gained **⧉ copy / ⇩ save** for the whole construct.
+
+**`src/portalfx.js`** holds the operator's bench export under the shader's own
+uniform names, the render settings, the ring's rotor rates, and the ramp:
+`travelRate(secs)` is the sentence "0 by default, 5 seconds before a wave it
+rises to 6" as a function — eased, because a linear ramp puts a visible kink
+at exactly the five-second mark and announces the mechanic instead of the
+wave. Driven by `secsToWave()`, factored out of the boss omen, which was the
+only thing on the board that knew that number. 26 checks.
+
+```
+7s:0.00  6s:0.00  5s:0.00  4s:0.62  3s:2.11  2s:3.89  1s:5.38  0s:6.00
+```
+
+**One target for the whole board.** Every gate samples the same 512px texture,
+so the cost does not scale with gates — the bench's load-bearing claim, and
+the only reason a **377M-sine-fold** march can sit under a live game. Named
+cost: a hit lurches *every* gate's throat. Its real-hardware price is
+unmeasured (headless SwiftShader says nothing about an M4); the levers are
+`uSteps`, `uTurbOctaves`, `updateHz`.
+
+**The ring, made into a gate.** Merged for the board (the bench leaves 72
+meshes unmerged on purpose to report draw calls). Grounded — `fitModel` seats
+the origin at the base, and the old dot-cloud offset had it hanging 0.63 cells
+in the air. Gate-sized at 1.6 cells, 2× the tank. Facing the most *open*
+neighbour, scored by that cell's own neighbourhood, so the mouth does not open
+into rock two steps on. The operator's "we made the tank enormous" was
+measured against the real mkcx: **0.75 cells, correct** — the gate had been
+smaller than the tank and floating, which is what made the tank look huge.
+
+**Grey, and lit.** The frame read black. Its materials were never black
+(luminance 0.41–0.66); they read black under the 0.55 hemi / 0.25 sun. The
+container's problem and the container's fix: a five-rung grey ladder, each
+rung with its own emissive, cloned per gate because each gate dims and loses
+pods independently.
+
+**Two power cores per hit, then two more, then the tank's own death.** Pods
+blow off with their own wreckage and a burst; the gate takes a **recoil** along
+its normal, eased out over 0.22s, plus a concussion and a flash at the mouth
+— the weight lives in the motion, not the particle count. The kill reuses
+`destroyPlayer`'s three parts. The pre-wave **shake is removed**: a standing
+ring is architecture, and a pulse on top of the wormhole ramp was the "two
+things moving reads as noise" that comment already warned about.
+
+```
+HITPROBE hit 1:  hp=2  pods=6/8  debris +5  kick 0.0 → 9.0   recoil 0.22s
+HITPROBE hit 2:  hp=1  pods=4/8  debris +5
+HITPROBE hit 3:  hp=0  pods=4/8  debris +2  kick 9.0 → 14.4  | GATE DESTROYED
+```
+
+**The pods only work because it was measured first.** 0 of the model's 38
+named nodes were meshes — `mergeByMaterial` had welded everything into the
+batch, so `Pod_N_Mount` survived by name with no geometry. Hiding one would
+have hidden nothing. The eight mounts are preserved pivots now (8/8 with
+geometry, eight extra draw calls per gate). Third time this project has paid
+for *name it as a pivot before the merge*.
+
+**The giant white square** was `Base_Collision` — a proxy box **67% of the
+model** — which the grey repaint painted, because the bench never hid it: its
+authored material was simply invisible. Excluded at the merge now, with
+`Callout_1` and the aux helpers, so no later repaint can light them.
+
+**Also in this span.** Wave-2's "invisible enemies" were **ghosts drawn inside
+the planet**: the idle tick opened with `pts.position.y = 0`, td-tab calls it
+one line after writing the world position, and every hit test uses `e.pos`.
+Measured 12.13 cells off, all buried; 0.00 after. Rule written into the file:
+an idle may rotate or scale; position belongs to whoever placed the object.
+And the opening garrison is **ISAO's order** now, sited 3–6 cells forward and
+ranked by nearness to a live gate, through `orderTower` with a `quiet` flag so
+the printer brief still fires on the *player's* first order.
+
+**Probe bugs, all the same family.** A garrison probe waited on a wall-clock
+timer for towers that are built in the *frame loop* — it measured headless's
+frame rate and called it a build failure; then a 1200ms timer raced
+`preloadFabricator` and reported "no drone". A size probe measured the
+procedural fallback and nearly sent the fix after the wrong tank. And
+wrapping headless Chrome in `timeout` kills it before stderr flushes — a
+working probe prints *nothing*, indistinguishable from a page that never ran.
+
+---
+
 ## `34b9746` — the beam lab gets the real weapon, and a drop-off bench
 
 > "edit the BEAMS tweak page, including to test the different levels,
