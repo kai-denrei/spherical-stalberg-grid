@@ -5,18 +5,18 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
   <title>spherical stålberg grid</title>
   <meta name="theme-color" content="#10131a">
-  <link rel="manifest" href="./manifest.webmanifest?v=fa5b839b">
-  <link rel="apple-touch-icon" href="./icons/apple-touch-icon.png?v=fa5b839b">
+  <link rel="manifest" href="./manifest.webmanifest?v=a79ef69c">
+  <link rel="apple-touch-icon" href="./icons/apple-touch-icon.png?v=a79ef69c">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="SphereGrid">
-  <link rel="stylesheet" href="./styles.css?v=fa5b839b">
+  <link rel="stylesheet" href="./styles.css?v=a79ef69c">
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
-  <link rel="icon" href="favicon.svg?v=fa5b839b" type="image/svg+xml">
-  <meta name="cb" content="fa5b839b">
-  <link rel="icon" type="image/svg+xml" href="./cb-shapes/58.svg?v=fa5b839b">
+  <link rel="icon" href="favicon.svg?v=a79ef69c" type="image/svg+xml">
+  <meta name="cb" content="a79ef69c">
+  <link rel="icon" type="image/svg+xml" href="./cb-shapes/39.svg?v=a79ef69c">
   <!-- cb-badge retired from the game view (operator ruling): the build
        token lives in the DEV LOG tab, which reads meta[name="cb"] itself -->
 </head>
@@ -143,6 +143,18 @@
 
   <div id="tab-td" class="tab tab-hidden">
     <div id="td-app"></div>
+    <!-- ⚙ opens the variables modal; ≡ stays the game-mode menu. Two buttons
+         because they are two different things, and the first cut hung the
+         modal off ≡ and buried its own nav under the tab list. -->
+    <button id="vars-toggle" type="button" title="variables (V-less: ⚙)">⚙</button>
+    <!-- frame readout, top-left after ⚙ — toggled by ` or the panel -->
+    <div id="td-perf" class="hidden"></div>
+    <!-- the variables MODAL: the lil-gui panel re-homed here as pages -->
+    <div id="td-vars" class="hidden">
+      <div class="vars-nav"></div>
+      <div class="vars-body"></div>
+      <button class="vars-close" type="button" title="close (Esc)">×</button>
+    </div>
     <div id="td-stats"></div>
     <div id="td-wave" class="hidden"></div>
     <div id="td-tower" class="hidden"></div>
@@ -218,7 +230,7 @@
     <div id="td-launch" class="caution-frame" aria-label="launch control">
       <button id="td-safety" class="safety" type="button" aria-pressed="false" aria-label="safety">
         <span class="lbl-on">ON</span>
-        <img id="td-safety-img" class="switch-img" src="assets/ui/switch-off.png?v=fa5b839b" alt="" width="120" height="200">
+        <img id="td-safety-img" class="switch-img" src="assets/ui/switch-off.png?v=a79ef69c" alt="" width="120" height="200">
         <span class="lbl-off">OFF</span>
       </button>
       <div id="td-launch-readout">
@@ -527,6 +539,6 @@
     </div>
   </div>
 
-  <script type="module" src="./src/main.js?v=fa5b839b"></script>
+  <script type="module" src="./src/main.js?v=a79ef69c"></script>
 </body>
 </html>

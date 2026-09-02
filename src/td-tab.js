@@ -19,49 +19,49 @@
 
 import * as THREE from '../vendor/three.module.js';
 import GUI from '../vendor/lil-gui.esm.js';
-import { generateSphereMesh, relax } from './grid.js?v=fa5b839b';
-import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=fa5b839b';
-import { mulberry32, randomSeed } from './rng.js?v=fa5b839b';
-import { computeBerths, berthIndexFor } from './berths.js?v=fa5b839b';
-import { wantsSecondary, shellsForAll } from './autofire.js?v=fa5b839b';
-import { printPhase, printOffset, printOn, patternSecsFor } from './printpath.js?v=fa5b839b';
-import { createBeamRig, PLASMA_DEFAULTS, BOARD_PRESET, BEAM_PEAK } from './beamdraw.js?v=fa5b839b';
-import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3, segKey, tangentDir, tangentBasis } from './vec3.js?v=fa5b839b';
-import { CREATURES, waveJelly } from './creatures.js?v=fa5b839b';
-import { brief, dwellFor } from './isaobriefs.js?v=fa5b839b';
-import { drawEmotion } from './emotions.js?v=fa5b839b';
+import { generateSphereMesh, relax } from './grid.js?v=a79ef69c';
+import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=a79ef69c';
+import { mulberry32, randomSeed } from './rng.js?v=a79ef69c';
+import { computeBerths, berthIndexFor } from './berths.js?v=a79ef69c';
+import { wantsSecondary, shellsForAll } from './autofire.js?v=a79ef69c';
+import { printPhase, printOffset, printOn, patternSecsFor } from './printpath.js?v=a79ef69c';
+import { createBeamRig, PLASMA_DEFAULTS, BOARD_PRESET, BEAM_PEAK } from './beamdraw.js?v=a79ef69c';
+import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3, segKey, tangentDir, tangentBasis } from './vec3.js?v=a79ef69c';
+import { CREATURES, waveJelly } from './creatures.js?v=a79ef69c';
+import { brief, dwellFor } from './isaobriefs.js?v=a79ef69c';
+import { drawEmotion } from './emotions.js?v=a79ef69c';
 import { ACHIEVEMENTS, ACHV_GROUPS, achievement, blankRun, earned, freshlyEarned,
   sanitiseRecord }
-  from './achievements.js?v=fa5b839b';
+  from './achievements.js?v=a79ef69c';
 import { applyFontPack, currentFontPack, FONT_NAMES,
-  loadTypeFeel } from './fonts.js?v=fa5b839b';
-import { SECONDARY_TOE, applySecondaryToe } from './units.js?v=fa5b839b';
-import { UNITS, UNIT_NAMES, buildUnit, buildCreature, preloadMkcx, preloadServer, makeServerFixture, makeShieldShell, preloadContainer, makeContainerFixture, preloadFabricator, makeIsaoDrone, makeBulletCloud, makeRewardSolid, makeShellSolid, makeDebris, makeDotBurst, makePortalCloud, preloadPortalRing, makePortalRing, makeHeartCloud, makeDotEnemy, preloadTerraformer, makeTerraformerFixture } from './units.js?v=fa5b839b';
-import { LOOKS, LOOK_NAMES } from './looks.js?v=fa5b839b';
-import { makeCellIndex } from './cellindex.js?v=fa5b839b';
-import { CREATURE_TINTS, ENEMY_SPEC, INTROS, computeWavePlan, accentFor } from './enemyspec.js?v=fa5b839b';
-import { PICKUPS } from './pickups.js?v=fa5b839b';
-import { rankFor, rankLabel, badgeSVG, killReq, eliteReq } from './ranks.js?v=fa5b839b';
-import { beamStep, isBeamStep, PEN_SOFT_FRAC, PEN_HARD_FRAC } from './beamranks.js?v=fa5b839b';
-import { burn, sweepAdvance, wallBite as wallBiteFor } from './beamburn.js?v=fa5b839b';
-import { arcPoint, projectToArc, toeForCrossing, crossingForToe } from './arc.js?v=fa5b839b';
+  loadTypeFeel } from './fonts.js?v=a79ef69c';
+import { SECONDARY_TOE, applySecondaryToe } from './units.js?v=a79ef69c';
+import { UNITS, UNIT_NAMES, buildUnit, buildCreature, preloadMkcx, preloadServer, makeServerFixture, makeShieldShell, preloadContainer, makeContainerFixture, preloadFabricator, makeIsaoDrone, makeBulletCloud, makeRewardSolid, makeShellSolid, makeDebris, makeDotBurst, makePortalCloud, preloadPortalRing, makePortalRing, makeHeartCloud, makeDotEnemy, preloadTerraformer, makeTerraformerFixture } from './units.js?v=a79ef69c';
+import { LOOKS, LOOK_NAMES } from './looks.js?v=a79ef69c';
+import { makeCellIndex } from './cellindex.js?v=a79ef69c';
+import { CREATURE_TINTS, ENEMY_SPEC, INTROS, computeWavePlan, accentFor } from './enemyspec.js?v=a79ef69c';
+import { PICKUPS } from './pickups.js?v=a79ef69c';
+import { rankFor, rankLabel, badgeSVG, killReq, eliteReq } from './ranks.js?v=a79ef69c';
+import { beamStep, isBeamStep, PEN_SOFT_FRAC, PEN_HARD_FRAC } from './beamranks.js?v=a79ef69c';
+import { burn, sweepAdvance, wallBite as wallBiteFor } from './beamburn.js?v=a79ef69c';
+import { arcPoint, projectToArc, toeForCrossing, crossingForToe } from './arc.js?v=a79ef69c';
 import { WORMHOLE_PRESET, WORMHOLE_RENDER, RING_SPIN, TRAVEL,
-  travelRate, advancePhase } from './portalfx.js?v=fa5b839b';
-import { WORMHOLE_FRAG } from './fx/wormhole.frag.js?v=fa5b839b';
-import { makeScore } from './score.js?v=fa5b839b';
-import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER } from './towers.js?v=fa5b839b';
-import { makeEconomy, sellRefund } from './economy.js?v=fa5b839b';
-import { makeBloom } from './postfx.js?v=fa5b839b';
-import { TANK_FEEL, TANK_FEEL_KNOBS, makeTankFeel, stepTankFeel, landTankFeel, fireTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js?v=fa5b839b';
-import { FEEL, loadFeel, saveFeel } from './feelstore.js?v=fa5b839b';
+  travelRate, advancePhase } from './portalfx.js?v=a79ef69c';
+import { WORMHOLE_FRAG } from './fx/wormhole.frag.js?v=a79ef69c';
+import { makeScore } from './score.js?v=a79ef69c';
+import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER } from './towers.js?v=a79ef69c';
+import { makeEconomy, sellRefund } from './economy.js?v=a79ef69c';
+import { makeBloom } from './postfx.js?v=a79ef69c';
+import { TANK_FEEL, TANK_FEEL_KNOBS, makeTankFeel, stepTankFeel, landTankFeel, fireTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js?v=a79ef69c';
+import { FEEL, loadFeel, saveFeel } from './feelstore.js?v=a79ef69c';
 import { STRIKE_KNOBS, makeStrike, makeStrikeParams, grantStrikes, stepStrike,
   toggleArm, paintTarget, launchStrike, stepFall, skipFall, fallProgress,
-  strikeDamage, retargetStrike, orbitProgress } from './strike.js?v=fa5b839b';
-import { radarBasis, radarProject, radarBearing, sweepAngle, radarPhosphor } from './radar.js?v=fa5b839b';
-import { BLOOM_GROUPS } from './bloomweights.js?v=fa5b839b';
-import { TOWER_LOOK_NAMES, DEFAULT_TOWER_LOOK, buildTowerLook, preloadLook } from './towerlooks.js?v=fa5b839b';
-import { makeAudio } from './audio.js?v=fa5b839b';
-import { DEATH_KEYS } from './audiomanifest.js?v=fa5b839b';
+  strikeDamage, retargetStrike, orbitProgress } from './strike.js?v=a79ef69c';
+import { radarBasis, radarProject, radarBearing, sweepAngle, radarPhosphor } from './radar.js?v=a79ef69c';
+import { BLOOM_GROUPS } from './bloomweights.js?v=a79ef69c';
+import { TOWER_LOOK_NAMES, DEFAULT_TOWER_LOOK, buildTowerLook, preloadLook } from './towerlooks.js?v=a79ef69c';
+import { makeAudio } from './audio.js?v=a79ef69c';
+import { DEATH_KEYS } from './audiomanifest.js?v=a79ef69c';
 
 export function initTdTab(root) {
   let active = false;
@@ -1236,6 +1236,8 @@ export function initTdTab(root) {
   addEventListener('keydown', (ev) => {
     const k = (ev.key || '').toLowerCase();
     if (CTL_DRIVE_KEYS.includes(k)) { ctlRawT = performance.now() / 1000; ctlRawKey = k; }
+    if (ev.key === '`') setPerfOverlay(!perfOn);
+    if (ev.key === 'Escape') document.body.classList.remove('vars-open');
   }, true);
   let ctlSwallowBarked = false;
   function ctlWatch(dt) {
@@ -8310,6 +8312,43 @@ export function initTdTab(root) {
     }
   }
 
+  // --- THE FRAME READOUT (operator, 2026-09-02) ---------------------------
+  // fps, ms, and what the frame is made of — draw calls, triangles, points —
+  // because "it feels slower" needs a number before it can be argued about.
+  // renderer.info is reset by hand each frame while the readout is on (the
+  // ?perf probe does the same), and left alone when it is off so it costs
+  // nothing. Half-second EMA so the digits are readable rather than jittery.
+  const perfEl = root.querySelector('#td-perf');
+  let perfOn = false, perfFrames = 0, perfAcc = 0, perfFps = 0;
+  const PERF_KEY = 'ssg.td.perf';
+  function setPerfOverlay(on) {
+    perfOn = !!on;
+    if (perfEl) {
+      perfEl.classList.toggle('hidden', !perfOn);
+      // say something at once — the first real sample is half a second away
+      // and an empty box looks like a box that failed
+      if (perfOn && !perfEl.textContent) perfEl.textContent = 'measuring…';
+    }
+    renderer.info.autoReset = !perfOn;
+    try { localStorage.setItem(PERF_KEY, perfOn ? '1' : '0'); } catch { /* fine */ }
+    if (perfCtl) perfCtl.updateDisplay();
+  }
+  function perfTick(dt) {
+    if (!perfOn || !perfEl) return;
+    perfFrames++; perfAcc += dt;
+    if (perfAcc < 0.5) { renderer.info.reset(); return; }
+    const fps = perfFrames / perfAcc;
+    perfFps = perfFps ? perfFps * 0.5 + fps * 0.5 : fps;
+    const r = renderer.info.render;
+    perfEl.innerHTML = `<b>${perfFps.toFixed(0)}</b> fps · ${(1000 / perfFps).toFixed(1)} ms`
+      + ` · <b>${r.calls}</b> calls · ${(r.triangles / 1000).toFixed(1)}k tris`
+      + ` · ${(r.points / 1000).toFixed(1)}k pts`
+      + (whRt ? ` · wh ${WORMHOLE_RENDER.size}@${WORMHOLE_RENDER.updateHz}` : '');
+    perfFrames = 0; perfAcc = 0;
+    renderer.info.reset();
+  }
+  let perfCtl = null;
+
   function animate() {
     // SIM rides TIMERS, not rAF: under a virtual-time budget the timer
     // queue runs at full speed while BeginFrames are rationed (the same
@@ -8327,6 +8366,7 @@ export function initTdTab(root) {
     }
     const now = performance.now();
     const dt = Math.min((now - lastFrame) / 1000, 0.1); // clamp tab-switch gaps
+    perfTick(dt);   // the readout rides the loop's OWN dt — it must not take a second one
     updateEngine(dt);
     lastFrame = now;
     // SIM fast-forward: K fixed-dt update passes per painted frame, and
@@ -10180,6 +10220,72 @@ export function initTdTab(root) {
   // ?perf=N — after N seconds, report what the frame actually costs. Written
   // because "is the dot count a performance limit?" is a question that should
   // be answered with the renderer's own numbers, not with an instinct.
+  // --- THE VARIABLES MODAL (operator, 2026-09-02) --------------------------
+  // "too messy and too vertical": thirty root controls and four folders in one
+  // right-edge column. The lil-gui DOM is MOVED into #td-vars as pages — root
+  // controls become the GAME page, each folder its own page — so nothing
+  // about any control changes, only where it lives and how it is reached.
+  perfCtl = gui.add({ get on() { return perfOn; }, set on(v) { setPerfOverlay(v); } }, 'on')
+    .name('fps readout (`)');
+  (function buildVarsModal() {
+    const modal = root.querySelector('#td-vars');
+    if (!modal) return;
+    const nav = modal.querySelector('.vars-nav');
+    const body = modal.querySelector('.vars-body');
+    const pages = [];
+    // page 1: everything that was loose at the root
+    const gamePage = document.createElement('div');
+    gamePage.className = 'vars-page lil-gui';
+    const gameKids = document.createElement('div');
+    gameKids.className = 'children';
+    for (const c of gui.controllers) gameKids.appendChild(c.domElement);
+    gamePage.appendChild(gameKids);
+    pages.push({ title: 'game', el: gamePage });
+    // one page per folder, the folder's own element moved whole
+    for (const f of gui.folders) {
+      const page = document.createElement('div');
+      page.className = 'vars-page';
+      page.appendChild(f.domElement);
+      f.open();
+      pages.push({ title: f._title, el: page });
+    }
+    let activeI = 0;
+    const show = (i) => {
+      activeI = i;
+      pages.forEach((pg, j) => pg.el.classList.toggle('active', j === i));
+      nav.querySelectorAll('button').forEach((b, j) => b.classList.toggle('active', j === i));
+    };
+    pages.forEach((pg, i) => {
+      const b = document.createElement('button');
+      b.type = 'button'; b.textContent = pg.title;
+      b.addEventListener('click', () => show(i));
+      nav.appendChild(b);
+      body.appendChild(pg.el);
+    });
+    // the root gui shell is now empty; park it out of the way but keep it
+    // alive, since lil-gui's controllers still reference their parent
+    gui.domElement.style.display = 'none';
+    modal.querySelector('.vars-close').addEventListener('click',
+      () => document.body.classList.remove('vars-open'));
+    const tg = root.querySelector('#vars-toggle');
+    if (tg) tg.addEventListener('click', () => document.body.classList.toggle('vars-open'));
+    modal.classList.remove('hidden');
+    show(0);
+    // ?vars=1 opens it; ?fps=1 turns the readout on — for screenshots and
+    // for linking a state rather than describing it
+    if (urlParams.get('vars') === '1') document.body.classList.add('vars-open');
+  })();
+  {
+    let saved = null;
+    try { saved = localStorage.getItem(PERF_KEY); } catch { /* fine */ }
+    if (urlParams.get('fps') === '1' || saved === '1') setPerfOverlay(true);
+    if (urlParams.get('fps') === '1') {
+      console.log(`PERFOVERLAY on=${perfOn} el=${!!perfEl}`
+        + ` hidden=${perfEl ? perfEl.classList.contains('hidden') : '?'}`
+        + ` text="${perfEl ? perfEl.textContent : ''}"`);
+    }
+  }
+
   const perfAt = parseFloat(urlParams.get('perf') || '0');
   if (perfAt > 0) {
     setTimeout(() => {

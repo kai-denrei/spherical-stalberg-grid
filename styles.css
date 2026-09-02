@@ -5,22 +5,22 @@
    back to a system face until the subset is rebuilt. */
 @font-face {
   font-family: 'VT323';
-  src: url('assets/fonts/VT323.woff2?v=fa5b839b') format('woff2');
+  src: url('assets/fonts/VT323.woff2?v=a79ef69c') format('woff2');
   font-weight: 400; font-style: normal; font-display: swap;
 }
 @font-face {
   font-family: 'Press Start 2P';
-  src: url('assets/fonts/PressStart2P.woff2?v=fa5b839b') format('woff2');
+  src: url('assets/fonts/PressStart2P.woff2?v=a79ef69c') format('woff2');
   font-weight: 400; font-style: normal; font-display: swap;
 }
 @font-face {
   font-family: 'Share Tech Mono';
-  src: url('assets/fonts/ShareTechMono.woff2?v=fa5b839b') format('woff2');
+  src: url('assets/fonts/ShareTechMono.woff2?v=a79ef69c') format('woff2');
   font-weight: 400; font-style: normal; font-display: swap;
 }
 @font-face {
   font-family: 'DotGothic16';
-  src: url('assets/fonts/DotGothic16.woff2?v=fa5b839b') format('woff2');
+  src: url('assets/fonts/DotGothic16.woff2?v=a79ef69c') format('woff2');
   font-weight: 400; font-style: normal; font-display: swap;
 }
 
@@ -3575,3 +3575,122 @@ tr.sim-timeout td:nth-child(2), tr.sim-stalled td:nth-child(2) { color: #ffb000;
   max-width: min(560px, calc(100vw - 24px));
 }
 #portal-hud b { color: var(--p-white, #fff); }
+
+
+/* --- TD frame readout (2026-09-02) ------------------------------------
+   Top-left, tucked beside the ≡ button so it never sits on the score.
+   Monospace and dim on purpose: an instrument, not a HUD element. --- */
+#td-perf {
+  position: fixed;
+  /* UNDER the score panel, not beside the ≡: the ≡ does not sit where its
+     own rule says (a badge holds that slot), and a readout in the toolbar
+     row overlapped it. The score panel's bottom edge is a stable anchor. */
+  top: 168px;
+  left: 14px;
+  z-index: 61;
+  font: 600 11px ui-monospace, Menlo, monospace;
+  letter-spacing: 0.06em;
+  color: #9fdcff;
+  background: rgba(8, 12, 20, 0.72);
+  border: 1px solid rgba(0, 208, 255, 0.28);
+  border-radius: 6px;
+  padding: 4px 8px;
+  pointer-events: none;
+  white-space: nowrap;
+}
+#td-perf b { color: #e8fbff; font-weight: 700; }
+#td-perf.hidden { display: none; }
+
+/* --- TD variables MODAL (2026-09-02) ----------------------------------
+   The lil-gui panel used to be one tall column pinned to the right edge —
+   thirty controls and four folders, scrolled by feel. It is re-homed into a
+   centred modal: a nav column of PAGES on the left, one page at a time on
+   the right. The lil-gui elements are MOVED, not rebuilt, so every slider's
+   behaviour is untouched. Opens with the ≡ (body.chrome-open), closes on ×
+   or Esc, and — unlike the old column — is allowed to open while playing,
+   because a toggle you cannot use mid-run is not a toggle. --- */
+#td-vars {
+  position: fixed;
+  inset: 0;
+  z-index: 62;
+  display: grid;
+  grid-template-columns: 168px minmax(0, 1fr);
+  width: min(760px, calc(100vw - 24px));
+  height: min(78vh, 640px);
+  margin: auto;
+  background: rgba(10, 14, 22, 0.96);
+  border: 1px solid rgba(0, 208, 255, 0.35);
+  border-radius: 10px;
+  box-shadow: 0 18px 60px rgba(0, 0, 0, 0.6);
+  overflow: hidden;
+  backdrop-filter: blur(4px);
+}
+#td-vars.hidden, body:not(.vars-open) #td-vars { display: none; }
+/* the ⚙, a sibling of ≡ in look and row */
+#vars-toggle {
+  position: fixed;
+  top: max(10px, env(safe-area-inset-top));
+  left: 194px;   /* right of the ≡ as it actually renders (x≈145-183) */
+  z-index: 60;
+  width: 40px; height: 36px;
+  font: 700 18px ui-monospace, Menlo, monospace;
+  color: #9fdcff;
+  background: rgba(27, 33, 48, 0.85);
+  border: 1px solid rgba(0, 208, 255, 0.3);
+  border-radius: 8px;
+  cursor: pointer;
+}
+#vars-toggle:hover, body.vars-open #vars-toggle { color: #fff; border-color: #00d0ff; }
+#td-vars .vars-nav {
+  display: flex; flex-direction: column; gap: 2px;
+  padding: 44px 8px 8px;
+  border-right: 1px solid rgba(0, 208, 255, 0.18);
+  overflow-y: auto;
+}
+#td-vars .vars-nav button {
+  text-align: left;
+  font: 600 12px ui-monospace, Menlo, monospace;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #9aa7bd;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  padding: 8px 10px;
+  cursor: pointer;
+}
+#td-vars .vars-nav button:hover { color: #e8fbff; border-color: rgba(0, 208, 255, 0.25); }
+#td-vars .vars-nav button.active {
+  color: #e8fbff;
+  background: rgba(0, 208, 255, 0.12);
+  border-color: rgba(0, 208, 255, 0.45);
+}
+#td-vars .vars-body { overflow-y: auto; padding: 44px 12px 12px; }
+#td-vars .vars-page { display: none; }
+#td-vars .vars-page.active { display: block; }
+#td-vars .vars-close {
+  position: absolute; top: 8px; right: 10px;
+  width: 30px; height: 30px;
+  font: 700 18px ui-monospace, Menlo, monospace;
+  color: #9fdcff; background: transparent;
+  border: 1px solid rgba(0, 208, 255, 0.3); border-radius: 6px;
+  cursor: pointer;
+}
+#td-vars .vars-close:hover { color: #fff; border-color: #00d0ff; }
+/* the moved lil-gui pieces: static, full width, no root title, and never
+   hidden by the column rules that apply to the OLD placement */
+#td-vars .lil-gui, #td-vars .lil-gui.root {
+  display: block !important;
+  position: static !important;
+  width: 100% !important;
+  max-height: none !important;
+}
+#td-vars .lil-gui.root > .title { display: none; }
+#td-vars .vars-page > .lil-gui > .title { display: none; }
+#td-vars .vars-page > .lil-gui > .children { display: block !important; }
+@media (max-width: 560px) {
+  #td-vars { grid-template-columns: 1fr; height: min(84vh, 640px); }
+  #td-vars .vars-nav { flex-direction: row; flex-wrap: wrap; padding-top: 42px; border-right: 0;
+    border-bottom: 1px solid rgba(0, 208, 255, 0.18); }
+  #td-vars .vars-body { padding-top: 10px; }
+}
