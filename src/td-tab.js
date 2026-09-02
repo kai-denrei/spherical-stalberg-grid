@@ -19,46 +19,49 @@
 
 import * as THREE from '../vendor/three.module.js';
 import GUI from '../vendor/lil-gui.esm.js';
-import { generateSphereMesh, relax } from './grid.js?v=6cbd45c5';
-import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=6cbd45c5';
-import { mulberry32, randomSeed } from './rng.js?v=6cbd45c5';
-import { computeBerths, berthIndexFor } from './berths.js?v=6cbd45c5';
-import { wantsSecondary, shellsForAll } from './autofire.js?v=6cbd45c5';
-import { printPhase, printOffset, printOn, patternSecsFor } from './printpath.js?v=6cbd45c5';
-import { createBeamRig, PLASMA_DEFAULTS, BOARD_PRESET, BEAM_PEAK } from './beamdraw.js?v=6cbd45c5';
-import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3, segKey, tangentDir, tangentBasis } from './vec3.js?v=6cbd45c5';
-import { CREATURES, waveJelly } from './creatures.js?v=6cbd45c5';
-import { brief, dwellFor } from './isaobriefs.js?v=6cbd45c5';
-import { drawEmotion } from './emotions.js?v=6cbd45c5';
+import { generateSphereMesh, relax } from './grid.js?v=1422ddf4';
+import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=1422ddf4';
+import { mulberry32, randomSeed } from './rng.js?v=1422ddf4';
+import { computeBerths, berthIndexFor } from './berths.js?v=1422ddf4';
+import { wantsSecondary, shellsForAll } from './autofire.js?v=1422ddf4';
+import { printPhase, printOffset, printOn, patternSecsFor } from './printpath.js?v=1422ddf4';
+import { createBeamRig, PLASMA_DEFAULTS, BOARD_PRESET, BEAM_PEAK } from './beamdraw.js?v=1422ddf4';
+import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3, segKey, tangentDir, tangentBasis } from './vec3.js?v=1422ddf4';
+import { CREATURES, waveJelly } from './creatures.js?v=1422ddf4';
+import { brief, dwellFor } from './isaobriefs.js?v=1422ddf4';
+import { drawEmotion } from './emotions.js?v=1422ddf4';
 import { ACHIEVEMENTS, ACHV_GROUPS, achievement, blankRun, earned, freshlyEarned,
   sanitiseRecord }
-  from './achievements.js?v=6cbd45c5';
+  from './achievements.js?v=1422ddf4';
 import { applyFontPack, currentFontPack, FONT_NAMES,
-  loadTypeFeel } from './fonts.js?v=6cbd45c5';
-import { SECONDARY_TOE, applySecondaryToe } from './units.js?v=6cbd45c5';
-import { UNITS, UNIT_NAMES, buildUnit, buildCreature, preloadMkcx, preloadServer, makeServerFixture, makeShieldShell, preloadContainer, makeContainerFixture, preloadFabricator, makeIsaoDrone, makeBulletCloud, makeRewardSolid, makeShellSolid, makeDebris, makeDotBurst, makePortalCloud, makeHeartCloud, makeDotEnemy, preloadTerraformer, makeTerraformerFixture } from './units.js?v=6cbd45c5';
-import { LOOKS, LOOK_NAMES } from './looks.js?v=6cbd45c5';
-import { makeCellIndex } from './cellindex.js?v=6cbd45c5';
-import { CREATURE_TINTS, ENEMY_SPEC, INTROS, computeWavePlan, accentFor } from './enemyspec.js?v=6cbd45c5';
-import { PICKUPS } from './pickups.js?v=6cbd45c5';
-import { rankFor, rankLabel, badgeSVG, killReq, eliteReq } from './ranks.js?v=6cbd45c5';
-import { beamStep, isBeamStep, PEN_SOFT_FRAC, PEN_HARD_FRAC } from './beamranks.js?v=6cbd45c5';
-import { burn, sweepAdvance, wallBite as wallBiteFor } from './beamburn.js?v=6cbd45c5';
-import { arcPoint, projectToArc, toeForCrossing, crossingForToe } from './arc.js?v=6cbd45c5';
-import { makeScore } from './score.js?v=6cbd45c5';
-import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER } from './towers.js?v=6cbd45c5';
-import { makeEconomy, sellRefund } from './economy.js?v=6cbd45c5';
-import { makeBloom } from './postfx.js?v=6cbd45c5';
-import { TANK_FEEL, TANK_FEEL_KNOBS, makeTankFeel, stepTankFeel, landTankFeel, fireTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js?v=6cbd45c5';
-import { FEEL, loadFeel, saveFeel } from './feelstore.js?v=6cbd45c5';
+  loadTypeFeel } from './fonts.js?v=1422ddf4';
+import { SECONDARY_TOE, applySecondaryToe } from './units.js?v=1422ddf4';
+import { UNITS, UNIT_NAMES, buildUnit, buildCreature, preloadMkcx, preloadServer, makeServerFixture, makeShieldShell, preloadContainer, makeContainerFixture, preloadFabricator, makeIsaoDrone, makeBulletCloud, makeRewardSolid, makeShellSolid, makeDebris, makeDotBurst, makePortalCloud, preloadPortalRing, makePortalRing, makeHeartCloud, makeDotEnemy, preloadTerraformer, makeTerraformerFixture } from './units.js?v=1422ddf4';
+import { LOOKS, LOOK_NAMES } from './looks.js?v=1422ddf4';
+import { makeCellIndex } from './cellindex.js?v=1422ddf4';
+import { CREATURE_TINTS, ENEMY_SPEC, INTROS, computeWavePlan, accentFor } from './enemyspec.js?v=1422ddf4';
+import { PICKUPS } from './pickups.js?v=1422ddf4';
+import { rankFor, rankLabel, badgeSVG, killReq, eliteReq } from './ranks.js?v=1422ddf4';
+import { beamStep, isBeamStep, PEN_SOFT_FRAC, PEN_HARD_FRAC } from './beamranks.js?v=1422ddf4';
+import { burn, sweepAdvance, wallBite as wallBiteFor } from './beamburn.js?v=1422ddf4';
+import { arcPoint, projectToArc, toeForCrossing, crossingForToe } from './arc.js?v=1422ddf4';
+import { WORMHOLE_PRESET, WORMHOLE_RENDER, RING_SPIN, TRAVEL,
+  travelRate, advancePhase } from './portalfx.js?v=1422ddf4';
+import { WORMHOLE_FRAG } from './fx/wormhole.frag.js?v=1422ddf4';
+import { makeScore } from './score.js?v=1422ddf4';
+import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER } from './towers.js?v=1422ddf4';
+import { makeEconomy, sellRefund } from './economy.js?v=1422ddf4';
+import { makeBloom } from './postfx.js?v=1422ddf4';
+import { TANK_FEEL, TANK_FEEL_KNOBS, makeTankFeel, stepTankFeel, landTankFeel, fireTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js?v=1422ddf4';
+import { FEEL, loadFeel, saveFeel } from './feelstore.js?v=1422ddf4';
 import { STRIKE_KNOBS, makeStrike, makeStrikeParams, grantStrikes, stepStrike,
   toggleArm, paintTarget, launchStrike, stepFall, skipFall, fallProgress,
-  strikeDamage, retargetStrike, orbitProgress } from './strike.js?v=6cbd45c5';
-import { radarBasis, radarProject, radarBearing, sweepAngle, radarPhosphor } from './radar.js?v=6cbd45c5';
-import { BLOOM_GROUPS } from './bloomweights.js?v=6cbd45c5';
-import { TOWER_LOOK_NAMES, DEFAULT_TOWER_LOOK, buildTowerLook, preloadLook } from './towerlooks.js?v=6cbd45c5';
-import { makeAudio } from './audio.js?v=6cbd45c5';
-import { DEATH_KEYS } from './audiomanifest.js?v=6cbd45c5';
+  strikeDamage, retargetStrike, orbitProgress } from './strike.js?v=1422ddf4';
+import { radarBasis, radarProject, radarBearing, sweepAngle, radarPhosphor } from './radar.js?v=1422ddf4';
+import { BLOOM_GROUPS } from './bloomweights.js?v=1422ddf4';
+import { TOWER_LOOK_NAMES, DEFAULT_TOWER_LOOK, buildTowerLook, preloadLook } from './towerlooks.js?v=1422ddf4';
+import { makeAudio } from './audio.js?v=1422ddf4';
+import { DEATH_KEYS } from './audiomanifest.js?v=1422ddf4';
 
 export function initTdTab(root) {
   let active = false;
@@ -7414,8 +7417,161 @@ export function initTdTab(root) {
   // it used to take no time at all.
   const GATE_DIAL = 1.6;
 
+  // HOW LONG UNTIL THE NEXT WAVE, in seconds. Infinity while one is already
+  // running, and while the board has no live gate to send it. Factored out of
+  // the boss omen, which was the only thing that knew how to work it out —
+  // the gates want the same number and two copies of a clock is two clocks.
+  function secsToWave() {
+    if (waveActive) return Infinity;
+    if (waveIn >= 0) return waveIn;
+    if (!spawnPoints.some((sp) => sp.alive)) return Infinity;
+    return params.waveGap - interClock;
+  }
+
+  // --- THE WORMHOLE, ONCE FOR THE WHOLE BOARD ----------------------------
+  //
+  // One render target, one march, however many gates are standing — the cost
+  // does not scale with the number of portals because they all sample the
+  // same texture. That was the load-bearing claim the #portal bench was built
+  // to test, and it is the only reason a 377M-sine-fold effect can be on a
+  // board that also has a game to draw.
+  //
+  // Rendered into an OFFSCREEN target with the main renderer, then bound as a
+  // map. The target is sRGB on purpose: the effect writes display-referred
+  // values and a material sampling it expects linear, so three has to convert
+  // on read. Getting that backwards is the single most common cause of "right
+  // in the sandbox, wrong in my scene" (PORTING.md).
+  let whRt = null, whMat = null, whScene = null, whCam = null, whLastAt = -1e9;
+  const whPhase = { travel: 0, spin: 0 };
+  let whTravelRate = 0;   // reported by the probe; driven by the wave clock
+  const whUniforms = {
+    uResolution: { value: new THREE.Vector3(1, 1, 1) },
+    uTime: { value: 0 },
+    uMouse: { value: new THREE.Vector4() },
+    uTravel: { value: 0 },
+    uSpinPhase: { value: 0 },
+    uTurbFreq: { value: 2.0 },
+    uStepScale: { value: 1 / 3 },
+    uColorBias: { value: 1.1 },   // NEVER below 1.0: at exactly 1.0 the
+                                  // singularity is 0/0 and returns real NaN
+    uEpsilon: { value: 1e-4 },
+    uMinStep: { value: 0.02 },
+    uNear: { value: 1.5 },
+    uDepthHue: { value: 0.12 },
+  };
+  for (const [k, v] of Object.entries(WORMHOLE_PRESET)) whUniforms[k] = { value: v };
+
+  function ensureWormhole() {
+    if (whRt) return whRt;
+    const n = WORMHOLE_RENDER.size;
+    whRt = new THREE.WebGLRenderTarget(n, n, {
+      minFilter: THREE.LinearFilter, magFilter: THREE.LinearFilter,
+      depthBuffer: false, stencilBuffer: false,
+    });
+    whRt.texture.colorSpace = THREE.SRGBColorSpace;
+    whUniforms.uResolution.value.set(n, n, 1);
+    whScene = new THREE.Scene();
+    whCam = new THREE.Camera();
+    const g = new THREE.BufferGeometry();
+    g.setAttribute('position', new THREE.BufferAttribute(
+      new Float32Array([-1, -1, 0, 3, -1, 0, -1, 3, 0]), 3));
+    whMat = new THREE.ShaderMaterial({
+      // NOT OPTIONAL: tanh() and `out` are GLSL ES 3.00 only, and the
+      // shader's tonemap is built on tanh.
+      glslVersion: THREE.GLSL3,
+      vertexShader: 'void main() { gl_Position = vec4(position.xy, 0.0, 1.0); }',
+      fragmentShader: WORMHOLE_FRAG,
+      uniforms: whUniforms,
+      depthTest: false, depthWrite: false,
+    });
+    whScene.add(new THREE.Mesh(g, whMat));
+    return whRt;
+  }
+
+  // THE RAMP. Travel sits at 0 and winds to 6 across the last five seconds
+  // before a wave lands (portalfx.travelRate) — the gate is a mouth that
+  // starts to pull just before something comes out of it. The rate is
+  // integrated into a phase here rather than multiplied by elapsed time in
+  // the shader: a rate that multiplies accumulated time rewrites its own
+  // history every frame it changes, which makes a ramp impossible.
+  function updateWormhole(dt, tNow) {
+    if (!whRt) return;
+    whTravelRate = travelRate(secsToWave(), TRAVEL);
+    advancePhase(whPhase, dt, whTravelRate, WORMHOLE_PRESET.uTimeScale);
+    const period = 1 / Math.max(1, WORMHOLE_RENDER.updateHz);
+    if (tNow - whLastAt < period) return;
+    whLastAt = tNow;
+    whUniforms.uTime.value = tNow;
+    whUniforms.uTravel.value = whPhase.travel;
+    whUniforms.uSpinPhase.value = whPhase.spin;
+    renderer.setRenderTarget(whRt);
+    renderer.render(whScene, whCam);
+    renderer.setRenderTarget(null);
+  }
+
+  // The authored ring, with the wormhole in the hole the blueprint reserves,
+  // falling back to the dot cloud until the bytes land — a gate you cannot
+  // see is a gate you cannot shoot, so "nothing yet" is not an option.
+  // WHEN THE BYTES LAND LATE, SWAP THE GATES THAT ARE ALREADY UP.
+  //
+  // A gate can be seeded before the GLB resolves — the tutorial seeds one in
+  // the first frames — and those would keep the dot cloud for the whole run
+  // while later gates wore the ring. One board, two kinds of gate, is worse
+  // than either. Rebuild in place, carrying the dial so a gate that is still
+  // drawing itself in does not snap to full size.
+  let ringSwapped = false;
+  function swapGatesToRing() {
+    if (ringSwapped || !graph || !dungeon) return;
+    ringSwapped = true;
+    for (const sp of spawnPoints) {
+      if (!sp.obj) continue;
+      const dial = sp.obj.userData.dial ?? 1;
+      scene.remove(sp.obj);
+      sp.obj = buildPortalObj(sp.ci, whim() * 6.283);
+      sp.obj.userData.dial = dial;
+      if (sp.obj.userData.setForm) sp.obj.userData.setForm(dial);
+      scene.add(sp.obj);
+    }
+  }
+  preloadPortalRing().then((ok) => { if (ok) swapGatesToRing(); });
+
+  function makeGateBody(phase) {
+    const ring = makePortalRing(0x8fe8ff);
+    if (!ring) return makePortalCloud({ body: 0xcfd8ff, hi: 0xffffff }, phase);
+    ensureWormhole();
+    const disc = new THREE.Mesh(
+      new THREE.CircleGeometry(1, 64),
+      new THREE.MeshBasicMaterial({
+        map: whRt.texture,
+        // The effect is authored on black, so ADDITIVE makes the black the
+        // transparency — no alpha channel, and the rim spills onto the ring's
+        // inner liner the way a real one would.
+        blending: THREE.AdditiveBlending,
+        transparent: true, depthWrite: false,
+        side: THREE.DoubleSide, toneMapped: false,
+      }));
+    const vol = ring.userData.aperture;
+    // unit radius under the aperture node, which carries the authored size
+    if (vol) vol.add(disc); else { disc.scale.setScalar(1.8); ring.add(disc); }
+    ring.userData.disc = disc;
+    // the ring's own idle, at the bench's tuned rates
+    ring.userData.tick = (t, dt) => {
+      const d = dt ?? 1 / 60;
+      if (ring.userData.rotorA) ring.userData.rotorA.rotation.z += RING_SPIN.rotorA * d;
+      if (ring.userData.rotorB) ring.userData.rotorB.rotation.z += RING_SPIN.rotorB * d;
+      if (ring.userData.yaw) ring.userData.yaw.rotation.y += RING_SPIN.yaw * d;
+    };
+    // the dial the gate is drawn in with — the cloud exposes setForm, the
+    // ring scales instead, so both answer the same call
+    ring.userData.setForm = (f) => {
+      const k = Math.max(0.001, f);
+      ring.scale.setScalar((ring.userData.sizeScale ?? 1) * k);
+    };
+    return ring;
+  }
+
   function buildPortalObj(ci, phase) {
-    const obj = makePortalCloud({ body: 0xcfd8ff, hi: 0xffffff }, phase);
+    const obj = makeGateBody(phase);
     // starts unformed; stepGates draws it in
     obj.userData.dial = 0;
     if (obj.userData.setForm) obj.userData.setForm(0);
@@ -8199,11 +8355,10 @@ export function initTdTab(root) {
       // it), so at the default 7s gap the omen owns the entire pre-boss
       // window; a stall-forced wave still cues off its 3s telegraph.
       if (!bossCued && wave + 1 === BOSS_WAVE && !buildFrozen()) {
-        const left = waveIn >= 0 ? waveIn
-          : (waveActive ? Infinity : params.waveGap - interClock);
-        if (left <= 10) { bossCued = true; sfx.play('boss_tension'); }
+        if (secsToWave() <= 10) { bossCued = true; sfx.play('boss_tension'); }
       }
     }
+    updateWormhole(dt, t);
     if (tutorialActive) tutorial.tick(dt);
     if (!frozen) {
       updateEnemies(dt, t);
@@ -10134,6 +10289,37 @@ export function initTdTab(root) {
         + ` | the old fixed ${SECONDARY_TOE} would cross at`
         + ` ${crossingForToe(lastToe.gap, SECONDARY_TOE).toFixed(2)}`);
     } else console.log('TOE not applied (no gun pivots on this tank)');
+  }
+
+  // ?gateprobe2=1 — ARE THE GATES WEARING THE RING, AND DOES THE RAMP RUN?
+  //
+  // Two things a screenshot cannot settle: whether the gates got the authored
+  // model or fell back to the dot cloud, and whether travel actually winds up
+  // in the last five seconds before a wave. The ramp is driven by a clock, so
+  // it is checked by asking the clock, not by waiting.
+  if (urlParams.get('gateprobe2') === '1') {
+    preloadPortalRing().then((ok) => {
+      swapGatesToRing();
+      const wearing = spawnPoints.filter((sp) => sp.obj && sp.obj.userData.disc).length;
+      console.log(`GATEPROBE2 ring loaded=${ok}`
+        + ` | ${wearing}/${spawnPoints.length} gates wearing the ring`
+        + ` ${wearing === spawnPoints.length && spawnPoints.length ? '' : '<-- some fell back to the cloud'}`
+        + ` | one shared target ${whRt ? `${WORMHOLE_RENDER.size}px` : 'NOT BUILT'}`
+        + ` for all of them`);
+      // the ramp, read straight off travelRate at each second of the lead
+      const row = [];
+      for (let sec = 7; sec >= 0; sec--) row.push(`${sec}s:${travelRate(sec).toFixed(2)}`);
+      console.log(`GATEPROBE2 travel ramp (seconds before the wave) ${row.join('  ')}`);
+      // ...and that the phase actually accumulates through it
+      const p0 = whPhase.travel;
+      for (let i = 0; i < 300; i++) advancePhase(whPhase, 1 / 60, travelRate(5 - i / 60));
+      console.log(`GATEPROBE2 five seconds of ramp moved the phase`
+        + ` ${(whPhase.travel - p0).toFixed(3)}`
+        + ` ${whPhase.travel - p0 > 0 ? '(travel is live)' : '<-- PHASE NEVER MOVED'}`);
+      const folds = WORMHOLE_RENDER.size ** 2 * WORMHOLE_PRESET.uSteps * WORMHOLE_PRESET.uTurbOctaves;
+      console.log(`GATEPROBE2 cost ${(folds / 1e6).toFixed(0)}M sine-folds per rendered frame,`
+        + ` ONCE for the board (not per gate)`);
+    });
   }
 
   // ?garrison=1 — WHERE THE OPENING TWO GO, AND WHO BUILDS THEM.

@@ -16,14 +16,14 @@
 
 import * as THREE from '../vendor/three.module.js';
 import { EMOTION_IDS, emotion, phosphorFor } from './emotions.js';
-import { printPhase, printOffset, printOn } from './printpath.js?v=6cbd45c5';
+import { printPhase, printOffset, printOn } from './printpath.js?v=1422ddf4';
 import { loadGlb, mergeByMaterial, fitModel, tintModel, makeShellRack,
-  addEdgeOutlines, makeHeatSleeve } from './glbmodels.js?v=6cbd45c5';
-import { CREATURES, waveJelly, swimWave, spherePts, bulletPts, missilePts, heartPts, torusPts, towerHeadPts, enemyDotPts, portalPts } from './creatures.js?v=6cbd45c5';
-import { TOWER_FEEL, TOWER_HEADS, headKindFor } from './towerfeel.js?v=6cbd45c5';
+  addEdgeOutlines, makeHeatSleeve } from './glbmodels.js?v=1422ddf4';
+import { CREATURES, waveJelly, swimWave, spherePts, bulletPts, missilePts, heartPts, torusPts, towerHeadPts, enemyDotPts, portalPts } from './creatures.js?v=1422ddf4';
+import { TOWER_FEEL, TOWER_HEADS, headKindFor } from './towerfeel.js?v=1422ddf4';
 import { STARGATE_PTS, STARGATE_STROKE,
-  HORIZON_N, stargateHorizon } from './stargate.js?v=6cbd45c5';
-import { ENEMY_SPEC } from './enemyspec.js?v=6cbd45c5';
+  HORIZON_N, stargateHorizon } from './stargate.js?v=1422ddf4';
+import { ENEMY_SPEC } from './enemyspec.js?v=1422ddf4';
 
 function normalizeToUnit(group) {
   group.updateMatrixWorld(true);
@@ -1808,6 +1808,50 @@ const FAB_PIVOTS = [...FAB_ROTORS, 'Boom_Yaw', 'Boom_Pitch', 'Head_Pitch', 'Nozz
   'Sensor_Pod', 'Sensor_Lens'];
 const FAB_DROP = ['Workpiece_Group', 'Airframe_Collision'];
 let fabProto = null, fabLoad = null;
+// --- THE PORTAL RING (operator, 2026-09-02) -------------------------------
+// The board's gates wear the authored ring now, with the wormhole rendered
+// into the hole the blueprint reserves for it.
+//
+// MERGED, unlike the bench. #portal leaves the 72 meshes unmerged on purpose
+// (it reports draw calls and merging would hide the geometry cost); the board
+// has a gate per spawn point and cannot pay that. The four moving/reserved
+// nodes are named as PIVOTS so the merge preserves them — a part is only
+// addressable after mergeByMaterial if it was named before it, which this
+// project has already paid to learn once.
+const RING_URL = 'assets/models/portalring.glb';
+const RING_PIVOTS = ['Rotor_A_Spin', 'Rotor_B_Spin', 'Yaw_Turntable', 'Aperture_Volume'];
+let ringLoad = null, ringProto = null;
+export function preloadPortalRing() {
+  if (ringLoad) return ringLoad;
+  ringLoad = loadGlb(RING_URL).then((scene) => {
+    if (!scene) { ringLoad = null; return false; }
+    const merged = mergeByMaterial(scene, RING_PIVOTS, []);
+    // Unit-ish: the caller scales to the cell. Height rather than span,
+    // because a gate reads by how tall it stands over the wall it is in.
+    ringProto = fitModel(merged, { height: 1.0, maxSpan: 1.2 });
+    return true;
+  });
+  return ringLoad;
+}
+
+// One ring. Returns null until the bytes land — callers fall back to the dot
+// cloud rather than showing nothing, because a gate you cannot see is a gate
+// you cannot shoot.
+export function makePortalRing(tint = 0x8fe8ff) {
+  if (!ringProto) { preloadPortalRing(); return null; }
+  const g = ringProto.clone(true);
+  tintModel(g, tint, { wash: 0.18, shades: { armour: 1.0, turret: 0.8, detail: 0.6, steel: 0.4 } });
+  g.userData.rotorA = g.getObjectByName('Rotor_A_Spin');
+  g.userData.rotorB = g.getObjectByName('Rotor_B_Spin');
+  g.userData.yaw = g.getObjectByName('Yaw_Turntable');
+  // The aperture is an EMPTY node whose SCALE carries the reserved volume —
+  // a Box3 over it is degenerate and returns nothing. Parent the disc to it
+  // at unit radius and the model's own authored size scales it, so a
+  // re-export at a different size follows without anyone editing a constant.
+  g.userData.aperture = g.getObjectByName('Aperture_Volume');
+  return g;
+}
+
 export function preloadFabricator() {
   if (fabLoad) return fabLoad;
   fabLoad = loadGlb(FAB_URL).then((scene) => {
