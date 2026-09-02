@@ -5,22 +5,22 @@
    back to a system face until the subset is rebuilt. */
 @font-face {
   font-family: 'VT323';
-  src: url('assets/fonts/VT323.woff2?v=2ae0fb50') format('woff2');
+  src: url('assets/fonts/VT323.woff2?v=a1b5f2a0') format('woff2');
   font-weight: 400; font-style: normal; font-display: swap;
 }
 @font-face {
   font-family: 'Press Start 2P';
-  src: url('assets/fonts/PressStart2P.woff2?v=2ae0fb50') format('woff2');
+  src: url('assets/fonts/PressStart2P.woff2?v=a1b5f2a0') format('woff2');
   font-weight: 400; font-style: normal; font-display: swap;
 }
 @font-face {
   font-family: 'Share Tech Mono';
-  src: url('assets/fonts/ShareTechMono.woff2?v=2ae0fb50') format('woff2');
+  src: url('assets/fonts/ShareTechMono.woff2?v=a1b5f2a0') format('woff2');
   font-weight: 400; font-style: normal; font-display: swap;
 }
 @font-face {
   font-family: 'DotGothic16';
-  src: url('assets/fonts/DotGothic16.woff2?v=2ae0fb50') format('woff2');
+  src: url('assets/fonts/DotGothic16.woff2?v=a1b5f2a0') format('woff2');
   font-weight: 400; font-style: normal; font-display: swap;
 }
 
@@ -3812,6 +3812,10 @@ body.mobile-shell #td-brief {
 }
 @keyframes td-caption-pop { from { opacity: 0; } to { opacity: 1; } }
 body.mobile-shell #td-brief-face { width: 56px; height: 56px; }
+/* the tower radial on glass: every target ≥ 48px (plan §2.2), the note big
+   enough to read at arm's length */
+body.mobile-shell #td-shop .shop-close { width: 48px; height: 48px; }
+body.mobile-shell #td-shop .shop-note { font-size: 12px; }
 /* the vertical budget at 844x303 (the ruler's landscape) is the top band
    (~150), a lane (~55) and Isao (~85): Isao is wide and small so his long
    lines wrap to two, not three */

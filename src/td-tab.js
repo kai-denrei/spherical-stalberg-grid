@@ -19,50 +19,50 @@
 
 import * as THREE from '../vendor/three.module.js';
 import GUI from '../vendor/lil-gui.esm.js';
-import { generateSphereMesh, relax } from './grid.js?v=2ae0fb50';
-import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=2ae0fb50';
-import { mulberry32, randomSeed } from './rng.js?v=2ae0fb50';
-import { computeBerths, berthIndexFor } from './berths.js?v=2ae0fb50';
-import { wantsSecondary, shellsForAll } from './autofire.js?v=2ae0fb50';
-import { printPhase, printOffset, printOn, patternSecsFor } from './printpath.js?v=2ae0fb50';
-import { createBeamRig, PLASMA_DEFAULTS, BOARD_PRESET, BEAM_PEAK } from './beamdraw.js?v=2ae0fb50';
-import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3, segKey, tangentDir, tangentBasis } from './vec3.js?v=2ae0fb50';
-import { CREATURES, waveJelly } from './creatures.js?v=2ae0fb50';
-import { brief, dwellFor } from './isaobriefs.js?v=2ae0fb50';
-import { drawEmotion } from './emotions.js?v=2ae0fb50';
+import { generateSphereMesh, relax } from './grid.js?v=a1b5f2a0';
+import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=a1b5f2a0';
+import { mulberry32, randomSeed } from './rng.js?v=a1b5f2a0';
+import { computeBerths, berthIndexFor } from './berths.js?v=a1b5f2a0';
+import { wantsSecondary, shellsForAll } from './autofire.js?v=a1b5f2a0';
+import { printPhase, printOffset, printOn, patternSecsFor } from './printpath.js?v=a1b5f2a0';
+import { createBeamRig, PLASMA_DEFAULTS, BOARD_PRESET, BEAM_PEAK } from './beamdraw.js?v=a1b5f2a0';
+import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3, segKey, tangentDir, tangentBasis } from './vec3.js?v=a1b5f2a0';
+import { CREATURES, waveJelly } from './creatures.js?v=a1b5f2a0';
+import { brief, dwellFor } from './isaobriefs.js?v=a1b5f2a0';
+import { drawEmotion } from './emotions.js?v=a1b5f2a0';
 import { ACHIEVEMENTS, ACHV_GROUPS, achievement, blankRun, earned, freshlyEarned,
   sanitiseRecord }
-  from './achievements.js?v=2ae0fb50';
+  from './achievements.js?v=a1b5f2a0';
 import { applyFontPack, currentFontPack, FONT_NAMES,
-  loadTypeFeel } from './fonts.js?v=2ae0fb50';
-import { SECONDARY_TOE, applySecondaryToe } from './units.js?v=2ae0fb50';
-import { UNITS, UNIT_NAMES, buildUnit, buildCreature, preloadMkcx, preloadServer, makeServerFixture, makeShieldShell, preloadContainer, makeContainerFixture, preloadFabricator, makeIsaoDrone, makeBulletCloud, makeRewardSolid, makeShellSolid, makeDebris, makeDotBurst, makePortalCloud, preloadPortalRing, makePortalRing, makeHeartCloud, makeDotEnemy, preloadTerraformer, makeTerraformerFixture } from './units.js?v=2ae0fb50';
-import { LOOKS, LOOK_NAMES } from './looks.js?v=2ae0fb50';
-import { makeCellIndex } from './cellindex.js?v=2ae0fb50';
-import { CREATURE_TINTS, ENEMY_SPEC, INTROS, computeWavePlan, accentFor } from './enemyspec.js?v=2ae0fb50';
-import { PICKUPS } from './pickups.js?v=2ae0fb50';
-import { rankFor, rankLabel, badgeSVG, killReq, eliteReq } from './ranks.js?v=2ae0fb50';
-import { beamStep, isBeamStep, PEN_SOFT_FRAC, PEN_HARD_FRAC } from './beamranks.js?v=2ae0fb50';
-import { burn, sweepAdvance, wallBite as wallBiteFor } from './beamburn.js?v=2ae0fb50';
-import { arcPoint, projectToArc, toeForCrossing, crossingForToe } from './arc.js?v=2ae0fb50';
+  loadTypeFeel } from './fonts.js?v=a1b5f2a0';
+import { SECONDARY_TOE, applySecondaryToe } from './units.js?v=a1b5f2a0';
+import { UNITS, UNIT_NAMES, buildUnit, buildCreature, preloadMkcx, preloadServer, makeServerFixture, makeShieldShell, preloadContainer, makeContainerFixture, preloadFabricator, makeIsaoDrone, makeBulletCloud, makeRewardSolid, makeShellSolid, makeDebris, makeDotBurst, makePortalCloud, preloadPortalRing, makePortalRing, makeHeartCloud, makeDotEnemy, preloadTerraformer, makeTerraformerFixture } from './units.js?v=a1b5f2a0';
+import { LOOKS, LOOK_NAMES } from './looks.js?v=a1b5f2a0';
+import { makeCellIndex } from './cellindex.js?v=a1b5f2a0';
+import { CREATURE_TINTS, ENEMY_SPEC, INTROS, computeWavePlan, accentFor } from './enemyspec.js?v=a1b5f2a0';
+import { PICKUPS } from './pickups.js?v=a1b5f2a0';
+import { rankFor, rankLabel, badgeSVG, killReq, eliteReq } from './ranks.js?v=a1b5f2a0';
+import { beamStep, isBeamStep, PEN_SOFT_FRAC, PEN_HARD_FRAC } from './beamranks.js?v=a1b5f2a0';
+import { burn, sweepAdvance, wallBite as wallBiteFor } from './beamburn.js?v=a1b5f2a0';
+import { arcPoint, projectToArc, toeForCrossing, crossingForToe } from './arc.js?v=a1b5f2a0';
 import { WORMHOLE_PRESET, WORMHOLE_RENDER, RING_SPIN, TRAVEL,
-  travelRate, advancePhase } from './portalfx.js?v=2ae0fb50';
-import { WORMHOLE_FRAG } from './fx/wormhole.frag.js?v=2ae0fb50';
-import { makeScore } from './score.js?v=2ae0fb50';
-import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER } from './towers.js?v=2ae0fb50';
-import { makeEconomy, sellRefund } from './economy.js?v=2ae0fb50';
-import { makeBloom } from './postfx.js?v=2ae0fb50';
-import { TANK_FEEL, TANK_FEEL_KNOBS, makeTankFeel, stepTankFeel, landTankFeel, fireTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js?v=2ae0fb50';
-import { FEEL, loadFeel, saveFeel } from './feelstore.js?v=2ae0fb50';
+  travelRate, advancePhase } from './portalfx.js?v=a1b5f2a0';
+import { WORMHOLE_FRAG } from './fx/wormhole.frag.js?v=a1b5f2a0';
+import { makeScore } from './score.js?v=a1b5f2a0';
+import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER } from './towers.js?v=a1b5f2a0';
+import { makeEconomy, sellRefund } from './economy.js?v=a1b5f2a0';
+import { makeBloom } from './postfx.js?v=a1b5f2a0';
+import { TANK_FEEL, TANK_FEEL_KNOBS, makeTankFeel, stepTankFeel, landTankFeel, fireTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js?v=a1b5f2a0';
+import { FEEL, loadFeel, saveFeel } from './feelstore.js?v=a1b5f2a0';
 import { STRIKE_KNOBS, makeStrike, makeStrikeParams, grantStrikes, stepStrike,
   toggleArm, paintTarget, launchStrike, stepFall, skipFall, fallProgress,
-  strikeDamage, retargetStrike, orbitProgress } from './strike.js?v=2ae0fb50';
+  strikeDamage, retargetStrike, orbitProgress } from './strike.js?v=a1b5f2a0';
 import { radarBasis, radarProject, radarBearing, sweepAngle, radarPhosphor,
-  proximitySectors, SENSOR_LEVELS } from './radar.js?v=2ae0fb50';
-import { BLOOM_GROUPS } from './bloomweights.js?v=2ae0fb50';
-import { TOWER_LOOK_NAMES, DEFAULT_TOWER_LOOK, buildTowerLook, preloadLook } from './towerlooks.js?v=2ae0fb50';
-import { makeAudio } from './audio.js?v=2ae0fb50';
-import { DEATH_KEYS } from './audiomanifest.js?v=2ae0fb50';
+  proximitySectors, SENSOR_LEVELS } from './radar.js?v=a1b5f2a0';
+import { BLOOM_GROUPS } from './bloomweights.js?v=a1b5f2a0';
+import { TOWER_LOOK_NAMES, DEFAULT_TOWER_LOOK, buildTowerLook, preloadLook } from './towerlooks.js?v=a1b5f2a0';
+import { makeAudio } from './audio.js?v=a1b5f2a0';
+import { DEATH_KEYS } from './audiomanifest.js?v=a1b5f2a0';
 
 export function initTdTab(root) {
   let active = false;
@@ -2972,15 +2972,62 @@ export function initTdTab(root) {
   let pinchPrev = null;            // last two-finger pixel distance
   let pinched = false;             // ≥2 fingers touched this gesture → no tap
   let tapStart = null;
+  // A tap is a press that never travelled. 8px is a trackpad's idea of
+  // "never"; a finger on glass jitters more than that (PLAYTEST-TODO §1:
+  // "a tap that moves 6px is still a tap to a human"). The shell's slop is
+  // finger-sized; desktop keeps its 8.
+  const tapSlop = () => (mobileShell ? 14 : 8);
+  // LONG-PRESS is the secondary action (plan §2.3): on the shell, in BUILD,
+  // holding a finger on a tower orders its upgrade — the desktop's U key,
+  // without a key. Cleared by travel, a second finger, or lifting.
+  const LONG_PRESS_MS = 550;
+  let pressTimer = 0;
+  let pressFired = false;          // the press was spent: the lift is not a tap
   container.addEventListener('pointerdown', (ev) => {
     // taps are tracked under EVERY camera — the shop opens anywhere now.
     // Drag-orbit and pinch stay orbit-only; the chase cams own their framing.
+    clearTimeout(pressTimer); pressFired = false;
     if (buildMode) {
       buildPointers.set(ev.pointerId, { x: ev.clientX, y: ev.clientY });
       if (buildPointers.size >= 2) { pinched = true; pinchPrev = null; tapStart = null; return; }
     }
     tapStart = [ev.clientX, ev.clientY];
+    if (mobileShell && buildMode) {
+      const px = ev.clientX, py = ev.clientY;
+      pressTimer = setTimeout(() => {
+        if (!tapStart || pinched) return;
+        const ci = cellAtScreen(px, py);
+        const tw = ci !== -1 ? towerByCell.get(ci) : null;
+        if (!tw) return;
+        pressFired = true; tapStart = null;
+        longPressUpgrade(tw);
+      }, LONG_PRESS_MS);
+    }
   });
+  function longPressUpgrade(tw) {
+    const cost = upgradeCost(tw.def, tw.tier);
+    let note;
+    if (cost === null) note = 'at MAX tier';
+    else if (orderByCell.has(tw.ci)) note = 'already on the list';
+    else if (!eco.canAfford(cost)) note = `upgrade needs ${cost}kg &middot; you have ${eco.biomass}kg`;
+    else if (orderUpgrade(tw)) { note = `+1 ordered &middot; ${cost}kg`; sfx.play('laser_click'); }
+    else note = 'could not order';
+    closeShop();
+    showToast(`<div class="wave-num">${tw.def.key.toUpperCase()} &middot; TIER ${tw.tier}</div>`
+      + `<div class="wave-role">${note}</div>`, 2200);
+  }
+  // A REFUSED PLACEMENT SAYS WHY, on the shell (PLAYTEST-TODO §1). The
+  // desktop's silence rule stands there — a radial of greyed-out towers is
+  // worse than nothing — but a caption is not a radial, and on glass a tap
+  // that does nothing is indistinguishable from a tap that missed. Same
+  // reason twice inside a second and a half is said once.
+  let refuseLast = { why: '', t: 0 };
+  function refuseCaption(why) {
+    const t = performance.now();
+    if (why === refuseLast.why && t - refuseLast.t < 1500) return;
+    refuseLast = { why, t };
+    showToast(`<div class="wave-num">NOT HERE</div><div class="wave-role">${why}</div>`, 1800);
+  }
   addEventListener('pointermove', (ev) => {
     if (!buildMode) return;
     const prev = buildPointers.get(ev.pointerId);
@@ -2994,11 +3041,12 @@ export function initTdTab(root) {
       if (pinchPrev !== null && d > 0) {
         buildDist = Math.min(4, Math.max(1.4, buildDist * (pinchPrev / d)));
       }
-      pinchPrev = d; pinched = true; tapStart = null;
+      pinchPrev = d; pinched = true; tapStart = null; clearTimeout(pressTimer);
       return;
     }
-    if (tapStart && Math.hypot(ev.clientX - tapStart[0], ev.clientY - tapStart[1]) > 8) {
+    if (tapStart && Math.hypot(ev.clientX - tapStart[0], ev.clientY - tapStart[1]) > tapSlop()) {
       tapStart = null; // it's a pan now
+      clearTimeout(pressTimer);
     }
     // grab the sphere and roll it: the drag rotates the carried frame about
     // its own up/right axes. Same feel as the old flick-to-pan, but it can
@@ -3015,8 +3063,9 @@ export function initTdTab(root) {
     }
   });
   function endBuildPointer(ev) {
-    const wasTap = !pinched && tapStart
-      && Math.hypot(ev.clientX - tapStart[0], ev.clientY - tapStart[1]) <= 8;
+    clearTimeout(pressTimer);
+    const wasTap = !pinched && !pressFired && tapStart
+      && Math.hypot(ev.clientX - tapStart[0], ev.clientY - tapStart[1]) <= tapSlop();
     buildPointers.delete(ev.pointerId);
     if (buildPointers.size < 2) pinchPrev = null;
     if (strike.falling > 0 && wasTap) {
@@ -3104,9 +3153,13 @@ export function initTdTab(root) {
         }
         return;
       }
+      if (mobileShell && buildMode && ci !== -1 && !towerByCell.get(ci) && !orderByCell.get(ci)) {
+        const why = placeError(ci);
+        if (why) { refuseCaption(why); return; }
+      }
       if (ci !== -1) openShop(ci, ev.clientX, ev.clientY);
     }
-    if (buildPointers.size === 0) { pinched = false; tapStart = null; }
+    if (buildPointers.size === 0) { pinched = false; tapStart = null; pressFired = false; }
   }
   addEventListener('pointerup', endBuildPointer);
   addEventListener('pointercancel', endBuildPointer);
@@ -11357,6 +11410,145 @@ export function initTdTab(root) {
         + ` handedBack=${!autoMode && params.directive !== 'goto'} shell=${mobileShell}`
         + ` ${ok && player.cur === target && !autoMode ? '(commanded there, and stopped)' : '<-- did not arrive or did not stop'}`);
     }, 1500);
+  }
+
+  // ?tapprobe=1 — PLAYTEST-TODO §1, measured. From the build camera, project
+  // the roof of every placeable wall-top that faces the camera and lies
+  // inside the frame, put a synthetic tap there, and ask what the tap
+  // resolves to. Two zooms: the default, and the double-tap's whole-planet
+  // pose, where a cell is a few pixels. The bar is ≥ 95% placeable.
+  if (urlParams.get('tapprobe') === '1') {
+    const measure = (label) => {
+      const r = renderer.domElement.getBoundingClientRect();
+      const top = 1 + params.wallHeight;
+      let n = 0, exact = 0, placeable = 0, total = 0, facing = 0;
+      const miss = {};
+      for (let ci = 0; ci < graph.centers.length; ci++) {
+        if (placeError(ci)) continue;
+        total++;
+        const c = graph.centers[ci], nrm = graph.normals[ci];
+        const p = new THREE.Vector3(c[0] * top, c[1] * top, c[2] * top);
+        const toCam = camera.position.clone().sub(p).normalize();
+        if (nrm[0] * toCam.x + nrm[1] * toCam.y + nrm[2] * toCam.z < 0.25) continue; // faces away
+        facing++;
+        const q = p.clone().project(camera);
+        if (Math.abs(q.x) > 0.92 || Math.abs(q.y) > 0.92 || q.z > 1) continue;      // out of frame
+        const sx = r.left + ((q.x + 1) / 2) * r.width;
+        const sy = r.top + ((1 - q.y) / 2) * r.height;
+        const hit = cellAtScreen(sx, sy);
+        n++;
+        if (hit === ci) exact++;
+        if (hit !== -1 && !placeError(hit)) placeable++;
+        else { const why = hit === -1 ? 'sky' : placeError(hit); miss[why] = (miss[why] || 0) + 1; }
+      }
+      return { n, exact, placeable, miss, total, facing };
+    };
+    // One pose sees a quarter of the frontier at best, so a zoom is EIGHT
+    // poses 45° apart about the build frame's up — the drag handler's own
+    // rotation — with the taps pooled. A single pose gave 5 taps and a
+    // meaningless 100%.
+    //
+    // STEPPED, NOT TIMED. The first cut chained setTimeouts and virtual
+    // time burned through all sixteen inside 13ms of real time with no
+    // frame between them: one frozen camera, measured sixteen times, at a
+    // radius of 1.16 — the camera had not even left the ground. The frame
+    // loop's own easing is run here by hand until it converges, the same
+    // rule as ?goto driving advanceMotion.
+    const settle = () => {
+      for (let i = 0; i < 120; i++) {           // 0.86^120 ≈ 1.6e-8 of the gap left
+        buildFollowTank(1 / 60);
+        updateCameraGoal();
+        camera.position.lerp(camGoal.pos, 0.14);
+        camera.quaternion.slerp(camGoal.quat, 0.14);
+      }
+      camera.updateMatrixWorld(true);
+    };
+    const POSES = 8;
+    const sweep = (label) => {
+      const sum = { n: 0, exact: 0, placeable: 0, miss: {}, total: 0 };
+      const per = [];
+      for (let k = 0; k < POSES; k++) {
+        settle();
+        const m = measure();
+        per.push(`${m.n}`);
+        sum.n += m.n; sum.exact += m.exact; sum.placeable += m.placeable; sum.total = m.total;
+        for (const [w, c] of Object.entries(m.miss)) sum.miss[w] = (sum.miss[w] || 0) + c;
+        const f = buildFrame();
+        buildQ.premultiply(bqTmp.setFromAxisAngle(f.up, (2 * Math.PI) / POSES));
+        buildQ.normalize();
+        followSuspend = true;
+      }
+      const pct = sum.n ? (100 * sum.placeable) / sum.n : 0;
+      console.log(`TAPPROBE ${label} dist=${buildDist.toFixed(1)} |cam|=${camera.position.length().toFixed(2)}`
+        + ` poses=${POSES} taps/pose=[${per.join(' ')}]`
+        + ` placeable-cells=${sum.total} taps=${sum.n} exact=${sum.exact}`
+        + ` placeable=${sum.placeable} (${pct.toFixed(1)}%) misses=${JSON.stringify(sum.miss)}`
+        + ` ${sum.n < 12 ? 'INCONCLUSIVE (sample too small)' : pct >= 95 ? 'PASS' : '<-- BELOW 95%'}`);
+    };
+    setTimeout(() => {
+      dismissIntro();
+      // updateCameraGoal answers shots and DEPLOY before the orbit — the
+      // drone probe found this — so the stepper converged on the berth
+      // framing at radius 1.10 until both were cleared
+      endShot(); deploy = null;
+      setView('orbit');
+      sweep('default');
+      centerBuildOnHeart(); buildDist = 3.4;
+      sweep('whole-planet');
+    }, 1200);
+  }
+
+  // ?pressprobe=1 — the shell's BUILD gestures through the real pointer
+  // pipeline: a tower is committed on a placeable roof, a synthetic finger
+  // holds it past LONG_PRESS_MS (expect: an upgrade on the book, and a
+  // caption), then taps open ground (expect: a NOT HERE caption with the
+  // reason, and no radial).
+  if (urlParams.get('pressprobe') === '1') {
+    const at = (ci, radius) => {
+      const r = renderer.domElement.getBoundingClientRect();
+      const c = graph.centers[ci];
+      const q = new THREE.Vector3(c[0] * radius, c[1] * radius, c[2] * radius).project(camera);
+      return [r.left + ((q.x + 1) / 2) * r.width, r.top + ((1 - q.y) / 2) * r.height];
+    };
+    const finger = (type, x, y) => container.dispatchEvent(new PointerEvent(type, {
+      clientX: x, clientY: y, pointerId: 7, pointerType: 'touch', isPrimary: true, bubbles: true,
+    }));
+    let towerCi = -1, floorCi = -1;
+    setTimeout(() => {
+      dismissIntro(); setView('orbit');
+      // the placeable roof nearest the Heart: the orbit pose centres there
+      const dh = bfsDist(graph.adj, [dungeon.heart], () => true);
+      let best = Infinity;
+      for (let ci = 0; ci < graph.centers.length; ci++) {
+        if (!placeError(ci) && dh[ci] < best) { best = dh[ci]; towerCi = ci; }
+      }
+      if (towerCi >= 0) { eco.addBiomass(999); commitTower(TOWERS[0].key, towerCi); }
+    }, 1200);
+    setTimeout(() => {
+      const [x, y] = at(towerCi, 1 + params.wallHeight);
+      finger('pointerdown', x, y);
+    }, 4200);
+    setTimeout(() => {
+      const [x, y] = at(towerCi, 1 + params.wallHeight);
+      finger('pointerup', x, y);
+      const o = orderByCell.get(towerCi);
+      const cap = toastEl ? toastEl.textContent.replace(/\s+/g, ' ').trim() : '';
+      console.log(`PRESSPROBE tower=${towerCi} hit=${cellAtScreen(x, y)} held=${LONG_PRESS_MS + 300}ms`
+        + ` order=${o ? o.kind : 'none'} radial=${shopCi !== -1 ? 'OPEN' : 'closed'} caption="${cap}"`
+        + ` ${o && o.kind === 'upgrade' && shopCi === -1 ? '(long-press ordered the upgrade)' : '<-- no upgrade order'}`);
+      // now a tap on open ground, well inside the frame
+      const d0 = bfsDist(graph.adj, [towerCi], () => true);
+      for (let ci = 0; ci < d0.length; ci++) {
+        if (dungeon.tags[ci] !== BLOCKED && d0[ci] >= 1 && d0[ci] <= 2) { floorCi = ci; break; }
+      }
+      const [fx, fy] = at(floorCi, 1);
+      finger('pointerdown', fx, fy);
+      finger('pointerup', fx, fy);
+      const hit = cellAtScreen(fx, fy);
+      const cap2 = toastEl ? toastEl.textContent.replace(/\s+/g, ' ').trim() : '';
+      console.log(`PRESSPROBE floor=${floorCi} hit=${hit} why=${placeError(hit)} radial=${shopCi !== -1 ? 'OPEN' : 'closed'}`
+        + ` caption="${cap2}" ${/NOT HERE/.test(cap2) && shopCi === -1 ? '(refused, and said why)' : '<-- silent refusal'}`);
+    }, 4200 + LONG_PRESS_MS + 300);
   }
 
   // ?drones=1 — buy the assistant, put three orders on the book, drive both

@@ -1,25 +1,25 @@
 // main.js — tab shell. Each tab lazily initializes its own renderer/scene the
 // first time it's shown and pauses (skips its loop body) while hidden.
 
-import { wireDevlogBadge } from './devlog.js?v=2ae0fb50';
-import { initHomeTab } from './home-tab.js?v=2ae0fb50';
-import { initGridTab } from './grid-tab.js?v=2ae0fb50';
-import { initMazeTab } from './maze-tab.js?v=2ae0fb50';
-import { initOrganicTab } from './organic-tab.js?v=2ae0fb50';
-import { initBattleTab } from './battle-tab.js?v=2ae0fb50';
-import { initHeartTab } from './heart-tab.js?v=2ae0fb50';
-import { initTdTab } from './td-tab.js?v=2ae0fb50';
-import { initTankTab } from './tank-tab.js?v=2ae0fb50';
-import { initTank2Tab } from './tank2-tab.js?v=2ae0fb50';
-import { initTank3Tab } from './tank3-tab.js?v=2ae0fb50';
-import { initUnitsTab } from './units-tab.js?v=2ae0fb50';
-import { initBeamTab } from './beam-tab.js?v=2ae0fb50';
-import { initPortalTab } from './portal-tab.js?v=2ae0fb50';
-import { initHowTab, initStackTab, initLogTab } from './how-tab.js?v=2ae0fb50';
-import { initSimTab } from './sim-tab.js?v=2ae0fb50';
-import { initRecordTab } from './recordtab.js?v=2ae0fb50';
+import { wireDevlogBadge } from './devlog.js?v=a1b5f2a0';
+import { initHomeTab } from './home-tab.js?v=a1b5f2a0';
+import { initGridTab } from './grid-tab.js?v=a1b5f2a0';
+import { initMazeTab } from './maze-tab.js?v=a1b5f2a0';
+import { initOrganicTab } from './organic-tab.js?v=a1b5f2a0';
+import { initBattleTab } from './battle-tab.js?v=a1b5f2a0';
+import { initHeartTab } from './heart-tab.js?v=a1b5f2a0';
+import { initTdTab } from './td-tab.js?v=a1b5f2a0';
+import { initTankTab } from './tank-tab.js?v=a1b5f2a0';
+import { initTank2Tab } from './tank2-tab.js?v=a1b5f2a0';
+import { initTank3Tab } from './tank3-tab.js?v=a1b5f2a0';
+import { initUnitsTab } from './units-tab.js?v=a1b5f2a0';
+import { initBeamTab } from './beam-tab.js?v=a1b5f2a0';
+import { initPortalTab } from './portal-tab.js?v=a1b5f2a0';
+import { initHowTab, initStackTab, initLogTab } from './how-tab.js?v=a1b5f2a0';
+import { initSimTab } from './sim-tab.js?v=a1b5f2a0';
+import { initRecordTab } from './recordtab.js?v=a1b5f2a0';
 import { applyFontPack, DEFAULT_FONT, DEFAULT_SHOUT_FONT,
-  loadTypeFeel } from './fonts.js?v=2ae0fb50';
+  loadTypeFeel } from './fonts.js?v=a1b5f2a0';
 
 // The typeface pack is APP-WIDE and applied before any tab boots: it writes
 // custom properties onto <html>, and a tab that measures its own layout on
