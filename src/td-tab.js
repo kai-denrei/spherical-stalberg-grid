@@ -19,50 +19,50 @@
 
 import * as THREE from '../vendor/three.module.js';
 import GUI from '../vendor/lil-gui.esm.js';
-import { generateSphereMesh, relax } from './grid.js?v=a1b5f2a0';
-import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=a1b5f2a0';
-import { mulberry32, randomSeed } from './rng.js?v=a1b5f2a0';
-import { computeBerths, berthIndexFor } from './berths.js?v=a1b5f2a0';
-import { wantsSecondary, shellsForAll } from './autofire.js?v=a1b5f2a0';
-import { printPhase, printOffset, printOn, patternSecsFor } from './printpath.js?v=a1b5f2a0';
-import { createBeamRig, PLASMA_DEFAULTS, BOARD_PRESET, BEAM_PEAK } from './beamdraw.js?v=a1b5f2a0';
-import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3, segKey, tangentDir, tangentBasis } from './vec3.js?v=a1b5f2a0';
-import { CREATURES, waveJelly } from './creatures.js?v=a1b5f2a0';
-import { brief, dwellFor } from './isaobriefs.js?v=a1b5f2a0';
-import { drawEmotion } from './emotions.js?v=a1b5f2a0';
+import { generateSphereMesh, relax } from './grid.js?v=bae30d1e';
+import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=bae30d1e';
+import { mulberry32, randomSeed } from './rng.js?v=bae30d1e';
+import { computeBerths, berthIndexFor } from './berths.js?v=bae30d1e';
+import { wantsSecondary, shellsForAll } from './autofire.js?v=bae30d1e';
+import { printPhase, printOffset, printOn, patternSecsFor } from './printpath.js?v=bae30d1e';
+import { createBeamRig, PLASMA_DEFAULTS, BOARD_PRESET, BEAM_PEAK } from './beamdraw.js?v=bae30d1e';
+import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3, segKey, tangentDir, tangentBasis } from './vec3.js?v=bae30d1e';
+import { CREATURES, waveJelly } from './creatures.js?v=bae30d1e';
+import { brief, dwellFor } from './isaobriefs.js?v=bae30d1e';
+import { drawEmotion } from './emotions.js?v=bae30d1e';
 import { ACHIEVEMENTS, ACHV_GROUPS, achievement, blankRun, earned, freshlyEarned,
   sanitiseRecord }
-  from './achievements.js?v=a1b5f2a0';
+  from './achievements.js?v=bae30d1e';
 import { applyFontPack, currentFontPack, FONT_NAMES,
-  loadTypeFeel } from './fonts.js?v=a1b5f2a0';
-import { SECONDARY_TOE, applySecondaryToe } from './units.js?v=a1b5f2a0';
-import { UNITS, UNIT_NAMES, buildUnit, buildCreature, preloadMkcx, preloadServer, makeServerFixture, makeShieldShell, preloadContainer, makeContainerFixture, preloadFabricator, makeIsaoDrone, makeBulletCloud, makeRewardSolid, makeShellSolid, makeDebris, makeDotBurst, makePortalCloud, preloadPortalRing, makePortalRing, makeHeartCloud, makeDotEnemy, preloadTerraformer, makeTerraformerFixture } from './units.js?v=a1b5f2a0';
-import { LOOKS, LOOK_NAMES } from './looks.js?v=a1b5f2a0';
-import { makeCellIndex } from './cellindex.js?v=a1b5f2a0';
-import { CREATURE_TINTS, ENEMY_SPEC, INTROS, computeWavePlan, accentFor } from './enemyspec.js?v=a1b5f2a0';
-import { PICKUPS } from './pickups.js?v=a1b5f2a0';
-import { rankFor, rankLabel, badgeSVG, killReq, eliteReq } from './ranks.js?v=a1b5f2a0';
-import { beamStep, isBeamStep, PEN_SOFT_FRAC, PEN_HARD_FRAC } from './beamranks.js?v=a1b5f2a0';
-import { burn, sweepAdvance, wallBite as wallBiteFor } from './beamburn.js?v=a1b5f2a0';
-import { arcPoint, projectToArc, toeForCrossing, crossingForToe } from './arc.js?v=a1b5f2a0';
+  loadTypeFeel } from './fonts.js?v=bae30d1e';
+import { SECONDARY_TOE, applySecondaryToe } from './units.js?v=bae30d1e';
+import { UNITS, UNIT_NAMES, buildUnit, buildCreature, preloadMkcx, preloadServer, makeServerFixture, makeShieldShell, preloadContainer, makeContainerFixture, preloadFabricator, makeIsaoDrone, makeBulletCloud, makeRewardSolid, makeShellSolid, makeDebris, makeDotBurst, makePortalCloud, preloadPortalRing, makePortalRing, makeHeartCloud, makeDotEnemy, preloadTerraformer, makeTerraformerFixture } from './units.js?v=bae30d1e';
+import { LOOKS, LOOK_NAMES } from './looks.js?v=bae30d1e';
+import { makeCellIndex } from './cellindex.js?v=bae30d1e';
+import { CREATURE_TINTS, ENEMY_SPEC, INTROS, computeWavePlan, accentFor } from './enemyspec.js?v=bae30d1e';
+import { PICKUPS } from './pickups.js?v=bae30d1e';
+import { rankFor, rankLabel, badgeSVG, killReq, eliteReq } from './ranks.js?v=bae30d1e';
+import { beamStep, isBeamStep, PEN_SOFT_FRAC, PEN_HARD_FRAC } from './beamranks.js?v=bae30d1e';
+import { burn, sweepAdvance, wallBite as wallBiteFor } from './beamburn.js?v=bae30d1e';
+import { arcPoint, projectToArc, toeForCrossing, crossingForToe } from './arc.js?v=bae30d1e';
 import { WORMHOLE_PRESET, WORMHOLE_RENDER, RING_SPIN, TRAVEL,
-  travelRate, advancePhase } from './portalfx.js?v=a1b5f2a0';
-import { WORMHOLE_FRAG } from './fx/wormhole.frag.js?v=a1b5f2a0';
-import { makeScore } from './score.js?v=a1b5f2a0';
-import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER } from './towers.js?v=a1b5f2a0';
-import { makeEconomy, sellRefund } from './economy.js?v=a1b5f2a0';
-import { makeBloom } from './postfx.js?v=a1b5f2a0';
-import { TANK_FEEL, TANK_FEEL_KNOBS, makeTankFeel, stepTankFeel, landTankFeel, fireTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js?v=a1b5f2a0';
-import { FEEL, loadFeel, saveFeel } from './feelstore.js?v=a1b5f2a0';
+  travelRate, advancePhase } from './portalfx.js?v=bae30d1e';
+import { WORMHOLE_FRAG } from './fx/wormhole.frag.js?v=bae30d1e';
+import { makeScore } from './score.js?v=bae30d1e';
+import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER } from './towers.js?v=bae30d1e';
+import { makeEconomy, sellRefund } from './economy.js?v=bae30d1e';
+import { makeBloom } from './postfx.js?v=bae30d1e';
+import { TANK_FEEL, TANK_FEEL_KNOBS, makeTankFeel, stepTankFeel, landTankFeel, fireTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js?v=bae30d1e';
+import { FEEL, loadFeel, saveFeel } from './feelstore.js?v=bae30d1e';
 import { STRIKE_KNOBS, makeStrike, makeStrikeParams, grantStrikes, stepStrike,
   toggleArm, paintTarget, launchStrike, stepFall, skipFall, fallProgress,
-  strikeDamage, retargetStrike, orbitProgress } from './strike.js?v=a1b5f2a0';
+  strikeDamage, retargetStrike, orbitProgress } from './strike.js?v=bae30d1e';
 import { radarBasis, radarProject, radarBearing, sweepAngle, radarPhosphor,
-  proximitySectors, SENSOR_LEVELS } from './radar.js?v=a1b5f2a0';
-import { BLOOM_GROUPS } from './bloomweights.js?v=a1b5f2a0';
-import { TOWER_LOOK_NAMES, DEFAULT_TOWER_LOOK, buildTowerLook, preloadLook } from './towerlooks.js?v=a1b5f2a0';
-import { makeAudio } from './audio.js?v=a1b5f2a0';
-import { DEATH_KEYS } from './audiomanifest.js?v=a1b5f2a0';
+  proximitySectors, SENSOR_LEVELS } from './radar.js?v=bae30d1e';
+import { BLOOM_GROUPS } from './bloomweights.js?v=bae30d1e';
+import { TOWER_LOOK_NAMES, DEFAULT_TOWER_LOOK, buildTowerLook, preloadLook } from './towerlooks.js?v=bae30d1e';
+import { makeAudio } from './audio.js?v=bae30d1e';
+import { DEATH_KEYS } from './audiomanifest.js?v=bae30d1e';
 
 export function initTdTab(root) {
   let active = false;
@@ -11110,6 +11110,7 @@ export function initTdTab(root) {
         shout: '#td-callouts', combo: '#td-combo',
         // the shell's pieces, and the two captions (pinned by ?pin=1)
         mode: '#mob-mode', brief: '#td-brief', toast: '#td-toast',
+        tabbar: '#tabbar',   // the site nav: behind ≡ on the shell, never over the board
       };
       const box = {};
       for (const [k, sel] of Object.entries(want)) {
@@ -11549,6 +11550,98 @@ export function initTdTab(root) {
       console.log(`PRESSPROBE floor=${floorCi} hit=${hit} why=${placeError(hit)} radial=${shopCi !== -1 ? 'OPEN' : 'closed'}`
         + ` caption="${cap2}" ${/NOT HERE/.test(cap2) && shopCi === -1 ? '(refused, and said why)' : '<-- silent refusal'}`);
     }, 4200 + LONG_PRESS_MS + 300);
+  }
+
+  // ?whatsat=x,y — after 3s, name every element under that screen point,
+  // top first. For the thing in a screenshot that nobody can identify.
+  if (urlParams.get('whatsat')) {
+    const [wx, wy] = urlParams.get('whatsat').split(',').map(Number);
+    setTimeout(() => {
+      const stack = document.elementsFromPoint(wx, wy).map((e) => {
+        const r = e.getBoundingClientRect();
+        return `${e.tagName.toLowerCase()}${e.id ? '#' + e.id : ''}${e.className && typeof e.className === 'string' ? '.' + e.className.trim().split(/\s+/).join('.') : ''}`
+          + `[${Math.round(r.left)}..${Math.round(r.right)} x ${Math.round(r.top)}..${Math.round(r.bottom)}]`
+          + (e.children.length === 0 ? ` "${(e.textContent || '').trim().slice(0, 24)}"` : '');
+      });
+      console.log(`WHATSAT ${wx},${wy}: ${stack.join(' > ')}`);
+    }, 3000);
+  }
+
+  // ?modalprobe=1 — phase 5's ruler. Open each modal the phone will meet,
+  // measure its box against the viewport and every button against the box
+  // it must be tapped inside of, then close it. "Unreachable" includes
+  // CLIPPED: #td-msg is overflow:hidden (the hologram sweep needs it), so a
+  // button past its bottom edge is exactly as unreachable as one past the
+  // screen's — and on a 303px-tall viewport that is where the orders go.
+  if (urlParams.get('modalprobe') === '1') {
+    setTimeout(() => {
+      const vw = innerWidth, vh = innerHeight;
+      const inside = (a, b) => a.left >= b.left - 1 && a.right <= b.right + 1
+        && a.top >= b.top - 1 && a.bottom <= b.bottom + 1;
+      const report = (name, el) => {
+        if (!el) { console.log(`MODAL ${name} MISSING`); return; }
+        const r = el.getBoundingClientRect();
+        const vp = { left: 0, top: 0, right: vw, bottom: vh };
+        // the tappable box: the modal's own rect, clipped to the viewport
+        const clip = { left: Math.max(r.left, 0), top: Math.max(r.top, 0),
+          right: Math.min(r.right, vw), bottom: Math.min(r.bottom, vh) };
+        const btns = [...el.querySelectorAll('button')]
+          .filter((b) => getComputedStyle(b).display !== 'none' && b.getBoundingClientRect().width > 0);
+        // a button below the fold of a column that SCROLLS is reachable —
+        // that is what the column is for; one below the fold of a box that
+        // clips is not
+        const scrollReachable = (b) => {
+          for (let a = b.parentElement; a && a !== el.parentElement; a = a.parentElement) {
+            const cs = getComputedStyle(a);
+            if ((cs.overflowY === 'auto' || cs.overflowY === 'scroll') && a.scrollHeight > a.clientHeight + 1) return true;
+          }
+          return false;
+        };
+        const lost = [];
+        let small = 0, byScroll = 0;
+        for (const b of btns) {
+          const br = b.getBoundingClientRect();
+          if (!inside(br, clip)) {
+            if (scrollReachable(b)) byScroll++;
+            else lost.push(b.className || b.id || b.textContent.trim().slice(0, 12));
+          }
+          if (Math.min(br.width, br.height) < 40) small++;
+        }
+        const ov = getComputedStyle(el).overflowY;
+        const scrolls = el.scrollHeight > el.clientHeight + 1;
+        const clipped = scrolls && ov === 'hidden';
+        const ok = inside(r, vp) && !clipped && lost.length === 0;
+        console.log(`MODAL ${name.padEnd(9)} box ${Math.round(r.width)}x${Math.round(r.height)}`
+          + ` y ${Math.round(r.top)}..${Math.round(r.bottom)} of ${vw}x${vh} fits=${inside(r, vp)}`
+          + ` content=${Math.round(el.scrollHeight)} overflow=${ov}${clipped ? ' CLIPPED' : scrolls ? ' scrolls' : ''}`
+          + ` buttons=${btns.length} byScroll=${byScroll} unreachable=${lost.length}${lost.length ? ' [' + lost.join(' ') + ']' : ''}`
+          + ` small=${small} ${ok && (small === 0 || !mobileShell) ? 'OK' : '<-- FAIL'}`);   // 40px is a thumb rule
+      };
+      showIntro(() => {}); report('manual', root.querySelector('#td-intro .fm-frame')); dismissIntro();
+      togglePause(); report('pause', msgEl); togglePause();
+      showRecord(); report('record', msgEl); msgEl.classList.add('hidden'); paused = false;
+      // the debrief, both stages, on the ?debrief fixtures
+      rs.kills = { phage: 23, ghost: 11, scoutufo: 6, drifter: 3, corona: 2 };
+      rs.bySrc = { tank: 19, tower: 21, strike: 5 };
+      rs.rams = 14; rs.shells = 6; rs.strikes = 1; rs.maxCombo = 4;
+      rs.scoreBins = [0, 120, 340, 900, 1400, 1450, 2100, 3300, 3600, 4200];
+      rs.bestShell = { kills: 3, wave: 4 };
+      rs.bestStrike = { kills: 5, wave: 6, replay: { radius: 3.2, portals: 1, bodies: [] } };
+      renderAnalysis(false); report('analysis', msgEl);
+      msgEl.querySelector('.msg-proceed').click(); report('verdict', msgEl);
+      // the campaign screen, on the ?campaign fixtures
+      const mk = (r, k, e, sp, hl) => ({ round: r, waves: 15, secs: 200 + r * 40, kills: k,
+        tank: Math.round(k * 0.4), tower: Math.round(k * 0.5),
+        strike: k - Math.round(k * 0.4) - Math.round(k * 0.5), earned: e, spent: sp,
+        hullsLost: hl, heartHits: hl, heart: 10 - hl, towers: 4 + r * 2, held: e - sp,
+        bestShell: 3, bestStrike: 5, full: r !== 2 });
+      campaign.push(mk(1, 45, 900, 610, 0), mk(2, 62, 1400, 1300, 1), mk(3, 88, 2100, 1750, 1));
+      setCoins(1); renderVerdict(true); report('campaign', msgEl);
+      msgEl.classList.add('hidden'); paused = false;
+      document.body.classList.add('vars-open');
+      report('vars', document.querySelector('#td-vars'));
+      document.body.classList.remove('vars-open');
+    }, 1200);
   }
 
   // ?drones=1 — buy the assistant, put three orders on the book, drive both

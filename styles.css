@@ -5,22 +5,22 @@
    back to a system face until the subset is rebuilt. */
 @font-face {
   font-family: 'VT323';
-  src: url('assets/fonts/VT323.woff2?v=a1b5f2a0') format('woff2');
+  src: url('assets/fonts/VT323.woff2?v=bae30d1e') format('woff2');
   font-weight: 400; font-style: normal; font-display: swap;
 }
 @font-face {
   font-family: 'Press Start 2P';
-  src: url('assets/fonts/PressStart2P.woff2?v=a1b5f2a0') format('woff2');
+  src: url('assets/fonts/PressStart2P.woff2?v=bae30d1e') format('woff2');
   font-weight: 400; font-style: normal; font-display: swap;
 }
 @font-face {
   font-family: 'Share Tech Mono';
-  src: url('assets/fonts/ShareTechMono.woff2?v=a1b5f2a0') format('woff2');
+  src: url('assets/fonts/ShareTechMono.woff2?v=bae30d1e') format('woff2');
   font-weight: 400; font-style: normal; font-display: swap;
 }
 @font-face {
   font-family: 'DotGothic16';
-  src: url('assets/fonts/DotGothic16.woff2?v=a1b5f2a0') format('woff2');
+  src: url('assets/fonts/DotGothic16.woff2?v=bae30d1e') format('woff2');
   font-weight: 400; font-style: normal; font-display: swap;
 }
 
@@ -2772,6 +2772,7 @@ body.playing:not(.chrome-open) #tabbar { display: none !important; }
 /* keyboard table only where there IS a keyboard; the touch line only where
    there is not (coarse alone is untestable on desktop — width pairs it) */
 .fm-touch { display: none; }
+.fm-shell { display: none; }   /* the mobile shell's controls; shown under body.mobile-shell */
 @media (pointer: coarse), (max-width: 560px) {
   .fm-desktop { display: none; }
   .fm-touch { display: block; }
@@ -3816,6 +3817,37 @@ body.mobile-shell #td-brief-face { width: 56px; height: 56px; }
    enough to read at arm's length */
 body.mobile-shell #td-shop .shop-close { width: 48px; height: 48px; }
 body.mobile-shell #td-shop .shop-note { font-size: 12px; }
+/* Phase 5 — MODALS FOR THE PHONE. Measured at 844x303 (the ruler's
+   landscape) before any of this: the message box clips at 295px because
+   its overflow is hidden for the hologram sweep, so every button below the
+   fold — proceed, the orders, another planet — was unreachable. On the
+   shell the box scrolls as a whole, fills the height, and every button is
+   a thumb target. The sweep scrolls with the content; nobody will miss it. */
+body.mobile-shell #td-msg {
+  box-sizing: border-box;   /* max-height is the OUTER box, or padding pushes it off-screen */
+  overflow-y: auto; max-height: calc(100dvh - 12px); max-width: 94vw;
+  padding: 10px 16px 12px; font-size: 13px; line-height: 1.55;
+}
+body.mobile-shell #td-msg button { min-height: 44px; padding: 8px 16px; font-size: 13px; touch-action: manipulation; }
+body.mobile-shell #td-msg .msg-glenemy, body.mobile-shell #td-msg .msg-glfriend { min-height: 40px; }
+body.mobile-shell #td-msg .dbf-win { min-height: 0; }
+body.mobile-shell #td-msg .dbf-grid { width: min(700px, 90vw); }
+body.mobile-shell .fm-frame { box-sizing: border-box; max-height: calc(100dvh - 12px); padding: 12px 18px 12px; font-size: 12px; line-height: 1.6; }
+body.mobile-shell .fm-desktop, body.mobile-shell .fm-touch { display: none !important; }
+body.mobile-shell .fm-shell { display: block; }
+body.mobile-shell #td-vars {
+  width: calc(100vw - 12px); height: calc(100dvh - 12px);
+  grid-template-columns: 124px minmax(0, 1fr);
+}
+body.mobile-shell #td-vars .vars-nav { padding: 40px 6px 8px; }
+body.mobile-shell #td-vars .vars-nav button { padding: 12px 10px; font-size: 11px; }
+body.mobile-shell #td-vars .vars-body { padding: 40px 10px 10px; }
+body.mobile-shell #td-vars button { min-height: 44px; }
+body.mobile-shell #td-vars .vars-close { width: 44px; height: 44px; }
+/* the site's tab bar (home / grid / maze...) is hidden by body.playing, and
+   the debrief is not "playing" — so it surfaced over the verdict's header.
+   On the shell it lives behind ≡ in EVERY state (plan §2.6). */
+body.mobile-shell:not(.chrome-open) #tabbar { display: none !important; }
 /* the vertical budget at 844x303 (the ruler's landscape) is the top band
    (~150), a lane (~55) and Isao (~85): Isao is wide and small so his long
    lines wrap to two, not three */
