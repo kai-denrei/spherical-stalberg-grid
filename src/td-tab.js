@@ -19,50 +19,50 @@
 
 import * as THREE from '../vendor/three.module.js';
 import GUI from '../vendor/lil-gui.esm.js';
-import { generateSphereMesh, relax } from './grid.js?v=aedb9f04';
-import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=aedb9f04';
-import { mulberry32, randomSeed } from './rng.js?v=aedb9f04';
-import { computeBerths, berthIndexFor } from './berths.js?v=aedb9f04';
-import { wantsSecondary, shellsForAll } from './autofire.js?v=aedb9f04';
-import { printPhase, printOffset, printOn, patternSecsFor } from './printpath.js?v=aedb9f04';
-import { createBeamRig, PLASMA_DEFAULTS, BOARD_PRESET, BEAM_PEAK } from './beamdraw.js?v=aedb9f04';
-import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3, segKey, tangentDir, tangentBasis } from './vec3.js?v=aedb9f04';
-import { CREATURES, waveJelly } from './creatures.js?v=aedb9f04';
-import { brief, dwellFor } from './isaobriefs.js?v=aedb9f04';
-import { drawEmotion } from './emotions.js?v=aedb9f04';
+import { generateSphereMesh, relax } from './grid.js?v=ac64f4fe';
+import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=ac64f4fe';
+import { mulberry32, randomSeed } from './rng.js?v=ac64f4fe';
+import { computeBerths, berthIndexFor } from './berths.js?v=ac64f4fe';
+import { wantsSecondary, shellsForAll } from './autofire.js?v=ac64f4fe';
+import { printPhase, printOffset, printOn, patternSecsFor } from './printpath.js?v=ac64f4fe';
+import { createBeamRig, PLASMA_DEFAULTS, BOARD_PRESET, BEAM_PEAK } from './beamdraw.js?v=ac64f4fe';
+import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3, segKey, tangentDir, tangentBasis } from './vec3.js?v=ac64f4fe';
+import { CREATURES, waveJelly } from './creatures.js?v=ac64f4fe';
+import { brief, dwellFor } from './isaobriefs.js?v=ac64f4fe';
+import { drawEmotion } from './emotions.js?v=ac64f4fe';
 import { ACHIEVEMENTS, ACHV_GROUPS, achievement, blankRun, earned, freshlyEarned,
   sanitiseRecord }
-  from './achievements.js?v=aedb9f04';
+  from './achievements.js?v=ac64f4fe';
 import { applyFontPack, currentFontPack, FONT_NAMES,
-  loadTypeFeel } from './fonts.js?v=aedb9f04';
-import { SECONDARY_TOE, applySecondaryToe } from './units.js?v=aedb9f04';
-import { UNITS, UNIT_NAMES, buildUnit, buildCreature, preloadMkcx, preloadServer, makeServerFixture, makeShieldShell, preloadContainer, makeContainerFixture, preloadFabricator, makeIsaoDrone, makeBulletCloud, makeRewardSolid, makeShellSolid, makeDebris, makeDotBurst, makePortalCloud, preloadPortalRing, makePortalRing, makeHeartCloud, makeDotEnemy, preloadTerraformer, makeTerraformerFixture } from './units.js?v=aedb9f04';
-import { LOOKS, LOOK_NAMES } from './looks.js?v=aedb9f04';
-import { makeCellIndex } from './cellindex.js?v=aedb9f04';
-import { CREATURE_TINTS, ENEMY_SPEC, INTROS, computeWavePlan, accentFor } from './enemyspec.js?v=aedb9f04';
-import { PICKUPS } from './pickups.js?v=aedb9f04';
-import { rankFor, rankLabel, badgeSVG, killReq, eliteReq } from './ranks.js?v=aedb9f04';
-import { beamStep, isBeamStep, PEN_SOFT_FRAC, PEN_HARD_FRAC } from './beamranks.js?v=aedb9f04';
-import { burn, sweepAdvance, wallBite as wallBiteFor } from './beamburn.js?v=aedb9f04';
-import { arcPoint, projectToArc, toeForCrossing, crossingForToe } from './arc.js?v=aedb9f04';
+  loadTypeFeel } from './fonts.js?v=ac64f4fe';
+import { SECONDARY_TOE, applySecondaryToe } from './units.js?v=ac64f4fe';
+import { UNITS, UNIT_NAMES, buildUnit, buildCreature, preloadMkcx, preloadServer, makeServerFixture, makeShieldShell, preloadContainer, makeContainerFixture, preloadFabricator, makeIsaoDrone, makeBulletCloud, makeRewardSolid, makeShellSolid, makeDebris, makeDotBurst, makePortalCloud, preloadPortalRing, makePortalRing, makeHeartCloud, makeDotEnemy, preloadTerraformer, makeTerraformerFixture } from './units.js?v=ac64f4fe';
+import { LOOKS, LOOK_NAMES } from './looks.js?v=ac64f4fe';
+import { makeCellIndex } from './cellindex.js?v=ac64f4fe';
+import { CREATURE_TINTS, ENEMY_SPEC, INTROS, computeWavePlan, accentFor } from './enemyspec.js?v=ac64f4fe';
+import { PICKUPS } from './pickups.js?v=ac64f4fe';
+import { rankFor, rankLabel, badgeSVG, killReq, eliteReq } from './ranks.js?v=ac64f4fe';
+import { beamStep, isBeamStep, PEN_SOFT_FRAC, PEN_HARD_FRAC } from './beamranks.js?v=ac64f4fe';
+import { burn, sweepAdvance, wallBite as wallBiteFor } from './beamburn.js?v=ac64f4fe';
+import { arcPoint, projectToArc, toeForCrossing, crossingForToe } from './arc.js?v=ac64f4fe';
 import { WORMHOLE_PRESET, WORMHOLE_RENDER, RING_SPIN, TRAVEL,
-  travelRate, advancePhase } from './portalfx.js?v=aedb9f04';
-import { WORMHOLE_FRAG } from './fx/wormhole.frag.js?v=aedb9f04';
-import { makeScore } from './score.js?v=aedb9f04';
-import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER } from './towers.js?v=aedb9f04';
-import { makeEconomy, sellRefund } from './economy.js?v=aedb9f04';
-import { makeBloom } from './postfx.js?v=aedb9f04';
-import { TANK_FEEL, TANK_FEEL_KNOBS, makeTankFeel, stepTankFeel, landTankFeel, fireTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js?v=aedb9f04';
-import { FEEL, loadFeel, saveFeel } from './feelstore.js?v=aedb9f04';
+  travelRate, advancePhase } from './portalfx.js?v=ac64f4fe';
+import { WORMHOLE_FRAG } from './fx/wormhole.frag.js?v=ac64f4fe';
+import { makeScore } from './score.js?v=ac64f4fe';
+import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER } from './towers.js?v=ac64f4fe';
+import { makeEconomy, sellRefund } from './economy.js?v=ac64f4fe';
+import { makeBloom } from './postfx.js?v=ac64f4fe';
+import { TANK_FEEL, TANK_FEEL_KNOBS, makeTankFeel, stepTankFeel, landTankFeel, fireTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js?v=ac64f4fe';
+import { FEEL, loadFeel, saveFeel } from './feelstore.js?v=ac64f4fe';
 import { STRIKE_KNOBS, makeStrike, makeStrikeParams, grantStrikes, stepStrike,
   toggleArm, paintTarget, launchStrike, stepFall, skipFall, fallProgress,
-  strikeDamage, retargetStrike, orbitProgress } from './strike.js?v=aedb9f04';
+  strikeDamage, retargetStrike, orbitProgress } from './strike.js?v=ac64f4fe';
 import { radarBasis, radarProject, radarBearing, sweepAngle, radarPhosphor,
-  proximitySectors, SENSOR_LEVELS } from './radar.js?v=aedb9f04';
-import { BLOOM_GROUPS } from './bloomweights.js?v=aedb9f04';
-import { TOWER_LOOK_NAMES, DEFAULT_TOWER_LOOK, buildTowerLook, preloadLook } from './towerlooks.js?v=aedb9f04';
-import { makeAudio } from './audio.js?v=aedb9f04';
-import { DEATH_KEYS } from './audiomanifest.js?v=aedb9f04';
+  proximitySectors, SENSOR_LEVELS } from './radar.js?v=ac64f4fe';
+import { BLOOM_GROUPS } from './bloomweights.js?v=ac64f4fe';
+import { TOWER_LOOK_NAMES, DEFAULT_TOWER_LOOK, buildTowerLook, preloadLook } from './towerlooks.js?v=ac64f4fe';
+import { makeAudio } from './audio.js?v=ac64f4fe';
+import { DEATH_KEYS } from './audiomanifest.js?v=ac64f4fe';
 
 export function initTdTab(root) {
   let active = false;
@@ -1230,6 +1230,37 @@ export function initTdTab(root) {
   let steerHold = 99; // seconds since the user last steered
   const steeringActive = () => steerHold < 1.2;
   let autoMode = false; // AUTO is opt-in (the directive chip); MANUAL is sticky
+
+  // --- THE MOBILE SHELL (docs/MOBILE-PORT-PLAN.md, phases 1-2) --------------
+  // A second shell over the same game. Desktop never enters this branch; the
+  // shell is a body class the phone CSS keys off and a handful of intents the
+  // game already had. Detection is coarse pointer AND a phone-class width,
+  // overridable either way by ?mobile=1|0 so it can be looked at anywhere.
+  const mobileParam = new URLSearchParams(location.search).get('mobile');
+  const mobileShell = mobileParam === '1' ? true : mobileParam === '0' ? false
+    : (matchMedia('(pointer: coarse)').matches && Math.min(innerWidth, innerHeight) < 900);
+  document.body.classList.toggle('mobile-shell', mobileShell);
+
+  // TAP-TO-GO (ruling 1, 2026-09-02). On the phone the tank is COMMANDED, not
+  // driven: a tap on the ground is a destination, and the graph walker that
+  // already serves the auto directives walks it there. A BFS field from the
+  // tapped cell is the goal, exactly as distToHeart is the goal for 'home';
+  // arriving hands control back to manual, which stops the tank.
+  let gotoField = null, gotoCi = -1;
+  function gotoCell(ci) {
+    if (ci < 0 || dungeon.tags[ci] === BLOCKED) return false;
+    gotoField = bfsDist(graph.adj, [ci], (i) => dungeon.tags[i] !== BLOCKED);
+    if (gotoField[player.cur] < 0) return false;          // unreachable from here
+    gotoCi = ci;
+    params.directive = 'goto';
+    autoMode = true; cruise = false; throttle = 0;
+    warnRing(ci, 0x9fdcff, 0.5, cellSide * 0.9);            // "here" — the same ring the board speaks
+    return true;
+  }
+  function stopGoto() {
+    gotoCi = -1; gotoField = null;
+    if (params.directive === 'goto') { params.directive = 'wander'; autoMode = false; }
+  }
   const manualActive = () => !autoMode;
 
   // --- THE CONTROLS-DEAD PROBE --------------------------------------------
@@ -2380,6 +2411,7 @@ export function initTdTab(root) {
     if (!active) {
       const d = params.directive;
       if (d === 'home') goalField = dungeon.distToHeart;
+      else if (d === 'goto' && gotoField) goalField = gotoField;
       else if (d === 'portal' && portalDist) goalField = portalDist;
       else if (d === 'avoid' || d === 'ram') {
         let bt = null, bd = Infinity;
@@ -3048,6 +3080,12 @@ export function initTdTab(root) {
       }
       // the shop opens under EVERY camera — building is not a mode
       const ci = cellAtScreen(ev.clientX, ev.clientY);
+      // TAP-TO-GO, on the shell, while driving. The relay's own cells keep
+      // their tap (below); everything else on open ground is a destination.
+      if (mobileShell && !buildMode && wasTap && ci !== -1
+          && !(serverCi >= 0 && (ci === serverCi || graph.adj[serverCi].includes(ci)))) {
+        if (gotoCell(ci)) return;
+      }
       // tapping the SERVER (its cell or a neighbour) is the interaction:
       // hack if it is awake, and say why not if it is not — a silent
       // nothing was exactly the operator's 'cannot find how to interact'
@@ -3659,6 +3697,16 @@ export function initTdTab(root) {
   statsEl.classList.add('hud-panel'); // the TD tab dresses the shared slot
   const dirBtnEl = root.querySelector('#td-pad-dir');
   const msgEl = root.querySelector('#td-msg');
+  // The shell's ONE big control (ruling 3): DRIVE <-> BUILD, and the view
+  // follows the mode. It calls the same toggleBuild the desktop chip calls.
+  const mobModeEl = root.querySelector('#mob-mode');
+  let mobModeLast = -1;
+  if (mobModeEl) mobModeEl.addEventListener('click', () => { toggleBuild(); syncMobMode(); });
+  function syncMobMode() {
+    if (!mobModeEl) return;
+    mobModeEl.textContent = buildMode ? 'DRIVE' : 'BUILD';
+    document.body.classList.toggle('mob-build', !!buildMode);
+  }
   // the modal's buttons (event delegation survives innerHTML swaps)
   msgEl.addEventListener('click', (ev) => {
     const cl = ev.target.classList;
@@ -9141,6 +9189,10 @@ export function initTdTab(root) {
     updateWormhole(dt, t);
     if (!frozen) tfTick(dt);
     if (!frozen) autoUpgradeTick(dt);
+    if (gotoCi >= 0 && player.cur === gotoCi) stopGoto();   // arrived: hand back, stop
+    // the shell's mode button follows buildMode from EVERY path that sets it
+    // (sector reveal, ?mode=build, the desktop chip), not only its own tap
+    if (mobModeEl && (buildMode ? 1 : 0) !== mobModeLast) { mobModeLast = buildMode ? 1 : 0; syncMobMode(); }
     if (!frozen && eco) { ecoClockT += dt; if (eco.biomass >= CHEAPEST_TOWER) ecoAffordT += dt; }
     if (tutorialActive) tutorial.tick(dt);
     if (!frozen) {
@@ -11266,6 +11318,29 @@ export function initTdTab(root) {
         + ` continue=${btn2 && !btn2.disabled ? 'ENABLED' : 'disabled'}`
         + ` ${btn2 && btn2.disabled ? '(no coin, no continue)' : '<-- WRONG'}`);
     }, 1200);
+  }
+
+  // ?goto=1 — tap-to-go without a finger: pick an open cell six hops out,
+  // command the tank there, drive the walker, and check it arrives AND hands
+  // control back (directive restored, auto off).
+  if (urlParams.get('goto') === '1') {
+    setTimeout(() => {
+      dismissIntro();
+      const d0 = bfsDist(graph.adj, [player.cur], (i) => dungeon.tags[i] !== BLOCKED);
+      let target = -1;
+      for (let i = 0; i < d0.length; i++) if (d0[i] === 6) { target = i; break; }
+      const ok = target >= 0 && gotoCell(target);
+      const dirAt = params.directive, autoAt = autoMode;
+      let tt = 0;
+      for (; tt < 40 && gotoCi >= 0; tt += 0.05) {
+        advanceMotion(0.05);
+        if (gotoCi >= 0 && player.cur === gotoCi) stopGoto();
+      }
+      console.log(`GOTO target=${target} accepted=${ok} directive=${dirAt} auto=${autoAt}`
+        + ` -> arrived=${player.cur === target} in ${tt.toFixed(1)}s`
+        + ` handedBack=${!autoMode && params.directive !== 'goto'} shell=${mobileShell}`
+        + ` ${ok && player.cur === target && !autoMode ? '(commanded there, and stopped)' : '<-- did not arrive or did not stop'}`);
+    }, 1500);
   }
 
   // ?drones=1 — buy the assistant, put three orders on the book, drive both

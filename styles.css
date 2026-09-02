@@ -5,22 +5,22 @@
    back to a system face until the subset is rebuilt. */
 @font-face {
   font-family: 'VT323';
-  src: url('assets/fonts/VT323.woff2?v=aedb9f04') format('woff2');
+  src: url('assets/fonts/VT323.woff2?v=ac64f4fe') format('woff2');
   font-weight: 400; font-style: normal; font-display: swap;
 }
 @font-face {
   font-family: 'Press Start 2P';
-  src: url('assets/fonts/PressStart2P.woff2?v=aedb9f04') format('woff2');
+  src: url('assets/fonts/PressStart2P.woff2?v=ac64f4fe') format('woff2');
   font-weight: 400; font-style: normal; font-display: swap;
 }
 @font-face {
   font-family: 'Share Tech Mono';
-  src: url('assets/fonts/ShareTechMono.woff2?v=aedb9f04') format('woff2');
+  src: url('assets/fonts/ShareTechMono.woff2?v=ac64f4fe') format('woff2');
   font-weight: 400; font-style: normal; font-display: swap;
 }
 @font-face {
   font-family: 'DotGothic16';
-  src: url('assets/fonts/DotGothic16.woff2?v=aedb9f04') format('woff2');
+  src: url('assets/fonts/DotGothic16.woff2?v=ac64f4fe') format('woff2');
   font-weight: 400; font-style: normal; font-display: swap;
 }
 
@@ -3750,3 +3750,39 @@ tr.sim-timeout td:nth-child(2), tr.sim-stalled td:nth-child(2) { color: #ffb000;
 }
 @keyframes td-blink { to { visibility: hidden; } }
 #td-msg button[disabled] { opacity: 0.45; cursor: default; }
+
+
+/* --- THE MOBILE SHELL (docs/MOBILE-PORT-PLAN.md) ----------------------------
+   Scoped under body.mobile-shell so desktop is byte-identical. Phase 2 cut:
+   DRIVE keeps fire, plasma, radar, the mode switch and the menu; the steering
+   pads and throttle are gone because the tank is COMMANDED by tap. -------- */
+#td-rotate, #mob-mode { display: none; }
+body.mobile-shell #mob-mode {
+  display: block; position: fixed; z-index: 61;
+  right: max(14px, env(safe-area-inset-right)); top: max(12px, env(safe-area-inset-top));
+  min-width: 96px; height: 48px; padding: 0 16px;
+  font: 800 15px ui-monospace, Menlo, monospace; letter-spacing: 0.18em;
+  color: #e8fbff; background: rgba(0, 208, 255, 0.16);
+  border: 2px solid rgba(0, 208, 255, 0.7); border-radius: 12px;
+  touch-action: manipulation;
+}
+body.mobile-shell.mob-build #mob-mode { background: rgba(134, 255, 158, 0.16); border-color: rgba(134, 255, 158, 0.75); }
+body.mobile-shell:not(.mob-build) #td-pad-left,
+body.mobile-shell:not(.mob-build) #td-pad-right,
+body.mobile-shell:not(.mob-build) #td-throttle,
+body.mobile-shell #td-pad-dir, body.mobile-shell #td-pad-tank, body.mobile-shell #td-pad-orbit,
+body.mobile-shell #td-pad-map, body.mobile-shell #td-pad-ctrheart, body.mobile-shell #td-pad-ctrtank,
+body.mobile-shell #td-pad-sound { display: none !important; }
+body.mobile-shell #td-pad-fire, body.mobile-shell #td-pad-laser { min-width: 64px; min-height: 64px; font-size: 22px; }
+body.mobile-shell #td-app { touch-action: none; }
+@media (orientation: portrait) {
+  body.mobile-shell #td-rotate {
+    display: flex; position: fixed; inset: 0; z-index: 70;
+    flex-direction: column; align-items: center; justify-content: center; gap: 12px;
+    background: rgba(4, 8, 14, 0.94); color: #9fdcff; text-align: center;
+    font: 600 15px ui-monospace, Menlo, monospace; letter-spacing: 0.08em;
+  }
+  body.mobile-shell #td-rotate div { font-size: 64px; color: #00d0ff; animation: td-rotate-hint 2.4s ease-in-out infinite; }
+  body.mobile-shell #td-rotate p { margin: 0; line-height: 1.6; max-width: 82vw; }   /* clipped at 390px without this */
+}
+@keyframes td-rotate-hint { 0%, 100% { transform: rotate(0); } 50% { transform: rotate(-90deg); } }

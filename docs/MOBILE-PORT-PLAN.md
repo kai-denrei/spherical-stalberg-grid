@@ -47,7 +47,7 @@ keys:
 | keys | meaning | how a touch port does this |
 |---|---|---|
 | W A S D / arrows, Q E, dbl-W | steer, throttle, cruise | **tap-to-go** on the nav graph (the game already has auto directives and a graph walker); a hold-to-ram thumb; no virtual stick |
-| SPACE / SHIFT | shell / plasma | one fire thumb; plasma on hold; autofire already exists (`autoSecondary`, `autoGunner`) and should default **on** |
+| SPACE / SHIFT | shell / plasma | two thumbs, shell and plasma — NOT auto: the plasma's 4.5s lockout makes *when* the whole decision (ruling 4) |
 | 1 / 2 / 3, M, V | orbit / pov / third, map, cycle view | **the view follows the mode.** Two modes, one big button. `pov`, `bastion`, `drone` only where they are summoned diegetically |
 | B, tap a cell | build | the tap **is** the command: radial at the finger, on the cell, in build mode |
 | U | upgrade | long-press a tower → upgrade; auto-upgrade toggle for the rest |
@@ -76,8 +76,9 @@ Not citations — the practices that survive across the good ports:
    pinch.
 4. **Reduce continuous input.** Virtual sticks are how most ports die. The game
    has a nav graph and directive AI — use them. Steering is a desktop pleasure.
-5. **Auto-aim is the norm, not a cheat.** Mobile shooters aim for you and let
-   you decide *when*. Default autofire on; the thumb is timing.
+5. **Auto-aim is the norm; auto-FIRE is not, here.** The towers aim for you
+   already; the tank's plasma has a lockout, so the thumb owns *when* — that
+   is the one decision worth a thumb (ruling 4).
 6. **HUD by subtraction, per mode.** DRIVE: hearts, hulls, biomass, wave clock,
    radar with the sensor, one drone line. BUILD: biomass, queue, unlocks.
    Everything else behind ≡. `body.playing` already hides chrome by state — it
@@ -112,7 +113,17 @@ Each phase is small, has a probe, and leaves desktop byte-identical.
 | 6 | **Hygiene + perf tier.** touch-action, dvh, wake lock, orientation prompt, vibrate-with-visual-twin, the perf tier, the PWA hook | fps readout on a phone-class budget; the tier is a table, not a feeling |
 | 7 | **Device pass.** A written checklist, on a real phone, in landscape then portrait | the checklist is filed with results; portrait is decided, not assumed |
 
-## 4. Decisions the operator owns (not the plan's to make)
+## 4. Rulings — operator, 2026-09-02
+
+1. **Tap-to-go.** Driving becomes commanding on the phone.
+2. **Landscape only, first.** Portrait shows a rotate prompt, not a layout.
+3. **Two views, one easy switch.** DRIVE ↔ BUILD; the others are diegetic only.
+4. **No autofire.** The plasma has a 4.5s lockout; auto-firing it spends a
+   burst the player may have wanted to hold. Fire is a thumb on both shells —
+   the plan's earlier "default on for mobile" is withdrawn.
+5. **No haptics** for now.
+
+### (superseded) the decisions as they were put
 
 - **Tap-to-go vs virtual stick.** The plan recommends tap-to-go; it changes the
   feel of the tank from "driving" to "commanding". If manual driving is part of
