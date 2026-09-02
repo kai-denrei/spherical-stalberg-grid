@@ -6,6 +6,50 @@ Demo links assume `npm run serve` (port 8144) or the
 
 ---
 
+## `82c1e4e` — the mobile shell, phase 5: modals that fit a phone
+
+Phase 5 of `docs/MOBILE-PORT-PLAN.md`: the briefing, both debrief stages,
+the campaign screen and the variables modal, one scrollable column each
+with buttons a thumb can reach.
+
+**The ruler first.** `?modalprobe=1` opens each modal the phone will meet
+and measures its box against the viewport and every button against the box
+it must be tapped inside of. Unreachable includes *clipped*: a button past
+an `overflow: hidden` edge is as gone as one past the screen's. A button
+below the fold of a column that scrolls counts as reachable. The thumb
+rule (40px) grades the shell only.
+
+Before, at 844×303, five of seven failed for one reason: the message box
+is `overflow: hidden` for the hologram sweep, capped at 295px, and the
+proceed button, the orders, and "another planet" all sat below that line.
+
+| modal | before | after |
+|---|---|---|
+| pause | clipped | scrolls |
+| analysis | proceed unreachable | scrolls, reachable |
+| verdict | 5 buttons unreachable | scrolls, reachable |
+| campaign | 2 buttons unreachable | scrolls, reachable |
+| variables | 6 buttons under 40px | full-screen, 44px |
+| manual, record | fit | fit, and the manual shows the shell's controls |
+
+**The fix**, under `body.mobile-shell`: the message box scrolls as a whole,
+`box-sizing: border-box` (`max-height` on a padded content box overshoots
+the viewport by the padding, and only a ruler notices), fills the height,
+44px buttons. The field manual the same, with an `.fm-shell` line — tap to
+go, hold a tower to upgrade — in place of the keyboard table. The
+variables modal fills the screen with a 124px nav. Desktop, run through
+the same ruler at 1280×800 with `?mobile=0`: seven of seven under its own
+rules, untouched.
+
+**`?whatsat=x,y`.** A screenshot of the verdict showed a "▸ home" chip
+over the header that was none of the shell's pieces. The new hook names
+the element stack under a point; one run said `button.nav-home` inside
+`nav#tabbar` — the site's tab bar, hidden by `body.playing`, and a debrief
+is not playing. On the shell it is behind ≡ in every state now, and the
+layout ruler lists it.
+
+---
+
 ## `e32e9ec` — the mobile shell, phase 3: BUILD on glass, and the raycast acquitted
 
 Phase 3 of `docs/MOBILE-PORT-PLAN.md`. Most of it already existed on the

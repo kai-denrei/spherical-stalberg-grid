@@ -122,7 +122,8 @@ Each phase is small, has a probe, and leaves desktop byte-identical.
 | 2 | shipped, per the rulings: tap-to-go, thumbs manual, no directive wheel yet | `2d249ac`, `14aa9d7` |
 | 3 | shipped: 14px slop, long-press upgrade, NOT HERE captions; `?tapprobe=1` 100% placeable on 244 taps across two zooms — the raycast was never the fault; `?pressprobe=1` drives both gestures through real PointerEvents. Drag-orbit and pinch were already there. | `e32e9ec` |
 | 4 | shipped: 0 overlaps at 844×390 in both modes with a caption and Isao pinned | `14aa9d7` |
-| 5–7 | not started | — |
+| 5 | shipped: message box / manual / variables fit and scroll at 844×303 with 44px buttons; `?modalprobe=1` 5/7 FAIL → 7/7 OK on the shell, 7/7 desktop; tab bar behind ≡; `?whatsat=x,y` | `82c1e4e` |
+| 6–7 | not started | — |
 
 ## 4. Rulings — operator, 2026-09-02
 
