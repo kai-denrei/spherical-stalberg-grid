@@ -16,14 +16,14 @@
 
 import * as THREE from '../vendor/three.module.js';
 import { EMOTION_IDS, emotion, phosphorFor } from './emotions.js';
-import { printPhase, printOffset, printOn } from './printpath.js?v=5688b85a';
+import { printPhase, printOffset, printOn } from './printpath.js?v=d0e138da';
 import { loadGlb, mergeByMaterial, fitModel, tintModel, makeShellRack,
-  addEdgeOutlines, makeHeatSleeve } from './glbmodels.js?v=5688b85a';
-import { CREATURES, waveJelly, swimWave, spherePts, bulletPts, missilePts, heartPts, torusPts, towerHeadPts, enemyDotPts, portalPts } from './creatures.js?v=5688b85a';
-import { TOWER_FEEL, TOWER_HEADS, headKindFor } from './towerfeel.js?v=5688b85a';
+  addEdgeOutlines, makeHeatSleeve } from './glbmodels.js?v=d0e138da';
+import { CREATURES, waveJelly, swimWave, spherePts, bulletPts, missilePts, heartPts, torusPts, towerHeadPts, enemyDotPts, portalPts } from './creatures.js?v=d0e138da';
+import { TOWER_FEEL, TOWER_HEADS, headKindFor } from './towerfeel.js?v=d0e138da';
 import { STARGATE_PTS, STARGATE_STROKE,
-  HORIZON_N, stargateHorizon } from './stargate.js?v=5688b85a';
-import { ENEMY_SPEC } from './enemyspec.js?v=5688b85a';
+  HORIZON_N, stargateHorizon } from './stargate.js?v=d0e138da';
+import { ENEMY_SPEC } from './enemyspec.js?v=d0e138da';
 
 function normalizeToUnit(group) {
   group.updateMatrixWorld(true);
@@ -1819,7 +1819,39 @@ let fabProto = null, fabLoad = null;
 // addressable after mergeByMaterial if it was named before it, which this
 // project has already paid to learn once.
 const RING_URL = 'assets/models/portalring.glb';
-const RING_PIVOTS = ['Rotor_A_Spin', 'Rotor_B_Spin', 'Yaw_Turntable', 'Aperture_Volume'];
+// THE PODS ARE PIVOTS BECAUSE THEY GET BLOWN OFF, one pair per hit.
+// mergeByMaterial welds every non-pivot mesh into a batch and drops the
+// originals, so the Pod_N_Mount nodes survived by NAME but carried no
+// geometry — hiding one hid nothing. Measured: 0 of the 38 named nodes were
+// meshes. A part you intend to address later must be named BEFORE the merge,
+// which is the third time this project has paid for that sentence.
+//
+// It costs draw calls: eight pods per gate no longer join the batch. That is
+// the price of a part that can be destroyed separately, and it is the whole
+// feature.
+const RING_PODS = [1, 2, 3, 4, 5, 6, 7, 8].map((i) => `Pod_${i}_Mount`);
+const RING_PIVOTS = ['Rotor_A_Spin', 'Rotor_B_Spin', 'Yaw_Turntable',
+  'Aperture_Volume', ...RING_PODS];
+
+// SHADES OF GREY, AND LIT ENOUGH TO SEE (operator, 2026-09-02: "the portal
+// metallic frame model is entirely black, it should be shades of grey").
+//
+// The authored colours were never black — measured, the frame materials sit
+// at luminance 0.41 to 0.66. They read black because the default look runs a
+// 0.55 hemi and a 0.25 sun, and a standard material under that light is
+// near-black whatever you paint it. Exactly the container's problem, and it
+// takes the container's fix: each rung carries its OWN emissive, so the
+// ladder survives the lighting instead of being erased by it.
+//
+// M_Glow2 is left alone. It is the pods' glow, already emissive at 0.71, and
+// it is the one thing on the model that is SUPPOSED to be a colour.
+const RING_REPAINT = {
+  M_Armour: [0xc2c8ce, 0x4a5057],   // the big plates — brightest rung
+  M_Turret: [0xa8b0b6, 0x3a4046],
+  M_Detail: [0x9aa1a7, 0x333940],
+  M_Steel: [0x868d93, 0x2a2f34],
+  M_Rubber: [0x5e6469, 0x1d2124],   // darkest, so the seals still read
+};
 let ringLoad = null, ringProto = null;
 export function preloadPortalRing() {
   if (ringLoad) return ringLoad;
@@ -1840,7 +1872,36 @@ export function preloadPortalRing() {
 export function makePortalRing(tint = 0x8fe8ff) {
   if (!ringProto) { preloadPortalRing(); return null; }
   const g = ringProto.clone(true);
-  tintModel(g, tint, { wash: 0.18, shades: { armour: 1.0, turret: 0.8, detail: 0.6, steel: 0.4 } });
+  // CLONE THE MATERIALS. Every gate dims independently as it is wounded and
+  // loses its own pods, so these carry per-instance state — the container's
+  // shared-material shortcut is wrong here for the same reason its lock lamps
+  // were.
+  const glows = [];
+  g.traverse((o) => {
+    if (!o.isMesh || !o.material) return;
+    const list = Array.isArray(o.material) ? o.material : [o.material];
+    const cloned = list.map((m) => {
+      const c = m.clone();
+      const rung = RING_REPAINT[m.name];
+      if (rung) {
+        c.color.setHex(rung[0]);
+        if (c.emissive) { c.emissive.setHex(rung[1]); c.emissiveIntensity = 1.0; }
+      } else if (/glow/i.test(m.name || '')) {
+        if (c.emissive) { c.emissive.setHex(tint); c.emissiveIntensity = 1.6; }
+        c.color.setHex(tint);
+        glows.push(c);
+      }
+      return c;
+    });
+    o.material = Array.isArray(o.material) ? cloned : cloned[0];
+  });
+  g.userData.glows = glows;
+  // How bright the gate burns — dimmed step by step as it is wounded, and
+  // wound UP while a wave charges. One place, so both callers agree.
+  g.userData.setDim = (v) => {
+    for (const m of glows) m.emissiveIntensity = 1.6 * Math.max(0, v);
+  };
+  g.userData.pods = RING_PODS.map((n) => g.getObjectByName(n)).filter(Boolean);
   g.userData.rotorA = g.getObjectByName('Rotor_A_Spin');
   g.userData.rotorB = g.getObjectByName('Rotor_B_Spin');
   g.userData.yaw = g.getObjectByName('Yaw_Turntable');

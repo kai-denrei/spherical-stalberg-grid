@@ -19,49 +19,49 @@
 
 import * as THREE from '../vendor/three.module.js';
 import GUI from '../vendor/lil-gui.esm.js';
-import { generateSphereMesh, relax } from './grid.js?v=5688b85a';
-import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=5688b85a';
-import { mulberry32, randomSeed } from './rng.js?v=5688b85a';
-import { computeBerths, berthIndexFor } from './berths.js?v=5688b85a';
-import { wantsSecondary, shellsForAll } from './autofire.js?v=5688b85a';
-import { printPhase, printOffset, printOn, patternSecsFor } from './printpath.js?v=5688b85a';
-import { createBeamRig, PLASMA_DEFAULTS, BOARD_PRESET, BEAM_PEAK } from './beamdraw.js?v=5688b85a';
-import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3, segKey, tangentDir, tangentBasis } from './vec3.js?v=5688b85a';
-import { CREATURES, waveJelly } from './creatures.js?v=5688b85a';
-import { brief, dwellFor } from './isaobriefs.js?v=5688b85a';
-import { drawEmotion } from './emotions.js?v=5688b85a';
+import { generateSphereMesh, relax } from './grid.js?v=d0e138da';
+import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=d0e138da';
+import { mulberry32, randomSeed } from './rng.js?v=d0e138da';
+import { computeBerths, berthIndexFor } from './berths.js?v=d0e138da';
+import { wantsSecondary, shellsForAll } from './autofire.js?v=d0e138da';
+import { printPhase, printOffset, printOn, patternSecsFor } from './printpath.js?v=d0e138da';
+import { createBeamRig, PLASMA_DEFAULTS, BOARD_PRESET, BEAM_PEAK } from './beamdraw.js?v=d0e138da';
+import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3, segKey, tangentDir, tangentBasis } from './vec3.js?v=d0e138da';
+import { CREATURES, waveJelly } from './creatures.js?v=d0e138da';
+import { brief, dwellFor } from './isaobriefs.js?v=d0e138da';
+import { drawEmotion } from './emotions.js?v=d0e138da';
 import { ACHIEVEMENTS, ACHV_GROUPS, achievement, blankRun, earned, freshlyEarned,
   sanitiseRecord }
-  from './achievements.js?v=5688b85a';
+  from './achievements.js?v=d0e138da';
 import { applyFontPack, currentFontPack, FONT_NAMES,
-  loadTypeFeel } from './fonts.js?v=5688b85a';
-import { SECONDARY_TOE, applySecondaryToe } from './units.js?v=5688b85a';
-import { UNITS, UNIT_NAMES, buildUnit, buildCreature, preloadMkcx, preloadServer, makeServerFixture, makeShieldShell, preloadContainer, makeContainerFixture, preloadFabricator, makeIsaoDrone, makeBulletCloud, makeRewardSolid, makeShellSolid, makeDebris, makeDotBurst, makePortalCloud, preloadPortalRing, makePortalRing, makeHeartCloud, makeDotEnemy, preloadTerraformer, makeTerraformerFixture } from './units.js?v=5688b85a';
-import { LOOKS, LOOK_NAMES } from './looks.js?v=5688b85a';
-import { makeCellIndex } from './cellindex.js?v=5688b85a';
-import { CREATURE_TINTS, ENEMY_SPEC, INTROS, computeWavePlan, accentFor } from './enemyspec.js?v=5688b85a';
-import { PICKUPS } from './pickups.js?v=5688b85a';
-import { rankFor, rankLabel, badgeSVG, killReq, eliteReq } from './ranks.js?v=5688b85a';
-import { beamStep, isBeamStep, PEN_SOFT_FRAC, PEN_HARD_FRAC } from './beamranks.js?v=5688b85a';
-import { burn, sweepAdvance, wallBite as wallBiteFor } from './beamburn.js?v=5688b85a';
-import { arcPoint, projectToArc, toeForCrossing, crossingForToe } from './arc.js?v=5688b85a';
+  loadTypeFeel } from './fonts.js?v=d0e138da';
+import { SECONDARY_TOE, applySecondaryToe } from './units.js?v=d0e138da';
+import { UNITS, UNIT_NAMES, buildUnit, buildCreature, preloadMkcx, preloadServer, makeServerFixture, makeShieldShell, preloadContainer, makeContainerFixture, preloadFabricator, makeIsaoDrone, makeBulletCloud, makeRewardSolid, makeShellSolid, makeDebris, makeDotBurst, makePortalCloud, preloadPortalRing, makePortalRing, makeHeartCloud, makeDotEnemy, preloadTerraformer, makeTerraformerFixture } from './units.js?v=d0e138da';
+import { LOOKS, LOOK_NAMES } from './looks.js?v=d0e138da';
+import { makeCellIndex } from './cellindex.js?v=d0e138da';
+import { CREATURE_TINTS, ENEMY_SPEC, INTROS, computeWavePlan, accentFor } from './enemyspec.js?v=d0e138da';
+import { PICKUPS } from './pickups.js?v=d0e138da';
+import { rankFor, rankLabel, badgeSVG, killReq, eliteReq } from './ranks.js?v=d0e138da';
+import { beamStep, isBeamStep, PEN_SOFT_FRAC, PEN_HARD_FRAC } from './beamranks.js?v=d0e138da';
+import { burn, sweepAdvance, wallBite as wallBiteFor } from './beamburn.js?v=d0e138da';
+import { arcPoint, projectToArc, toeForCrossing, crossingForToe } from './arc.js?v=d0e138da';
 import { WORMHOLE_PRESET, WORMHOLE_RENDER, RING_SPIN, TRAVEL,
-  travelRate, advancePhase } from './portalfx.js?v=5688b85a';
-import { WORMHOLE_FRAG } from './fx/wormhole.frag.js?v=5688b85a';
-import { makeScore } from './score.js?v=5688b85a';
-import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER } from './towers.js?v=5688b85a';
-import { makeEconomy, sellRefund } from './economy.js?v=5688b85a';
-import { makeBloom } from './postfx.js?v=5688b85a';
-import { TANK_FEEL, TANK_FEEL_KNOBS, makeTankFeel, stepTankFeel, landTankFeel, fireTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js?v=5688b85a';
-import { FEEL, loadFeel, saveFeel } from './feelstore.js?v=5688b85a';
+  travelRate, advancePhase } from './portalfx.js?v=d0e138da';
+import { WORMHOLE_FRAG } from './fx/wormhole.frag.js?v=d0e138da';
+import { makeScore } from './score.js?v=d0e138da';
+import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER } from './towers.js?v=d0e138da';
+import { makeEconomy, sellRefund } from './economy.js?v=d0e138da';
+import { makeBloom } from './postfx.js?v=d0e138da';
+import { TANK_FEEL, TANK_FEEL_KNOBS, makeTankFeel, stepTankFeel, landTankFeel, fireTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js?v=d0e138da';
+import { FEEL, loadFeel, saveFeel } from './feelstore.js?v=d0e138da';
 import { STRIKE_KNOBS, makeStrike, makeStrikeParams, grantStrikes, stepStrike,
   toggleArm, paintTarget, launchStrike, stepFall, skipFall, fallProgress,
-  strikeDamage, retargetStrike, orbitProgress } from './strike.js?v=5688b85a';
-import { radarBasis, radarProject, radarBearing, sweepAngle, radarPhosphor } from './radar.js?v=5688b85a';
-import { BLOOM_GROUPS } from './bloomweights.js?v=5688b85a';
-import { TOWER_LOOK_NAMES, DEFAULT_TOWER_LOOK, buildTowerLook, preloadLook } from './towerlooks.js?v=5688b85a';
-import { makeAudio } from './audio.js?v=5688b85a';
-import { DEATH_KEYS } from './audiomanifest.js?v=5688b85a';
+  strikeDamage, retargetStrike, orbitProgress } from './strike.js?v=d0e138da';
+import { radarBasis, radarProject, radarBearing, sweepAngle, radarPhosphor } from './radar.js?v=d0e138da';
+import { BLOOM_GROUPS } from './bloomweights.js?v=d0e138da';
+import { TOWER_LOOK_NAMES, DEFAULT_TOWER_LOOK, buildTowerLook, preloadLook } from './towerlooks.js?v=d0e138da';
+import { makeAudio } from './audio.js?v=d0e138da';
+import { DEATH_KEYS } from './audiomanifest.js?v=d0e138da';
 
 export function initTdTab(root) {
   let active = false;
@@ -4805,8 +4805,72 @@ export function initTdTab(root) {
   // walls breach, towers fall, the strike vaporises. A gate that shrugged off
   // three well-placed shells was the only exception, and it was mine, and it
   // was wrong (operator). Get close, put three in it, and it is down.
+  // TWO POWER CORES PER HIT (operator). Eight pods, three hits: two go on the
+  // first, two more on the second, and the third takes the whole gate — so a
+  // player can read how close a gate is to falling by counting what is left
+  // of it, without a health bar.
+  const PODS_PER_HIT = 2;
+  function popPods(sp, n) {
+    const pods = sp.obj.userData.pods;
+    if (!pods || !pods.length) return 0;
+    let popped = 0;
+    for (const pod of pods) {
+      if (popped >= n) break;
+      if (!pod.visible) continue;          // already gone
+      pod.updateWorldMatrix(true, false);
+      const wp = new THREE.Vector3();
+      pod.getWorldPosition(wp);
+      const nrm = norm3([wp.x, wp.y, wp.z]);
+      // the pod's own wreckage, then a flash of its glow colour
+      const fx = makeDebris(pod, nrm);
+      scene.add(fx); debris.push(fx);
+      const burst = makeDotBurst(0x8fe8ff, nrm, 26);
+      burst.scale.setScalar(cellSide * 0.5);
+      burst.position.copy(wp);
+      scene.add(burst); debris.push(burst);
+      pod.visible = false;
+      popped++;
+    }
+    return popped;
+  }
+
+  // WHAT A SHELL LANDING ON A GATE FEELS LIKE. It used to be a scale step and
+  // a dim — a wounded gate got quieter, which is the opposite of heavy.
+  const GATE_RECOIL = 0.22;   // seconds of shove, eased out by stepGates
+  function gateTakesHit(sp) {
+    const nrm = norm3(graph.centers[sp.ci]);
+    sfx.play('tower_aoe');            // the concussion
+    whKick = WH_KICK;                 // ...and the throat lurches
+    popPods(sp, PODS_PER_HIT);
+    // a broad flash at the gate's mouth, over and above the pod bursts
+    const burst = makeDotBurst(0xfff2c0, nrm, 70);
+    burst.scale.setScalar(cellSide * 1.1);
+    const bp = scale3(nrm, 1 + cellSide * 0.5);
+    burst.position.set(bp[0], bp[1], bp[2]);
+    scene.add(burst); debris.push(burst);
+    // and the ring is SHOVED — a recoil the frame loop eases back out, so the
+    // weight is in the motion rather than in a bigger particle count
+    sp.recoil = GATE_RECOIL;
+  }
+
   function killPortal(sp) {
     sp.alive = false;
+    // THE GATE GOES LIKE THE TANK GOES (operator): its own wreckage, a big
+    // burst in its own colour, and the heavy sound — the same three parts as
+    // destroyPlayer, because that is the vocabulary the board already has for
+    // "something substantial just ended".
+    const nrm = norm3(graph.centers[sp.ci]);
+    sfx.play('tank_destroyed');
+    whKick = WH_KICK * 1.6;           // the throat convulses as it collapses
+    if (sp.obj) {
+      const fx = makeDebris(sp.obj, nrm);
+      scene.add(fx); debris.push(fx);
+      const burst = makeDotBurst(0x8fe8ff, nrm, 90);
+      burst.scale.setScalar(cellSide * 1.6);
+      const bp = scale3(nrm, 1 + cellSide * 0.6);
+      burst.position.set(bp[0], bp[1], bp[2]);
+      scene.add(burst); debris.push(burst);
+    }
     scene.remove(sp.obj);
     disposeObj(sp.obj);
     if (sp.mapMarker) { scene.remove(sp.mapMarker); disposeObj(sp.mapMarker); }
@@ -5769,10 +5833,14 @@ export function initTdTab(root) {
             if (sp.hp <= 0) {
               killPortal(sp);
             } else {
-              // wounded: the portal shrinks a step AND its light dims —
-              // a dying gate fades before it falls
-              const s = sp.obj.userData.sizeScale * (0.65 + 0.35 * (sp.hp / 3));
-              sp.obj.scale.setScalar(s);
+              // wounded: it loses two power cores, takes a shove, and its
+              // light dims — a dying gate fades before it falls. The SHRINK
+              // is gone for a standing ring: architecture does not get
+              // smaller when you shoot it, it loses pieces.
+              gateTakesHit(sp);
+              if (!sp.obj.userData.grounded) {
+                sp.obj.scale.setScalar(sp.obj.userData.sizeScale * (0.65 + 0.35 * (sp.hp / 3)));
+              }
               if (sp.obj.userData.setDim) sp.obj.userData.setDim(0.2 + 0.8 * (sp.hp / 3));
             }
             updateHud();
@@ -7448,6 +7516,17 @@ export function initTdTab(root) {
   let whRt = null, whMat = null, whScene = null, whCam = null, whLastAt = -1e9;
   const whPhase = { travel: 0, spin: 0 };
   let whTravelRate = 0;   // reported by the probe; driven by the wave clock
+  // A HIT SPINS THE WORMHOLE UP (operator, 2026-09-02). The dot-cloud gate
+  // vibrated when it was struck; a solid ring cannot shudder convincingly, so
+  // the tell moves INSIDE — the throat lurches and winds back down.
+  //
+  // It is the SHARED target, so every gate on the board flares together. That
+  // is the cost of one march for all of them, and it is worth naming: you are
+  // almost always shooting one gate at a time, and a board-wide lurch reads as
+  // the network noticing rather than as a bug.
+  let whKick = 0;
+  const WH_KICK = 9;        // travel added at the instant of a hit
+  const WH_KICK_DECAY = 2.2; // ...bled off this fast, in units per second
   const whUniforms = {
     uResolution: { value: new THREE.Vector3(1, 1, 1) },
     uTime: { value: 0 },
@@ -7500,7 +7579,8 @@ export function initTdTab(root) {
   // history every frame it changes, which makes a ramp impossible.
   function updateWormhole(dt, tNow) {
     if (!whRt) return;
-    whTravelRate = travelRate(secsToWave(), TRAVEL);
+    whKick = Math.max(0, whKick - WH_KICK_DECAY * dt);
+    whTravelRate = travelRate(secsToWave(), TRAVEL) + whKick;
     advancePhase(whPhase, dt, whTravelRate, WORMHOLE_PRESET.uTimeScale);
     const period = 1 / Math.max(1, WORMHOLE_RENDER.updateHz);
     if (tNow - whLastAt < period) return;
@@ -8393,6 +8473,23 @@ export function initTdTab(root) {
       updateLasers(dt, t);
       stepTowers(dt, t);
       updateTowerShots(dt, t);
+    }
+    // THE GATES' OWN MOTION: the ring's rotors turn, and a struck gate rides
+    // out its recoil. The recoil is a SHOVE along its own normal that eases
+    // back — the weight of a shell landing lives in that motion, not in a
+    // bigger particle count.
+    for (const sp of spawnPoints) {
+      if (!sp.alive || !sp.obj) continue;
+      if (sp.obj.userData.tick) sp.obj.userData.tick(t, dt);
+      if (sp.recoil > 0) {
+        sp.recoil = Math.max(0, sp.recoil - dt);
+        const u = sp.recoil / GATE_RECOIL;          // 1 at impact, 0 at rest
+        const push = Math.sin(u * Math.PI) * cellSide * 0.28;
+        const c = graph.centers[sp.ci];
+        const n2 = graph.normals[sp.ci];
+        // shoved back and slightly up, then let down
+        sp.obj.position.set(c[0] + n2[0] * push, c[1] + n2[1] * push, c[2] + n2[2] * push);
+      }
     }
     updateBeams(dt); // fx fade even during downtime
     stepSlugs(dt);
@@ -10315,6 +10412,85 @@ export function initTdTab(root) {
         + ` | the old fixed ${SECONDARY_TOE} would cross at`
         + ` ${crossingForToe(lastToe.gap, SECONDARY_TOE).toFixed(2)}`);
     } else console.log('TOE not applied (no gun pivots on this tank)');
+  }
+
+  // ?ringdump=1 — WHAT IS ACTUALLY IN THE PORTAL RING?
+  //
+  // Operator: "the portal metallic frame model is entirely black, it should
+  // be shades of grey", and the power cores need to blow one pair at a time.
+  // Both of those are questions about the authored model's OWN names — which
+  // materials the tint ladder is failing to match, and what the cores are
+  // called — and guessing at names is how the last three model jobs went
+  // wrong. Dump them.
+  if (urlParams.get('ringdump') === '1') {
+    preloadPortalRing().then((ok) => {
+      if (!ok) { console.log('RINGDUMP model failed to load'); return; }
+      const g = makePortalRing(0x8fe8ff);
+      if (!g) { console.log('RINGDUMP no proto'); return; }
+      const mats = new Map();
+      const names = [];
+      g.traverse((o) => {
+        if (o.name) names.push(`${o.name}${o.isMesh ? '*' : ''}`);
+        if (!o.isMesh || !o.material) return;
+        for (const m of Array.isArray(o.material) ? o.material : [o.material]) {
+          if (mats.has(m.name || '(unnamed)')) continue;
+          const c = m.color || { r: 0, g: 0, b: 0 };
+          const e = m.emissive || { r: 0, g: 0, b: 0 };
+          mats.set(m.name || '(unnamed)', {
+            lum: 0.2126 * c.r + 0.7152 * c.g + 0.0722 * c.b,
+            elum: 0.2126 * e.r + 0.7152 * e.g + 0.0722 * e.b,
+            ei: m.emissiveIntensity ?? 0,
+          });
+        }
+      });
+      for (const [n2, v] of mats) {
+        console.log(`RINGDUMP material ${n2.padEnd(22)} colour lum ${v.lum.toFixed(3)}`
+          + ` | emissive lum ${v.elum.toFixed(3)} x${v.ei.toFixed(2)}`
+          + ` ${v.lum < 0.08 && v.elum < 0.02 ? '<-- READS BLACK' : ''}`);
+      }
+      console.log(`RINGDUMP nodes (${names.length}), meshes marked *:`
+        + ` ${names.filter((x) => x.endsWith('*')).join(' ') || 'NONE — everything merged away'}`);
+      // ADDRESSABLE IS NOT THE SAME AS HAVING GEOMETRY. A preserved pivot can
+      // be an empty transform whose meshes were welded into the global batch,
+      // and hiding that hides nothing — which is the failure this whole
+      // pivot list exists to avoid. So measure each pod's box.
+      const pb = new THREE.Box3(), ps = new THREE.Vector3();
+      let solid = 0;
+      for (const pod of g.userData.pods || []) {
+        pb.setFromObject(pod); pb.getSize(ps);
+        if (ps.length() > 1e-6) solid++;
+      }
+      console.log(`RINGDUMP pods addressable ${(g.userData.pods || []).length}/8,`
+        + ` of which ${solid} actually carry geometry`
+        + ` ${solid === 8 ? '(hiding one will remove a pod)' : '<-- EMPTY TRANSFORMS, hiding them does nothing'}`);
+    });
+  }
+
+  // ?hitprobe=1 — THE THREE HITS, AS THEY ACTUALLY LAND.
+  //
+  // Operator: two power cores per hit, then two more, then a destruction like
+  // the tank's. Every part of that is a side effect — pods hidden, debris
+  // pushed, a sound played — so it is checked by counting the effects rather
+  // than by looking at a frame.
+  if (urlParams.get('hitprobe') === '1') {
+    preloadPortalRing().then(() => {
+      swapGatesToRing();
+      const sp = spawnPoints.find((x) => x.alive);
+      if (!sp) { console.log('HITPROBE no live gate'); return; }
+      if (sp.obj.userData.setForm) sp.obj.userData.setForm(1);
+      const pods = () => (sp.obj.userData.pods || []).filter((p2) => p2.visible).length;
+      console.log(`HITPROBE start: hp=${sp.hp} pods=${pods()}/8 debris=${debris.length}`);
+      for (let h = 1; h <= 3; h++) {
+        const d0 = debris.length, k0 = whKick;
+        sp.hp--;
+        if (sp.hp <= 0) killPortal(sp); else gateTakesHit(sp);
+        console.log(`HITPROBE hit ${h}: hp=${sp.hp} pods=${pods()}/8`
+          + ` debris +${debris.length - d0}`
+          + ` wormhole kick ${k0.toFixed(1)} -> ${whKick.toFixed(1)}`
+          + ` recoil ${(sp.recoil ?? 0).toFixed(2)}s`
+          + (sp.alive ? '' : ' | GATE DESTROYED'));
+      }
+    });
   }
 
   // ?sizeprobe=1 — HOW BIG IS EVERYTHING, IN CELLS?
