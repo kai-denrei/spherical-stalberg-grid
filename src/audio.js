@@ -17,10 +17,10 @@
 //    total. A failed fetch or decode logs once and that key becomes a
 //    permanent no-op for the session; the game keeps running silent.
 
-import { makeMixState, distanceGain, admit, addVoice, dropVoice } from './audiomix.js?v=d0e138da';
-import { SOUNDS, BUSES, DEFAULT_LEVELS, GLOBAL_VOICE_CAP, DISTANCE_K } from './audiomanifest.js?v=d0e138da';
-import { mulberry32 } from './rng.js?v=d0e138da';
-import { gateStep } from './audiogate.js?v=d0e138da';
+import { makeMixState, distanceGain, admit, addVoice, dropVoice } from './audiomix.js?v=ecc12837';
+import { SOUNDS, BUSES, DEFAULT_LEVELS, GLOBAL_VOICE_CAP, DISTANCE_K } from './audiomanifest.js?v=ecc12837';
+import { mulberry32 } from './rng.js?v=ecc12837';
+import { gateStep } from './audiogate.js?v=ecc12837';
 
 const STORE_KEY = 'ssg.audio.levels';
 const STEAL_FADE = 0.03; // s — a hard cut mid-waveform is an audible click

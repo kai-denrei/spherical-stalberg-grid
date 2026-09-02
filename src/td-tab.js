@@ -19,49 +19,49 @@
 
 import * as THREE from '../vendor/three.module.js';
 import GUI from '../vendor/lil-gui.esm.js';
-import { generateSphereMesh, relax } from './grid.js?v=d0e138da';
-import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=d0e138da';
-import { mulberry32, randomSeed } from './rng.js?v=d0e138da';
-import { computeBerths, berthIndexFor } from './berths.js?v=d0e138da';
-import { wantsSecondary, shellsForAll } from './autofire.js?v=d0e138da';
-import { printPhase, printOffset, printOn, patternSecsFor } from './printpath.js?v=d0e138da';
-import { createBeamRig, PLASMA_DEFAULTS, BOARD_PRESET, BEAM_PEAK } from './beamdraw.js?v=d0e138da';
-import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3, segKey, tangentDir, tangentBasis } from './vec3.js?v=d0e138da';
-import { CREATURES, waveJelly } from './creatures.js?v=d0e138da';
-import { brief, dwellFor } from './isaobriefs.js?v=d0e138da';
-import { drawEmotion } from './emotions.js?v=d0e138da';
+import { generateSphereMesh, relax } from './grid.js?v=ecc12837';
+import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=ecc12837';
+import { mulberry32, randomSeed } from './rng.js?v=ecc12837';
+import { computeBerths, berthIndexFor } from './berths.js?v=ecc12837';
+import { wantsSecondary, shellsForAll } from './autofire.js?v=ecc12837';
+import { printPhase, printOffset, printOn, patternSecsFor } from './printpath.js?v=ecc12837';
+import { createBeamRig, PLASMA_DEFAULTS, BOARD_PRESET, BEAM_PEAK } from './beamdraw.js?v=ecc12837';
+import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3, segKey, tangentDir, tangentBasis } from './vec3.js?v=ecc12837';
+import { CREATURES, waveJelly } from './creatures.js?v=ecc12837';
+import { brief, dwellFor } from './isaobriefs.js?v=ecc12837';
+import { drawEmotion } from './emotions.js?v=ecc12837';
 import { ACHIEVEMENTS, ACHV_GROUPS, achievement, blankRun, earned, freshlyEarned,
   sanitiseRecord }
-  from './achievements.js?v=d0e138da';
+  from './achievements.js?v=ecc12837';
 import { applyFontPack, currentFontPack, FONT_NAMES,
-  loadTypeFeel } from './fonts.js?v=d0e138da';
-import { SECONDARY_TOE, applySecondaryToe } from './units.js?v=d0e138da';
-import { UNITS, UNIT_NAMES, buildUnit, buildCreature, preloadMkcx, preloadServer, makeServerFixture, makeShieldShell, preloadContainer, makeContainerFixture, preloadFabricator, makeIsaoDrone, makeBulletCloud, makeRewardSolid, makeShellSolid, makeDebris, makeDotBurst, makePortalCloud, preloadPortalRing, makePortalRing, makeHeartCloud, makeDotEnemy, preloadTerraformer, makeTerraformerFixture } from './units.js?v=d0e138da';
-import { LOOKS, LOOK_NAMES } from './looks.js?v=d0e138da';
-import { makeCellIndex } from './cellindex.js?v=d0e138da';
-import { CREATURE_TINTS, ENEMY_SPEC, INTROS, computeWavePlan, accentFor } from './enemyspec.js?v=d0e138da';
-import { PICKUPS } from './pickups.js?v=d0e138da';
-import { rankFor, rankLabel, badgeSVG, killReq, eliteReq } from './ranks.js?v=d0e138da';
-import { beamStep, isBeamStep, PEN_SOFT_FRAC, PEN_HARD_FRAC } from './beamranks.js?v=d0e138da';
-import { burn, sweepAdvance, wallBite as wallBiteFor } from './beamburn.js?v=d0e138da';
-import { arcPoint, projectToArc, toeForCrossing, crossingForToe } from './arc.js?v=d0e138da';
+  loadTypeFeel } from './fonts.js?v=ecc12837';
+import { SECONDARY_TOE, applySecondaryToe } from './units.js?v=ecc12837';
+import { UNITS, UNIT_NAMES, buildUnit, buildCreature, preloadMkcx, preloadServer, makeServerFixture, makeShieldShell, preloadContainer, makeContainerFixture, preloadFabricator, makeIsaoDrone, makeBulletCloud, makeRewardSolid, makeShellSolid, makeDebris, makeDotBurst, makePortalCloud, preloadPortalRing, makePortalRing, makeHeartCloud, makeDotEnemy, preloadTerraformer, makeTerraformerFixture } from './units.js?v=ecc12837';
+import { LOOKS, LOOK_NAMES } from './looks.js?v=ecc12837';
+import { makeCellIndex } from './cellindex.js?v=ecc12837';
+import { CREATURE_TINTS, ENEMY_SPEC, INTROS, computeWavePlan, accentFor } from './enemyspec.js?v=ecc12837';
+import { PICKUPS } from './pickups.js?v=ecc12837';
+import { rankFor, rankLabel, badgeSVG, killReq, eliteReq } from './ranks.js?v=ecc12837';
+import { beamStep, isBeamStep, PEN_SOFT_FRAC, PEN_HARD_FRAC } from './beamranks.js?v=ecc12837';
+import { burn, sweepAdvance, wallBite as wallBiteFor } from './beamburn.js?v=ecc12837';
+import { arcPoint, projectToArc, toeForCrossing, crossingForToe } from './arc.js?v=ecc12837';
 import { WORMHOLE_PRESET, WORMHOLE_RENDER, RING_SPIN, TRAVEL,
-  travelRate, advancePhase } from './portalfx.js?v=d0e138da';
-import { WORMHOLE_FRAG } from './fx/wormhole.frag.js?v=d0e138da';
-import { makeScore } from './score.js?v=d0e138da';
-import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER } from './towers.js?v=d0e138da';
-import { makeEconomy, sellRefund } from './economy.js?v=d0e138da';
-import { makeBloom } from './postfx.js?v=d0e138da';
-import { TANK_FEEL, TANK_FEEL_KNOBS, makeTankFeel, stepTankFeel, landTankFeel, fireTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js?v=d0e138da';
-import { FEEL, loadFeel, saveFeel } from './feelstore.js?v=d0e138da';
+  travelRate, advancePhase } from './portalfx.js?v=ecc12837';
+import { WORMHOLE_FRAG } from './fx/wormhole.frag.js?v=ecc12837';
+import { makeScore } from './score.js?v=ecc12837';
+import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER } from './towers.js?v=ecc12837';
+import { makeEconomy, sellRefund } from './economy.js?v=ecc12837';
+import { makeBloom } from './postfx.js?v=ecc12837';
+import { TANK_FEEL, TANK_FEEL_KNOBS, makeTankFeel, stepTankFeel, landTankFeel, fireTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js?v=ecc12837';
+import { FEEL, loadFeel, saveFeel } from './feelstore.js?v=ecc12837';
 import { STRIKE_KNOBS, makeStrike, makeStrikeParams, grantStrikes, stepStrike,
   toggleArm, paintTarget, launchStrike, stepFall, skipFall, fallProgress,
-  strikeDamage, retargetStrike, orbitProgress } from './strike.js?v=d0e138da';
-import { radarBasis, radarProject, radarBearing, sweepAngle, radarPhosphor } from './radar.js?v=d0e138da';
-import { BLOOM_GROUPS } from './bloomweights.js?v=d0e138da';
-import { TOWER_LOOK_NAMES, DEFAULT_TOWER_LOOK, buildTowerLook, preloadLook } from './towerlooks.js?v=d0e138da';
-import { makeAudio } from './audio.js?v=d0e138da';
-import { DEATH_KEYS } from './audiomanifest.js?v=d0e138da';
+  strikeDamage, retargetStrike, orbitProgress } from './strike.js?v=ecc12837';
+import { radarBasis, radarProject, radarBearing, sweepAngle, radarPhosphor } from './radar.js?v=ecc12837';
+import { BLOOM_GROUPS } from './bloomweights.js?v=ecc12837';
+import { TOWER_LOOK_NAMES, DEFAULT_TOWER_LOOK, buildTowerLook, preloadLook } from './towerlooks.js?v=ecc12837';
+import { makeAudio } from './audio.js?v=ecc12837';
+import { DEATH_KEYS } from './audiomanifest.js?v=ecc12837';
 
 export function initTdTab(root) {
   let active = false;
@@ -10448,6 +10448,22 @@ export function initTdTab(root) {
           + ` | emissive lum ${v.elum.toFixed(3)} x${v.ei.toFixed(2)}`
           + ` ${v.lum < 0.08 && v.elum < 0.02 ? '<-- READS BLACK' : ''}`);
       }
+      // WHICH NODE IS THE GIANT? A blueprint model carries helpers — collision
+      // proxies, callout cards, an aux scene — that the bench never draws. A
+      // merge that keeps everything keeps those too, and a lit collision box
+      // is exactly a giant white square. Measure every named node.
+      const nb = new THREE.Box3(), ns = new THREE.Vector3();
+      g.updateMatrixWorld(true);
+      nb.setFromObject(g); nb.getSize(ns);
+      const whole = ns.length();
+      const rows = [];
+      g.traverse((o) => {
+        if (!o.name) return;
+        nb.setFromObject(o); nb.getSize(ns);
+        const span = ns.length();
+        if (span > whole * 0.25) rows.push(`${o.name}=${(span / whole * 100).toFixed(0)}%`);
+      });
+      console.log(`RINGDUMP big nodes (>25% of the model): ${rows.join(' ')}`);
       console.log(`RINGDUMP nodes (${names.length}), meshes marked *:`
         + ` ${names.filter((x) => x.endsWith('*')).join(' ') || 'NONE — everything merged away'}`);
       // ADDRESSABLE IS NOT THE SAME AS HAVING GEOMETRY. A preserved pivot can

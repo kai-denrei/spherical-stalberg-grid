@@ -16,14 +16,14 @@
 
 import * as THREE from '../vendor/three.module.js';
 import { EMOTION_IDS, emotion, phosphorFor } from './emotions.js';
-import { printPhase, printOffset, printOn } from './printpath.js?v=d0e138da';
+import { printPhase, printOffset, printOn } from './printpath.js?v=ecc12837';
 import { loadGlb, mergeByMaterial, fitModel, tintModel, makeShellRack,
-  addEdgeOutlines, makeHeatSleeve } from './glbmodels.js?v=d0e138da';
-import { CREATURES, waveJelly, swimWave, spherePts, bulletPts, missilePts, heartPts, torusPts, towerHeadPts, enemyDotPts, portalPts } from './creatures.js?v=d0e138da';
-import { TOWER_FEEL, TOWER_HEADS, headKindFor } from './towerfeel.js?v=d0e138da';
+  addEdgeOutlines, makeHeatSleeve } from './glbmodels.js?v=ecc12837';
+import { CREATURES, waveJelly, swimWave, spherePts, bulletPts, missilePts, heartPts, torusPts, towerHeadPts, enemyDotPts, portalPts } from './creatures.js?v=ecc12837';
+import { TOWER_FEEL, TOWER_HEADS, headKindFor } from './towerfeel.js?v=ecc12837';
 import { STARGATE_PTS, STARGATE_STROKE,
-  HORIZON_N, stargateHorizon } from './stargate.js?v=d0e138da';
-import { ENEMY_SPEC } from './enemyspec.js?v=d0e138da';
+  HORIZON_N, stargateHorizon } from './stargate.js?v=ecc12837';
+import { ENEMY_SPEC } from './enemyspec.js?v=ecc12837';
 
 function normalizeToUnit(group) {
   group.updateMatrixWorld(true);
@@ -1857,7 +1857,15 @@ export function preloadPortalRing() {
   if (ringLoad) return ringLoad;
   ringLoad = loadGlb(RING_URL).then((scene) => {
     if (!scene) { ringLoad = null; return false; }
-    const merged = mergeByMaterial(scene, RING_PIVOTS, []);
+    // DROP THE HELPERS BEFORE THE MERGE. Base_Collision is a proxy box 67% the
+    // size of the whole model, and Callout_1 is a blueprint label card. Neither
+    // is drawn on the bench — not because it hides them, but because their
+    // authored materials are invisible. The grey repaint below paints EVERY
+    // material, so the first build of this lit the collision box up as a giant
+    // white square standing over the gate. Excluding them here means no later
+    // repaint can bring them back.
+    hideCollisionNodes(scene);
+    const merged = mergeByMaterial(scene, RING_PIVOTS, ['Base_Collision', 'Callout_1', 'AuxScene_Helpers']);
     // Unit-ish: the caller scales to the cell. Height rather than span,
     // because a gate reads by how tall it stands over the wall it is in.
     ringProto = fitModel(merged, { height: 1.0, maxSpan: 1.2 });
