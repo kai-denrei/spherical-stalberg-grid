@@ -17,10 +17,10 @@
 //    total. A failed fetch or decode logs once and that key becomes a
 //    permanent no-op for the session; the game keeps running silent.
 
-import { makeMixState, distanceGain, admit, addVoice, dropVoice } from './audiomix.js?v=a08bf7dd';
-import { SOUNDS, BUSES, DEFAULT_LEVELS, GLOBAL_VOICE_CAP, DISTANCE_K } from './audiomanifest.js?v=a08bf7dd';
-import { mulberry32 } from './rng.js?v=a08bf7dd';
-import { gateStep } from './audiogate.js?v=a08bf7dd';
+import { makeMixState, distanceGain, admit, addVoice, dropVoice } from './audiomix.js?v=b0b57628';
+import { SOUNDS, BUSES, DEFAULT_LEVELS, GLOBAL_VOICE_CAP, DISTANCE_K } from './audiomanifest.js?v=b0b57628';
+import { mulberry32 } from './rng.js?v=b0b57628';
+import { gateStep } from './audiogate.js?v=b0b57628';
 
 const STORE_KEY = 'ssg.audio.levels';
 const STEAL_FADE = 0.03; // s — a hard cut mid-waveform is an audible click
@@ -68,12 +68,59 @@ export function makeAudio(opts = {}) {
 
   function now() { return ctx ? ctx.currentTime : 0; }
 
+  // --- THE LEAK LEDGER ----------------------------------------------------
+  //
+  // The desktop-Safari silence was closed as a leaked AudioContext: contexts
+  // created per page load and never closed, accumulated by WebKit until it
+  // stopped granting audio sessions to this ORIGIN. Quitting Safari cleared
+  // it, and a reboot clears it too.
+  //
+  // That explanation fits every symptom, and it has never once been MEASURED.
+  // It was inferred from a fix — which is exactly the shape of reasoning that
+  // cost this project ten wrong attempts before it, and it leaves the next
+  // recurrence starting from zero all over again.
+  //
+  // So: count. The tally survives reloads (it is the accumulation ACROSS
+  // reloads that the theory is about, and a per-load counter would always
+  // read 1). `created` goes up when a context is born, `closed` when its
+  // close() actually resolves — not when it is requested, because a close
+  // that never settles is precisely the failure being hunted.
+  //
+  // Read it off the console at the next silence:
+  //   leaked climbing with reloads  -> the theory is right, and the release
+  //                                    hook is not firing on this browser
+  //   leaked at 0 or 1 while silent -> the theory is WRONG and two days of
+  //                                    conclusions go with it
+  //
+  // Either answer is worth more than the guess, and neither costs anything.
+  const LEAK_KEY = 'ssg.audio.ledger';
+  function ledgerRead() { return ledger(null); }
+  function ledger(patch) {
+    let v = { created: 0, closed: 0, loads: 0 };
+    try {
+      const raw = localStorage.getItem(LEAK_KEY);
+      if (raw) v = { ...v, ...JSON.parse(raw) };
+    } catch { /* private mode: the ledger is a diagnostic, never a dependency */ }
+    if (patch) {
+      Object.assign(v, patch(v));
+      try { localStorage.setItem(LEAK_KEY, JSON.stringify(v)); } catch { /* ignore */ }
+    }
+    return v;
+  }
+  // exposed so a probe (and the operator's console) can clear it without
+  // hunting for the key
+  function resetLedger() {
+    try { localStorage.removeItem(LEAK_KEY); } catch { /* ignore */ }
+    console.log('AUDIO ledger cleared');
+  }
+
   function ensureCtx() {
     if (ctx) return ctx;
     const Ctor = window.AudioContext || window.webkitAudioContext;
     if (!Ctor) return null;
     try {
       ctx = new Ctor();
+      ledger((v) => ({ created: v.created + 1 }));
       master = ctx.createGain();
       master.gain.value = muted ? 0 : levels.master;
       // A TAP ON THE WAY OUT. Every layer this file can see has reported
@@ -351,7 +398,14 @@ export function makeAudio(opts = {}) {
     // That is a worse bug than the leak it was written to fix.
     const release = () => {
       if (ctx) {
-        try { ctx.close(); } catch { /* already gone */ }
+        // count the close when it RESOLVES. A close that is requested and
+        // never settles looks identical to a healthy one from the call site,
+        // and that difference is the whole question.
+        try {
+          const p = ctx.close();
+          if (p && p.then) p.then(() => ledger((v) => ({ closed: v.closed + 1 })), () => {});
+          else ledger((v) => ({ closed: v.closed + 1 }));
+        } catch { /* already gone */ }
       }
       ctx = null; master = null; analyser = null;
       loadPromise = null; loadStarted = false; loadSettled = false;
@@ -372,8 +426,20 @@ export function makeAudio(opts = {}) {
     // Nothing to do until a gesture: the context is born there (Safari will
     // report one created outside a gesture as `running` and still produce no
     // output), and the decode now rides the same context.
+    const led = ledger((v) => ({ loads: v.loads + 1 }));
+    const leaked = led.created - led.closed;
     console.log('AUDIO armed (context and decode both wait for a gesture)'
       + ` muted=${muted} master=${levels.master}`);
+    // THE ONE LINE TO READ AT THE NEXT SILENCE. WebKit's cap on concurrent
+    // contexts is small; if `leaked` is climbing toward it across reloads,
+    // the leak theory is measured rather than assumed. If it is 0 or 1 and
+    // the page is still silent, the theory is dead and this line says so.
+    console.log(`AUDIO ledger origin=${location.origin} loads=${led.loads}`
+      + ` contexts created=${led.created} closed=${led.closed}`
+      + ` LEAKED=${leaked}`
+      + `${leaked > 3 ? ' — climbing; this is the leak, and pagehide is not releasing'
+        : ' — healthy'}`
+      + ' (audio.resetLedger() to zero it)');
     startListening();
   }
 
@@ -569,6 +635,14 @@ export function makeAudio(opts = {}) {
     // of an audio leak is "it sounds worse now", which is not evidence.
     get voices() { return live.size; },
     get contextState() { return ctx ? `${ctx.state} @${ctx.sampleRate}Hz` : 'none'; },
+    // THE LEAK LEDGER, reachable from the console. `audio.ledger` at the
+    // moment of a silence is the measurement that two days of this bug never
+    // had; `audio.resetLedger()` zeroes it to start a clean count.
+    get ledger() {
+      const v = ledgerRead();
+      return { ...v, leaked: v.created - v.closed, origin: location.origin };
+    },
+    resetLedger,
 
     // Stop everything and unwire it. A new run should not inherit the last
     // run's graph — a bed whose owner was thrown away keeps playing, and

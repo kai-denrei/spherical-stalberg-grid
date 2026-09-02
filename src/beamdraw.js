@@ -32,8 +32,20 @@ import { arcPoint } from './arc.js';
 export const PLASMA_DEFAULTS = {
   coreFrac: 0.45,   // fraction of the reach the hot ribbon root covers
   points: 220,      // dots per gun
-  flare: 0.30,      // plume half-width at the TIP, as a fraction of reach
-  rootFlare: 0.05,  // ...and at the muzzle, so the root is tight, not pinched
+  // Plume half-width at the TIP, as a fraction of reach. 0.30 was a first
+  // guess and it read as a cone twice the tank's width by mid-length; a
+  // flamethrower plume opens, it does not fan.
+  flare: 0.15,
+  // ...and at the MUZZLE, in CELLS — an absolute bore, not a fraction of the
+  // length (operator, 2026-09-02: "the plasma should start thin and out of
+  // the secondary weapons"). As a fraction it scaled with reach, so a rank-15
+  // beam left the tank three times fatter than a rank-1 one for no reason a
+  // nozzle can explain. A muzzle is a fixed size; only the plume opens up.
+  rootFlare: 0.07,
+  // The hot root's width at the muzzle as a fraction of the preset width, so
+  // the core emerges narrow and opens along the chain instead of leaving the
+  // gun already a cell wide.
+  coreRoot: 0.22,
   flow: 1.9,        // plume travels muzzle -> tip this many times a second
   bias: 1.35,       // >1 crowds the dots toward the root, where flame is dense
   squash: 0.55,     // vertical spread against lateral — a plume HUGS
@@ -44,7 +56,10 @@ export const PLASMA_DEFAULTS = {
 // Straight links in the root. Solved, not guessed: at the rank-15 reach the
 // root spans 0.36 rad, so three links sag 0.02 cells — a fortieth of the
 // 3.51 cells a single chord flew.
-export const CORE_SEGS = 3;
+// Five rather than three since the root tapers across them: three steps of
+// width read as a stack of boxes, five read as a cone. Costs four more draw
+// calls on a frame that spends about a thousand.
+export const CORE_SEGS = 5;
 
 // mulberry32, the project's one stream. Copied rather than imported because
 // this module is the render layer and grid.js is the sim layer; a render
@@ -132,9 +147,13 @@ export function createBeamRig({
       a.set(p0[0] * lift, p0[1] * lift, p0[2] * lift);
       b.set(p1[0] * lift, p1[1] * lift, p1[2] * lift);
       bm.setEndpoints(a, b);
+      // NARROW AT THE MUZZLE, opening along the chain. Sampled at each link's
+      // midpoint so the first link is not uniformly the root width.
+      const mid = (k + 0.5) / CORE_SEGS;
+      const wMul = plasma.coreRoot + (1 - plasma.coreRoot) * Math.pow(mid, 0.7);
       for (const key of widthKeys) {
         const u = bm.uniforms['u' + key[0].toUpperCase() + key.slice(1)];
-        if (u) u.value = preset[key] * scale;
+        if (u) u.value = preset[key] * scale * wMul;
       }
       // THE JOINTS MUST NOT TAPER. beamfx fades each ribbon to nothing over
       // capStart/capEnd of its OWN length; leave that on and a chained root
@@ -172,8 +191,14 @@ export function createBeamRig({
       // by construction — so their cross is already unit and a normalise would
       // only cost a sqrt to confirm it.
       const rx = qy * tz - qz * ty, ry = qz * tx - qx * tz, rz = qx * ty - qy * tx;
-      const spread = len * (plasma.rootFlare
-        + (plasma.flare - plasma.rootFlare) * Math.pow(u, 1.6));
+      // Root is an absolute bore (cells -> this frame), tip is proportional
+      // to the reach. `scale / lift` converts a cell into the unit-sphere
+      // frame these offsets are built in, and it lands on the same number on
+      // both surfaces: the board is 1 cell = 0.08 world at lift 1; the lab is
+      // 1 cell = 1 world at lift 12.5.
+      const rootUnit = plasma.rootFlare * scale / lift;
+      const tipUnit = plasma.flare * len;
+      const spread = rootUnit + Math.max(0, tipUnit - rootUnit) * Math.pow(u, 1.6);
       const rr = pl.rad[j] * spread;
       const ang = pl.ang[j] + s * plasma.twist;
       const lat = Math.cos(ang) * rr, vert = Math.sin(ang) * rr * plasma.squash;

@@ -19,46 +19,46 @@
 
 import * as THREE from '../vendor/three.module.js';
 import GUI from '../vendor/lil-gui.esm.js';
-import { generateSphereMesh, relax } from './grid.js?v=a08bf7dd';
-import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=a08bf7dd';
-import { mulberry32, randomSeed } from './rng.js?v=a08bf7dd';
-import { computeBerths, berthIndexFor } from './berths.js?v=a08bf7dd';
-import { wantsSecondary, shellsForAll } from './autofire.js?v=a08bf7dd';
-import { printPhase, printOffset, printOn, patternSecsFor } from './printpath.js?v=a08bf7dd';
-import { createBeamRig, PLASMA_DEFAULTS } from './beamdraw.js?v=a08bf7dd';
-import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3, segKey, tangentDir, tangentBasis } from './vec3.js?v=a08bf7dd';
-import { CREATURES, waveJelly } from './creatures.js?v=a08bf7dd';
-import { brief, dwellFor } from './isaobriefs.js?v=a08bf7dd';
-import { drawEmotion } from './emotions.js?v=a08bf7dd';
+import { generateSphereMesh, relax } from './grid.js?v=b0b57628';
+import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=b0b57628';
+import { mulberry32, randomSeed } from './rng.js?v=b0b57628';
+import { computeBerths, berthIndexFor } from './berths.js?v=b0b57628';
+import { wantsSecondary, shellsForAll } from './autofire.js?v=b0b57628';
+import { printPhase, printOffset, printOn, patternSecsFor } from './printpath.js?v=b0b57628';
+import { createBeamRig, PLASMA_DEFAULTS } from './beamdraw.js?v=b0b57628';
+import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3, segKey, tangentDir, tangentBasis } from './vec3.js?v=b0b57628';
+import { CREATURES, waveJelly } from './creatures.js?v=b0b57628';
+import { brief, dwellFor } from './isaobriefs.js?v=b0b57628';
+import { drawEmotion } from './emotions.js?v=b0b57628';
 import { ACHIEVEMENTS, ACHV_GROUPS, achievement, blankRun, earned, freshlyEarned,
   sanitiseRecord }
-  from './achievements.js?v=a08bf7dd';
+  from './achievements.js?v=b0b57628';
 import { applyFontPack, currentFontPack, FONT_NAMES,
-  loadTypeFeel } from './fonts.js?v=a08bf7dd';
-import { SECONDARY_TOE } from './units.js?v=a08bf7dd';
-import { UNITS, UNIT_NAMES, buildUnit, buildCreature, preloadMkcx, preloadServer, makeServerFixture, makeShieldShell, preloadContainer, makeContainerFixture, preloadFabricator, makeIsaoDrone, makeBulletCloud, makeRewardSolid, makeShellSolid, makeDebris, makeDotBurst, makePortalCloud, makeHeartCloud, makeDotEnemy, preloadTerraformer, makeTerraformerFixture } from './units.js?v=a08bf7dd';
-import { LOOKS, LOOK_NAMES } from './looks.js?v=a08bf7dd';
-import { makeCellIndex } from './cellindex.js?v=a08bf7dd';
-import { CREATURE_TINTS, ENEMY_SPEC, INTROS, computeWavePlan, accentFor } from './enemyspec.js?v=a08bf7dd';
-import { PICKUPS } from './pickups.js?v=a08bf7dd';
-import { rankFor, rankLabel, badgeSVG, killReq, eliteReq } from './ranks.js?v=a08bf7dd';
-import { beamStep, isBeamStep, PEN_SOFT_FRAC, PEN_HARD_FRAC } from './beamranks.js?v=a08bf7dd';
-import { burn, sweepAdvance, wallBite as wallBiteFor } from './beamburn.js?v=a08bf7dd';
-import { arcPoint, projectToArc } from './arc.js?v=a08bf7dd';
-import { makeScore } from './score.js?v=a08bf7dd';
-import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER } from './towers.js?v=a08bf7dd';
-import { makeEconomy, sellRefund } from './economy.js?v=a08bf7dd';
-import { makeBloom } from './postfx.js?v=a08bf7dd';
-import { TANK_FEEL, TANK_FEEL_KNOBS, makeTankFeel, stepTankFeel, landTankFeel, fireTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js?v=a08bf7dd';
-import { FEEL, loadFeel, saveFeel } from './feelstore.js?v=a08bf7dd';
+  loadTypeFeel } from './fonts.js?v=b0b57628';
+import { SECONDARY_TOE } from './units.js?v=b0b57628';
+import { UNITS, UNIT_NAMES, buildUnit, buildCreature, preloadMkcx, preloadServer, makeServerFixture, makeShieldShell, preloadContainer, makeContainerFixture, preloadFabricator, makeIsaoDrone, makeBulletCloud, makeRewardSolid, makeShellSolid, makeDebris, makeDotBurst, makePortalCloud, makeHeartCloud, makeDotEnemy, preloadTerraformer, makeTerraformerFixture } from './units.js?v=b0b57628';
+import { LOOKS, LOOK_NAMES } from './looks.js?v=b0b57628';
+import { makeCellIndex } from './cellindex.js?v=b0b57628';
+import { CREATURE_TINTS, ENEMY_SPEC, INTROS, computeWavePlan, accentFor } from './enemyspec.js?v=b0b57628';
+import { PICKUPS } from './pickups.js?v=b0b57628';
+import { rankFor, rankLabel, badgeSVG, killReq, eliteReq } from './ranks.js?v=b0b57628';
+import { beamStep, isBeamStep, PEN_SOFT_FRAC, PEN_HARD_FRAC } from './beamranks.js?v=b0b57628';
+import { burn, sweepAdvance, wallBite as wallBiteFor } from './beamburn.js?v=b0b57628';
+import { arcPoint, projectToArc } from './arc.js?v=b0b57628';
+import { makeScore } from './score.js?v=b0b57628';
+import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER } from './towers.js?v=b0b57628';
+import { makeEconomy, sellRefund } from './economy.js?v=b0b57628';
+import { makeBloom } from './postfx.js?v=b0b57628';
+import { TANK_FEEL, TANK_FEEL_KNOBS, makeTankFeel, stepTankFeel, landTankFeel, fireTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js?v=b0b57628';
+import { FEEL, loadFeel, saveFeel } from './feelstore.js?v=b0b57628';
 import { STRIKE_KNOBS, makeStrike, makeStrikeParams, grantStrikes, stepStrike,
   toggleArm, paintTarget, launchStrike, stepFall, skipFall, fallProgress,
-  strikeDamage, retargetStrike, orbitProgress } from './strike.js?v=a08bf7dd';
-import { radarBasis, radarProject, radarBearing, sweepAngle, radarPhosphor } from './radar.js?v=a08bf7dd';
-import { BLOOM_GROUPS } from './bloomweights.js?v=a08bf7dd';
-import { TOWER_LOOK_NAMES, DEFAULT_TOWER_LOOK, buildTowerLook, preloadLook } from './towerlooks.js?v=a08bf7dd';
-import { makeAudio } from './audio.js?v=a08bf7dd';
-import { DEATH_KEYS } from './audiomanifest.js?v=a08bf7dd';
+  strikeDamage, retargetStrike, orbitProgress } from './strike.js?v=b0b57628';
+import { radarBasis, radarProject, radarBearing, sweepAngle, radarPhosphor } from './radar.js?v=b0b57628';
+import { BLOOM_GROUPS } from './bloomweights.js?v=b0b57628';
+import { TOWER_LOOK_NAMES, DEFAULT_TOWER_LOOK, buildTowerLook, preloadLook } from './towerlooks.js?v=b0b57628';
+import { makeAudio } from './audio.js?v=b0b57628';
+import { DEATH_KEYS } from './audiomanifest.js?v=b0b57628';
 
 export function initTdTab(root) {
   let active = false;
@@ -5337,10 +5337,10 @@ export function initTdTab(root) {
     if (beamRig) beamRig.setColor(beamStepNow.color);
   }
 
-  function drawBeam(i, from, dir, len, heatFrac) {
+  function drawBeam(i, from, dir, len, heatFrac, lift) {
     ensureBeams().draw(i, {
       from, dir, len, heat: heatFrac,
-      lift: 1 + params.wallHeight * 0.5,
+      lift: lift ?? (1 + params.wallHeight * 0.5),
       scale: cellSide, time: simTime, peak: BEAM_PEAK,
     });
   }
@@ -5473,6 +5473,12 @@ export function initTdTab(root) {
         const gun = guns[gi];
         gun.getWorldPosition(tmpV);
         const from = norm3([tmpV.x, tmpV.y, tmpV.z]);
+        // THE MUZZLE'S OWN RADIUS. The beam used to be flattened onto the
+        // ground lift and so left from UNDER the hull rather than out of the
+        // secondaries — invisible at this scale, obvious in the lab where the
+        // tank is drawn 12x larger. Floored at the ground clearance so it
+        // still rides over wall tops.
+        const gunR = Math.max(tmpV.length(), 1 + params.wallHeight * 0.5);
         gun.getWorldQuaternion(tmpQ);
         tmpV.set(0, 0, 1).applyQuaternion(tmpQ);
         const d0 = [tmpV.x, tmpV.y, tmpV.z];
@@ -5566,7 +5572,7 @@ export function initTdTab(root) {
         const drag = bu.drag, reachLeft = bu.reachLeft;
         // draw the CHOKED length, not the clear-air one
         drawBeam(gi, from, dir, Math.max(cellSide * 0.15, reachLeft),
-          laserHeat / LASER_MAX_HEAT);
+          laserHeat / LASER_MAX_HEAT, gunR);
         // ADVANCE THIS BEAM'S SWEEP, slowed by what it is chewing through.
         // Capped so it always creeps, never freezes; uncapped at the top so a
         // beam that spends the burst inside a hard cluster simply does not
@@ -7781,7 +7787,8 @@ export function initTdTab(root) {
   const plasmaF = gui.addFolder('plasma');
   plasmaF.add(PLASMA, 'coreFrac', 0, 1, 0.01).name('hot root length');
   plasmaF.add(PLASMA, 'flare', 0, 0.8, 0.01).name('tip flare');
-  plasmaF.add(PLASMA, 'rootFlare', 0, 0.3, 0.005).name('root flare');
+  plasmaF.add(PLASMA, 'rootFlare', 0, 0.6, 0.005).name('muzzle bore (cells)');
+  plasmaF.add(PLASMA, 'coreRoot', 0.05, 1, 0.01).name('core width at muzzle');
   plasmaF.add(PLASMA, 'squash', 0, 1.5, 0.05).name('vertical squash');
   plasmaF.add(PLASMA, 'flow', 0, 6, 0.05).name('flow speed');
   plasmaF.add(PLASMA, 'bias', 0.5, 3, 0.05).name('root density');

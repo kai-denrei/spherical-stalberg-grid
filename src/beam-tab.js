@@ -216,9 +216,12 @@ export function initBeamTab(root) {
   const PLASMA = { ...PLASMA_DEFAULTS };
   const rig = createBeamRig({
     scene, guns: 2, preset: P, plasma: PLASMA, seed: 0x91a5be,
-    // widths are in CELLS on the board and one unit IS a cell here, so the
-    // rig's scale is 1 and the preset transfers across untouched
-    widthKeys: [],
+    // Widths are in CELLS on the board and one unit IS a cell here, so the
+    // rig's scale is 1 and the preset transfers across untouched — but the
+    // KEYS still have to be named, or the rig never touches them and the
+    // muzzle taper silently does nothing. An empty list here cost a round of
+    // "why is the root still fat".
+    widthKeys: ['coreWidth', 'glowWidth', 'jitterAmount'],
   });
 
   // --- THE TARGETS (operator, 2026-09-02) ---------------------------------
@@ -421,7 +424,8 @@ export function initBeamTab(root) {
   const gpl = gui.addFolder('plasma');
   gpl.add(PLASMA, 'coreFrac', 0, 1, 0.01).name('hot root length');
   gpl.add(PLASMA, 'flare', 0, 0.8, 0.01).name('tip flare');
-  gpl.add(PLASMA, 'rootFlare', 0, 0.3, 0.005).name('root flare');
+  gpl.add(PLASMA, 'rootFlare', 0, 0.6, 0.005).name('muzzle bore (cells)');
+  gpl.add(PLASMA, 'coreRoot', 0.05, 1, 0.01).name('core width at muzzle');
   gpl.add(PLASMA, 'squash', 0, 1.5, 0.05).name('vertical squash');
   gpl.add(PLASMA, 'flow', 0, 6, 0.05).name('flow speed');
   gpl.add(PLASMA, 'bias', 0.5, 3, 0.05).name('root density');
@@ -539,10 +543,15 @@ export function initBeamTab(root) {
       tmpP.set(0, 0, gunTipZ(pivot) + P.muzzleNudge);
       pivot.localToWorld(tmpP);
       const from = vunit(tmpP);
+      // ...and the muzzle's own RADIUS. Projecting `from` onto the sphere and
+      // then lifting by the stage radius put the beam on the GROUND while the
+      // guns sat above it — the operator's screenshot, exactly: plasma
+      // emerging from under the hull instead of out of the secondaries.
+      const r = tmpP.length();
       pivot.getWorldQuaternion(tmpQ2);
       tmpP.set(0, 0, 1).applyQuaternion(tmpQ2);
       const d0 = [tmpP.x, tmpP.y, tmpP.z];
-      return { from, dir: norm3([d0[0] - from[0] * dot3(d0, from),
+      return { from, r, dir: norm3([d0[0] - from[0] * dot3(d0, from),
         d0[1] - from[1] * dot3(d0, from), d0[2] - from[2] * dot3(d0, from)]) };
     }
     if (!tank) return null;
@@ -550,10 +559,11 @@ export function initBeamTab(root) {
     tmpP.set((g === 0 ? -0.18 : 0.18) * P.spread, 0.22, 0.35);
     tank.localToWorld(tmpP);
     const from = vunit(tmpP);
+    const r = tmpP.length();
     tank.getWorldQuaternion(tmpQ2);
     tmpP.set(0, 0, 1).applyQuaternion(tmpQ2);
     const d0 = [tmpP.x, tmpP.y, tmpP.z];
-    return { from, dir: norm3([d0[0] - from[0] * dot3(d0, from),
+    return { from, r, dir: norm3([d0[0] - from[0] * dot3(d0, from),
       d0[1] - from[1] * dot3(d0, from), d0[2] - from[2] * dot3(d0, from)]) };
   }
 
@@ -631,7 +641,7 @@ export function initBeamTab(root) {
       reports.push(rep);
       rig.draw(g, {
         from: aim.from, dir, len: Math.max(0.05, rep.reachLeft) / LAB_R,
-        heat: heatFrac(), lift: LAB_R, scale: 1, time: t, peak: P.peakIntensity,
+        heat: heatFrac(), lift: aim.r, scale: 1, time: t, peak: P.peakIntensity,
       });
       // MASS IN THE BEAM SLOWS ITS SWEEP, per beam, so the pair falls out of
       // step — the inverse of knock-back, and the reason the lab shows two
@@ -731,9 +741,13 @@ export function initBeamTab(root) {
     // direction per beam (fireFrame), not by rotating the model, because the
     // two beams no longer share one angle once drag pulls them apart
     applyToe(P.toeIn);
+    // ORDER IS LOAD-BEARING: pushParams writes every slider onto every link,
+    // then draw() applies the per-link muzzle taper and the bell on top. A
+    // second pushParams after the draw — which is what used to be here, to
+    // restore uAlpha that beam.update() rewrote — flattens the taper straight
+    // back out. draw() sets alpha itself now, so it is not needed.
     pushParams(alpha);
     fireFrame(dt, t, alpha);
-    if (alpha !== undefined) pushParams(alpha);   // draw() rewrites intensity
     controls.update();
     if (flashT > 0) flashT -= dt;
     if (hud) {
