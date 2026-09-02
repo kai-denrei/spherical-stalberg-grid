@@ -6,6 +6,87 @@ Demo links assume `npm run serve` (port 8144) or the
 
 ---
 
+## `34b9746` — the beam lab gets the real weapon, and a drop-off bench
+
+> "edit the BEAMS tweak page, including to test the different levels,
+> lengths, and adding invincible enemies to test the drop off."
+
+The lab could not do any of the three, and it was the same cause each time:
+**it was drawing a different weapon than the game.** Two straight `beamfx`
+ribbons of arbitrary world length on a flat floor, with no idea that the beam
+pierces, chokes, or curves. So most of this commit is deleting copies.
+
+**Two modules came out of `td-tab`, and both surfaces call them.**
+
+`src/beamburn.js` — the drop-off. It pierces, but every body eats its
+remaining reach; three solid cores stop it dead; a wall bites in the same
+currency; mass slows the sweep per beam so the pair decouples. It sorts
+nearest-first *itself*, because the order is the whole mechanic and no caller
+should be trusted with it. 40 checks, including the one that matters: three
+stop it and two do not, **at every rank step**.
+
+`src/beamdraw.js` — the anatomy. The chained arc root plus the plasma plume,
+the meshes, and the per-frame update. `td-tab` is a rig client now, and so is
+the lab, so the lab *cannot* draw a weapon the board does not. That is the
+anti-drift line this file keeps paying for: the beam preset was once tuned in
+a lab whose tone mapping the game did not have.
+
+**One unit is one cell, and the stage is a sphere.** The board runs a unit
+sphere at `cellSide` 0.08, so its radius is **12.5 cells** — the lab's stage is
+that exact curvature. `beamLength` in arbitrary world units is gone; reach is
+in cells on both sides, free to drag from 0.5 to 14 as well as jump between
+the four rank steps. The ground carries **ring markers at whole-cell
+distances**, so a beam's reach can be read off the floor in the unit the game
+talks in. Not a grid — a grid on a sphere is a projection argument.
+
+The old lab scaled its widths down (`glowWidth` 0.055 against the preset's
+1.0) because a cell meant nothing there. It means something now, and leaving
+them drew the beam **eighteen times too thin to see** — which is exactly how
+the first build of this looked on screen.
+
+**The targets are invincible, as asked, and that is the point.** The drop-off
+is a standing shape you want to look at *while moving sliders*; bodies that
+die rearrange it every two seconds. Count, first distance, gap, body size and
+which of them are the solid tier are all live. Colour carries the rammable
+read, from `enemyspec`'s own belts. Burned bodies light up; the ones the beam
+never reaches go ghostly — and that read **is** the mechanic, because what is
+behind armour is never reached.
+
+Two sizing mistakes worth recording, both caught by looking: bodies at
+`size` 0.9 are larger than the tank and hide the beam they exist to measure
+(the board's whole roster is 0.4–0.55), and an `emissiveIntensity` of 1.5
+under the bloom chain becomes a white ball that swallows the same beam.
+
+**`?labprobe=1`** reports the burn for all four rank steps against the current
+line-up. Against the default row it prints the whole design in five lines:
+
+```
+rank=1  SODIUM reach=4c  ends=2.90c burned=2/4 missed=4.3,5.7 drag=65%
+rank=5  CYAN   reach=6c  ends=2.90c burned=2/4 missed=4.3,5.7 drag=65%
+rank=10 VIOLET reach=8c  ends=3.69c burned=2/4 missed=4.3,5.7 drag=65%
+rank=15 IRON   reach=10c ends=4.30c burned=3/4 missed=5.7     drag=75%
+```
+
+Rank 1 and rank 5 both die in the solid body at 2.9 cells — more reach buys
+nothing against armour you cannot get through. Rank 10 pushes 0.8 cells
+further into it, and only rank 15 comes out the other side and reaches the
+third body. That is the penetration-as-a-fraction decision from `f585653`,
+visible.
+
+**And the bench immediately found something.** `?beamprobe` walks the arc now,
+and reports that at the shipped toe-in of 0.035 the twin beams' apex sits at
+about 11.6 cells — so at rank 1's four-cell reach **they never converge**.
+Whether the pair should meet inside the reach it actually has is a design
+question for the operator; the point here is that a lab measuring in the
+game's own units surfaced it in one line, and the old one could not have.
+
+**Verified.** `npm test` EXIT=0, 31 suites / 966 checks. Both extractions are
+transparent to the game: `?beamfire` burst, cooldown and live colour PASS at
+every rank, and `?arcprobe` still reports 0.000 cells of core altitude over
+6 links.
+
+---
+
 ## `f585653` — the beam hugs the planet, and burns like plasma
 
 > "the beam extends in the air, and for game play we should have hug the
