@@ -1,13 +1,20 @@
-// ranks.js — the tank's field promotion ladder. 15 ranks in three tiers
+// ranks.js — the pilot's field promotion ladder. 15 ranks in three tiers
 // (bronze chevrons, silver chevrons + core diamond, gold stars + laurel),
 // drawn from the operator's rank sheet (ranks.html) with one change asked
 // for by name: 4 and 5 gold stars sit like dice pips — a 2x2 square and a
 // quincunx — instead of an ever-wider row. Tier is derived, never stored.
 //
-// The ladder is the TANK's, not the player's: only hands-on kills climb it
-// (tower and orbital kills pay biomass, not respect), and it resets with
-// the tank that earned it. Gold has a second gate — the dangerous,
+// The ladder is the PILOT's: only hands-on kills climb it (tower and orbital
+// kills pay biomass, not respect). It used to reset with the tank that earned
+// it; it no longer does (operator, 2026-09-02) — the pilot is the player, a
+// disembodied thing that occupies one machine at a time, which is the only
+// reason it cannot drive them all at once. A new RUN starts unranked; a burnt
+// hull costs you the hull. Gold has a second gate — the dangerous,
 // non-rammable tier must be fought up close.
+//
+// Four of the fifteen ranks (1 / 5 / 10 / 15) also rearm the tank's beam.
+// That table is beamranks.js, deliberately not here: this module owns the
+// ladder, not what hangs off it.
 //
 // Pure module: no DOM, no three.js. badgeSVG returns a self-contained
 // string; the tab decides where it lands (HUD span, sprite texture).

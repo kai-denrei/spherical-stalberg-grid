@@ -20,6 +20,7 @@ import { createBeam, DEFAULTS } from './beamfx.js';
 import { makeBloom } from './postfx.js';
 import { LOOKS } from './looks.js';
 import { buildCreature, preloadMkcx, SECONDARY_TOE } from './units.js';
+import { BEAM_STEPS, beamStep } from './beamranks.js';
 
 // the heat clock the secondary actually runs on, mirrored from td-tab so the
 // envelope tuned here is the envelope the weapon will fire
@@ -96,7 +97,16 @@ export function initBeamTab(root) {
     glowWidth: 0.055,
     coreWidth: 0.011,
     jitterAmount: 0.006,
+    // The stage opens on the beam a rank-1 pilot actually fires. beamfx's
+    // own default glow is #006d8f — which is now the RANK 5 colour, so
+    // leaving it would have shown a silver-tier beam and called it the base.
+    glowColor: BEAM_STEPS[0].color,
   };
+  // What `beamLength` means at rank 1 on THIS stage. The board measures reach
+  // in cells and cannot be copied across; the rank picker scales this number
+  // by the step's reach relative to rank 1, so the four beams differ here in
+  // the same proportion they differ on the board.
+  const LAB_LENGTH_AT_RANK1 = 12.0;
 
   const P = {
     ...DEFAULTS,
@@ -127,7 +137,8 @@ export function initBeamTab(root) {
     // pair opens parallel, scissors inward to the midpoint and opens again —
     // the beams sweeping the ground in front rather than sitting in one line.
     sweep: true,
-    sweepAmplitude: 0.40,       // radians of inward toe at the peak
+    sweepAmplitude: 0.20,       // radians of inward toe at the peak (matches BEAM_SWEEP in td-tab)
+    rankStep: BEAM_STEPS[0].minRank,   // which of the four beams is on the stage
     spread: 1.0,                // how far apart the emitters read
     toeIn: SECONDARY_TOE,       // live, so convergence can be tuned by eye
     autoFire: true,
@@ -250,6 +261,23 @@ export function initBeamTab(root) {
   gg.add(P, 'levelBeams').name('level with ground').onChange(() => applyToe());
   gg.add(P, 'sweep').name('sweep across burst');
   gg.add(P, 'sweepAmplitude', 0, 0.8, 0.005).name('sweep amplitude');
+  // THE RANK PICKER. Colour and length are the pilot's rank on the board now
+  // (beamranks.js), so a lab that only ever shows one of the four steps is a
+  // lab that lies about three quarters of the weapon.
+  //
+  // Colour transfers EXACTLY — it is unit-free. Length cannot: the board
+  // measures reach in CELLS and this stage measures it in world units against
+  // a 1-unit tank, so the picker scales the lab's own length by the step's
+  // reach RELATIVE to rank 1 rather than pretending 4 means 4 here. The
+  // proportions are truthful; the absolute number is the lab's.
+  gg.add(P, 'rankStep', BEAM_STEPS.map((b) => b.minRank))
+    .name('rank step (1/5/10/15)')
+    .onChange((r) => {
+      const st = beamStep(Number(r));
+      P.glowColor = st.color;
+      P.beamLength = LAB_LENGTH_AT_RANK1 * (st.reach / BEAM_STEPS[0].reach);
+      gui.controllersRecursive().forEach((c) => c.updateDisplay());
+    });
   gg.open();
 
   const gc = gui.addFolder('core');

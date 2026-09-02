@@ -19,43 +19,44 @@
 
 import * as THREE from '../vendor/three.module.js';
 import GUI from '../vendor/lil-gui.esm.js';
-import { generateSphereMesh, relax } from './grid.js?v=91c002bf';
-import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=91c002bf';
-import { mulberry32, randomSeed } from './rng.js?v=91c002bf';
-import { computeBerths, berthIndexFor } from './berths.js?v=91c002bf';
-import { wantsSecondary, shellsForAll } from './autofire.js?v=91c002bf';
-import { printPhase, printOffset, printOn, patternSecsFor } from './printpath.js?v=91c002bf';
-import { createBeam } from './beamfx.js?v=91c002bf';
-import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3, segKey, tangentDir, tangentBasis } from './vec3.js?v=91c002bf';
-import { CREATURES, waveJelly } from './creatures.js?v=91c002bf';
-import { brief, dwellFor } from './isaobriefs.js?v=91c002bf';
-import { drawEmotion } from './emotions.js?v=91c002bf';
+import { generateSphereMesh, relax } from './grid.js?v=7e1f2fff';
+import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=7e1f2fff';
+import { mulberry32, randomSeed } from './rng.js?v=7e1f2fff';
+import { computeBerths, berthIndexFor } from './berths.js?v=7e1f2fff';
+import { wantsSecondary, shellsForAll } from './autofire.js?v=7e1f2fff';
+import { printPhase, printOffset, printOn, patternSecsFor } from './printpath.js?v=7e1f2fff';
+import { createBeam } from './beamfx.js?v=7e1f2fff';
+import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3, segKey, tangentDir, tangentBasis } from './vec3.js?v=7e1f2fff';
+import { CREATURES, waveJelly } from './creatures.js?v=7e1f2fff';
+import { brief, dwellFor } from './isaobriefs.js?v=7e1f2fff';
+import { drawEmotion } from './emotions.js?v=7e1f2fff';
 import { ACHIEVEMENTS, ACHV_GROUPS, achievement, blankRun, earned, freshlyEarned,
   sanitiseRecord }
-  from './achievements.js?v=91c002bf';
+  from './achievements.js?v=7e1f2fff';
 import { applyFontPack, currentFontPack, FONT_NAMES,
-  loadTypeFeel } from './fonts.js?v=91c002bf';
-import { SECONDARY_TOE } from './units.js?v=91c002bf';
-import { UNITS, UNIT_NAMES, buildUnit, buildCreature, preloadMkcx, preloadServer, makeServerFixture, makeShieldShell, preloadContainer, makeContainerFixture, preloadFabricator, makeIsaoDrone, makeBulletCloud, makeRewardSolid, makeShellSolid, makeDebris, makeDotBurst, makePortalCloud, makeHeartCloud, makeDotEnemy, preloadTerraformer, makeTerraformerFixture } from './units.js?v=91c002bf';
-import { LOOKS, LOOK_NAMES } from './looks.js?v=91c002bf';
-import { makeCellIndex } from './cellindex.js?v=91c002bf';
-import { CREATURE_TINTS, ENEMY_SPEC, INTROS, computeWavePlan, accentFor } from './enemyspec.js?v=91c002bf';
-import { PICKUPS } from './pickups.js?v=91c002bf';
-import { rankFor, rankLabel, badgeSVG, killReq, eliteReq } from './ranks.js?v=91c002bf';
-import { makeScore } from './score.js?v=91c002bf';
-import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER } from './towers.js?v=91c002bf';
-import { makeEconomy, sellRefund } from './economy.js?v=91c002bf';
-import { makeBloom } from './postfx.js?v=91c002bf';
-import { TANK_FEEL, TANK_FEEL_KNOBS, makeTankFeel, stepTankFeel, landTankFeel, fireTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js?v=91c002bf';
-import { FEEL, loadFeel, saveFeel } from './feelstore.js?v=91c002bf';
+  loadTypeFeel } from './fonts.js?v=7e1f2fff';
+import { SECONDARY_TOE } from './units.js?v=7e1f2fff';
+import { UNITS, UNIT_NAMES, buildUnit, buildCreature, preloadMkcx, preloadServer, makeServerFixture, makeShieldShell, preloadContainer, makeContainerFixture, preloadFabricator, makeIsaoDrone, makeBulletCloud, makeRewardSolid, makeShellSolid, makeDebris, makeDotBurst, makePortalCloud, makeHeartCloud, makeDotEnemy, preloadTerraformer, makeTerraformerFixture } from './units.js?v=7e1f2fff';
+import { LOOKS, LOOK_NAMES } from './looks.js?v=7e1f2fff';
+import { makeCellIndex } from './cellindex.js?v=7e1f2fff';
+import { CREATURE_TINTS, ENEMY_SPEC, INTROS, computeWavePlan, accentFor } from './enemyspec.js?v=7e1f2fff';
+import { PICKUPS } from './pickups.js?v=7e1f2fff';
+import { rankFor, rankLabel, badgeSVG, killReq, eliteReq } from './ranks.js?v=7e1f2fff';
+import { beamStep, isBeamStep, PEN_SOFT_FRAC, PEN_HARD_FRAC } from './beamranks.js?v=7e1f2fff';
+import { makeScore } from './score.js?v=7e1f2fff';
+import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER } from './towers.js?v=7e1f2fff';
+import { makeEconomy, sellRefund } from './economy.js?v=7e1f2fff';
+import { makeBloom } from './postfx.js?v=7e1f2fff';
+import { TANK_FEEL, TANK_FEEL_KNOBS, makeTankFeel, stepTankFeel, landTankFeel, fireTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js?v=7e1f2fff';
+import { FEEL, loadFeel, saveFeel } from './feelstore.js?v=7e1f2fff';
 import { STRIKE_KNOBS, makeStrike, makeStrikeParams, grantStrikes, stepStrike,
   toggleArm, paintTarget, launchStrike, stepFall, skipFall, fallProgress,
-  strikeDamage, retargetStrike, orbitProgress } from './strike.js?v=91c002bf';
-import { radarBasis, radarProject, radarBearing, sweepAngle, radarPhosphor } from './radar.js?v=91c002bf';
-import { BLOOM_GROUPS } from './bloomweights.js?v=91c002bf';
-import { TOWER_LOOK_NAMES, DEFAULT_TOWER_LOOK, buildTowerLook, preloadLook } from './towerlooks.js?v=91c002bf';
-import { makeAudio } from './audio.js?v=91c002bf';
-import { DEATH_KEYS } from './audiomanifest.js?v=91c002bf';
+  strikeDamage, retargetStrike, orbitProgress } from './strike.js?v=7e1f2fff';
+import { radarBasis, radarProject, radarBearing, sweepAngle, radarPhosphor } from './radar.js?v=7e1f2fff';
+import { BLOOM_GROUPS } from './bloomweights.js?v=7e1f2fff';
+import { TOWER_LOOK_NAMES, DEFAULT_TOWER_LOOK, buildTowerLook, preloadLook } from './towerlooks.js?v=7e1f2fff';
+import { makeAudio } from './audio.js?v=7e1f2fff';
+import { DEATH_KEYS } from './audiomanifest.js?v=7e1f2fff';
 
 export function initTdTab(root) {
   let active = false;
@@ -5163,6 +5164,7 @@ export function initTdTab(root) {
         + `${tankEliteKills ? ` · ${tankEliteKills} elite` : ''}">`
         + `${badgeSVG(tankRank, 22)} ${rankLabel(tankRank)}</span>`
       : '';
+    applyBeamRank();   // the insignia and the gun are the same readout
     updateHud();
   }
   function harvestTankKill(spec) {
@@ -5176,10 +5178,19 @@ export function initTdTab(root) {
     if (r !== tankRank) {
       tankRank = r;
       refreshRankVisuals();
+      // A BEAM STEP IS A BIGGER EVENT THAN A PROMOTION and says so — four
+      // of the fifteen ranks rearm the secondary, and a player who cannot
+      // tell those apart learns the ladder is cosmetic.
       showToast(`<div class="wave-num">PROMOTED · ${rankLabel(r)}</div>`
-        + `<div class="wave-role">${tankKills} hands-on kills</div>`, 2200);
+        + (isBeamStep(r)
+          ? `<div class="wave-role" style="color:${beamStep(r).color}">`
+            + `SECONDARY REARMED · ${beamStep(r).name} · ${beamStep(r).reach} cells</div>`
+          : `<div class="wave-role">${tankKills} hands-on kills</div>`),
+        isBeamStep(r) ? 3000 : 2200);
     } else updateHud();
   }
+  // A NEW RUN starts unranked — this is the ONLY caller left (loseTank used
+  // to be the other one, and the pilot outliving the hull is what removed it).
   function resetTankRank() {
     if (!tankKills && !tankRank) return;
     tankKills = 0; tankEliteKills = 0; tankRank = 0;
@@ -5239,10 +5250,12 @@ export function initTdTab(root) {
   // of burning one fixed line. Damage follows for free, because it is
   // measured against the same swept direction the beam is drawn along.
   //
-  // Radians. The operator said "0 to 4 to 0"; on this slider that reads as
-  // 0.4 rad — about 23 degrees each side, a wide and obvious sweep. If they
-  // meant something else this is the one number to move.
-  const BEAM_SWEEP = 0.40;
+  // Radians. Started at 0.4 (~23 degrees each side) from the operator's
+  // "0 to 4 to 0"; played, that was a wider scissor than the weapon wants —
+  // the beams spent the burst pointing away from what was in front of them.
+  // 0.2 rad (~11 degrees each side) keeps the traverse legible while the pair
+  // stays on target. This is the one number to move.
+  const BEAM_SWEEP = 0.20;
   // THE SWEEP IS A MOTOR UNDER LOAD (operator, 2026-09-01). Mass in the beam
   // slows its traverse — per beam, independently — so the pair falls out of
   // step and the tank visibly labours through a crowd. This is the inverse of
@@ -5260,8 +5273,12 @@ export function initTdTab(root) {
   // the reach that is left, so the beam shortens as it struggles through.
   // In cells, against a 2.6-cell reach: fodder is nearly free, three solid
   // cores stop it dead.
-  const PEN_SOFT = 0.30;
-  const PEN_HARD = 1.10;
+  // ...and they are FRACTIONS of the reach now, because the reach is no
+  // longer a constant: it climbs with the pilot's rank (beamranks.js). Held
+  // as absolute cells, "three solid cores stop it dead" would quietly stop
+  // being true the moment a rank-15 beam ran to 10 cells.
+  const PEN_SOFT = () => LASER_REACH * PEN_SOFT_FRAC;
+  const PEN_HARD = () => LASER_REACH * PEN_HARD_FRAC;
   // A BOGGED BEAM FALLS BEHIND AND STAYS BEHIND. It does not catch up at the
   // end of the burst — that would hide the cost, which is the point of it.
   const beamPhase = [0, 0];
@@ -5279,7 +5296,28 @@ export function initTdTab(root) {
       scene.add(bm.mesh);
       return bm;
     });
+    applyBeamRank();   // a fresh pair must not be born the base colour
     return tankBeams;
+  }
+
+  // THE BEAM WEARS THE RANK (operator, 2026-09-02). Colour, reach and damage
+  // all step at ranks 1 / 5 / 10 / 15 — the table and the reasoning live in
+  // beamranks.js; this is the two lines that make it real.
+  //
+  // The colour is written to the LIVE uniform rather than baked into
+  // BEAM_PRESET at construction, so a promotion that lands mid-burst
+  // recolours the beam already in the air — which is the whole point of
+  // putting the readout on the weapon instead of in the corner.
+  let beamStepNow = beamStep(0);
+  function applyBeamRank() {
+    beamStepNow = beamStep(tankRank);
+    LASER_DPS = beamStepNow.dps;
+    LASER_REACH = beamStepNow.reach;
+    if (!tankBeams) return;
+    for (const bm of tankBeams) {
+      const u = bm.uniforms.uGlowColor;
+      if (u) u.value.set(beamStepNow.color);
+    }
   }
 
   function drawBeam(i, from, dir, len, heatFrac) {
@@ -5328,8 +5366,12 @@ export function initTdTab(root) {
   // and the multi-target advantage is now paid for twice — the sweep bogs,
   // and the reach chokes. A beam that reaches three bodies is working hard
   // for them.
-  const LASER_DPS = 1.7;
-  const LASER_REACH = 2.6;    // cells, unchanged — reach is not a silent buff
+  // BOTH ARE THE PILOT'S RANK NOW (operator, 2026-09-02) — see beamranks.js
+  // for the four steps and for why penetration had to become a fraction. They
+  // are seeded at the rank-1 step and rewritten by applyBeamRank(); `let`
+  // rather than `const` is the honest shape for a value the ladder moves.
+  let LASER_DPS = beamStep(0).dps;
+  let LASER_REACH = beamStep(0).reach;   // cells
   // Bolts were BoxGeometry — literally blocky (operator ruling). They are
   // round tracers now, the same idiom every tower shot speaks: a hot head
   // with three ghosts strung behind it along the flight line.
@@ -5506,7 +5548,7 @@ export function initTdTab(root) {
           if (hit.t > reachLeft) break;          // the beam died before this one
           damageEnemy(hit.e, tNow, LASER_DPS * dt, false, 'tank');
           drag += hit.e.spec.rammable ? DRAG_SOFT : DRAG_HARD;
-          reachLeft -= (hit.e.spec.rammable ? PEN_SOFT : PEN_HARD) * cellSide;
+          reachLeft -= (hit.e.spec.rammable ? PEN_SOFT() : PEN_HARD()) * cellSide;
           if (reachLeft <= hit.t) { reachLeft = hit.t; break; }   // stops in it
         }
         // draw the CHOKED length, not the clear-air one
@@ -5982,17 +6024,25 @@ export function initTdTab(root) {
   const DOWN_DASH = 1.0;   // seconds of camera, wreck -> camp
 
   function loseTank() {
-    const stripped = tankRank > 0 ? rankLabel(tankRank) : '';
+    // THE RANK SURVIVES THE HULL (operator, 2026-09-02). It used to be
+    // stripped here — "the insignia belonged to that hull" — and that was a
+    // read of who the tank IS. The tank is not the pilot. The pilot is the
+    // player: a disembodied thing that occupies one machine at a time, which
+    // is the only reason it cannot drive them all at once. Burning a hull
+    // costs you the hull.
+    //
+    // What still dies with the wreck is the RAM COMBO, because that one is
+    // genuinely the machine's momentum and nothing carries it out.
+    const carried = tankRank > 0 ? rankLabel(tankRank) : '';
     destroyPlayer();
-    resetTankRank(); // the insignia belonged to that hull
-    ramCombo = 0; ramComboT = 0; syncCombo(); // the combo died with it too
+    ramCombo = 0; ramComboT = 0; syncCombo(); // the combo died with it
 
     // BEAT 1 — the wreck, and the word for it. Losing a hull is the most
     // consequential thing that happens to you and it used to be a toast the
     // size of a wave announcement.
     showToast(`<div class="td-down">MK-CX DOWN!</div>`
       + `<div class="td-down-sub">${playerHP} left`
-      + `${stripped ? ` · ${stripped} insignia lost` : ''}</div>`,
+      + `${carried ? ` · ${carried} carries over` : ''}</div>`,
       (DEATH_HOLD + DOWN_DASH) * 1000);
 
     // THE DEAD RUN'S TIMER MUST NOT LAND ON THE LIVE ONE. This hold is
@@ -8572,6 +8622,13 @@ export function initTdTab(root) {
   // through rather than stopping at the first thing.
   if (urlParams.get('beamfire') === '1') {
     (async () => {
+      // YIELD BEFORE MEASURING ANYTHING. An async IIFE's body runs
+      // SYNCHRONOUSLY up to its first await, and the rest of init — including
+      // the ?rank=N hook several hundred lines below — has not run yet.
+      // Without this the probe measures the boot defaults and silently
+      // ignores every hook it is paired with: ?rank=15&beamfire=1 reported a
+      // rank-0 beam and called it a PASS. Found while wiring the rank steps.
+      await new Promise((r) => setTimeout(r, 0));
       const step = 1 / 60;
       keys.laser = true;
       let rise = 0, fell = 0, peakSeen = 0;
@@ -8593,6 +8650,24 @@ export function initTdTab(root) {
         + ` ${okBurst ? 'PASS' : 'FAIL'}`
         + ` | cooldown=${fell.toFixed(2)}s want ~1.71 ${okCool ? 'PASS' : 'FAIL'}`
         + ` | peak=${peakSeen.toFixed(2)}`);
+
+      // THE COLOUR, read off the LIVE uniform rather than off the table it
+      // came from. The table is already Node-tested; what is untested by
+      // anything but this line is whether applyBeamRank ever reached the
+      // material — and a beam wearing the wrong rank is invisible to every
+      // other probe here, because burst, cooldown and pierce all pass in any
+      // colour. Pair it with ?rank=N.
+      {
+        const bmC = tankBeams && tankBeams[0] && tankBeams[0].uniforms.uGlowColor;
+        const want = new THREE.Color(beamStepNow.color);
+        const got = bmC && bmC.value;
+        const okCol = !!got && Math.abs(got.r - want.r) < 1e-3
+          && Math.abs(got.g - want.g) < 1e-3 && Math.abs(got.b - want.b) < 1e-3;
+        console.log(`BEAMFIRE color=${okCol ? 'PASS' : got ? 'FAIL' : 'INCONCLUSIVE (no beam built)'}`
+          + ` rank=${tankRank} step=${beamStepNow.name} want=${beamStepNow.color}`
+          + `${got ? ` got=#${got.getHexString()}` : ''}`
+          + ` | reach=${LASER_REACH} cells dps=${LASER_DPS}`);
+      }
 
       // PIERCING: line three live enemies up along one beam and check the far
       // ones take damage too. The old bolts stopped at the first.
@@ -8647,7 +8722,7 @@ export function initTdTab(root) {
           // past the end of what is left and must never be touched
           console.log(`BEAMFIRE choke=${!reached ? 'PASS' : 'FAIL'}`
             + ` (three solid cores at ${at.join('/')} cells;`
-            + ` the one at ${at[2]} must be UNREACHED — PEN_HARD=${PEN_HARD}`
+            + ` the one at ${at[2]} must be UNREACHED — PEN_HARD=${PEN_HARD().toFixed(2)}`
             + ` eats the 2.6-cell reach)`);
           // park them, do NOT kill them: the drag check below needs live
           // bodies, and the first cut of this tidied up by killing everything
@@ -9855,8 +9930,43 @@ export function initTdTab(root) {
     tankEliteKills = eliteReq(fr);
     tankRank = rankFor(tankKills, tankEliteKills);
     refreshRankVisuals();
+    // ...and report the BEAM the rank arms, because that is now the half of
+    // a promotion a screenshot cannot show you: the beam only exists while
+    // the trigger is held, so the numbers are the only headless evidence.
     console.log(`RANK forced=${tankRank} label=${rankLabel(tankRank)}`
-      + ` kills=${tankKills} elite=${tankEliteKills}`);
+      + ` kills=${tankKills} elite=${tankEliteKills}`
+      + ` | BEAM ${beamStepNow.name} color=${beamStepNow.color}`
+      + ` reach=${LASER_REACH} cells dps=${LASER_DPS}`
+      + ` pen soft=${PEN_SOFT().toFixed(2)} hard=${PEN_HARD().toFixed(2)}`
+      + ` (3 hard = ${(PEN_HARD() * 3).toFixed(2)} of ${LASER_REACH} —`
+      + ` ${PEN_HARD() * 3 >= LASER_REACH ? 'STOPS it' : 'does NOT stop it'})`);
+  }
+
+  // ?rankprobe=N — THE PILOT OUTLIVES THE HULL (operator, 2026-09-02).
+  // Force rank N, burn the tank, and check the ladder is still standing —
+  // and that the BEAM came back the same colour, because the two are wired
+  // through the same refreshRankVisuals and only one of them is visible in
+  // the HUD. This is the invariant that regresses in silence: nothing else
+  // in the suite would notice a stray resetTankRank() creeping back into
+  // loseTank(), and the whole change is that it is not there.
+  const rankProbe = parseInt(urlParams.get('rankprobe') || '0', 10);
+  if (rankProbe > 0) {
+    const rp = Math.min(15, rankProbe);
+    tankKills = killReq(rp); tankEliteKills = eliteReq(rp);
+    tankRank = rankFor(tankKills, tankEliteKills);
+    refreshRankVisuals();
+    const before = { rank: tankRank, kills: tankKills, step: beamStepNow.name,
+      color: beamStepNow.color, reach: LASER_REACH };
+    playerHP = PLAYER_MAX;     // survive the loss: we want the NEXT hull
+    loseTank();
+    const kept = tankRank === before.rank && tankKills === before.kills;
+    const beamKept = beamStepNow.color === before.color && LASER_REACH === before.reach;
+    console.log(`RANKPROBE survives-hull=${kept ? 'PASS' : 'FAIL'}`
+      + ` rank ${before.rank}->${tankRank} kills ${before.kills}->${tankKills}`
+      + ` | beam=${beamKept ? 'PASS' : 'FAIL'}`
+      + ` ${before.step}/${before.color}/${before.reach}c ->`
+      + ` ${beamStepNow.name}/${beamStepNow.color}/${LASER_REACH}c`
+      + ` | (a NEW RUN still starts unranked — that reset lives in regenerate)`);
   }
 
   // ?gateprobe=1 — report a live gate's geometry: drawRange, and where its
