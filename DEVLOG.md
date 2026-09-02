@@ -6,6 +6,95 @@ Demo links assume `npm run serve` (port 8144) or the
 
 ---
 
+## `f585653` — the beam hugs the planet, and burns like plasma
+
+> "the beam extends in the air, and for game play we should have hug the
+> curvature of the planet, more like plasma flamethrower than pure laser."
+
+The first half was a bug, and the rank ladder had just made it visible.
+
+**The beam was a chord.** `drawBeam` built `from + dir*len` and lifted the
+result, so the tip floated `sqrt(1+t²)-1` above the ground. Measured against
+the board's own numbers (unit sphere, `cellSide` 0.08):
+
+| reach | tip floats | wall walk under-reaches |
+| --- | --- | --- |
+| 2.6 cells (the original) | 0.27 cells | 0.05 cells |
+| 4 cells (rank 1) | 0.62 cells | 0.21 cells |
+| 6 cells (rank 5) | 1.37 cells | 0.53 cells |
+| 8 cells (rank 10) | 2.34 cells | 1.02 cells |
+| 10 cells (rank 15) | 3.51 cells | 1.77 cells |
+
+At 2.6 cells that top row is invisible, which is exactly why it shipped and
+sat there. At 10 it is the beam leaving the planet.
+
+**Underneath, the sim had three disagreeing notions of "along".** This is the
+part that cost damage rather than looks:
+
+- the **wall walk** normalised a chord point (`norm3(from + dir*m)`) — it aims
+  correctly but under-reaches, because `atan(t)` is not `t`;
+- the **enemy test** used the raw chord, with no normalise at all. A body
+  standing on the ground 8 cells out sits 0.19 world units off that line,
+  against a hit radius of at most 0.13. **Every enemy past about five cells
+  was unhittable** — the rank 5/10/15 beams from `31f1100` drew their full
+  length and killed nothing at the far end;
+- only the **drawing** lifted, and it lifted the wrong curve.
+
+`src/arc.js` replaces all three with one parameterisation: **arc length**. On
+a unit sphere arc length is the angle in radians, so a reach measured in world
+units along the ground already *is* the angle — no conversion — and `arcPoint`
+lands on the surface by construction rather than by a normalise that quietly
+rescales the distance. `projectToArc` returns a **signed** `s` so a body behind
+the muzzle is rejected rather than folded forward, and an `off` that counts
+altitude as well as lateral offset, so the existing hit radii carry over
+untouched. 19 checks, and the table above is pinned as assertions — the bug
+cannot come back unnoticed.
+
+**The plasma.** A flamethrower is two things, and the code says so now.
+
+The **root** is the tuned `beamfx` ribbon — kept, not thrown away — chained in
+three short straight links along the great circle. Three because `arcSegments`
+solves it rather than guessing: at the rank-15 reach that is 0.02 cells of sag
+per link, a fortieth of the 3.51 cells the single chord flew. The joints zero
+their `capStart`/`capEnd`; leave those on and beamfx tapers each link to
+nothing, so the root reads as three dashes with gaps instead of one beam.
+
+The **plume** is a dot cloud — this codebase's native idiom (`creatures.js`,
+the warn ring, the range ring all speak it) and one draw call per gun on a
+frame already spending a thousand. Each dot rides muzzle→tip and recycles, so
+the stream reads as something *thrown* rather than a shape *held*; it is
+white-hot at the muzzle, the rank's colour through the body, and gutters out
+at the tip; and it is flattened against the ground (`squash`) rather than
+ballooning, because a plume that is round is a fireball. Phases, angles and
+radii come off the run's seed, so two runs on one seed burn identically.
+
+Every plume number is a live knob under **plasma** in the GUI. That is not
+laziness — the shape of a flame is taste, and this repo's standing position is
+that a derived value is a starting point and nothing more.
+
+**Cost.** Six ribbon links plus two point clouds while firing, against two
+ribbons before: +6 draw calls on a frame that spends ~1022 at wave 4. The
+plume's inner loop shares one `cos`/`sin` pair between `arcPoint` and
+`arcTangent` rather than paying four transcendentals per dot, and skips a
+`norm3` on a cross product that is unit by construction.
+
+**A probe bug on the way, and it is a shape worth naming.** `?arcprobe`
+measured altitude *after* the trigger released — by then `hideBeams()` has run,
+every mesh is invisible, the `visible` guard skipped all of them, the max
+stayed 0, and the check read that as **PASS**. It samples mid-burst now, and
+reports INCONCLUSIVE rather than PASS when it measured nothing. Same family as
+the `?cine=0` lesson: a probe that can pass having observed nothing is worse
+than no probe.
+
+**Verified.** `npm test` EXIT=0, 29 suites. Headless at ranks 1 and 15: core
+altitude **0.000 cells over 6 links**, plume drawn, against the 0.59 and 3.33
+cells the old chord flew at those reaches. Framing the firing beam for a
+screenshot defeated headless — the camera clips inside the hull at `pov` and
+puts the tank off-frame at `third` — so the eye pass is the operator's, which
+is what the knobs are for.
+
+---
+
 ## `31f1100` — the beam wears the rank, and the pilot outlives the hull
 
 Three operator rulings in one pass. The first is a number; the other two
