@@ -108,5 +108,16 @@ while IFS= read -r f; do
   fi
 done < <(find ./src -type f -name '*.js')
 
+# ---------- 5. (project-local) Stamp the service worker's cache key ----------
+# The SW keys its cache name off the same token so there is exactly one version
+# number in the project (copied from blueprint-to-life). test/pwa.mjs asserts the
+# SW token still matches index.html, so a drift fails the suite rather than
+# silently pinning every installed user to an old build.
+if [[ -f sw.js ]]; then
+  sed "${SED_INPLACE[@]}" -E "s/const CB_TOKEN = '[^']*'/const CB_TOKEN = '${TOKEN}'/" sw.js
+  rm -f sw.js.cbbak
+  [[ -z "$QUIET" ]] && echo "  ✓ service worker cache key → ${TOKEN} in sw.js"
+fi
+
 # exit cleanly: the per-file "[[ -z $QUIET ]] && echo" pattern leaves $?=1 under --quiet
 true

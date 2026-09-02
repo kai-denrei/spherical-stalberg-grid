@@ -19,50 +19,52 @@
 
 import * as THREE from '../vendor/three.module.js';
 import GUI from '../vendor/lil-gui.esm.js';
-import { generateSphereMesh, relax } from './grid.js?v=bae30d1e';
-import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=bae30d1e';
-import { mulberry32, randomSeed } from './rng.js?v=bae30d1e';
-import { computeBerths, berthIndexFor } from './berths.js?v=bae30d1e';
-import { wantsSecondary, shellsForAll } from './autofire.js?v=bae30d1e';
-import { printPhase, printOffset, printOn, patternSecsFor } from './printpath.js?v=bae30d1e';
-import { createBeamRig, PLASMA_DEFAULTS, BOARD_PRESET, BEAM_PEAK } from './beamdraw.js?v=bae30d1e';
-import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3, segKey, tangentDir, tangentBasis } from './vec3.js?v=bae30d1e';
-import { CREATURES, waveJelly } from './creatures.js?v=bae30d1e';
-import { brief, dwellFor } from './isaobriefs.js?v=bae30d1e';
-import { drawEmotion } from './emotions.js?v=bae30d1e';
+import { generateSphereMesh, relax } from './grid.js?v=ab898a18';
+import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=ab898a18';
+import { mulberry32, randomSeed } from './rng.js?v=ab898a18';
+import { computeBerths, berthIndexFor } from './berths.js?v=ab898a18';
+import { wantsSecondary, shellsForAll } from './autofire.js?v=ab898a18';
+import { printPhase, printOffset, printOn, patternSecsFor } from './printpath.js?v=ab898a18';
+import { createBeamRig, PLASMA_DEFAULTS, BOARD_PRESET, BEAM_PEAK } from './beamdraw.js?v=ab898a18';
+import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3, segKey, tangentDir, tangentBasis } from './vec3.js?v=ab898a18';
+import { CREATURES, waveJelly } from './creatures.js?v=ab898a18';
+import { brief, dwellFor } from './isaobriefs.js?v=ab898a18';
+import { drawEmotion } from './emotions.js?v=ab898a18';
 import { ACHIEVEMENTS, ACHV_GROUPS, achievement, blankRun, earned, freshlyEarned,
   sanitiseRecord }
-  from './achievements.js?v=bae30d1e';
+  from './achievements.js?v=ab898a18';
 import { applyFontPack, currentFontPack, FONT_NAMES,
-  loadTypeFeel } from './fonts.js?v=bae30d1e';
-import { SECONDARY_TOE, applySecondaryToe } from './units.js?v=bae30d1e';
-import { UNITS, UNIT_NAMES, buildUnit, buildCreature, preloadMkcx, preloadServer, makeServerFixture, makeShieldShell, preloadContainer, makeContainerFixture, preloadFabricator, makeIsaoDrone, makeBulletCloud, makeRewardSolid, makeShellSolid, makeDebris, makeDotBurst, makePortalCloud, preloadPortalRing, makePortalRing, makeHeartCloud, makeDotEnemy, preloadTerraformer, makeTerraformerFixture } from './units.js?v=bae30d1e';
-import { LOOKS, LOOK_NAMES } from './looks.js?v=bae30d1e';
-import { makeCellIndex } from './cellindex.js?v=bae30d1e';
-import { CREATURE_TINTS, ENEMY_SPEC, INTROS, computeWavePlan, accentFor } from './enemyspec.js?v=bae30d1e';
-import { PICKUPS } from './pickups.js?v=bae30d1e';
-import { rankFor, rankLabel, badgeSVG, killReq, eliteReq } from './ranks.js?v=bae30d1e';
-import { beamStep, isBeamStep, PEN_SOFT_FRAC, PEN_HARD_FRAC } from './beamranks.js?v=bae30d1e';
-import { burn, sweepAdvance, wallBite as wallBiteFor } from './beamburn.js?v=bae30d1e';
-import { arcPoint, projectToArc, toeForCrossing, crossingForToe } from './arc.js?v=bae30d1e';
-import { WORMHOLE_PRESET, WORMHOLE_RENDER, RING_SPIN, TRAVEL,
-  travelRate, advancePhase } from './portalfx.js?v=bae30d1e';
-import { WORMHOLE_FRAG } from './fx/wormhole.frag.js?v=bae30d1e';
-import { makeScore } from './score.js?v=bae30d1e';
-import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER } from './towers.js?v=bae30d1e';
-import { makeEconomy, sellRefund } from './economy.js?v=bae30d1e';
-import { makeBloom } from './postfx.js?v=bae30d1e';
-import { TANK_FEEL, TANK_FEEL_KNOBS, makeTankFeel, stepTankFeel, landTankFeel, fireTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js?v=bae30d1e';
-import { FEEL, loadFeel, saveFeel } from './feelstore.js?v=bae30d1e';
+  loadTypeFeel } from './fonts.js?v=ab898a18';
+import { SECONDARY_TOE, applySecondaryToe } from './units.js?v=ab898a18';
+import { UNITS, UNIT_NAMES, buildUnit, buildCreature, preloadMkcx, preloadServer, makeServerFixture, makeShieldShell, preloadContainer, makeContainerFixture, preloadFabricator, makeIsaoDrone, makeBulletCloud, makeRewardSolid, makeShellSolid, makeDebris, makeDotBurst, makePortalCloud, preloadPortalRing, makePortalRing, makeHeartCloud, makeDotEnemy, preloadTerraformer, makeTerraformerFixture } from './units.js?v=ab898a18';
+import { LOOKS, LOOK_NAMES } from './looks.js?v=ab898a18';
+import { makeCellIndex } from './cellindex.js?v=ab898a18';
+import { CREATURE_TINTS, ENEMY_SPEC, INTROS, computeWavePlan, accentFor } from './enemyspec.js?v=ab898a18';
+import { PICKUPS } from './pickups.js?v=ab898a18';
+import { rankFor, rankLabel, badgeSVG, killReq, eliteReq } from './ranks.js?v=ab898a18';
+import { beamStep, isBeamStep, PEN_SOFT_FRAC, PEN_HARD_FRAC } from './beamranks.js?v=ab898a18';
+import { burn, sweepAdvance, wallBite as wallBiteFor } from './beamburn.js?v=ab898a18';
+import { arcPoint, projectToArc, toeForCrossing, crossingForToe } from './arc.js?v=ab898a18';
+import { WORMHOLE_PRESET, RING_SPIN, TRAVEL,
+  travelRate, advancePhase } from './portalfx.js?v=ab898a18';
+import { WORMHOLE_FRAG } from './fx/wormhole.frag.js?v=ab898a18';
+import { makeScore } from './score.js?v=ab898a18';
+import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER } from './towers.js?v=ab898a18';
+import { makeEconomy, sellRefund } from './economy.js?v=ab898a18';
+import { pickTier } from './perftier.js?v=ab898a18';
+import { registerServiceWorker } from './pwa.js?v=ab898a18';
+import { makeBloom } from './postfx.js?v=ab898a18';
+import { TANK_FEEL, TANK_FEEL_KNOBS, makeTankFeel, stepTankFeel, landTankFeel, fireTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js?v=ab898a18';
+import { FEEL, loadFeel, saveFeel } from './feelstore.js?v=ab898a18';
 import { STRIKE_KNOBS, makeStrike, makeStrikeParams, grantStrikes, stepStrike,
   toggleArm, paintTarget, launchStrike, stepFall, skipFall, fallProgress,
-  strikeDamage, retargetStrike, orbitProgress } from './strike.js?v=bae30d1e';
+  strikeDamage, retargetStrike, orbitProgress } from './strike.js?v=ab898a18';
 import { radarBasis, radarProject, radarBearing, sweepAngle, radarPhosphor,
-  proximitySectors, SENSOR_LEVELS } from './radar.js?v=bae30d1e';
-import { BLOOM_GROUPS } from './bloomweights.js?v=bae30d1e';
-import { TOWER_LOOK_NAMES, DEFAULT_TOWER_LOOK, buildTowerLook, preloadLook } from './towerlooks.js?v=bae30d1e';
-import { makeAudio } from './audio.js?v=bae30d1e';
-import { DEATH_KEYS } from './audiomanifest.js?v=bae30d1e';
+  proximitySectors, SENSOR_LEVELS } from './radar.js?v=ab898a18';
+import { BLOOM_GROUPS } from './bloomweights.js?v=ab898a18';
+import { TOWER_LOOK_NAMES, DEFAULT_TOWER_LOOK, buildTowerLook, preloadLook } from './towerlooks.js?v=ab898a18';
+import { makeAudio } from './audio.js?v=ab898a18';
+import { DEATH_KEYS } from './audiomanifest.js?v=ab898a18';
 
 export function initTdTab(root) {
   let active = false;
@@ -163,10 +165,31 @@ export function initTdTab(root) {
     },
   };
 
+  // --- THE MOBILE SHELL (docs/MOBILE-PORT-PLAN.md, phases 1-2) --------------
+  // A second shell over the same game. Desktop never enters this branch; the
+  // shell is a body class the phone CSS keys off and a handful of intents the
+  // game already had. Detection is coarse pointer AND a phone-class width,
+  // overridable either way by ?mobile=1|0 so it can be looked at anywhere.
+  const mobileParam = new URLSearchParams(location.search).get('mobile');
+  const mobileShell = mobileParam === '1' ? true : mobileParam === '0' ? false
+    : (matchMedia('(pointer: coarse)').matches && Math.min(innerWidth, innerHeight) < 900);
+  document.body.classList.toggle('mobile-shell', mobileShell);
+  // THE RENDER BUDGET (plan §2.9): one table, picked once, printed by
+  // ?perf=N next to the draw stats. ?mobile=1|0 forces the matching tier so
+  // a headless run — never coarse — measures what a phone gets; ?tier=
+  // overrides on its own for a phone that wants the desktop look.
+  const tier = pickTier({
+    coarse: matchMedia('(pointer: coarse)').matches,
+    shortSide: Math.min(innerWidth, innerHeight),
+    forced: new URLSearchParams(location.search).get('tier')
+      || (mobileParam === '1' ? 'phone' : mobileParam === '0' ? 'desktop' : null),
+  });
+  const whRender = { ...tier.wormhole };
+
   // --- scene ---------------------------------------------------------------
   const container = root.querySelector('#td-app');
-  const renderer = new THREE.WebGLRenderer({ antialias: true });
-  renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+  const renderer = new THREE.WebGLRenderer({ antialias: tier.antialias });
+  renderer.setPixelRatio(Math.min(devicePixelRatio, tier.dprCap));
   container.appendChild(renderer.domElement);
 
   const scene = new THREE.Scene();
@@ -174,7 +197,7 @@ export function initTdTab(root) {
   scene.background = mainBg;
 
   const camera = new THREE.PerspectiveCamera(68, 1, 0.004, 50);
-  const postfx = makeBloom(renderer, scene, camera, {});
+  const postfx = makeBloom(renderer, scene, camera, { scale: tier.bloomScale });
   // sound. The context can only be born on a user gesture, so arm() wires
   // one-shot listeners and the first tap/keypress creates it. Until then
   // every play() is a silent no-op -- the game never waits on audio.
@@ -1231,15 +1254,6 @@ export function initTdTab(root) {
   const steeringActive = () => steerHold < 1.2;
   let autoMode = false; // AUTO is opt-in (the directive chip); MANUAL is sticky
 
-  // --- THE MOBILE SHELL (docs/MOBILE-PORT-PLAN.md, phases 1-2) --------------
-  // A second shell over the same game. Desktop never enters this branch; the
-  // shell is a body class the phone CSS keys off and a handful of intents the
-  // game already had. Detection is coarse pointer AND a phone-class width,
-  // overridable either way by ?mobile=1|0 so it can be looked at anywhere.
-  const mobileParam = new URLSearchParams(location.search).get('mobile');
-  const mobileShell = mobileParam === '1' ? true : mobileParam === '0' ? false
-    : (matchMedia('(pointer: coarse)').matches && Math.min(innerWidth, innerHeight) < 900);
-  document.body.classList.toggle('mobile-shell', mobileShell);
 
   // TAP-TO-GO (ruling 1, 2026-09-02). On the phone the tank is COMMANDED, not
   // driven: a tap on the ground is a destination, and the graph walker that
@@ -3758,6 +3772,30 @@ export function initTdTab(root) {
   const mobModeEl = root.querySelector('#mob-mode');
   let mobModeLast = -1;
   if (mobModeEl) mobModeEl.addEventListener('click', () => { toggleView(); syncMobMode(); });
+  // SCREEN WAKE LOCK (plan §2.8). A phone dims and sleeps on a screen that is
+  // not being touched, and a wave that is going well is exactly that. Shell
+  // only; re-requested when the tab comes back, because hiding releases it.
+  let wakeLock = null;
+  async function holdWake() {
+    if (!mobileShell || !('wakeLock' in navigator) || document.visibilityState !== 'visible') return;
+    if (wakeLock && !wakeLock.released) return;
+    try { wakeLock = await navigator.wakeLock.request('screen'); } catch { wakeLock = null; }
+  }
+  document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') holdWake(); });
+  root.addEventListener('pointerdown', () => holdWake(), { once: true });
+  holdWake();
+  // THE PWA HOOK: shell only, ?sw=0 opts out. The worker's cache is keyed off
+  // the build token (sw.js); it never skips waiting on its own, and an update
+  // ready is only logged here — the toast is the dedicated project's.
+  if (mobileShell && new URLSearchParams(location.search).get('sw') !== '0') {
+    registerServiceWorker((apply) => {
+      console.log('PWA update ready — ssg.pwaApply() to reload onto it');
+      window.ssg = window.ssg || {};
+      window.ssg.pwaApply = apply;
+    }).then((reg) => {
+      console.log(`PWA sw=${reg ? 'registered' : 'not registered'}${registerServiceWorker.why ? ' (' + registerServiceWorker.why + ')' : ''}`);
+    });
+  }
   function syncMobMode() {
     if (!mobModeEl) return;
     mobModeEl.textContent = buildMode ? 'DRIVE' : 'BUILD';
@@ -8012,7 +8050,7 @@ export function initTdTab(root) {
 
   function ensureWormhole() {
     if (whRt) return whRt;
-    const n = WORMHOLE_RENDER.size;
+    const n = whRender.size;
     whRt = new THREE.WebGLRenderTarget(n, n, {
       minFilter: THREE.LinearFilter, magFilter: THREE.LinearFilter,
       depthBuffer: false, stencilBuffer: false,
@@ -8069,7 +8107,7 @@ export function initTdTab(root) {
     whKick = Math.max(0, whKick - WH_KICK_DECAY * dt);
     whTravelRate = travelRate(secsToWave(), TRAVEL) + whKick;
     advancePhase(whPhase, dt, whTravelRate, WORMHOLE_PRESET.uTimeScale);
-    const period = 1 / Math.max(1, WORMHOLE_RENDER.updateHz);
+    const period = 1 / Math.max(1, whRender.updateHz);
     if (tNow - whLastAt < period) return;
     // NOTHING TO SHOW, NOTHING TO MARCH. The phase keeps advancing above so a
     // gate scrolling back into view is where it should be — but the 377M
@@ -9057,7 +9095,7 @@ export function initTdTab(root) {
     perfEl.innerHTML = `<b>${perfFps.toFixed(0)}</b> fps · ${(1000 / perfFps).toFixed(1)} ms`
       + ` · <b>${r.calls}</b> calls · ${(r.triangles / 1000).toFixed(1)}k tris`
       + ` · ${(r.points / 1000).toFixed(1)}k pts`
-      + (whRt ? ` · wh ${WORMHOLE_RENDER.size}@${WORMHOLE_RENDER.updateHz}` : '');
+      + (whRt ? ` · wh ${whRender.size}@${whRender.updateHz}` : '');
     perfFrames = 0; perfAcc = 0;
     renderer.info.reset();
   }
@@ -11065,6 +11103,9 @@ export function initTdTab(root) {
         }
       });
       console.log(`PERF viewport=${innerWidth}x${innerHeight} dpr=${devicePixelRatio}`);
+      console.log(`PERF tier=${tier.name} renderDpr=${renderer.getPixelRatio()} aa=${tier.antialias}`
+        + ` wormhole=${whRender.size}@${whRender.updateHz} bloom=${tier.bloomScale}`
+        + ` shell=${mobileShell}`);
       // simTime only advances inside advanceMotion, so it is the honest
       // answer to "is the driver live right now"
       console.log(`PERF build=${buildMode} frozenWorld=${buildFrozen()}`
@@ -11552,6 +11593,16 @@ export function initTdTab(root) {
     }, 4200 + LONG_PRESS_MS + 300);
   }
 
+  // ?wake=1 — is the screen being held awake? Reports the lock's state, or
+  // that the API is absent (headless Chrome has none; a phone does).
+  if (urlParams.get('wake') === '1') {
+    setTimeout(() => {
+      console.log(`WAKE shell=${mobileShell} api=${'wakeLock' in navigator}`
+        + ` held=${!!(wakeLock && !wakeLock.released)} visible=${document.visibilityState}`
+        + ` ${!('wakeLock' in navigator) ? 'INCONCLUSIVE (no API here)' : (wakeLock && !wakeLock.released) ? 'PASS' : mobileShell ? '<-- not held' : '(desktop: not requested, by design)'}`);
+    }, 1500);
+  }
+
   // ?whatsat=x,y — after 3s, name every element under that screen point,
   // top first. For the thing in a screenshot that nobody can identify.
   if (urlParams.get('whatsat')) {
@@ -12008,7 +12059,7 @@ export function initTdTab(root) {
       console.log(`GATEPROBE2 ring loaded=${ok}`
         + ` | ${wearing}/${spawnPoints.length} gates wearing the ring`
         + ` ${wearing === spawnPoints.length && spawnPoints.length ? '' : '<-- some fell back to the cloud'}`
-        + ` | one shared target ${whRt ? `${WORMHOLE_RENDER.size}px` : 'NOT BUILT'}`
+        + ` | one shared target ${whRt ? `${whRender.size}px` : 'NOT BUILT'}`
         + ` for all of them`);
       // the ramp, read straight off travelRate at each second of the lead
       const row = [];
@@ -12020,9 +12071,9 @@ export function initTdTab(root) {
       console.log(`GATEPROBE2 five seconds of ramp moved the phase`
         + ` ${(whPhase.travel - p0).toFixed(3)}`
         + ` ${whPhase.travel - p0 > 0 ? '(travel is live)' : '<-- PHASE NEVER MOVED'}`);
-      const folds = WORMHOLE_RENDER.size ** 2 * WORMHOLE_PRESET.uSteps * WORMHOLE_PRESET.uTurbOctaves;
+      const folds = whRender.size ** 2 * WORMHOLE_PRESET.uSteps * WORMHOLE_PRESET.uTurbOctaves;
       console.log(`GATEPROBE2 cost ${(folds / 1e6).toFixed(0)}M sine-folds per rendered frame,`
-        + ` ONCE for the board (not per gate), at ${WORMHOLE_RENDER.updateHz}Hz`);
+        + ` ONCE for the board (not per gate), at ${whRender.updateHz}Hz`);
       // THE FRUSTUM GATE. The march is skipped when no live gate is on screen;
       // a gate that is on screen and NOT marched is a black hole in the ring,
       // so the visibility test has to be right in both directions.
