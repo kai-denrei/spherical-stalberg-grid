@@ -6,6 +6,111 @@ Demo links assume `npm run serve` (port 8144) or the
 
 ---
 
+## `31f1100` — the beam wears the rank, and the pilot outlives the hull
+
+Three operator rulings in one pass. The first is a number; the other two
+change what the weapon and the ladder mean.
+
+**The sweep is 0.2.** It shipped at 0.40 rad, read off "0 to 4 to 0" — about
+23 degrees each side, and in play the pair spent the burst pointing away from
+whatever was in front of it. 0.2 (~11 degrees) keeps the traverse legible with
+the beams still on target. Moved in `td-tab.js` (`BEAM_SWEEP`) **and** in the
+lab (`beam-tab.js`), because the beam lab is only worth having while what you
+see there is what the tank does.
+
+**The beam wears the rank.** `src/beamranks.js` is a four-row table read by
+both surfaces:
+
+| rank | colour | reach | dps |
+| --- | --- | --- | --- |
+| 1 | `#666100` SODIUM | 4 cells | 1.7 |
+| 5 | `#006d8f` CYAN | 6 cells | 2.1 |
+| 10 | `#d357fe` VIOLET | 8 cells | 2.6 |
+| 15 | `#b51a00` IRON | 10 cells | 3.2 |
+
+Colour and reach are the operator's numbers verbatim. The steps are **entry
+plus each tier ceiling** (bronze 5, silver 5, gold 5) — the reward lands when
+a tier is *finished*, not when it is entered, and gold 5 is the only
+double-gated rank on the ladder, so there is nothing above it. Eleven of the
+fifteen promotions stay badge-only, which is why `isBeamStep()` exists: the
+toast says something different for the four that rearm the gun, and a player
+who cannot tell those apart learns the ladder is cosmetic.
+
+The dps column is **a proposal, not an operator number** — they said power
+steps too and did not name it. 1.7 is what already ships and is pinned at
+rank 1 so the opening of a run does not move; the climb is deliberately
+*slower* than the reach climb (1.9x against 2.5x), because length is the
+reward here and damage is the thing that turns a career into a cheat.
+
+`LASER_DPS` and `LASER_REACH` are `let` now, rewritten by `applyBeamRank()`
+off `refreshRankVisuals()` — the insignia and the gun are one readout. The
+colour is written to the live `uGlowColor` uniform rather than baked into
+`BEAM_PRESET` at construction, so a promotion landing mid-burst recolours the
+beam already in the air, which is the whole point of putting the readout on
+the weapon instead of in the corner.
+
+**Penetration had to stop being a distance.** td-tab charges every body the
+beam burns through against the reach it has left, in cells: `PEN_SOFT` 0.30,
+`PEN_HARD` 1.10, tuned so *three solid cores stop it dead* against a 2.6-cell
+reach. Leave those absolute and a rank-15 beam at 10 cells eats three cores
+with 6.7 cells to spare — the choke mechanic dies silently at the exact moment
+the weapon gets long. They are fractions of the live reach now
+(`PEN_SOFT_FRAC`, `PEN_HARD_FRAC`), so the struggle is identical at every step
+and length buys engagement **range** rather than smuggling in a penetration
+buff nobody asked for. `test/beamranks.mjs` asserts three cores stop it and
+two do not, at all four steps — and asserts that the naive version *would*
+have broken at 15, so the reason the module exists is written down as a test
+rather than as a comment.
+
+**The pilot outlives the hull.** `loseTank()` used to call `resetTankRank()`
+— "the insignia belonged to that hull". It does not any more. The tank is not
+the pilot; the pilot is the player, a disembodied thing that occupies one
+machine at a time, which is the only reason it cannot drive them all at once.
+Burning a hull costs you the hull, and the MK-CX DOWN toast now says the rank
+*carries over* where it used to say *insignia lost*. A new **run** still
+starts unranked — `regenerate()` is the only caller of `resetTankRank()` left.
+The ram combo still dies with the wreck; that one genuinely is the machine's
+momentum and nothing carries it out.
+
+**Two bugs surfaced verifying it.**
+
+`?beamfire=1` was measuring the **boot defaults**. An async IIFE's body runs
+synchronously up to its first `await`, and the `?rank=N` hook sits several
+hundred lines further down init — so `?rank=15&beamfire=1` dutifully reported
+a rank-0 beam and called it a PASS. It yields once before measuring anything
+now. Worth noting as a shape, not a one-off: any probe written as a bare async
+IIFE silently ignores every hook declared after it.
+
+And `beamfx.js`'s own default glow is `#006d8f` — which is now the **rank 5**
+colour. The lab would have opened on a silver-tier beam and called it the
+base; `WORLD_SCALED` pins it to the rank-1 colour instead.
+
+**Verifying it.** `npm test` is 28 suites now (`test/beamranks.mjs`, 24
+checks). On the board:
+
+- `?rank=N` reports the armed beam alongside the badge — the beam only exists
+  while the trigger is held, so the numbers are the only headless evidence.
+  Checked at 1 / 4 / 5 / 10 / 14 / 15: the steps land on the right side of
+  every boundary.
+- `?beamfire=1` reads the colour **off the live uniform**, not off the table
+  it came from. The table is already Node-tested; what nothing else covers is
+  whether `applyBeamRank()` ever reached the material — burst, cooldown and
+  pierce all pass in any colour.
+- `?rankprobe=N` forces a rank, burns the tank, and checks both the ladder and
+  the beam are still standing. This is the invariant that would regress in
+  silence: nothing else in the suite would notice a stray `resetTankRank()`
+  creeping back into `loseTank()`, and the whole ruling is that it is not
+  there.
+
+The beam lab gained a **rank step** picker. Colour transfers exactly (it is
+unit-free); length cannot, because the board measures reach in cells and that
+stage measures it in world units against a 1-unit tank — so the picker scales
+the lab's own length by the step's reach *relative to rank 1*. The proportions
+are truthful, the absolute number is the lab's, and that is written in the
+comment so nobody later copies 10 across as if it meant cells.
+
+---
+
 ## `d88471c`..`e7b75d3` — Isao stops asking, and starts explaining
 
 Two halves of playtest item 3, in the order the operator chose: fix the
