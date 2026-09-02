@@ -19,49 +19,49 @@
 
 import * as THREE from '../vendor/three.module.js';
 import GUI from '../vendor/lil-gui.esm.js';
-import { generateSphereMesh, relax } from './grid.js?v=af5b2382';
-import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=af5b2382';
-import { mulberry32, randomSeed } from './rng.js?v=af5b2382';
-import { computeBerths, berthIndexFor } from './berths.js?v=af5b2382';
-import { wantsSecondary, shellsForAll } from './autofire.js?v=af5b2382';
-import { printPhase, printOffset, printOn, patternSecsFor } from './printpath.js?v=af5b2382';
-import { createBeamRig, PLASMA_DEFAULTS, BOARD_PRESET, BEAM_PEAK } from './beamdraw.js?v=af5b2382';
-import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3, segKey, tangentDir, tangentBasis } from './vec3.js?v=af5b2382';
-import { CREATURES, waveJelly } from './creatures.js?v=af5b2382';
-import { brief, dwellFor } from './isaobriefs.js?v=af5b2382';
-import { drawEmotion } from './emotions.js?v=af5b2382';
+import { generateSphereMesh, relax } from './grid.js?v=7a73daf3';
+import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=7a73daf3';
+import { mulberry32, randomSeed } from './rng.js?v=7a73daf3';
+import { computeBerths, berthIndexFor } from './berths.js?v=7a73daf3';
+import { wantsSecondary, shellsForAll } from './autofire.js?v=7a73daf3';
+import { printPhase, printOffset, printOn, patternSecsFor } from './printpath.js?v=7a73daf3';
+import { createBeamRig, PLASMA_DEFAULTS, BOARD_PRESET, BEAM_PEAK } from './beamdraw.js?v=7a73daf3';
+import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3, segKey, tangentDir, tangentBasis } from './vec3.js?v=7a73daf3';
+import { CREATURES, waveJelly } from './creatures.js?v=7a73daf3';
+import { brief, dwellFor } from './isaobriefs.js?v=7a73daf3';
+import { drawEmotion } from './emotions.js?v=7a73daf3';
 import { ACHIEVEMENTS, ACHV_GROUPS, achievement, blankRun, earned, freshlyEarned,
   sanitiseRecord }
-  from './achievements.js?v=af5b2382';
+  from './achievements.js?v=7a73daf3';
 import { applyFontPack, currentFontPack, FONT_NAMES,
-  loadTypeFeel } from './fonts.js?v=af5b2382';
-import { SECONDARY_TOE, applySecondaryToe } from './units.js?v=af5b2382';
-import { UNITS, UNIT_NAMES, buildUnit, buildCreature, preloadMkcx, preloadServer, makeServerFixture, makeShieldShell, preloadContainer, makeContainerFixture, preloadFabricator, makeIsaoDrone, makeBulletCloud, makeRewardSolid, makeShellSolid, makeDebris, makeDotBurst, makePortalCloud, preloadPortalRing, makePortalRing, makeHeartCloud, makeDotEnemy, preloadTerraformer, makeTerraformerFixture } from './units.js?v=af5b2382';
-import { LOOKS, LOOK_NAMES } from './looks.js?v=af5b2382';
-import { makeCellIndex } from './cellindex.js?v=af5b2382';
-import { CREATURE_TINTS, ENEMY_SPEC, INTROS, computeWavePlan, accentFor } from './enemyspec.js?v=af5b2382';
-import { PICKUPS } from './pickups.js?v=af5b2382';
-import { rankFor, rankLabel, badgeSVG, killReq, eliteReq } from './ranks.js?v=af5b2382';
-import { beamStep, isBeamStep, PEN_SOFT_FRAC, PEN_HARD_FRAC } from './beamranks.js?v=af5b2382';
-import { burn, sweepAdvance, wallBite as wallBiteFor } from './beamburn.js?v=af5b2382';
-import { arcPoint, projectToArc, toeForCrossing, crossingForToe } from './arc.js?v=af5b2382';
+  loadTypeFeel } from './fonts.js?v=7a73daf3';
+import { SECONDARY_TOE, applySecondaryToe } from './units.js?v=7a73daf3';
+import { UNITS, UNIT_NAMES, buildUnit, buildCreature, preloadMkcx, preloadServer, makeServerFixture, makeShieldShell, preloadContainer, makeContainerFixture, preloadFabricator, makeIsaoDrone, makeBulletCloud, makeRewardSolid, makeShellSolid, makeDebris, makeDotBurst, makePortalCloud, preloadPortalRing, makePortalRing, makeHeartCloud, makeDotEnemy, preloadTerraformer, makeTerraformerFixture } from './units.js?v=7a73daf3';
+import { LOOKS, LOOK_NAMES } from './looks.js?v=7a73daf3';
+import { makeCellIndex } from './cellindex.js?v=7a73daf3';
+import { CREATURE_TINTS, ENEMY_SPEC, INTROS, computeWavePlan, accentFor } from './enemyspec.js?v=7a73daf3';
+import { PICKUPS } from './pickups.js?v=7a73daf3';
+import { rankFor, rankLabel, badgeSVG, killReq, eliteReq } from './ranks.js?v=7a73daf3';
+import { beamStep, isBeamStep, PEN_SOFT_FRAC, PEN_HARD_FRAC } from './beamranks.js?v=7a73daf3';
+import { burn, sweepAdvance, wallBite as wallBiteFor } from './beamburn.js?v=7a73daf3';
+import { arcPoint, projectToArc, toeForCrossing, crossingForToe } from './arc.js?v=7a73daf3';
 import { WORMHOLE_PRESET, WORMHOLE_RENDER, RING_SPIN, TRAVEL,
-  travelRate, advancePhase } from './portalfx.js?v=af5b2382';
-import { WORMHOLE_FRAG } from './fx/wormhole.frag.js?v=af5b2382';
-import { makeScore } from './score.js?v=af5b2382';
-import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER } from './towers.js?v=af5b2382';
-import { makeEconomy, sellRefund } from './economy.js?v=af5b2382';
-import { makeBloom } from './postfx.js?v=af5b2382';
-import { TANK_FEEL, TANK_FEEL_KNOBS, makeTankFeel, stepTankFeel, landTankFeel, fireTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js?v=af5b2382';
-import { FEEL, loadFeel, saveFeel } from './feelstore.js?v=af5b2382';
+  travelRate, advancePhase } from './portalfx.js?v=7a73daf3';
+import { WORMHOLE_FRAG } from './fx/wormhole.frag.js?v=7a73daf3';
+import { makeScore } from './score.js?v=7a73daf3';
+import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER } from './towers.js?v=7a73daf3';
+import { makeEconomy, sellRefund } from './economy.js?v=7a73daf3';
+import { makeBloom } from './postfx.js?v=7a73daf3';
+import { TANK_FEEL, TANK_FEEL_KNOBS, makeTankFeel, stepTankFeel, landTankFeel, fireTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js?v=7a73daf3';
+import { FEEL, loadFeel, saveFeel } from './feelstore.js?v=7a73daf3';
 import { STRIKE_KNOBS, makeStrike, makeStrikeParams, grantStrikes, stepStrike,
   toggleArm, paintTarget, launchStrike, stepFall, skipFall, fallProgress,
-  strikeDamage, retargetStrike, orbitProgress } from './strike.js?v=af5b2382';
-import { radarBasis, radarProject, radarBearing, sweepAngle, radarPhosphor } from './radar.js?v=af5b2382';
-import { BLOOM_GROUPS } from './bloomweights.js?v=af5b2382';
-import { TOWER_LOOK_NAMES, DEFAULT_TOWER_LOOK, buildTowerLook, preloadLook } from './towerlooks.js?v=af5b2382';
-import { makeAudio } from './audio.js?v=af5b2382';
-import { DEATH_KEYS } from './audiomanifest.js?v=af5b2382';
+  strikeDamage, retargetStrike, orbitProgress } from './strike.js?v=7a73daf3';
+import { radarBasis, radarProject, radarBearing, sweepAngle, radarPhosphor } from './radar.js?v=7a73daf3';
+import { BLOOM_GROUPS } from './bloomweights.js?v=7a73daf3';
+import { TOWER_LOOK_NAMES, DEFAULT_TOWER_LOOK, buildTowerLook, preloadLook } from './towerlooks.js?v=7a73daf3';
+import { makeAudio } from './audio.js?v=7a73daf3';
+import { DEATH_KEYS } from './audiomanifest.js?v=7a73daf3';
 
 export function initTdTab(root) {
   let active = false;
@@ -1096,12 +1096,24 @@ export function initTdTab(root) {
   // gap the hull cannot thread — the second half of the operator's
   // can't-get-out report. Clear of the berth, they go solid again.
   const berthed = () => lifeContainers.some((cc) => cc.ci === player.cur);
+  // THE TERRAFORMER IS SOLID TOO (operator, 2026-09-02: "currently the tank
+  // can drive under"). Its pad radius is measured off the model, so a
+  // re-export follows. Enemies are NOT kept out — they have to reach the
+  // heart — so the cells stay open and only the TANK is turned away.
+  function pedestalRadius() {
+    return heartSprite && heartSprite.userData.padR
+      ? heartSprite.userData.padR * heartSprite.userData.sizeScale : cellSide * 1.4;
+  }
+  function pedestalBlocked(ci) {
+    return dist3(graph.centers[ci], graph.centers[dungeon.heart]) < pedestalRadius() + cellSide * 0.45;
+  }
   function freeBlocked(cand) {
     const ci = cellIndex(cand);
     // the SERVER is solid: a machine you can drive through is a prop, not
     // a fixture (operator field report — the tank phased clean through)
     if (ci === -1 || dungeon.tags[ci] === BLOCKED || ci === serverCi
       || containerBlocked(ci)) return true;
+    if (dist3(cand, graph.centers[dungeon.heart]) < pedestalRadius() + cellSide * 0.3) return true;
     // wide ground keeps the clipping margin; narrow halls trade a little
     // visual overlap for guaranteed passability
     const margin = cellSide * (openCount(ci) <= 3 ? 0.45 : 0.62);
@@ -1145,6 +1157,20 @@ export function initTdTab(root) {
   function wallCushion(pos) {
     const ci = cellIndex(pos);
     if (ci === -1) return pos;
+    // the pedestal first: a hard radial push out of the pad, before the wall
+    // cushion adds its own nudges
+    {
+      const hc = graph.centers[dungeon.heart];
+      const rim = pedestalRadius() + cellSide * 0.35;
+      const d = dist3(pos, hc);
+      if (d < rim) {
+        const away = sub3(pos, hc);
+        const n = norm3(pos);
+        const tg = sub3(away, scale3(n, dot3(away, n)));
+        const l = len3(tg);
+        if (l > 1e-9) pos = norm3(add3(pos, scale3(tg, (rim - d) / l)));
+      }
+    }
     const narrow = openCount(ci) <= 3;
     const margin = cellSide * (narrow ? 0.6 : 0.95);
     let px = 0, py = 0, pz = 0;
@@ -2339,7 +2365,7 @@ export function initTdTab(root) {
     let exits = openNeighbors(player.cur);
     // auto never routes THROUGH a berth (free movement already refuses);
     // if the boxes somehow wall the only way out, solidity yields
-    const clear = exits.filter((e2) => !containerBlocked(e2));
+    const clear = exits.filter((e2) => !containerBlocked(e2) && !pedestalBlocked(e2));
     if (clear.length) exits = clear;
     if (exits.length === 0) return -1;
     // control mode: while the user steers, their intent dominates — the
@@ -3637,7 +3663,16 @@ export function initTdTab(root) {
     if (!cl) return;
     if (cl.contains('msg-regen')) regenerate(); // retry the CURRENT round
     else if (cl.contains('msg-planet')) params.newPlanet(); // a DIFFERENT, bigger world
+    else if (cl.contains('msg-buyhull')) {
+      if (playerHP < PLAYER_MAX && eco.spend(SINK.hull)) {
+        playerHP++; syncLifeContainers(); updateHud(); renderVerdict(false);
+      }
+    }
+    else if (cl.contains('msg-buystrike')) {
+      if (eco.spend(SINK.strike)) { strike.reserved += 1; syncArmUi(); renderVerdict(false); }
+    }
     else if (cl.contains('msg-next')) {
+      if (!eco.spend(sectorToll())) return;   // the toll is the gate
       round++; hackedRound = false; syncHackBtn();
       sectorStartWave = wave;   // the next sector's programme starts here
       strike.reserved += 1; // the platform restocks one round per sector
@@ -5526,7 +5561,12 @@ export function initTdTab(root) {
   // COOLDOWN DURATION IS UNCHANGED. It was MAX_HEAT / COOL = 2.4 / 1.4 ≈
   // 1.71 s, and the operator asked for the same cooldown, so the shed rate
   // rises with the budget instead of the lockout stretching to 4.3 s.
-  const LASER_COOL = LASER_MAX_HEAT / 1.71;
+  // LOCKOUT 1.71s -> 4.5s (operator, 2026-09-02: "longer delay between
+  // plasma gun uses"). The burst stays the length of the sound; what grew is
+  // the wait after it. One constant, so the ?beamfire probe reads it rather
+  // than a second copy of the number.
+  const LASER_LOCKOUT = 4.5;
+  const LASER_COOL = LASER_MAX_HEAT / LASER_LOCKOUT;
   // Damage is SUSTAINED, not per bolt. The old bolt stream was about 2.86/s
   // into ONE target. This is well under it (operator: currently overpowered)
   // and the multi-target advantage is now paid for twice — the sweep bogs,
@@ -7617,9 +7657,11 @@ export function initTdTab(root) {
         if (ci >= 0) preloadContainer().then((ok) => { if (ok && !tfJob) tfStart('container'); });
         return;
       }
-      const dl = g.getObjectByName('Door_L_Pivot'), dr = g.getObjectByName('Door_R_Pivot');
-      if (dl) dl.rotation.y = 0;
-      if (dr) dr.rotation.y = 0;           // sealed: stores, not bays
+      // SEALED, BY GEOMETRY. Rotation 0 is not "shut" — measured, the leaf at
+      // 0 still stands 0.50 deep in the box's frame (the authored rest pose is
+      // ajar), which is why the stores read as open. Find the angle at which
+      // each leaf lies flattest in the end wall and use that.
+      shutDoors(g);
       const c = graph.centers[ci], n = graph.normals[ci], hc = graph.centers[dungeon.heart];
       g.userData.full = [cellSide * 0.45, cellSide * 0.45, cellSide * 0.45 * 0.55];
       g.scale.set(0.001, 0.001, 0.001);
@@ -7633,6 +7675,26 @@ export function initTdTab(root) {
       tfJob = { kind: 'hull', obj: null, ci: dungeon.heart, t: 0, dur: TF.hullSecs, pulseT: 0 };
     }
     if (heartSprite) heartSprite.userData.working = 1;
+  }
+  const doorBox = new THREE.Box3(), doorSz = new THREE.Vector3(), doorInv = new THREE.Matrix4();
+  function shutDoors(g) {
+    g.updateMatrixWorld(true);
+    doorInv.copy(g.matrixWorld).invert();
+    for (const name of ['Door_L_Pivot', 'Door_R_Pivot']) {
+      const piv = g.getObjectByName(name);
+      if (!piv) continue;
+      let bestA = 0, bestZ = Infinity;
+      for (let a = -1.2; a <= 1.2001; a += 0.05) {
+        piv.rotation.y = a; g.updateMatrixWorld(true);
+        doorBox.makeEmpty();
+        piv.traverse((o) => { if (o.isMesh) doorBox.union(new THREE.Box3().setFromObject(o).applyMatrix4(doorInv)); });
+        doorBox.getSize(doorSz);
+        if (doorSz.z < bestZ) { bestZ = doorSz.z; bestA = a; }
+      }
+      piv.rotation.y = bestA;
+      piv.userData.shutAngle = bestA; piv.userData.shutDepth = bestZ;
+    }
+    g.updateMatrixWorld(true);
   }
   function tfMilestone(w) {
     if (w > 0 && w % TF.hullEvery === 0) tfStart('hull');
@@ -8331,6 +8393,31 @@ export function initTdTab(root) {
     msgEl.classList.remove('hidden');
     startReplay();
   }
+  // --- THE SINKS (operator, 2026-09-02) -----------------------------------
+  // "still too generous with the credits. we can play around that by saying
+  // that x amount of biomass is needed to proceed to the next stage, or make
+  // some items really expensive. like an extra tank or orbital strike."
+  //
+  // Both, on the one screen where the run pauses to spend: breaching the
+  // next sector COSTS biomass (the toll climbs per sector), and two things
+  // that used to arrive free are for sale at prices that hurt — a spare
+  // hull and a strike missile. The sim's ledger (spent / earned) is what
+  // says whether these bite; they are numbers, not rulings, and live here in
+  // one place so the next measurement can move them.
+  const SINK = { tollBase: 250, tollStep: 150, hull: 400, strike: 350 };
+  const sectorToll = () => SINK.tollBase + SINK.tollStep * (round - 1);
+  function ordersBlock() {
+    const toll = sectorToll();
+    const can = (c) => eco.canAfford(c);
+    const btn = (cls, label, cost) =>
+      `<button class="${cls}"${can(cost) ? '' : ' disabled'}>${label} &mdash; ${cost}kg`
+      + `${can(cost) ? '' : ' (short)'}</button>`;
+    return `<div class="go-grid"><span>biomass in hand <b>${eco.biomass}kg</b></span></div>`
+      + (playerHP < PLAYER_MAX ? btn('msg-buyhull', '&#9881; print a spare hull', SINK.hull)
+        : `<button disabled>&#9881; hulls full ${playerHP}/${PLAYER_MAX}</button>`)
+      + btn('msg-buystrike', '&#10022; resupply one orbital strike', SINK.strike)
+      + btn('msg-next', `&rsaquo; breach sector ${round + 1} — bigger, farther, meaner`, toll);
+  }
   function renderVerdict(final) {
     cancelAnimationFrame(replayRaf);
     {
@@ -8366,7 +8453,7 @@ export function initTdTab(root) {
           + `</div>`
           + runAchvBlock()
           + `<button class="msg-lap">&#9673; walk the sector &mdash; fly it as ISAO</button>`
-          + `<button class="msg-next">&rsaquo; breach sector ${round + 1} — bigger, farther, meaner</button>`;
+          + ordersBlock();
       }
       msgEl.classList.remove('hidden');
     }
@@ -9519,10 +9606,10 @@ export function initTdTab(root) {
         fell += step;
       }
       const okBurst = Math.abs(rise - LASER_MAX_HEAT) < 0.2;
-      const okCool = Math.abs(fell - 1.71) < 0.25;
+      const okCool = Math.abs(fell - LASER_LOCKOUT) < 0.25;
       console.log(`BEAMFIRE burst=${rise.toFixed(2)}s want ${LASER_MAX_HEAT}`
         + ` ${okBurst ? 'PASS' : 'FAIL'}`
-        + ` | cooldown=${fell.toFixed(2)}s want ~1.71 ${okCool ? 'PASS' : 'FAIL'}`
+        + ` | cooldown=${fell.toFixed(2)}s want ~${LASER_LOCKOUT} ${okCool ? 'PASS' : 'FAIL'}`
         + ` | peak=${peakSeen.toFixed(2)}`);
 
       // THE COLOUR, read off the LIVE uniform rather than off the table it
@@ -10897,7 +10984,8 @@ export function initTdTab(root) {
       // "only then do we have the option to walk the planet, start another"
       const hadOrdersEarly = !!msgEl.querySelector('.msg-lap, .msg-next, .msg-planet');
       msgEl.querySelector('.msg-proceed').click();
-      const orders = [...msgEl.querySelectorAll('.msg-lap, .msg-next, .msg-planet')].map((b) => b.className);
+      const orders = [...msgEl.querySelectorAll('.msg-lap, .msg-next, .msg-planet, .msg-buyhull, .msg-buystrike')]
+        .map((b) => b.className + (b.disabled ? '(short)' : ''));
       console.log(`DEBRIEF stage=verdict orders=[${orders.join(', ')}]`
         + ` ordersBeforeProceed=${hadOrdersEarly}`
         + ` ${!hadOrdersEarly && orders.length >= 2 ? '(gated correctly)' : '<-- WRONG ORDER'}`);
@@ -10923,6 +11011,26 @@ export function initTdTab(root) {
       for (const y of tfYard) {
         y.obj.updateMatrixWorld(true); bb2.setFromObject(y.obj); bb2.getSize(sz2);
         const d = dist3(hc, graph.centers[y.ci]) / cellSide;
+        const dl2 = y.obj.getObjectByName('Door_L_Pivot');
+        const bl = lifeContainers[0] && lifeContainers[0].obj.getObjectByName('Door_L_Pivot');
+        console.log(`TERRA store doors: L=${dl2 ? dl2.rotation.y.toFixed(2) : '?'}`
+          + ` (berth container L=${bl ? bl.rotation.y.toFixed(2) : '?'}, which stands OPEN)`);
+        // WHICH POSE IS SHUT? Measure the leaf, not the angle: in the box's own
+        // frame a closed door lies flat in the end wall (wide in x, thin in
+        // z); an open one stands out along z.
+        if (dl2) {
+          const inv = new THREE.Matrix4().copy(y.obj.matrixWorld).invert();
+          const leafBox = (ang) => {
+            const keep = dl2.rotation.y; dl2.rotation.y = ang; y.obj.updateMatrixWorld(true);
+            const lb = new THREE.Box3(); const ls = new THREE.Vector3();
+            dl2.traverse((o) => { if (!o.isMesh) return;
+              lb.union(new THREE.Box3().setFromObject(o).applyMatrix4(inv)); });
+            lb.getSize(ls); dl2.rotation.y = keep; y.obj.updateMatrixWorld(true);
+            return `x${ls.x.toFixed(2)} z${ls.z.toFixed(2)} -> ${ls.x > ls.z * 1.5 ? 'FLAT IN THE END WALL (shut)' : ls.z > ls.x * 1.5 ? 'STANDING OUT (open)' : 'ambiguous'}`;
+          };
+          console.log(`TERRA door leaf at 0.00: ${leafBox(0)} | at -1.90: ${leafBox(-1.9)}`
+            + ` | SHUT at ${(dl2.userData.shutAngle ?? 0).toFixed(2)}: depth z${(dl2.userData.shutDepth ?? NaN).toFixed(2)}`);
+        }
         console.log(`TERRA store at cell ${y.ci}: ${d.toFixed(2)} cells from the heart,`
           + ` pedestal radius ${padCells.toFixed(2)} cells`
           + ` ${d < padCells ? '<-- UNDER THE PEDESTAL' : '(clear of it)'}`
@@ -10933,6 +11041,25 @@ export function initTdTab(root) {
         + ` (every ${TF.containerEvery} a store, every ${TF.hullEvery} a hull)`
         + ` ${tfContainers > 0 && tfHulls > 0 ? 'BOTH PRODUCTS LANDED' : '<-- something did not build'}`);
     });
+  }
+
+  // ?pedprobe=1 — push the tank straight at the heart through the cushion and
+  // report how close it gets, against the pad radius.
+  if (urlParams.get('pedprobe') === '1') {
+    setTimeout(() => {
+      const hc = graph.centers[dungeon.heart];
+      let p2 = norm3(add3(hc, scale3(norm3(sub3(graph.centers[dungeon.spawn], hc)), cellSide * 4)));
+      let closest = Infinity;
+      for (let i = 0; i < 400; i++) {
+        p2 = norm3(add3(p2, scale3(norm3(sub3(hc, p2)), cellSide * 0.05)));
+        p2 = wallCushion(p2);
+        closest = Math.min(closest, dist3(p2, hc));
+      }
+      const pad = pedestalRadius();
+      console.log(`PEDPROBE closest approach ${(closest / cellSide).toFixed(2)} cells,`
+        + ` pad radius ${(pad / cellSide).toFixed(2)} cells`
+        + ` ${closest >= pad ? '(kept OUT — solid)' : '<-- DROVE UNDER'}`);
+    }, 1500);
   }
 
   // ?newplanet=1 — press the final verdict's button without earning it
