@@ -5,22 +5,22 @@
    back to a system face until the subset is rebuilt. */
 @font-face {
   font-family: 'VT323';
-  src: url('assets/fonts/VT323.woff2?v=ac64f4fe') format('woff2');
+  src: url('assets/fonts/VT323.woff2?v=2ae0fb50') format('woff2');
   font-weight: 400; font-style: normal; font-display: swap;
 }
 @font-face {
   font-family: 'Press Start 2P';
-  src: url('assets/fonts/PressStart2P.woff2?v=ac64f4fe') format('woff2');
+  src: url('assets/fonts/PressStart2P.woff2?v=2ae0fb50') format('woff2');
   font-weight: 400; font-style: normal; font-display: swap;
 }
 @font-face {
   font-family: 'Share Tech Mono';
-  src: url('assets/fonts/ShareTechMono.woff2?v=ac64f4fe') format('woff2');
+  src: url('assets/fonts/ShareTechMono.woff2?v=2ae0fb50') format('woff2');
   font-weight: 400; font-style: normal; font-display: swap;
 }
 @font-face {
   font-family: 'DotGothic16';
-  src: url('assets/fonts/DotGothic16.woff2?v=ac64f4fe') format('woff2');
+  src: url('assets/fonts/DotGothic16.woff2?v=2ae0fb50') format('woff2');
   font-weight: 400; font-style: normal; font-display: swap;
 }
 
@@ -3767,14 +3767,63 @@ body.mobile-shell #mob-mode {
   touch-action: manipulation;
 }
 body.mobile-shell.mob-build #mob-mode { background: rgba(134, 255, 158, 0.16); border-color: rgba(134, 255, 158, 0.75); }
-body.mobile-shell:not(.mob-build) #td-pad-left,
-body.mobile-shell:not(.mob-build) #td-pad-right,
-body.mobile-shell:not(.mob-build) #td-throttle,
+body.mobile-shell #td-pad-left, body.mobile-shell #td-pad-right, body.mobile-shell #td-throttle,
+body.mobile-shell #td-hint,   /* key legend: there are no keys */
 body.mobile-shell #td-pad-dir, body.mobile-shell #td-pad-tank, body.mobile-shell #td-pad-orbit,
 body.mobile-shell #td-pad-map, body.mobile-shell #td-pad-ctrheart, body.mobile-shell #td-pad-ctrtank,
 body.mobile-shell #td-pad-sound { display: none !important; }
 body.mobile-shell #td-pad-fire, body.mobile-shell #td-pad-laser { min-width: 64px; min-height: 64px; font-size: 22px; }
 body.mobile-shell #td-app { touch-action: none; }
+/* Phase 4 — HUD SUBTRACTION PER MODE, AND CAPTIONS.
+   DRIVE shows what a sub-second read needs: vitals + resources, the wave
+   clock, a compact launch console, the radar, the two thumbs. Score, the
+   objectives row and the drones' status lines belong to BUILD, the calm
+   mode, which in turn drops the thumbs, the console and the radar (orbit
+   shows the whole planet). Isao's channel and the announcement lane leave
+   the sightline: both anchor to the bottom edge beside the radar, as
+   captions — nothing to dismiss, nothing over the board. Sizes are set here
+   rather than inherited from the coarse-pointer block so the headless ruler
+   (which is never coarse) measures what a phone gets. */
+body.mobile-shell #td-stats.hud-panel { line-height: 1.38; padding: 5px 10px 6px; min-width: 0; }
+body.mobile-shell #td-stats.hud-panel .hud-meta { font-size: 9px; }
+body.mobile-shell #td-stats.hud-panel .hud-meta b { font-size: 11px; }
+body.mobile-shell #td-stats.hud-panel .hud-vitals { font-size: 12px; }
+body.mobile-shell #td-stats.hud-panel .hud-wave b { font-size: 13px; }
+body.mobile-shell #td-stats.hud-panel .hud-obj, body.mobile-shell #td-stats.hud-panel .hud-alert { font-size: 9px; }
+body.mobile-shell:not(.mob-build) #td-stats.hud-panel .hud-meta,
+body.mobile-shell:not(.mob-build) #td-stats.hud-panel .hud-obj { display: none; }
+/* the launch console, compact: safety + status + button. The target is read
+   on the board, not off a readout. */
+body.mobile-shell #td-launch { top: 52px; width: auto; min-height: 0; padding: 4px 8px; gap: 8px; }
+body.mobile-shell #td-launch-readout .target { display: none; }
+body.mobile-shell #td-launch-readout .status { font-size: 9px; }
+body.mobile-shell.mob-build #td-pad-fire, body.mobile-shell.mob-build #td-pad-laser,
+body.mobile-shell.mob-build #td-launch, body.mobile-shell.mob-build #tab-td .minimap,
+body.mobile-shell.mob-build #td-hack, body.mobile-shell.mob-build #td-hackprompt { display: none !important; }
+/* captions: Isao beside the radar on the bottom edge, the lane just above him */
+body.mobile-shell #td-brief {
+  left: 124px; bottom: max(8px, env(safe-area-inset-bottom));
+  width: min(520px, calc(100vw - 340px)); padding: 6px 10px; gap: 8px;
+  /* a transform-free entrance: wave-pop starts at translateX(-50%), and CSS
+     animations do not advance under headless virtual time, so the ruler
+     measured the brief frozen on its first frame, centred on its own left
+     edge. Fade in, and the rectangle is the rectangle. */
+  transform: none; animation: td-caption-pop 0.25s ease-out;
+}
+@keyframes td-caption-pop { from { opacity: 0; } to { opacity: 1; } }
+body.mobile-shell #td-brief-face { width: 56px; height: 56px; }
+/* the vertical budget at 844x303 (the ruler's landscape) is the top band
+   (~150), a lane (~55) and Isao (~85): Isao is wide and small so his long
+   lines wrap to two, not three */
+body.mobile-shell #td-brief-line { font-size: 11px; line-height: 1.35; margin: 0; }
+body.mobile-shell #td-brief-title { font-size: 9px; }
+body.mobile-shell #td-brief-foot { font-size: 10px; }
+body.mobile-shell #td-sitrep, body.mobile-shell #td-wave, body.mobile-shell #td-toast, body.mobile-shell #td-tower {
+  left: 124px; right: auto; top: auto; bottom: 100px; transform: none; animation: td-caption-pop 0.25s ease-out;
+  width: min(300px, 40vw); min-width: 0; max-width: 40vw; font-size: 11px; padding: 5px 10px 6px;
+}
+body.mobile-shell #td-toast .wave-num, body.mobile-shell #td-wave .wave-num, body.mobile-shell #td-tower .wave-num { font-size: 12px; line-height: 1.25; }
+body.mobile-shell #td-toast .wave-role, body.mobile-shell #td-wave .wave-name, body.mobile-shell #td-tower .wave-name { font-size: 10px; }
 @media (orientation: portrait) {
   body.mobile-shell #td-rotate {
     display: flex; position: fixed; inset: 0; z-index: 70;

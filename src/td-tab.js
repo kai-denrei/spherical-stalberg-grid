@@ -19,50 +19,50 @@
 
 import * as THREE from '../vendor/three.module.js';
 import GUI from '../vendor/lil-gui.esm.js';
-import { generateSphereMesh, relax } from './grid.js?v=ac64f4fe';
-import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=ac64f4fe';
-import { mulberry32, randomSeed } from './rng.js?v=ac64f4fe';
-import { computeBerths, berthIndexFor } from './berths.js?v=ac64f4fe';
-import { wantsSecondary, shellsForAll } from './autofire.js?v=ac64f4fe';
-import { printPhase, printOffset, printOn, patternSecsFor } from './printpath.js?v=ac64f4fe';
-import { createBeamRig, PLASMA_DEFAULTS, BOARD_PRESET, BEAM_PEAK } from './beamdraw.js?v=ac64f4fe';
-import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3, segKey, tangentDir, tangentBasis } from './vec3.js?v=ac64f4fe';
-import { CREATURES, waveJelly } from './creatures.js?v=ac64f4fe';
-import { brief, dwellFor } from './isaobriefs.js?v=ac64f4fe';
-import { drawEmotion } from './emotions.js?v=ac64f4fe';
+import { generateSphereMesh, relax } from './grid.js?v=2ae0fb50';
+import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=2ae0fb50';
+import { mulberry32, randomSeed } from './rng.js?v=2ae0fb50';
+import { computeBerths, berthIndexFor } from './berths.js?v=2ae0fb50';
+import { wantsSecondary, shellsForAll } from './autofire.js?v=2ae0fb50';
+import { printPhase, printOffset, printOn, patternSecsFor } from './printpath.js?v=2ae0fb50';
+import { createBeamRig, PLASMA_DEFAULTS, BOARD_PRESET, BEAM_PEAK } from './beamdraw.js?v=2ae0fb50';
+import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3, segKey, tangentDir, tangentBasis } from './vec3.js?v=2ae0fb50';
+import { CREATURES, waveJelly } from './creatures.js?v=2ae0fb50';
+import { brief, dwellFor } from './isaobriefs.js?v=2ae0fb50';
+import { drawEmotion } from './emotions.js?v=2ae0fb50';
 import { ACHIEVEMENTS, ACHV_GROUPS, achievement, blankRun, earned, freshlyEarned,
   sanitiseRecord }
-  from './achievements.js?v=ac64f4fe';
+  from './achievements.js?v=2ae0fb50';
 import { applyFontPack, currentFontPack, FONT_NAMES,
-  loadTypeFeel } from './fonts.js?v=ac64f4fe';
-import { SECONDARY_TOE, applySecondaryToe } from './units.js?v=ac64f4fe';
-import { UNITS, UNIT_NAMES, buildUnit, buildCreature, preloadMkcx, preloadServer, makeServerFixture, makeShieldShell, preloadContainer, makeContainerFixture, preloadFabricator, makeIsaoDrone, makeBulletCloud, makeRewardSolid, makeShellSolid, makeDebris, makeDotBurst, makePortalCloud, preloadPortalRing, makePortalRing, makeHeartCloud, makeDotEnemy, preloadTerraformer, makeTerraformerFixture } from './units.js?v=ac64f4fe';
-import { LOOKS, LOOK_NAMES } from './looks.js?v=ac64f4fe';
-import { makeCellIndex } from './cellindex.js?v=ac64f4fe';
-import { CREATURE_TINTS, ENEMY_SPEC, INTROS, computeWavePlan, accentFor } from './enemyspec.js?v=ac64f4fe';
-import { PICKUPS } from './pickups.js?v=ac64f4fe';
-import { rankFor, rankLabel, badgeSVG, killReq, eliteReq } from './ranks.js?v=ac64f4fe';
-import { beamStep, isBeamStep, PEN_SOFT_FRAC, PEN_HARD_FRAC } from './beamranks.js?v=ac64f4fe';
-import { burn, sweepAdvance, wallBite as wallBiteFor } from './beamburn.js?v=ac64f4fe';
-import { arcPoint, projectToArc, toeForCrossing, crossingForToe } from './arc.js?v=ac64f4fe';
+  loadTypeFeel } from './fonts.js?v=2ae0fb50';
+import { SECONDARY_TOE, applySecondaryToe } from './units.js?v=2ae0fb50';
+import { UNITS, UNIT_NAMES, buildUnit, buildCreature, preloadMkcx, preloadServer, makeServerFixture, makeShieldShell, preloadContainer, makeContainerFixture, preloadFabricator, makeIsaoDrone, makeBulletCloud, makeRewardSolid, makeShellSolid, makeDebris, makeDotBurst, makePortalCloud, preloadPortalRing, makePortalRing, makeHeartCloud, makeDotEnemy, preloadTerraformer, makeTerraformerFixture } from './units.js?v=2ae0fb50';
+import { LOOKS, LOOK_NAMES } from './looks.js?v=2ae0fb50';
+import { makeCellIndex } from './cellindex.js?v=2ae0fb50';
+import { CREATURE_TINTS, ENEMY_SPEC, INTROS, computeWavePlan, accentFor } from './enemyspec.js?v=2ae0fb50';
+import { PICKUPS } from './pickups.js?v=2ae0fb50';
+import { rankFor, rankLabel, badgeSVG, killReq, eliteReq } from './ranks.js?v=2ae0fb50';
+import { beamStep, isBeamStep, PEN_SOFT_FRAC, PEN_HARD_FRAC } from './beamranks.js?v=2ae0fb50';
+import { burn, sweepAdvance, wallBite as wallBiteFor } from './beamburn.js?v=2ae0fb50';
+import { arcPoint, projectToArc, toeForCrossing, crossingForToe } from './arc.js?v=2ae0fb50';
 import { WORMHOLE_PRESET, WORMHOLE_RENDER, RING_SPIN, TRAVEL,
-  travelRate, advancePhase } from './portalfx.js?v=ac64f4fe';
-import { WORMHOLE_FRAG } from './fx/wormhole.frag.js?v=ac64f4fe';
-import { makeScore } from './score.js?v=ac64f4fe';
-import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER } from './towers.js?v=ac64f4fe';
-import { makeEconomy, sellRefund } from './economy.js?v=ac64f4fe';
-import { makeBloom } from './postfx.js?v=ac64f4fe';
-import { TANK_FEEL, TANK_FEEL_KNOBS, makeTankFeel, stepTankFeel, landTankFeel, fireTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js?v=ac64f4fe';
-import { FEEL, loadFeel, saveFeel } from './feelstore.js?v=ac64f4fe';
+  travelRate, advancePhase } from './portalfx.js?v=2ae0fb50';
+import { WORMHOLE_FRAG } from './fx/wormhole.frag.js?v=2ae0fb50';
+import { makeScore } from './score.js?v=2ae0fb50';
+import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER } from './towers.js?v=2ae0fb50';
+import { makeEconomy, sellRefund } from './economy.js?v=2ae0fb50';
+import { makeBloom } from './postfx.js?v=2ae0fb50';
+import { TANK_FEEL, TANK_FEEL_KNOBS, makeTankFeel, stepTankFeel, landTankFeel, fireTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js?v=2ae0fb50';
+import { FEEL, loadFeel, saveFeel } from './feelstore.js?v=2ae0fb50';
 import { STRIKE_KNOBS, makeStrike, makeStrikeParams, grantStrikes, stepStrike,
   toggleArm, paintTarget, launchStrike, stepFall, skipFall, fallProgress,
-  strikeDamage, retargetStrike, orbitProgress } from './strike.js?v=ac64f4fe';
+  strikeDamage, retargetStrike, orbitProgress } from './strike.js?v=2ae0fb50';
 import { radarBasis, radarProject, radarBearing, sweepAngle, radarPhosphor,
-  proximitySectors, SENSOR_LEVELS } from './radar.js?v=ac64f4fe';
-import { BLOOM_GROUPS } from './bloomweights.js?v=ac64f4fe';
-import { TOWER_LOOK_NAMES, DEFAULT_TOWER_LOOK, buildTowerLook, preloadLook } from './towerlooks.js?v=ac64f4fe';
-import { makeAudio } from './audio.js?v=ac64f4fe';
-import { DEATH_KEYS } from './audiomanifest.js?v=ac64f4fe';
+  proximitySectors, SENSOR_LEVELS } from './radar.js?v=2ae0fb50';
+import { BLOOM_GROUPS } from './bloomweights.js?v=2ae0fb50';
+import { TOWER_LOOK_NAMES, DEFAULT_TOWER_LOOK, buildTowerLook, preloadLook } from './towerlooks.js?v=2ae0fb50';
+import { makeAudio } from './audio.js?v=2ae0fb50';
+import { DEATH_KEYS } from './audiomanifest.js?v=2ae0fb50';
 
 export function initTdTab(root) {
   let active = false;
@@ -3698,10 +3698,13 @@ export function initTdTab(root) {
   const dirBtnEl = root.querySelector('#td-pad-dir');
   const msgEl = root.querySelector('#td-msg');
   // The shell's ONE big control (ruling 3): DRIVE <-> BUILD, and the view
-  // follows the mode. It calls the same toggleBuild the desktop chip calls.
+  // follows the mode. Build mode IS the orbit view (setView owns buildMode),
+  // so this is the desktop's own third<->orbit toggle. The phase-2 cut called
+  // a `toggleBuild` that never existed — the probe drove the tank and never
+  // tapped the button, so a ReferenceError shipped. Now the probe taps it.
   const mobModeEl = root.querySelector('#mob-mode');
   let mobModeLast = -1;
-  if (mobModeEl) mobModeEl.addEventListener('click', () => { toggleBuild(); syncMobMode(); });
+  if (mobModeEl) mobModeEl.addEventListener('click', () => { toggleView(); syncMobMode(); });
   function syncMobMode() {
     if (!mobModeEl) return;
     mobModeEl.textContent = buildMode ? 'DRIVE' : 'BUILD';
@@ -11028,6 +11031,17 @@ export function initTdTab(root) {
   // Rectangles do not lie.
   const layoutAt = parseFloat(urlParams.get('layout') || '0');
   if (layoutAt > 0) {
+    // ?mobbuild=1 — measure BUILD mode: tap the shell's own switch, so the
+    // measurement goes through the button and not around it.
+    // ?pin=1 — a caption and Isao on screen when the ruler comes out, so the
+    // slots they take are measured and not assumed.
+    setTimeout(() => {
+      if (urlParams.get('mobbuild') === '1' && mobModeEl && !buildMode) mobModeEl.click();
+      if (urlParams.get('pin') === '1') {
+        showToast('<div class="wave-num">CAPTION</div><div class="wave-role">pinned for the ruler</div>', 60000);
+        showBrief('arrival');
+      }
+    }, Math.max(0, layoutAt * 1000 - 1200));
     setTimeout(() => {
       const want = {
         // scoped to THIS tab: the sibling tabs carry the same classes, and
@@ -11041,6 +11055,8 @@ export function initTdTab(root) {
         // encouragement is switched off — and are exactly the pair most
         // likely to land on the HUD when they move
         shout: '#td-callouts', combo: '#td-combo',
+        // the shell's pieces, and the two captions (pinned by ?pin=1)
+        mode: '#mob-mode', brief: '#td-brief', toast: '#td-toast',
       };
       const box = {};
       for (const [k, sel] of Object.entries(want)) {
