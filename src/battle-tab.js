@@ -8,15 +8,15 @@
 
 import * as THREE from '../vendor/three.module.js';
 import GUI from '../vendor/lil-gui.esm.js';
-import { generateSphereMesh, relax } from './grid.js?v=fd91b488';
-import { generateDungeon, BLOCKED, PATH, ROOM } from './dungeon.js?v=fd91b488';
-import { mulberry32, randomSeed } from './rng.js?v=fd91b488';
-import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3 } from './vec3.js?v=fd91b488';
-import { CREATURES, waveJelly } from './creatures.js?v=fd91b488';
-import { UNITS, UNIT_NAMES, buildUnit, buildCreature, onMkcxReady, makeOrbCloud, makeBulletCloud, makeDebris, ORB_FX, makeHeartCloud } from './units.js?v=fd91b488';
-import { LOOKS, LOOK_NAMES } from './looks.js?v=fd91b488';
-import { makeCellIndex } from './cellindex.js?v=fd91b488';
-import { makeBloom } from './postfx.js?v=fd91b488';
+import { generateSphereMesh, relax } from './grid.js?v=ec60ced9';
+import { generateDungeon, BLOCKED, PATH, ROOM } from './dungeon.js?v=ec60ced9';
+import { mulberry32, randomSeed } from './rng.js?v=ec60ced9';
+import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3 } from './vec3.js?v=ec60ced9';
+import { CREATURES, waveJelly } from './creatures.js?v=ec60ced9';
+import { UNITS, UNIT_NAMES, buildUnit, buildCreature, onMkcxReady, makeOrbCloud, makeBulletCloud, makeDebris, ORB_FX, makeHeartCloud } from './units.js?v=ec60ced9';
+import { LOOKS, LOOK_NAMES } from './looks.js?v=ec60ced9';
+import { makeCellIndex } from './cellindex.js?v=ec60ced9';
+import { makeBloom } from './postfx.js?v=ec60ced9';
 
 export function initBattleTab(root) {
   let active = false;

@@ -19,52 +19,52 @@
 
 import * as THREE from '../vendor/three.module.js';
 import GUI from '../vendor/lil-gui.esm.js';
-import { generateSphereMesh, relax } from './grid.js?v=fd91b488';
-import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=fd91b488';
-import { mulberry32, randomSeed } from './rng.js?v=fd91b488';
-import { computeBerths, berthIndexFor } from './berths.js?v=fd91b488';
-import { wantsSecondary, shellsForAll } from './autofire.js?v=fd91b488';
-import { printPhase, printOffset, printOn, patternSecsFor } from './printpath.js?v=fd91b488';
-import { createBeamRig, PLASMA_DEFAULTS, BOARD_PRESET, BEAM_PEAK } from './beamdraw.js?v=fd91b488';
-import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3, segKey, tangentDir, tangentBasis } from './vec3.js?v=fd91b488';
-import { CREATURES, waveJelly } from './creatures.js?v=fd91b488';
-import { brief, dwellFor } from './isaobriefs.js?v=fd91b488';
-import { drawEmotion } from './emotions.js?v=fd91b488';
+import { generateSphereMesh, relax } from './grid.js?v=ec60ced9';
+import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=ec60ced9';
+import { mulberry32, randomSeed } from './rng.js?v=ec60ced9';
+import { computeBerths, berthIndexFor } from './berths.js?v=ec60ced9';
+import { wantsSecondary, shellsForAll } from './autofire.js?v=ec60ced9';
+import { printPhase, printOffset, printOn, patternSecsFor } from './printpath.js?v=ec60ced9';
+import { createBeamRig, PLASMA_DEFAULTS, BOARD_PRESET, BEAM_PEAK } from './beamdraw.js?v=ec60ced9';
+import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3, segKey, tangentDir, tangentBasis } from './vec3.js?v=ec60ced9';
+import { CREATURES, waveJelly } from './creatures.js?v=ec60ced9';
+import { brief, dwellFor } from './isaobriefs.js?v=ec60ced9';
+import { drawEmotion } from './emotions.js?v=ec60ced9';
 import { ACHIEVEMENTS, ACHV_GROUPS, achievement, blankRun, earned, freshlyEarned,
   sanitiseRecord }
-  from './achievements.js?v=fd91b488';
+  from './achievements.js?v=ec60ced9';
 import { applyFontPack, currentFontPack, FONT_NAMES,
-  loadTypeFeel } from './fonts.js?v=fd91b488';
-import { SECONDARY_TOE, applySecondaryToe } from './units.js?v=fd91b488';
-import { UNITS, UNIT_NAMES, buildUnit, buildCreature, preloadMkcx, preloadServer, makeServerFixture, makeShieldShell, preloadContainer, makeContainerFixture, preloadFabricator, makeIsaoDrone, makeBulletCloud, makeRewardSolid, makeShellSolid, makeDebris, makeDotBurst, makePortalCloud, preloadPortalRing, makePortalRing, makeHeartCloud, makeDotEnemy, preloadTerraformer, makeTerraformerFixture } from './units.js?v=fd91b488';
-import { LOOKS, LOOK_NAMES } from './looks.js?v=fd91b488';
-import { makeCellIndex } from './cellindex.js?v=fd91b488';
-import { CREATURE_TINTS, ENEMY_SPEC, INTROS, computeWavePlan, accentFor } from './enemyspec.js?v=fd91b488';
-import { PICKUPS } from './pickups.js?v=fd91b488';
-import { rankFor, rankLabel, badgeSVG, killReq, eliteReq } from './ranks.js?v=fd91b488';
-import { beamStep, isBeamStep, PEN_SOFT_FRAC, PEN_HARD_FRAC } from './beamranks.js?v=fd91b488';
-import { burn, sweepAdvance, wallBite as wallBiteFor } from './beamburn.js?v=fd91b488';
-import { arcPoint, projectToArc, toeForCrossing, crossingForToe } from './arc.js?v=fd91b488';
+  loadTypeFeel } from './fonts.js?v=ec60ced9';
+import { SECONDARY_TOE, applySecondaryToe } from './units.js?v=ec60ced9';
+import { UNITS, UNIT_NAMES, buildUnit, buildCreature, preloadMkcx, preloadServer, makeServerFixture, makeShieldShell, preloadContainer, makeContainerFixture, preloadFabricator, makeIsaoDrone, makeBulletCloud, makeRewardSolid, makeShellSolid, makeDebris, makeDotBurst, makePortalCloud, preloadPortalRing, makePortalRing, makeHeartCloud, makeDotEnemy, preloadTerraformer, makeTerraformerFixture } from './units.js?v=ec60ced9';
+import { LOOKS, LOOK_NAMES } from './looks.js?v=ec60ced9';
+import { makeCellIndex } from './cellindex.js?v=ec60ced9';
+import { CREATURE_TINTS, ENEMY_SPEC, INTROS, computeWavePlan, accentFor } from './enemyspec.js?v=ec60ced9';
+import { PICKUPS } from './pickups.js?v=ec60ced9';
+import { rankFor, rankLabel, badgeSVG, killReq, eliteReq } from './ranks.js?v=ec60ced9';
+import { beamStep, isBeamStep, PEN_SOFT_FRAC, PEN_HARD_FRAC } from './beamranks.js?v=ec60ced9';
+import { burn, sweepAdvance, wallBite as wallBiteFor } from './beamburn.js?v=ec60ced9';
+import { arcPoint, projectToArc, toeForCrossing, crossingForToe } from './arc.js?v=ec60ced9';
 import { WORMHOLE_PRESET, RING_SPIN, TRAVEL,
-  travelRate, advancePhase } from './portalfx.js?v=fd91b488';
-import { WORMHOLE_FRAG } from './fx/wormhole.frag.js?v=fd91b488';
-import { makeScore } from './score.js?v=fd91b488';
-import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER } from './towers.js?v=fd91b488';
-import { makeEconomy, sellRefund } from './economy.js?v=fd91b488';
-import { pickTier } from './perftier.js?v=fd91b488';
-import { registerServiceWorker } from './pwa.js?v=fd91b488';
-import { makeBloom } from './postfx.js?v=fd91b488';
-import { TANK_FEEL, TANK_FEEL_KNOBS, makeTankFeel, stepTankFeel, landTankFeel, fireTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js?v=fd91b488';
-import { FEEL, loadFeel, saveFeel } from './feelstore.js?v=fd91b488';
+  travelRate, advancePhase } from './portalfx.js?v=ec60ced9';
+import { WORMHOLE_FRAG } from './fx/wormhole.frag.js?v=ec60ced9';
+import { makeScore } from './score.js?v=ec60ced9';
+import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER } from './towers.js?v=ec60ced9';
+import { makeEconomy, sellRefund } from './economy.js?v=ec60ced9';
+import { pickTier } from './perftier.js?v=ec60ced9';
+import { registerServiceWorker } from './pwa.js?v=ec60ced9';
+import { makeBloom } from './postfx.js?v=ec60ced9';
+import { TANK_FEEL, TANK_FEEL_KNOBS, makeTankFeel, stepTankFeel, landTankFeel, fireTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js?v=ec60ced9';
+import { FEEL, loadFeel, saveFeel } from './feelstore.js?v=ec60ced9';
 import { STRIKE_KNOBS, makeStrike, makeStrikeParams, grantStrikes, stepStrike,
   toggleArm, paintTarget, launchStrike, stepFall, skipFall, fallProgress,
-  strikeDamage, retargetStrike, orbitProgress } from './strike.js?v=fd91b488';
+  strikeDamage, retargetStrike, orbitProgress } from './strike.js?v=ec60ced9';
 import { radarBasis, radarProject, radarBearing, sweepAngle, radarPhosphor,
-  proximitySectors, SENSOR_LEVELS } from './radar.js?v=fd91b488';
-import { BLOOM_GROUPS } from './bloomweights.js?v=fd91b488';
-import { TOWER_LOOK_NAMES, DEFAULT_TOWER_LOOK, buildTowerLook, preloadLook } from './towerlooks.js?v=fd91b488';
-import { makeAudio } from './audio.js?v=fd91b488';
-import { DEATH_KEYS } from './audiomanifest.js?v=fd91b488';
+  proximitySectors, SENSOR_LEVELS } from './radar.js?v=ec60ced9';
+import { BLOOM_GROUPS } from './bloomweights.js?v=ec60ced9';
+import { TOWER_LOOK_NAMES, DEFAULT_TOWER_LOOK, buildTowerLook, preloadLook } from './towerlooks.js?v=ec60ced9';
+import { makeAudio } from './audio.js?v=ec60ced9';
+import { DEATH_KEYS } from './audiomanifest.js?v=ec60ced9';
 
 export function initTdTab(root) {
   let active = false;
@@ -189,10 +189,16 @@ export function initTdTab(root) {
       for (const r of rules) {
         if (!(r instanceof CSSMediaRule)) continue;
         const t = r.media.mediaText;
-        if (!/pointer:\s*coarse|hover:\s*none/.test(t)) continue;
+        // BOTH sides of the pointer: coarse/hover-none become true AND
+        // fine/hover-hover become false — headless is `pointer: fine`, and
+        // leaving that half alone hid the thumbs (a fine-pointer block) under
+        // a coarse layout, a combination no device has
+        if (!/pointer:\s*(coarse|fine)|hover:\s*(none|hover)/.test(t)) continue;
         r.media.mediaText = t
           .replace(/\(pointer:\s*coarse\)/g, '(min-width: 0px)')
-          .replace(/\(hover:\s*none\)/g, '(min-width: 0px)');
+          .replace(/\(hover:\s*none\)/g, '(min-width: 0px)')
+          .replace(/\(pointer:\s*fine\)/g, '(min-width: 99999px)')
+          .replace(/\(hover:\s*hover\)/g, '(min-width: 99999px)');
         flipped++;
       }
     }
