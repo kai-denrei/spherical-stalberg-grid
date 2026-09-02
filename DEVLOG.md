@@ -6,6 +6,68 @@ Demo links assume `npm run serve` (port 8144) or the
 
 ---
 
+## `aa072fa`..`d00a607` — a frame number, a cheaper wormhole, a panel you can navigate
+
+Three commits after the operator felt the portal's fps hit.
+
+**The pass took back the two costs that were pure waste.** The wormhole march
+— 512px × 120 steps × 12 octaves at 60Hz, **377M sine-folds a frame** — ran
+whether or not a gate was in view, and driving away from the gates is most
+of the game. `updateWormhole` now sphere-tests every live gate against the
+camera frustum and skips the render when none is inside it; the phase keeps
+advancing, so a gate scrolling back into view is where it should be.
+`?gateprobe2` checks that gate in *both* directions, because a gate on screen
+and not marched is a black hole in the ring. And the cost knobs moved without
+the look knobs: **384 @ 30Hz** — 0.56× the pixels at half the rate, ~3.6×
+cheaper — while steps, octaves and exposure stay exactly the bench's export.
+`test/portalfx.mjs` pins that split, so the board can get cheaper without the
+bench lying about it. The third cost stays on purpose: eight pods per gate
+outside the merged batch, the price of parts that blow off individually.
+
+**One hotspot predated the portal.** The shell wall-impact test scanned
+*every cell, per shell, per frame* — three shells on a 2,000-cell board is
+6,000 distance checks a frame for an answer the voxel hash gives in one. It's
+`cellIndex` now, like every other collision query; new `?breachprobe=1` lands
+a shell on a wall cell and confirms the breach set grew by exactly that cell.
+No full-cell scans remain in `td-tab`.
+
+**What was not measured:** the fps. Headless SwiftShader cannot time a GPU,
+and `?perf` never fires under these flags (two runs, then stopped). Verified
+by behaviour instead — frustum gate consistent, breach on the right cell, hit
+sequence unchanged. Which is the reason for the next thing.
+
+**A frame readout.** `#td-perf` under the score panel: fps · ms · draw calls
+· tris · pts, plus the wormhole's size@rate while a target exists. Half-second
+EMA so the digits read. `renderer.info` is reset by hand each frame while it
+is on (the `?perf` probe's own trick) and left alone when off, so an off
+readout costs nothing. Toggle with **`` ` ``**, the panel checkbox, or
+`?fps=1`; remembered in `localStorage`. "It feels slower" now has a number
+the operator can take themselves — the wormhole's real-hardware cost is the
+open question this closes.
+
+**The variables panel is a modal.** Thirty root controls and four folders
+were one right-edge column, scrolled by feel, and hidden while playing. The
+lil-gui DOM is **moved, not rebuilt**, into `#td-vars`: root controls become
+the GAME page, each folder its own page (hover, recoil, orbital strike,
+plasma, bloom, sound), a nav column left, one page at a time right, × and
+Esc, `?vars=1`. Every slider keeps its listeners because nothing about it
+changed except where it lives. It opens mid-run — a toggle you cannot use
+while playing is not a toggle. It has its **own ⚙ button** beside the ≡: the
+first cut hung it off `body.chrome-open`, which also opens the game-mode tab
+list, and that list sat straight over the modal's own nav.
+
+**Three small dead ends, all placement or plumbing.** The ≡ renders at
+x≈145, not the 10px its CSS declares (a badge holds that slot) — settled by
+screenshot, which is why the readout sits under the score panel and not in
+the toolbar row where it first overlapped. `perfTick` took its `dt` from a
+`clock` td-tab does not have; it rides the loop's own `dt` *after* the loop
+computes it, since a second delta there would have zeroed the sim. And
+wrapping headless Chrome in `timeout` kills it before stderr flushes: a probe
+that works bare prints *nothing*, indistinguishable from a page that never
+ran.
+
+---
+
 ## `a1acc6a`..`a596b7d` — the gates wear the portal ring
 
 Fourteen commits. The thread through them: the portal bench got honest, then
