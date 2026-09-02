@@ -55,13 +55,18 @@ token — the corner badge was retired from the game view).
   enter BUILD through the button, pin a caption + Isao), `?tapprobe=1`,
   `?pressprobe=1`, `?modalprobe=1`, `?wake=1`, `?tier=phone|desktop`,
   `?sw=0`, `?whatsat=x,y` (name the element stack under a point),
+  `?coarse=1` (apply the phone's coarse-pointer CSS headless), `?coach=1`,
   `#tabname`.
   Headless clamps windows to ~500px wide and CROPS screenshots — for
   layout bugs, log `innerWidth` from the page before touching CSS.
 - A `@media (pointer: coarse)` rule cannot be exercised by any desktop
   browser, headless included — pair it with a width clause
   (`, (max-width: 560px)`) or the rules inside are unverifiable and can
-  silently do nothing. Also mind source order: `#td-tut`'s base rule is
+  silently do nothing. The TD tab has the inverse tool: `?mobile=1&coarse=1`
+  rewrites the coarse media conditions in the loaded sheets so the ruler
+  measures the phone's blocks for real (a phone screenshot found the radar
+  over the console while `?layout` said 0 overlaps — measure with `?coarse=1`
+  BEFORE trusting a shell layout). Also mind source order: `#td-tut`'s base rule is
   declared after the mobile blocks, so an override up there loses.
 - maze/organic/battle/heart tabs are ~900-line siblings (cp+sed lineage).
   When batch-patching them: anchor on CODE lines (comments drift first),

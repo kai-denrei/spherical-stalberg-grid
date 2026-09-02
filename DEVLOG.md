@@ -6,6 +6,44 @@ Demo links assume `npm run serve` (port 8144) or the
 
 ---
 
+## `1cf2b02` — the first phone screen: the ruler's blind spot, and a coach
+
+The operator's first screen on a real phone: the radar filling the
+top-right at 240px with the launch console and both thumbs under it, and
+nothing saying how to move the tank. Two roots, both fixed on the shell only.
+
+**The ruler could not see the phone.** Every shell rule was measured
+headless, where `(pointer: coarse)` is false, so every rule in the phone's
+own coarse blocks was invisible to `?layout`, which reported zero overlaps
+on a layout the phone never shows. No headless flag makes the pointer
+coarse. `?coarse=1` now rewrites the media conditions in the loaded
+stylesheets so those blocks apply for real; its first run reproduced the
+screenshot in numbers (radar × console 44×52px, console × mode button). The
+shell now pins its geometry with two ids plus the class, outranking every
+selector in those blocks, and each rule states the whole geometry: radar
+bottom-left at 96px (a JS branch, since its size is written there), the
+console centred and collapsed to its safety switch until armed, HUD, wave
+clock, hack button, brief and lane restated.
+
+| run | DRIVE | BUILD |
+|---|---|---|
+| 844×390 | 0 overlaps | 0 |
+| 908×418 + `?coarse=1` | 0 | 0 |
+
+**Nothing said how to move.** The tutorial now speaks the shell's language
+at the one place every banner passes through (`shellWords`): tap the ground
+beyond them, the plasma thumb, tap BUILD then high ground. Its throttle
+lesson becomes a tap-to-go lesson, passed by a destination accepted. For a
+phone that has already seen the tutorial, the operator's case, a **coach**
+shows three marks once per browser, each holding until the thing it names
+has happened: tap the ground (a target cell pulses three hops out), the
+thumbs, then BUILD when a tower is affordable. `?coach=1` walks all three by
+doing what each asks. The banner's shell slot is right of the console, above
+the thumbs, the one slot at 303px that touches neither the console nor the
+caption lane.
+
+---
+
 ## `2c33c8f` — the mobile shell, phase 6: the budget as a table, a wake lock, the PWA hook
 
 Phase 6 of `docs/MOBILE-PORT-PLAN.md`. Haptics are out by ruling; the rotate
