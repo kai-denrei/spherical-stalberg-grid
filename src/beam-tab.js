@@ -180,8 +180,16 @@ export function initBeamTab(root) {
     // THE SWEEP. Across one burst the toe-in runs 0 -> amplitude -> 0, so the
     // pair opens parallel, scissors inward to the midpoint and opens again —
     // the beams sweeping the ground in front rather than sitting in one line.
-    sweep: true,
-    sweepAmplitude: 0.20,       // radians of inward toe at the peak (matches BEAM_SWEEP in td-tab)
+    // THE SWEEP IS A MODE now (operator, 2026-09-02: "I want the ability to
+    // set the sweep to be automatic, stop the sweep, or manually adjust").
+    // A boolean could only say on/off, and the whole reason to want it off is
+    // to hold the pair still and see what the OTHER variables are doing.
+    //   auto   — the bell: 0 -> amplitude -> 0 across the burst
+    //   off    — no swing at all; the barrels sit at the solved toe
+    //   manual — frozen at `sweepManual`, for looking at one angle
+    sweepMode: 'auto',
+    sweepAmplitude: 0.20,       // radians of inward swing at the peak (auto)
+    sweepManual: 0.0,           // ...or held here, in manual
     rankStep: BEAM_STEPS[0].minRank,   // which of the four beams is on the stage
     // --- the drop-off bench -----------------------------------------------
     targets: 4,              // invincible bodies laid down the hull centreline
@@ -392,10 +400,32 @@ export function initBeamTab(root) {
   // Measure the gap with the toe ZEROED — the world transforms already carry
   // whatever angle was applied last, so measuring without resetting feeds the
   // previous answer back in and the angle walks every frame.
+  //
+  // ONE TERM OWNS THE CROSSING (operator, 2026-09-02: "I think the cross
+  // calculations might be interfering" — they were, measurably).
+  //
+  // The static toe and the sweep BOTH swing the beams inward, and they were
+  // solved and set independently. Measured: a toe solved for a crossing at
+  // 2.80 cells, plus a sweep amplitude of 0.20 rad, actually crossed at 1.00
+  // — the sweep was nearly twice the larger term, so the number the solve
+  // asked for was true only at the two instants the swing passed zero.
+  //
+  // The rule now: the pair crosses at `crossFrac x reach` AT ITS MOST
+  // CONVERGED MOMENT, and the mode decides which term carries it.
+  //
+  //   auto   the SWEEP carries it. The static toe goes to zero, so the pair
+  //          leaves the muzzles parallel, scissors in to meet at the target
+  //          at the midpoint, and opens again — which is what the sweep was
+  //          described as doing before a static toe was added underneath it.
+  //   manual the static toe carries whatever the frozen swing does not.
+  //   off    the static toe carries all of it.
+  let solvedAmp = null;
   function applyReachToe() {
     if (!tank) return;
     const pivots = secondaryPivots(tank);
-    if (!P.toeAuto || pivots.length < 2) { applyToe(P.toeIn); toeInfo = null; return; }
+    if (!P.toeAuto || pivots.length < 2) {
+      applyToe(P.toeIn); toeInfo = null; solvedAmp = null; return;
+    }
     // IT IS A FIXED POINT, NOT A ONE-SHOT SOLVE.
     //
     // aimGun seats the origin at the barrel TIP (gunTipZ + muzzleNudge), not
@@ -408,17 +438,26 @@ export function initBeamTab(root) {
     // board does NOT need this — its beam origin is the pivot's own world
     // position, which a rotation about that pivot does not move.
     const target = P.crossFrac * P.reachCells;
-    let toe = P.toeIn, gap = 0;
+    let total = 0, toe = 0, gap = 0;
     for (let it = 0; it < 3; it++) {
       const A0 = aimGun(0), B0 = aimGun(1);
-      if (!A0 || !B0) { applyToe(P.toeIn); toeInfo = null; return; }
+      if (!A0 || !B0) { applyToe(P.toeIn); toeInfo = null; solvedAmp = null; return; }
       gap = Math.hypot(A0.from[0] - B0.from[0], A0.from[1] - B0.from[1],
         A0.from[2] - B0.from[2]) * LAB_R;         // unit-frame -> cells
-      toe = toeForCrossing(gap, target) || P.toeIn;
+      total = toeForCrossing(gap, target) || P.toeIn;
+      // split `total` between the two terms according to the mode
+      toe = P.sweepMode === 'auto' ? 0
+        : P.sweepMode === 'manual' ? Math.max(0, total - P.sweepManual)
+          : total;
       applySecondaryToe(tank, toe);
       tank.updateMatrixWorld(true);
     }
-    toeInfo = { gap, toe, at: crossingForToe(gap, toe) };
+    solvedAmp = P.sweepMode === 'auto' ? total : null;
+    toeInfo = {
+      gap, toe, total, at: crossingForToe(gap, total),
+      carriedBy: P.sweepMode === 'auto' ? 'sweep'
+        : P.sweepMode === 'manual' ? 'toe+manual swing' : 'toe',
+    };
   }
 
   function applyWorld() {
@@ -462,8 +501,9 @@ export function initBeamTab(root) {
   gg.add(P, 'toeAuto').name('toe solves for crossing');
   gg.add(P, 'crossFrac', 0.2, 1.2, 0.01).name('cross at (x reach)');
   gg.add(P, 'toeIn', 0, 0.8, 0.005).name('manual toe-in').onChange(() => applyToe());
-  gg.add(P, 'sweep').name('sweep across burst');
-  gg.add(P, 'sweepAmplitude', 0, 0.8, 0.005).name('sweep amplitude');
+  gg.add(P, 'sweepMode', ['auto', 'off', 'manual']).name('sweep');
+  gg.add(P, 'sweepAmplitude', 0, 0.8, 0.005).name('sweep amplitude (auto)');
+  gg.add(P, 'sweepManual', 0, 0.8, 0.005).name('sweep angle (manual)');
   // THE RANK PICKER. Colour and reach are the pilot's rank on the board now
   // (beamranks.js), so a lab that only ever showed one of the four steps was
   // a lab lying about three quarters of the weapon. Both transfer EXACTLY
@@ -679,6 +719,48 @@ export function initBeamTab(root) {
   // BOTH beams, because the whole point of the lateral offset is that they
   // stop agreeing — a HUD showing one of them cannot show that.
   let lastReport = null, otherReport = null;
+  // WHAT THE PAIR IS ACTUALLY DOING THIS FRAME, as fired — not as solved.
+  // The toe solves for a crossing with the beams at rest, and then the sweep
+  // adds its own inward swing ON TOP; at amplitude 0.2 against a solved toe
+  // of ~0.04 the sweep is five times the larger term, so the crossing the
+  // solve asked for is only true at the two instants the swing passes zero.
+  // That is the "variables working against each other" the operator suspected,
+  // and it is not something a static number on the panel can show.
+  const lastSwing = [0, 0];
+  const firedFrom = [null, null], firedDir = [null, null];
+  let liveCross = null;
+  // The crossing for an ARBITRARY swing, so the bench can ask where the pair
+  // meets at the sweep's PEAK — which in auto mode is the only moment the
+  // solve is aiming at. Sampling "now" during a bell that spends most of its
+  // time near zero reports "never meets" on a perfectly correct sweep.
+  function crossAtSwing(swing) {
+    const A = aimGun(0), B = aimGun(1);
+    if (!A || !B) return null;
+    const dA2 = swingDir(A.from, A.dir, swing), dB2 = swingDir(B.from, B.dir, swing);
+    let best = Infinity, at = 0;
+    const maxS = P.reachCells / LAB_R;
+    for (let i = 0; i <= 240; i++) {
+      const d = (i / 240) * maxS;
+      const a2 = arcPoint(A.from, dA2, d), b2 = arcPoint(B.from, dB2, d);
+      const g2 = Math.hypot(a2[0] - b2[0], a2[1] - b2[1], a2[2] - b2[2]);
+      if (g2 < best) { best = g2; at = d * LAB_R; }
+    }
+    return { at, gap: best * LAB_R, meets: best * LAB_R < 0.08 };
+  }
+
+  function measureCross() {
+    if (!firedFrom[0] || !firedFrom[1]) { liveCross = null; return; }
+    let best = Infinity, at = 0;
+    const maxS = P.reachCells / LAB_R;
+    for (let i = 0; i <= 240; i++) {
+      const d = (i / 240) * maxS;
+      const a2 = arcPoint(firedFrom[0], firedDir[0], d);
+      const b2 = arcPoint(firedFrom[1], firedDir[1], d);
+      const g2 = Math.hypot(a2[0] - b2[0], a2[1] - b2[1], a2[2] - b2[2]);
+      if (g2 < best) { best = g2; at = d * LAB_R; }
+    }
+    liveCross = { at, gap: best * LAB_R, meets: best * LAB_R < 0.08 };
+  }
   function markTargets(reachedSet) {
     for (const t of targets) {
       const hit = reachedSet && reachedSet.has(t);
@@ -699,9 +781,17 @@ export function initBeamTab(root) {
     for (let g = 0; g < 2; g++) {
       const aim = aimGun(g);
       if (!aim) continue;
-      const swing = P.sweep
-        ? P.sweepAmplitude * Math.sin(Math.min(1, beamPhase[g]) * Math.PI) : P.toeIn * 0;
+      // In auto the amplitude is the SOLVED one unless the solve is off, in
+      // which case the slider is live again. Writing the solved value back
+      // into P.sweepAmplitude would stamp on the operator's own slider every
+      // frame, so it is kept beside it instead.
+      const amp = (solvedAmp !== null) ? solvedAmp : P.sweepAmplitude;
+      const swing = P.sweepMode === 'auto'
+        ? amp * Math.sin(Math.min(1, beamPhase[g]) * Math.PI)
+        : P.sweepMode === 'manual' ? P.sweepManual : 0;
       const dir = swingDir(aim.from, aim.dir, swing);
+      lastSwing[g] = swing;
+      firedFrom[g] = aim.from; firedDir[g] = dir;
       // WHAT IS IN THE BEAM — projected onto this gun's own arc, exactly the
       // query the board runs, so a body the lab shows as reached is a body
       // the game would burn.
@@ -723,9 +813,14 @@ export function initBeamTab(root) {
       // MASS IN THE BEAM SLOWS ITS SWEEP, per beam, so the pair falls out of
       // step — the inverse of knock-back, and the reason the lab shows two
       // phases rather than one shared toe angle.
-      beamPhase[g] = Math.min(1, beamPhase[g] + sweepAdvance(dt, P.burstSeconds, rep.drag));
+      // only AUTO advances the clock — in off/manual the pair is held still
+      // on purpose, and a phase ticking underneath would be a lie on the HUD
+      if (P.sweepMode === 'auto') {
+        beamPhase[g] = Math.min(1, beamPhase[g] + sweepAdvance(dt, P.burstSeconds, rep.drag));
+      }
     }
     markTargets(reached);
+    measureCross();
     lastReport = reports[0] || null;
     otherReport = reports[1] || null;
   }
@@ -741,6 +836,8 @@ export function initBeamTab(root) {
   // driven by hand, and "the beams fall out of step" stays an assertion.
   {
     const q = new URLSearchParams(location.search);
+    if (q.has('sweepmode')) P.sweepMode = q.get('sweepmode');
+    if (q.has('sweepat')) P.sweepManual = parseFloat(q.get('sweepat')) || 0;
     if (q.has('labside') || q.has('labstagger')) {
       P.targetSide = parseFloat(q.get('labside')) || 0;
       P.targetStagger = parseFloat(q.get('labstagger')) || 0;
@@ -767,6 +864,27 @@ export function initBeamTab(root) {
       const wouldBe = Math.min(1, firedFor / P.burstSeconds);
       console.log(`LABBEAMS frames=${frames} firedFor=${firedFor.toFixed(2)}s`
         + ` | a CLEAR beam would be at phase ${wouldBe.toFixed(3)} by now`);
+      // THE INTERFERENCE, as one line. The toe is solved with the beams at
+      // rest; the sweep then adds its own inward swing on top, so what the
+      // pair actually does is toe+swing — and at the shipped numbers the
+      // swing is the far larger term.
+      console.log(`LABCROSS sweep=${P.sweepMode}`
+        + ` toe=${toeInfo ? toeInfo.toe.toFixed(4) : '?'}`
+        + ` (solved for a crossing @${toeInfo ? toeInfo.at.toFixed(2) : '?'}c)`
+        + ` + swing=${lastSwing[0].toFixed(4)}`
+        + ` => total inward ${((toeInfo ? toeInfo.toe : 0) + lastSwing[0]).toFixed(4)} rad`
+        + ` | ACTUAL now ${liveCross ? (liveCross.meets
+          ? `crossing @${liveCross.at.toFixed(2)}c`
+          : `apart ${liveCross.gap.toFixed(2)}c @${liveCross.at.toFixed(2)}c`) : '?'}`
+        + (() => {
+          // AT THE PEAK, which is the moment the solve is aiming at in auto.
+          const peak = solvedAmp !== null ? solvedAmp
+            : P.sweepMode === 'manual' ? P.sweepManual : 0;
+          const c = crossAtSwing(peak);
+          return c ? ` | AT PEAK swing=${peak.toFixed(4)} ${c.meets
+            ? `crossing @${c.at.toFixed(2)}c` : `apart ${c.gap.toFixed(2)}c`}`
+            + ` (target ${(P.crossFrac * P.reachCells).toFixed(2)}c)` : '';
+        })());
       console.log(`LABBEAMS side=${P.targetSide} stagger=${P.targetStagger}`
         + ` | L ends=${L.reachLeft.toFixed(2)}c drag=${(L.drag * 100).toFixed(0)}%`
         + ` hits=${L.hits.length}`
@@ -896,7 +1014,12 @@ export function initBeamTab(root) {
     const base = `heat ${heat.toFixed(2)}/${P.burstSeconds.toFixed(1)}s`
       + `  ${lock ? 'COOLING' : 'FIRING'}`
       + `  rank ${P.rankStep} · ${P.reachCells.toFixed(1)} cells`
-      + (toeInfo ? `  toe ${toeInfo.toe.toFixed(4)} → cross @${toeInfo.at.toFixed(1)}c` : '')
+      + (toeInfo ? `  toe ${toeInfo.toe.toFixed(3)} (crossing carried by ${toeInfo.carriedBy})` : '')
+      + `  sweep ${P.sweepMode} +${lastSwing[0].toFixed(3)}`
+      + (solvedAmp !== null ? ` (amp solved ${solvedAmp.toFixed(3)})` : '')
+      + (liveCross ? `  →  ACTUALLY ${liveCross.meets
+        ? `crossing @${liveCross.at.toFixed(2)}c`
+        : `closest ${liveCross.gap.toFixed(2)}c apart @${liveCross.at.toFixed(2)}c`}` : '')
       + `  tone ${P.toneMapping}`;
     if (!lastReport) return base;
     const r = lastReport;
