@@ -19,49 +19,49 @@
 
 import * as THREE from '../vendor/three.module.js';
 import GUI from '../vendor/lil-gui.esm.js';
-import { generateSphereMesh, relax } from './grid.js?v=a79ef69c';
-import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=a79ef69c';
-import { mulberry32, randomSeed } from './rng.js?v=a79ef69c';
-import { computeBerths, berthIndexFor } from './berths.js?v=a79ef69c';
-import { wantsSecondary, shellsForAll } from './autofire.js?v=a79ef69c';
-import { printPhase, printOffset, printOn, patternSecsFor } from './printpath.js?v=a79ef69c';
-import { createBeamRig, PLASMA_DEFAULTS, BOARD_PRESET, BEAM_PEAK } from './beamdraw.js?v=a79ef69c';
-import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3, segKey, tangentDir, tangentBasis } from './vec3.js?v=a79ef69c';
-import { CREATURES, waveJelly } from './creatures.js?v=a79ef69c';
-import { brief, dwellFor } from './isaobriefs.js?v=a79ef69c';
-import { drawEmotion } from './emotions.js?v=a79ef69c';
+import { generateSphereMesh, relax } from './grid.js?v=9851a1a3';
+import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=9851a1a3';
+import { mulberry32, randomSeed } from './rng.js?v=9851a1a3';
+import { computeBerths, berthIndexFor } from './berths.js?v=9851a1a3';
+import { wantsSecondary, shellsForAll } from './autofire.js?v=9851a1a3';
+import { printPhase, printOffset, printOn, patternSecsFor } from './printpath.js?v=9851a1a3';
+import { createBeamRig, PLASMA_DEFAULTS, BOARD_PRESET, BEAM_PEAK } from './beamdraw.js?v=9851a1a3';
+import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3, segKey, tangentDir, tangentBasis } from './vec3.js?v=9851a1a3';
+import { CREATURES, waveJelly } from './creatures.js?v=9851a1a3';
+import { brief, dwellFor } from './isaobriefs.js?v=9851a1a3';
+import { drawEmotion } from './emotions.js?v=9851a1a3';
 import { ACHIEVEMENTS, ACHV_GROUPS, achievement, blankRun, earned, freshlyEarned,
   sanitiseRecord }
-  from './achievements.js?v=a79ef69c';
+  from './achievements.js?v=9851a1a3';
 import { applyFontPack, currentFontPack, FONT_NAMES,
-  loadTypeFeel } from './fonts.js?v=a79ef69c';
-import { SECONDARY_TOE, applySecondaryToe } from './units.js?v=a79ef69c';
-import { UNITS, UNIT_NAMES, buildUnit, buildCreature, preloadMkcx, preloadServer, makeServerFixture, makeShieldShell, preloadContainer, makeContainerFixture, preloadFabricator, makeIsaoDrone, makeBulletCloud, makeRewardSolid, makeShellSolid, makeDebris, makeDotBurst, makePortalCloud, preloadPortalRing, makePortalRing, makeHeartCloud, makeDotEnemy, preloadTerraformer, makeTerraformerFixture } from './units.js?v=a79ef69c';
-import { LOOKS, LOOK_NAMES } from './looks.js?v=a79ef69c';
-import { makeCellIndex } from './cellindex.js?v=a79ef69c';
-import { CREATURE_TINTS, ENEMY_SPEC, INTROS, computeWavePlan, accentFor } from './enemyspec.js?v=a79ef69c';
-import { PICKUPS } from './pickups.js?v=a79ef69c';
-import { rankFor, rankLabel, badgeSVG, killReq, eliteReq } from './ranks.js?v=a79ef69c';
-import { beamStep, isBeamStep, PEN_SOFT_FRAC, PEN_HARD_FRAC } from './beamranks.js?v=a79ef69c';
-import { burn, sweepAdvance, wallBite as wallBiteFor } from './beamburn.js?v=a79ef69c';
-import { arcPoint, projectToArc, toeForCrossing, crossingForToe } from './arc.js?v=a79ef69c';
+  loadTypeFeel } from './fonts.js?v=9851a1a3';
+import { SECONDARY_TOE, applySecondaryToe } from './units.js?v=9851a1a3';
+import { UNITS, UNIT_NAMES, buildUnit, buildCreature, preloadMkcx, preloadServer, makeServerFixture, makeShieldShell, preloadContainer, makeContainerFixture, preloadFabricator, makeIsaoDrone, makeBulletCloud, makeRewardSolid, makeShellSolid, makeDebris, makeDotBurst, makePortalCloud, preloadPortalRing, makePortalRing, makeHeartCloud, makeDotEnemy, preloadTerraformer, makeTerraformerFixture } from './units.js?v=9851a1a3';
+import { LOOKS, LOOK_NAMES } from './looks.js?v=9851a1a3';
+import { makeCellIndex } from './cellindex.js?v=9851a1a3';
+import { CREATURE_TINTS, ENEMY_SPEC, INTROS, computeWavePlan, accentFor } from './enemyspec.js?v=9851a1a3';
+import { PICKUPS } from './pickups.js?v=9851a1a3';
+import { rankFor, rankLabel, badgeSVG, killReq, eliteReq } from './ranks.js?v=9851a1a3';
+import { beamStep, isBeamStep, PEN_SOFT_FRAC, PEN_HARD_FRAC } from './beamranks.js?v=9851a1a3';
+import { burn, sweepAdvance, wallBite as wallBiteFor } from './beamburn.js?v=9851a1a3';
+import { arcPoint, projectToArc, toeForCrossing, crossingForToe } from './arc.js?v=9851a1a3';
 import { WORMHOLE_PRESET, WORMHOLE_RENDER, RING_SPIN, TRAVEL,
-  travelRate, advancePhase } from './portalfx.js?v=a79ef69c';
-import { WORMHOLE_FRAG } from './fx/wormhole.frag.js?v=a79ef69c';
-import { makeScore } from './score.js?v=a79ef69c';
-import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER } from './towers.js?v=a79ef69c';
-import { makeEconomy, sellRefund } from './economy.js?v=a79ef69c';
-import { makeBloom } from './postfx.js?v=a79ef69c';
-import { TANK_FEEL, TANK_FEEL_KNOBS, makeTankFeel, stepTankFeel, landTankFeel, fireTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js?v=a79ef69c';
-import { FEEL, loadFeel, saveFeel } from './feelstore.js?v=a79ef69c';
+  travelRate, advancePhase } from './portalfx.js?v=9851a1a3';
+import { WORMHOLE_FRAG } from './fx/wormhole.frag.js?v=9851a1a3';
+import { makeScore } from './score.js?v=9851a1a3';
+import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER } from './towers.js?v=9851a1a3';
+import { makeEconomy, sellRefund } from './economy.js?v=9851a1a3';
+import { makeBloom } from './postfx.js?v=9851a1a3';
+import { TANK_FEEL, TANK_FEEL_KNOBS, makeTankFeel, stepTankFeel, landTankFeel, fireTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js?v=9851a1a3';
+import { FEEL, loadFeel, saveFeel } from './feelstore.js?v=9851a1a3';
 import { STRIKE_KNOBS, makeStrike, makeStrikeParams, grantStrikes, stepStrike,
   toggleArm, paintTarget, launchStrike, stepFall, skipFall, fallProgress,
-  strikeDamage, retargetStrike, orbitProgress } from './strike.js?v=a79ef69c';
-import { radarBasis, radarProject, radarBearing, sweepAngle, radarPhosphor } from './radar.js?v=a79ef69c';
-import { BLOOM_GROUPS } from './bloomweights.js?v=a79ef69c';
-import { TOWER_LOOK_NAMES, DEFAULT_TOWER_LOOK, buildTowerLook, preloadLook } from './towerlooks.js?v=a79ef69c';
-import { makeAudio } from './audio.js?v=a79ef69c';
-import { DEATH_KEYS } from './audiomanifest.js?v=a79ef69c';
+  strikeDamage, retargetStrike, orbitProgress } from './strike.js?v=9851a1a3';
+import { radarBasis, radarProject, radarBearing, sweepAngle, radarPhosphor } from './radar.js?v=9851a1a3';
+import { BLOOM_GROUPS } from './bloomweights.js?v=9851a1a3';
+import { TOWER_LOOK_NAMES, DEFAULT_TOWER_LOOK, buildTowerLook, preloadLook } from './towerlooks.js?v=9851a1a3';
+import { makeAudio } from './audio.js?v=9851a1a3';
+import { DEATH_KEYS } from './audiomanifest.js?v=9851a1a3';
 
 export function initTdTab(root) {
   let active = false;
@@ -898,7 +898,12 @@ export function initTdTab(root) {
   function resetRunStats() {
     rs = { kills: {}, bySrc: { tank: 0, tower: 0, strike: 0 }, rams: 0,
       strikes: 0, maxCombo: 0, killers: [], maxRank: 0,
-      scoreBins: [], binClock: 0 };
+      scoreBins: [], binClock: 0,
+      // THE ANALYST'S RECORDS (operator, 2026-09-02): the single best shell
+      // and the single best orbital strike, and enough of the strike to
+      // replay it — bodies on the tangent plane at impact, and which died.
+      shells: 0, bestShell: { kills: 0, wave: 0 },
+      bestStrike: { kills: 0, wave: 0, replay: null } };
   }
   resetRunStats();
 
@@ -3215,10 +3220,37 @@ export function initTdTab(root) {
         killPortal(sp);
       }
     }
+    // THE REPLAY IS RECORDED AT IMPACT, not reconstructed later: every body
+    // near the blast, projected onto the tangent plane at ground zero in
+    // cells, and whether it was alive after. The debrief plays this back.
+    const [rbU, rbV] = tangentBasis(norm3(c));
+    const watched = [];
+    for (const e of enemies) {
+      if (!e.alive) continue;
+      const d = dist3(c, e.pos);
+      if (d < radius * 1.9) {
+        const rel = sub3(e.pos, c);
+        watched.push({ e, x: dot3(rel, rbU) / cellSide, y: dot3(rel, rbV) / cellSide, type: e.type });
+      }
+    }
     for (const e of enemies) {
       if (!e.alive) continue;
       const dmg = strikeDamage(dist3(c, e.pos), radius, strikeTune);
       if (dmg > 0) damageEnemy(e, tNow, dmg, false, 'strike');
+    }
+    if (rs) {
+      const killedByStrike = before.enemies
+        - enemies.reduce((n2, x) => n2 + (x.alive ? 1 : 0), 0);
+      if (killedByStrike >= rs.bestStrike.kills) {
+        rs.bestStrike = {
+          kills: killedByStrike, wave,
+          replay: {
+            radius: radius / cellSide,
+            portals: before.portals - spawnPoints.filter((q) => q.alive).length,
+            bodies: watched.map((w) => ({ x: w.x, y: w.y, type: w.type, died: !w.e.alive })),
+          },
+        };
+      }
     }
     updateHud();
     checkVictory();
@@ -3591,6 +3623,7 @@ export function initTdTab(root) {
     const cl = ev.target.classList;
     if (!cl) return;
     if (cl.contains('msg-regen')) regenerate(); // retry the CURRENT round
+    else if (cl.contains('msg-planet')) params.newPlanet(); // a DIFFERENT, bigger world
     else if (cl.contains('msg-next')) {
       round++; hackedRound = false; syncHackBtn();
       sectorStartWave = wave;   // the next sector's programme starts here
@@ -3598,6 +3631,7 @@ export function initTdTab(root) {
       expandRound(); syncArmUi();
     }
     else if (cl.contains('msg-lap')) startLap();
+    else if (cl.contains('msg-proceed')) renderVerdict(ev.target.dataset.final === '1');
     else if (cl.contains('msg-begin')) {
       paused = false; msgEl.classList.add('hidden');
       showBrief('arrival');   // where you are, said once you are actually there
@@ -4683,6 +4717,22 @@ export function initTdTab(root) {
     params.seed = randomSeed() % 100000;
     seedCtrl.updateDisplay();
     regenerate();
+  };
+  // ANOTHER PLANET (operator, 2026-09-02): "New Planet restarts the same
+  // planet. it should be another planet. a bigger one, different topology."
+  // The final verdict's button called regenerate(), which keeps the seed —
+  // the same world, re-rolled. A new planet is a new SEED (topology) and
+  // more of it (size): sample points up ~18% and two more rooms per planet
+  // cleared, capped where the draw-call budget says stop. The planet count
+  // is what the run already persists.
+  const PLANET_GROWTH = 1.18, PLANET_POINTS_CAP = 900, PLANET_ROOMS_CAP = 28;
+  params.newPlanet = () => {
+    params.seed = randomSeed() % 100000;
+    params.points = Math.min(PLANET_POINTS_CAP, Math.round(params.points * PLANET_GROWTH));
+    params.rooms = Math.min(PLANET_ROOMS_CAP, params.rooms + 2);
+    gui.controllersRecursive().forEach((c) => c.updateDisplay());
+    regenerate();
+    console.log(`NEWPLANET seed=${params.seed} points=${params.points} rooms=${params.rooms}`);
   };
 
 
@@ -5794,6 +5844,9 @@ export function initTdTab(root) {
           // below the heavy tier (dmg 4 kills up to the rolling mine;
           // prime and the Thorus soak it and remember), and the splash
           // genuinely clears a pocket rather than shaving it.
+          // count what THIS shell kills — direct hit plus the splash below —
+          // by the only honest method: live bodies before and after
+          const aliveBeforeShell = enemies.reduce((n2, x) => n2 + (x.alive ? 1 : 0), 0);
           damageEnemy(e, tNow, 4, true, 'tank');
           const SHELL_R = cellSide * 2.0;
           for (const e2 of enemies) {
@@ -5802,6 +5855,12 @@ export function initTdTab(root) {
             if (d2 < SHELL_R) {
               damageEnemy(e2, tNow, d2 < SHELL_R * 0.5 ? 2 : 1, false, 'tank');
             }
+          }
+          if (rs) {
+            const killedByShell = aliveBeforeShell
+              - enemies.reduce((n2, x) => n2 + (x.alive ? 1 : 0), 0);
+            rs.shells++;
+            if (killedByShell > rs.bestShell.kills) rs.bestShell = { kills: killedByShell, wave };
           }
           // an explosion you can HEAR and SEE: the heavy blast lands at
           // the impact (fire already played tank_main at the muzzle), and
@@ -7968,6 +8027,160 @@ export function initTdTab(root) {
           localStorage.setItem('td.planets', String(p2));
         } catch (e) { /* private mode */ }
         persistBest();
+        renderAnalysis(true);
+        return;
+      }
+      renderAnalysis(false);
+      return;
+    }
+  }
+
+  // --- THE DEBRIEF, IN TWO STAGES (operator, 2026-09-02) -----------------
+  // "as if we were a military analyst studying the situations. only then do
+  // we have the option to walk the planet, start another planet, etc."
+  //
+  // Stage one is the analyst's board: six small windows — the roster of what
+  // was killed, who did the killing, the score's tempo, the records (the
+  // single best shell, the single best strike), a REPLAY of that strike on
+  // the tangent plane, and the state of the defence. One button: proceed.
+  // Stage two is the verdict and the orders, unchanged from before.
+  let replayRaf = 0;
+  function killedTypes() {
+    return Object.entries((rs && rs.kills) || {}).filter(([, k]) => k > 0).sort((a, b) => b[1] - a[1]);
+  }
+  function tintHex(type) {
+    return '#' + (CREATURE_TINTS[type] ?? 0xffffff).toString(16).padStart(6, '0');
+  }
+  function winRoster() {
+    const rows = killedTypes().map(([type, k]) =>
+      `<div class="dbf-row"><img class="dbf-icon" src="${spriteShot(type, () => makeDotEnemy(type,
+        { walker: CREATURE_TINTS[type], walkerHi: accentFor(type) }))}" alt="">`
+      + `<span class="dbf-name" style="color:${tintHex(type)}">${type}</span>`
+      + `<span class="dbf-tag">${ENEMY_SPEC[type] && ENEMY_SPEC[type].rammable ? 'soft' : 'SOLID'}</span>`
+      + `<b class="dbf-n">${k}</b></div>`).join('');
+    const total = killedTypes().reduce((a, [, k]) => a + k, 0);
+    return `<div class="dbf-win"><div class="dbf-head">ROSTER · ${total} CONFIRMED</div>`
+      + (rows || '<div class="dbf-dim">no contacts destroyed</div>') + '</div>';
+  }
+  function winAttribution() {
+    const by = (rs && rs.bySrc) || { tank: 0, tower: 0, strike: 0 };
+    const top = Math.max(1, by.tank, by.tower, by.strike);
+    const bar = (label, v, col) => `<div class="dbf-row"><span class="dbf-name">${label}</span>`
+      + `<span class="dbf-track"><span class="dbf-bar" style="width:${Math.round(100 * v / top)}%;background:${col}"></span></span>`
+      + `<b class="dbf-n">${v}</b></div>`;
+    return `<div class="dbf-win"><div class="dbf-head">ATTRIBUTION</div>`
+      + bar('tank', by.tank, '#9fdcff') + bar('towers', by.tower, '#86ff9e')
+      + bar('orbital', by.strike, '#ffb347')
+      + `<div class="dbf-dim">${(rs && rs.rams) || 0} rammed · ${(rs && rs.shells) || 0} shells landed · ${(rs && rs.strikes) || 0} strikes</div></div>`;
+  }
+  function winTempo() {
+    // score every 5s, cumulative — the graph shows the RATE (deltas), which
+    // is where a wave shows up as a spike and a lull as a floor
+    const bins = (rs && rs.scoreBins) || [];
+    const d = bins.map((v, i) => Math.max(0, v - (i ? bins[i - 1] : 0)));
+    const W = 240, H = 64, top = Math.max(1, ...d, 1);
+    const pts = d.map((v, i) => `${(i / Math.max(1, d.length - 1) * W).toFixed(1)},${(H - v / top * (H - 6)).toFixed(1)}`);
+    const path = pts.length > 1 ? `<polyline points="${pts.join(' ')}" fill="none" stroke="#86ff9e" stroke-width="1.5"/>` : '';
+    const fill = pts.length > 1 ? `<polygon points="0,${H} ${pts.join(' ')} ${W},${H}" fill="rgba(134,255,158,0.12)"/>` : '';
+    return `<div class="dbf-win"><div class="dbf-head">SCORE TEMPO · per 5s</div>`
+      + `<svg class="dbf-svg" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none">${fill}${path}</svg>`
+      + `<div class="dbf-dim">peak ${fmt(top)} / 5s · total ${fmt(score.points)}</div></div>`;
+  }
+  function winRecords() {
+    const bs = (rs && rs.bestShell) || { kills: 0 }, bk = (rs && rs.bestStrike) || { kills: 0 };
+    const tile = (n, label) => `<div class="dbf-tile"><b>${n}</b><span>${label}</span></div>`;
+    return `<div class="dbf-win"><div class="dbf-head">RECORDS</div><div class="dbf-tiles">`
+      + tile(bs.kills, `most by one shell${bs.wave ? ` · w${bs.wave}` : ''}`)
+      + tile(bk.kills, `most by one strike${bk.wave ? ` · w${bk.wave}` : ''}`)
+      + tile(run.bestStreak || 0, 'longest streak')
+      + tile((rs && rs.maxCombo) || 0, 'best ram combo')
+      + `</div></div>`;
+  }
+  function winDefence() {
+    const tile = (n, label) => `<div class="dbf-tile"><b>${n}</b><span>${label}</span></div>`;
+    return `<div class="dbf-win"><div class="dbf-head">DEFENCE</div><div class="dbf-tiles">`
+      + tile(`${Math.max(0, heartHP)}/${HEART_MAX}`, 'heart')
+      + tile(run.heartHits || 0, 'heart hits taken')
+      + tile(run.hullsLost || 0, 'hulls lost')
+      + tile(towers.length, 'towers standing')
+      + tile(`${eco.biomass}kg`, 'biomass in hand')
+      + tile(tankRank > 0 ? rankLabel(tankRank) : '—', 'pilot rank')
+      + `</div></div>`;
+  }
+  function winReplay() {
+    const bk = rs && rs.bestStrike;
+    if (!bk || !bk.replay) {
+      return `<div class="dbf-win"><div class="dbf-head">BEST ORBITAL STRIKE</div>`
+        + `<div class="dbf-dim">no strike fired</div></div>`;
+    }
+    return `<div class="dbf-win"><div class="dbf-head">BEST ORBITAL STRIKE · wave ${bk.wave} · ${bk.kills} killed`
+      + `${bk.replay.portals ? ` · ${bk.replay.portals} gate${bk.replay.portals > 1 ? 's' : ''}` : ''}</div>`
+      + `<canvas class="dbf-replay" width="240" height="120"></canvas></div>`;
+  }
+  // The replay: bodies on the tangent plane at impact; the blast ring
+  // expands over 1.2s and every body it passes that DIED flares and goes
+  // out; the survivors stay. Loops. Stops itself when the canvas leaves the
+  // document, so a dismissed modal does not keep a rAF alive.
+  function startReplay() {
+    cancelAnimationFrame(replayRaf);
+    const cv = msgEl.querySelector('.dbf-replay');
+    const bk = rs && rs.bestStrike;
+    if (!cv || !bk || !bk.replay) return;
+    const ctx = cv.getContext('2d');
+    const R = bk.replay.radius, view = R * 1.9;
+    const W = cv.width, H = cv.height, sc = Math.min(W, H) / (2 * view);
+    const t0 = performance.now();
+    const LOOP = 3200, EXPAND = 1200;
+    const frame = () => {
+      if (!cv.isConnected) return;
+      const t = (performance.now() - t0) % LOOP;
+      const ring = Math.min(1, t / EXPAND) * R;
+      ctx.clearRect(0, 0, W, H);
+      ctx.fillStyle = '#020a10'; ctx.fillRect(0, 0, W, H);
+      ctx.save(); ctx.translate(W / 2, H / 2);
+      // range rings, one per cell
+      ctx.strokeStyle = 'rgba(0,208,255,0.12)'; ctx.lineWidth = 1;
+      for (let r = 1; r <= view; r++) { ctx.beginPath(); ctx.arc(0, 0, r * sc, 0, 6.283); ctx.stroke(); }
+      // the blast radius, faint, always
+      ctx.strokeStyle = 'rgba(255,179,71,0.35)'; ctx.setLineDash([3, 3]);
+      ctx.beginPath(); ctx.arc(0, 0, R * sc, 0, 6.283); ctx.stroke(); ctx.setLineDash([]);
+      for (const b of bk.replay.bodies) {
+        const d = Math.hypot(b.x, b.y);
+        const passed = d <= ring;
+        const gone = b.died && passed && t > EXPAND * (d / R) + 260;
+        if (gone) continue;
+        const flare = b.died && passed;
+        ctx.fillStyle = flare ? '#fff2c0' : tintHex(b.type);
+        ctx.globalAlpha = flare ? 1 : 0.9;
+        ctx.beginPath(); ctx.arc(b.x * sc, -b.y * sc, flare ? 4 : 2.6, 0, 6.283); ctx.fill();
+        ctx.globalAlpha = 1;
+      }
+      // the ring itself
+      if (t < EXPAND + 300) {
+        ctx.strokeStyle = '#ffffff'; ctx.lineWidth = 2;
+        ctx.globalAlpha = Math.max(0, 1 - (t - EXPAND) / 300);
+        ctx.beginPath(); ctx.arc(0, 0, ring * sc, 0, 6.283); ctx.stroke();
+        ctx.globalAlpha = 1;
+      }
+      // ground zero
+      ctx.fillStyle = '#ffb347'; ctx.beginPath(); ctx.arc(0, 0, 2, 0, 6.283); ctx.fill();
+      ctx.restore();
+      replayRaf = requestAnimationFrame(frame);
+    };
+    frame();
+  }
+  function renderAnalysis(final) {
+    msgEl.innerHTML = `<div class="msg-head">transmission · ${final ? 'final' : 'sector cleared'} · analysis</div>`
+      + `<div class="go-verdict dbf-title">${final ? 'OBJECT STÅLBERG-9' : `SECTOR ${round} OF ${SECTORS_TOTAL}`} · AFTER-ACTION</div>`
+      + `<div class="dbf-grid">${winRoster()}${winAttribution()}${winTempo()}${winRecords()}${winReplay()}${winDefence()}</div>`
+      + `<button class="msg-proceed" data-final="${final ? 1 : 0}">&#9656; proceed to orders</button>`;
+    msgEl.classList.remove('hidden');
+    startReplay();
+  }
+  function renderVerdict(final) {
+    cancelAnimationFrame(replayRaf);
+    {
+      if (final) {
         msgEl.innerHTML = `<div class="msg-head">transmission · final</div>`
           + `<div class="go-verdict best">OBJECT STÅLBERG-9 IS YOURS</div>`
           + `<div class="go-reason">every portal on the shell destroyed, all `
@@ -7980,7 +8193,7 @@ export function initTdTab(root) {
           + `</div>`
           + runAchvBlock()
           + `<button class="msg-lap">&#9673; walk the planet &mdash; fly it as ISAO</button>`
-          + `<button class="msg-regen">&#10226; another planet</button>`;
+          + `<button class="msg-planet">&#10226; another planet &mdash; bigger, new ground</button>`;
       } else {
         // THE DEBRIEF. Dismissed by hand, never on a timer: the operator
         // cleared a hard sector and the game moved on before they had
@@ -10501,6 +10714,52 @@ export function initTdTab(root) {
     openHack();
   }
 
+  // ?debrief=1 — the analyst's board with fabricated run stats, through the
+  // real renderer, so its six windows and the replay can be looked at
+  // without playing a sector to the end. ?debrief=2 shows the FINAL variant.
+  const debriefWant = parseInt(urlParams.get('debrief') || '0', 10);
+  if (debriefWant > 0) {
+    setTimeout(() => {
+      dismissIntro();
+      rs.kills = { phage: 23, ghost: 11, scoutufo: 6, drifter: 3, corona: 2 };
+      rs.bySrc = { tank: 19, tower: 21, strike: 5 };
+      rs.rams = 14; rs.shells = 6; rs.strikes = 1; rs.maxCombo = 4;
+      rs.scoreBins = [0, 120, 340, 900, 1400, 1450, 2100, 3300, 3600, 4200];
+      rs.bestShell = { kills: 3, wave: 4 };
+      const bodies = [];
+      const rng = mulberry32(7);
+      for (let i = 0; i < 14; i++) {
+        const a = rng() * 6.283, d = rng() * 5.5;
+        bodies.push({ x: Math.cos(a) * d, y: Math.sin(a) * d,
+          type: ['phage', 'ghost', 'drifter', 'corona'][i % 4], died: d < 3.2 });
+      }
+      rs.bestStrike = { kills: 5, wave: 6, replay: { radius: 3.2, portals: 1, bodies } };
+      renderAnalysis(debriefWant === 2);
+      console.log(`DEBRIEF stage=analysis windows=${msgEl.querySelectorAll('.dbf-win').length}`
+        + ` replay=${!!msgEl.querySelector('.dbf-replay')} proceed=${!!msgEl.querySelector('.msg-proceed')}`);
+      // ...then press proceed, and check the ORDERS only appear after it —
+      // "only then do we have the option to walk the planet, start another"
+      const hadOrdersEarly = !!msgEl.querySelector('.msg-lap, .msg-next, .msg-planet');
+      msgEl.querySelector('.msg-proceed').click();
+      const orders = [...msgEl.querySelectorAll('.msg-lap, .msg-next, .msg-planet')].map((b) => b.className);
+      console.log(`DEBRIEF stage=verdict orders=[${orders.join(', ')}]`
+        + ` ordersBeforeProceed=${hadOrdersEarly}`
+        + ` ${!hadOrdersEarly && orders.length >= 2 ? '(gated correctly)' : '<-- WRONG ORDER'}`);
+    }, 1200);
+  }
+
+  // ?newplanet=1 — press the final verdict's button without earning it
+  if (urlParams.get('newplanet') === '1') {
+    setTimeout(() => {
+      const before = { seed: params.seed, points: params.points, rooms: params.rooms, cells: graph.centers.length };
+      params.newPlanet();
+      console.log(`NEWPLANET check: seed ${before.seed}->${params.seed}`
+        + ` points ${before.points}->${params.points} rooms ${before.rooms}->${params.rooms}`
+        + ` cells ${before.cells}->${graph.centers.length}`
+        + ` ${params.seed !== before.seed && graph.centers.length > before.cells ? 'DIFFERENT AND BIGGER' : '<-- same or not bigger'}`);
+    }, 1500);
+  }
+
   // ?sitrep=1 — fabricated wave stats through the real renderer
   if (urlParams.get('sitrep') === '1') {
     resetWaveStats();
@@ -10599,6 +10858,31 @@ export function initTdTab(root) {
         if (span > whole * 0.25) rows.push(`${o.name}=${(span / whole * 100).toFixed(0)}%`);
       });
       console.log(`RINGDUMP big nodes (>25% of the model): ${rows.join(' ')}`);
+      // WHAT SITS IN THE MOUTH? Operator: "an unwanted grey block in the
+      // center of the portal." List every mesh — named or not, since the merge
+      // strips names — whose centre lies inside the aperture's radius.
+      const ap = g.userData.aperture;
+      if (ap) {
+        const apC = new THREE.Vector3(); ap.getWorldPosition(apC);
+        const apS = new THREE.Vector3(); ap.getWorldScale(apS);
+        const apR = Math.max(apS.x, apS.y);
+        const mb = new THREE.Box3(), mc = new THREE.Vector3(), msz = new THREE.Vector3();
+        const inMouth = [];
+        g.traverse((o) => {
+          if (!o.isMesh || o === g.userData.disc) return;
+          mb.setFromObject(o); mb.getCenter(mc); mb.getSize(msz);
+          const off = mc.distanceTo(apC);
+          if (off < apR * 0.6 && msz.length() > 1e-6) {
+            const mats = (Array.isArray(o.material) ? o.material : [o.material]).map((m) => m.name).join('+');
+            inMouth.push(`[${o.name || 'unnamed'} parent=${o.parent && o.parent.name || '?'} mat=${mats} size=${(msz.length() / apR).toFixed(2)}xR off=${(off / apR).toFixed(2)}R]`);
+          }
+        });
+        console.log(`RINGDUMP in the mouth (centre within 0.6R of the aperture): ${inMouth.join(' ') || 'nothing'}`);
+      }
+      // (A "raw file" pass used to sit here. It was not raw: loadGlb caches
+      // the parsed scene and mergeByMaterial mutates it in place, so it dumped
+      // the merged model and called it the source. The honest pre-merge look
+      // is the RING log lines from preloadPortalRing itself.)
       console.log(`RINGDUMP nodes (${names.length}), meshes marked *:`
         + ` ${names.filter((x) => x.endsWith('*')).join(' ') || 'NONE — everything merged away'}`);
       // ADDRESSABLE IS NOT THE SAME AS HAVING GEOMETRY. A preserved pivot can

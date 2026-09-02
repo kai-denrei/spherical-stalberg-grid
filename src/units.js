@@ -16,14 +16,14 @@
 
 import * as THREE from '../vendor/three.module.js';
 import { EMOTION_IDS, emotion, phosphorFor } from './emotions.js';
-import { printPhase, printOffset, printOn } from './printpath.js?v=a79ef69c';
+import { printPhase, printOffset, printOn } from './printpath.js?v=9851a1a3';
 import { loadGlb, mergeByMaterial, fitModel, tintModel, makeShellRack,
-  addEdgeOutlines, makeHeatSleeve } from './glbmodels.js?v=a79ef69c';
-import { CREATURES, waveJelly, swimWave, spherePts, bulletPts, missilePts, heartPts, torusPts, towerHeadPts, enemyDotPts, portalPts } from './creatures.js?v=a79ef69c';
-import { TOWER_FEEL, TOWER_HEADS, headKindFor } from './towerfeel.js?v=a79ef69c';
+  addEdgeOutlines, makeHeatSleeve } from './glbmodels.js?v=9851a1a3';
+import { CREATURES, waveJelly, swimWave, spherePts, bulletPts, missilePts, heartPts, torusPts, towerHeadPts, enemyDotPts, portalPts } from './creatures.js?v=9851a1a3';
+import { TOWER_FEEL, TOWER_HEADS, headKindFor } from './towerfeel.js?v=9851a1a3';
 import { STARGATE_PTS, STARGATE_STROKE,
-  HORIZON_N, stargateHorizon } from './stargate.js?v=a79ef69c';
-import { ENEMY_SPEC } from './enemyspec.js?v=a79ef69c';
+  HORIZON_N, stargateHorizon } from './stargate.js?v=9851a1a3';
+import { ENEMY_SPEC } from './enemyspec.js?v=9851a1a3';
 
 function normalizeToUnit(group) {
   group.updateMatrixWorld(true);
@@ -1865,7 +1865,30 @@ export function preloadPortalRing() {
     // white square standing over the gate. Excluding them here means no later
     // repaint can bring them back.
     hideCollisionNodes(scene);
-    const merged = mergeByMaterial(scene, RING_PIVOTS, ['Base_Collision', 'Callout_1', 'AuxScene_Helpers']);
+    // INSTANCED MESHES MUST NOT BE MERGED. The ring's stators and rotors are
+    // authored as InstancedMesh nodes (Block_Instanced, Face_Block_Instanced,
+    // RotorA/B_Instanced, Shell_Instanced). mergeByMaterial takes a mesh's
+    // BASE geometry and ignores instance matrices — so each instanced part
+    // contributed exactly one copy, at the origin. That single block on the
+    // turntable's axis was the operator's "unwanted grey block in the centre
+    // of the portal" (measured: M_Turret 0.51R and M_Detail 0.26R, unnamed,
+    // under Yaw_Turntable — no raw mesh sits there at all), and it also meant
+    // every OTHER instance around the ring was silently missing.
+    //
+    // Two wrong diagnoses before this one, both recorded: a name-excluded
+    // callout (the exclude was fine) and a geometric "hub" sweep (there was
+    // no hub). What settled it was listing the raw file's meshes by MATERIAL
+    // rather than by position.
+    //
+    // A pivot that is a mesh is left exactly as it is by the merge, so every
+    // instanced node is named as one — collected from the file, not typed,
+    // so a re-export with different instanced parts still works. It costs
+    // one draw call per instanced part per gate; that is the price of the
+    // parts existing at all.
+    const instanced = [];
+    scene.traverse((o) => { if (o.isInstancedMesh && o.name) instanced.push(o.name); });
+    console.log(`RING instanced parts kept whole: ${instanced.join(', ') || 'none'}`);
+    const merged = mergeByMaterial(scene, [...RING_PIVOTS, ...instanced], ['Base_Collision', 'Callout_1', 'AuxScene_Helpers']);
     // Unit-ish: the caller scales to the cell. Height rather than span,
     // because a gate reads by how tall it stands over the wall it is in.
     ringProto = fitModel(merged, { height: 1.0, maxSpan: 1.2 });
