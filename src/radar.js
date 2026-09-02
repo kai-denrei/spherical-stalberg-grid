@@ -9,7 +9,7 @@
 // Ours scopes a SPHERE, so a contact is projected onto the tangent plane of
 // the scope's centre — player-centred heading-up, or heart-centred.
 
-import { sub3, scale3, dot3, cross3, norm3 } from './vec3.js?v=7a73daf3';
+import { sub3, scale3, dot3, cross3, norm3 } from './vec3.js?v=5c2746ed';
 
 export const SWEEP_PERIOD = 2.6;   // seconds per revolution
 export const PHOSPHOR_DECAY = 1.12; // brightness lost per full turn behind the beam
@@ -55,4 +55,51 @@ export function radarPhosphor(bearing, sweep) {
   const TAU = Math.PI * 2;
   const age = (((sweep - bearing) % TAU) + TAU) % TAU / TAU;
   return Math.max(0.16, 1 - age * PHOSPHOR_DECAY);
+}
+
+
+// --- THE PROXIMITY SENSOR (operator, 2026-09-02) --------------------------
+// "a proximity sensor on the quadrants of the mini-map. no sound, just a
+// visual feedback. akin to a car system. it indicates when a hard-core enemy
+// is nearby. far enough to give time to react."
+//
+// Four sectors in the scope's heading frame — ahead, starboard, astern, port
+// — and a LEVEL per sector, 0..3, from the nearest contact in it: the same
+// thirds the range rings already draw, so the sensor and the scope agree
+// about what "near" means. The caller decides what counts as a contact (the
+// board passes only the solid, unrammable tier); this function only sorts
+// and grades. Range is the scope's reach, which at one cell a second is
+// about fifteen seconds of warning at the rim.
+export const SENSOR_SECTORS = 4;
+export const SENSOR_LEVELS = 3;
+
+// Which sector a bearing falls in. 0 = ahead (±45°), then clockwise:
+// 1 starboard, 2 astern, 3 port.
+export function sensorSector(bearing) {
+  const TAU = Math.PI * 2;
+  const b = ((bearing % TAU) + TAU) % TAU;               // 0..2π, 0 = ahead
+  return Math.floor(((b + Math.PI / 4) % TAU) / (Math.PI / 2)) % SENSOR_SECTORS;
+}
+
+// Level for a distance, as a fraction of the reach: 3 in the inner third,
+// 2 in the middle, 1 in the outer, 0 beyond.
+export function sensorLevel(distFrac) {
+  if (!(distFrac >= 0) || distFrac > 1) return 0;
+  return SENSOR_LEVELS - Math.min(SENSOR_LEVELS - 1, Math.floor(distFrac * SENSOR_LEVELS));
+}
+
+// contacts: [[x,y,z] world positions]. Returns one entry per sector:
+// { level, dist } with dist as a fraction of the reach (Infinity if none).
+export function proximitySectors(contacts, centerPos, basis, reach) {
+  const out = [];
+  for (let i = 0; i < SENSOR_SECTORS; i++) out.push({ level: 0, dist: Infinity });
+  for (const pos of contacts) {
+    const d = sub3(pos, centerPos);
+    const x = dot3(d, basis.right), y = -dot3(d, basis.fwd);
+    const frac = Math.hypot(x, y) / reach;
+    if (frac > 1) continue;
+    const sec = sensorSector(radarBearing(x, y));
+    if (frac < out[sec].dist) out[sec] = { level: sensorLevel(frac), dist: frac };
+  }
+  return out;
 }

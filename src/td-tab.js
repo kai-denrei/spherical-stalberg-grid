@@ -19,49 +19,50 @@
 
 import * as THREE from '../vendor/three.module.js';
 import GUI from '../vendor/lil-gui.esm.js';
-import { generateSphereMesh, relax } from './grid.js?v=7a73daf3';
-import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=7a73daf3';
-import { mulberry32, randomSeed } from './rng.js?v=7a73daf3';
-import { computeBerths, berthIndexFor } from './berths.js?v=7a73daf3';
-import { wantsSecondary, shellsForAll } from './autofire.js?v=7a73daf3';
-import { printPhase, printOffset, printOn, patternSecsFor } from './printpath.js?v=7a73daf3';
-import { createBeamRig, PLASMA_DEFAULTS, BOARD_PRESET, BEAM_PEAK } from './beamdraw.js?v=7a73daf3';
-import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3, segKey, tangentDir, tangentBasis } from './vec3.js?v=7a73daf3';
-import { CREATURES, waveJelly } from './creatures.js?v=7a73daf3';
-import { brief, dwellFor } from './isaobriefs.js?v=7a73daf3';
-import { drawEmotion } from './emotions.js?v=7a73daf3';
+import { generateSphereMesh, relax } from './grid.js?v=5c2746ed';
+import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=5c2746ed';
+import { mulberry32, randomSeed } from './rng.js?v=5c2746ed';
+import { computeBerths, berthIndexFor } from './berths.js?v=5c2746ed';
+import { wantsSecondary, shellsForAll } from './autofire.js?v=5c2746ed';
+import { printPhase, printOffset, printOn, patternSecsFor } from './printpath.js?v=5c2746ed';
+import { createBeamRig, PLASMA_DEFAULTS, BOARD_PRESET, BEAM_PEAK } from './beamdraw.js?v=5c2746ed';
+import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3, segKey, tangentDir, tangentBasis } from './vec3.js?v=5c2746ed';
+import { CREATURES, waveJelly } from './creatures.js?v=5c2746ed';
+import { brief, dwellFor } from './isaobriefs.js?v=5c2746ed';
+import { drawEmotion } from './emotions.js?v=5c2746ed';
 import { ACHIEVEMENTS, ACHV_GROUPS, achievement, blankRun, earned, freshlyEarned,
   sanitiseRecord }
-  from './achievements.js?v=7a73daf3';
+  from './achievements.js?v=5c2746ed';
 import { applyFontPack, currentFontPack, FONT_NAMES,
-  loadTypeFeel } from './fonts.js?v=7a73daf3';
-import { SECONDARY_TOE, applySecondaryToe } from './units.js?v=7a73daf3';
-import { UNITS, UNIT_NAMES, buildUnit, buildCreature, preloadMkcx, preloadServer, makeServerFixture, makeShieldShell, preloadContainer, makeContainerFixture, preloadFabricator, makeIsaoDrone, makeBulletCloud, makeRewardSolid, makeShellSolid, makeDebris, makeDotBurst, makePortalCloud, preloadPortalRing, makePortalRing, makeHeartCloud, makeDotEnemy, preloadTerraformer, makeTerraformerFixture } from './units.js?v=7a73daf3';
-import { LOOKS, LOOK_NAMES } from './looks.js?v=7a73daf3';
-import { makeCellIndex } from './cellindex.js?v=7a73daf3';
-import { CREATURE_TINTS, ENEMY_SPEC, INTROS, computeWavePlan, accentFor } from './enemyspec.js?v=7a73daf3';
-import { PICKUPS } from './pickups.js?v=7a73daf3';
-import { rankFor, rankLabel, badgeSVG, killReq, eliteReq } from './ranks.js?v=7a73daf3';
-import { beamStep, isBeamStep, PEN_SOFT_FRAC, PEN_HARD_FRAC } from './beamranks.js?v=7a73daf3';
-import { burn, sweepAdvance, wallBite as wallBiteFor } from './beamburn.js?v=7a73daf3';
-import { arcPoint, projectToArc, toeForCrossing, crossingForToe } from './arc.js?v=7a73daf3';
+  loadTypeFeel } from './fonts.js?v=5c2746ed';
+import { SECONDARY_TOE, applySecondaryToe } from './units.js?v=5c2746ed';
+import { UNITS, UNIT_NAMES, buildUnit, buildCreature, preloadMkcx, preloadServer, makeServerFixture, makeShieldShell, preloadContainer, makeContainerFixture, preloadFabricator, makeIsaoDrone, makeBulletCloud, makeRewardSolid, makeShellSolid, makeDebris, makeDotBurst, makePortalCloud, preloadPortalRing, makePortalRing, makeHeartCloud, makeDotEnemy, preloadTerraformer, makeTerraformerFixture } from './units.js?v=5c2746ed';
+import { LOOKS, LOOK_NAMES } from './looks.js?v=5c2746ed';
+import { makeCellIndex } from './cellindex.js?v=5c2746ed';
+import { CREATURE_TINTS, ENEMY_SPEC, INTROS, computeWavePlan, accentFor } from './enemyspec.js?v=5c2746ed';
+import { PICKUPS } from './pickups.js?v=5c2746ed';
+import { rankFor, rankLabel, badgeSVG, killReq, eliteReq } from './ranks.js?v=5c2746ed';
+import { beamStep, isBeamStep, PEN_SOFT_FRAC, PEN_HARD_FRAC } from './beamranks.js?v=5c2746ed';
+import { burn, sweepAdvance, wallBite as wallBiteFor } from './beamburn.js?v=5c2746ed';
+import { arcPoint, projectToArc, toeForCrossing, crossingForToe } from './arc.js?v=5c2746ed';
 import { WORMHOLE_PRESET, WORMHOLE_RENDER, RING_SPIN, TRAVEL,
-  travelRate, advancePhase } from './portalfx.js?v=7a73daf3';
-import { WORMHOLE_FRAG } from './fx/wormhole.frag.js?v=7a73daf3';
-import { makeScore } from './score.js?v=7a73daf3';
-import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER } from './towers.js?v=7a73daf3';
-import { makeEconomy, sellRefund } from './economy.js?v=7a73daf3';
-import { makeBloom } from './postfx.js?v=7a73daf3';
-import { TANK_FEEL, TANK_FEEL_KNOBS, makeTankFeel, stepTankFeel, landTankFeel, fireTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js?v=7a73daf3';
-import { FEEL, loadFeel, saveFeel } from './feelstore.js?v=7a73daf3';
+  travelRate, advancePhase } from './portalfx.js?v=5c2746ed';
+import { WORMHOLE_FRAG } from './fx/wormhole.frag.js?v=5c2746ed';
+import { makeScore } from './score.js?v=5c2746ed';
+import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER } from './towers.js?v=5c2746ed';
+import { makeEconomy, sellRefund } from './economy.js?v=5c2746ed';
+import { makeBloom } from './postfx.js?v=5c2746ed';
+import { TANK_FEEL, TANK_FEEL_KNOBS, makeTankFeel, stepTankFeel, landTankFeel, fireTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js?v=5c2746ed';
+import { FEEL, loadFeel, saveFeel } from './feelstore.js?v=5c2746ed';
 import { STRIKE_KNOBS, makeStrike, makeStrikeParams, grantStrikes, stepStrike,
   toggleArm, paintTarget, launchStrike, stepFall, skipFall, fallProgress,
-  strikeDamage, retargetStrike, orbitProgress } from './strike.js?v=7a73daf3';
-import { radarBasis, radarProject, radarBearing, sweepAngle, radarPhosphor } from './radar.js?v=7a73daf3';
-import { BLOOM_GROUPS } from './bloomweights.js?v=7a73daf3';
-import { TOWER_LOOK_NAMES, DEFAULT_TOWER_LOOK, buildTowerLook, preloadLook } from './towerlooks.js?v=7a73daf3';
-import { makeAudio } from './audio.js?v=7a73daf3';
-import { DEATH_KEYS } from './audiomanifest.js?v=7a73daf3';
+  strikeDamage, retargetStrike, orbitProgress } from './strike.js?v=5c2746ed';
+import { radarBasis, radarProject, radarBearing, sweepAngle, radarPhosphor,
+  proximitySectors, SENSOR_LEVELS } from './radar.js?v=5c2746ed';
+import { BLOOM_GROUPS } from './bloomweights.js?v=5c2746ed';
+import { TOWER_LOOK_NAMES, DEFAULT_TOWER_LOOK, buildTowerLook, preloadLook } from './towerlooks.js?v=5c2746ed';
+import { makeAudio } from './audio.js?v=5c2746ed';
+import { DEATH_KEYS } from './audiomanifest.js?v=5c2746ed';
 
 export function initTdTab(root) {
   let active = false;
@@ -9223,6 +9224,38 @@ export function initTdTab(root) {
     }
     // gates: amber, pulsing harder as a wave charges. Known ones only —
     // discovery still matters.
+    // THE PROXIMITY SENSOR (operator): car-style arcs inside the rim, one
+    // sector each for ahead / starboard / astern / port, one to three arcs by
+    // how close the nearest SOLID contact in that sector is. Visual only —
+    // no sound by request. Only in the heading frame: from the heart's frame
+    // "ahead" means nothing.
+    if (mapMode !== 'heart') {
+      const hard = [];
+      for (const e of enemies) {
+        if (!e.alive || e.spec.rammable) continue;
+        if (e.spec.cloaked && !e.decloaked) continue;
+        hard.push(e.pos);
+      }
+      const secs = proximitySectors(hard, cpos, basis, range);
+      const pulse = 0.72 + 0.28 * Math.sin(t * 9);
+      for (let i = 0; i < secs.length; i++) {
+        const lv = secs[i].level;
+        if (!lv) continue;
+        // sector i is centred at bearing i*90°; canvas angles run from +x
+        // clockwise and bearing 0 is screen-up, so subtract a quarter turn
+        const mid = i * Math.PI / 2 - Math.PI / 2;
+        const half = Math.PI / 4 - 0.14;   // a gap between sectors
+        for (let k = 0; k < lv; k++) {
+          const rr = R - 3 - k * 4.5;
+          ctx.strokeStyle = lv >= 3 ? '#ff4433' : lv === 2 ? '#ff8a3d' : '#ffb347';
+          ctx.globalAlpha = (lv >= 3 ? pulse : 0.85) * (k === SENSOR_LEVELS - 1 ? 1 : 0.8);
+          ctx.lineWidth = 2.5;
+          ctx.beginPath(); ctx.arc(cx, cy, rr, mid - half, mid + half); ctx.stroke();
+        }
+      }
+      ctx.globalAlpha = 1;
+    }
+
     for (const sp of spawnPoints) {
       if (!sp.alive || !sp.found) continue;
       const q = radarProject(graph.centers[sp.ci], cpos, basis, range);
@@ -11041,6 +11074,23 @@ export function initTdTab(root) {
         + ` (every ${TF.containerEvery} a store, every ${TF.hullEvery} a hull)`
         + ` ${tfContainers > 0 && tfHulls > 0 ? 'BOTH PRODUCTS LANDED' : '<-- something did not build'}`);
     });
+  }
+
+  // ?sensorprobe=1 — plant one SOLID contact ahead-starboard at half the
+  // scope's reach and read the sensor: starboard at level 2, nothing else.
+  if (urlParams.get('sensorprobe') === '1') {
+    setTimeout(() => {
+      const basis = radarBasis(player.pos, player.smoothDir);
+      const reach = 1.15;
+      const put = (fwd, right) => norm3([player.pos[0] + basis.fwd[0] * fwd + basis.right[0] * right,
+        player.pos[1] + basis.fwd[1] * fwd + basis.right[1] * right,
+        player.pos[2] + basis.fwd[2] * fwd + basis.right[2] * right]);
+      const secs = proximitySectors([put(reach * 0.2, reach * 0.45)], player.pos, basis, reach);
+      const levels = secs.map((x) => x.level).join('/');
+      console.log(`SENSORPROBE levels ahead/stbd/astern/port = ${levels}`
+        + ` ${secs[1].level === 2 && secs[0].level === 0 ? '(starboard, level 2 — correct)' : '<-- WRONG SECTOR OR LEVEL'}`
+        + ` | reach ${reach.toFixed(2)} = ${(reach / cellSide).toFixed(1)} cells of warning at the rim`);
+    }, 1500);
   }
 
   // ?pedprobe=1 — push the tank straight at the heart through the cushion and

@@ -2,6 +2,7 @@
 // them: heading is up, starboard is right, the beam brightens what it just
 // passed, and out-of-range contacts pin to the rim instead of vanishing.
 import {
+  sensorSector, sensorLevel, proximitySectors, SENSOR_SECTORS,
   SWEEP_PERIOD, radarBasis, radarProject, radarBearing, sweepAngle,
   radarPhosphor,
 } from '../src/radar.js';
@@ -63,6 +64,32 @@ console.log('phosphor:');
     prev = v;
   }
   check('decay is monotonic behind the beam', mono);
+}
+
+
+console.log('proximity sensor:');
+{
+  const c = [0, 0, 1];
+  const basis = radarBasis(c, [1, 0, 0]);
+  const at = (fwd, right) => [c[0] + basis.fwd[0] * fwd + basis.right[0] * right,
+    c[1] + basis.fwd[1] * fwd + basis.right[1] * right,
+    c[2] + basis.fwd[2] * fwd + basis.right[2] * right];
+  check('four sectors, all quiet with nothing in range',
+    proximitySectors([], c, basis, 1).every((s2) => s2.level === 0 && s2.dist === Infinity));
+  check('ahead lands in sector 0', proximitySectors([at(0.5, 0)], c, basis, 1)[0].level > 0);
+  check('starboard lands in sector 1', proximitySectors([at(0, 0.5)], c, basis, 1)[1].level > 0);
+  check('astern lands in sector 2', proximitySectors([at(-0.5, 0)], c, basis, 1)[2].level > 0);
+  check('port lands in sector 3', proximitySectors([at(0, -0.5)], c, basis, 1)[3].level > 0);
+  check('44° is still AHEAD, 46° is starboard',
+    sensorSector(44 * Math.PI / 180) === 0 && sensorSector(46 * Math.PI / 180) === 1);
+  check('level 1 outer third, 2 middle, 3 inner',
+    sensorLevel(0.9) === 1 && sensorLevel(0.5) === 2 && sensorLevel(0.1) === 3);
+  check('beyond the reach is 0, and so is garbage', sensorLevel(1.2) === 0 && sensorLevel(NaN) === 0);
+  check('at the rim exactly is still a warning', sensorLevel(1) === 1);
+  const two = proximitySectors([at(0.9, 0), at(0.2, 0)], c, basis, 1);
+  check('the NEAREST contact in a sector sets its level', two[0].level === 3 && approx(two[0].dist, 0.2, 1e-9));
+  check('a contact past the reach does not register', proximitySectors([at(1.5, 0)], c, basis, 1)[0].level === 0);
+  check(`sector count is ${SENSOR_SECTORS}`, proximitySectors([], c, basis, 1).length === SENSOR_SECTORS);
 }
 
 console.log(failures ? `\n${failures} FAILURES` : '\nall radar invariants hold');
