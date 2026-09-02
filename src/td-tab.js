@@ -19,52 +19,52 @@
 
 import * as THREE from '../vendor/three.module.js';
 import GUI from '../vendor/lil-gui.esm.js';
-import { generateSphereMesh, relax } from './grid.js?v=ab898a18';
-import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=ab898a18';
-import { mulberry32, randomSeed } from './rng.js?v=ab898a18';
-import { computeBerths, berthIndexFor } from './berths.js?v=ab898a18';
-import { wantsSecondary, shellsForAll } from './autofire.js?v=ab898a18';
-import { printPhase, printOffset, printOn, patternSecsFor } from './printpath.js?v=ab898a18';
-import { createBeamRig, PLASMA_DEFAULTS, BOARD_PRESET, BEAM_PEAK } from './beamdraw.js?v=ab898a18';
-import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3, segKey, tangentDir, tangentBasis } from './vec3.js?v=ab898a18';
-import { CREATURES, waveJelly } from './creatures.js?v=ab898a18';
-import { brief, dwellFor } from './isaobriefs.js?v=ab898a18';
-import { drawEmotion } from './emotions.js?v=ab898a18';
+import { generateSphereMesh, relax } from './grid.js?v=fd91b488';
+import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=fd91b488';
+import { mulberry32, randomSeed } from './rng.js?v=fd91b488';
+import { computeBerths, berthIndexFor } from './berths.js?v=fd91b488';
+import { wantsSecondary, shellsForAll } from './autofire.js?v=fd91b488';
+import { printPhase, printOffset, printOn, patternSecsFor } from './printpath.js?v=fd91b488';
+import { createBeamRig, PLASMA_DEFAULTS, BOARD_PRESET, BEAM_PEAK } from './beamdraw.js?v=fd91b488';
+import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3, segKey, tangentDir, tangentBasis } from './vec3.js?v=fd91b488';
+import { CREATURES, waveJelly } from './creatures.js?v=fd91b488';
+import { brief, dwellFor } from './isaobriefs.js?v=fd91b488';
+import { drawEmotion } from './emotions.js?v=fd91b488';
 import { ACHIEVEMENTS, ACHV_GROUPS, achievement, blankRun, earned, freshlyEarned,
   sanitiseRecord }
-  from './achievements.js?v=ab898a18';
+  from './achievements.js?v=fd91b488';
 import { applyFontPack, currentFontPack, FONT_NAMES,
-  loadTypeFeel } from './fonts.js?v=ab898a18';
-import { SECONDARY_TOE, applySecondaryToe } from './units.js?v=ab898a18';
-import { UNITS, UNIT_NAMES, buildUnit, buildCreature, preloadMkcx, preloadServer, makeServerFixture, makeShieldShell, preloadContainer, makeContainerFixture, preloadFabricator, makeIsaoDrone, makeBulletCloud, makeRewardSolid, makeShellSolid, makeDebris, makeDotBurst, makePortalCloud, preloadPortalRing, makePortalRing, makeHeartCloud, makeDotEnemy, preloadTerraformer, makeTerraformerFixture } from './units.js?v=ab898a18';
-import { LOOKS, LOOK_NAMES } from './looks.js?v=ab898a18';
-import { makeCellIndex } from './cellindex.js?v=ab898a18';
-import { CREATURE_TINTS, ENEMY_SPEC, INTROS, computeWavePlan, accentFor } from './enemyspec.js?v=ab898a18';
-import { PICKUPS } from './pickups.js?v=ab898a18';
-import { rankFor, rankLabel, badgeSVG, killReq, eliteReq } from './ranks.js?v=ab898a18';
-import { beamStep, isBeamStep, PEN_SOFT_FRAC, PEN_HARD_FRAC } from './beamranks.js?v=ab898a18';
-import { burn, sweepAdvance, wallBite as wallBiteFor } from './beamburn.js?v=ab898a18';
-import { arcPoint, projectToArc, toeForCrossing, crossingForToe } from './arc.js?v=ab898a18';
+  loadTypeFeel } from './fonts.js?v=fd91b488';
+import { SECONDARY_TOE, applySecondaryToe } from './units.js?v=fd91b488';
+import { UNITS, UNIT_NAMES, buildUnit, buildCreature, preloadMkcx, preloadServer, makeServerFixture, makeShieldShell, preloadContainer, makeContainerFixture, preloadFabricator, makeIsaoDrone, makeBulletCloud, makeRewardSolid, makeShellSolid, makeDebris, makeDotBurst, makePortalCloud, preloadPortalRing, makePortalRing, makeHeartCloud, makeDotEnemy, preloadTerraformer, makeTerraformerFixture } from './units.js?v=fd91b488';
+import { LOOKS, LOOK_NAMES } from './looks.js?v=fd91b488';
+import { makeCellIndex } from './cellindex.js?v=fd91b488';
+import { CREATURE_TINTS, ENEMY_SPEC, INTROS, computeWavePlan, accentFor } from './enemyspec.js?v=fd91b488';
+import { PICKUPS } from './pickups.js?v=fd91b488';
+import { rankFor, rankLabel, badgeSVG, killReq, eliteReq } from './ranks.js?v=fd91b488';
+import { beamStep, isBeamStep, PEN_SOFT_FRAC, PEN_HARD_FRAC } from './beamranks.js?v=fd91b488';
+import { burn, sweepAdvance, wallBite as wallBiteFor } from './beamburn.js?v=fd91b488';
+import { arcPoint, projectToArc, toeForCrossing, crossingForToe } from './arc.js?v=fd91b488';
 import { WORMHOLE_PRESET, RING_SPIN, TRAVEL,
-  travelRate, advancePhase } from './portalfx.js?v=ab898a18';
-import { WORMHOLE_FRAG } from './fx/wormhole.frag.js?v=ab898a18';
-import { makeScore } from './score.js?v=ab898a18';
-import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER } from './towers.js?v=ab898a18';
-import { makeEconomy, sellRefund } from './economy.js?v=ab898a18';
-import { pickTier } from './perftier.js?v=ab898a18';
-import { registerServiceWorker } from './pwa.js?v=ab898a18';
-import { makeBloom } from './postfx.js?v=ab898a18';
-import { TANK_FEEL, TANK_FEEL_KNOBS, makeTankFeel, stepTankFeel, landTankFeel, fireTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js?v=ab898a18';
-import { FEEL, loadFeel, saveFeel } from './feelstore.js?v=ab898a18';
+  travelRate, advancePhase } from './portalfx.js?v=fd91b488';
+import { WORMHOLE_FRAG } from './fx/wormhole.frag.js?v=fd91b488';
+import { makeScore } from './score.js?v=fd91b488';
+import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER } from './towers.js?v=fd91b488';
+import { makeEconomy, sellRefund } from './economy.js?v=fd91b488';
+import { pickTier } from './perftier.js?v=fd91b488';
+import { registerServiceWorker } from './pwa.js?v=fd91b488';
+import { makeBloom } from './postfx.js?v=fd91b488';
+import { TANK_FEEL, TANK_FEEL_KNOBS, makeTankFeel, stepTankFeel, landTankFeel, fireTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js?v=fd91b488';
+import { FEEL, loadFeel, saveFeel } from './feelstore.js?v=fd91b488';
 import { STRIKE_KNOBS, makeStrike, makeStrikeParams, grantStrikes, stepStrike,
   toggleArm, paintTarget, launchStrike, stepFall, skipFall, fallProgress,
-  strikeDamage, retargetStrike, orbitProgress } from './strike.js?v=ab898a18';
+  strikeDamage, retargetStrike, orbitProgress } from './strike.js?v=fd91b488';
 import { radarBasis, radarProject, radarBearing, sweepAngle, radarPhosphor,
-  proximitySectors, SENSOR_LEVELS } from './radar.js?v=ab898a18';
-import { BLOOM_GROUPS } from './bloomweights.js?v=ab898a18';
-import { TOWER_LOOK_NAMES, DEFAULT_TOWER_LOOK, buildTowerLook, preloadLook } from './towerlooks.js?v=ab898a18';
-import { makeAudio } from './audio.js?v=ab898a18';
-import { DEATH_KEYS } from './audiomanifest.js?v=ab898a18';
+  proximitySectors, SENSOR_LEVELS } from './radar.js?v=fd91b488';
+import { BLOOM_GROUPS } from './bloomweights.js?v=fd91b488';
+import { TOWER_LOOK_NAMES, DEFAULT_TOWER_LOOK, buildTowerLook, preloadLook } from './towerlooks.js?v=fd91b488';
+import { makeAudio } from './audio.js?v=fd91b488';
+import { DEATH_KEYS } from './audiomanifest.js?v=fd91b488';
 
 export function initTdTab(root) {
   let active = false;
@@ -174,6 +174,31 @@ export function initTdTab(root) {
   const mobileShell = mobileParam === '1' ? true : mobileParam === '0' ? false
     : (matchMedia('(pointer: coarse)').matches && Math.min(innerWidth, innerHeight) < 900);
   document.body.classList.toggle('mobile-shell', mobileShell);
+  // ?coarse=1 — SIMULATE A COARSE POINTER for the ruler. No headless flag
+  // makes `(pointer: coarse)` true (primaryPointerType blink-settings were
+  // tried: still false), so every rule in the phone's coarse blocks was
+  // invisible to ?layout, which reported 0 overlaps on a layout the phone
+  // never shows — the operator's screenshot showed the radar swallowing the
+  // launch console. Rewriting the media conditions in the loaded sheets
+  // makes those blocks apply for real, at this width, in this run.
+  if (mobileParam === '1' && new URLSearchParams(location.search).get('coarse') === '1') {
+    let flipped = 0;
+    for (const sheet of document.styleSheets) {
+      let rules;
+      try { rules = sheet.cssRules; } catch { continue; }
+      for (const r of rules) {
+        if (!(r instanceof CSSMediaRule)) continue;
+        const t = r.media.mediaText;
+        if (!/pointer:\s*coarse|hover:\s*none/.test(t)) continue;
+        r.media.mediaText = t
+          .replace(/\(pointer:\s*coarse\)/g, '(min-width: 0px)')
+          .replace(/\(hover:\s*none\)/g, '(min-width: 0px)');
+        flipped++;
+      }
+    }
+    console.log(`COARSE simulated: ${flipped} media blocks now apply`);
+  }
+
   // THE RENDER BUDGET (plan §2.9): one table, picked once, printed by
   // ?perf=N next to the draw stats. ?mobile=1|0 forces the matching tier so
   // a headless run — never coarse — measures what a phone gets; ?tier=
@@ -428,7 +453,11 @@ export function initTdTab(root) {
     const narrow = w <= 700;
     const mScale = strike.armed ? (narrow ? 0.44 : 0.52) : (narrow ? 0.23 : 0.32);
     const mCap = strike.armed ? (narrow ? 340 : 430) : (narrow ? 138 : 240);
-    const m = Math.min(mCap, Math.floor(Math.min(w, h) * mScale));
+    // the shell keeps the radar small and bottom-left (its CSS pins the
+    // corner); the phone block's 240px disc was swallowing the console
+    const m = mobileShell
+      ? Math.min(strike.armed ? 200 : 96, Math.floor(Math.min(w, h) * (strike.armed ? 0.5 : 0.3)))
+      : Math.min(mCap, Math.floor(Math.min(w, h) * mScale));
     radarCss = m;
     const dpr = Math.min(devicePixelRatio || 1, 2);
     radarEl.width = Math.round(m * dpr);
@@ -3418,7 +3447,28 @@ export function initTdTab(root) {
   // non-freezing tutorial callout; flash = big centred, skip = show Skip, hold = no auto-hide
   let tutTimer = null;
   const TUT_BEAT = 4.0;   // seconds of quiet between lessons
+  // THE SHELL'S WORDS. The tutorial teaches treads, lasers, shell, throttle,
+  // build — in the desktop's vocabulary. On the shell there is no throttle
+  // and no key; the same lessons are said in the shell's terms here, at the
+  // one place every banner passes through, so the phase machine is untouched.
+  // (The operator's first phone screen: "cannot figure out the controls".)
+  const SHELL_WORDS = [
+    ['RAM THEM · drive straight through them',
+      'RAM THEM · TAP THE GROUND beyond them — the tank drives there and rams what it crosses'],
+    ['hold to sweep them with the lasers', 'hold &#8767; (bottom right) to sweep them with the plasma'],
+    ['Build Towers — tap any HIGH GROUND cell, from any camera. ',
+      'BUILD · tap the BUILD button, then any HIGH GROUND cell. Hold a tower to upgrade. '],
+  ];
+  function shellWords(html) {
+    if (!mobileShell) return html;
+    if (html.startsWith('THROTTLE ·')) {
+      return 'TAP TO GO · tap where you want the tank, tap again to change your mind. It drives itself.';
+    }
+    for (const [a, b] of SHELL_WORDS) html = html.replace(a, b);
+    return html;
+  }
   function tutBanner(html, opts = {}) {
+    html = shellWords(html);
     tutEl.className = opts.flash ? 'tut-flash' : '';
     tutEl.innerHTML = html + (opts.skip
       ? '<div><button class="tut-skip">skip tutorial</button></div>' : '');
@@ -3433,6 +3483,9 @@ export function initTdTab(root) {
   let pulsedBtn = null;
   function pulseButton(sel) {
     if (pulsedBtn) pulsedBtn.classList.remove('tutorial-pulse');
+    // the shell has no throttle to pulse; its BUILD lesson pulses the switch
+    if (mobileShell && sel === '#td-throttle') sel = null;
+    if (mobileShell && sel === '#td-pad-map') sel = '#mob-mode';
     pulsedBtn = sel ? root.querySelector(sel) : null;
     if (pulsedBtn) pulsedBtn.classList.add('tutorial-pulse');
   }
@@ -3644,7 +3697,10 @@ export function initTdTab(root) {
         // Advance on USE, not on a timer — the point is that they touch it.
         // The timer is only there so a player who will not is not stranded.
         this.speedT += dt;
-        if (Math.abs(throttle - this.speedFrom) > 0.15 || this.speedT > 16) {
+        // on the shell this lesson is TAP TO GO (shellWords): passed by a
+        // destination accepted, not by a throttle that is not on screen
+        if (Math.abs(throttle - this.speedFrom) > 0.15 || this.speedT > 16
+            || (mobileShell && gotoCi >= 0)) {
           hideTutBanner();
           this.startBuild();
         }
@@ -3723,6 +3779,8 @@ export function initTdTab(root) {
   }
   function endTutorial() {
     tutorialActive = false;
+    // a tutorial COMPLETED on the shell taught the shell; a skipped one did not
+    if (mobileShell && !tutorial.skipped) coachFinish();
     root.classList.remove('tutoring');
     waveActive = enemies.some((e) => e.alive); waveAge = 0; interClock = 0;
     tutorial.teardown();
@@ -3730,6 +3788,7 @@ export function initTdTab(root) {
     try { localStorage.setItem('td.tutorialSeen', '1'); } catch (e) { /* private mode */ }
   }
   function skipTutorial() {
+    tutorial.skipped = true;
     // tear down tutorial-only entities, then hand to a clean normal round
     for (const e of tutorial.fodder) { if (e.alive) { e.alive = false; scene.remove(e.obj); } }
     if (tutorial.portal && tutorial.portal.alive) {
@@ -3795,6 +3854,76 @@ export function initTdTab(root) {
     }).then((reg) => {
       console.log(`PWA sw=${reg ? 'registered' : 'not registered'}${registerServiceWorker.why ? ' (' + registerServiceWorker.why + ')' : ''}`);
     });
+  }
+  // THE COACH. The tutorial runs once per browser and teaches the game; a
+  // phone that has already seen it (the operator's) boots straight into a
+  // wave with nothing on screen saying how to move — tap-to-go is invisible
+  // until someone has done it. Three coach marks, shell only, once per
+  // browser, each holding until the thing it names has happened:
+  //   1. TAP THE GROUND        until a destination is accepted
+  //   2. the thumbs            until a thumb is pressed (or 12s)
+  //   3. BUILD                 when a tower is affordable, until one is ordered
+  // Not the tutorial: it never spawns anything and never freezes the game.
+  const COACH_KEY = 'td.shellCoachSeen';
+  const coach = {
+    step: 0, t: 0, pulseT: 0, shown: false, fired: false, ordersAt: 0,
+    done: (() => { try { return !!localStorage.getItem(COACH_KEY); } catch { return false; } })(),
+  };
+  function coachFinish() {
+    if (coach.done) return;
+    coach.done = true;
+    pulseButton(null);
+    hideTutBanner();
+    try { localStorage.setItem(COACH_KEY, '1'); } catch { /* private mode */ }
+  }
+  // a cell three hops out, away from the Heart: the direction the game is in
+  function coachTarget() {
+    const d0 = bfsDist(graph.adj, [player.cur], (i) => dungeon.tags[i] !== BLOCKED);
+    let best = -1, bestH = -1;
+    for (let i = 0; i < d0.length; i++) {
+      if (d0[i] === 3 && dungeon.distToHeart[i] > bestH) { bestH = dungeon.distToHeart[i]; best = i; }
+    }
+    return best;
+  }
+  function coachTick(dt) {
+    if (!mobileShell || coach.done || tutorialActive || paused || !graph) return;
+    if (introEl && !introEl.classList.contains('hidden')) return;
+    coach.t += dt;
+    if (coach.step === 0) {
+      if (!coach.shown) { coach.shown = true; tutBanner('TAP THE GROUND &middot; the tank drives there', { hold: true }); }
+      coach.pulseT -= dt;
+      if (coach.pulseT <= 0) {
+        coach.pulseT = 1.2;
+        const c = coachTarget();
+        if (c >= 0) { paintCell(c, look().floors.hintFlash); setTimeout(() => paintCell(c, floorColorOf(c)), 700); }
+      }
+      if (gotoCi >= 0 || coach.t > 45) { coach.step = 1; coach.t = 0; coach.shown = false; }
+    } else if (coach.step === 1) {
+      if (!coach.shown) {
+        coach.shown = true;
+        tutBanner('&#9673; SHELL &middot; &#8767; PLASMA &middot; the thumbs, bottom right', { hold: true });
+        pulseButton('#td-pad-fire');
+      }
+      if (coach.fired || coach.t > 12) {
+        coach.step = 2; coach.t = 0; coach.shown = false;
+        pulseButton(null); hideTutBanner(); coach.ordersAt = orders.length;
+      }
+    } else if (coach.step === 2) {
+      if (!coach.shown) {
+        const keys = unlockedTowerKeys(wave, hackedUnlocks);
+        const cheapest = keys.length ? Math.min(...keys.map((k) => TOWER_BY_KEY[k].cost)) : Infinity;
+        if (eco.biomass < cheapest || buildMode) return;
+        coach.shown = true; coach.t = 0;
+        tutBanner('BUILD &middot; tap the button, then HIGH GROUND &middot; hold a tower to upgrade', { hold: true });
+        pulseButton('#mob-mode');
+        return;
+      }
+      if (orders.length > coach.ordersAt || coach.t > 60) coachFinish();
+    }
+  }
+  for (const sel of ['#td-pad-fire', '#td-pad-laser']) {
+    const el = root.querySelector(sel);
+    if (el) el.addEventListener('pointerdown', () => { coach.fired = true; }, { once: true });
   }
   function syncMobMode() {
     if (!mobModeEl) return;
@@ -9287,6 +9416,7 @@ export function initTdTab(root) {
     // the shell's mode button follows buildMode from EVERY path that sets it
     // (sector reveal, ?mode=build, the desktop chip), not only its own tap
     if (mobModeEl && (buildMode ? 1 : 0) !== mobModeLast) { mobModeLast = buildMode ? 1 : 0; syncMobMode(); }
+    coachTick(dt);
     if (!frozen && eco) { ecoClockT += dt; if (eco.biomass >= CHEAPEST_TOWER) ecoAffordT += dt; }
     if (tutorialActive) tutorial.tick(dt);
     if (!frozen) {
@@ -11179,7 +11309,8 @@ export function initTdTab(root) {
           }
         }
       }
-      console.log(`LAYOUT viewport ${innerWidth}x${innerHeight} — ${clashes} overlaps`);
+      console.log(`LAYOUT viewport ${innerWidth}x${innerHeight} coarse=${matchMedia('(pointer: coarse)').matches}`
+        + ` dpr=${devicePixelRatio} — ${clashes} overlaps`);
     }, layoutAt * 1000);
   }
 
@@ -11600,6 +11731,39 @@ export function initTdTab(root) {
       console.log(`WAKE shell=${mobileShell} api=${'wakeLock' in navigator}`
         + ` held=${!!(wakeLock && !wakeLock.released)} visible=${document.visibilityState}`
         + ` ${!('wakeLock' in navigator) ? 'INCONCLUSIVE (no API here)' : (wakeLock && !wakeLock.released) ? 'PASS' : mobileShell ? '<-- not held' : '(desktop: not requested, by design)'}`);
+    }, 1500);
+  }
+
+  // ?coach=1 — walk the three coach marks by doing what each one asks, and
+  // print the banner at every step. Forces the tutorial off (the coach is
+  // for the player who is past it) and the seen-flag clear.
+  if (urlParams.get('coach') === '1') {
+    setTimeout(() => {
+      dismissIntro();
+      try { localStorage.removeItem(COACH_KEY); } catch { /* */ }
+      coach.done = false; tutorialActive = false; root.classList.remove('tutoring'); paused = false;
+      const banner = () => tutEl.classList.contains('hidden') ? '(hidden)' : tutEl.textContent.replace(/\s+/g, ' ').trim();
+      const tick = (n) => { for (let i = 0; i < n; i++) coachTick(1 / 30); };
+      tick(2);
+      const b0 = banner(), s0 = coach.step;
+      const target = coachTarget();
+      gotoCell(target);
+      tick(2);
+      const b1 = banner(), s1 = coach.step;
+      root.querySelector('#td-pad-fire').dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, pointerId: 9, pointerType: 'touch', isPrimary: true }));
+      tick(2);
+      const s2 = coach.step, b2 = banner();
+      eco.addBiomass(500); stopGoto(); if (buildMode) setView('third');
+      tick(2);
+      const b3 = banner();
+      let ci = -1;
+      for (let i = 0; i < graph.centers.length; i++) if (!placeError(i)) { ci = i; break; }
+      const ok = ci >= 0 && orderTower(TOWERS[0].key, ci, { quiet: true });
+      tick(2);
+      let seen = false; try { seen = !!localStorage.getItem(COACH_KEY); } catch { /* */ }
+      console.log(`COACH step0="${b0}" (step ${s0}) -> goto target=${target} -> "${b1}" (step ${s1})`
+        + ` -> thumb -> step ${s2} "${b2}" -> biomass -> "${b3}" -> order=${ok} -> done=${coach.done} seen=${seen}`
+        + ` ${s0 === 0 && s1 === 1 && s2 === 2 && /BUILD/.test(b3) && coach.done && seen ? '(three marks, each cleared by its own action)' : '<-- WRONG'}`);
     }, 1500);
   }
 

@@ -5,22 +5,22 @@
    back to a system face until the subset is rebuilt. */
 @font-face {
   font-family: 'VT323';
-  src: url('assets/fonts/VT323.woff2?v=ab898a18') format('woff2');
+  src: url('assets/fonts/VT323.woff2?v=fd91b488') format('woff2');
   font-weight: 400; font-style: normal; font-display: swap;
 }
 @font-face {
   font-family: 'Press Start 2P';
-  src: url('assets/fonts/PressStart2P.woff2?v=ab898a18') format('woff2');
+  src: url('assets/fonts/PressStart2P.woff2?v=fd91b488') format('woff2');
   font-weight: 400; font-style: normal; font-display: swap;
 }
 @font-face {
   font-family: 'Share Tech Mono';
-  src: url('assets/fonts/ShareTechMono.woff2?v=ab898a18') format('woff2');
+  src: url('assets/fonts/ShareTechMono.woff2?v=fd91b488') format('woff2');
   font-weight: 400; font-style: normal; font-display: swap;
 }
 @font-face {
   font-family: 'DotGothic16';
-  src: url('assets/fonts/DotGothic16.woff2?v=ab898a18') format('woff2');
+  src: url('assets/fonts/DotGothic16.woff2?v=fd91b488') format('woff2');
   font-weight: 400; font-style: normal; font-display: swap;
 }
 
@@ -3844,6 +3844,43 @@ body.mobile-shell #td-vars .vars-nav button { padding: 12px 10px; font-size: 11p
 body.mobile-shell #td-vars .vars-body { padding: 40px 10px 10px; }
 body.mobile-shell #td-vars button { min-height: 44px; }
 body.mobile-shell #td-vars .vars-close { width: 44px; height: 44px; }
+/* THE SHELL PINS ITS GEOMETRY against the phone's own coarse-pointer blocks.
+   Every rule above was measured headless, where (pointer: coarse) is false;
+   on a real phone the coarse blocks moved the radar to the top-right at 240px
+   and the launch console under it, and neither the ruler nor the screenshots
+   could see it (the operator's phone could). Two ids + the class outranks
+   every selector in those blocks, and each rule states the WHOLE geometry —
+   a property left unsaid is a property the phone block still owns.
+   ?coarse=1 makes the ruler apply those blocks, so this is measured now. */
+body.mobile-shell #tab-td .minimap { left: 14px; bottom: 14px; top: auto; right: auto; }
+body.mobile-shell #tab-td #td-stats.hud-panel { top: 46px; left: 14px; right: auto; max-width: none; font-size: 11px; line-height: 1.38; }
+body.mobile-shell #tab-td #td-next {
+  top: 8px; left: 50%; right: auto; transform: translateX(-50%);
+  max-width: 96vw; text-align: center; font-size: 11px; padding: 5px 10px 6px;
+}
+body.mobile-shell #tab-td #td-launch, body.mobile-shell #tab-td #td-launch.caution-frame {
+  top: 52px; left: 50%; right: auto; transform: translateX(-50%);
+  width: auto; display: flex; flex-direction: row; min-height: 0; padding: 4px 8px; gap: 8px;
+}
+body.mobile-shell #tab-td #td-launch .launch-button { width: 64px; height: 44px; }
+/* the console collapses to its safety switch until the strike is armed —
+   the phone block does this under (pointer: coarse); the shell does it
+   itself, so the ruler and the phone see the same 48px console */
+body.mobile-shell #tab-td #td-launch-readout { display: none; }
+body.mobile-shell #tab-td #td-launch:not(.armed) .launch-button { display: none; }
+body.mobile-shell #tab-td #td-hack { left: 14px; right: auto; top: 104px; }
+/* the coach / tutorial banner: right of the launch console, above the
+   thumbs — the only slot at the ruler's 303px height that touches neither
+   the console (ends 136) nor the caption lane (starts ~160) */
+body.mobile-shell #tab-td #td-tut {
+  top: 52px; left: auto; right: 116px; transform: none;
+  max-width: 250px; text-align: left; font-size: 12px; line-height: 1.4; padding: 8px 12px;
+}
+body.mobile-shell #tab-td #td-brief { left: 124px; right: auto; top: auto; bottom: max(8px, env(safe-area-inset-bottom)); width: min(520px, calc(100vw - 340px)); }
+body.mobile-shell #tab-td #td-sitrep, body.mobile-shell #tab-td #td-wave,
+body.mobile-shell #tab-td #td-toast, body.mobile-shell #tab-td #td-tower {
+  left: 124px; right: auto; top: auto; bottom: 100px; transform: none; width: min(300px, 40vw);
+}
 /* the site's tab bar (home / grid / maze...) is hidden by body.playing, and
    the debrief is not "playing" — so it surfaced over the verdict's header.
    On the shell it lives behind ≡ in EVERY state (plan §2.6). */
