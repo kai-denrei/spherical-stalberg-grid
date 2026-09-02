@@ -103,6 +103,16 @@ So:
 
 ## Committed
 
+### The mobile shell — planned 2026-09-02, not started
+
+A second shell over the same game rather than media-query overrides on the
+desktop HUD, which is what "simply ported" produced. Two modes (DRIVE / BUILD),
+view follows mode, tap-to-go driving on the nav graph, radial-at-the-finger
+building, HUD by subtraction, captions not modals, then a real device pass.
+Desktop stays byte-identical. The plan, its phases, its probes and the
+decisions the operator still owns: **`docs/MOBILE-PORT-PLAN.md`**.
+
+
 ### The Construction Drone, and BIOMASS — operator direction, 2026-08-31
 
 A lore-and-gameplay change, handed down whole: **nothing the player builds

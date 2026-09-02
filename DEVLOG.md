@@ -6,6 +6,81 @@ Demo links assume `npm run serve` (port 8144) or the
 
 ---
 
+## `45d9c20`..`57f15e0` — the board learns to keep time, spend, warn, and debrief
+
+Eight commits in one afternoon. The thread: the game stopped handing things
+out and started making the player feel the clock and the purse.
+
+**The Terraformer builds** (`8ddba0c`, `611efd0`). Every second wave a sealed
+small container is printed into a yard at the pedestal's rim; every fifth wave
+a new mk-cx is printed and racked in a berth. The yard *is* the clock — you
+count it. First cut ran the idle rig 2.8× faster to look busy, and the nozzle's
+print pattern thrashed ("erratic, jarring"); building is *slow*, so `working`
+is a blend weight into a deliberate raster (travel 9s, traverse 3s, mast down,
+arm low, nozzle nodding). The stores were measured **clear** of the pedestal
+(2.0–2.7 cells vs a 1.43 pad) — "builds nothing" was placement plus a dropped
+job when the model hadn't loaded, not occlusion. Doors are shut by **geometry**
+(the leaf's flattest angle, depth 0.08), because the authored rest pose is
+ajar; the open boxes near the heart are the three berths, open by design.
+
+**The economy is measured, not felt** (`611efd0`). `economy.js` keeps a ledger
+and the sim's `SIMRESULT` carries `earned, spent, held, peak, spendRatio,
+affordable, perWave`. Before any tuning: ram policy seed 7 earned 2009, spent
+618, affordable 80% — while the build policy on the same seed spent 98% and was
+short half the time. The excess is the **ram loop**: tank 1.0 × premium 1.5 ×
+streak cap 5 = 7.5× bounty. Cut to cap 3, premium 1.25 (3.75×). After: per-wave
+income 402 → 349 on the long run; still a surplus. Per-run totals don't compare
+(the cut changed how long the run lasted) — rates do.
+
+**Sinks, on the one screen where the run pauses to spend** (`0d2e189`). A sector
+**toll** that climbs (250 + 150/sector) gates the breach button; a spare hull
+(400kg) and a strike missile (350kg) are for sale. Plus: plasma lockout 1.71s →
+4.5s; the Terraformer's pad is **solid for the tank** (enemies must still reach
+the heart) — closest approach 1.75 cells against a pad of 1.40.
+
+**The slow tower only slows; ranks are twice as hard** (`8ddba0c`). It carried
+4/90 damage — enough to steal kills — and, worse, `damageEnemy` at zero still
+fires the on-hit reactions, so the slow tower was *accelerating* barbed.
+`killReq` doubled to `r(r+3)`: gold 5 is 270 kills + 15 elite.
+
+**A proximity sensor on the radar** (`1b41602`). Car-style arcs inside the rim,
+one sector each for ahead / starboard / astern / port, one to three arcs by the
+nearest **solid** contact in that sector — the same thirds the range rings
+draw. Pure in `radar.js`, twelve checks. Reach is the scope's own: 15.3 cells,
+about fifteen seconds of warning. Visual only.
+
+**A second drone, and drones that upgrade on their own** (`904e079`). ISAO's
+state machine became `stepWorker(w, dt)` over `workers()`; orders are claimed
+by identity (`order.worker`) and released by splice, so the 114 sites that name
+`isao` were untouched — he is `workers()[0]`. The assistant is amber, 500kg.
+Auto-upgrade orders the cheapest affordable tier while holding a **150kg
+reserve** — "excess" means what's left *after* paying — never more orders than
+drones. `?drones=1`: both claimed, three orders drained in 14.1s.
+
+**Two debriefs** (`45d9c20`, `57f15e0`). The sector debrief is now an analyst's
+board first — roster with sprites, attribution, score tempo, records (most by
+one shell, most by one strike), a canvas **replay** of the best strike recorded
+at impact, defence tiles — and only then the orders. The planet debrief is a
+**campaign**: a snapshot per cleared sector (deltas, taken at the clear), one
+table with planet totals, records, achievements, then `INSERT COIN : 1` and a
+blinking `CONTINUE?` — the win mints a persisted coin, YES spends it on a new
+planet (new seed, +18% points, +2 rooms: 2236 → 2630 cells). No timer.
+
+**The grey block in the portal's mouth** (`45d9c20`) was never a hub. The ring's
+stators and rotors are `InstancedMesh` nodes, and `mergeByMaterial` keeps one
+instance at the origin and drops the rest — so a single stator block sat on
+the axis and every other instance around the ring was silently missing. Named
+as pivots now. Two wrong diagnoses first, both from a "raw" dump that was the
+cached, already-merged scene: `loadGlb` returns the same object every time.
+
+**The probe lessons this span added to the pile:** `timeout` around headless
+Chrome kills it before stderr flushes; an unquoted `$FLAGS` in zsh is one
+malformed flag; a fixed timer racing a model preload reports "no drone"; a
+door's *angle* is not its pose — measure the leaf, in the fixture's own
+uniform frame, before any non-uniform placement scale.
+
+---
+
 ## `aa072fa`..`d00a607` — a frame number, a cheaper wormhole, a panel you can navigate
 
 Three commits after the operator felt the portal's fps hit.
