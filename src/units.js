@@ -16,14 +16,14 @@
 
 import * as THREE from '../vendor/three.module.js';
 import { EMOTION_IDS, emotion, phosphorFor } from './emotions.js';
-import { printPhase, printOffset, printOn } from './printpath.js?v=b0b57628';
+import { printPhase, printOffset, printOn } from './printpath.js?v=801a5c74';
 import { loadGlb, mergeByMaterial, fitModel, tintModel, makeShellRack,
-  addEdgeOutlines, makeHeatSleeve } from './glbmodels.js?v=b0b57628';
-import { CREATURES, waveJelly, swimWave, spherePts, bulletPts, missilePts, heartPts, torusPts, towerHeadPts, enemyDotPts, portalPts } from './creatures.js?v=b0b57628';
-import { TOWER_FEEL, TOWER_HEADS, headKindFor } from './towerfeel.js?v=b0b57628';
+  addEdgeOutlines, makeHeatSleeve } from './glbmodels.js?v=801a5c74';
+import { CREATURES, waveJelly, swimWave, spherePts, bulletPts, missilePts, heartPts, torusPts, towerHeadPts, enemyDotPts, portalPts } from './creatures.js?v=801a5c74';
+import { TOWER_FEEL, TOWER_HEADS, headKindFor } from './towerfeel.js?v=801a5c74';
 import { STARGATE_PTS, STARGATE_STROKE,
-  HORIZON_N, stargateHorizon } from './stargate.js?v=b0b57628';
-import { ENEMY_SPEC } from './enemyspec.js?v=b0b57628';
+  HORIZON_N, stargateHorizon } from './stargate.js?v=801a5c74';
+import { ENEMY_SPEC } from './enemyspec.js?v=801a5c74';
 
 function normalizeToUnit(group) {
   group.updateMatrixWorld(true);
@@ -1172,6 +1172,42 @@ const MKCX_LIFTERS = ['LiftEmitter_L1', 'LiftEmitter_L2', 'LiftEmitter_L3',
 // — it is the divergence past the apex, which is this constant alone.
 export const SECONDARY_TOE = 0.035;
 
+// Toe both secondaries inward by `angle`, from each turret's OWN SIDE rather
+// than from its name — a gun left of the centreline must yaw toward +X and
+// one right of it toward -X. Deriving it from position means the fix cannot
+// be defeated by an L/R naming convention, in the model or in anyone's head.
+//
+// Exported because the toe is no longer a constant baked once at build time:
+// it scales with the beam's reach so the pair always crosses (arc.js
+// toeForCrossing), and both the board and the beam lab re-apply it. It used
+// to be inlined here AND copied into beam-tab, which is two copies of a sign
+// convention that has already been got wrong once.
+export function applySecondaryToe(g, angle) {
+  const pivots = secondaryPivots(g);
+  for (const piv of pivots) {
+    const side = piv.position.x < 0 ? 1 : -1;    // sign that points inward
+    piv.rotation.set(0, side * angle, 0);
+  }
+  return pivots.length;
+}
+
+// The two things a toe can be applied to, in preference order: the authored
+// model's named pivots, else the procedural tank's own gun objects.
+//
+// The fallback is not cosmetic. Headless rarely finishes the GLB load, so
+// every probe in this project runs on the PROCEDURAL tank — which has no
+// `Secondary_*_Pivot` nodes, so a name-only lookup found nothing, silently
+// did nothing, and left a reach-solved toe reading as the old fixed one in
+// every measurement. Both tanks expose `userData.laserGuns`; that is the
+// handle the beams themselves are found by, so it is the right one here too.
+export function secondaryPivots(g) {
+  const named = ['Secondary_L_Pivot', 'Secondary_R_Pivot']
+    .map((nm) => g.getObjectByName(nm)).filter(Boolean);
+  if (named.length >= 2) return named;
+  const guns = g.userData && g.userData.laserGuns;
+  return Array.isArray(guns) ? guns.filter(Boolean) : [];
+}
+
 const MKCX_PIVOTS = ['Turret_Pivot', 'Secondary_L_Gun_Pivot', 'Secondary_R_Gun_Pivot',
   'Hover_Gear', ...MKCX_LIFTERS];
 // The barrel glow strips are authored floating +0.20 above the barrel axis.
@@ -2036,12 +2072,7 @@ function makeMkcx(cols) {
   // left of the centreline must yaw toward +X and one right of it toward -X.
   // Deriving it from position means the fix cannot be defeated by an
   // L/R naming convention, in the model or in my head.
-  for (const name of ['Secondary_L_Pivot', 'Secondary_R_Pivot']) {
-    const piv = g.getObjectByName(name);
-    if (!piv) continue;
-    const side = piv.position.x < 0 ? 1 : -1;    // sign that points inward
-    piv.rotation.set(0, side * SECONDARY_TOE, 0);
-  }
+  applySecondaryToe(g, SECONDARY_TOE);
 
   // Split the tank in two so the hull can lift while the skirt stays down.
   // Raising the WHOLE unit reads as flight; raising only the body off a

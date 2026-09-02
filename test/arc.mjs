@@ -2,7 +2,10 @@
 // that pin the BUG this module was written to remove: a chord and a
 // normalised chord both drift from the real arc, and the drift is what made
 // a long beam draw into space and hit nothing at its far end.
-import { arcPoint, arcTangent, projectToArc, chordSag, arcSegments } from '../src/arc.js';
+import {
+  arcPoint, arcTangent, projectToArc, chordSag, arcSegments,
+  toeForCrossing, crossingForToe,
+} from '../src/arc.js';
 import { BEAM_STEPS } from '../src/beamranks.js';
 
 let failures = 0;
@@ -114,6 +117,63 @@ console.log('segmenting for the renderer:');
   check('degenerate input returns 1 rather than NaN or Infinity',
     arcSegments(0, 0.1) === 1 && arcSegments(1, 0) === 1 && arcSegments(NaN, 0.1) === 1);
   check('chordSag is zero at zero and grows', chordSag(0) === 0 && chordSag(0.8) > chordSag(0.4));
+}
+
+console.log('the toe that makes them cross:');
+{
+  // MEASURED, not guessed: ?beamprobe=1 in the beam lab reports
+  // muzzle-gap=0.668 cells off the real mkcx pivots at the board's tank
+  // scale. The first cut of this test invented 0.24 and then asserted a
+  // consequence of it, which is how you get a green suite about a tank that
+  // does not exist.
+  const GAP = 0.668;                      // cells between the muzzles
+  // round-trip: solve for the angle, then ask where that angle crosses
+  let round = true;
+  for (const at of [1, 2.6, 4, 7, 10, 14]) {
+    const toe = toeForCrossing(GAP, at);
+    if (Math.abs(crossingForToe(GAP, toe) - at) > 1e-9) round = false;
+  }
+  check('solve then invert lands back on the asked distance', round);
+  check('a nearer crossing needs a WIDER toe',
+    toeForCrossing(GAP, 2) > toeForCrossing(GAP, 8));
+  check('a wider muzzle gap needs a wider toe',
+    toeForCrossing(0.5, 4) > toeForCrossing(0.2, 4));
+  // THE BUG THIS REPLACES, stated so it does not depend on the gap.
+  //
+  // A fixed toe crosses at a fixed DISTANCE, so across a 2.5x reach ladder
+  // the crossing lands at wildly different fractions of the beam — measured
+  // on the board (gap 0.209 cells) the shipped 0.035 rad crosses at 75% of a
+  // rank-1 beam and 30% of a rank-15 one, which is the pair meeting almost
+  // at the muzzle and then diverging for the whole rest of the burst.
+  //
+  // An earlier version of this check asserted the apex fell BEYOND the rank-1
+  // reach, which is true of the lab's tank and false of the board's — a claim
+  // about one measurement dressed up as a claim about the design.
+  const SHIPPED = 0.035;
+  const fixedAt = crossingForToe(GAP, SHIPPED);
+  const fracs = BEAM_STEPS.map((st) => fixedAt / st.reach);
+  check('a FIXED toe crosses at wildly different fractions of the reach',
+    Math.max(...fracs) / Math.min(...fracs) > 2,
+    fracs.map((f) => f.toFixed(2)).join(' '));
+  // ...and the solve pins that fraction, whatever the reach
+  const solved = BEAM_STEPS.map((st) => {
+    const at = 0.7 * st.reach;
+    return crossingForToe(GAP, toeForCrossing(GAP, at)) / st.reach;
+  });
+  check('the solved toe crosses at the SAME fraction at every step',
+    Math.max(...solved) - Math.min(...solved) < 1e-9,
+    solved.map((f) => f.toFixed(3)).join(' '));
+  // ...and with the solve, every step crosses inside its own reach
+  let allCross = true;
+  for (const st of BEAM_STEPS) {
+    const at = 0.7 * st.reach;
+    if (crossingForToe(GAP, toeForCrossing(GAP, at)) > st.reach) allCross = false;
+  }
+  check('solved per step, every rank crosses inside its own reach', allCross);
+  check('degenerate input returns 0 rather than NaN',
+    toeForCrossing(0, 4) === 0 && toeForCrossing(0.2, 0) === 0
+    && toeForCrossing(NaN, 4) === 0);
+  check('a zero toe never crosses', crossingForToe(0.2, 0) === Infinity);
 }
 
 if (failures) { console.error(`arc: ${failures} FAILED`); process.exit(1); }

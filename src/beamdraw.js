@@ -30,18 +30,29 @@ import { arcPoint } from './arc.js';
 // because the shape of a flame is taste and a derived value is a starting
 // point and nothing more.
 export const PLASMA_DEFAULTS = {
-  coreFrac: 0.45,   // fraction of the reach the hot ribbon root covers
+  // THE RIBBON RUNS THE WHOLE BEAM (operator, 2026-09-02). It used to cover
+  // 0.45 of it, on the "hot root plus long plume" reading — but that made the
+  // drawn ribbon 45% of the beam that actually damages, and left the dots as
+  // the only marker of the real reach. They then flew far past the ribbon,
+  // which is exactly what the operator's screenshot showed.
+  coreFrac: 1.0,
   points: 220,      // dots per gun
-  // Plume half-width at the TIP, as a fraction of reach. 0.30 was a first
-  // guess and it read as a cone twice the tank's width by mid-length; a
-  // flamethrower plume opens, it does not fan.
-  flare: 0.15,
-  // ...and at the MUZZLE, in CELLS — an absolute bore, not a fraction of the
-  // length (operator, 2026-09-02: "the plasma should start thin and out of
-  // the secondary weapons"). As a fraction it scaled with reach, so a rank-15
-  // beam left the tank three times fatter than a rank-1 one for no reason a
-  // nozzle can explain. A muzzle is a fixed size; only the plume opens up.
-  rootFlare: 0.07,
+
+  // --- THE PLUME IS LINKED TO THE RIBBON ---------------------------------
+  // "I don't think we need both the dots and the beams in Plasma, or they
+  // could be linked. I don't want those particles going much further or
+  // wider than the main beam."
+  //
+  // So the dots no longer have a length or a width of their own — the old
+  // `flare` and `rootFlare` are gone. Both are read off the ribbon:
+  // `plumeLen` is a fraction of the DRAWN beam, and `plumeWidth` is a
+  // multiple of the ribbon's LOCAL half-width, which is itself tapered from
+  // the muzzle, so the dots inherit the cone for free. Widen the beam and
+  // the dots widen with it; there is no second shape to keep in sync, and no
+  // setting of these two can send a dot past the tip.
+  dots: true,        // the plume at all — off leaves the bare ribbon
+  plumeLen: 1.0,     // fraction of the DRAWN beam the dots cover (<=1)
+  plumeWidth: 1.6,   // multiple of the ribbon's own half-width at that point
   // The hot root's width at the muzzle as a fraction of the preset width, so
   // the core emerges narrow and opens along the chain instead of leaving the
   // gun already a cell wide.
@@ -121,6 +132,11 @@ export function createBeamRig({
     plumes.push({ pts, geo, pos, col, phase, ang, rad });
   }
 
+  // The muzzle taper, as ONE curve that both the ribbon and the plume read.
+  // Two copies of this is how the dots stop matching the beam the first time
+  // either is touched.
+  const widthAt = (u) => plasma.coreRoot + (1 - plasma.coreRoot) * Math.pow(u, 0.7);
+
   const col = new THREE.Color(preset.glowColor || '#ffffff');
   const a = new THREE.Vector3(), b = new THREE.Vector3();
 
@@ -150,7 +166,7 @@ export function createBeamRig({
       // NARROW AT THE MUZZLE, opening along the chain. Sampled at each link's
       // midpoint so the first link is not uniformly the root width.
       const mid = (k + 0.5) / CORE_SEGS;
-      const wMul = plasma.coreRoot + (1 - plasma.coreRoot) * Math.pow(mid, 0.7);
+      const wMul = widthAt(mid);
       for (const key of widthKeys) {
         const u = bm.uniforms['u' + key[0].toUpperCase() + key.slice(1)];
         if (u) u.value = preset[key] * scale * wMul;
@@ -171,12 +187,19 @@ export function createBeamRig({
 
     const pl = plumes[gun];
     if (!pl) return;
+    if (!plasma.dots) { pl.pts.visible = false; return; }
+    // The ribbon's own half-width, in the unit-sphere frame these offsets are
+    // built in. `scale / lift` puts a cell into that frame and lands on the
+    // same number on both surfaces: the board is 1 cell = 0.08 world at lift
+    // 1; the lab is 1 cell = 1 world at lift 12.5.
+    const ribbonUnit = (preset.glowWidth || 0) * scale / lift;
+    const plumeSpan = coreLen * Math.min(1, plasma.plumeLen);
     const N = Math.min(plasma.points, pl.phase.length);
     for (let j = 0; j < N; j++) {
       // FLOW. Each dot rides muzzle -> tip and recycles.
       let u = (pl.phase[j] + time * plasma.flow) % 1;
       if (u < 0) u += 1;
-      const s = len * Math.pow(u, plasma.bias);
+      const s = plumeSpan * Math.pow(u, plasma.bias);
       // arcPoint and arcTangent are the same cos/sin pair — this runs `points`
       // times per gun per frame, so share them rather than paying four
       // transcendentals where two will do.
@@ -191,14 +214,10 @@ export function createBeamRig({
       // by construction — so their cross is already unit and a normalise would
       // only cost a sqrt to confirm it.
       const rx = qy * tz - qz * ty, ry = qz * tx - qx * tz, rz = qx * ty - qy * tx;
-      // Root is an absolute bore (cells -> this frame), tip is proportional
-      // to the reach. `scale / lift` converts a cell into the unit-sphere
-      // frame these offsets are built in, and it lands on the same number on
-      // both surfaces: the board is 1 cell = 0.08 world at lift 1; the lab is
-      // 1 cell = 1 world at lift 12.5.
-      const rootUnit = plasma.rootFlare * scale / lift;
-      const tipUnit = plasma.flare * len;
-      const spread = rootUnit + Math.max(0, tipUnit - rootUnit) * Math.pow(u, 1.6);
+      // WIDTH COMES FROM THE RIBBON at this point along it, so the dots wear
+      // the same muzzle taper and can never exceed the beam's own width by
+      // more than plumeWidth.
+      const spread = ribbonUnit * widthAt(u) * plasma.plumeWidth;
       const rr = pl.rad[j] * spread;
       const ang = pl.ang[j] + s * plasma.twist;
       const lat = Math.cos(ang) * rr, vert = Math.sin(ang) * rr * plasma.squash;

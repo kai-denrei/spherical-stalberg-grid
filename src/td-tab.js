@@ -19,46 +19,46 @@
 
 import * as THREE from '../vendor/three.module.js';
 import GUI from '../vendor/lil-gui.esm.js';
-import { generateSphereMesh, relax } from './grid.js?v=b0b57628';
-import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=b0b57628';
-import { mulberry32, randomSeed } from './rng.js?v=b0b57628';
-import { computeBerths, berthIndexFor } from './berths.js?v=b0b57628';
-import { wantsSecondary, shellsForAll } from './autofire.js?v=b0b57628';
-import { printPhase, printOffset, printOn, patternSecsFor } from './printpath.js?v=b0b57628';
-import { createBeamRig, PLASMA_DEFAULTS } from './beamdraw.js?v=b0b57628';
-import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3, segKey, tangentDir, tangentBasis } from './vec3.js?v=b0b57628';
-import { CREATURES, waveJelly } from './creatures.js?v=b0b57628';
-import { brief, dwellFor } from './isaobriefs.js?v=b0b57628';
-import { drawEmotion } from './emotions.js?v=b0b57628';
+import { generateSphereMesh, relax } from './grid.js?v=801a5c74';
+import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=801a5c74';
+import { mulberry32, randomSeed } from './rng.js?v=801a5c74';
+import { computeBerths, berthIndexFor } from './berths.js?v=801a5c74';
+import { wantsSecondary, shellsForAll } from './autofire.js?v=801a5c74';
+import { printPhase, printOffset, printOn, patternSecsFor } from './printpath.js?v=801a5c74';
+import { createBeamRig, PLASMA_DEFAULTS } from './beamdraw.js?v=801a5c74';
+import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3, segKey, tangentDir, tangentBasis } from './vec3.js?v=801a5c74';
+import { CREATURES, waveJelly } from './creatures.js?v=801a5c74';
+import { brief, dwellFor } from './isaobriefs.js?v=801a5c74';
+import { drawEmotion } from './emotions.js?v=801a5c74';
 import { ACHIEVEMENTS, ACHV_GROUPS, achievement, blankRun, earned, freshlyEarned,
   sanitiseRecord }
-  from './achievements.js?v=b0b57628';
+  from './achievements.js?v=801a5c74';
 import { applyFontPack, currentFontPack, FONT_NAMES,
-  loadTypeFeel } from './fonts.js?v=b0b57628';
-import { SECONDARY_TOE } from './units.js?v=b0b57628';
-import { UNITS, UNIT_NAMES, buildUnit, buildCreature, preloadMkcx, preloadServer, makeServerFixture, makeShieldShell, preloadContainer, makeContainerFixture, preloadFabricator, makeIsaoDrone, makeBulletCloud, makeRewardSolid, makeShellSolid, makeDebris, makeDotBurst, makePortalCloud, makeHeartCloud, makeDotEnemy, preloadTerraformer, makeTerraformerFixture } from './units.js?v=b0b57628';
-import { LOOKS, LOOK_NAMES } from './looks.js?v=b0b57628';
-import { makeCellIndex } from './cellindex.js?v=b0b57628';
-import { CREATURE_TINTS, ENEMY_SPEC, INTROS, computeWavePlan, accentFor } from './enemyspec.js?v=b0b57628';
-import { PICKUPS } from './pickups.js?v=b0b57628';
-import { rankFor, rankLabel, badgeSVG, killReq, eliteReq } from './ranks.js?v=b0b57628';
-import { beamStep, isBeamStep, PEN_SOFT_FRAC, PEN_HARD_FRAC } from './beamranks.js?v=b0b57628';
-import { burn, sweepAdvance, wallBite as wallBiteFor } from './beamburn.js?v=b0b57628';
-import { arcPoint, projectToArc } from './arc.js?v=b0b57628';
-import { makeScore } from './score.js?v=b0b57628';
-import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER } from './towers.js?v=b0b57628';
-import { makeEconomy, sellRefund } from './economy.js?v=b0b57628';
-import { makeBloom } from './postfx.js?v=b0b57628';
-import { TANK_FEEL, TANK_FEEL_KNOBS, makeTankFeel, stepTankFeel, landTankFeel, fireTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js?v=b0b57628';
-import { FEEL, loadFeel, saveFeel } from './feelstore.js?v=b0b57628';
+  loadTypeFeel } from './fonts.js?v=801a5c74';
+import { SECONDARY_TOE, applySecondaryToe } from './units.js?v=801a5c74';
+import { UNITS, UNIT_NAMES, buildUnit, buildCreature, preloadMkcx, preloadServer, makeServerFixture, makeShieldShell, preloadContainer, makeContainerFixture, preloadFabricator, makeIsaoDrone, makeBulletCloud, makeRewardSolid, makeShellSolid, makeDebris, makeDotBurst, makePortalCloud, makeHeartCloud, makeDotEnemy, preloadTerraformer, makeTerraformerFixture } from './units.js?v=801a5c74';
+import { LOOKS, LOOK_NAMES } from './looks.js?v=801a5c74';
+import { makeCellIndex } from './cellindex.js?v=801a5c74';
+import { CREATURE_TINTS, ENEMY_SPEC, INTROS, computeWavePlan, accentFor } from './enemyspec.js?v=801a5c74';
+import { PICKUPS } from './pickups.js?v=801a5c74';
+import { rankFor, rankLabel, badgeSVG, killReq, eliteReq } from './ranks.js?v=801a5c74';
+import { beamStep, isBeamStep, PEN_SOFT_FRAC, PEN_HARD_FRAC } from './beamranks.js?v=801a5c74';
+import { burn, sweepAdvance, wallBite as wallBiteFor } from './beamburn.js?v=801a5c74';
+import { arcPoint, projectToArc, toeForCrossing, crossingForToe } from './arc.js?v=801a5c74';
+import { makeScore } from './score.js?v=801a5c74';
+import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER } from './towers.js?v=801a5c74';
+import { makeEconomy, sellRefund } from './economy.js?v=801a5c74';
+import { makeBloom } from './postfx.js?v=801a5c74';
+import { TANK_FEEL, TANK_FEEL_KNOBS, makeTankFeel, stepTankFeel, landTankFeel, fireTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js?v=801a5c74';
+import { FEEL, loadFeel, saveFeel } from './feelstore.js?v=801a5c74';
 import { STRIKE_KNOBS, makeStrike, makeStrikeParams, grantStrikes, stepStrike,
   toggleArm, paintTarget, launchStrike, stepFall, skipFall, fallProgress,
-  strikeDamage, retargetStrike, orbitProgress } from './strike.js?v=b0b57628';
-import { radarBasis, radarProject, radarBearing, sweepAngle, radarPhosphor } from './radar.js?v=b0b57628';
-import { BLOOM_GROUPS } from './bloomweights.js?v=b0b57628';
-import { TOWER_LOOK_NAMES, DEFAULT_TOWER_LOOK, buildTowerLook, preloadLook } from './towerlooks.js?v=b0b57628';
-import { makeAudio } from './audio.js?v=b0b57628';
-import { DEATH_KEYS } from './audiomanifest.js?v=b0b57628';
+  strikeDamage, retargetStrike, orbitProgress } from './strike.js?v=801a5c74';
+import { radarBasis, radarProject, radarBearing, sweepAngle, radarPhosphor } from './radar.js?v=801a5c74';
+import { BLOOM_GROUPS } from './bloomweights.js?v=801a5c74';
+import { TOWER_LOOK_NAMES, DEFAULT_TOWER_LOOK, buildTowerLook, preloadLook } from './towerlooks.js?v=801a5c74';
+import { makeAudio } from './audio.js?v=801a5c74';
+import { DEATH_KEYS } from './audiomanifest.js?v=801a5c74';
 
 export function initTdTab(root) {
   let active = false;
@@ -5335,7 +5335,38 @@ export function initTdTab(root) {
     LASER_DPS = beamStepNow.dps;
     LASER_REACH = beamStepNow.reach;
     if (beamRig) beamRig.setColor(beamStepNow.color);
+    applyReachToe();
   }
+
+  // THE TOE SCALES WITH REACH (operator, 2026-09-02: "the toe-in should scale
+  // with reach so they always cross").
+  //
+  // A fixed angle cannot be right across a 2.5x reach ladder: the apex sits
+  // at gap/(2·tan(toe)), so the shipped 0.035 rad put it about 9.5 cells out
+  // — past a rank-1 beam's whole four cells, and well inside a rank-15 one.
+  // Solve for the angle instead, from the muzzle gap MEASURED off the model
+  // rather than assumed, so a new tank does not silently break it.
+  const TOE_CROSS_FRAC = 0.7;   // they meet at 70% of the reach: out in front,
+                                // but comfortably before the tip
+  const toeA = new THREE.Vector3(), toeB = new THREE.Vector3();
+  function applyReachToe() {
+    const guns = playerMesh && playerMesh.userData && playerMesh.userData.laserGuns;
+    if (!guns || guns.length < 2 || !playerMesh) return;
+    // ZERO THE TOE BEFORE MEASURING. The gap is read off the live world
+    // transforms, and those already carry whatever toe was applied last — so
+    // measuring without resetting feeds the previous answer back in and the
+    // angle walks every time the rank changes.
+    applySecondaryToe(playerMesh, 0);
+    playerMesh.updateMatrixWorld(true);
+    guns[0].getWorldPosition(toeA);
+    guns[1].getWorldPosition(toeB);
+    const gap = toeA.distanceTo(toeB) / cellSide;          // cells
+    const toe = toeForCrossing(gap, TOE_CROSS_FRAC * LASER_REACH);
+    applySecondaryToe(playerMesh, toe || SECONDARY_TOE);
+    playerMesh.updateMatrixWorld(true);
+    lastToe = { gap, toe: toe || SECONDARY_TOE, at: crossingForToe(gap, toe || SECONDARY_TOE) };
+  }
+  let lastToe = null;
 
   function drawBeam(i, from, dir, len, heatFrac, lift) {
     ensureBeams().draw(i, {
@@ -7786,9 +7817,10 @@ export function initTdTab(root) {
   // controls in hand rather than reasoned from a number.
   const plasmaF = gui.addFolder('plasma');
   plasmaF.add(PLASMA, 'coreFrac', 0, 1, 0.01).name('hot root length');
-  plasmaF.add(PLASMA, 'flare', 0, 0.8, 0.01).name('tip flare');
-  plasmaF.add(PLASMA, 'rootFlare', 0, 0.6, 0.005).name('muzzle bore (cells)');
-  plasmaF.add(PLASMA, 'coreRoot', 0.05, 1, 0.01).name('core width at muzzle');
+  plasmaF.add(PLASMA, 'dots').name('dots on');
+  plasmaF.add(PLASMA, 'plumeLen', 0, 1, 0.01).name('dots length (x beam)');
+  plasmaF.add(PLASMA, 'plumeWidth', 0, 5, 0.05).name('dots width (x beam)');
+  plasmaF.add(PLASMA, 'coreRoot', 0.05, 1, 0.01).name('width at muzzle');
   plasmaF.add(PLASMA, 'squash', 0, 1.5, 0.05).name('vertical squash');
   plasmaF.add(PLASMA, 'flow', 0, 6, 0.05).name('flow speed');
   plasmaF.add(PLASMA, 'bias', 0.5, 3, 0.05).name('root density');
@@ -10033,6 +10065,18 @@ export function initTdTab(root) {
       + ` pen soft=${PEN_SOFT().toFixed(2)} hard=${PEN_HARD().toFixed(2)}`
       + ` (3 hard = ${(PEN_HARD() * 3).toFixed(2)} of ${LASER_REACH} —`
       + ` ${PEN_HARD() * 3 >= LASER_REACH ? 'STOPS it' : 'does NOT stop it'})`);
+    // ...and the toe the reach solved for, with where it actually crosses.
+    // Reported rather than asserted: the muzzle gap is measured off whatever
+    // model loaded, and a probe that assumed it would be lying on the
+    // procedural fallback.
+    if (lastToe) {
+      console.log(`TOE gap=${lastToe.gap.toFixed(3)} cells`
+        + ` toe=${lastToe.toe.toFixed(4)} rad`
+        + ` crosses at ${lastToe.at.toFixed(2)} of ${LASER_REACH} cells`
+        + ` (${lastToe.at <= LASER_REACH ? 'INSIDE the reach' : 'BEYOND it — they never meet'})`
+        + ` | the old fixed ${SECONDARY_TOE} would cross at`
+        + ` ${crossingForToe(lastToe.gap, SECONDARY_TOE).toFixed(2)}`);
+    } else console.log('TOE not applied (no gun pivots on this tank)');
   }
 
   // ?rankprobe=N — THE PILOT OUTLIVES THE HULL (operator, 2026-09-02).

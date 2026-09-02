@@ -89,3 +89,36 @@ export function arcSegments(s, tol, max = 12) {
   const n = Math.ceil(s / Math.sqrt(8 * tol));
   return Math.max(1, Math.min(max, n));
 }
+
+// --- convergence ----------------------------------------------------------
+// THE TOE ANGLE THAT MAKES A TOED-IN PAIR CROSS AT A GIVEN DISTANCE.
+//
+// The secondaries are toed inward by a fixed angle, so their apex sits at
+// gap / (2·tan(toe)) — a 1/toe quantity, which is why halving the toe once
+// moved the crossing by almost nothing and a third of it moved it miles.
+// A FIXED angle therefore cannot be right at every reach: at the shipped
+// 0.035 rad the apex is about 11.6 cells out, so a rank-1 beam with four
+// cells of reach never converges at all, while a rank-15 beam crosses well
+// inside its own tip. Invert it instead — ask for the crossing distance and
+// solve for the angle (operator, 2026-09-02: "the toe-in should scale with
+// reach so they always cross").
+//
+// PLANAR, deliberately. The exact answer on a sphere involves the two great
+// circles' intersection; at these angles (a few degrees) and these distances
+// (under a radian) the planar solution differs by far less than the width of
+// the beam, and a formula nobody can check is worse than one that is a
+// little approximate and obviously right.
+//
+//   gap      distance between the two muzzles, any unit
+//   crossAt  where they should meet, SAME unit
+export function toeForCrossing(gap, crossAt) {
+  if (!(gap > 0) || !(crossAt > 0)) return 0;
+  return Math.atan(gap / (2 * crossAt));
+}
+
+// ...and the inverse, so a probe can report where a given toe actually puts
+// the apex rather than asserting it.
+export function crossingForToe(gap, toe) {
+  if (!(gap > 0) || !(toe > 0)) return Infinity;
+  return gap / (2 * Math.tan(toe));
+}

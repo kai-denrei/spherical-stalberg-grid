@@ -21,9 +21,10 @@ import GUI from '../vendor/lil-gui.esm.js';
 import { DEFAULTS } from './beamfx.js';
 import { makeBloom } from './postfx.js';
 import { LOOKS } from './looks.js';
-import { buildCreature, preloadMkcx, SECONDARY_TOE } from './units.js';
+import { buildCreature, preloadMkcx, SECONDARY_TOE,
+  applySecondaryToe, secondaryPivots } from './units.js';
 import { BEAM_STEPS, beamStep } from './beamranks.js';
-import { arcPoint, projectToArc } from './arc.js';
+import { arcPoint, projectToArc, toeForCrossing, crossingForToe } from './arc.js';
 import { burnReport, sweepAdvance } from './beamburn.js';
 import { createBeamRig, PLASMA_DEFAULTS } from './beamdraw.js';
 import { SAFE_HUES, ALARM_HUES } from './enemyspec.js';
@@ -191,7 +192,9 @@ export function initBeamTab(root) {
                              //  body bigger than the tank hides the beam)
     targetMix: 'alternate',  // which of them are the solid, unrammable tier
     spread: 1.0,                // how far apart the emitters read
-    toeIn: SECONDARY_TOE,       // live, so convergence can be tuned by eye
+    toeIn: SECONDARY_TOE,       // the manual angle, when the solve is off
+    toeAuto: true,              // solve the toe from the reach instead
+    crossFrac: 0.7,             // ...so the pair meets at this much of it
     autoFire: true,
     copyPreset: () => copyPreset(),
     downloadPreset: () => {
@@ -341,14 +344,51 @@ export function initBeamTab(root) {
     else fail('unavailable');
   }
 
+  // ONE implementation of the sign convention (units.js). It used to be
+  // copied here, which is two copies of a rule this project has already got
+  // wrong once — the authored model gives BOTH pivots the same yaw, so one
+  // toed in and the other out, and the pair never converged.
+  let toeInfo = null;
   function applyToe(angle) {
     if (!tank) return;
-    const a4 = angle === undefined ? P.toeIn : angle;
-    for (const name of ['Secondary_L_Pivot', 'Secondary_R_Pivot']) {
-      const piv = tank.getObjectByName(name);
-      if (!piv) continue;
-      piv.rotation.set(0, (piv.position.x < 0 ? 1 : -1) * a4, 0);
+    applySecondaryToe(tank, angle === undefined ? P.toeIn : angle);
+  }
+
+  // THE TOE THAT MAKES THEM CROSS (operator: "the toe-in should scale with
+  // reach so they always cross"). A fixed angle crosses at a fixed DISTANCE,
+  // so across the ladder's 2.5x reach range the meeting point lands anywhere
+  // from three quarters of the beam to under a third of it.
+  //
+  // Measure the gap with the toe ZEROED — the world transforms already carry
+  // whatever angle was applied last, so measuring without resetting feeds the
+  // previous answer back in and the angle walks every frame.
+  function applyReachToe() {
+    if (!tank) return;
+    const pivots = secondaryPivots(tank);
+    if (!P.toeAuto || pivots.length < 2) { applyToe(P.toeIn); toeInfo = null; return; }
+    // IT IS A FIXED POINT, NOT A ONE-SHOT SOLVE.
+    //
+    // aimGun seats the origin at the barrel TIP (gunTipZ + muzzleNudge), not
+    // at the pivot — and rotating a pivot MOVES its tip, so the muzzle gap
+    // depends on the toe that the gap is being used to compute. Solving once
+    // from the zero-toe gap over-estimates it and lands the crossing short:
+    // measured, 2.41 cells against the 2.80 asked for.
+    //
+    // Three iterations converge to well under a hundredth of a cell. The
+    // board does NOT need this — its beam origin is the pivot's own world
+    // position, which a rotation about that pivot does not move.
+    const target = P.crossFrac * P.reachCells;
+    let toe = P.toeIn, gap = 0;
+    for (let it = 0; it < 3; it++) {
+      const A0 = aimGun(0), B0 = aimGun(1);
+      if (!A0 || !B0) { applyToe(P.toeIn); toeInfo = null; return; }
+      gap = Math.hypot(A0.from[0] - B0.from[0], A0.from[1] - B0.from[1],
+        A0.from[2] - B0.from[2]) * LAB_R;         // unit-frame -> cells
+      toe = toeForCrossing(gap, target) || P.toeIn;
+      applySecondaryToe(tank, toe);
+      tank.updateMatrixWorld(true);
     }
+    toeInfo = { gap, toe, at: crossingForToe(gap, toe) };
   }
 
   function applyWorld() {
@@ -389,7 +429,9 @@ export function initBeamTab(root) {
   gg.add(P, 'reachCells', 0.5, 14, 0.1).name('reach (cells)');
   gg.add(P, 'muzzleNudge', -0.5, 0.5, 0.005).name('muzzle offset');
   gg.add(P, 'spread', 0.2, 3, 0.05);
-  gg.add(P, 'toeIn', 0, 0.8, 0.005).name('secondary toe-in').onChange(() => applyToe());
+  gg.add(P, 'toeAuto').name('toe solves for crossing');
+  gg.add(P, 'crossFrac', 0.2, 1.2, 0.01).name('cross at (x reach)');
+  gg.add(P, 'toeIn', 0, 0.8, 0.005).name('manual toe-in').onChange(() => applyToe());
   gg.add(P, 'sweep').name('sweep across burst');
   gg.add(P, 'sweepAmplitude', 0, 0.8, 0.005).name('sweep amplitude');
   // THE RANK PICKER. Colour and reach are the pilot's rank on the board now
@@ -423,9 +465,10 @@ export function initBeamTab(root) {
   // The plume's shape — the other half of the weapon, and pure taste.
   const gpl = gui.addFolder('plasma');
   gpl.add(PLASMA, 'coreFrac', 0, 1, 0.01).name('hot root length');
-  gpl.add(PLASMA, 'flare', 0, 0.8, 0.01).name('tip flare');
-  gpl.add(PLASMA, 'rootFlare', 0, 0.6, 0.005).name('muzzle bore (cells)');
-  gpl.add(PLASMA, 'coreRoot', 0.05, 1, 0.01).name('core width at muzzle');
+  gpl.add(PLASMA, 'dots').name('dots on');
+  gpl.add(PLASMA, 'plumeLen', 0, 1, 0.01).name('dots length (x beam)');
+  gpl.add(PLASMA, 'plumeWidth', 0, 5, 0.05).name('dots width (x beam)');
+  gpl.add(PLASMA, 'coreRoot', 0.05, 1, 0.01).name('width at muzzle');
   gpl.add(PLASMA, 'squash', 0, 1.5, 0.05).name('vertical squash');
   gpl.add(PLASMA, 'flow', 0, 6, 0.05).name('flow speed');
   gpl.add(PLASMA, 'bias', 0.5, 3, 0.05).name('root density');
@@ -684,9 +727,15 @@ export function initBeamTab(root) {
       const A = aimGun(0), B = aimGun(1);
       if (!A || !B) { console.log('BEAMPROBE INCONCLUSIVE (no guns yet)'); return; }
       const fmt = (v) => v.map((x) => x.toFixed(3)).join(',');
-      const guns = gunL && gunR ? 'mkcx pivots' : 'procedural fallback';
+      // NAME THE ARTIFACT. This said "mkcx pivots" whenever laserGuns
+      // existed — which both tanks have — so every headless measurement was
+      // labelled as the authored model while running on the procedural one.
+      const named = !!tank.getObjectByName('Secondary_L_Pivot');
+      const guns = named ? 'mkcx (authored pivots)' : 'PROCEDURAL fallback tank';
       console.log(`BEAMPROBE source=${guns} reach=${P.reachCells} cells`
-        + ` stage=sphere r=${LAB_R} cells`);
+        + ` stage=sphere r=${LAB_R} cells`
+        + (toeInfo ? ` | toe=${toeInfo.toe.toFixed(4)} solved for a crossing at`
+          + ` ${(P.crossFrac * P.reachCells).toFixed(2)} cells` : ' | toe=manual'));
       console.log(`BEAMPROBE L from=${fmt(A.from)} dir=${fmt(A.dir)}`);
       console.log(`BEAMPROBE R from=${fmt(B.from)} dir=${fmt(B.dir)}`);
       // WHERE THEY MEET, which is the number worth tuning. The first cut of
@@ -737,10 +786,11 @@ export function initBeamTab(root) {
     const nowFiring = alpha !== undefined && alpha > 0;
     if (nowFiring && !wasFiring) { beamPhase[0] = 0; beamPhase[1] = 0; }
     wasFiring = nowFiring;
-    // the barrels keep their static toe; the SWEEP is applied to the fired
-    // direction per beam (fireFrame), not by rotating the model, because the
-    // two beams no longer share one angle once drag pulls them apart
-    applyToe(P.toeIn);
+    // the barrels carry the STATIC toe (solved from the reach); the SWEEP is
+    // applied to the fired direction per beam in fireFrame, not by rotating
+    // the model, because the two beams no longer share one angle once drag
+    // pulls them apart
+    applyReachToe();
     // ORDER IS LOAD-BEARING: pushParams writes every slider onto every link,
     // then draw() applies the per-link muzzle taper and the bell on top. A
     // second pushParams after the draw — which is what used to be here, to
@@ -763,6 +813,7 @@ export function initBeamTab(root) {
     const base = `heat ${heat.toFixed(2)}/${P.burstSeconds.toFixed(1)}s`
       + `  ${lock ? 'COOLING' : 'FIRING'}`
       + `  rank ${P.rankStep} · ${P.reachCells.toFixed(1)} cells`
+      + (toeInfo ? `  toe ${toeInfo.toe.toFixed(4)} → cross @${toeInfo.at.toFixed(1)}c` : '')
       + `  tone ${P.toneMapping}`;
     if (!lastReport) return base;
     const r = lastReport;
