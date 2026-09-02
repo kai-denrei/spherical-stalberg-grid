@@ -6,6 +6,57 @@ Demo links assume `npm run serve` (port 8144) or the
 
 ---
 
+## `e32e9ec` — the mobile shell, phase 3: BUILD on glass, and the raycast acquitted
+
+Phase 3 of `docs/MOBILE-PORT-PLAN.md`. Most of it already existed on the
+desktop — drag orbits, pinch zooms, a tap opens the tower radial at the tap
+point, placement has a reason string — so the phone work is the finger and
+the feedback, and a probe for the complaint that started it.
+
+**The probe first.** PLAYTEST-TODO §1 ("clicking a buildable spot does not
+work at all") named four suspects: the tap-vs-drag threshold, what the ray
+hits, silent refusals, and camera distance. `?tapprobe=1` projects the roof
+of every placeable wall-top that faces the build camera and lies in frame,
+puts a synthetic tap there, and asks `cellAtScreen` what it resolves to —
+eight poses 45° apart per zoom, taps pooled:
+
+| zoom | taps | exact | placeable |
+|---|---|---|---|
+| default (dist 2.0) | 101 | 101 | 100% |
+| whole-planet (dist 3.4) | 143 | 143 | 100% |
+
+The ray is not the problem at either distance. That leaves the human
+suspects, and the shell answers them.
+
+**Finger-sized slop.** A tap was a press that travelled ≤ 8px. That is a
+trackpad's idea of "never"; the shell uses 14 CSS px, through one
+`tapSlop()` read by pointermove and the lift. Desktop keeps 8.
+
+**Long-press upgrades.** In BUILD on the shell, 550ms on a tower orders its
+upgrade through `orderUpgrade` — the U key without a key — and says what it
+did, or why not, as a caption. The press is *spent*: the lift is not a tap,
+so no radial opens under it. Travel past the slop, a second finger, or
+lifting cancels the timer.
+
+**Refusals speak.** The desktop deliberately shows nothing on an unbuildable
+cell (a radial of greyed-out towers is a wall of no). On the shell a caption
+is not a radial: a BUILD tap on bad ground shows NOT HERE with
+`placeError`'s own reason, rate-limited so the same reason is said once per
+1.5s. `?pressprobe=1` drives both gestures through real `PointerEvent`s on
+the container: the hold put an upgrade on the book with the radial closed,
+and the ground tap was refused with "towers need HIGH GROUND".
+
+**What the probe taught, on record.** Its first cut chained `setTimeout`s
+between poses. Virtual time burned all sixteen inside 13ms of real time
+with no frame between them: one frozen camera at radius 1.16 — the deploy
+framing, not the orbit — measured sixteen times, and reported as 100% of
+16. Two fixes, both already known elsewhere in this file: step the frame
+loop's easing by hand until it converges (the `?goto` rule), and clear the
+deploy blend and any shot first, because `updateCameraGoal` answers those
+before the orbit (the drone probe's rule). The number is real now.
+
+---
+
 ## `2d249ac`..`14aa9d7` — the mobile shell, phases 1, 2 and 4
 
 The plan is `docs/MOBILE-PORT-PLAN.md`; these two commits are its first

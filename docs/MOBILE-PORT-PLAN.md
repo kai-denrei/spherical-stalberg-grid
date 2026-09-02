@@ -120,7 +120,7 @@ Each phase is small, has a probe, and leaves desktop byte-identical.
 | 0 | the ruler exists; the intent log does not | `?layout=N`, `?pin=1`, `?mobbuild=1` |
 | 1 | shipped (detection + `body.mobile-shell`; no `intents` object — the seam is `keys` + the discrete functions, which turned out to be enough) | `2d249ac` |
 | 2 | shipped, per the rulings: tap-to-go, thumbs manual, no directive wheel yet | `2d249ac`, `14aa9d7` |
-| 3 | not started | — |
+| 3 | shipped: 14px slop, long-press upgrade, NOT HERE captions; `?tapprobe=1` 100% placeable on 244 taps across two zooms — the raycast was never the fault; `?pressprobe=1` drives both gestures through real PointerEvents. Drag-orbit and pinch were already there. | `e32e9ec` |
 | 4 | shipped: 0 overlaps at 844×390 in both modes with a caption and Isao pinned | `14aa9d7` |
 | 5–7 | not started | — |
 
