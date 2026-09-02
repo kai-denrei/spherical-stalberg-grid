@@ -87,9 +87,15 @@ console.log('isBeamStep asks the right question:');
 
 console.log('penetration survives the length climb:');
 {
-  // The mechanic as written in td-tab: "three solid cores stop it dead",
-  // "fodder is nearly free". Both are claims about FRACTIONS of the reach,
-  // and they must hold at 4 cells and at 10 cells identically.
+  // NOTE, 2026-09-02: a solid core now BLOCKS the beam outright (beamburn's
+  // HARD_BLOCKS, the operator's ruling), so PEN_HARD_FRAC no longer decides
+  // where a beam dies against armour — it is the fallback if that rule is
+  // ever switched off, and it still sets the scale these fractions live on.
+  // The checks below therefore test the FRACTION invariant, not the shipped
+  // behaviour; beamburn.mjs owns the behaviour.
+  //
+  // The invariant is the same either way: hold penetration as a fraction of
+  // reach and it means the same thing at 4 cells and at 10.
   let threeStop = true, twoSurvive = true, fodderCheap = true, sameShape = true;
   for (const s of BEAM_STEPS) {
     if (penaltyCells(s.reach, true) * 3 < s.reach) threeStop = false;
@@ -99,15 +105,16 @@ console.log('penetration survives the length climb:');
     const ratio = penaltyCells(s.reach, true) / penaltyCells(s.reach, false);
     if (Math.abs(ratio - PEN_HARD_FRAC / PEN_SOFT_FRAC) > 1e-9) sameShape = false;
   }
-  check('three solid cores stop the beam at EVERY step', threeStop);
-  check('...and two do not, at every step', twoSurvive);
+  check('the hard fraction is big enough that three would end any beam', threeStop);
+  check('...and small enough that two would not, at every step', twoSurvive);
   check('fodder stays nearly free at every step', fodderCheap);
   check('hard:soft ratio is identical at every step', sameShape);
   check('the fractions reproduce the shipped 2.6-cell tuning',
     Math.abs(PEN_SOFT_FRAC * BEAM_BASE.reach - 0.30) < 1e-9
     && Math.abs(PEN_HARD_FRAC * BEAM_BASE.reach - 1.10) < 1e-9);
-  // the regression this module exists to prevent: absolute cells would have
-  // let a rank-15 beam eat three cores and keep going
+  // the regression this module exists to prevent: held in absolute cells,
+  // the whole penetration scale stops meaning anything once reach climbs —
+  // three cores' worth of cost would be a third of a rank-15 beam
   const naive = 1.10 * 3;
   check('the naive absolute-cell version WOULD have broken at rank 15',
     naive < BEAM_STEPS[3].reach, `${naive} vs ${BEAM_STEPS[3].reach}`);

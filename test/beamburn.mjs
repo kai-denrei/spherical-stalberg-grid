@@ -16,7 +16,7 @@ const check = (name, cond, detail = '') => {
 const soft = (t) => ({ t, hard: false });
 const hard = (t) => ({ t, hard: true });
 
-console.log('it pierces:');
+console.log('it pierces the safe tier:');
 {
   // three soft bodies in a row, well inside a 10-unit reach
   const r = burn([soft(1), soft(2), soft(3)], 10, 10);
@@ -28,41 +28,40 @@ console.log('it pierces:');
 
 console.log('...but it pays to:');
 {
-  const one = burn([hard(1)], 10, 10).reachLeft;
-  const two = burn([hard(1), hard(2)], 10, 10).reachLeft;
-  check('each body takes another bite', two < one, `${two.toFixed(2)} vs ${one.toFixed(2)}`);
+  const one = burn([soft(1)], 10, 10).reachLeft;
+  const two = burn([soft(1), soft(2)], 10, 10).reachLeft;
+  check('each soft body takes another bite', two < one, `${two.toFixed(2)} vs ${one.toFixed(2)}`);
   check('a hard body costs more than a soft one',
     penaltyFor(10, true) > penaltyFor(10, false));
   check('fodder is nearly free (<15% of reach)', penaltyFor(10, false) / 10 < 0.15);
 }
 
-console.log('three solid cores stop it dead:');
+console.log('ONE solid core stops it dead:');
 {
-  // CLUSTERED AT THE MUZZLE, deliberately. The budget claim (3 x PEN_HARD
-  // exceeds the whole reach) is beamranks' to assert; what burn() decides is
-  // WHERE the beam dies, and that depends on position as well as cost — a
-  // body only stops the beam if it sits beyond the reach that is left when
-  // the beam gets to it. Bunched at the muzzle isolates the cost from the
-  // spacing, which is the thing under test here.
-  const three = burn([hard(0.1), hard(0.2), hard(0.3)], 10, 10);
-  check('the third is where it dies', !!three.stoppedBy, 'nothing stopped it');
-  check('it stops IN a body, not past one', three.reachLeft === three.stoppedBy.t);
-  const two = burn([hard(0.1), hard(0.2)], 10, 10);
-  check('two do NOT stop it', two.stoppedBy === null,
-    `stopped at ${two.reachLeft}`);
-  // and at every rank, because penetration is a fraction of reach
+  // The operator's ruling, 2026-09-02: a hard core blocks the beam entirely,
+  // as a wall does. It used to take three, and the weapon punched through the
+  // first two.
+  const r = burn([hard(3), soft(5), hard(7)], 10, 10);
+  check('the FIRST solid core is where it dies', r.stoppedBy && r.stoppedBy.t === 3,
+    r.stoppedBy ? `stopped at ${r.stoppedBy.t}` : 'nothing stopped it');
+  check('it stops AT that body, not past it', r.reachLeft === 3);
+  check('the core itself is still burned — it takes the frame it stopped',
+    r.hits.length === 1 && r.hits[0].t === 3);
+  check('everything behind it is untouched, soft or hard',
+    r.hits.every((h) => h.t <= 3));
+  // ...at every rank. Reach buys RANGE and depth through fodder; it never
+  // bought penetration through armour (three cores stopped every rank
+  // identically) and now it visibly does not.
   let everyStep = true;
   for (const st of BEAM_STEPS) {
     const R = st.reach;
-    const t3 = burn([hard(R * 0.01), hard(R * 0.02), hard(R * 0.03)], R, R);
-    const t2 = burn([hard(R * 0.01), hard(R * 0.02)], R, R);
-    if (!t3.stoppedBy || t2.stoppedBy) everyStep = false;
+    const one = burn([hard(R * 0.3), soft(R * 0.6)], R, R);
+    if (!one.stoppedBy || one.hits.length !== 1) everyStep = false;
   }
-  check('three stop it and two do not at EVERY rank step', everyStep);
-  // SPACING MATTERS TOO, and that is not a bug: two hard bodies far enough
-  // out DO end the beam, because the second sits past what is left.
-  check('two hard bodies far out still stop it — position counts, not just cost',
-    !!burn([hard(1), hard(2)], 10, 10).stoppedBy);
+  check('one core stops it at EVERY rank step', everyStep);
+  // and a beam with nothing hard in it still runs its full length
+  const clear = burn([soft(1), soft(2)], 10, 10);
+  check('a beam through fodder alone is not stopped', clear.stoppedBy === null);
 }
 
 console.log('what is behind armour is never reached:');
@@ -70,6 +69,7 @@ console.log('what is behind armour is never reached:');
   // a hard body up close, then something far out that the beam cannot get to
   const r = burnReport([hard(1), soft(9)], 10, 10);
   check('the far body is not burned', r.hits.length === 1);
+  check('one core was enough to shadow it', r.stoppedBy && r.stoppedBy.t === 1);
   check('...and the report names it as missed',
     r.missed.length === 1 && r.missed[0].t === 9);
   check('the beam ends short of it', r.reachLeft < 9);
@@ -79,17 +79,20 @@ console.log('order is the mechanic:');
 {
   // the SAME bodies, handed over backwards. burn() sorts, so no caller can
   // get this wrong — which is the point of it sorting rather than trusting.
-  const fwd = burn([hard(1), soft(2), soft(3)], 10, 10);
-  const rev = burn([soft(3), soft(2), hard(1)], 10, 10);
+  const fwd = burn([soft(1), soft(2), hard(3)], 10, 10);
+  const rev = burn([hard(3), soft(2), soft(1)], 10, 10);
   check('a shuffled list burns identically', fwd.reachLeft === rev.reachLeft
     && fwd.hits.length === rev.hits.length);
   check('the hits come back nearest-first regardless',
     rev.hits.every((h, i) => i === 0 || h.t >= rev.hits[i - 1].t));
-  // ...and it must be nearest-first, not farthest: put the armour LAST, still
-  // inside the reach the two softs leave behind, and all three burn
+  // ...and it must be nearest-first, not farthest: put the armour LAST and
+  // everything in front of it burns, the armour last of all — and there the
+  // beam ends
   const behind = burn([soft(1), soft(2), hard(5)], 10, 10);
   check('soft bodies in front of armour all burn, and so does the armour',
     behind.hits.length === 3, `${behind.hits.length} hits`);
+  check('...and the armour is where it stops',
+    behind.stoppedBy && behind.stoppedBy.t === 5);
 }
 
 console.log('a wall bites in the same currency:');
@@ -104,13 +107,15 @@ console.log('a wall bites in the same currency:');
   check('a wall drags even with nothing in the beam',
     scraping.drag > clear.drag && clear.drag === 0);
   check('the wall drags exactly like one hard body', scraping.drag === DRAG_HARD);
+  check('one hard body alone already caps the sweep — "entirely slowed"',
+    DRAG_HARD >= DRAG_CAP, `${DRAG_HARD} vs cap ${DRAG_CAP}`);
 }
 
 console.log('drag slows the sweep but never stalls it:');
 {
   const dt = 1 / 60, burst = 2.4;
   const clear = sweepAdvance(dt, burst, 0);
-  const loaded = sweepAdvance(dt, burst, 3 * DRAG_HARD);
+  const loaded = sweepAdvance(dt, burst, DRAG_SOFT * 2);
   check('a clear beam sweeps at full rate', Math.abs(clear - dt / burst) < 1e-12);
   check('a loaded beam sweeps slower', loaded < clear);
   check('it always CREEPS — never zero, however loaded',
@@ -124,7 +129,7 @@ console.log('the lab readout matches the game:');
 {
   // burnReport must not restate the rule — it must CALL it, or the lab and
   // the board drift the first time either is tuned
-  const bodies = [soft(1), hard(2), soft(3), hard(7)];
+  const bodies = [soft(1), soft(3), hard(4), soft(7)];
   const a = burn(bodies, 10, 10, 0.3);
   const b = burnReport(bodies, 10, 10, 0.3);
   check('report and burn agree on where the beam ends', a.reachLeft === b.reachLeft);

@@ -11,10 +11,11 @@
 // module) and it is also the anti-drift line: the lab cannot disagree with the
 // game about the drop-off, because there is only one copy of the rule.
 //
-// THE RULE, in one paragraph. The beam pierces — it does not stop at the
-// first body — but every body it passes through eats into the reach it has
-// left, so it visibly shortens rather than sailing on. Fodder is nearly free;
-// a solid core takes a big bite, and three of those stop it dead. Separately,
+// THE RULE, in one paragraph. The beam pierces the SAFE tier — it does not
+// stop at the first rammable body — but every one it passes through eats into
+// the reach it has left, so it visibly shortens rather than sailing on. Fodder
+// is nearly free. A SOLID CORE ends it outright, at that body, as a wall does
+// (operator, 2026-09-02); it used to take three. Separately,
 // mass in the beam SLOWS its sweep (drag), which is the inverse of knock-back:
 // nothing is pushed, something is held, and a beam lagging its twin is the
 // weapon's own motion saying "there is something in here you should not ram".
@@ -30,8 +31,24 @@ import { PEN_SOFT_FRAC, PEN_HARD_FRAC } from './beamranks.js';
 // much MASS is in the beam, and a heavier target does not get lighter because
 // the pilot was promoted.
 export const DRAG_SOFT = 0.10;   // per rammable body
-export const DRAG_HARD = 0.55;   // per unrammable one — the solid core bites
+export const DRAG_HARD = 0.90;   // per unrammable one — a solid core stalls it
 export const DRAG_CAP = 0.90;    // never a full stall: it always creeps
+
+// A SOLID CORE STOPS THE BEAM DEAD (operator, 2026-09-02: "I insist that we
+// want long beam to be entirely slowed/blocked by enemies with hardcores and
+// walls").
+//
+// Until now a hard body cost 0.423 of the reach, so it took three of them to
+// end a beam and the weapon punched through the first two. It ends at the
+// FIRST one now, and the drag it contributes is the cap — entirely slowed,
+// entirely blocked, in the operator's words.
+//
+// This makes the rammable/not-rammable colour the most load-bearing read on
+// the board: a beam pierces the whole safe ladder and stops at the first
+// alarm belt in its path. Reach still buys engagement RANGE, and still buys
+// depth through fodder; it no longer buys penetration through armour, which
+// it never really did (three cores stopped every rank identically).
+export const HARD_BLOCKS = true;
 
 // How much of its remaining reach one body costs, in the same units as
 // `reach`. `hard` is the not-rammable tier — the colour the whole board
@@ -79,6 +96,13 @@ export function burn(bodies, len, reach, bite = 0) {
     if (b.t > reachLeft) break;            // the beam died before this one
     hits.push({ ...b, reachAt: reachLeft });
     drag += b.hard ? DRAG_HARD : DRAG_SOFT;
+    // A SOLID CORE IS A WALL WITH LEGS. It is still BURNED — it takes the
+    // damage of the frame it stopped the beam in — but nothing behind it is.
+    if (b.hard && HARD_BLOCKS) {
+      reachLeft = b.t;
+      stoppedBy = b;
+      break;
+    }
     reachLeft -= penaltyFor(reach, b.hard);
     if (reachLeft <= b.t) {                // it stops IN this one
       reachLeft = b.t;

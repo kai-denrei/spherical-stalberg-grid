@@ -191,6 +191,14 @@ export function initBeamTab(root) {
                              // (0.4-0.55 is the board's whole roster, and a
                              //  body bigger than the tank hides the beam)
     targetMix: 'alternate',  // which of them are the solid, unrammable tier
+    // LATERAL OFFSET (operator, 2026-09-02). Down the centreline both beams
+    // see the same bodies, both bog identically, and the pair never falls out
+    // of step — so the one readout the drag mechanic exists for is invisible
+    // on the bench built to show it. Push the row sideways and one beam eats
+    // the line while the other runs clear.
+    targetSide: 0.0,         // cells across, + toward the right-hand gun
+    targetStagger: 0.0,      // ...and this much MORE per body, so the row can
+                             //  be walked diagonally through the pair
     spread: 1.0,                // how far apart the emitters read
     toeIn: SECONDARY_TOE,       // the manual angle, when the solve is off
     toeAuto: true,              // solve the toe from the reach instead
@@ -273,7 +281,11 @@ export function initBeamTab(root) {
       });
       const mesh = new THREE.Mesh(new THREE.IcosahedronGeometry(r, 1), mat);
       targetGroup.add(mesh);
-      targets.push({ mesh, mat, t: P.targetStart + i * P.targetGap, hard, r });
+      targets.push({
+        mesh, mat, hard, r,
+        t: P.targetStart + i * P.targetGap,
+        side: P.targetSide + i * P.targetStagger,
+      });
     }
     placeTargets();
   }
@@ -285,7 +297,25 @@ export function initBeamTab(root) {
   const hullDir = [0, 0, 1];
   function placeTargets() {
     for (const t of targets) {
-      const q = arcPoint(hullFrom, hullDir, t.t / LAB_R);
+      // Walk down the centreline, then step sideways along the great circle
+      // that leaves THAT point at right angles. A lateral offset added as a
+      // straight vector would lift the body off the sphere, and the beam's
+      // own hit test counts altitude as being out of the beam — so a body
+      // nudged sideways would quietly stop being hittable at all.
+      const sRad = t.t / LAB_R;
+      const base = arcPoint(hullFrom, hullDir, sRad);
+      const c = Math.cos(sRad), n = Math.sin(sRad);
+      const fwd = [
+        hullDir[0] * c - hullFrom[0] * n,
+        hullDir[1] * c - hullFrom[1] * n,
+        hullDir[2] * c - hullFrom[2] * n,
+      ];
+      const right = [
+        base[1] * fwd[2] - base[2] * fwd[1],
+        base[2] * fwd[0] - base[0] * fwd[2],
+        base[0] * fwd[1] - base[1] * fwd[0],
+      ];
+      const q = t.side ? arcPoint(base, right, t.side / LAB_R) : base;
       // seat it on the surface, lifted by its own radius so it sits ON the
       // ground rather than half-buried in it
       const lift = LAB_R + t.r * 0.6;
@@ -459,6 +489,8 @@ export function initBeamTab(root) {
   gt.add(P, 'targetSize', 0.3, 2, 0.05).name('body size').onChange(buildTargets);
   gt.add(P, 'targetMix', ['alternate', 'all rammable', 'all solid',
     'solid first', 'solid last']).name('which are solid').onChange(buildTargets);
+  gt.add(P, 'targetSide', -3, 3, 0.05).name('offset across (cells)').onChange(buildTargets);
+  gt.add(P, 'targetStagger', -1, 1, 0.02).name('...+ per body').onChange(buildTargets);
   gt.open();
   buildTargets();
 
@@ -644,7 +676,9 @@ export function initBeamTab(root) {
 
   // --- the burn, run on the SAME rule the board runs (beamburn.js) --------
   const beamPhase = [0, 0];
-  let lastReport = null;
+  // BOTH beams, because the whole point of the lateral offset is that they
+  // stop agreeing — a HUD showing one of them cannot show that.
+  let lastReport = null, otherReport = null;
   function markTargets(reachedSet) {
     for (const t of targets) {
       const hit = reachedSet && reachedSet.has(t);
@@ -693,6 +727,7 @@ export function initBeamTab(root) {
     }
     markTargets(reached);
     lastReport = reports[0] || null;
+    otherReport = reports[1] || null;
   }
 
   // ?labprobe=1 — THE DROP-OFF, as numbers. Reports the burn for each of the
@@ -701,6 +736,42 @@ export function initBeamTab(root) {
   // board agree, because both call beamburn.burn() — if these ever disagree
   // with the game's own ?beamfire probe, one of them has grown a second copy
   // of the rule.
+  // ?labside=N&labstagger=N — set the lateral offset from the URL so the
+  // decoupling can be measured headless. Without these the bench can only be
+  // driven by hand, and "the beams fall out of step" stays an assertion.
+  {
+    const q = new URLSearchParams(location.search);
+    if (q.has('labside') || q.has('labstagger')) {
+      P.targetSide = parseFloat(q.get('labside')) || 0;
+      P.targetStagger = parseFloat(q.get('labstagger')) || 0;
+      // REBUILD. The GUI block above already called buildTargets() with the
+      // defaults, so setting the params here and stopping would leave the row
+      // exactly where it was — and the probe would faithfully report that the
+      // offset did nothing.
+      buildTargets();
+      gui.controllersRecursive().forEach((c) => c.updateDisplay());
+    }
+  }
+
+  // ?labbeams=1 — the two beams, separately, after the burst has had time to
+  // load them unevenly. THE point of the lateral offset: one beam eats the
+  // row and bogs, the other runs clear and finishes its sweep.
+  if (new URLSearchParams(location.search).get('labbeams') === '1') {
+    setTimeout(() => {
+      const L = lastReport, R = otherReport;
+      if (!L || !R) { console.log('LABBEAMS INCONCLUSIVE (not firing yet)'); return; }
+      const split = Math.abs(beamPhase[0] - beamPhase[1]);
+      console.log(`LABBEAMS side=${P.targetSide} stagger=${P.targetStagger}`
+        + ` | L ends=${L.reachLeft.toFixed(2)}c drag=${(L.drag * 100).toFixed(0)}%`
+        + ` hits=${L.hits.length}`
+        + ` | R ends=${R.reachLeft.toFixed(2)}c drag=${(R.drag * 100).toFixed(0)}%`
+        + ` hits=${R.hits.length}`
+        + ` | phases ${beamPhase[0].toFixed(3)}/${beamPhase[1].toFixed(3)}`
+        + ` split=${split.toFixed(3)}`
+        + ` ${split > 0.02 ? 'DECOUPLED' : 'in step'}`);
+    }, 2000);
+  }
+
   if (new URLSearchParams(location.search).get('labprobe') === '1') {
     setTimeout(() => {
       for (const st of BEAM_STEPS) {
@@ -819,11 +890,14 @@ export function initBeamTab(root) {
     const r = lastReport;
     const rows = r.rows.map((x) => `${x.hard ? 'SOLID' : 'soft'}@${x.t.toFixed(1)}`
       + `−${x.cost.toFixed(2)}`).join(' ');
+    const o = otherReport;
     return `${base}\n`
-      + `beam ends at ${r.reachLeft.toFixed(2)} of ${P.reachCells.toFixed(1)} cells`
-      + `  ·  drag ${(r.drag * 100).toFixed(0)}%`
-      + `  ·  phases ${beamPhase[0].toFixed(2)}/${beamPhase[1].toFixed(2)}`
-      + (rows ? `\nburned: ${rows}` : '\nburned: nothing in the beam')
+      + `L ends ${r.reachLeft.toFixed(2)}c drag ${(r.drag * 100).toFixed(0)}%`
+      + `   R ends ${o ? `${o.reachLeft.toFixed(2)}c drag ${(o.drag * 100).toFixed(0)}%` : '—'}`
+      + `   of ${P.reachCells.toFixed(1)}c`
+      + `   ·  phases ${beamPhase[0].toFixed(2)}/${beamPhase[1].toFixed(2)}`
+      + (Math.abs(beamPhase[0] - beamPhase[1]) > 0.02 ? '  ← DECOUPLED' : '')
+      + (rows ? `\nL burned: ${rows}` : '\nL burned: nothing in the beam')
       + (r.missed.length ? `  ·  NEVER REACHED: ${r.missed.length}` : '');
   }
   frame();

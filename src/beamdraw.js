@@ -64,6 +64,26 @@ export const PLASMA_DEFAULTS = {
   size: 3.2,        // screen px, matching the board's other clouds
 };
 
+// THE SHIPPED PRESET, in ONE place (operator, 2026-09-02, pasted from the
+// lab's ⧉ copy). It lived in td-tab while the lab kept its own lab-scaled
+// copy, so "try these presets in the game" was two edits and a unit
+// conversion — which is exactly the seam a tuned value goes stale in.
+//
+// Widths are in CELLS. The rig multiplies them by `scale`, which is world
+// units per cell on whichever surface is drawing: 0.08 on the board, 1 in
+// the lab. glowColor is a placeholder — the pilot's RANK owns the colour
+// (beamranks.js) and overwrites it on every rig.
+export const BOARD_PRESET = {
+  coreColor: '#ffffff', coreWidth: 0.0025, coreIntensity: 8,
+  glowColor: '#666100', glowWidth: 0.464, glowIntensity: 2, glowFalloff: 8,
+  capStart: 0.155, capEnd: 0.4, blast: 0,
+  scrollSpeed: -4, noiseScale: 16.9, noiseAmount: 0.61, flicker: 0.5,
+  jitterAmount: 0.19, jitterFreq: 118,
+  burstRate: 0, burstDuty: 0.54, burstDecay: 3.15, burstAttack: 0,
+};
+// Intensity at the midpoint of the burst — the preset's `peakIntensity`.
+export const BEAM_PEAK = 8;
+
 // Straight links in the root. Solved, not guessed: at the rank-15 reach the
 // root spans 0.36 rad, so three links sag 0.02 cells — a fortieth of the
 // 3.51 cells a single chord flew.
