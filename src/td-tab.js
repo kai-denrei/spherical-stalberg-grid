@@ -19,49 +19,49 @@
 
 import * as THREE from '../vendor/three.module.js';
 import GUI from '../vendor/lil-gui.esm.js';
-import { generateSphereMesh, relax } from './grid.js?v=4ddaebae';
-import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=4ddaebae';
-import { mulberry32, randomSeed } from './rng.js?v=4ddaebae';
-import { computeBerths, berthIndexFor } from './berths.js?v=4ddaebae';
-import { wantsSecondary, shellsForAll } from './autofire.js?v=4ddaebae';
-import { printPhase, printOffset, printOn, patternSecsFor } from './printpath.js?v=4ddaebae';
-import { createBeamRig, PLASMA_DEFAULTS, BOARD_PRESET, BEAM_PEAK } from './beamdraw.js?v=4ddaebae';
-import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3, segKey, tangentDir, tangentBasis } from './vec3.js?v=4ddaebae';
-import { CREATURES, waveJelly } from './creatures.js?v=4ddaebae';
-import { brief, dwellFor } from './isaobriefs.js?v=4ddaebae';
-import { drawEmotion } from './emotions.js?v=4ddaebae';
+import { generateSphereMesh, relax } from './grid.js?v=af5b2382';
+import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=af5b2382';
+import { mulberry32, randomSeed } from './rng.js?v=af5b2382';
+import { computeBerths, berthIndexFor } from './berths.js?v=af5b2382';
+import { wantsSecondary, shellsForAll } from './autofire.js?v=af5b2382';
+import { printPhase, printOffset, printOn, patternSecsFor } from './printpath.js?v=af5b2382';
+import { createBeamRig, PLASMA_DEFAULTS, BOARD_PRESET, BEAM_PEAK } from './beamdraw.js?v=af5b2382';
+import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3, segKey, tangentDir, tangentBasis } from './vec3.js?v=af5b2382';
+import { CREATURES, waveJelly } from './creatures.js?v=af5b2382';
+import { brief, dwellFor } from './isaobriefs.js?v=af5b2382';
+import { drawEmotion } from './emotions.js?v=af5b2382';
 import { ACHIEVEMENTS, ACHV_GROUPS, achievement, blankRun, earned, freshlyEarned,
   sanitiseRecord }
-  from './achievements.js?v=4ddaebae';
+  from './achievements.js?v=af5b2382';
 import { applyFontPack, currentFontPack, FONT_NAMES,
-  loadTypeFeel } from './fonts.js?v=4ddaebae';
-import { SECONDARY_TOE, applySecondaryToe } from './units.js?v=4ddaebae';
-import { UNITS, UNIT_NAMES, buildUnit, buildCreature, preloadMkcx, preloadServer, makeServerFixture, makeShieldShell, preloadContainer, makeContainerFixture, preloadFabricator, makeIsaoDrone, makeBulletCloud, makeRewardSolid, makeShellSolid, makeDebris, makeDotBurst, makePortalCloud, preloadPortalRing, makePortalRing, makeHeartCloud, makeDotEnemy, preloadTerraformer, makeTerraformerFixture } from './units.js?v=4ddaebae';
-import { LOOKS, LOOK_NAMES } from './looks.js?v=4ddaebae';
-import { makeCellIndex } from './cellindex.js?v=4ddaebae';
-import { CREATURE_TINTS, ENEMY_SPEC, INTROS, computeWavePlan, accentFor } from './enemyspec.js?v=4ddaebae';
-import { PICKUPS } from './pickups.js?v=4ddaebae';
-import { rankFor, rankLabel, badgeSVG, killReq, eliteReq } from './ranks.js?v=4ddaebae';
-import { beamStep, isBeamStep, PEN_SOFT_FRAC, PEN_HARD_FRAC } from './beamranks.js?v=4ddaebae';
-import { burn, sweepAdvance, wallBite as wallBiteFor } from './beamburn.js?v=4ddaebae';
-import { arcPoint, projectToArc, toeForCrossing, crossingForToe } from './arc.js?v=4ddaebae';
+  loadTypeFeel } from './fonts.js?v=af5b2382';
+import { SECONDARY_TOE, applySecondaryToe } from './units.js?v=af5b2382';
+import { UNITS, UNIT_NAMES, buildUnit, buildCreature, preloadMkcx, preloadServer, makeServerFixture, makeShieldShell, preloadContainer, makeContainerFixture, preloadFabricator, makeIsaoDrone, makeBulletCloud, makeRewardSolid, makeShellSolid, makeDebris, makeDotBurst, makePortalCloud, preloadPortalRing, makePortalRing, makeHeartCloud, makeDotEnemy, preloadTerraformer, makeTerraformerFixture } from './units.js?v=af5b2382';
+import { LOOKS, LOOK_NAMES } from './looks.js?v=af5b2382';
+import { makeCellIndex } from './cellindex.js?v=af5b2382';
+import { CREATURE_TINTS, ENEMY_SPEC, INTROS, computeWavePlan, accentFor } from './enemyspec.js?v=af5b2382';
+import { PICKUPS } from './pickups.js?v=af5b2382';
+import { rankFor, rankLabel, badgeSVG, killReq, eliteReq } from './ranks.js?v=af5b2382';
+import { beamStep, isBeamStep, PEN_SOFT_FRAC, PEN_HARD_FRAC } from './beamranks.js?v=af5b2382';
+import { burn, sweepAdvance, wallBite as wallBiteFor } from './beamburn.js?v=af5b2382';
+import { arcPoint, projectToArc, toeForCrossing, crossingForToe } from './arc.js?v=af5b2382';
 import { WORMHOLE_PRESET, WORMHOLE_RENDER, RING_SPIN, TRAVEL,
-  travelRate, advancePhase } from './portalfx.js?v=4ddaebae';
-import { WORMHOLE_FRAG } from './fx/wormhole.frag.js?v=4ddaebae';
-import { makeScore } from './score.js?v=4ddaebae';
-import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER } from './towers.js?v=4ddaebae';
-import { makeEconomy, sellRefund } from './economy.js?v=4ddaebae';
-import { makeBloom } from './postfx.js?v=4ddaebae';
-import { TANK_FEEL, TANK_FEEL_KNOBS, makeTankFeel, stepTankFeel, landTankFeel, fireTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js?v=4ddaebae';
-import { FEEL, loadFeel, saveFeel } from './feelstore.js?v=4ddaebae';
+  travelRate, advancePhase } from './portalfx.js?v=af5b2382';
+import { WORMHOLE_FRAG } from './fx/wormhole.frag.js?v=af5b2382';
+import { makeScore } from './score.js?v=af5b2382';
+import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER } from './towers.js?v=af5b2382';
+import { makeEconomy, sellRefund } from './economy.js?v=af5b2382';
+import { makeBloom } from './postfx.js?v=af5b2382';
+import { TANK_FEEL, TANK_FEEL_KNOBS, makeTankFeel, stepTankFeel, landTankFeel, fireTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js?v=af5b2382';
+import { FEEL, loadFeel, saveFeel } from './feelstore.js?v=af5b2382';
 import { STRIKE_KNOBS, makeStrike, makeStrikeParams, grantStrikes, stepStrike,
   toggleArm, paintTarget, launchStrike, stepFall, skipFall, fallProgress,
-  strikeDamage, retargetStrike, orbitProgress } from './strike.js?v=4ddaebae';
-import { radarBasis, radarProject, radarBearing, sweepAngle, radarPhosphor } from './radar.js?v=4ddaebae';
-import { BLOOM_GROUPS } from './bloomweights.js?v=4ddaebae';
-import { TOWER_LOOK_NAMES, DEFAULT_TOWER_LOOK, buildTowerLook, preloadLook } from './towerlooks.js?v=4ddaebae';
-import { makeAudio } from './audio.js?v=4ddaebae';
-import { DEATH_KEYS } from './audiomanifest.js?v=4ddaebae';
+  strikeDamage, retargetStrike, orbitProgress } from './strike.js?v=af5b2382';
+import { radarBasis, radarProject, radarBearing, sweepAngle, radarPhosphor } from './radar.js?v=af5b2382';
+import { BLOOM_GROUPS } from './bloomweights.js?v=af5b2382';
+import { TOWER_LOOK_NAMES, DEFAULT_TOWER_LOOK, buildTowerLook, preloadLook } from './towerlooks.js?v=af5b2382';
+import { makeAudio } from './audio.js?v=af5b2382';
+import { DEATH_KEYS } from './audiomanifest.js?v=af5b2382';
 
 export function initTdTab(root) {
   let active = false;
@@ -781,6 +781,13 @@ export function initTdTab(root) {
   // SLOW and AOE at bottlenecks, SNIPER everywhere, upgrades with spare
   // biomass. style0 is the deliberate floor: wander, build nothing.
   let simFast = 0, simStyle = null, simPolClock = 0, simDone = false;
+  // ECONOMY MEASURE (operator, 2026-09-02: "biomass is much too easy to
+  // acquire, but rather than going by feel, let's be systematic"). Two
+  // numbers the feeling turns on: how much of the run the purse could
+  // afford the cheapest tower without waiting (a purse that is never short
+  // is not an economy), and how much of what was earned was ever spent.
+  let ecoAffordT = 0, ecoClockT = 0;
+  const CHEAPEST_TOWER = 40;
   const simCurve = []; // one point per wave CLEAR: the tuning signal
   let simCap = 600; // sim-seconds before a run reports 'timeout'
   function simTrunk() {
@@ -885,7 +892,13 @@ export function initTdTab(root) {
     const payload = { style: simStyle, seed: params.seed >>> 0, outcome, wave, round,
       score: score.points, heart: heartHP, lives: playerHP,
       towers: towers.length, biomass: eco.biomass, simT: Math.round(t),
-      curve: simCurve };
+      curve: simCurve,
+      economy: {
+        earned: eco.earned, spent: eco.spent, peak: eco.peak, held: eco.biomass,
+        spendRatio: eco.earned ? +(eco.spent / eco.earned).toFixed(2) : 0,
+        affordable: ecoClockT ? +(ecoAffordT / ecoClockT).toFixed(2) : 0,
+        perWave: wave ? Math.round(eco.earned / wave) : 0,
+      } };
     console.log('SIMRESULT ' + JSON.stringify(payload));
     try {
       if (window.parent !== window) window.parent.postMessage({ simresult: payload }, '*');
@@ -7571,15 +7584,24 @@ export function initTdTab(root) {
   // A yard cell: open, two or three hops from the heart, not a berth, not
   // already used. Deterministic order (cell index), so the yard grows the
   // same way on the same seed.
+  // ON THE PEDESTAL'S RIM, measured from the pedestal rather than counted in
+  // hops: hop 2-3 landed stores at 2.0-2.7 cells while the pad reaches 1.43,
+  // which is "somewhere near the heart" rather than "at the Terraformer's
+  // feet". Nearest first, so the yard grows outward from the rim.
   function tfYardCell() {
     const taken = new Set([...tfYard.map((y) => y.ci), ...berths.map((b) => b.ci),
       ...lifeContainers.map((c) => c.ci)]);
+    const hc = graph.centers[dungeon.heart];
+    const pad = heartSprite && heartSprite.userData.padR
+      ? (heartSprite.userData.padR * heartSprite.userData.sizeScale) / cellSide : 1.4;
+    let best = -1, bd = Infinity;
     for (let i = 0; i < dungeon.tags.length; i++) {
       if (dungeon.tags[i] === BLOCKED || taken.has(i)) continue;
-      const d = dungeon.distToHeart[i];
-      if (d >= 2 && d <= 3) return i;
+      const d = dist3(hc, graph.centers[i]) / cellSide;
+      if (d < pad + 0.35 || d > pad + 1.6) continue;
+      if (d < bd) { bd = d; best = i; }
     }
-    return -1;
+    return best;
   }
   function tfStart(kind) {
     if (tfJob) { tfQueue.push(kind); return; }
@@ -7588,7 +7610,13 @@ export function initTdTab(root) {
     if (kind === 'container') {
       const ci = tfYardCell();
       const g = ci >= 0 ? makeContainerFixture(0) : null;
-      if (!g) return;                       // model not landed yet — the next wave tries again
+      if (!g) {
+        // MODEL NOT LANDED YET. The first cut dropped the job here — one way
+        // a Terraformer "moves as if building something but builds nothing".
+        // Wait for the bytes and start the same job.
+        if (ci >= 0) preloadContainer().then((ok) => { if (ok && !tfJob) tfStart('container'); });
+        return;
+      }
       const dl = g.getObjectByName('Door_L_Pivot'), dr = g.getObjectByName('Door_R_Pivot');
       if (dl) dl.rotation.y = 0;
       if (dr) dr.rotation.y = 0;           // sealed: stores, not bays
@@ -8869,6 +8897,7 @@ export function initTdTab(root) {
     }
     updateWormhole(dt, t);
     if (!frozen) tfTick(dt);
+    if (!frozen && eco) { ecoClockT += dt; if (eco.biomass >= CHEAPEST_TOWER) ecoAffordT += dt; }
     if (tutorialActive) tutorial.tick(dt);
     if (!frozen) {
       updateEnemies(dt, t);
@@ -10886,6 +10915,18 @@ export function initTdTab(root) {
       for (let w = 1; w <= terraN; w++) {
         tfMilestone(w);
         for (let s2 = 0; s2 < 14 && (tfJob || tfQueue.length); s2 += 0.05) tfTick(0.05);
+      }
+      const hc = graph.centers[dungeon.heart];
+      const padCells = heartSprite && heartSprite.userData.padR
+        ? (heartSprite.userData.padR * heartSprite.userData.sizeScale) / cellSide : NaN;
+      const bb2 = new THREE.Box3(), sz2 = new THREE.Vector3();
+      for (const y of tfYard) {
+        y.obj.updateMatrixWorld(true); bb2.setFromObject(y.obj); bb2.getSize(sz2);
+        const d = dist3(hc, graph.centers[y.ci]) / cellSide;
+        console.log(`TERRA store at cell ${y.ci}: ${d.toFixed(2)} cells from the heart,`
+          + ` pedestal radius ${padCells.toFixed(2)} cells`
+          + ` ${d < padCells ? '<-- UNDER THE PEDESTAL' : '(clear of it)'}`
+          + ` | drawn ${(sz2.length() / cellSide).toFixed(2)} cells across`);
       }
       console.log(`TERRA after ${terraN} waves: yard=${tfYard.length} containers=${tfContainers}`
         + ` hulls printed=${tfHulls} playerHP ${hp0}->${playerHP}`

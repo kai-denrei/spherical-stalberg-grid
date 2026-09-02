@@ -13,11 +13,18 @@
 
 export const START_BIOMASS = 190;
 export const STREAK_STEP = 0.05;
-export const STREAK_CAP = 5;
+// FIRST CUT, 2026-09-02, from the sim rather than by feel: on the ram policy
+// a run EARNED 2009 and SPENT 618 — a 1561kg surplus, the purse able to
+// afford the cheapest tower 80% of the run — while the build-heavy policy on
+// the same seed spent 98% and was short half the time. So the excess is the
+// ram loop specifically: KILL_PAY.tank 1.0 x RAM_PREMIUM 1.5 x a streak that
+// capped at 5, or 7.5x bounty on a chain. Cap 5 -> 3 and premium 1.5 -> 1.25
+// bring that ceiling to 3.75x. Measured again after the change; see DEVLOG.
+export const STREAK_CAP = 3;
 export const REFUND_FRACTION = 0.75;
 
 // operator ruling: ramming pays a premium — personal risk towers never take
-export const RAM_PREMIUM = 1.5;
+export const RAM_PREMIUM = 1.25;
 
 export function sellRefund(spent) {
   return Math.round(spent * REFUND_FRACTION);
@@ -39,6 +46,10 @@ export function makeEconomy(opts = {}) {
   let biomass = startBiomass;
   let streak = 0;
   let score = 0; // cumulative, never spent
+  // LEDGER (2026-09-02): what came in and what went out, so the sim can
+  // measure the economy instead of the operator feeling it. `earned` is
+  // kills and bonuses; `spent` is every successful spend.
+  let earned = 0, spent = 0, peak = biomass;
 
   const multiplier = () =>
     Math.min(STREAK_CAP, 1 + STREAK_STEP * streak);
@@ -55,6 +66,7 @@ export function makeEconomy(opts = {}) {
       const amount = Math.round(bounty * (ram ? RAM_PREMIUM : 1) * multiplier());
       biomass += amount;
       score += amount;
+      earned += amount; if (biomass > peak) peak = biomass;
       return amount;
     },
     // an enemy reached the Heart: the streak dies with the moment
@@ -63,8 +75,12 @@ export function makeEconomy(opts = {}) {
     spend(cost) {
       if (biomass < cost) return false;
       biomass -= cost;
+      spent += cost;
       return true;
     },
-    addBiomass(n) { biomass += n; score += Math.max(0, n); },
+    addBiomass(n) { biomass += n; score += Math.max(0, n); earned += Math.max(0, n); if (biomass > peak) peak = biomass; },
+    get earned() { return earned; },
+    get spent() { return spent; },
+    get peak() { return peak; },
   };
 }

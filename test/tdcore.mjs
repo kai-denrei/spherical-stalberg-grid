@@ -6,7 +6,7 @@ import { ENEMY_SPEC, INTROS, typesByWave, computeWavePlan, CREATURE_TINTS,
   SAFE_HUES, ALARM_HUES, isSafeHue, isAlarmHue, accentFor, hueLuma, DARK_LUMA, ACCENT_ALARM }
   from '../src/enemyspec.js';
 import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER, HACK_GATED } from '../src/towers.js';
-import { makeEconomy, sellRefund, waveClearBonus, earlyCallBonus, START_BIOMASS, RAM_PREMIUM } from '../src/economy.js';
+import { makeEconomy, sellRefund, waveClearBonus, earlyCallBonus, START_BIOMASS, RAM_PREMIUM, STREAK_CAP } from '../src/economy.js';
 
 let failures = 0;
 const check = (name, cond, detail = '') => {
@@ -126,9 +126,9 @@ console.log('economy:');
   eco.leak();
   check('leak resets the streak', eco.streak === 0 && eco.multiplier() === 1);
   for (let i = 0; i < 200; i++) eco.award(1);
-  check('multiplier caps at ×5', eco.multiplier() === 5);
+  check(`multiplier caps at x${STREAK_CAP}`, eco.multiplier() === STREAK_CAP);
   const ramPay = makeEconomy().award(10, { ram: true });
-  check('ram premium ×1.5', ramPay === Math.round(10 * RAM_PREMIUM * 1.05));
+  check(`ram premium x${RAM_PREMIUM}`, ramPay === Math.round(10 * RAM_PREMIUM * 1.05));
   const eco2 = makeEconomy({ startBiomass: 50 });
   check('spend guards affordability',
     eco2.spend(60) === false && eco2.spend(50) === true && eco2.biomass === 0);

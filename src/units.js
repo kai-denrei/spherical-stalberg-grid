@@ -16,14 +16,14 @@
 
 import * as THREE from '../vendor/three.module.js';
 import { EMOTION_IDS, emotion, phosphorFor } from './emotions.js';
-import { printPhase, printOffset, printOn } from './printpath.js?v=4ddaebae';
+import { printPhase, printOffset, printOn } from './printpath.js?v=af5b2382';
 import { loadGlb, mergeByMaterial, fitModel, tintModel, makeShellRack,
-  addEdgeOutlines, makeHeatSleeve } from './glbmodels.js?v=4ddaebae';
-import { CREATURES, waveJelly, swimWave, spherePts, bulletPts, missilePts, heartPts, torusPts, towerHeadPts, enemyDotPts, portalPts } from './creatures.js?v=4ddaebae';
-import { TOWER_FEEL, TOWER_HEADS, headKindFor } from './towerfeel.js?v=4ddaebae';
+  addEdgeOutlines, makeHeatSleeve } from './glbmodels.js?v=af5b2382';
+import { CREATURES, waveJelly, swimWave, spherePts, bulletPts, missilePts, heartPts, torusPts, towerHeadPts, enemyDotPts, portalPts } from './creatures.js?v=af5b2382';
+import { TOWER_FEEL, TOWER_HEADS, headKindFor } from './towerfeel.js?v=af5b2382';
 import { STARGATE_PTS, STARGATE_STROKE,
-  HORIZON_N, stargateHorizon } from './stargate.js?v=4ddaebae';
-import { ENEMY_SPEC } from './enemyspec.js?v=4ddaebae';
+  HORIZON_N, stargateHorizon } from './stargate.js?v=af5b2382';
+import { ENEMY_SPEC } from './enemyspec.js?v=af5b2382';
 
 function normalizeToUnit(group) {
   group.updateMatrixWorld(true);
@@ -1569,6 +1569,7 @@ export function makeTerraformerFixture(bodyHex = 0xff6a88) {
   model.position.z -= mc.z;
   const padR = Math.max(ms.x, ms.z) * 0.5 * 1.12;   // a rim beyond the rails
   rig.add(terraPedestal(padR, padR * 0.34));
+  g.userData.padR = padR;   // in model units; x sizeScale for the world
 
   // the pivots this thing is animated by, resolved once
   const P = {};
@@ -1625,17 +1626,30 @@ export function makeTerraformerFixture(bodyHex = 0xff6a88) {
 
   // WORKING (operator, 2026-09-02: "give the image that the Terraformer is
   // active by having it build things"). 0 = idling as before; 1 = a job on
-  // the bed. The rig runs its own PHASE rather than the raw clock so the
-  // speed-up is continuous — multiplying `t` would make every carriage jump
-  // the moment a job starts.
+  // the bed.
+  //
+  // The first cut ran the idle rig 2.8x faster while working. That made the
+  // nozzle's print pattern thrash — "erratic, jarring" (operator) — and read
+  // as agitation, not work. Building is SLOW: the carriage sweeps the bed at
+  // a walking pace, the arm holds low, the nozzle nods. So `working` is a
+  // blend weight into a second, deliberate motion, eased in over about a
+  // second so nothing snaps when a job starts or lands.
   g.userData.working = 0;
-  let phase = 0, lastRaw = null;
+  let wk = 0, lastRaw = null;
   g.userData.tick = (t) => {
-    if (lastRaw !== null) phase += Math.max(0, t - lastRaw) * (1 + 1.8 * (g.userData.working || 0));
+    if (lastRaw !== null) {
+      const dtl = Math.max(0, Math.min(0.1, t - lastRaw));
+      wk += (Math.min(1, g.userData.working || 0) - wk) * Math.min(1, dtl * 1.2);
+    }
     lastRaw = t;
     const raw = t;
-    t = phase;
     g.userData.lastT = raw;
+    const mix = (idle, build) => idle * (1 - wk) + build * wk;
+    // BUILD: a raster over the bed — travel sweeps the long axis every 9s,
+    // traverse steps the short axis every 3s, a print head's path. Long
+    // periods, full sines, no bursts.
+    const bTravel = Math.sin((t / 9) * Math.PI * 2) * 0.30;
+    const bTrav = Math.sin((t / 3) * Math.PI * 2) * 0.22;
     g.scale.setScalar(g.userData.sizeScale);
     const hurting = raw < hitUntil;
 
@@ -1643,23 +1657,23 @@ export function makeTerraformerFixture(bodyHex = 0xff6a88) {
     // rarely — it is the biggest, slowest thing here and it should read as an
     // event, not a wobble. ~once every 23s, over 6s.
     if (P.Travel_Carriage) {
-      P.Travel_Carriage.position.z = swing(t, 23, 6.0, 0.00) * 0.34;
+      P.Travel_Carriage.position.z = mix(swing(t, 23, 6.0, 0.00) * 0.34, bTravel);
     }
     // THE TRAVERSE: the arm rides across the beam more often than the gantry
     // moves, and on its own period so the two are never in phase.
     if (P.Traverse_Carriage) {
-      P.Traverse_Carriage.position.x = swing(t, 14, 4.5, 0.37) * 0.26;
+      P.Traverse_Carriage.position.x = mix(swing(t, 14, 4.5, 0.37) * 0.26, bTrav);
     }
     // THE MAST: a short breath down and back as it sets its working height.
     if (P.Mast_Stage_2) {
       P.Mast_Stage_2.position.y = (rest.Mast_Stage_2 ?? 0)
-        - burst(t, 17, 3.2, 0.62) * 0.09;
+        - mix(burst(t, 17, 3.2, 0.62) * 0.09, 0.11);   // down on the work while building
     }
     // THE EXTRUSION ARM: shoulder, elbow and wrist each take a turn, offset
     // so the limb articulates rather than pivoting as one rigid piece.
-    if (P.Arm_Swing) P.Arm_Swing.rotation.y = swing(t, 11, 3.6, 0.11) * 0.40;
-    if (P.Arm_Elbow) P.Arm_Elbow.rotation.x = -0.10 + swing(t, 9, 3.0, 0.44) * 0.26;
-    if (P.Arm_Wrist) P.Arm_Wrist.rotation.x = swing(t, 7, 2.2, 0.73) * 0.34;
+    if (P.Arm_Swing) P.Arm_Swing.rotation.y = mix(swing(t, 11, 3.6, 0.11) * 0.40, Math.sin((t / 12) * Math.PI * 2) * 0.12);
+    if (P.Arm_Elbow) P.Arm_Elbow.rotation.x = mix(-0.10 + swing(t, 9, 3.0, 0.44) * 0.26, -0.34);
+    if (P.Arm_Wrist) P.Arm_Wrist.rotation.x = mix(swing(t, 7, 2.2, 0.73) * 0.34, 0.22);
 
     // THE NOZZLE: the same three-pattern print cycle Isao's beam runs —
     // zigzag raster, spiral, then travel moves with the extruder off — so
@@ -1667,11 +1681,13 @@ export function makeTerraformerFixture(bodyHex = 0xff6a88) {
     // while the arm is actually working; dark and still the rest of the time.
     const working = burst(t, 11, 3.6, 0.11) > 0.05;
     const { pattern, u } = printPhase(t, 1.2);
-    const firing = working && printOn(pattern, u);
+    // the print pattern is the IDLE's nozzle business; while building, the
+    // nozzle is on the work — lit, and only nodding along the pass
+    const firing = wk >= 0.5 ? true : (working && printOn(pattern, u));
     if (P.Nozzle_Cone) {
       const [ox, oy] = printOffset(pattern, u);
-      P.Nozzle_Cone.rotation.z = ox * 0.16;
-      P.Nozzle_Cone.rotation.x = oy * 0.16;
+      P.Nozzle_Cone.rotation.z = mix(ox * 0.16, Math.sin((t / 3) * Math.PI * 2) * 0.05);
+      P.Nozzle_Cone.rotation.x = mix(oy * 0.16, 0.08 + Math.sin((t / 4.5) * Math.PI * 2) * 0.04);
     }
 
     // the glow follows the work: hot while printing, banked while resting,
