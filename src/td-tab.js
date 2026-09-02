@@ -19,46 +19,46 @@
 
 import * as THREE from '../vendor/three.module.js';
 import GUI from '../vendor/lil-gui.esm.js';
-import { generateSphereMesh, relax } from './grid.js?v=cf6e30b2';
-import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=cf6e30b2';
-import { mulberry32, randomSeed } from './rng.js?v=cf6e30b2';
-import { computeBerths, berthIndexFor } from './berths.js?v=cf6e30b2';
-import { wantsSecondary, shellsForAll } from './autofire.js?v=cf6e30b2';
-import { printPhase, printOffset, printOn, patternSecsFor } from './printpath.js?v=cf6e30b2';
-import { createBeamRig, PLASMA_DEFAULTS, BOARD_PRESET, BEAM_PEAK } from './beamdraw.js?v=cf6e30b2';
-import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3, segKey, tangentDir, tangentBasis } from './vec3.js?v=cf6e30b2';
-import { CREATURES, waveJelly } from './creatures.js?v=cf6e30b2';
-import { brief, dwellFor } from './isaobriefs.js?v=cf6e30b2';
-import { drawEmotion } from './emotions.js?v=cf6e30b2';
+import { generateSphereMesh, relax } from './grid.js?v=1611d20a';
+import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=1611d20a';
+import { mulberry32, randomSeed } from './rng.js?v=1611d20a';
+import { computeBerths, berthIndexFor } from './berths.js?v=1611d20a';
+import { wantsSecondary, shellsForAll } from './autofire.js?v=1611d20a';
+import { printPhase, printOffset, printOn, patternSecsFor } from './printpath.js?v=1611d20a';
+import { createBeamRig, PLASMA_DEFAULTS, BOARD_PRESET, BEAM_PEAK } from './beamdraw.js?v=1611d20a';
+import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3, segKey, tangentDir, tangentBasis } from './vec3.js?v=1611d20a';
+import { CREATURES, waveJelly } from './creatures.js?v=1611d20a';
+import { brief, dwellFor } from './isaobriefs.js?v=1611d20a';
+import { drawEmotion } from './emotions.js?v=1611d20a';
 import { ACHIEVEMENTS, ACHV_GROUPS, achievement, blankRun, earned, freshlyEarned,
   sanitiseRecord }
-  from './achievements.js?v=cf6e30b2';
+  from './achievements.js?v=1611d20a';
 import { applyFontPack, currentFontPack, FONT_NAMES,
-  loadTypeFeel } from './fonts.js?v=cf6e30b2';
-import { SECONDARY_TOE, applySecondaryToe } from './units.js?v=cf6e30b2';
-import { UNITS, UNIT_NAMES, buildUnit, buildCreature, preloadMkcx, preloadServer, makeServerFixture, makeShieldShell, preloadContainer, makeContainerFixture, preloadFabricator, makeIsaoDrone, makeBulletCloud, makeRewardSolid, makeShellSolid, makeDebris, makeDotBurst, makePortalCloud, makeHeartCloud, makeDotEnemy, preloadTerraformer, makeTerraformerFixture } from './units.js?v=cf6e30b2';
-import { LOOKS, LOOK_NAMES } from './looks.js?v=cf6e30b2';
-import { makeCellIndex } from './cellindex.js?v=cf6e30b2';
-import { CREATURE_TINTS, ENEMY_SPEC, INTROS, computeWavePlan, accentFor } from './enemyspec.js?v=cf6e30b2';
-import { PICKUPS } from './pickups.js?v=cf6e30b2';
-import { rankFor, rankLabel, badgeSVG, killReq, eliteReq } from './ranks.js?v=cf6e30b2';
-import { beamStep, isBeamStep, PEN_SOFT_FRAC, PEN_HARD_FRAC } from './beamranks.js?v=cf6e30b2';
-import { burn, sweepAdvance, wallBite as wallBiteFor } from './beamburn.js?v=cf6e30b2';
-import { arcPoint, projectToArc, toeForCrossing, crossingForToe } from './arc.js?v=cf6e30b2';
-import { makeScore } from './score.js?v=cf6e30b2';
-import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER } from './towers.js?v=cf6e30b2';
-import { makeEconomy, sellRefund } from './economy.js?v=cf6e30b2';
-import { makeBloom } from './postfx.js?v=cf6e30b2';
-import { TANK_FEEL, TANK_FEEL_KNOBS, makeTankFeel, stepTankFeel, landTankFeel, fireTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js?v=cf6e30b2';
-import { FEEL, loadFeel, saveFeel } from './feelstore.js?v=cf6e30b2';
+  loadTypeFeel } from './fonts.js?v=1611d20a';
+import { SECONDARY_TOE, applySecondaryToe } from './units.js?v=1611d20a';
+import { UNITS, UNIT_NAMES, buildUnit, buildCreature, preloadMkcx, preloadServer, makeServerFixture, makeShieldShell, preloadContainer, makeContainerFixture, preloadFabricator, makeIsaoDrone, makeBulletCloud, makeRewardSolid, makeShellSolid, makeDebris, makeDotBurst, makePortalCloud, makeHeartCloud, makeDotEnemy, preloadTerraformer, makeTerraformerFixture } from './units.js?v=1611d20a';
+import { LOOKS, LOOK_NAMES } from './looks.js?v=1611d20a';
+import { makeCellIndex } from './cellindex.js?v=1611d20a';
+import { CREATURE_TINTS, ENEMY_SPEC, INTROS, computeWavePlan, accentFor } from './enemyspec.js?v=1611d20a';
+import { PICKUPS } from './pickups.js?v=1611d20a';
+import { rankFor, rankLabel, badgeSVG, killReq, eliteReq } from './ranks.js?v=1611d20a';
+import { beamStep, isBeamStep, PEN_SOFT_FRAC, PEN_HARD_FRAC } from './beamranks.js?v=1611d20a';
+import { burn, sweepAdvance, wallBite as wallBiteFor } from './beamburn.js?v=1611d20a';
+import { arcPoint, projectToArc, toeForCrossing, crossingForToe } from './arc.js?v=1611d20a';
+import { makeScore } from './score.js?v=1611d20a';
+import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER } from './towers.js?v=1611d20a';
+import { makeEconomy, sellRefund } from './economy.js?v=1611d20a';
+import { makeBloom } from './postfx.js?v=1611d20a';
+import { TANK_FEEL, TANK_FEEL_KNOBS, makeTankFeel, stepTankFeel, landTankFeel, fireTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js?v=1611d20a';
+import { FEEL, loadFeel, saveFeel } from './feelstore.js?v=1611d20a';
 import { STRIKE_KNOBS, makeStrike, makeStrikeParams, grantStrikes, stepStrike,
   toggleArm, paintTarget, launchStrike, stepFall, skipFall, fallProgress,
-  strikeDamage, retargetStrike, orbitProgress } from './strike.js?v=cf6e30b2';
-import { radarBasis, radarProject, radarBearing, sweepAngle, radarPhosphor } from './radar.js?v=cf6e30b2';
-import { BLOOM_GROUPS } from './bloomweights.js?v=cf6e30b2';
-import { TOWER_LOOK_NAMES, DEFAULT_TOWER_LOOK, buildTowerLook, preloadLook } from './towerlooks.js?v=cf6e30b2';
-import { makeAudio } from './audio.js?v=cf6e30b2';
-import { DEATH_KEYS } from './audiomanifest.js?v=cf6e30b2';
+  strikeDamage, retargetStrike, orbitProgress } from './strike.js?v=1611d20a';
+import { radarBasis, radarProject, radarBearing, sweepAngle, radarPhosphor } from './radar.js?v=1611d20a';
+import { BLOOM_GROUPS } from './bloomweights.js?v=1611d20a';
+import { TOWER_LOOK_NAMES, DEFAULT_TOWER_LOOK, buildTowerLook, preloadLook } from './towerlooks.js?v=1611d20a';
+import { makeAudio } from './audio.js?v=1611d20a';
+import { DEATH_KEYS } from './audiomanifest.js?v=1611d20a';
 
 export function initTdTab(root) {
   let active = false;
@@ -4438,20 +4438,23 @@ export function initTdTab(root) {
     eco = makeEconomy({ startBiomass: 170 });
     score.reset();
     // THE OPENING GARRISON (sim batch: the heart pays half its total in
-    // waves 1-3, before any kit exists). Two singles stand pre-built on
-    // the walls nearest the heart — free, placed after the board exists.
+    // waves 1-3, before any kit exists).
+    //
+    // It used to stand PRE-BUILT on the walls nearest the heart — two towers
+    // that simply existed, behind the Stalheart, doing their work from
+    // somewhere the player never looks. Both halves of that were wrong
+    // (operator, 2026-09-02): nothing the player builds is built by the
+    // player, and that rule should hold from the first second, so ISAO flies
+    // out and prints these like any other order; and tucked in behind the
+    // heart they were shooting at things that had already arrived.
+    //
+    // The board opens on a drone doing its job at a place worth looking at.
+    // The garrison is still FREE — the biomass is credited before the orders
+    // are placed, so orderTower's own spend nets to zero and every other
+    // rule (the queue, the travel, the print clock) applies unchanged.
     queueMicrotask(() => {
-      let placed = 0;
-      eco.addBiomass(TOWER_BY_KEY.single.cost * 2); // the garrison is free
-      for (let d = 1; d <= 4 && placed < 2; d++) {
-        for (let i = 0; i < dungeon.tags.length && placed < 2; i++) {
-          if (dungeon.tags[i] !== BLOCKED || placeError(i)) continue;
-          const nearOpen = graph.adj[i].some((nb) =>
-            dungeon.tags[nb] !== BLOCKED && dungeon.distToHeart[nb] >= 0
-            && dungeon.distToHeart[nb] <= d);
-          if (nearOpen && placeTower('single', i)) placed++;
-        }
-      }
+      eco.addBiomass(TOWER_BY_KEY.single.cost * 2);
+      for (const ci of garrisonSites(2)) orderTower('single', ci, { quiet: true });
       spawnIsao();   // on shift from the first second, order or no order
     });
     hackedUnlocks = 0; hackedRound = false; syncHackBtn();
@@ -6362,6 +6365,56 @@ export function initTdTab(root) {
   // users left: the opening garrison (pre-built before the run, not ordered)
   // and the ?tower= verification hook. Everything the player asks for goes
   // through Isao.
+  // WHERE THE OPENING GARRISON GOES.
+  //
+  // Forward of the heart, not on top of it. Towers mount on WALL cells, so a
+  // candidate is a blocked cell with an open neighbour — and "forward" is
+  // that neighbour sitting a few cells out from the heart rather than one.
+  // Among those, prefer the sites nearest a live gate, because forward only
+  // means anything in the direction the wave actually comes from.
+  //
+  // The two are also kept apart: the first pass of this put both on the same
+  // stretch of wall, which is two towers covering one lane and none covering
+  // the other.
+  const GARRISON_BAND = [3, 6];    // cells from the heart, inclusive
+  const GARRISON_APART = 4;        // cells between the two, minimum
+  function garrisonSites(want) {
+    const gates = spawnPoints.filter((sp) => sp.alive).map((sp) => sp.ci);
+    const cand = [];
+    for (let i = 0; i < dungeon.tags.length; i++) {
+      if (dungeon.tags[i] !== BLOCKED || placeError(i)) continue;
+      let best = Infinity;
+      for (const nb of graph.adj[i]) {
+        const d = dungeon.tags[nb] !== BLOCKED ? dungeon.distToHeart[nb] : -1;
+        if (d >= GARRISON_BAND[0] && d <= GARRISON_BAND[1]) best = Math.min(best, d);
+      }
+      if (best === Infinity) continue;
+      // nearest gate, as a straight distance on the sphere in cells
+      let toGate = Infinity;
+      for (const g of gates) {
+        toGate = Math.min(toGate, dist3(graph.centers[i], graph.centers[g]) / cellSide);
+      }
+      cand.push({ ci: i, toGate: Number.isFinite(toGate) ? toGate : 0, fromHeart: best });
+    }
+    cand.sort((a, b) => a.toGate - b.toGate);
+    const out = [];
+    for (const c of cand) {
+      if (out.length >= want) break;
+      const clear = out.every((o2) =>
+        dist3(graph.centers[o2], graph.centers[c.ci]) / cellSide >= GARRISON_APART);
+      if (clear) out.push(c.ci);
+    }
+    // ...and if the band or the spacing could not be satisfied on this board,
+    // fall back to ANY legal wall rather than opening with no garrison at all
+    if (out.length < want) {
+      for (let i = 0; i < dungeon.tags.length && out.length < want; i++) {
+        if (dungeon.tags[i] !== BLOCKED || placeError(i) || out.includes(i)) continue;
+        if (graph.adj[i].some((nb) => dungeon.tags[nb] !== BLOCKED)) out.push(i);
+      }
+    }
+    return out;
+  }
+
   function placeTower(key, ci) {
     const def = TOWER_BY_KEY[key];
     if (!def) return false;
@@ -6527,7 +6580,11 @@ export function initTdTab(root) {
     order.ring = null;
   }
 
-  function orderTower(key, ci) {
+  // `quiet` is for orders the GAME places rather than the player: no click,
+  // no range ring, and no printer brief — that brief exists to fire the first
+  // time the PLAYER commits to an order, and having the opening garrison
+  // spend it teaches the mechanic to nobody.
+  function orderTower(key, ci, { quiet = false } = {}) {
     const def = TOWER_BY_KEY[key];
     if (!def) return false;
     const err = placeError(ci);
@@ -6541,12 +6598,14 @@ export function initTdTab(root) {
     const order = { kind: 'tower', ci, key, def, cost: def.cost, ring: makeSiteRing(ci, def.color) };
     orders.push(order);
     orderByCell.set(ci, order);
-    showBrief('printer');   // the first order is when the mechanic is real
+    if (!quiet) showBrief('printer');   // the first order is when the mechanic is real
     run.maxQueue = Math.max(run.maxQueue, orders.length);
     checkAchievements();
     spawnIsao();
-    sfx.play('laser_click');   // the order goes on the book, not a tower on the wall
-    showRangeRing(ci, effectiveStats(def, 0).range, def.color, 1.6);
+    if (!quiet) {
+      sfx.play('laser_click'); // the order goes on the book, not a tower on the wall
+      showRangeRing(ci, effectiveStats(def, 0).range, def.color, 1.6);
+    }
     updateHud();
     return true;
   }
@@ -10075,6 +10134,73 @@ export function initTdTab(root) {
         + ` | the old fixed ${SECONDARY_TOE} would cross at`
         + ` ${crossingForToe(lastToe.gap, SECONDARY_TOE).toFixed(2)}`);
     } else console.log('TOE not applied (no gun pivots on this tank)');
+  }
+
+  // ?garrison=1 — WHERE THE OPENING TWO GO, AND WHO BUILDS THEM.
+  //
+  // Two claims to check and neither is visible from a screenshot: that the
+  // sites are FORWARD of the heart rather than behind it, and that they
+  // arrive as ISAO's orders rather than as pre-built towers. Reports the old
+  // behaviour's numbers alongside, because "more forward" is a comparison.
+  if (urlParams.get('garrison') === '1') {
+    const heart = graph.centers[dungeon.heart];
+    const gates = spawnPoints.filter((sp) => sp.alive).map((sp) => sp.ci);
+    const say = (label, list) => {
+      for (const ci of list) {
+        let toGate = Infinity;
+        for (const g of gates) {
+          toGate = Math.min(toGate, dist3(graph.centers[ci], graph.centers[g]) / cellSide);
+        }
+        console.log(`GARRISON ${label} cell=${ci}`
+          + ` ${(dist3(graph.centers[ci], heart) / cellSide).toFixed(2)} cells from the heart`
+          + `, ${toGate.toFixed(2)} from the nearest gate`);
+      }
+    };
+    // what the OLD rule picked: hug the heart, first legal wall found
+    const old = [];
+    for (let d = 1; d <= 4 && old.length < 2; d++) {
+      for (let i = 0; i < dungeon.tags.length && old.length < 2; i++) {
+        if (dungeon.tags[i] !== BLOCKED || placeError(i) || old.includes(i)) continue;
+        if (graph.adj[i].some((nb) => dungeon.tags[nb] !== BLOCKED
+          && dungeon.distToHeart[nb] >= 0 && dungeon.distToHeart[nb] <= d)) old.push(i);
+      }
+    }
+    say('OLD (pre-built, hugging the heart)', old);
+    say('NEW (ordered, forward)', garrisonSites(2));
+    // ISAO IS A GLB, and headless rarely finishes that load — so a run with
+    // no towers built means nothing unless the loader's own answer is beside
+    // it. Without this line the probe cannot tell "the orders are stuck" from
+    // "this environment has no drone".
+    preloadFabricator().then((ok) => {
+      console.log(`GARRISON fabricator loaded=${ok}`
+        + `${ok ? '' : ' — headless has no drone, so nothing here can print'}`);
+    });
+    // and the mechanic: orders on the book, towers not yet standing
+    setTimeout(() => {
+      console.log(`GARRISON at t0: orders=${orders.length} towers=${towers.size ?? towers.length ?? 0}`
+        + ` isao=${isao ? isao.state : 'none'}`
+        + ` — ${orders.length === 2 ? 'ISAO IS BUILDING THEM' : 'NOT ordered'}`);
+    }, 300);
+    // ...AND THAT THEY ACTUALLY LAND. Driven by calling updateIsao directly
+    // rather than by waiting: the drone's travel and print clocks advance in
+    // the FRAME LOOP, and headless runs a handful of frames in a whole
+    // virtual minute, so a wall-clock wait measures the renderer's frame rate
+    // and calls it a build failure. (First reading did exactly that: 40s of
+    // virtual time, fabricator loaded, zero towers.)
+    // WAIT FOR THE DRONE, do not guess at it. A fixed 1200ms timer fired
+    // before preloadFabricator resolved and reported "no drone to drive" on
+    // a run where the drone arrived a moment later — a probe racing the thing
+    // it is measuring.
+    spawnIsao().then(() => {
+      const n0 = towers.size ?? towers.length ?? 0;
+      if (!isao) { console.log('GARRISON sim: no drone (fabricator never loaded)'); return; }
+      let t = 0;
+      for (; t < 90 && orders.length; t += 0.05) updateIsao(0.05);
+      const n1 = towers.size ?? towers.length ?? 0;
+      console.log(`GARRISON simulated ${t.toFixed(1)}s of drone time:`
+        + ` towers ${n0} -> ${n1}, orders left ${orders.length}`
+        + ` | ${n1 - n0 >= 2 ? 'ISAO BUILT BOTH' : 'DID NOT BUILD'}`);
+    });
   }
 
   // ?ghostprobe=1 — DO ANY ENEMIES DRIFT OFF THEIR OWN POSITION?
