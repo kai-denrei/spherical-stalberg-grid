@@ -16,14 +16,14 @@
 
 import * as THREE from '../vendor/three.module.js';
 import { EMOTION_IDS, emotion, phosphorFor } from './emotions.js';
-import { printPhase, printOffset, printOn } from './printpath.js?v=9851a1a3';
+import { printPhase, printOffset, printOn } from './printpath.js?v=4ddaebae';
 import { loadGlb, mergeByMaterial, fitModel, tintModel, makeShellRack,
-  addEdgeOutlines, makeHeatSleeve } from './glbmodels.js?v=9851a1a3';
-import { CREATURES, waveJelly, swimWave, spherePts, bulletPts, missilePts, heartPts, torusPts, towerHeadPts, enemyDotPts, portalPts } from './creatures.js?v=9851a1a3';
-import { TOWER_FEEL, TOWER_HEADS, headKindFor } from './towerfeel.js?v=9851a1a3';
+  addEdgeOutlines, makeHeatSleeve } from './glbmodels.js?v=4ddaebae';
+import { CREATURES, waveJelly, swimWave, spherePts, bulletPts, missilePts, heartPts, torusPts, towerHeadPts, enemyDotPts, portalPts } from './creatures.js?v=4ddaebae';
+import { TOWER_FEEL, TOWER_HEADS, headKindFor } from './towerfeel.js?v=4ddaebae';
 import { STARGATE_PTS, STARGATE_STROKE,
-  HORIZON_N, stargateHorizon } from './stargate.js?v=9851a1a3';
-import { ENEMY_SPEC } from './enemyspec.js?v=9851a1a3';
+  HORIZON_N, stargateHorizon } from './stargate.js?v=4ddaebae';
+import { ENEMY_SPEC } from './enemyspec.js?v=4ddaebae';
 
 function normalizeToUnit(group) {
   group.updateMatrixWorld(true);
@@ -1623,10 +1623,21 @@ export function makeTerraformerFixture(bodyHex = 0xff6a88) {
   g.userData.sizeScale = 1;
   g.userData.hit = () => { hitUntil = (g.userData.lastT ?? 0) + 0.9; };
 
+  // WORKING (operator, 2026-09-02: "give the image that the Terraformer is
+  // active by having it build things"). 0 = idling as before; 1 = a job on
+  // the bed. The rig runs its own PHASE rather than the raw clock so the
+  // speed-up is continuous — multiplying `t` would make every carriage jump
+  // the moment a job starts.
+  g.userData.working = 0;
+  let phase = 0, lastRaw = null;
   g.userData.tick = (t) => {
-    g.userData.lastT = t;
+    if (lastRaw !== null) phase += Math.max(0, t - lastRaw) * (1 + 1.8 * (g.userData.working || 0));
+    lastRaw = t;
+    const raw = t;
+    t = phase;
+    g.userData.lastT = raw;
     g.scale.setScalar(g.userData.sizeScale);
-    const hurting = t < hitUntil;
+    const hurting = raw < hitUntil;
 
     // THE GANTRY: the whole travel carriage repositions down the rails, but
     // rarely — it is the biggest, slowest thing here and it should read as an

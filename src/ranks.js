@@ -36,16 +36,20 @@ export function rankLabel(rank) {
 }
 
 // --- the ladder ----------------------------------------------------------
-// Cumulative tank kills for rank r: r(r+3)/2 — 2, 5, 9, 14, 20 ... 135.
-// Early ranks come fast enough to feel during wave one; gold is a career.
+// Cumulative tank kills for rank r: r(r+3) — 4, 10, 18, 28, 40 ... 270.
+// DOUBLED on 2026-09-02 (operator: "make the ranking progression harder,
+// currently too easy"). It was r(r+3)/2, which put gold 5 at 135 hands-on
+// kills — reachable in a sector. Bronze still lands inside wave one; gold is
+// now a career across sectors, which is what the four beam steps deserve.
 export function killReq(rank) {
-  return (rank * (rank + 3)) / 2;
+  return rank * (rank + 3);
 }
 
 // Gold's second gate: hands-on kills of the dangerous (non-rammable) tier.
-// 2 per gold level — the units that hurt to touch are the ones that count.
+// 3 per gold level (was 2) — the units that hurt to touch are the ones that
+// count, and gold should cost a few of them.
 export function eliteReq(rank) {
-  return rank > 10 ? (rank - 10) * 2 : 0;
+  return rank > 10 ? (rank - 10) * 3 : 0;
 }
 
 // Highest rank both counts support. 0 = unranked (no insignia yet).

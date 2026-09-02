@@ -38,7 +38,11 @@ export const TOWERS = [
     // which is what a homing shot does once it has picked its target.
     shape: 'gripper', spin: 0.9, projPx: 5, trail: 6, projSpeed: 13 }, // HK 0.6 — guided, unhurried
   { key: 'slow',   label: 'Slow',        color: 0xc4e6ff, cost: 100,
-    dmg: 4 / 90,  range: 3.5, rate: 1.0, attack: 'slowfield',
+    // ZERO damage (operator, 2026-09-02: "the slow towers do dmg instead of
+    // purely slowing down"). It carried 4/90 a tick — small enough to look
+    // like nothing on the panel and large enough to finish wounded fodder,
+    // which is a kill the SLOW tower has no business taking.
+    dmg: 0,       range: 3.5, rate: 1.0, attack: 'slowfield',
     slowFactor: 0.45, slowDur: 1.6,
     // a broadcast antenna: it emits over an area rather than aiming, which
     // is exactly what a slow FIELD does. Ported from the Braille lab.
