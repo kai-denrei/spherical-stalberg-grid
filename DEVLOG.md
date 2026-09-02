@@ -6,6 +6,72 @@ Demo links assume `npm run serve` (port 8144) or the
 
 ---
 
+## `2d249ac`..`14aa9d7` — the mobile shell, phases 1, 2 and 4
+
+The plan is `docs/MOBILE-PORT-PLAN.md`; these two commits are its first
+three phases on the board. Everything is scoped under `body.mobile-shell`,
+so the desktop game is byte-identical — the shell is a second skin over an
+untouched game, not a fork of it.
+
+**Detection** (`2d249ac`). Coarse pointer AND a phone-class short side
+(< 900px). `?mobile=1` / `?mobile=0` override it either way, which is how
+the shell is looked at on a desktop and switched off on a phone.
+
+**Tap-to-go.** On the shell, while driving, a tap on open ground is a
+destination. A BFS field from the tapped cell becomes the walker's goal
+exactly as `distToHeart` is the goal for `home` — one new directive,
+`goto`, and `chooseNext` reads it like any other. Arriving hands control
+back to manual, which stops the tank. The relay's own cells keep their tap.
+Because the tank is commanded rather than driven, the steering pads and
+the throttle are gone; the shell and plasma thumbs stay, and they are NOT
+automatic (operator ruling: the plasma's 4.5s lockout makes *when* the
+player's decision). `?goto=1` picks an open cell six hops out and drives
+the walker: arrived in 5.1s, handed back.
+
+**One switch.** `#mob-mode`, top-right, DRIVE ↔ BUILD. Build mode IS the
+orbit view — `setView` owns `buildMode` — so the button calls the
+desktop's own `toggleView`, and follows `buildMode` from every path that
+sets it (a sector reveal auto-enters build). The first cut called a
+`toggleBuild()` that did not exist; the probe had driven the tank and never
+tapped the button, so a ReferenceError shipped on the one control the
+shell has. Fixed in `14aa9d7`, and the ruler now enters BUILD *through*
+the button (`?mobbuild=1`).
+
+**Landscape only.** Portrait shows a rotate prompt over the game.
+
+**Per-mode HUD sets** (`14aa9d7`). DRIVE shows what a sub-second read
+needs: vitals + resources (two rows, 50px tall), the wave clock, the launch
+console compacted to safety + status + button, the radar, the thumbs.
+Score, the objectives row and the drones' status lines are hidden. BUILD
+is the calm mode: the full panel, and no thumbs, no console, no radar
+(orbit shows the whole planet), no hack button. The desktop key legend is
+gone in both — there are no keys. Sizes are set on the shell rather than
+inherited from the `(pointer: coarse)` block, because the headless ruler
+is never coarse and would otherwise measure a layout no phone gets.
+
+**Captions.** Isao's channel (`#td-brief`) and the announcement lane
+(toast, sitrep, wave and tower cards) leave the sightline: both anchor to
+the bottom edge beside the radar, Isao under the lane, nothing to dismiss.
+Isao is wide and small on the shell so his long lines wrap to two.
+
+**The ruler, and what it caught.** `?layout=N` gained the shell's pieces
+and `?pin=1`, which puts a caption and Isao on screen when the ruler
+fires, so the slots they take are measured rather than assumed. It found
+the brief landing centred on its own left edge: `wave-pop`'s first
+keyframe is `translateX(-50%)`, and CSS animations do not advance under
+virtual time, so the ruler saw the brief frozen mid-entrance. The shell's
+captions fade in with no transform. At 844×390 with both pinned:
+
+| mode | overlaps |
+|---|---|
+| DRIVE | 0 (was 1: hud × launch, 42×89px) |
+| BUILD | 0 |
+
+**Not yet:** phase 3 (radial-at-the-finger building, long-press upgrade,
+tap-vs-drag), phase 5 (phone modals), 6 (perf tier, PWA), 7 (device pass).
+
+---
+
 ## `45d9c20`..`57f15e0` — the board learns to keep time, spend, warn, and debrief
 
 Eight commits in one afternoon. The thread: the game stopped handing things

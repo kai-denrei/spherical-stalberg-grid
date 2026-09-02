@@ -113,6 +113,17 @@ Each phase is small, has a probe, and leaves desktop byte-identical.
 | 6 | **Hygiene + perf tier.** touch-action, dvh, wake lock, orientation prompt, vibrate-with-visual-twin, the perf tier, the PWA hook | fps readout on a phone-class budget; the tier is a table, not a feeling |
 | 7 | **Device pass.** A written checklist, on a real phone, in landscape then portrait | the checklist is filed with results; portrait is decided, not assumed |
 
+### Status — 2026-09-02
+
+| phase | state | where |
+|---|---|---|
+| 0 | the ruler exists; the intent log does not | `?layout=N`, `?pin=1`, `?mobbuild=1` |
+| 1 | shipped (detection + `body.mobile-shell`; no `intents` object — the seam is `keys` + the discrete functions, which turned out to be enough) | `2d249ac` |
+| 2 | shipped, per the rulings: tap-to-go, thumbs manual, no directive wheel yet | `2d249ac`, `14aa9d7` |
+| 3 | not started | — |
+| 4 | shipped: 0 overlaps at 844×390 in both modes with a caption and Isao pinned | `14aa9d7` |
+| 5–7 | not started | — |
+
 ## 4. Rulings — operator, 2026-09-02
 
 1. **Tap-to-go.** Driving becomes commanding on the phone.
