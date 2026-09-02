@@ -19,50 +19,50 @@
 
 import * as THREE from '../vendor/three.module.js';
 import GUI from '../vendor/lil-gui.esm.js';
-import { generateSphereMesh, relax } from './grid.js?v=7fcd1afb';
-import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=7fcd1afb';
-import { mulberry32, randomSeed } from './rng.js?v=7fcd1afb';
-import { computeBerths, berthIndexFor } from './berths.js?v=7fcd1afb';
-import { wantsSecondary, shellsForAll } from './autofire.js?v=7fcd1afb';
-import { printPhase, printOffset, printOn, patternSecsFor } from './printpath.js?v=7fcd1afb';
-import { createBeamRig, PLASMA_DEFAULTS, BOARD_PRESET, BEAM_PEAK } from './beamdraw.js?v=7fcd1afb';
-import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3, segKey, tangentDir, tangentBasis } from './vec3.js?v=7fcd1afb';
-import { CREATURES, waveJelly } from './creatures.js?v=7fcd1afb';
-import { brief, dwellFor } from './isaobriefs.js?v=7fcd1afb';
-import { drawEmotion } from './emotions.js?v=7fcd1afb';
+import { generateSphereMesh, relax } from './grid.js?v=aedb9f04';
+import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=aedb9f04';
+import { mulberry32, randomSeed } from './rng.js?v=aedb9f04';
+import { computeBerths, berthIndexFor } from './berths.js?v=aedb9f04';
+import { wantsSecondary, shellsForAll } from './autofire.js?v=aedb9f04';
+import { printPhase, printOffset, printOn, patternSecsFor } from './printpath.js?v=aedb9f04';
+import { createBeamRig, PLASMA_DEFAULTS, BOARD_PRESET, BEAM_PEAK } from './beamdraw.js?v=aedb9f04';
+import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3, segKey, tangentDir, tangentBasis } from './vec3.js?v=aedb9f04';
+import { CREATURES, waveJelly } from './creatures.js?v=aedb9f04';
+import { brief, dwellFor } from './isaobriefs.js?v=aedb9f04';
+import { drawEmotion } from './emotions.js?v=aedb9f04';
 import { ACHIEVEMENTS, ACHV_GROUPS, achievement, blankRun, earned, freshlyEarned,
   sanitiseRecord }
-  from './achievements.js?v=7fcd1afb';
+  from './achievements.js?v=aedb9f04';
 import { applyFontPack, currentFontPack, FONT_NAMES,
-  loadTypeFeel } from './fonts.js?v=7fcd1afb';
-import { SECONDARY_TOE, applySecondaryToe } from './units.js?v=7fcd1afb';
-import { UNITS, UNIT_NAMES, buildUnit, buildCreature, preloadMkcx, preloadServer, makeServerFixture, makeShieldShell, preloadContainer, makeContainerFixture, preloadFabricator, makeIsaoDrone, makeBulletCloud, makeRewardSolid, makeShellSolid, makeDebris, makeDotBurst, makePortalCloud, preloadPortalRing, makePortalRing, makeHeartCloud, makeDotEnemy, preloadTerraformer, makeTerraformerFixture } from './units.js?v=7fcd1afb';
-import { LOOKS, LOOK_NAMES } from './looks.js?v=7fcd1afb';
-import { makeCellIndex } from './cellindex.js?v=7fcd1afb';
-import { CREATURE_TINTS, ENEMY_SPEC, INTROS, computeWavePlan, accentFor } from './enemyspec.js?v=7fcd1afb';
-import { PICKUPS } from './pickups.js?v=7fcd1afb';
-import { rankFor, rankLabel, badgeSVG, killReq, eliteReq } from './ranks.js?v=7fcd1afb';
-import { beamStep, isBeamStep, PEN_SOFT_FRAC, PEN_HARD_FRAC } from './beamranks.js?v=7fcd1afb';
-import { burn, sweepAdvance, wallBite as wallBiteFor } from './beamburn.js?v=7fcd1afb';
-import { arcPoint, projectToArc, toeForCrossing, crossingForToe } from './arc.js?v=7fcd1afb';
+  loadTypeFeel } from './fonts.js?v=aedb9f04';
+import { SECONDARY_TOE, applySecondaryToe } from './units.js?v=aedb9f04';
+import { UNITS, UNIT_NAMES, buildUnit, buildCreature, preloadMkcx, preloadServer, makeServerFixture, makeShieldShell, preloadContainer, makeContainerFixture, preloadFabricator, makeIsaoDrone, makeBulletCloud, makeRewardSolid, makeShellSolid, makeDebris, makeDotBurst, makePortalCloud, preloadPortalRing, makePortalRing, makeHeartCloud, makeDotEnemy, preloadTerraformer, makeTerraformerFixture } from './units.js?v=aedb9f04';
+import { LOOKS, LOOK_NAMES } from './looks.js?v=aedb9f04';
+import { makeCellIndex } from './cellindex.js?v=aedb9f04';
+import { CREATURE_TINTS, ENEMY_SPEC, INTROS, computeWavePlan, accentFor } from './enemyspec.js?v=aedb9f04';
+import { PICKUPS } from './pickups.js?v=aedb9f04';
+import { rankFor, rankLabel, badgeSVG, killReq, eliteReq } from './ranks.js?v=aedb9f04';
+import { beamStep, isBeamStep, PEN_SOFT_FRAC, PEN_HARD_FRAC } from './beamranks.js?v=aedb9f04';
+import { burn, sweepAdvance, wallBite as wallBiteFor } from './beamburn.js?v=aedb9f04';
+import { arcPoint, projectToArc, toeForCrossing, crossingForToe } from './arc.js?v=aedb9f04';
 import { WORMHOLE_PRESET, WORMHOLE_RENDER, RING_SPIN, TRAVEL,
-  travelRate, advancePhase } from './portalfx.js?v=7fcd1afb';
-import { WORMHOLE_FRAG } from './fx/wormhole.frag.js?v=7fcd1afb';
-import { makeScore } from './score.js?v=7fcd1afb';
-import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER } from './towers.js?v=7fcd1afb';
-import { makeEconomy, sellRefund } from './economy.js?v=7fcd1afb';
-import { makeBloom } from './postfx.js?v=7fcd1afb';
-import { TANK_FEEL, TANK_FEEL_KNOBS, makeTankFeel, stepTankFeel, landTankFeel, fireTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js?v=7fcd1afb';
-import { FEEL, loadFeel, saveFeel } from './feelstore.js?v=7fcd1afb';
+  travelRate, advancePhase } from './portalfx.js?v=aedb9f04';
+import { WORMHOLE_FRAG } from './fx/wormhole.frag.js?v=aedb9f04';
+import { makeScore } from './score.js?v=aedb9f04';
+import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER } from './towers.js?v=aedb9f04';
+import { makeEconomy, sellRefund } from './economy.js?v=aedb9f04';
+import { makeBloom } from './postfx.js?v=aedb9f04';
+import { TANK_FEEL, TANK_FEEL_KNOBS, makeTankFeel, stepTankFeel, landTankFeel, fireTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js?v=aedb9f04';
+import { FEEL, loadFeel, saveFeel } from './feelstore.js?v=aedb9f04';
 import { STRIKE_KNOBS, makeStrike, makeStrikeParams, grantStrikes, stepStrike,
   toggleArm, paintTarget, launchStrike, stepFall, skipFall, fallProgress,
-  strikeDamage, retargetStrike, orbitProgress } from './strike.js?v=7fcd1afb';
+  strikeDamage, retargetStrike, orbitProgress } from './strike.js?v=aedb9f04';
 import { radarBasis, radarProject, radarBearing, sweepAngle, radarPhosphor,
-  proximitySectors, SENSOR_LEVELS } from './radar.js?v=7fcd1afb';
-import { BLOOM_GROUPS } from './bloomweights.js?v=7fcd1afb';
-import { TOWER_LOOK_NAMES, DEFAULT_TOWER_LOOK, buildTowerLook, preloadLook } from './towerlooks.js?v=7fcd1afb';
-import { makeAudio } from './audio.js?v=7fcd1afb';
-import { DEATH_KEYS } from './audiomanifest.js?v=7fcd1afb';
+  proximitySectors, SENSOR_LEVELS } from './radar.js?v=aedb9f04';
+import { BLOOM_GROUPS } from './bloomweights.js?v=aedb9f04';
+import { TOWER_LOOK_NAMES, DEFAULT_TOWER_LOOK, buildTowerLook, preloadLook } from './towerlooks.js?v=aedb9f04';
+import { makeAudio } from './audio.js?v=aedb9f04';
+import { DEATH_KEYS } from './audiomanifest.js?v=aedb9f04';
 
 export function initTdTab(root) {
   let active = false;
@@ -3664,7 +3664,11 @@ export function initTdTab(root) {
     const cl = ev.target.classList;
     if (!cl) return;
     if (cl.contains('msg-regen')) regenerate(); // retry the CURRENT round
-    else if (cl.contains('msg-planet')) params.newPlanet(); // a DIFFERENT, bigger world
+    else if (cl.contains('msg-planet')) {
+      if (coins() <= 0) return;             // the button is disabled, but be sure
+      setCoins(coins() - 1);                // the coin goes in the slot
+      params.newPlanet();                   // a DIFFERENT, bigger world
+    }
     else if (cl.contains('msg-buyhull')) {
       if (playerHP < PLAYER_MAX && eco.spend(SINK.hull)) {
         playerHP++; syncLifeContainers(); updateHud(); renderVerdict(false);
@@ -4529,6 +4533,7 @@ export function initTdTab(root) {
     runAchv = [];
     clearTowers();
     tfReset();   // a new world starts with an empty yard
+    campaignReset();
     if (assistant) { scene.remove(assistant.obj); disposeObj(assistant.obj); assistant = null; }
     for (const o of orders) o.worker = null;
     // opening biomass: exactly a Rapid (70kg) + a Slow (100kg) — your first plan
@@ -8313,6 +8318,7 @@ export function initTdTab(root) {
       sectorsCleared = round;
       run.sectorsCleared = sectorsCleared;
       run.sectorCleared = true;
+      logSector();   // the campaign remembers every round, for the final debrief
       checkAchievements();
       if (round >= SECTORS_TOTAL) {
         run.planetCleared = true;
@@ -8323,6 +8329,7 @@ export function initTdTab(root) {
         try {
           const p2 = (parseInt(localStorage.getItem('td.planets') || '0', 10) || 0) + 1;
           localStorage.setItem('td.planets', String(p2));
+          setCoins(coins() + 1);   // a planet is worth one coin
         } catch (e) { /* private mode */ }
         persistBest();
         renderAnalysis(true);
@@ -8475,6 +8482,65 @@ export function initTdTab(root) {
     msgEl.classList.remove('hidden');
     startReplay();
   }
+  // --- THE CAMPAIGN LOG (operator, 2026-09-02) ----------------------------
+  // "before the choice for Another Planet, we need a full debrief, even
+  // deeper, for all rounds. make it feel meaningful, then a clear decision."
+  //
+  // A snapshot per cleared sector, taken at the moment of clearing so the
+  // numbers are the sector's own and not the run's so far: what it sent,
+  // how long it took, what died and to whom, what the purse did, what it
+  // cost the heart and the hulls. Deltas against the previous snapshot.
+  const campaign = [];
+  let campPrev = null;
+  function logSector() {
+    const kills = Object.values((rs && rs.kills) || {}).reduce((a, b) => a + b, 0);
+    const by = (rs && rs.bySrc) || { tank: 0, tower: 0, strike: 0 };
+    const now = { kills, tank: by.tank, tower: by.tower, strike: by.strike,
+      earned: eco.earned, spent: eco.spent, hullsLost: run.hullsLost || 0,
+      heartHits: run.heartHits || 0, t: simTime, wave };
+    const prev = campPrev || { kills: 0, tank: 0, tower: 0, strike: 0, earned: 0, spent: 0,
+      hullsLost: 0, heartHits: 0, t: 0, wave: 0 };
+    campaign.push({
+      round, waves: now.wave - prev.wave, secs: Math.max(0, Math.round(now.t - prev.t)),
+      kills: now.kills - prev.kills, tank: now.tank - prev.tank, tower: now.tower - prev.tower,
+      strike: now.strike - prev.strike, earned: now.earned - prev.earned, spent: now.spent - prev.spent,
+      hullsLost: now.hullsLost - prev.hullsLost, heartHits: now.heartHits - prev.heartHits,
+      heart: Math.max(0, heartHP), towers: towers.length, held: eco.biomass,
+      bestShell: (rs && rs.bestShell && rs.bestShell.kills) || 0,
+      bestStrike: (rs && rs.bestStrike && rs.bestStrike.kills) || 0,
+      full: programmeDone(),
+    });
+    campPrev = now;
+  }
+  function campaignReset() { campaign.length = 0; campPrev = null; }
+
+  // THE COIN. Retro, by request: winning a planet mints one; CONTINUE? spends
+  // it. Persists, so a player who walks away with a coin still has it.
+  const COIN_KEY = 'td.coins';
+  function coins() { try { return parseInt(localStorage.getItem(COIN_KEY) || '0', 10) || 0; } catch { return 0; } }
+  function setCoins(n) { try { localStorage.setItem(COIN_KEY, String(Math.max(0, n))); } catch { /* private mode */ } }
+
+  function campaignScreen() {
+    const rows = campaign.map((c) => `<tr>`
+      + `<td>${c.round}</td><td>${c.waves}${c.full ? '' : '*'}</td><td>${Math.floor(c.secs / 60)}:${String(c.secs % 60).padStart(2, '0')}</td>`
+      + `<td><b>${c.kills}</b></td><td>${c.tank}/${c.tower}/${c.strike}</td>`
+      + `<td>${fmt(c.earned)} &rarr; ${fmt(c.spent)}</td><td>${c.heart}/${HEART_MAX}</td>`
+      + `<td>${c.hullsLost}</td><td>${c.towers}</td></tr>`).join('');
+    const T = campaign.reduce((a, c) => ({ waves: a.waves + c.waves, secs: a.secs + c.secs, kills: a.kills + c.kills,
+      tank: a.tank + c.tank, tower: a.tower + c.tower, strike: a.strike + c.strike, earned: a.earned + c.earned,
+      spent: a.spent + c.spent, hulls: a.hulls + c.hullsLost }),
+    { waves: 0, secs: 0, kills: 0, tank: 0, tower: 0, strike: 0, earned: 0, spent: 0, hulls: 0 });
+    const cut = campaign.some((c) => !c.full);
+    return `<div class="camp-wrap"><table class="camp-table">`
+      + `<thead><tr><th>sector</th><th>waves</th><th>time</th><th>kills</th><th>tank/twr/orb</th>`
+      + `<th>biomass in &rarr; out</th><th>heart</th><th>hulls lost</th><th>towers</th></tr></thead>`
+      + `<tbody>${rows}</tbody>`
+      + `<tfoot><tr><td>planet</td><td>${T.waves}</td><td>${Math.floor(T.secs / 60)}:${String(T.secs % 60).padStart(2, '0')}</td>`
+      + `<td><b>${T.kills}</b></td><td>${T.tank}/${T.tower}/${T.strike}</td><td>${fmt(T.earned)} &rarr; ${fmt(T.spent)}</td>`
+      + `<td>${Math.max(0, heartHP)}/${HEART_MAX}</td><td>${T.hulls}</td><td>${towers.length}</td></tr></tfoot>`
+      + `</table>${cut ? '<div class="dbf-dim">* sector ended early — the gates fell before the programme ran out</div>' : ''}</div>`;
+  }
+
   // --- THE SINKS (operator, 2026-09-02) -----------------------------------
   // "still too generous with the credits. we can play around that by saying
   // that x amount of biomass is needed to proceed to the next stage, or make
@@ -8506,19 +8572,24 @@ export function initTdTab(root) {
     cancelAnimationFrame(replayRaf);
     {
       if (final) {
-        msgEl.innerHTML = `<div class="msg-head">transmission · final</div>`
+        // THE CAMPAIGN DEBRIEF. Every round on one table, the planet's totals
+        // under them, the records and the best strike beside, the
+        // achievements — and then ONE decision, in the register of the
+        // machines that asked it first.
+        const n = coins();
+        msgEl.innerHTML = `<div class="msg-head">transmission · final · campaign</div>`
           + `<div class="go-verdict best">OBJECT STÅLBERG-9 IS YOURS</div>`
           + `<div class="go-reason">every portal on the shell destroyed, all `
           + `${SECTORS_TOTAL} sectors open — there is nothing left to breach</div>`
-          + `<div class="go-grid">`
-          + `<span>SCORE <b>${fmt(score.points)}</b></span>`
-          + `<span>${wave} waves · ${sectorsCleared} sectors</span>`
-          + `<span>heart ${Math.max(0, heartHP)}/${HEART_MAX} · ${towers.length} towers standing</span>`
-          + `<span>hulls left ${Math.max(0, playerHP)}/${PLAYER_MAX}</span>`
-          + `</div>`
+          + `<div class="go-grid"><span>SCORE <b>${fmt(score.points)}</b> · best ${fmt(score.best)}</span></div>`
+          + campaignScreen()
+          + `<div class="dbf-grid">${winRecords()}${winReplay()}</div>`
           + runAchvBlock()
-          + `<button class="msg-lap">&#9673; walk the planet &mdash; fly it as ISAO</button>`
-          + `<button class="msg-planet">&#10226; another planet &mdash; bigger, new ground</button>`;
+          + `<div class="coin">INSERT COIN : <b>${n}</b></div>`
+          + `<div class="continue">CONTINUE?</div>`
+          + `<button class="msg-planet"${n > 0 ? '' : ' disabled'}>&#10226; ${n > 0 ? 'YES — another planet, bigger, new ground' : 'no coin'}</button>`
+          + `<button class="msg-lap">&#9673; no — walk the planet as ISAO</button>`;
+        startReplay();
       } else {
         // THE DEBRIEF. Dismissed by hand, never on a timer: the operator
         // cleared a hard sector and the game moved on before they had
@@ -11162,6 +11233,39 @@ export function initTdTab(root) {
         + ` (every ${TF.containerEvery} a store, every ${TF.hullEvery} a hull)`
         + ` ${tfContainers > 0 && tfHulls > 0 ? 'BOTH PRODUCTS LANDED' : '<-- something did not build'}`);
     });
+  }
+
+  // ?campaign=1 — fabricate three cleared sectors and render the final
+  // screen: the table must carry three rows and a totals row, the coin must
+  // read 1 after a win and 0 after CONTINUE, and the decision must be gated
+  // on the coin.
+  if (urlParams.get('campaign') === '1') {
+    setTimeout(() => {
+      dismissIntro();
+      setCoins(0);
+      const mk = (r, k, e, sp, hl) => ({ round: r, waves: 15, secs: 200 + r * 40, kills: k, tank: Math.round(k * 0.4),
+        tower: Math.round(k * 0.5), strike: k - Math.round(k * 0.4) - Math.round(k * 0.5), earned: e, spent: sp,
+        hullsLost: hl, heartHits: hl, heart: 10 - hl, towers: 4 + r * 2, held: e - sp, bestShell: 3, bestStrike: 5, full: r !== 2 });
+      campaign.push(mk(1, 45, 900, 610, 0), mk(2, 62, 1400, 1300, 1), mk(3, 88, 2100, 1750, 1));
+      rs.bestShell = { kills: 3, wave: 4 };
+      rs.bestStrike = { kills: 5, wave: 6, replay: { radius: 3.2, portals: 1, bodies: [] } };
+      setCoins(coins() + 1);   // the win mints one
+      renderVerdict(true);
+      const rows = msgEl.querySelectorAll('.camp-table tbody tr').length;
+      const foot = msgEl.querySelectorAll('.camp-table tfoot tr').length;
+      const coinTxt = (msgEl.querySelector('.coin') || {}).textContent || '';
+      const btn = msgEl.querySelector('.msg-planet');
+      console.log(`CAMPAIGN rows=${rows} totals=${foot} coin="${coinTxt.trim()}"`
+        + ` continue=${btn && !btn.disabled ? 'ENABLED' : 'disabled'}`
+        + ` ${rows === 3 && foot === 1 && /: 1/.test(coinTxt) && btn && !btn.disabled ? '(meaningful, and the coin is in)' : '<-- WRONG'}`);
+      // spend it without regenerating: the handler's guard and decrement only
+      setCoins(coins() - 1);
+      renderVerdict(true);
+      const btn2 = msgEl.querySelector('.msg-planet');
+      console.log(`CAMPAIGN after CONTINUE: coin="${(msgEl.querySelector('.coin') || {}).textContent.trim()}"`
+        + ` continue=${btn2 && !btn2.disabled ? 'ENABLED' : 'disabled'}`
+        + ` ${btn2 && btn2.disabled ? '(no coin, no continue)' : '<-- WRONG'}`);
+    }, 1200);
   }
 
   // ?drones=1 — buy the assistant, put three orders on the book, drive both

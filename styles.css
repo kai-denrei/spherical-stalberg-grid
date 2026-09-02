@@ -5,22 +5,22 @@
    back to a system face until the subset is rebuilt. */
 @font-face {
   font-family: 'VT323';
-  src: url('assets/fonts/VT323.woff2?v=7fcd1afb') format('woff2');
+  src: url('assets/fonts/VT323.woff2?v=aedb9f04') format('woff2');
   font-weight: 400; font-style: normal; font-display: swap;
 }
 @font-face {
   font-family: 'Press Start 2P';
-  src: url('assets/fonts/PressStart2P.woff2?v=7fcd1afb') format('woff2');
+  src: url('assets/fonts/PressStart2P.woff2?v=aedb9f04') format('woff2');
   font-weight: 400; font-style: normal; font-display: swap;
 }
 @font-face {
   font-family: 'Share Tech Mono';
-  src: url('assets/fonts/ShareTechMono.woff2?v=7fcd1afb') format('woff2');
+  src: url('assets/fonts/ShareTechMono.woff2?v=aedb9f04') format('woff2');
   font-weight: 400; font-style: normal; font-display: swap;
 }
 @font-face {
   font-family: 'DotGothic16';
-  src: url('assets/fonts/DotGothic16.woff2?v=7fcd1afb') format('woff2');
+  src: url('assets/fonts/DotGothic16.woff2?v=aedb9f04') format('woff2');
   font-weight: 400; font-style: normal; font-display: swap;
 }
 
@@ -3725,3 +3725,28 @@ tr.sim-timeout td:nth-child(2), tr.sim-stalled td:nth-child(2) { color: #ffb000;
 #td-msg .dbf-tile span { display: block; font-size: 9.5px; color: #9aa7bd; letter-spacing: 0.06em; }
 #td-msg .dbf-replay { width: 100%; height: 120px; display: block; border-radius: 4px; background: #020a10; }
 @media (max-width: 560px) { #td-msg .dbf-grid { grid-template-columns: 1fr; } }
+
+
+/* --- TD campaign debrief (2026-09-02) ------------------------------------
+   Every round on one table, then the retro decision. --- */
+#td-msg .camp-wrap { width: min(680px, 86vw); margin: 6px auto 10px; overflow-x: auto; }
+#td-msg .camp-table { width: 100%; border-collapse: collapse; font-size: 11px; text-align: right; }
+#td-msg .camp-table th { font-size: 9.5px; letter-spacing: 0.12em; color: #9fdcff; font-weight: 600;
+  padding: 3px 6px; border-bottom: 1px solid rgba(0, 208, 255, 0.35); text-transform: uppercase; }
+#td-msg .camp-table td { padding: 3px 6px; border-bottom: 1px solid rgba(0, 208, 255, 0.12); }
+#td-msg .camp-table td:first-child, #td-msg .camp-table th:first-child { text-align: left; }
+#td-msg .camp-table tfoot td { border-top: 1px solid rgba(0, 208, 255, 0.45); border-bottom: 0;
+  color: #e8fbff; font-weight: 700; }
+#td-msg .camp-table b { font-size: 12px; }
+#td-msg .coin {
+  margin: 12px auto 2px; font: 700 15px ui-monospace, Menlo, monospace; letter-spacing: 0.22em;
+  color: #ffd75a; text-shadow: 0 0 10px rgba(255, 215, 90, 0.55);
+}
+#td-msg .coin b { color: #fff3c4; }
+#td-msg .continue {
+  margin: 2px auto 8px; font: 800 22px ui-monospace, Menlo, monospace; letter-spacing: 0.3em;
+  color: #86ff9e; text-shadow: 0 0 14px rgba(134, 255, 158, 0.6);
+  animation: td-blink 1.1s steps(2, start) infinite;
+}
+@keyframes td-blink { to { visibility: hidden; } }
+#td-msg button[disabled] { opacity: 0.45; cursor: default; }
