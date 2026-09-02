@@ -123,7 +123,8 @@ Each phase is small, has a probe, and leaves desktop byte-identical.
 | 3 | shipped: 14px slop, long-press upgrade, NOT HERE captions; `?tapprobe=1` 100% placeable on 244 taps across two zooms — the raycast was never the fault; `?pressprobe=1` drives both gestures through real PointerEvents. Drag-orbit and pinch were already there. | `e32e9ec` |
 | 4 | shipped: 0 overlaps at 844×390 in both modes with a caption and Isao pinned | `14aa9d7` |
 | 5 | shipped: message box / manual / variables fit and scroll at 844×303 with 44px buttons; `?modalprobe=1` 5/7 FAIL → 7/7 OK on the shell, 7/7 desktop; tab bar behind ≡; `?whatsat=x,y` | `82c1e4e` |
-| 6–7 | not started | — |
+| 6 | shipped: `src/perftier.js` (desktop 2/on/384@30/1.0 vs phone 1.5/off/256@24/0.5, wormhole ratio 0.356), wake lock on the shell, the PWA hook (token-keyed runtime-cache worker, no precache, no skipWaiting, shell only). Haptics out by ruling 5. | `2c33c8f` |
+| 7 | not started — needs a phone in hand | — |
 
 ## 4. Rulings — operator, 2026-09-02
 

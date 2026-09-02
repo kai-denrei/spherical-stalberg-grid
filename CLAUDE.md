@@ -50,6 +50,11 @@ token — the corner badge was retired from the game view).
   `?charge=0..1` (TD: park the wave clock inside the warning window —
   `?tick` drives motion, NOT the wave scheduler, so winding it forward
   leaves the countdown where it was),
+  the mobile shell's own: `?mobile=1|0` (force the shell on/off — a headless
+  run is never coarse), `?goto=1`, `?mobbuild=1` + `?pin=1` (with `?layout`:
+  enter BUILD through the button, pin a caption + Isao), `?tapprobe=1`,
+  `?pressprobe=1`, `?modalprobe=1`, `?wake=1`, `?tier=phone|desktop`,
+  `?sw=0`, `?whatsat=x,y` (name the element stack under a point),
   `#tabname`.
   Headless clamps windows to ~500px wide and CROPS screenshots — for
   layout bugs, log `innerWidth` from the page before touching CSS.

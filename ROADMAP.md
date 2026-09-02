@@ -583,10 +583,14 @@ tutorial is settled — it should show the game as it will actually be.
 
 ### Installed-PWA / offline mode
 
-True offline and no browser chrome. Blocked on a known conflict: a service
-worker must key its cache names off the build token or it silently serves
-stale modules and defeats the version badge. Small dedicated project — it
-should not be bolted onto TD work.
+True offline and no browser chrome. Was blocked on a known conflict: a
+service worker must key its cache names off the build token or it silently
+serves stale modules and defeats the version badge. **The hook landed**
+(`2c33c8f`, mobile shell phase 6): `sw.js` keys its cache off the token,
+`bust.sh` stamps it, `test/pwa.mjs` guards the match, registered on the
+shell only. What remains is the dedicated part — a precache list for a cold
+offline boot (GLBs, audio, fonts, minigames) and an update toast — and it
+should still not be bolted onto TD work.
 
 ---
 

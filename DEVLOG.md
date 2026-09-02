@@ -6,6 +6,48 @@ Demo links assume `npm run serve` (port 8144) or the
 
 ---
 
+## `2c33c8f` — the mobile shell, phase 6: the budget as a table, a wake lock, the PWA hook
+
+Phase 6 of `docs/MOBILE-PORT-PLAN.md`. Haptics are out by ruling; the rotate
+prompt, `touch-action` and the viewport units landed in earlier phases.
+
+**The render tier** (`src/perftier.js`, tested). The phone's savings had
+accreted one at a time, each as a feeling in a different file. They are one
+table now, picked once at boot, and `?perf=N` prints the tier it ran under
+next to the draw stats:
+
+| tier | pixel-ratio cap | MSAA | wormhole | bloom |
+|---|---|---|---|---|
+| desktop | 2 | on | 384@30 | 1.0 |
+| phone | 1.5 | off | 256@24 | 0.5 |
+
+The wormhole cost the table implies: desktop 212M sine-folds per frame,
+phone 94M, a per-second ratio of 0.356. The look (steps, octaves, exposure)
+is the preset's and untouched; the tier owns only what it costs. The pick is
+the shell's own test so one detection feeds two consumers; `?mobile=1|0`
+forces the matching tier, which is how a headless run measures what a phone
+gets, and `?tier=` overrides on its own. Measured on the same board at
+844×390: phone `aa=false wormhole=256@24 bloom=0.5`, desktop
+`aa=true wormhole=384@30 bloom=1`. The tier buys per-pixel cost, which the
+draw-call readout cannot see, so the honest number is the table's.
+
+**The wake lock.** Shell only, requested at boot and on the first touch,
+re-requested when the tab returns. `?wake=1` reports held on the shell and
+"not requested, by design" on the desktop.
+
+**The PWA hook.** The roadmap blocked installed-PWA on one conflict, a
+worker whose cache is not keyed off the build token, and called the full
+offline story a dedicated project. This is the hook only, in the shape of
+`blueprint-to-life`'s solved `sw.js`: the cache name is the token,
+`bust.sh` stamps it, `test/pwa.mjs` fails the suite if it drifts from the
+page. Navigations network-first then cache, fingerprinted assets
+cache-first, the rest stale-while-revalidate. No precache list, no
+`skipWaiting` on the worker's own initiative, registered on the shell only
+with `?sw=0` to opt out. Precaching for a cold offline boot remains the
+dedicated item.
+
+---
+
 ## `82c1e4e` — the mobile shell, phase 5: modals that fit a phone
 
 Phase 5 of `docs/MOBILE-PORT-PLAN.md`: the briefing, both debrief stages,
