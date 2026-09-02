@@ -19,45 +19,46 @@
 
 import * as THREE from '../vendor/three.module.js';
 import GUI from '../vendor/lil-gui.esm.js';
-import { generateSphereMesh, relax } from './grid.js?v=9d2d6700';
-import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=9d2d6700';
-import { mulberry32, randomSeed } from './rng.js?v=9d2d6700';
-import { computeBerths, berthIndexFor } from './berths.js?v=9d2d6700';
-import { wantsSecondary, shellsForAll } from './autofire.js?v=9d2d6700';
-import { printPhase, printOffset, printOn, patternSecsFor } from './printpath.js?v=9d2d6700';
-import { createBeam } from './beamfx.js?v=9d2d6700';
-import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3, segKey, tangentDir, tangentBasis } from './vec3.js?v=9d2d6700';
-import { CREATURES, waveJelly } from './creatures.js?v=9d2d6700';
-import { brief, dwellFor } from './isaobriefs.js?v=9d2d6700';
-import { drawEmotion } from './emotions.js?v=9d2d6700';
+import { generateSphereMesh, relax } from './grid.js?v=a08bf7dd';
+import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=a08bf7dd';
+import { mulberry32, randomSeed } from './rng.js?v=a08bf7dd';
+import { computeBerths, berthIndexFor } from './berths.js?v=a08bf7dd';
+import { wantsSecondary, shellsForAll } from './autofire.js?v=a08bf7dd';
+import { printPhase, printOffset, printOn, patternSecsFor } from './printpath.js?v=a08bf7dd';
+import { createBeamRig, PLASMA_DEFAULTS } from './beamdraw.js?v=a08bf7dd';
+import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3, segKey, tangentDir, tangentBasis } from './vec3.js?v=a08bf7dd';
+import { CREATURES, waveJelly } from './creatures.js?v=a08bf7dd';
+import { brief, dwellFor } from './isaobriefs.js?v=a08bf7dd';
+import { drawEmotion } from './emotions.js?v=a08bf7dd';
 import { ACHIEVEMENTS, ACHV_GROUPS, achievement, blankRun, earned, freshlyEarned,
   sanitiseRecord }
-  from './achievements.js?v=9d2d6700';
+  from './achievements.js?v=a08bf7dd';
 import { applyFontPack, currentFontPack, FONT_NAMES,
-  loadTypeFeel } from './fonts.js?v=9d2d6700';
-import { SECONDARY_TOE } from './units.js?v=9d2d6700';
-import { UNITS, UNIT_NAMES, buildUnit, buildCreature, preloadMkcx, preloadServer, makeServerFixture, makeShieldShell, preloadContainer, makeContainerFixture, preloadFabricator, makeIsaoDrone, makeBulletCloud, makeRewardSolid, makeShellSolid, makeDebris, makeDotBurst, makePortalCloud, makeHeartCloud, makeDotEnemy, preloadTerraformer, makeTerraformerFixture } from './units.js?v=9d2d6700';
-import { LOOKS, LOOK_NAMES } from './looks.js?v=9d2d6700';
-import { makeCellIndex } from './cellindex.js?v=9d2d6700';
-import { CREATURE_TINTS, ENEMY_SPEC, INTROS, computeWavePlan, accentFor } from './enemyspec.js?v=9d2d6700';
-import { PICKUPS } from './pickups.js?v=9d2d6700';
-import { rankFor, rankLabel, badgeSVG, killReq, eliteReq } from './ranks.js?v=9d2d6700';
-import { beamStep, isBeamStep, PEN_SOFT_FRAC, PEN_HARD_FRAC } from './beamranks.js?v=9d2d6700';
-import { arcPoint, projectToArc } from './arc.js?v=9d2d6700';
-import { makeScore } from './score.js?v=9d2d6700';
-import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER } from './towers.js?v=9d2d6700';
-import { makeEconomy, sellRefund } from './economy.js?v=9d2d6700';
-import { makeBloom } from './postfx.js?v=9d2d6700';
-import { TANK_FEEL, TANK_FEEL_KNOBS, makeTankFeel, stepTankFeel, landTankFeel, fireTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js?v=9d2d6700';
-import { FEEL, loadFeel, saveFeel } from './feelstore.js?v=9d2d6700';
+  loadTypeFeel } from './fonts.js?v=a08bf7dd';
+import { SECONDARY_TOE } from './units.js?v=a08bf7dd';
+import { UNITS, UNIT_NAMES, buildUnit, buildCreature, preloadMkcx, preloadServer, makeServerFixture, makeShieldShell, preloadContainer, makeContainerFixture, preloadFabricator, makeIsaoDrone, makeBulletCloud, makeRewardSolid, makeShellSolid, makeDebris, makeDotBurst, makePortalCloud, makeHeartCloud, makeDotEnemy, preloadTerraformer, makeTerraformerFixture } from './units.js?v=a08bf7dd';
+import { LOOKS, LOOK_NAMES } from './looks.js?v=a08bf7dd';
+import { makeCellIndex } from './cellindex.js?v=a08bf7dd';
+import { CREATURE_TINTS, ENEMY_SPEC, INTROS, computeWavePlan, accentFor } from './enemyspec.js?v=a08bf7dd';
+import { PICKUPS } from './pickups.js?v=a08bf7dd';
+import { rankFor, rankLabel, badgeSVG, killReq, eliteReq } from './ranks.js?v=a08bf7dd';
+import { beamStep, isBeamStep, PEN_SOFT_FRAC, PEN_HARD_FRAC } from './beamranks.js?v=a08bf7dd';
+import { burn, sweepAdvance, wallBite as wallBiteFor } from './beamburn.js?v=a08bf7dd';
+import { arcPoint, projectToArc } from './arc.js?v=a08bf7dd';
+import { makeScore } from './score.js?v=a08bf7dd';
+import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER } from './towers.js?v=a08bf7dd';
+import { makeEconomy, sellRefund } from './economy.js?v=a08bf7dd';
+import { makeBloom } from './postfx.js?v=a08bf7dd';
+import { TANK_FEEL, TANK_FEEL_KNOBS, makeTankFeel, stepTankFeel, landTankFeel, fireTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js?v=a08bf7dd';
+import { FEEL, loadFeel, saveFeel } from './feelstore.js?v=a08bf7dd';
 import { STRIKE_KNOBS, makeStrike, makeStrikeParams, grantStrikes, stepStrike,
   toggleArm, paintTarget, launchStrike, stepFall, skipFall, fallProgress,
-  strikeDamage, retargetStrike, orbitProgress } from './strike.js?v=9d2d6700';
-import { radarBasis, radarProject, radarBearing, sweepAngle, radarPhosphor } from './radar.js?v=9d2d6700';
-import { BLOOM_GROUPS } from './bloomweights.js?v=9d2d6700';
-import { TOWER_LOOK_NAMES, DEFAULT_TOWER_LOOK, buildTowerLook, preloadLook } from './towerlooks.js?v=9d2d6700';
-import { makeAudio } from './audio.js?v=9d2d6700';
-import { DEATH_KEYS } from './audiomanifest.js?v=9d2d6700';
+  strikeDamage, retargetStrike, orbitProgress } from './strike.js?v=a08bf7dd';
+import { radarBasis, radarProject, radarBearing, sweepAngle, radarPhosphor } from './radar.js?v=a08bf7dd';
+import { BLOOM_GROUPS } from './bloomweights.js?v=a08bf7dd';
+import { TOWER_LOOK_NAMES, DEFAULT_TOWER_LOOK, buildTowerLook, preloadLook } from './towerlooks.js?v=a08bf7dd';
+import { makeAudio } from './audio.js?v=a08bf7dd';
+import { DEATH_KEYS } from './audiomanifest.js?v=a08bf7dd';
 
 export function initTdTab(root) {
   let active = false;
@@ -5267,9 +5268,10 @@ export function initTdTab(root) {
   // lagging its twin is a DANGER READOUT — the weapon's own motion saying
   // "there is something in here you should not ram", a third channel beside
   // the belt colour and the DO-NOT-RAM badge.
-  const DRAG_SOFT = 0.10;   // per rammable body in the beam
-  const DRAG_HARD = 0.55;   // per unrammable one — the solid core bites
-  const DRAG_CAP = 0.90;    // never a full stall: it always creeps forward
+  // DRAG_SOFT / DRAG_HARD / DRAG_CAP are imported from beamburn.js now. The
+  // rule moved out whole so the beam lab can show the drop-off without
+  // restating it — two copies of this would drift the first time either is
+  // tuned, and the lab exists precisely to tune it.
   // ...and the same idea along the OTHER axis: every body burned eats into
   // the reach that is left, so the beam shortens as it struggles through.
   // In cells, against a 2.6-cell reach: fodder is nearly free, three solid
@@ -5286,202 +5288,67 @@ export function initTdTab(root) {
   let beamHitWall = false;   // did either beam clip on rock this frame?
   const CELL_WIDTH_KEYS = ['coreWidth', 'glowWidth', 'jitterAmount'];
   // `beams` is taken by the tower/slow-tether fx pool — these are the tank's
-  let tankBeams = null, beamOn = false, beamVoice = null;
-  const beamA = new THREE.Vector3(), beamB = new THREE.Vector3();
+  // Both are views ONTO the rig (beamdraw.js), kept as names because the
+  // probes walk them: ?beamfire=1 reads the live glow colour off tankBeams[0]
+  // and ?arcprobe walks every plume dot for altitude.
+  let tankBeams = null, plasma = null;
+  let beamOn = false, beamVoice = null;
 
   // --- THE PLASMA (operator, 2026-09-02) ----------------------------------
-  // "the beam extends in the air, and for game play it should hug the
+  // "the beam extends in the air, and for game play we should have hug the
   // curvature of the planet, more like plasma flamethrower than pure laser."
   //
-  // Two parts, because a flamethrower IS two things: a tight bright ROOT and
-  // a long billowing PLUME. The root is the tuned beamfx ribbon — kept, not
-  // thrown away — chained in short straight links along the great circle so
-  // that it curves. The plume is a dot cloud, which is this codebase's native
-  // idiom (creatures.js, the warn ring, the range ring all speak it) and
-  // costs ONE draw call per gun against a frame already spending a thousand.
+  // The anatomy, the meshes and the per-frame update all live in beamdraw.js
+  // now. That move is what lets the beam LAB draw this same weapon instead of
+  // two straight ribbons on a flat floor — a tuning surface showing a
+  // different weapon than the game is worse than none, and this project has
+  // already paid for that once with a preset tuned under tone mapping the
+  // game did not have.
   //
-  // Every number here is a live knob under `plasma` in the GUI, because a
-  // derived value is a starting point and nothing more.
-  const PLASMA = {
-    coreFrac: 0.45,   // fraction of the reach the hot ribbon root covers
-    points: 220,      // dots per gun in the plume
-    flare: 0.30,      // plume half-width at the TIP, as a fraction of reach
-    rootFlare: 0.05,  // ...and at the muzzle, so the root is tight, not pinched
-    flow: 1.9,        // plume travels muzzle -> tip this many times a second
-    bias: 1.35,       // >1 crowds the dots toward the root, where flame is dense
-    squash: 0.55,     // vertical spread against lateral — a plume HUGS, not balloons
-    twist: 7.0,       // radians of corkscrew per unit of arc
-    size: 3.2,        // screen px, matching the board's other clouds
-  };
-  // Straight links in the root. Solved, not guessed: at the rank-15 reach the
-  // root spans 0.36 rad, so three links sag 0.02 cells — a fortieth of the
-  // 3.51 cells the old single chord flew.
-  const CORE_SEGS = 3;
+  // PLASMA is a LIVE object: the GUI mutates it and the rig reads it every
+  // frame, so the knobs stay knobs.
+  const PLASMA = { ...PLASMA_DEFAULTS };
 
+  let beamRig = null;
   function ensureBeams() {
-    if (tankBeams) return tankBeams;
-    // FLAT, gun-major: index [gun * CORE_SEGS + link]. tankBeams[0] is still
-    // gun 0's first link, which is what ?beamfire=1 reads the colour off.
-    tankBeams = [];
-    for (let i = 0; i < 2 * CORE_SEGS; i++) {
-      const bm = createBeam(new THREE.Vector3(), new THREE.Vector3(), BEAM_PRESET);
-      bm.mesh.visible = false;
-      scene.add(bm.mesh);
-      tankBeams.push(bm);
-    }
-    applyBeamRank();   // a fresh set must not be born the base colour
-    return tankBeams;
-  }
-
-  // The plume's dots. Positions are rewritten every frame; what is fixed per
-  // dot is its PHASE along the stream, its angle around it, and its radius —
-  // drawn once from the run's own seed so two runs on one seed burn alike.
-  let plasma = null;
-  function ensurePlasma() {
-    if (plasma) return plasma;
-    const rng = mulberry32((params.seed ^ 0x91a5be) >>> 0);
-    plasma = [0, 1].map(() => {
-      const N = PLASMA.points;
-      const pos = new Float32Array(N * 3), col = new Float32Array(N * 3);
-      const phase = new Float32Array(N), ang = new Float32Array(N), rad = new Float32Array(N);
-      for (let j = 0; j < N; j++) {
-        phase[j] = rng();
-        ang[j] = rng() * Math.PI * 2;
-        // sqrt so the dots fill the disc evenly instead of piling on the axis
-        rad[j] = Math.sqrt(rng());
-      }
-      const geo = new THREE.BufferGeometry();
-      geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
-      geo.setAttribute('color', new THREE.BufferAttribute(col, 3));
-      const pts = new THREE.Points(geo, new THREE.PointsMaterial({
-        size: PLASMA.size, sizeAttenuation: false, vertexColors: true,
-        transparent: true, opacity: 0.95, depthWrite: false,
-        blending: THREE.AdditiveBlending,
-      }));
-      pts.frustumCulled = false;   // the positions move every frame anyway
-      pts.renderOrder = 10;
-      pts.visible = false;
-      scene.add(pts);
-      return { pts, geo, pos, col, phase, ang, rad };
+    if (beamRig) return beamRig;
+    beamRig = createBeamRig({
+      scene, guns: 2, preset: BEAM_PRESET, plasma: PLASMA,
+      seed: (params.seed ^ 0x91a5be) >>> 0,
+      widthKeys: CELL_WIDTH_KEYS,
     });
-    return plasma;
+    // tankBeams is what ?beamfire=1 reads the live colour off, and index 0 is
+    // still gun 0's first link; plasma is what ?arcprobe walks for altitude
+    tankBeams = beamRig.beams;
+    plasma = beamRig.plumes;
+    applyBeamRank();   // a fresh rig must not be born the base colour
+    return beamRig;
   }
 
-  // One gun's plume, laid along the SAME arc the damage query walks.
-  function drawPlasma(i, from, dir, len, heatFrac, lift) {
-    const pl = ensurePlasma()[i];
-    if (!pl) return;
-    const N = PLASMA.points;
-    const env = Math.sin(Math.min(1, heatFrac) * Math.PI);   // the burst bell
-    const cr = beamColNow.r, cg = beamColNow.g, cb = beamColNow.b;
-    for (let j = 0; j < N; j++) {
-      // FLOW. Each dot rides muzzle -> tip and recycles, so the stream reads
-      // as something being thrown rather than a shape being held.
-      let u = (pl.phase[j] + simTime * PLASMA.flow) % 1;
-      if (u < 0) u += 1;
-      const sArc = len * Math.pow(u, PLASMA.bias);
-      // arcPoint and arcTangent are the same cos/sin pair — this runs 220
-      // times per gun per frame, so share them rather than paying four
-      // transcendentals where two will do.
-      const cs = Math.cos(sArc), sn = Math.sin(sArc);
-      const q = [from[0] * cs + dir[0] * sn, from[1] * cs + dir[1] * sn,
-        from[2] * cs + dir[2] * sn];
-      const tg = [dir[0] * cs - from[0] * sn, dir[1] * cs - from[1] * sn,
-        dir[2] * cs - from[2] * sn];
-      // q IS the outward normal at that point — the sphere's own up — and it
-      // is perpendicular to tg by construction, so their cross is already
-      // unit and norm3 would only cost a sqrt to confirm it.
-      const right = cross3(q, tg);
-      const spread = len * (PLASMA.rootFlare
-        + (PLASMA.flare - PLASMA.rootFlare) * Math.pow(u, 1.6));
-      const rr = pl.rad[j] * spread;
-      const a = pl.ang[j] + sArc * PLASMA.twist;
-      const lat = Math.cos(a) * rr, vert = Math.sin(a) * rr * PLASMA.squash;
-      const px = (q[0] + right[0] * lat + q[0] * vert) * lift;
-      const py = (q[1] + right[1] * lat + q[1] * vert) * lift;
-      const pz = (q[2] + right[2] * lat + q[2] * vert) * lift;
-      pl.pos[j * 3] = px; pl.pos[j * 3 + 1] = py; pl.pos[j * 3 + 2] = pz;
-      // COLOUR: white-hot at the muzzle, the rank's colour through the body,
-      // guttering out at the tip. The white is what stops a coloured cloud
-      // reading as smoke.
-      const b = Math.pow(1 - u, 1.1) * env;
-      const w = Math.max(0, 1 - u * 3.2);
-      pl.col[j * 3] = (cr + (1 - cr) * w) * b;
-      pl.col[j * 3 + 1] = (cg + (1 - cg) * w) * b;
-      pl.col[j * 3 + 2] = (cb + (1 - cb) * w) * b;
-    }
-    pl.geo.attributes.position.needsUpdate = true;
-    pl.geo.attributes.color.needsUpdate = true;
-    pl.pts.visible = true;
-  }
-
-  // THE BEAM WEARS THE RANK (operator, 2026-09-02). Colour, reach and damage
-  // all step at ranks 1 / 5 / 10 / 15 — the table and the reasoning live in
-  // beamranks.js; this is the two lines that make it real.
-  //
   // The colour is written to the LIVE uniform rather than baked into
   // BEAM_PRESET at construction, so a promotion that lands mid-burst
   // recolours the beam already in the air — which is the whole point of
   // putting the readout on the weapon instead of in the corner.
   let beamStepNow = beamStep(0);
-  // ...and the same colour as a THREE.Color, because the plume writes it into
-  // a vertex buffer 220 times per gun per frame and must not re-parse a hex
-  // string to do it.
-  const beamColNow = new THREE.Color(beamStepNow.color);
   function applyBeamRank() {
     beamStepNow = beamStep(tankRank);
-    beamColNow.set(beamStepNow.color);
     LASER_DPS = beamStepNow.dps;
     LASER_REACH = beamStepNow.reach;
-    if (!tankBeams) return;
-    for (const bm of tankBeams) {
-      const u = bm.uniforms.uGlowColor;
-      if (u) u.value.set(beamStepNow.color);
-    }
+    if (beamRig) beamRig.setColor(beamStepNow.color);
   }
 
   function drawBeam(i, from, dir, len, heatFrac) {
-    const bms = ensureBeams();
-    const lift = 1 + params.wallHeight * 0.5;
-    // THE BELL. 0 at the trigger, peak at the midpoint of the 6 seconds, 0 as
-    // the tubes lock — the operator's shape, driving INTENSITY rather than
-    // opacity because the two read very differently under bloom.
-    const env = BEAM_PEAK * Math.sin(Math.min(1, heatFrac) * Math.PI);
-    const coreLen = len * PLASMA.coreFrac;
-    for (let k = 0; k < CORE_SEGS; k++) {
-      const bm = bms[i * CORE_SEGS + k];
-      if (!bm) continue;
-      // Each link is a straight ribbon between two points ON the sphere, so
-      // the chain follows the ground however far the beam runs.
-      const a = arcPoint(from, dir, coreLen * (k / CORE_SEGS));
-      const b = arcPoint(from, dir, coreLen * ((k + 1) / CORE_SEGS));
-      beamA.set(a[0] * lift, a[1] * lift, a[2] * lift);
-      beamB.set(b[0] * lift, b[1] * lift, b[2] * lift);
-      bm.setEndpoints(beamA, beamB);
-      for (const key of CELL_WIDTH_KEYS) {
-        const u = bm.uniforms['u' + key[0].toUpperCase() + key.slice(1)];
-        if (u) u.value = BEAM_PRESET[key] * cellSide;
-      }
-      // THE JOINTS MUST NOT TAPER. beamfx fades each ribbon to nothing over
-      // capStart/capEnd of its own length; leave that on and a chained root
-      // reads as three dashes with gaps, not one beam. Only the true ends of
-      // the chain keep their cap.
-      const cs = bm.uniforms.uCapStart, ce = bm.uniforms.uCapEnd;
-      if (cs) cs.value = k === 0 ? BEAM_PRESET.capStart : 0;
-      if (ce) ce.value = k === CORE_SEGS - 1 ? BEAM_PRESET.capEnd : 0;
-      const gi = bm.uniforms.uGlowIntensity;
-      if (gi) gi.value = env;
-      bm.mesh.visible = true;
-      bm.update(simTime);
-      bm.setAlpha(1);
-    }
-    drawPlasma(i, from, dir, len, heatFrac, lift);
+    ensureBeams().draw(i, {
+      from, dir, len, heat: heatFrac,
+      lift: 1 + params.wallHeight * 0.5,
+      scale: cellSide, time: simTime, peak: BEAM_PEAK,
+    });
   }
 
   function hideBeams() {
-    if (tankBeams) for (const bm of tankBeams) bm.mesh.visible = false;
-    if (plasma) for (const pl of plasma) pl.pts.visible = false;
+    if (beamRig) beamRig.hide();
   }
+
   const laserBtnEl = root.querySelector('#td-pad-laser');
   let laserBtnBand = -1, laserDrainPct = -1;
   // THE SECONDARY IS A BEAM (operator, 2026-09-01). Twin sustained beams out
@@ -5634,7 +5501,7 @@ export function initTdTab(root) {
         // WALLS STOP IT, enemies do not. March in half-cells to the first
         // blocked cell so a beam cannot reach through the maze you built.
         let len = reach;
-        let wallBite = 0;
+        let bite = 0;
         // ALONG THE GROUND, not through it. `m` is arc length now — on a
         // unit sphere that is radians, so no conversion — and arcPoint lands
         // ON the surface by construction. The old `norm3(from + dir*m)`
@@ -5651,7 +5518,7 @@ export function initTdTab(root) {
             // flat penalty on contact would bog the weapon EVERYWHERE and the
             // sweep would never move. Bite is the same currency a body pays
             // in: 0 when the wall is out at the tip, 1 at point-blank.
-            wallBite = Math.max(0, 1 - m / reach);
+            bite = wallBiteFor(m, reach);
             break;
           }
         }
@@ -5681,25 +5548,22 @@ export function initTdTab(root) {
           if (pr.s < 0 || pr.s > len) continue;
           const r = cellSide * Math.max(0.4, (e.size ?? e.spec.size) * 0.8);
           if (pr.off >= r) continue;
-          along.push({ e, t: pr.s });
+          // `hard` is beamburn's word for the not-rammable tier — the same
+          // read the board already carries in colour
+          along.push({ e, t: pr.s, hard: !e.spec.rammable });
         }
-        along.sort((x, y) => x.t - y.t);
-
         // A WALL BOGS IT LIKE ARMOUR DOES (operator). Burning into rock is
         // the same job as burning through a solid core — the sweep labours,
         // and firing across a corner drags exactly as it should. It is the
         // harsher of the two, in fact: a wall also ends the beam outright,
         // where a body only takes a bite out of the reach.
-        if (wallBite > 0.05) beamHitWall = true;
-        let drag = DRAG_HARD * wallBite;
-        let reachLeft = len;
-        for (const hit of along) {
-          if (hit.t > reachLeft) break;          // the beam died before this one
-          damageEnemy(hit.e, tNow, LASER_DPS * dt, false, 'tank');
-          drag += hit.e.spec.rammable ? DRAG_SOFT : DRAG_HARD;
-          reachLeft -= (hit.e.spec.rammable ? PEN_SOFT() : PEN_HARD()) * cellSide;
-          if (reachLeft <= hit.t) { reachLeft = hit.t; break; }   // stops in it
-        }
+        if (bite > 0.05) beamHitWall = true;
+        // ONE COPY OF THE RULE (beamburn.js). It sorts nearest-first itself,
+        // so no caller here or in the lab can get the order wrong — and the
+        // order is the whole mechanic.
+        const bu = burn(along, len, reach, bite);
+        for (const hit of bu.hits) damageEnemy(hit.e, tNow, LASER_DPS * dt, false, 'tank');
+        const drag = bu.drag, reachLeft = bu.reachLeft;
         // draw the CHOKED length, not the clear-air one
         drawBeam(gi, from, dir, Math.max(cellSide * 0.15, reachLeft),
           laserHeat / LASER_MAX_HEAT);
@@ -5708,7 +5572,7 @@ export function initTdTab(root) {
         // beam that spends the burst inside a hard cluster simply does not
         // finish its arc.
         beamPhase[gi] = Math.min(1, beamPhase[gi]
-          + (dt / LASER_MAX_HEAT) * (1 - Math.min(DRAG_CAP, drag)));
+          + sweepAdvance(dt, LASER_MAX_HEAT, drag));
       }
     } else if (beamOn) {
       beamOn = false;
