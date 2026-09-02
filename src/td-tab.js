@@ -19,49 +19,49 @@
 
 import * as THREE from '../vendor/three.module.js';
 import GUI from '../vendor/lil-gui.esm.js';
-import { generateSphereMesh, relax } from './grid.js?v=1422ddf4';
-import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=1422ddf4';
-import { mulberry32, randomSeed } from './rng.js?v=1422ddf4';
-import { computeBerths, berthIndexFor } from './berths.js?v=1422ddf4';
-import { wantsSecondary, shellsForAll } from './autofire.js?v=1422ddf4';
-import { printPhase, printOffset, printOn, patternSecsFor } from './printpath.js?v=1422ddf4';
-import { createBeamRig, PLASMA_DEFAULTS, BOARD_PRESET, BEAM_PEAK } from './beamdraw.js?v=1422ddf4';
-import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3, segKey, tangentDir, tangentBasis } from './vec3.js?v=1422ddf4';
-import { CREATURES, waveJelly } from './creatures.js?v=1422ddf4';
-import { brief, dwellFor } from './isaobriefs.js?v=1422ddf4';
-import { drawEmotion } from './emotions.js?v=1422ddf4';
+import { generateSphereMesh, relax } from './grid.js?v=5688b85a';
+import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=5688b85a';
+import { mulberry32, randomSeed } from './rng.js?v=5688b85a';
+import { computeBerths, berthIndexFor } from './berths.js?v=5688b85a';
+import { wantsSecondary, shellsForAll } from './autofire.js?v=5688b85a';
+import { printPhase, printOffset, printOn, patternSecsFor } from './printpath.js?v=5688b85a';
+import { createBeamRig, PLASMA_DEFAULTS, BOARD_PRESET, BEAM_PEAK } from './beamdraw.js?v=5688b85a';
+import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3, segKey, tangentDir, tangentBasis } from './vec3.js?v=5688b85a';
+import { CREATURES, waveJelly } from './creatures.js?v=5688b85a';
+import { brief, dwellFor } from './isaobriefs.js?v=5688b85a';
+import { drawEmotion } from './emotions.js?v=5688b85a';
 import { ACHIEVEMENTS, ACHV_GROUPS, achievement, blankRun, earned, freshlyEarned,
   sanitiseRecord }
-  from './achievements.js?v=1422ddf4';
+  from './achievements.js?v=5688b85a';
 import { applyFontPack, currentFontPack, FONT_NAMES,
-  loadTypeFeel } from './fonts.js?v=1422ddf4';
-import { SECONDARY_TOE, applySecondaryToe } from './units.js?v=1422ddf4';
-import { UNITS, UNIT_NAMES, buildUnit, buildCreature, preloadMkcx, preloadServer, makeServerFixture, makeShieldShell, preloadContainer, makeContainerFixture, preloadFabricator, makeIsaoDrone, makeBulletCloud, makeRewardSolid, makeShellSolid, makeDebris, makeDotBurst, makePortalCloud, preloadPortalRing, makePortalRing, makeHeartCloud, makeDotEnemy, preloadTerraformer, makeTerraformerFixture } from './units.js?v=1422ddf4';
-import { LOOKS, LOOK_NAMES } from './looks.js?v=1422ddf4';
-import { makeCellIndex } from './cellindex.js?v=1422ddf4';
-import { CREATURE_TINTS, ENEMY_SPEC, INTROS, computeWavePlan, accentFor } from './enemyspec.js?v=1422ddf4';
-import { PICKUPS } from './pickups.js?v=1422ddf4';
-import { rankFor, rankLabel, badgeSVG, killReq, eliteReq } from './ranks.js?v=1422ddf4';
-import { beamStep, isBeamStep, PEN_SOFT_FRAC, PEN_HARD_FRAC } from './beamranks.js?v=1422ddf4';
-import { burn, sweepAdvance, wallBite as wallBiteFor } from './beamburn.js?v=1422ddf4';
-import { arcPoint, projectToArc, toeForCrossing, crossingForToe } from './arc.js?v=1422ddf4';
+  loadTypeFeel } from './fonts.js?v=5688b85a';
+import { SECONDARY_TOE, applySecondaryToe } from './units.js?v=5688b85a';
+import { UNITS, UNIT_NAMES, buildUnit, buildCreature, preloadMkcx, preloadServer, makeServerFixture, makeShieldShell, preloadContainer, makeContainerFixture, preloadFabricator, makeIsaoDrone, makeBulletCloud, makeRewardSolid, makeShellSolid, makeDebris, makeDotBurst, makePortalCloud, preloadPortalRing, makePortalRing, makeHeartCloud, makeDotEnemy, preloadTerraformer, makeTerraformerFixture } from './units.js?v=5688b85a';
+import { LOOKS, LOOK_NAMES } from './looks.js?v=5688b85a';
+import { makeCellIndex } from './cellindex.js?v=5688b85a';
+import { CREATURE_TINTS, ENEMY_SPEC, INTROS, computeWavePlan, accentFor } from './enemyspec.js?v=5688b85a';
+import { PICKUPS } from './pickups.js?v=5688b85a';
+import { rankFor, rankLabel, badgeSVG, killReq, eliteReq } from './ranks.js?v=5688b85a';
+import { beamStep, isBeamStep, PEN_SOFT_FRAC, PEN_HARD_FRAC } from './beamranks.js?v=5688b85a';
+import { burn, sweepAdvance, wallBite as wallBiteFor } from './beamburn.js?v=5688b85a';
+import { arcPoint, projectToArc, toeForCrossing, crossingForToe } from './arc.js?v=5688b85a';
 import { WORMHOLE_PRESET, WORMHOLE_RENDER, RING_SPIN, TRAVEL,
-  travelRate, advancePhase } from './portalfx.js?v=1422ddf4';
-import { WORMHOLE_FRAG } from './fx/wormhole.frag.js?v=1422ddf4';
-import { makeScore } from './score.js?v=1422ddf4';
-import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER } from './towers.js?v=1422ddf4';
-import { makeEconomy, sellRefund } from './economy.js?v=1422ddf4';
-import { makeBloom } from './postfx.js?v=1422ddf4';
-import { TANK_FEEL, TANK_FEEL_KNOBS, makeTankFeel, stepTankFeel, landTankFeel, fireTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js?v=1422ddf4';
-import { FEEL, loadFeel, saveFeel } from './feelstore.js?v=1422ddf4';
+  travelRate, advancePhase } from './portalfx.js?v=5688b85a';
+import { WORMHOLE_FRAG } from './fx/wormhole.frag.js?v=5688b85a';
+import { makeScore } from './score.js?v=5688b85a';
+import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER } from './towers.js?v=5688b85a';
+import { makeEconomy, sellRefund } from './economy.js?v=5688b85a';
+import { makeBloom } from './postfx.js?v=5688b85a';
+import { TANK_FEEL, TANK_FEEL_KNOBS, makeTankFeel, stepTankFeel, landTankFeel, fireTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js?v=5688b85a';
+import { FEEL, loadFeel, saveFeel } from './feelstore.js?v=5688b85a';
 import { STRIKE_KNOBS, makeStrike, makeStrikeParams, grantStrikes, stepStrike,
   toggleArm, paintTarget, launchStrike, stepFall, skipFall, fallProgress,
-  strikeDamage, retargetStrike, orbitProgress } from './strike.js?v=1422ddf4';
-import { radarBasis, radarProject, radarBearing, sweepAngle, radarPhosphor } from './radar.js?v=1422ddf4';
-import { BLOOM_GROUPS } from './bloomweights.js?v=1422ddf4';
-import { TOWER_LOOK_NAMES, DEFAULT_TOWER_LOOK, buildTowerLook, preloadLook } from './towerlooks.js?v=1422ddf4';
-import { makeAudio } from './audio.js?v=1422ddf4';
-import { DEATH_KEYS } from './audiomanifest.js?v=1422ddf4';
+  strikeDamage, retargetStrike, orbitProgress } from './strike.js?v=5688b85a';
+import { radarBasis, radarProject, radarBearing, sweepAngle, radarPhosphor } from './radar.js?v=5688b85a';
+import { BLOOM_GROUPS } from './bloomweights.js?v=5688b85a';
+import { TOWER_LOOK_NAMES, DEFAULT_TOWER_LOOK, buildTowerLook, preloadLook } from './towerlooks.js?v=5688b85a';
+import { makeAudio } from './audio.js?v=5688b85a';
+import { DEATH_KEYS } from './audiomanifest.js?v=5688b85a';
 
 export function initTdTab(root) {
   let active = false;
@@ -7416,6 +7416,10 @@ export function initTdTab(root) {
   // appearing is the most consequential thing that happens on this board and
   // it used to take no time at all.
   const GATE_DIAL = 1.6;
+  // How tall a standing gate is, in cells. Bigger than the tank (~0.85) on
+  // purpose — it is a doorway, and the thing coming through it should look
+  // like it fits.
+  const GATE_HEIGHT = 1.6;
 
   // HOW LONG UNTIL THE NEXT WAVE, in seconds. Infinity while one is already
   // running, and while the board has no live gate to send it. Factored out of
@@ -7567,6 +7571,7 @@ export function initTdTab(root) {
       const k = Math.max(0.001, f);
       ring.scale.setScalar((ring.userData.sizeScale ?? 1) * k);
     };
+    ring.userData.grounded = true;   // its origin IS its base (fitModel)
     return ring;
   }
 
@@ -7575,17 +7580,38 @@ export function initTdTab(root) {
     // starts unformed; stepGates draws it in
     obj.userData.dial = 0;
     if (obj.userData.setForm) obj.userData.setForm(0);
-    const r = cellSide * 0.7;
+    // A GATE IS A DOORWAY, SO IT STANDS ON THE GROUND (operator, 2026-09-02).
+    //
+    // The dot cloud was an orb and was floated clear of the surface to read as
+    // one. The ring is architecture: fitModel seats its origin at its own
+    // base, so the surface point IS where it goes — measured, the old offset
+    // left it hanging 0.63 cells in the air. And it is taller than the tank
+    // on purpose; the thing driving through a gate should be smaller than the
+    // gate.
+    const grounded = obj.userData.grounded === true;
+    const r = cellSide * (grounded ? GATE_HEIGHT : 0.7);
     obj.scale.setScalar(r);
     obj.userData.sizeScale = r;
     const c = graph.centers[ci];
     const n = graph.normals[ci];
-    obj.position.set(c[0] + n[0] * r * 0.9, c[1] + n[1] * r * 0.9, c[2] + n[2] * r * 0.9);
-    let face = null, bd = Infinity;
+    if (grounded) obj.position.set(c[0], c[1], c[2]);
+    else obj.position.set(c[0] + n[0] * r * 0.9, c[1] + n[1] * r * 0.9, c[2] + n[2] * r * 0.9);
+    // FACE AN EMPTY SPOT, not merely a downhill one. The old rule took the
+    // open neighbour nearest the Heart, which can be a cell with rock right
+    // behind it — a gate whose mouth opens into a wall two steps on. Score
+    // each open neighbour by how open ITS OWN neighbourhood is, and let the
+    // distance to the Heart break ties, so the gate still points down the
+    // lane when the lane is clear.
+    let face = null, bestScore = -Infinity;
     for (const nb of graph.adj[ci]) {
       if (dungeon.tags[nb] === BLOCKED) continue;
       const d = dungeon.distToHeart[nb];
-      if (d !== -1 && d < bd) { bd = d; face = nb; }
+      if (d === -1) continue;
+      let open = 0, total = 0;
+      for (const nn of graph.adj[nb]) { total++; if (dungeon.tags[nn] !== BLOCKED) open++; }
+      // openness dominates; distance only separates equally open directions
+      const score = (total ? open / total : 0) * 100 - d;
+      if (score > bestScore) { bestScore = score; face = nb; }
     }
     if (face !== null) {
       const fdir = tangentDirTo(ci, face);
@@ -10289,6 +10315,65 @@ export function initTdTab(root) {
         + ` | the old fixed ${SECONDARY_TOE} would cross at`
         + ` ${crossingForToe(lastToe.gap, SECONDARY_TOE).toFixed(2)}`);
     } else console.log('TOE not applied (no gun pivots on this tank)');
+  }
+
+  // ?sizeprobe=1 — HOW BIG IS EVERYTHING, IN CELLS?
+  //
+  // Operator: "we made the tank enormous". A screenshot cannot separate a
+  // scaled-up model from a camera sitting inside one, and those want opposite
+  // fixes — so measure the world bounding box of each actor and divide by the
+  // cell. The tank's design size is about 0.85 of a cell.
+  if (urlParams.get('sizeprobe') === '1') {
+    // NAME THE ARTIFACT AND WAIT FOR IT. Headless rarely finishes the GLB
+    // load, so a size measured at a fixed timeout is a size for the
+    // PROCEDURAL fallback — a different model with a different scale, which
+    // this project has already been burned by once.
+    Promise.all([preloadMkcx(), preloadPortalRing()]).then(([mk, rg]) => {
+      const bb = new THREE.Box3(), sz = new THREE.Vector3();
+      console.log(`SIZEPROBE artifacts: mkcx=${mk ? 'loaded' : 'FALLBACK'}`
+        + ` ring=${rg ? 'loaded' : 'FALLBACK'}`);
+      const say = (label, obj, want) => {
+        if (!obj) { console.log(`SIZEPROBE ${label}: absent`); return; }
+        obj.updateMatrixWorld(true);
+        bb.setFromObject(obj); bb.getSize(sz);
+        const span = Math.max(sz.x, sz.y, sz.z) / cellSide;
+        console.log(`SIZEPROBE ${label.padEnd(14)} ${span.toFixed(2)} cells across`
+          + (want ? `  (want ~${want}) ${Math.abs(span - want) > want * 0.6 ? '<-- WRONG' : 'ok'}` : '')
+          + `  | scale ${obj.scale.x.toFixed(4)}`
+          + ` baseScale ${(obj.userData.baseScale ?? 1).toFixed(4)}`);
+      };
+      say('tank', playerMesh, 0.85);
+      const gate = spawnPoints[0] && spawnPoints[0].obj;
+      // FORM IT FIRST. A gate spends its opening seconds dialling in from
+      // nothing, so measuring on a timer reports 0.00 cells and calls the
+      // model broken — which is exactly what the first reading did.
+      if (gate && gate.userData.setForm) gate.userData.setForm(1);
+      say('gate', gate, GATE_HEIGHT);
+      if (gate) {
+        // ...and where it sits relative to the ground it should stand on
+        const r = Math.hypot(gate.position.x, gate.position.y, gate.position.z);
+        console.log(`SIZEPROBE gate origin sits ${((r - 1) / cellSide).toFixed(2)}`
+          + ` cells off the surface (a grounded ring wants ~0)`);
+      }
+      // THE APERTURE, which is what decides whether the wormhole fills the
+      // hole or spills out over the ring. Its reserved volume lives in the
+      // node's SCALE, and a merge can reparent a preserved pivot and drop an
+      // ancestor's transform on the way — so the number is read off the live
+      // object rather than trusted from the blueprint.
+      if (gate && gate.userData.aperture) {
+        const ap = gate.userData.aperture;
+        const ws = new THREE.Vector3();
+        ap.getWorldScale(ws);
+        gate.updateMatrixWorld(true);
+        bb.setFromObject(gate); bb.getSize(sz);
+        const ringSpan = Math.max(sz.x, sz.y, sz.z);
+        console.log(`SIZEPROBE aperture world scale ${ws.x.toFixed(4)}`
+          + ` -> disc diameter ${(2 * ws.x / cellSide).toFixed(2)} cells`
+          + ` vs ring span ${(ringSpan / cellSide).toFixed(2)} cells`
+          + ` ${2 * ws.x > ringSpan ? '<-- THE HOLE IS BIGGER THAN THE RING' : 'fits'}`);
+      }
+      console.log(`SIZEPROBE cellSide=${cellSide.toFixed(4)} unitScale=${unitScale.toFixed(4)}`);
+    });
   }
 
   // ?gateprobe2=1 — ARE THE GATES WEARING THE RING, AND DOES THE RAMP RUN?
