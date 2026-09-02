@@ -16,14 +16,14 @@
 
 import * as THREE from '../vendor/three.module.js';
 import { EMOTION_IDS, emotion, phosphorFor } from './emotions.js';
-import { printPhase, printOffset, printOn } from './printpath.js?v=4430ac13';
+import { printPhase, printOffset, printOn } from './printpath.js?v=cf6e30b2';
 import { loadGlb, mergeByMaterial, fitModel, tintModel, makeShellRack,
-  addEdgeOutlines, makeHeatSleeve } from './glbmodels.js?v=4430ac13';
-import { CREATURES, waveJelly, swimWave, spherePts, bulletPts, missilePts, heartPts, torusPts, towerHeadPts, enemyDotPts, portalPts } from './creatures.js?v=4430ac13';
-import { TOWER_FEEL, TOWER_HEADS, headKindFor } from './towerfeel.js?v=4430ac13';
+  addEdgeOutlines, makeHeatSleeve } from './glbmodels.js?v=cf6e30b2';
+import { CREATURES, waveJelly, swimWave, spherePts, bulletPts, missilePts, heartPts, torusPts, towerHeadPts, enemyDotPts, portalPts } from './creatures.js?v=cf6e30b2';
+import { TOWER_FEEL, TOWER_HEADS, headKindFor } from './towerfeel.js?v=cf6e30b2';
 import { STARGATE_PTS, STARGATE_STROKE,
-  HORIZON_N, stargateHorizon } from './stargate.js?v=4430ac13';
-import { ENEMY_SPEC } from './enemyspec.js?v=4430ac13';
+  HORIZON_N, stargateHorizon } from './stargate.js?v=cf6e30b2';
+import { ENEMY_SPEC } from './enemyspec.js?v=cf6e30b2';
 
 function normalizeToUnit(group) {
   group.updateMatrixWorld(true);
@@ -758,12 +758,26 @@ export function makeDotEnemy(type, cols, dens = 1) {
 
   // transform-only idles, one flavor per family
   const TICKS = {
-    ghost: (t) => { pts.position.y = 0; pts.rotation.y = Math.sin(t * 1.2) * 0.4; },
+    // NEVER WRITE AN ABSOLUTE POSITION IN AN IDLE TICK. This used to open
+    // with `pts.position.y = 0` — harmless on a viewer stage where the model
+    // sits at the origin, catastrophic in the game, where td-tab writes the
+    // enemy's world position and THEN calls this. Zeroing y on a unit sphere
+    // drops the body inside the planet: invisible, but still alive and still
+    // taking hits, because every hit test uses `e.pos` and not the mesh.
+    // Measured on wave 2 — ghosts drawn 12.13 cells from where they were,
+    // all of them buried. An idle may rotate or scale; position belongs to
+    // whoever placed the object.
+    ghost: (t) => { pts.rotation.y = Math.sin(t * 1.2) * 0.4; },
     scoutufo: (t) => { pts.rotation.y = t * 2.4; },
     gslime: (t) => {
+      // s0 is written by the CONSUMER after construction, so a caller that
+      // does not set it (the unit viewer, for one) would multiply undefined
+      // and hand three.js a NaN scale — which is invisible in exactly the
+      // same way, and silent.
+      const s0 = pts.userData.s0 ?? pts.scale.x ?? 1;
       const sy = 1 + 0.14 * Math.sin(t * 3);
-      pts.scale.y = pts.userData.s0 * sy;
-      pts.scale.x = pts.scale.z = pts.userData.s0 / Math.sqrt(sy);
+      pts.scale.y = s0 * sy;
+      pts.scale.x = pts.scale.z = s0 / Math.sqrt(sy);
     },
     drifter: (t) => { pts.rotation.y = t * 0.8; },
     corona: (t) => { pts.rotation.y = t * 0.9; },
