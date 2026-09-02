@@ -50,6 +50,25 @@ export const DRAG_CAP = 0.90;    // never a full stall: it always creeps
 // it never really did (three cores stopped every rank identically).
 export const HARD_BLOCKS = true;
 
+// A WALL STALLS THE SWEEP TOO (operator, 2026-09-02, reaffirmed after the
+// counter-measurement below was put to them).
+//
+// The drag a wall contributed used to be PROPORTIONAL to how much of the beam
+// it ate — `DRAG_HARD * bite`, so rock out at the tip barely slowed the
+// traverse. That was not timidity: measured on 2026-09-01, a beam standing on
+// ground whose whole two-hop neighbourhood is open still clipped rock at 2.5
+// of its 2.6 cells, because this map is dense. A flat penalty therefore fired
+// in the NORMAL state and bogged the weapon everywhere, which is why the
+// proportional bite replaced it.
+//
+// The operator wants it flat anyway, and it is their call. What it means, so
+// nobody has to rediscover it: burning across ANY rock within reach now
+// stalls the sweep exactly as a solid core does, and the reach is 4-10 cells
+// on a dense map. The sweep will therefore run its full arc only in genuinely
+// open ground. `bite` survives as a REPORTED quantity — probes still say how
+// much of the beam the rock took — it just no longer scales the drag.
+export const WALL_STALLS = true;
+
 // How much of its remaining reach one body costs, in the same units as
 // `reach`. `hard` is the not-rammable tier — the colour the whole board
 // already reads danger by.
@@ -86,9 +105,13 @@ export function wallBite(hitAt, reach) {
 //   hits       the bodies actually reached, nearest first, each with the
 //              reach remaining when the beam got to it
 //   stoppedBy  the body that ended it, or null if it ran out of bodies
-export function burn(bodies, len, reach, bite = 0) {
+//   wall    did rock actually end this beam? Passed explicitly rather than
+//           inferred from `bite`, because a wall sitting exactly at the tip
+//           bites 0 and would be indistinguishable from no wall at all.
+export function burn(bodies, len, reach, bite = 0, wall = bite > 0) {
   const along = bodies.slice().sort((a, b) => a.t - b.t);
-  let drag = DRAG_HARD * bite;
+  // Flat, not scaled by bite — see WALL_STALLS.
+  let drag = wall ? (WALL_STALLS ? DRAG_HARD : DRAG_HARD * bite) : 0;
   let reachLeft = len;
   const hits = [];
   let stoppedBy = null;
@@ -122,8 +145,8 @@ export function sweepAdvance(dt, burstSeconds, drag) {
 
 // A READOUT for the lab: what a given line-up costs, body by body. Same
 // numbers the game runs on — it calls burn() rather than restating the rule.
-export function burnReport(bodies, len, reach, bite = 0) {
-  const r = burn(bodies, len, reach, bite);
+export function burnReport(bodies, len, reach, bite = 0, wall = bite > 0) {
+  const r = burn(bodies, len, reach, bite, wall);
   const rows = r.hits.map((h) => ({
     t: h.t,
     hard: h.hard,
@@ -132,5 +155,10 @@ export function burnReport(bodies, len, reach, bite = 0) {
   }));
   const reached = new Set(r.hits.map((h) => h.t));
   const missed = bodies.filter((b) => !reached.has(b.t)).sort((a, b) => a.t - b.t);
-  return { ...r, rows, missed };
+  // WHAT IS HOLDING THE SWEEP, in words. A stalled sweep looks identical to a
+  // broken one, and that is exactly how the operator read it.
+  const stalledBy = r.drag >= DRAG_CAP
+    ? (wall ? 'rock' : (r.stoppedBy && r.stoppedBy.hard ? 'a solid core' : 'mass in the beam'))
+    : null;
+  return { ...r, rows, missed, stalledBy, wall };
 }

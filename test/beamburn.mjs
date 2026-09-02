@@ -107,6 +107,21 @@ console.log('a wall bites in the same currency:');
   check('a wall drags even with nothing in the beam',
     scraping.drag > clear.drag && clear.drag === 0);
   check('the wall drags exactly like one hard body', scraping.drag === DRAG_HARD);
+  // THE 2026-09-02 RULING: rock stalls the sweep flat, not in proportion to
+  // how much of the beam it took. The distinguishing case is a wall out at
+  // the TIP — bite ~0, which under the old proportional rule contributed
+  // almost no drag at all.
+  const atTip = burn([], 10, 10, wallBite(9.9, 10), true);
+  check('rock at the very TIP still stalls the sweep', atTip.drag === DRAG_HARD,
+    `drag ${atTip.drag}`);
+  check('...and that is a change: the old proportional rule gave it almost none',
+    DRAG_HARD * wallBite(9.9, 10) < 0.01);
+  // and the flag is what separates "wall at the tip" from "no wall": bite is
+  // 0 in both, so inferring from bite alone cannot tell them apart
+  const exactlyAtReach = burn([], 10, 10, wallBite(10, 10), true);
+  check('a wall exactly at the reach still counts — the flag decides, not the bite',
+    exactlyAtReach.drag === DRAG_HARD && wallBite(10, 10) === 0);
+  check('no wall means no wall drag', burn([], 10, 10, 0, false).drag === 0);
   check('one hard body alone already caps the sweep — "entirely slowed"',
     DRAG_HARD >= DRAG_CAP, `${DRAG_HARD} vs cap ${DRAG_CAP}`);
 }
@@ -123,6 +138,19 @@ console.log('drag slows the sweep but never stalls it:');
   check('the cap is what stops the stall',
     Math.abs(sweepAdvance(dt, burst, 99) - (dt / burst) * (1 - DRAG_CAP)) < 1e-12);
   check('soft bodies barely slow it, hard ones bog it', DRAG_SOFT < DRAG_HARD / 4);
+}
+
+console.log('the readout says WHAT is holding the sweep:');
+{
+  // A stalled sweep looks exactly like a broken one — which is how the
+  // operator read it — so the report has to name the cause.
+  check('rock is named', burnReport([], 10, 10, 0.5, true).stalledBy === 'rock');
+  check('a solid core is named',
+    burnReport([hard(2)], 10, 10, 0, false).stalledBy === 'a solid core');
+  check('a clear beam is not stalled at all',
+    burnReport([], 10, 10, 0, false).stalledBy === null);
+  check('fodder alone does not stall it',
+    burnReport([soft(1), soft(2)], 10, 10, 0, false).stalledBy === null);
 }
 
 console.log('the lab readout matches the game:');

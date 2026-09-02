@@ -19,46 +19,46 @@
 
 import * as THREE from '../vendor/three.module.js';
 import GUI from '../vendor/lil-gui.esm.js';
-import { generateSphereMesh, relax } from './grid.js?v=edb103e7';
-import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=edb103e7';
-import { mulberry32, randomSeed } from './rng.js?v=edb103e7';
-import { computeBerths, berthIndexFor } from './berths.js?v=edb103e7';
-import { wantsSecondary, shellsForAll } from './autofire.js?v=edb103e7';
-import { printPhase, printOffset, printOn, patternSecsFor } from './printpath.js?v=edb103e7';
-import { createBeamRig, PLASMA_DEFAULTS, BOARD_PRESET, BEAM_PEAK } from './beamdraw.js?v=edb103e7';
-import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3, segKey, tangentDir, tangentBasis } from './vec3.js?v=edb103e7';
-import { CREATURES, waveJelly } from './creatures.js?v=edb103e7';
-import { brief, dwellFor } from './isaobriefs.js?v=edb103e7';
-import { drawEmotion } from './emotions.js?v=edb103e7';
+import { generateSphereMesh, relax } from './grid.js?v=55149511';
+import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=55149511';
+import { mulberry32, randomSeed } from './rng.js?v=55149511';
+import { computeBerths, berthIndexFor } from './berths.js?v=55149511';
+import { wantsSecondary, shellsForAll } from './autofire.js?v=55149511';
+import { printPhase, printOffset, printOn, patternSecsFor } from './printpath.js?v=55149511';
+import { createBeamRig, PLASMA_DEFAULTS, BOARD_PRESET, BEAM_PEAK } from './beamdraw.js?v=55149511';
+import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3, segKey, tangentDir, tangentBasis } from './vec3.js?v=55149511';
+import { CREATURES, waveJelly } from './creatures.js?v=55149511';
+import { brief, dwellFor } from './isaobriefs.js?v=55149511';
+import { drawEmotion } from './emotions.js?v=55149511';
 import { ACHIEVEMENTS, ACHV_GROUPS, achievement, blankRun, earned, freshlyEarned,
   sanitiseRecord }
-  from './achievements.js?v=edb103e7';
+  from './achievements.js?v=55149511';
 import { applyFontPack, currentFontPack, FONT_NAMES,
-  loadTypeFeel } from './fonts.js?v=edb103e7';
-import { SECONDARY_TOE, applySecondaryToe } from './units.js?v=edb103e7';
-import { UNITS, UNIT_NAMES, buildUnit, buildCreature, preloadMkcx, preloadServer, makeServerFixture, makeShieldShell, preloadContainer, makeContainerFixture, preloadFabricator, makeIsaoDrone, makeBulletCloud, makeRewardSolid, makeShellSolid, makeDebris, makeDotBurst, makePortalCloud, makeHeartCloud, makeDotEnemy, preloadTerraformer, makeTerraformerFixture } from './units.js?v=edb103e7';
-import { LOOKS, LOOK_NAMES } from './looks.js?v=edb103e7';
-import { makeCellIndex } from './cellindex.js?v=edb103e7';
-import { CREATURE_TINTS, ENEMY_SPEC, INTROS, computeWavePlan, accentFor } from './enemyspec.js?v=edb103e7';
-import { PICKUPS } from './pickups.js?v=edb103e7';
-import { rankFor, rankLabel, badgeSVG, killReq, eliteReq } from './ranks.js?v=edb103e7';
-import { beamStep, isBeamStep, PEN_SOFT_FRAC, PEN_HARD_FRAC } from './beamranks.js?v=edb103e7';
-import { burn, sweepAdvance, wallBite as wallBiteFor } from './beamburn.js?v=edb103e7';
-import { arcPoint, projectToArc, toeForCrossing, crossingForToe } from './arc.js?v=edb103e7';
-import { makeScore } from './score.js?v=edb103e7';
-import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER } from './towers.js?v=edb103e7';
-import { makeEconomy, sellRefund } from './economy.js?v=edb103e7';
-import { makeBloom } from './postfx.js?v=edb103e7';
-import { TANK_FEEL, TANK_FEEL_KNOBS, makeTankFeel, stepTankFeel, landTankFeel, fireTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js?v=edb103e7';
-import { FEEL, loadFeel, saveFeel } from './feelstore.js?v=edb103e7';
+  loadTypeFeel } from './fonts.js?v=55149511';
+import { SECONDARY_TOE, applySecondaryToe } from './units.js?v=55149511';
+import { UNITS, UNIT_NAMES, buildUnit, buildCreature, preloadMkcx, preloadServer, makeServerFixture, makeShieldShell, preloadContainer, makeContainerFixture, preloadFabricator, makeIsaoDrone, makeBulletCloud, makeRewardSolid, makeShellSolid, makeDebris, makeDotBurst, makePortalCloud, makeHeartCloud, makeDotEnemy, preloadTerraformer, makeTerraformerFixture } from './units.js?v=55149511';
+import { LOOKS, LOOK_NAMES } from './looks.js?v=55149511';
+import { makeCellIndex } from './cellindex.js?v=55149511';
+import { CREATURE_TINTS, ENEMY_SPEC, INTROS, computeWavePlan, accentFor } from './enemyspec.js?v=55149511';
+import { PICKUPS } from './pickups.js?v=55149511';
+import { rankFor, rankLabel, badgeSVG, killReq, eliteReq } from './ranks.js?v=55149511';
+import { beamStep, isBeamStep, PEN_SOFT_FRAC, PEN_HARD_FRAC } from './beamranks.js?v=55149511';
+import { burn, sweepAdvance, wallBite as wallBiteFor } from './beamburn.js?v=55149511';
+import { arcPoint, projectToArc, toeForCrossing, crossingForToe } from './arc.js?v=55149511';
+import { makeScore } from './score.js?v=55149511';
+import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER } from './towers.js?v=55149511';
+import { makeEconomy, sellRefund } from './economy.js?v=55149511';
+import { makeBloom } from './postfx.js?v=55149511';
+import { TANK_FEEL, TANK_FEEL_KNOBS, makeTankFeel, stepTankFeel, landTankFeel, fireTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js?v=55149511';
+import { FEEL, loadFeel, saveFeel } from './feelstore.js?v=55149511';
 import { STRIKE_KNOBS, makeStrike, makeStrikeParams, grantStrikes, stepStrike,
   toggleArm, paintTarget, launchStrike, stepFall, skipFall, fallProgress,
-  strikeDamage, retargetStrike, orbitProgress } from './strike.js?v=edb103e7';
-import { radarBasis, radarProject, radarBearing, sweepAngle, radarPhosphor } from './radar.js?v=edb103e7';
-import { BLOOM_GROUPS } from './bloomweights.js?v=edb103e7';
-import { TOWER_LOOK_NAMES, DEFAULT_TOWER_LOOK, buildTowerLook, preloadLook } from './towerlooks.js?v=edb103e7';
-import { makeAudio } from './audio.js?v=edb103e7';
-import { DEATH_KEYS } from './audiomanifest.js?v=edb103e7';
+  strikeDamage, retargetStrike, orbitProgress } from './strike.js?v=55149511';
+import { radarBasis, radarProject, radarBearing, sweepAngle, radarPhosphor } from './radar.js?v=55149511';
+import { BLOOM_GROUPS } from './bloomweights.js?v=55149511';
+import { TOWER_LOOK_NAMES, DEFAULT_TOWER_LOOK, buildTowerLook, preloadLook } from './towerlooks.js?v=55149511';
+import { makeAudio } from './audio.js?v=55149511';
+import { DEATH_KEYS } from './audiomanifest.js?v=55149511';
 
 export function initTdTab(root) {
   let active = false;
@@ -5593,7 +5593,10 @@ export function initTdTab(root) {
         // ONE COPY OF THE RULE (beamburn.js). It sorts nearest-first itself,
         // so no caller here or in the lab can get the order wrong — and the
         // order is the whole mechanic.
-        const bu = burn(along, len, reach, bite);
+        // `bite` is reported, not applied: WALL_STALLS makes rock a flat
+        // stall now. The explicit wall flag matters — rock exactly at the tip
+        // bites 0 and would otherwise read as no wall at all.
+        const bu = burn(along, len, reach, bite, len < reach);
         for (const hit of bu.hits) damageEnemy(hit.e, tNow, LASER_DPS * dt, false, 'tank');
         const drag = bu.drag, reachLeft = bu.reachLeft;
         // draw the CHOKED length, not the clear-air one
@@ -10072,6 +10075,56 @@ export function initTdTab(root) {
         + ` | the old fixed ${SECONDARY_TOE} would cross at`
         + ` ${crossingForToe(lastToe.gap, SECONDARY_TOE).toFixed(2)}`);
     } else console.log('TOE not applied (no gun pivots on this tank)');
+  }
+
+  // ?rockprobe=1 — HOW OFTEN IS THE BEAM TOUCHING ROCK?
+  //
+  // The number the WALL_STALLS ruling turns on. Walls now stall the sweep
+  // flat, so if a beam on this map is almost always clipping rock, the sweep
+  // is a feature that never runs. Measured rather than argued: sample open
+  // cells, fire in eight directions from each, and count how many of those
+  // shots find a BLOCKED cell inside the reach — at every rank's reach, since
+  // reach is what changed.
+  if (urlParams.get('rockprobe') === '1') {
+    const open = [];
+    for (let i = 0; i < dungeon.tags.length; i++) {
+      if (dungeon.tags[i] !== BLOCKED) open.push(i);
+    }
+    const pick = mulberry32(0x0c0ffee);
+    const sample = [];
+    for (let i = 0; i < Math.min(160, open.length); i++) {
+      sample.push(open[Math.floor(pick() * open.length)]);
+    }
+    for (const st of [beamStep(0), beamStep(5), beamStep(10), beamStep(15)]) {
+      const reachW = st.reach * cellSide;
+      let shots = 0, clipped = 0, sumAt = 0;
+      for (const ci of sample) {
+        const from = norm3(graph.centers[ci]);
+        // eight headings around the tangent circle, built off an arbitrary
+        // but non-degenerate reference so no direction is privileged
+        const ref = Math.abs(from[1]) < 0.9 ? [0, 1, 0] : [1, 0, 0];
+        const e1 = norm3(cross3(from, ref));
+        const e2 = cross3(from, e1);
+        for (let k = 0; k < 8; k++) {
+          const a = (k / 8) * Math.PI * 2, ca = Math.cos(a), sa = Math.sin(a);
+          const dir = norm3([e1[0] * ca + e2[0] * sa, e1[1] * ca + e2[1] * sa,
+            e1[2] * ca + e2[2] * sa]);
+          shots++;
+          for (let m = cellSide * 0.5; m <= reachW; m += cellSide * 0.5) {
+            const q = arcPoint(from, dir, m);
+            const ci2 = cellIndex(q);
+            if (ci2 !== -1 && dungeon.tags[ci2] === BLOCKED) {
+              clipped++; sumAt += m / cellSide; break;
+            }
+          }
+        }
+      }
+      const pct = (100 * clipped / Math.max(1, shots)).toFixed(1);
+      console.log(`ROCKPROBE reach=${st.reach}c ${st.name}`
+        + ` clips rock in ${pct}% of ${shots} shots`
+        + ` (mean first contact ${clipped ? (sumAt / clipped).toFixed(2) : '-'} cells)`
+        + ` — the sweep runs its full arc in the other ${(100 - pct).toFixed(1)}%`);
+    }
   }
 
   // ?rankprobe=N — THE PILOT OUTLIVES THE HULL (operator, 2026-09-02).

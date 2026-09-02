@@ -761,6 +761,12 @@ export function initBeamTab(root) {
       const L = lastReport, R = otherReport;
       if (!L || !R) { console.log('LABBEAMS INCONCLUSIVE (not firing yet)'); return; }
       const split = Math.abs(beamPhase[0] - beamPhase[1]);
+      // FRAMES FIRST. The sweep rate is dt/burstSeconds per frame, so a phase
+      // of 0.05 means either "stalled by drag" or "only seven frames have run"
+      // — and only the frame count separates them.
+      const wouldBe = Math.min(1, firedFor / P.burstSeconds);
+      console.log(`LABBEAMS frames=${frames} firedFor=${firedFor.toFixed(2)}s`
+        + ` | a CLEAR beam would be at phase ${wouldBe.toFixed(3)} by now`);
       console.log(`LABBEAMS side=${P.targetSide} stagger=${P.targetStagger}`
         + ` | L ends=${L.reachLeft.toFixed(2)}c drag=${(L.drag * 100).toFixed(0)}%`
         + ` hits=${L.hits.length}`
@@ -848,14 +854,20 @@ export function initBeamTab(root) {
   // which is the whole readout — a beam lagging its twin is the weapon saying
   // there is something in there you should not ram.
   let wasFiring = false;
+  // Frames and burst-seconds actually elapsed, so a "the sweep is not moving"
+  // report can be told apart from "headless ran six frames in two virtual
+  // seconds". Without this the phase number alone cannot distinguish them.
+  let frames = 0, firedFor = 0;
   function frame() {
     requestAnimationFrame(frame);
     if (!active) return;
     const dt = Math.min(clock.getDelta(), 0.1);
+    frames++;
     const t = clock.getElapsedTime();
     const alpha = envelope(dt);
     const nowFiring = alpha !== undefined && alpha > 0;
-    if (nowFiring && !wasFiring) { beamPhase[0] = 0; beamPhase[1] = 0; }
+    if (nowFiring && !wasFiring) { beamPhase[0] = 0; beamPhase[1] = 0; firedFor = 0; }
+    if (nowFiring) firedFor += dt;
     wasFiring = nowFiring;
     // the barrels carry the STATIC toe (solved from the reach); the SWEEP is
     // applied to the fired direction per beam in fireFrame, not by rotating
@@ -895,7 +907,11 @@ export function initBeamTab(root) {
       + `L ends ${r.reachLeft.toFixed(2)}c drag ${(r.drag * 100).toFixed(0)}%`
       + `   R ends ${o ? `${o.reachLeft.toFixed(2)}c drag ${(o.drag * 100).toFixed(0)}%` : '—'}`
       + `   of ${P.reachCells.toFixed(1)}c`
-      + `   ·  phases ${beamPhase[0].toFixed(2)}/${beamPhase[1].toFixed(2)}`
+      + `   ·  sweep ${beamPhase[0].toFixed(2)}/${beamPhase[1].toFixed(2)}`
+      // A STALLED SWEEP LOOKS EXACTLY LIKE A BROKEN ONE. It is the same
+      // motionless pair either way, and the operator read it as broken —
+      // correctly, from the outside. Name the cause on the HUD.
+      + (r.stalledBy ? `  ← SWEEP STALLED by ${r.stalledBy}` : '')
       + (Math.abs(beamPhase[0] - beamPhase[1]) > 0.02 ? '  ← DECOUPLED' : '')
       + (rows ? `\nL burned: ${rows}` : '\nL burned: nothing in the beam')
       + (r.missed.length ? `  ·  NEVER REACHED: ${r.missed.length}` : '');
