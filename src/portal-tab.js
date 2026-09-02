@@ -70,9 +70,11 @@ const EFFECTS = {
       ...SHARED,
       uThroatRadius: 1.0,
       uExposure: 150.0,
-      uSpeed: 1.6,      // forward travel; negative flies backwards OUT of it
+      uSpeed: 1.6,      // forward travel RATE; the host integrates it
+      uTravel: 0,       // ...into this phase, which is what the shader reads
       uTwist: 0.35,     // swirl per unit depth — the wormhole cue itself
       uSpin: 0.15,
+      uSpinPhase: 0,
       uHueSpread: 0.5,  // above ~0.8 it reads as a rainbow, not a portal
       uDepthHue: 0.12,
       uMinStep: 0.02,   // 0 stalls the march at the wall
@@ -308,6 +310,68 @@ export function initPortalTab(root) {
   st.add(P, 'bloom').name('bloom');
   st.add(P, 'autoOrbit').name('auto orbit');
 
+  // --- TAKING A LOOK OUT OF HERE ------------------------------------------
+  // A tuning session that ends with the operator reading numbers off a
+  // screenshot is a tuning session that has to be repeated. Same idiom as the
+  // beam lab: copy to the clipboard, and save a .json for the ones worth
+  // keeping, with the console as the always-works fallback because a silent
+  // clipboard refusal is indistinguishable from a broken button.
+  function presetJson() {
+    return JSON.stringify({
+      schema: 'portalfx/1',
+      id: 'portal-in-world',
+      generatedAt: new Date().toISOString(),
+      effect: P.effect,
+      // everything the shader reads, under the names it reads them by, so a
+      // paste into the game is a paste and not a translation
+      uniforms: {
+        uSteps: Math.round(P.steps),
+        uTurbOctaves: Math.round(P.octaves),
+        [EFFECTS[P.effect].radiusKey]: P.radius,
+        uExposure: P.exposure,
+        uTurbAmp: P.turbAmp,
+        uTimeScale: P.timeScale,
+        uTwist: P.twist,
+        uHueSpread: P.hueSpread,
+      },
+      // rates, which the HOST integrates into phases — not uniforms
+      rates: { speed: P.speed },
+      render: { rtSize: P.rtSize, updateHz: P.updateHz, bloom: P.bloom },
+      stage: { portals: P.portals, spinA: P.spinA, spinB: P.spinB, yaw: P.yaw },
+    }, null, 2);
+  }
+  let flashT = 0, flashMsg = '';
+  function flashNote(m) { flashMsg = m; flashT = 2.0; }
+  P.copyPreset = () => {
+    const json = presetJson();
+    const ok = () => { flashNote('preset copied to clipboard'); console.log('PORTAL preset:\n' + json); };
+    const fail = (why) => {
+      try {
+        const ta = document.createElement('textarea');
+        ta.value = json; ta.style.position = 'fixed'; ta.style.opacity = '0';
+        document.body.appendChild(ta); ta.select();
+        const done = document.execCommand('copy');
+        ta.remove();
+        flashNote(done ? 'preset copied (fallback)' : 'copy refused — see console');
+      } catch { flashNote('copy refused — see console'); }
+      console.log(`PORTAL preset (clipboard ${why}):\n` + json);
+    };
+    if (navigator.clipboard?.writeText) navigator.clipboard.writeText(json).then(ok, () => fail('refused'));
+    else fail('unavailable');
+  };
+  P.downloadPreset = () => {
+    const blob = new Blob([presetJson()], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a2 = document.createElement('a');
+    a2.href = url;
+    a2.download = `portal-${P.effect}-${new Date().toISOString().slice(0, 10)}.json`;
+    document.body.appendChild(a2); a2.click(); a2.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+    flashNote('saved .json');
+  };
+  gui.add(P, 'copyPreset').name('⧉ copy preset');
+  gui.add(P, 'downloadPreset').name('⇩ save .json');
+
   // Swapping the fragment source means a new program: three.js recompiles when
   // material.fragmentShader changes AND needsUpdate is set. The uniform object
   // is shared and is a union of both effects, so nothing has to be rebuilt.
@@ -351,9 +415,20 @@ export function initPortalTab(root) {
     if (rt) renderer.readRenderTargetPixels(rt, 0, 0, 1, 1, syncPix);
   }
 
-  function renderCorona(t, sync) {
+  // THE INTEGRATED PHASES. Advanced once per frame from the rates, so a rate
+  // change is a change of rate and nothing else. `phase` lets a probe pin an
+  // exact value instead of racing the accumulator.
+  const phase = { travel: 0, spin: 0 };
+  function advancePhase(dt) {
+    phase.travel += P.speed * P.timeScale * dt;
+    phase.spin += (EFFECTS.wormhole.defaults.uSpin) * P.timeScale * dt;
+  }
+
+  function renderCorona(t, sync, at) {
     const t0 = performance.now();
     sizeTarget(P.rtSize);
+    fxUniforms.uTravel.value = at ? at.travel : phase.travel;
+    fxUniforms.uSpinPhase.value = at ? at.spin : phase.spin;
     fxUniforms.uTime.value = t;
     fxUniforms.uTimeScale.value = P.timeScale;
     fxUniforms.uSteps.value = Math.round(P.steps);
@@ -361,7 +436,6 @@ export function initPortalTab(root) {
     fxUniforms[EFFECTS[P.effect].radiusKey].value = P.radius;
     fxUniforms.uExposure.value = P.exposure;
     fxUniforms.uTurbAmp.value = P.turbAmp;
-    fxUniforms.uSpeed.value = P.speed;
     fxUniforms.uTwist.value = P.twist;
     fxUniforms.uHueSpread.value = P.hueSpread;
     renderer.setRenderTarget(rt);
@@ -401,6 +475,8 @@ export function initPortalTab(root) {
     }
     for (const d of discs) d.visible = P.corona;
 
+    if (flashT > 0) flashT -= dt;
+    advancePhase(dt);
     coronaMs = 0;
     if (P.corona) {
       const period = 1 / Math.max(1, P.updateHz);
@@ -417,6 +493,7 @@ export function initPortalTab(root) {
 
   function paintHud() {
     if (!hud) return;
+    if (flashT > 0) { hud.innerHTML = `<b>${flashMsg}</b>`; return; }
     const r = renderer.info.render;
     const work = fragmentWork();
     const med = times.length ? times.slice().sort((a, b) => a - b)[times.length >> 1] : 0;
@@ -464,6 +541,89 @@ export function initPortalTab(root) {
   // and so the perf probe can be pointed at either without touching a slider.
   const fxWanted = urlParams.get('portalfx');
   if (fxWanted && EFFECTS[fxWanted]) { P.effect = fxWanted; setEffect(fxWanted); }
+  // ?fxprobe=1 — DOES EACH KNOB ACTUALLY REACH THE SHADER?
+  //
+  // Operator: the wormhole-only variables "seem to have no effect". That is a
+  // claim about the pixels, so it is settled with pixels: render the SAME
+  // frame twice with one knob moved, read both targets back, and report the
+  // mean absolute difference. Zero means the uniform is not arriving; a large
+  // number means it is and the look is the argument instead.
+  if (urlParams.get('fxprobe') === '1') {
+    setTimeout(() => {
+      P.effect = 'wormhole'; setEffect('wormhole');
+      const W = 64;
+      const buf = () => new Uint8Array(W * W * 4);
+      const shot = (mut) => {
+        const keep = { speed: P.speed, twist: P.twist, hueSpread: P.hueSpread,
+          rtSize: P.rtSize, steps: P.steps };
+        P.rtSize = W; P.steps = 24;
+        mut();
+        renderCorona(3.0, true);          // FIXED time, so only the knob differs
+        const b = buf();
+        renderer.readRenderTargetPixels(rt, 0, 0, W, W, b);
+        Object.assign(P, keep);
+        return b;
+      };
+      const diff = (a, b) => {
+        let sum = 0;
+        for (let i = 0; i < a.length; i++) sum += Math.abs(a[i] - b[i]);
+        return sum / a.length;
+      };
+      const base = shot(() => { P.twist = 0; P.hueSpread = 0.5; });
+      // These are the INSTANTANEOUS knobs — move one and this frame changes.
+      // `speed` is deliberately not among them: it is a RATE now, and a rate
+      // shows up through the phase it integrates into, which the next block
+      // tests. Listing it here would print "NO EFFECT" for correct behaviour.
+      const tests = [
+        ['twist / depth 0 -> 1.5', () => { P.twist = 1.5; P.hueSpread = 0.5; }],
+        ['hue spread  0.5 -> 2.5', () => { P.twist = 0; P.hueSpread = 2.5; }],
+        ['(control) nothing moved', () => { P.twist = 0; P.hueSpread = 0.5; }],
+      ];
+      for (const [label, mut] of tests) {
+        const d = diff(base, shot(mut));
+        console.log(`FXPROBE ${label.padEnd(24)} mean pixel delta ${d.toFixed(3)}`
+          + `  ${d < 0.5 ? '<-- NO EFFECT' : 'reaches the shader'}`);
+      }
+
+      // WHY IT FEELS LIKE NOTHING, even though every knob reaches the shader.
+      //
+      // The march computes `travel = T * uSpeed` — ACCUMULATED time times the
+      // rate. So moving the rate does not change how fast the field flows from
+      // here on; it retroactively rewrites where the field has been for the
+      // whole session. The longer the tab has been open, the further one
+      // slider notch teleports you, and a teleport into turbulence looks like
+      // a reshuffle, not an acceleration.
+      //
+      // Measured by nudging the speed by ONE slider step at two different
+      // elapsed times. If the deltas grow with T, the knob is a jump control.
+      // THE FIX, ASSERTED. Travel is an integrated PHASE now, so the rate no
+      // longer reaches backwards: at a pinned phase, moving `speed` changes
+      // nothing at all, and the image depends only on how far you have
+      // actually travelled. Before the fix these read 12.1 / 19.4 / 28.1 —
+      // growing with page uptime, which is the signature of the bug.
+      const shotAt = (T, sp, travel) => {
+        const keep = { speed: P.speed, rtSize: P.rtSize, steps: P.steps,
+          twist: P.twist, hueSpread: P.hueSpread };
+        P.rtSize = W; P.steps = 24; P.twist = 0; P.hueSpread = 0.5; P.speed = sp;
+        renderCorona(T, true, { travel, spin: 0 });
+        const b = buf();
+        renderer.readRenderTargetPixels(rt, 0, 0, W, W, b);
+        Object.assign(P, keep);
+        return b;
+      };
+      for (const T of [2, 20, 200]) {
+        const d = diff(shotAt(T, 1.00, 3), shotAt(T, 1.02, 3));
+        console.log(`FXPROBE at a PINNED phase, one 0.02 step of speed at`
+          + ` t=${String(T).padStart(3)}s moves ${d.toFixed(3)}`
+          + `  ${d < 0.5 ? 'rate no longer reaches backwards' : '<-- STILL A JUMP CONTROL'}`);
+      }
+      // ...and the phase itself is what moves the picture
+      const dPhase = diff(shotAt(5, 1, 0), shotAt(5, 1, 6));
+      console.log(`FXPROBE travelling 0 -> 6 of phase moves ${dPhase.toFixed(3)}`
+        + `  ${dPhase > 0.5 ? 'travel is live' : '<-- TRAVEL DOES NOTHING'}`);
+    }, 900);
+  }
+
   if (urlParams.get('portalperf') === '1') {
     setTimeout(() => {
       // HEADLESS CANNOT TIME THIS. performance.now() does not advance under

@@ -144,9 +144,24 @@ uniform float uColorBias;
 uniform float uExposure;
 uniform float uEpsilon;
 
-uniform float uSpeed;        // forward travel rate
+// TRAVEL AND SPIN ARE PHASES, NOT RATES (2026-09-02).
+//
+// These were T*uSpeed and T*uSpin — accumulated time times a rate,
+// computed here. That makes the rate a JUMP control: moving it does not
+// change how fast the field flows from now on, it retroactively rewrites
+// where the field has been for the whole session, and the longer the page
+// has been open the further one slider notch teleports. Measured: a single
+// 0.02 step moved the image by a mean delta of 12.1 at t=2s, 19.4 at t=20s
+// and 28.1 at t=200s. Into turbulence, that reads as a reshuffle rather than
+// an acceleration — which is exactly the operator's "seems to have no
+// effect", and it also makes a smooth ramp impossible.
+//
+// The host integrates them instead (phase += rate * dt) and sends the phase.
+// The rate then means what its name says, a ramp is a ramp, and the value
+// stays under the host's control rather than growing with page uptime.
+uniform float uTravel;       // accumulated forward distance
 uniform float uTwist;        // radians of swirl per unit depth
-uniform float uSpin;         // constant barrel roll
+uniform float uSpinPhase;    // accumulated barrel roll, radians
 uniform float uHueSpread;    // per-channel cosine phase offset
 uniform float uDepthHue;     // hue shift per unit depth
 uniform float uMinStep;      // march step floor — prevents stalling at the wall
@@ -156,13 +171,13 @@ void main() {
     vec3  rd  = rayDir(gl_FragCoord.xy);
     vec3  acc = vec3(0.0);
     float z   = uNear;
-    float travel = T * uSpeed;
+    float travel = uTravel;
 
     for (int i = 0; i < uSteps; i++) {
         vec3 p = z * rd;
         p.z += travel;                                  // (A) fly forward
 
-        p.xy = rot(p.z * uTwist + T * uSpin) * p.xy;    // (B) twist with depth
+        p.xy = rot(p.z * uTwist + uSpinPhase) * p.xy;   // (B) twist with depth
 
         vec3 unwarped = p;
 
