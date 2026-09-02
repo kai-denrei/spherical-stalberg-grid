@@ -19,50 +19,50 @@
 
 import * as THREE from '../vendor/three.module.js';
 import GUI from '../vendor/lil-gui.esm.js';
-import { generateSphereMesh, relax } from './grid.js?v=4571a1c6';
-import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=4571a1c6';
-import { mulberry32, randomSeed } from './rng.js?v=4571a1c6';
-import { computeBerths, berthIndexFor } from './berths.js?v=4571a1c6';
-import { wantsSecondary, shellsForAll } from './autofire.js?v=4571a1c6';
-import { printPhase, printOffset, printOn, patternSecsFor } from './printpath.js?v=4571a1c6';
-import { createBeamRig, PLASMA_DEFAULTS, BOARD_PRESET, BEAM_PEAK } from './beamdraw.js?v=4571a1c6';
-import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3, segKey, tangentDir, tangentBasis } from './vec3.js?v=4571a1c6';
-import { CREATURES, waveJelly } from './creatures.js?v=4571a1c6';
-import { brief, dwellFor } from './isaobriefs.js?v=4571a1c6';
-import { drawEmotion } from './emotions.js?v=4571a1c6';
+import { generateSphereMesh, relax } from './grid.js?v=7fcd1afb';
+import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=7fcd1afb';
+import { mulberry32, randomSeed } from './rng.js?v=7fcd1afb';
+import { computeBerths, berthIndexFor } from './berths.js?v=7fcd1afb';
+import { wantsSecondary, shellsForAll } from './autofire.js?v=7fcd1afb';
+import { printPhase, printOffset, printOn, patternSecsFor } from './printpath.js?v=7fcd1afb';
+import { createBeamRig, PLASMA_DEFAULTS, BOARD_PRESET, BEAM_PEAK } from './beamdraw.js?v=7fcd1afb';
+import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3, segKey, tangentDir, tangentBasis } from './vec3.js?v=7fcd1afb';
+import { CREATURES, waveJelly } from './creatures.js?v=7fcd1afb';
+import { brief, dwellFor } from './isaobriefs.js?v=7fcd1afb';
+import { drawEmotion } from './emotions.js?v=7fcd1afb';
 import { ACHIEVEMENTS, ACHV_GROUPS, achievement, blankRun, earned, freshlyEarned,
   sanitiseRecord }
-  from './achievements.js?v=4571a1c6';
+  from './achievements.js?v=7fcd1afb';
 import { applyFontPack, currentFontPack, FONT_NAMES,
-  loadTypeFeel } from './fonts.js?v=4571a1c6';
-import { SECONDARY_TOE, applySecondaryToe } from './units.js?v=4571a1c6';
-import { UNITS, UNIT_NAMES, buildUnit, buildCreature, preloadMkcx, preloadServer, makeServerFixture, makeShieldShell, preloadContainer, makeContainerFixture, preloadFabricator, makeIsaoDrone, makeBulletCloud, makeRewardSolid, makeShellSolid, makeDebris, makeDotBurst, makePortalCloud, preloadPortalRing, makePortalRing, makeHeartCloud, makeDotEnemy, preloadTerraformer, makeTerraformerFixture } from './units.js?v=4571a1c6';
-import { LOOKS, LOOK_NAMES } from './looks.js?v=4571a1c6';
-import { makeCellIndex } from './cellindex.js?v=4571a1c6';
-import { CREATURE_TINTS, ENEMY_SPEC, INTROS, computeWavePlan, accentFor } from './enemyspec.js?v=4571a1c6';
-import { PICKUPS } from './pickups.js?v=4571a1c6';
-import { rankFor, rankLabel, badgeSVG, killReq, eliteReq } from './ranks.js?v=4571a1c6';
-import { beamStep, isBeamStep, PEN_SOFT_FRAC, PEN_HARD_FRAC } from './beamranks.js?v=4571a1c6';
-import { burn, sweepAdvance, wallBite as wallBiteFor } from './beamburn.js?v=4571a1c6';
-import { arcPoint, projectToArc, toeForCrossing, crossingForToe } from './arc.js?v=4571a1c6';
+  loadTypeFeel } from './fonts.js?v=7fcd1afb';
+import { SECONDARY_TOE, applySecondaryToe } from './units.js?v=7fcd1afb';
+import { UNITS, UNIT_NAMES, buildUnit, buildCreature, preloadMkcx, preloadServer, makeServerFixture, makeShieldShell, preloadContainer, makeContainerFixture, preloadFabricator, makeIsaoDrone, makeBulletCloud, makeRewardSolid, makeShellSolid, makeDebris, makeDotBurst, makePortalCloud, preloadPortalRing, makePortalRing, makeHeartCloud, makeDotEnemy, preloadTerraformer, makeTerraformerFixture } from './units.js?v=7fcd1afb';
+import { LOOKS, LOOK_NAMES } from './looks.js?v=7fcd1afb';
+import { makeCellIndex } from './cellindex.js?v=7fcd1afb';
+import { CREATURE_TINTS, ENEMY_SPEC, INTROS, computeWavePlan, accentFor } from './enemyspec.js?v=7fcd1afb';
+import { PICKUPS } from './pickups.js?v=7fcd1afb';
+import { rankFor, rankLabel, badgeSVG, killReq, eliteReq } from './ranks.js?v=7fcd1afb';
+import { beamStep, isBeamStep, PEN_SOFT_FRAC, PEN_HARD_FRAC } from './beamranks.js?v=7fcd1afb';
+import { burn, sweepAdvance, wallBite as wallBiteFor } from './beamburn.js?v=7fcd1afb';
+import { arcPoint, projectToArc, toeForCrossing, crossingForToe } from './arc.js?v=7fcd1afb';
 import { WORMHOLE_PRESET, WORMHOLE_RENDER, RING_SPIN, TRAVEL,
-  travelRate, advancePhase } from './portalfx.js?v=4571a1c6';
-import { WORMHOLE_FRAG } from './fx/wormhole.frag.js?v=4571a1c6';
-import { makeScore } from './score.js?v=4571a1c6';
-import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER } from './towers.js?v=4571a1c6';
-import { makeEconomy, sellRefund } from './economy.js?v=4571a1c6';
-import { makeBloom } from './postfx.js?v=4571a1c6';
-import { TANK_FEEL, TANK_FEEL_KNOBS, makeTankFeel, stepTankFeel, landTankFeel, fireTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js?v=4571a1c6';
-import { FEEL, loadFeel, saveFeel } from './feelstore.js?v=4571a1c6';
+  travelRate, advancePhase } from './portalfx.js?v=7fcd1afb';
+import { WORMHOLE_FRAG } from './fx/wormhole.frag.js?v=7fcd1afb';
+import { makeScore } from './score.js?v=7fcd1afb';
+import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER } from './towers.js?v=7fcd1afb';
+import { makeEconomy, sellRefund } from './economy.js?v=7fcd1afb';
+import { makeBloom } from './postfx.js?v=7fcd1afb';
+import { TANK_FEEL, TANK_FEEL_KNOBS, makeTankFeel, stepTankFeel, landTankFeel, fireTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js?v=7fcd1afb';
+import { FEEL, loadFeel, saveFeel } from './feelstore.js?v=7fcd1afb';
 import { STRIKE_KNOBS, makeStrike, makeStrikeParams, grantStrikes, stepStrike,
   toggleArm, paintTarget, launchStrike, stepFall, skipFall, fallProgress,
-  strikeDamage, retargetStrike, orbitProgress } from './strike.js?v=4571a1c6';
+  strikeDamage, retargetStrike, orbitProgress } from './strike.js?v=7fcd1afb';
 import { radarBasis, radarProject, radarBearing, sweepAngle, radarPhosphor,
-  proximitySectors, SENSOR_LEVELS } from './radar.js?v=4571a1c6';
-import { BLOOM_GROUPS } from './bloomweights.js?v=4571a1c6';
-import { TOWER_LOOK_NAMES, DEFAULT_TOWER_LOOK, buildTowerLook, preloadLook } from './towerlooks.js?v=4571a1c6';
-import { makeAudio } from './audio.js?v=4571a1c6';
-import { DEATH_KEYS } from './audiomanifest.js?v=4571a1c6';
+  proximitySectors, SENSOR_LEVELS } from './radar.js?v=7fcd1afb';
+import { BLOOM_GROUPS } from './bloomweights.js?v=7fcd1afb';
+import { TOWER_LOOK_NAMES, DEFAULT_TOWER_LOOK, buildTowerLook, preloadLook } from './towerlooks.js?v=7fcd1afb';
+import { makeAudio } from './audio.js?v=7fcd1afb';
+import { DEATH_KEYS } from './audiomanifest.js?v=7fcd1afb';
 
 export function initTdTab(root) {
   let active = false;
@@ -91,6 +91,7 @@ export function initTdTab(root) {
     wallHeight: 0.03,
     relaxIters: 80,
     view: 'third', // pov | third
+    autoUpgrade: false, // the drones spend excess biomass on tiers by themselves
     look: 'tronColors', // visual identity, see looks.js
     wallTops: 'black', // obstacles read as voids; silhouettes matter here
     speed: 1.1, // cells per second, wanderer pace
@@ -3669,6 +3670,9 @@ export function initTdTab(root) {
         playerHP++; syncLifeContainers(); updateHud(); renderVerdict(false);
       }
     }
+    else if (cl.contains('msg-buydrone')) {
+      if (!assistant && eco.spend(SINK.drone)) { spawnAssistant().then(() => renderVerdict(false)); }
+    }
     else if (cl.contains('msg-buystrike')) {
       if (eco.spend(SINK.strike)) { strike.reserved += 1; syncArmUi(); renderVerdict(false); }
     }
@@ -4309,6 +4313,7 @@ export function initTdTab(root) {
         : `wave ${sectorWave() + 1}/${params.wavesPerSector} of sector ${round}`}`
       + ` · built ${towers.length}</div>`
       + isaoLine()
+      + assistantLine()
       + terraLine()
       + (alerts ? `<div class="hud-alert">${alerts}</div>` : '');
     if (dirBtnEl) {
@@ -4524,6 +4529,8 @@ export function initTdTab(root) {
     runAchv = [];
     clearTowers();
     tfReset();   // a new world starts with an empty yard
+    if (assistant) { scene.remove(assistant.obj); disposeObj(assistant.obj); assistant = null; }
+    for (const o of orders) o.worker = null;
     // opening biomass: exactly a Rapid (70kg) + a Slow (100kg) — your first plan
     eco = makeEconomy({ startBiomass: 170 });
     score.reset();
@@ -5330,6 +5337,17 @@ export function initTdTab(root) {
       return `<div class="hud-obj hud-isao">ISAO &#9656; printing ${what} ${pct}%${rest}</div>`;
     }
     return `<div class="hud-obj hud-isao">ISAO &#9656; inbound ${what}${rest}</div>`;
+  }
+  function assistantLine() {
+    if (!assistant) return '';
+    const o = assistant.order;
+    if (!o) return `<div class="hud-obj hud-isao">DRONE 2 &#9656; on shift</div>`;
+    const what = o.kind === 'upgrade' ? `${o.tower.def.key}+1` : o.key;
+    if (assistant.state === 'build') {
+      const pct = Math.round(Math.min(1, assistant.t / Math.max(0.001, assistant.dur)) * 100);
+      return `<div class="hud-obj hud-isao">DRONE 2 &#9656; printing ${what} ${pct}%</div>`;
+    }
+    return `<div class="hud-obj hud-isao">DRONE 2 &#9656; inbound ${what}</div>`;
   }
 
   const fmt = (v) => (v ?? 0).toLocaleString('en-US'); // 3103356 -> 3,103,356
@@ -6655,6 +6673,28 @@ export function initTdTab(root) {
   applyType();
 
   let isao = null;                 // { obj, dir[3], state, t, dur, order }
+  let assistant = null;            // the second drone, bought with biomass
+  const workers = () => (assistant ? [isao, assistant] : [isao]).filter(Boolean);
+  const ASSIST_TINT = 0xffb347;    // amber, so the two never read as one drone
+  function spawnAssistant() {
+    if (assistant || !graph || !dungeon) return Promise.resolve(false);
+    return preloadFabricator().then((ok) => {
+      if (!ok || assistant || !graph || !dungeon) return false;
+      const obj = makeIsaoDrone(ASSIST_TINT);
+      if (!obj) return false;
+      obj.scale.setScalar(cellSide * 1.15);
+      // parked a couple of cells off the heart's other side, so the pair do
+      // not spawn inside each other
+      const hd = norm3(graph.centers[dungeon.heart]);
+      const [u2] = tangentBasis(hd);
+      const dir = norm3(add3(hd, scale3(u2, cellSide * 2.2)));
+      assistant = { obj, dir, state: 'idle', t: 0, dur: 0, order: null, loiter: dir.slice(), gleeT: 0 };
+      placeWorker(assistant);
+      scene.add(obj);
+      updateHud();
+      return true;
+    });
+  }
   let printBeam = null;             // one Line, reused for every print
   const PRINT_TRAIL = 8;            // bead segments behind the head
   const PRINT_TRAIL_STEP = 0.014;   // how far back along the path each one sits
@@ -6691,45 +6731,46 @@ export function initTdTab(root) {
       return true;
     });
   }
-  function placeIsao() {
-    const p = isaoPos(isao.dir);
-    isao.obj.position.set(p[0], p[1], p[2]);
+  function placeWorker(w = isao) {
+    const p = isaoPos(w.dir);
+    w.obj.position.set(p[0], p[1], p[2]);
     // up is its own radial; face where it is going (or where it is working)
     // he faces what he is doing: the site while flying to it AND while
     // printing it, his drift when idle. The build case used to fall through
     // to a stale loiter point, so he printed with his back to the work —
     // invisible until a camera was hung off his facing.
-    tmpObj.position.copy(isao.obj.position);
-    tmpObj.up.set(isao.dir[0], isao.dir[1], isao.dir[2]);
+    tmpObj.position.copy(w.obj.position);
+    tmpObj.up.set(w.dir[0], w.dir[1], w.dir[2]);
 
     // WHILE PILOTED HE FACES WHERE HE IS FLYING. This is the bug the operator
     // saw as "rotates on an unnatural axis": the aim below falls back to
-    // isao.loiter, and pilotIsao sets loiter to his own POSITION, so the
+    // w.loiter, and pilotIsao sets loiter to his own POSITION, so the
     // lookAt target sat on top of him, the distance guard skipped the lookAt
     // entirely, and his quaternion was left stale from whatever it last was.
     // He was not rotating oddly — he was not being oriented at all.
-    if (params.view === 'drone' && isaoHeading) {
+    if (w === isao && params.view === 'drone' && isaoHeading) {
       const ahead = add3(p, scale3(isaoHeading, cellSide));
       tmpObj.lookAt(ahead[0], ahead[1], ahead[2]);
-      isao.obj.quaternion.copy(tmpObj.quaternion);
+      w.obj.quaternion.copy(tmpObj.quaternion);
       // LEAN AND BANK, composed as quaternions onto the facing — never
       // written as Euler on the same object, which would replace the whole
       // orientation and put us straight back to an unnatural axis. This
       // project has that dead end on record twice.
       tmpQ.setFromAxisAngle(X_AXIS, isaoLean);
-      isao.obj.quaternion.multiply(tmpQ);
+      w.obj.quaternion.multiply(tmpQ);
       tmpQ.setFromAxisAngle(Z_AXIS, isaoRoll);
-      isao.obj.quaternion.multiply(tmpQ);
+      w.obj.quaternion.multiply(tmpQ);
       return;
     }
 
     // autonomous: he faces what he is doing — the site while flying to it AND
     // while printing it, his drift when idle
-    const aim = isao.order ? norm3(graph.centers[isao.order.ci]) : isao.loiter;
+    const aim = w.order ? norm3(graph.centers[w.order.ci]) : w.loiter;
     const t = isaoPos(aim);
     if (dist3(t, p) > 1e-4) tmpObj.lookAt(t[0], t[1], t[2]);
-    isao.obj.quaternion.copy(tmpObj.quaternion);
+    w.obj.quaternion.copy(tmpObj.quaternion);
   }
+  const placeIsao = () => placeWorker(isao);
 
   // the site marker: a ring of points on the wall top, in the tower's own
   // colour, that says "something is coming here". It is the ONLY thing an
@@ -6815,7 +6856,7 @@ export function initTdTab(root) {
   function cancelOrder(ci) {
     const order = orderByCell.get(ci);
     if (!order) return false;
-    const live = orders[0] === order && isao && isao.state === 'build';
+    const live = !!(order.worker && order.worker.state === 'build');
     eco.addBiomass(live ? Math.round(order.cost * 0.5) : order.cost);
     dropSiteRing(order);
     if (order.ghost) { scene.remove(order.ghost); disposeObj(order.ghost); order.ghost = null; }
@@ -6851,12 +6892,12 @@ export function initTdTab(root) {
     } else {
       eco.addBiomass(order.cost);   // the tower was sold or destroyed mid-flight
     }
-    orders.shift();
+    const at = orders.indexOf(order);
+    if (at >= 0) orders.splice(at, 1);   // by identity: with two workers it is not always orders[0]
     orderByCell.delete(order.ci);
-    isao.gleeT = 2.2;   // a finished print is worth a face
-    isao.order = null;
-    isao.state = 'idle';
-    isao.t = 0;
+    const w = order.worker || isao;
+    if (w) { w.gleeT = 2.2; w.order = null; w.state = 'idle'; w.t = 0; }
+    order.worker = null;
     updateHud();
   }
 
@@ -6927,70 +6968,86 @@ export function initTdTab(root) {
     placeIsao();
   }
 
-  function updateIsao(dt) {
-    if (!isao) return;
-    // piloted: the queue waits, and so does everything else he does
-    if (params.view === 'drone') { pilotIsao(dt); return; }
-    isaoHeading = null;
+  // ONE STATE MACHINE, ANY NUMBER OF WORKERS (operator, 2026-09-02: "another
+  // Drone, assists Isao"). This body was updateIsao's, written against the
+  // singleton; it now takes the worker it drives. isao is workers()[0] and
+  // every camera / face / probe site that names him is untouched.
+  function stepWorker(w, dt) {
     const speed = ISAO_CELLS_SEC * cellSide;   // radians per second
-    if (isao.state === 'idle') {
-      if (orders.length) {
-        isao.order = orders[0];
-        isao.state = 'travel';
+    if (w.state === 'idle') {
+      // CLAIM THE FIRST ORDER NOBODY HAS. With two workers on one FIFO this
+      // is the whole change: the queue stays the queue, each drone takes the
+      // oldest unclaimed job, and the order carries its worker so finishing
+      // and cancelling can find the right one.
+      const free = orders.find((o) => !o.worker);
+      if (free) {
+        free.worker = w;
+        w.order = free;
+        w.state = 'travel';
       } else {
         // LOITER. He does not park: he drifts a couple of cells around the
         // heart, which is what makes him read as a machine on shift rather
         // than a prop bolted to the sky.
         const hd = norm3(graph.centers[dungeon.heart]);
-        if (dot3(isao.dir, isao.loiter) > 0.99999 || dist3(isao.loiter, hd) < 1e-9) {
+        if (dot3(w.dir, w.loiter) > 0.99999 || dist3(w.loiter, hd) < 1e-9) {
           const a = t * 0.37;
           const ref = Math.abs(hd[1]) < 0.9 ? [0, 1, 0] : [1, 0, 0];
           const t1 = norm3(cross3(hd, ref));
           const t2 = cross3(hd, t1);
           const off = cellSide * 2.2;
-          isao.loiter = norm3(add3(hd,
+          w.loiter = norm3(add3(hd,
             add3(scale3(t1, Math.cos(a) * off), scale3(t2, Math.sin(a) * off))));
         }
-        isao.dir = stepDir(isao.dir, isao.loiter, speed * 0.35 * dt);
+        w.dir = stepDir(w.dir, w.loiter, speed * 0.35 * dt);
       }
     }
-    if (isao.state === 'travel' && isao.order) {
-      const target = norm3(graph.centers[isao.order.ci]);
-      isao.dir = stepDir(isao.dir, target, speed * dt);
-      if (dot3(isao.dir, target) > 0.99995) {
-        isao.state = 'build';
-        isao.t = 0;
-        isao.dur = buildSeconds(isao.order.cost);
-        isao.shown = -1;
-        if (isao.order.kind === 'tower') {
+    if (w.state === 'travel' && w.order) {
+      const target = norm3(graph.centers[w.order.ci]);
+      w.dir = stepDir(w.dir, target, speed * dt);
+      if (dot3(w.dir, target) > 0.99995) {
+        w.state = 'build';
+        w.t = 0;
+        w.dur = buildSeconds(w.order.cost);
+        w.shown = -1;
+        if (w.order.kind === 'tower') {
           // the print: the tower itself grows out of the wall top. Built
           // here rather than at order time so a queued site costs nothing
           // but a ring of points.
-          const g = buildTowerLook(params.towerLook, isao.order.def);
-          isao.order.ghost = g;
+          const g = buildTowerLook(params.towerLook, w.order.def);
+          w.order.ghost = g;
           scene.add(g);
         }
       }
-    } else if (isao.state === 'build' && isao.order) {
-      isao.t += dt;
-      const k = Math.min(1, isao.t / isao.dur);
-      const g = isao.order.ghost;
+    } else if (w.state === 'build' && w.order) {
+      w.t += dt;
+      const k = Math.min(1, w.t / w.dur);
+      const g = w.order.ghost;
       if (g) {
         // same recipe as placeTowerObj, with the height easing up from
         // nothing — scale.y is the print head's progress
         const base = (g.userData.baseScale ?? 1) * cellSide * 0.62;
         g.scale.set(base, base * Math.max(0.02, k), base);
-        const c = graph.centers[isao.order.ci];
-        const nrm = graph.normals[isao.order.ci];
+        const c = graph.centers[w.order.ci];
+        const nrm = graph.normals[w.order.ci];
         const top = 1 + params.wallHeight;
         g.position.set(c[0] * top, c[1] * top, c[2] * top);
         tmpN.set(nrm[0], nrm[1], nrm[2]);
         g.quaternion.setFromUnitVectors(Y_AXIS, tmpN);
       }
       const step = Math.floor(k * 10);
-      if (step !== isao.shown) { isao.shown = step; updateHud(); }
-      if (isao.t >= isao.dur) finishOrder(isao.order);
+      if (step !== w.shown) { w.shown = step; updateHud(); }
+      if (w.t >= w.dur) finishOrder(w.order);
     }
+  }
+
+  function updateIsao(dt) {
+    if (!isao) return;
+    // piloted: the queue waits, and so does everything else he does
+    if (params.view === 'drone') { pilotIsao(dt); return; }
+    isaoHeading = null;
+    const speed = ISAO_CELLS_SEC * cellSide;   // radians per second
+    for (const w of workers()) stepWorker(w, dt);
+    if (assistant) placeWorker(assistant);
     if (!isao) return;
     const working = isao.state === 'build';
     // HIS FACE IS A STATUS LIGHT. Not a performance: four presets from the
@@ -7696,6 +7753,30 @@ export function initTdTab(root) {
       piv.userData.shutAngle = bestA; piv.userData.shutDepth = bestZ;
     }
     g.updateMatrixWorld(true);
+  }
+  // AUTO-UPGRADE (operator, 2026-09-02: "IF excess cash AND some towers are
+  // not upgraded, THEN go around and upgrade them"). Off by default; a
+  // checkbox on the panel. "Excess" means the purse would still hold the
+  // reserve after paying — a drone that spends your last biomass on a tier
+  // you did not choose is a drone you switch off. One order at a time and
+  // never more than the drones can carry, so the queue stays yours.
+  const AUTO_RESERVE = 150;
+  let autoUpClock = 0;
+  function autoUpgradeTick(dt) {
+    if (!params.autoUpgrade || !eco) return;
+    autoUpClock += dt;
+    if (autoUpClock < 1.5) return;
+    autoUpClock = 0;
+    if (orders.length >= workers().length) return;
+    let bestT = null, bestC = Infinity;
+    for (const tw of towers) {
+      if (orderByCell.has(tw.ci)) continue;
+      const c = upgradeCost(tw.def, tw.tier);
+      if (c === null) continue;                              // topped out
+      if (eco.biomass - c < AUTO_RESERVE) continue;          // not excess
+      if (c < bestC) { bestC = c; bestT = tw; }
+    }
+    if (bestT) orderUpgrade(bestT);
   }
   function tfMilestone(w) {
     if (w > 0 && w % TF.hullEvery === 0) tfStart('hull');
@@ -8405,7 +8486,7 @@ export function initTdTab(root) {
   // hull and a strike missile. The sim's ledger (spent / earned) is what
   // says whether these bite; they are numbers, not rulings, and live here in
   // one place so the next measurement can move them.
-  const SINK = { tollBase: 250, tollStep: 150, hull: 400, strike: 350 };
+  const SINK = { tollBase: 250, tollStep: 150, hull: 400, strike: 350, drone: 500 };
   const sectorToll = () => SINK.tollBase + SINK.tollStep * (round - 1);
   function ordersBlock() {
     const toll = sectorToll();
@@ -8417,6 +8498,8 @@ export function initTdTab(root) {
       + (playerHP < PLAYER_MAX ? btn('msg-buyhull', '&#9881; print a spare hull', SINK.hull)
         : `<button disabled>&#9881; hulls full ${playerHP}/${PLAYER_MAX}</button>`)
       + btn('msg-buystrike', '&#10022; resupply one orbital strike', SINK.strike)
+      + (assistant ? `<button disabled>&#9881; second drone on shift</button>`
+        : btn('msg-buydrone', '&#9881; print a second drone — assists ISAO', SINK.drone))
       + btn('msg-next', `&rsaquo; breach sector ${round + 1} — bigger, farther, meaner`, toll);
   }
   function renderVerdict(final) {
@@ -8629,6 +8712,7 @@ export function initTdTab(root) {
     if (plasma) for (const pl of plasma) pl.pts.material.size = v;
   });
   plasmaF.close();
+  gui.add(params, 'autoUpgrade').name('drones auto-upgrade');
 
   const bloomF = gui.addFolder('bloom');
   bloomF.add(postfx.params, 'enabled').name('enabled').onChange((v) => postfx.setEnabled(v));
@@ -8985,6 +9069,7 @@ export function initTdTab(root) {
     }
     updateWormhole(dt, t);
     if (!frozen) tfTick(dt);
+    if (!frozen) autoUpgradeTick(dt);
     if (!frozen && eco) { ecoClockT += dt; if (eco.biomass >= CHEAPEST_TOWER) ecoAffordT += dt; }
     if (tutorialActive) tutorial.tick(dt);
     if (!frozen) {
@@ -11076,6 +11161,48 @@ export function initTdTab(root) {
         + ` hulls printed=${tfHulls} playerHP ${hp0}->${playerHP}`
         + ` (every ${TF.containerEvery} a store, every ${TF.hullEvery} a hull)`
         + ` ${tfContainers > 0 && tfHulls > 0 ? 'BOTH PRODUCTS LANDED' : '<-- something did not build'}`);
+    });
+  }
+
+  // ?drones=1 — buy the assistant, put three orders on the book, drive both
+  // workers, and check they split the queue and all three land.
+  if (urlParams.get('drones') === '1') {
+    Promise.all([preloadFabricator(), spawnIsao()]).then(() => spawnAssistant()).then(() => {
+      eco.addBiomass(2000);
+      let placed = 0;
+      for (let i = 0; i < dungeon.tags.length && placed < 3; i++) {
+        if (dungeon.tags[i] === BLOCKED && !placeError(i) && graph.adj[i].some((nb) => dungeon.tags[nb] !== BLOCKED)) {
+          if (orderTower('single', i, { quiet: true })) placed++;
+        }
+      }
+      const seen = new Set();
+      let t2 = 0;
+      for (; t2 < 60 && orders.length; t2 += 0.05) {
+        updateIsao(0.05);
+        for (const o of orders) if (o.worker) seen.add(o.worker === isao ? 'isao' : 'drone2');
+      }
+      console.log(`DRONES assistant=${!!assistant} orders placed=${placed}`
+        + ` workers that claimed something=[${[...seen].join(',')}]`
+        + ` left=${orders.length} after ${t2.toFixed(1)}s`
+        + ` ${seen.size === 2 && orders.length === 0 ? 'BOTH DRONES BUILT, QUEUE DRAINED' : '<-- one worker or stuck'}`);
+    });
+  }
+  // ?autoup=1 — flood the purse, switch auto-upgrade on, and count the orders
+  // the drones place by themselves in 20s (and that the reserve holds).
+  if (urlParams.get('autoup') === '1') {
+    Promise.all([preloadFabricator(), spawnIsao()]).then(() => {
+      eco.addBiomass(1200);
+      params.autoUpgrade = true;
+      const t0 = towers.map((tw) => tw.tier).join('');
+      let made = 0;
+      for (let t2 = 0; t2 < 40; t2 += 0.05) {
+        const n0 = orders.length;
+        autoUpgradeTick(0.05); updateIsao(0.05);
+        if (orders.length > n0) made++;
+      }
+      console.log(`AUTOUP towers=${towers.length} tiers ${t0} -> ${towers.map((tw) => tw.tier).join('')}`
+        + ` orders placed=${made} biomass left=${eco.biomass}`
+        + ` ${made > 0 && eco.biomass >= AUTO_RESERVE ? '(upgraded, reserve held)' : '<-- nothing upgraded or reserve breached'}`);
     });
   }
 
