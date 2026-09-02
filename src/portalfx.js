@@ -32,7 +32,12 @@ export const WORMHOLE_PRESET = {
 // Render settings that are a COST decision rather than a look decision, kept
 // apart for that reason: 512 x 120 steps x 12 octaves is ~377M sine-folds a
 // frame, and the board has a whole game to draw around it.
-export const WORMHOLE_RENDER = { size: 512, updateHz: 60 };
+// 384 @ 30Hz, down from 512 @ 60Hz (2026-09-02 optimisation pass): 0.56x the
+// pixels at half the rate is ~3.6x cheaper for the SAME look — the march,
+// the octaves and the exposure are untouched, so the bench export still
+// describes the board. Turbulence at 30Hz reads as the same turbulence; the
+// disc is a small thing on screen and 384 fills it.
+export const WORMHOLE_RENDER = { size: 384, updateHz: 30 };
 
 // The ring's own idle, also from the bench.
 export const RING_SPIN = { rotorA: 0.77, rotorB: -0.09, yaw: 0 };

@@ -90,8 +90,12 @@ console.log('the tuned preset is the operator\'s, verbatim:');
   for (const [k, v] of Object.entries(want)) if (WORMHOLE_PRESET[k] !== v) all = false;
   check('every uniform matches the bench export', all,
     JSON.stringify(WORMHOLE_PRESET));
-  check('render settings are 512 @ 60Hz',
-    WORMHOLE_RENDER.size === 512 && WORMHOLE_RENDER.updateHz === 60);
+  // Cost knobs, deliberately NOT the bench's 512 @ 60: the look is the
+  // preset above and is verbatim; these are what the board pays for it.
+  check('render settings are the board\'s cost decision, 384 @ 30Hz',
+    WORMHOLE_RENDER.size === 384 && WORMHOLE_RENDER.updateHz === 30);
+  check('...and the LOOK is untouched by that decision',
+    WORMHOLE_PRESET.uSteps === 120 && WORMHOLE_PRESET.uTurbOctaves === 12);
   check('ring spin carried across too',
     RING_SPIN.rotorA === 0.77 && RING_SPIN.rotorB === -0.09 && RING_SPIN.yaw === 0);
   // a number worth having in front of anyone who changes these

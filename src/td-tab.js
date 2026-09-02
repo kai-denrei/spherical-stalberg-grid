@@ -19,49 +19,49 @@
 
 import * as THREE from '../vendor/three.module.js';
 import GUI from '../vendor/lil-gui.esm.js';
-import { generateSphereMesh, relax } from './grid.js?v=6011d6ec';
-import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=6011d6ec';
-import { mulberry32, randomSeed } from './rng.js?v=6011d6ec';
-import { computeBerths, berthIndexFor } from './berths.js?v=6011d6ec';
-import { wantsSecondary, shellsForAll } from './autofire.js?v=6011d6ec';
-import { printPhase, printOffset, printOn, patternSecsFor } from './printpath.js?v=6011d6ec';
-import { createBeamRig, PLASMA_DEFAULTS, BOARD_PRESET, BEAM_PEAK } from './beamdraw.js?v=6011d6ec';
-import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3, segKey, tangentDir, tangentBasis } from './vec3.js?v=6011d6ec';
-import { CREATURES, waveJelly } from './creatures.js?v=6011d6ec';
-import { brief, dwellFor } from './isaobriefs.js?v=6011d6ec';
-import { drawEmotion } from './emotions.js?v=6011d6ec';
+import { generateSphereMesh, relax } from './grid.js?v=fa5b839b';
+import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=fa5b839b';
+import { mulberry32, randomSeed } from './rng.js?v=fa5b839b';
+import { computeBerths, berthIndexFor } from './berths.js?v=fa5b839b';
+import { wantsSecondary, shellsForAll } from './autofire.js?v=fa5b839b';
+import { printPhase, printOffset, printOn, patternSecsFor } from './printpath.js?v=fa5b839b';
+import { createBeamRig, PLASMA_DEFAULTS, BOARD_PRESET, BEAM_PEAK } from './beamdraw.js?v=fa5b839b';
+import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3, segKey, tangentDir, tangentBasis } from './vec3.js?v=fa5b839b';
+import { CREATURES, waveJelly } from './creatures.js?v=fa5b839b';
+import { brief, dwellFor } from './isaobriefs.js?v=fa5b839b';
+import { drawEmotion } from './emotions.js?v=fa5b839b';
 import { ACHIEVEMENTS, ACHV_GROUPS, achievement, blankRun, earned, freshlyEarned,
   sanitiseRecord }
-  from './achievements.js?v=6011d6ec';
+  from './achievements.js?v=fa5b839b';
 import { applyFontPack, currentFontPack, FONT_NAMES,
-  loadTypeFeel } from './fonts.js?v=6011d6ec';
-import { SECONDARY_TOE, applySecondaryToe } from './units.js?v=6011d6ec';
-import { UNITS, UNIT_NAMES, buildUnit, buildCreature, preloadMkcx, preloadServer, makeServerFixture, makeShieldShell, preloadContainer, makeContainerFixture, preloadFabricator, makeIsaoDrone, makeBulletCloud, makeRewardSolid, makeShellSolid, makeDebris, makeDotBurst, makePortalCloud, preloadPortalRing, makePortalRing, makeHeartCloud, makeDotEnemy, preloadTerraformer, makeTerraformerFixture } from './units.js?v=6011d6ec';
-import { LOOKS, LOOK_NAMES } from './looks.js?v=6011d6ec';
-import { makeCellIndex } from './cellindex.js?v=6011d6ec';
-import { CREATURE_TINTS, ENEMY_SPEC, INTROS, computeWavePlan, accentFor } from './enemyspec.js?v=6011d6ec';
-import { PICKUPS } from './pickups.js?v=6011d6ec';
-import { rankFor, rankLabel, badgeSVG, killReq, eliteReq } from './ranks.js?v=6011d6ec';
-import { beamStep, isBeamStep, PEN_SOFT_FRAC, PEN_HARD_FRAC } from './beamranks.js?v=6011d6ec';
-import { burn, sweepAdvance, wallBite as wallBiteFor } from './beamburn.js?v=6011d6ec';
-import { arcPoint, projectToArc, toeForCrossing, crossingForToe } from './arc.js?v=6011d6ec';
+  loadTypeFeel } from './fonts.js?v=fa5b839b';
+import { SECONDARY_TOE, applySecondaryToe } from './units.js?v=fa5b839b';
+import { UNITS, UNIT_NAMES, buildUnit, buildCreature, preloadMkcx, preloadServer, makeServerFixture, makeShieldShell, preloadContainer, makeContainerFixture, preloadFabricator, makeIsaoDrone, makeBulletCloud, makeRewardSolid, makeShellSolid, makeDebris, makeDotBurst, makePortalCloud, preloadPortalRing, makePortalRing, makeHeartCloud, makeDotEnemy, preloadTerraformer, makeTerraformerFixture } from './units.js?v=fa5b839b';
+import { LOOKS, LOOK_NAMES } from './looks.js?v=fa5b839b';
+import { makeCellIndex } from './cellindex.js?v=fa5b839b';
+import { CREATURE_TINTS, ENEMY_SPEC, INTROS, computeWavePlan, accentFor } from './enemyspec.js?v=fa5b839b';
+import { PICKUPS } from './pickups.js?v=fa5b839b';
+import { rankFor, rankLabel, badgeSVG, killReq, eliteReq } from './ranks.js?v=fa5b839b';
+import { beamStep, isBeamStep, PEN_SOFT_FRAC, PEN_HARD_FRAC } from './beamranks.js?v=fa5b839b';
+import { burn, sweepAdvance, wallBite as wallBiteFor } from './beamburn.js?v=fa5b839b';
+import { arcPoint, projectToArc, toeForCrossing, crossingForToe } from './arc.js?v=fa5b839b';
 import { WORMHOLE_PRESET, WORMHOLE_RENDER, RING_SPIN, TRAVEL,
-  travelRate, advancePhase } from './portalfx.js?v=6011d6ec';
-import { WORMHOLE_FRAG } from './fx/wormhole.frag.js?v=6011d6ec';
-import { makeScore } from './score.js?v=6011d6ec';
-import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER } from './towers.js?v=6011d6ec';
-import { makeEconomy, sellRefund } from './economy.js?v=6011d6ec';
-import { makeBloom } from './postfx.js?v=6011d6ec';
-import { TANK_FEEL, TANK_FEEL_KNOBS, makeTankFeel, stepTankFeel, landTankFeel, fireTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js?v=6011d6ec';
-import { FEEL, loadFeel, saveFeel } from './feelstore.js?v=6011d6ec';
+  travelRate, advancePhase } from './portalfx.js?v=fa5b839b';
+import { WORMHOLE_FRAG } from './fx/wormhole.frag.js?v=fa5b839b';
+import { makeScore } from './score.js?v=fa5b839b';
+import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER } from './towers.js?v=fa5b839b';
+import { makeEconomy, sellRefund } from './economy.js?v=fa5b839b';
+import { makeBloom } from './postfx.js?v=fa5b839b';
+import { TANK_FEEL, TANK_FEEL_KNOBS, makeTankFeel, stepTankFeel, landTankFeel, fireTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js?v=fa5b839b';
+import { FEEL, loadFeel, saveFeel } from './feelstore.js?v=fa5b839b';
 import { STRIKE_KNOBS, makeStrike, makeStrikeParams, grantStrikes, stepStrike,
   toggleArm, paintTarget, launchStrike, stepFall, skipFall, fallProgress,
-  strikeDamage, retargetStrike, orbitProgress } from './strike.js?v=6011d6ec';
-import { radarBasis, radarProject, radarBearing, sweepAngle, radarPhosphor } from './radar.js?v=6011d6ec';
-import { BLOOM_GROUPS } from './bloomweights.js?v=6011d6ec';
-import { TOWER_LOOK_NAMES, DEFAULT_TOWER_LOOK, buildTowerLook, preloadLook } from './towerlooks.js?v=6011d6ec';
-import { makeAudio } from './audio.js?v=6011d6ec';
-import { DEATH_KEYS } from './audiomanifest.js?v=6011d6ec';
+  strikeDamage, retargetStrike, orbitProgress } from './strike.js?v=fa5b839b';
+import { radarBasis, radarProject, radarBearing, sweepAngle, radarPhosphor } from './radar.js?v=fa5b839b';
+import { BLOOM_GROUPS } from './bloomweights.js?v=fa5b839b';
+import { TOWER_LOOK_NAMES, DEFAULT_TOWER_LOOK, buildTowerLook, preloadLook } from './towerlooks.js?v=fa5b839b';
+import { makeAudio } from './audio.js?v=fa5b839b';
+import { DEATH_KEYS } from './audiomanifest.js?v=fa5b839b';
 
 export function initTdTab(root) {
   let active = false;
@@ -5850,14 +5850,12 @@ export function initTdTab(root) {
       }
       if (hit) { killProjectile(i); checkVictory(); continue; }
 
-      // wall impact: the shell BREACHES it — one wall per shell
-      let bestCi = -1, bd = Infinity;
-      for (let ci = 0; ci < graph.centers.length; ci++) {
-        const c = graph.centers[ci];
-        const dx = c[0] - p.pos[0], dy = c[1] - p.pos[1], dz = c[2] - p.pos[2];
-        const d2 = dx * dx + dy * dy + dz * dz;
-        if (d2 < bd) { bd = d2; bestCi = ci; }
-      }
+      // wall impact: the shell BREACHES it — one wall per shell.
+      // cellIndex is the voxel hash every other collision query on the board
+      // already uses. This used to scan EVERY cell per shell per frame — with
+      // three shells in the air on a 2,000-cell board that is 6,000 distance
+      // checks a frame for an answer the hash gives in one lookup.
+      const bestCi = cellIndex(norm3(p.pos));
       if (bestCi !== -1 && dungeon.tags[bestCi] === BLOCKED) {
         blastWall(bestCi);
         killProjectile(i);
@@ -7577,6 +7575,27 @@ export function initTdTab(root) {
   // integrated into a phase here rather than multiplied by elapsed time in
   // the shader: a rate that multiplies accumulated time rewrites its own
   // history every frame it changes, which makes a ramp impossible.
+  const whFrustum = new THREE.Frustum();
+  const whProj = new THREE.Matrix4();
+  const whDiscPos = new THREE.Vector3();
+  function anyGateVisible() {
+    if (document.hidden) return false;
+    camera.updateMatrixWorld();
+    whProj.multiplyMatrices(camera.projectionMatrix, camera.matrixWorldInverse);
+    whFrustum.setFromProjectionMatrix(whProj);
+    for (const sp of spawnPoints) {
+      if (!sp.alive || !sp.obj) continue;
+      const disc = sp.obj.userData.disc;
+      if (!disc) continue;
+      disc.getWorldPosition(whDiscPos);
+      // sphere-vs-frustum with the gate's own size as the radius: visible
+      // unless some plane pushes the whole gate outside
+      const r = sp.obj.userData.sizeScale ?? cellSide;
+      if (whFrustum.planes.every((pl) => pl.distanceToPoint(whDiscPos) > -r)) return true;
+    }
+    return false;
+  }
+
   function updateWormhole(dt, tNow) {
     if (!whRt) return;
     whKick = Math.max(0, whKick - WH_KICK_DECAY * dt);
@@ -7584,6 +7603,11 @@ export function initTdTab(root) {
     advancePhase(whPhase, dt, whTravelRate, WORMHOLE_PRESET.uTimeScale);
     const period = 1 / Math.max(1, WORMHOLE_RENDER.updateHz);
     if (tNow - whLastAt < period) return;
+    // NOTHING TO SHOW, NOTHING TO MARCH. The phase keeps advancing above so a
+    // gate scrolling back into view is where it should be — but the 377M
+    // sine-folds are only spent when a live gate's disc is inside the camera
+    // frustum. Driving away from the gates is most of the game.
+    if (!anyGateVisible()) return;
     whLastAt = tNow;
     whUniforms.uTime.value = tNow;
     whUniforms.uTravel.value = whPhase.travel;
@@ -10514,6 +10538,37 @@ export function initTdTab(root) {
     });
   }
 
+  // ?breachprobe=1 — DOES A SHELL STILL BREACH THE WALL IT LANDS ON?
+  //
+  // The wall-impact test moved from a scan of every cell to the voxel hash
+  // (cellIndex). Same answer for a point on the surface, but "same" is a claim
+  // and this is the check: put a shell on a wall cell and run one projectile
+  // step; the breach set must grow by exactly that cell.
+  if (urlParams.get('breachprobe') === '1') {
+    setTimeout(() => {
+      let wall = -1;
+      for (let i = 0; i < dungeon.tags.length && wall < 0; i++) {
+        if (dungeon.tags[i] !== BLOCKED) continue;
+        if (graph.adj[i].some((nb) => dungeon.tags[nb] !== BLOCKED)) wall = i;
+      }
+      if (wall < 0) { console.log('BREACHPROBE no wall with an open neighbour'); return; }
+      const before = breachedCells.size;
+      const c = graph.centers[wall];
+      // a real Mesh, because killProjectile disposes geometry and material —
+      // the first cut used a bare Object3D and the probe crashed on its own prop
+      const fake = new THREE.Mesh(new THREE.BufferGeometry(), new THREE.MeshBasicMaterial());
+      scene.add(fake);
+      projectiles.push({ pos: c.slice(), dir: [0, 0, 1], vel: [0, 0, 0], dist: 0,
+        mesh: fake, life: 1 });
+      updateProjectiles(1 / 60, 0);
+      const after = breachedCells.size;
+      console.log(`BREACHPROBE shell on wall cell ${wall}:`
+        + ` breached ${before} -> ${after}`
+        + ` ${after === before + 1 && breachedCells.has(wall) ? 'THAT cell, exactly (cellIndex agrees with the old scan)'
+          : after === before ? '<-- NO BREACH: cellIndex missed the wall' : '<-- breached the WRONG cell(s)'}`);
+    }, 1500);
+  }
+
   // ?sizeprobe=1 — HOW BIG IS EVERYTHING, IN CELLS?
   //
   // Operator: "we made the tank enormous". A screenshot cannot separate a
@@ -10600,7 +10655,17 @@ export function initTdTab(root) {
         + ` ${whPhase.travel - p0 > 0 ? '(travel is live)' : '<-- PHASE NEVER MOVED'}`);
       const folds = WORMHOLE_RENDER.size ** 2 * WORMHOLE_PRESET.uSteps * WORMHOLE_PRESET.uTurbOctaves;
       console.log(`GATEPROBE2 cost ${(folds / 1e6).toFixed(0)}M sine-folds per rendered frame,`
-        + ` ONCE for the board (not per gate)`);
+        + ` ONCE for the board (not per gate), at ${WORMHOLE_RENDER.updateHz}Hz`);
+      // THE FRUSTUM GATE. The march is skipped when no live gate is on screen;
+      // a gate that is on screen and NOT marched is a black hole in the ring,
+      // so the visibility test has to be right in both directions.
+      const vis = anyGateVisible();
+      const marchedBefore = whLastAt;
+      updateWormhole(1 / 30, (whLastAt || 0) + 1);   // force past the period
+      console.log(`GATEPROBE2 visibility: a gate is ${vis ? 'IN' : 'OUT of'} the frustum`
+        + ` -> march ${whLastAt !== marchedBefore ? 'RAN' : 'SKIPPED'}`
+        + ` ${(vis && whLastAt !== marchedBefore) || (!vis && whLastAt === marchedBefore)
+          ? '(consistent)' : '<-- GATE VISIBLE BUT NOT MARCHED, or vice versa'}`);
     });
   }
 
