@@ -19,49 +19,49 @@
 
 import * as THREE from '../vendor/three.module.js';
 import GUI from '../vendor/lil-gui.esm.js';
-import { generateSphereMesh, relax } from './grid.js?v=ecc12837';
-import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=ecc12837';
-import { mulberry32, randomSeed } from './rng.js?v=ecc12837';
-import { computeBerths, berthIndexFor } from './berths.js?v=ecc12837';
-import { wantsSecondary, shellsForAll } from './autofire.js?v=ecc12837';
-import { printPhase, printOffset, printOn, patternSecsFor } from './printpath.js?v=ecc12837';
-import { createBeamRig, PLASMA_DEFAULTS, BOARD_PRESET, BEAM_PEAK } from './beamdraw.js?v=ecc12837';
-import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3, segKey, tangentDir, tangentBasis } from './vec3.js?v=ecc12837';
-import { CREATURES, waveJelly } from './creatures.js?v=ecc12837';
-import { brief, dwellFor } from './isaobriefs.js?v=ecc12837';
-import { drawEmotion } from './emotions.js?v=ecc12837';
+import { generateSphereMesh, relax } from './grid.js?v=6011d6ec';
+import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=6011d6ec';
+import { mulberry32, randomSeed } from './rng.js?v=6011d6ec';
+import { computeBerths, berthIndexFor } from './berths.js?v=6011d6ec';
+import { wantsSecondary, shellsForAll } from './autofire.js?v=6011d6ec';
+import { printPhase, printOffset, printOn, patternSecsFor } from './printpath.js?v=6011d6ec';
+import { createBeamRig, PLASMA_DEFAULTS, BOARD_PRESET, BEAM_PEAK } from './beamdraw.js?v=6011d6ec';
+import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3, segKey, tangentDir, tangentBasis } from './vec3.js?v=6011d6ec';
+import { CREATURES, waveJelly } from './creatures.js?v=6011d6ec';
+import { brief, dwellFor } from './isaobriefs.js?v=6011d6ec';
+import { drawEmotion } from './emotions.js?v=6011d6ec';
 import { ACHIEVEMENTS, ACHV_GROUPS, achievement, blankRun, earned, freshlyEarned,
   sanitiseRecord }
-  from './achievements.js?v=ecc12837';
+  from './achievements.js?v=6011d6ec';
 import { applyFontPack, currentFontPack, FONT_NAMES,
-  loadTypeFeel } from './fonts.js?v=ecc12837';
-import { SECONDARY_TOE, applySecondaryToe } from './units.js?v=ecc12837';
-import { UNITS, UNIT_NAMES, buildUnit, buildCreature, preloadMkcx, preloadServer, makeServerFixture, makeShieldShell, preloadContainer, makeContainerFixture, preloadFabricator, makeIsaoDrone, makeBulletCloud, makeRewardSolid, makeShellSolid, makeDebris, makeDotBurst, makePortalCloud, preloadPortalRing, makePortalRing, makeHeartCloud, makeDotEnemy, preloadTerraformer, makeTerraformerFixture } from './units.js?v=ecc12837';
-import { LOOKS, LOOK_NAMES } from './looks.js?v=ecc12837';
-import { makeCellIndex } from './cellindex.js?v=ecc12837';
-import { CREATURE_TINTS, ENEMY_SPEC, INTROS, computeWavePlan, accentFor } from './enemyspec.js?v=ecc12837';
-import { PICKUPS } from './pickups.js?v=ecc12837';
-import { rankFor, rankLabel, badgeSVG, killReq, eliteReq } from './ranks.js?v=ecc12837';
-import { beamStep, isBeamStep, PEN_SOFT_FRAC, PEN_HARD_FRAC } from './beamranks.js?v=ecc12837';
-import { burn, sweepAdvance, wallBite as wallBiteFor } from './beamburn.js?v=ecc12837';
-import { arcPoint, projectToArc, toeForCrossing, crossingForToe } from './arc.js?v=ecc12837';
+  loadTypeFeel } from './fonts.js?v=6011d6ec';
+import { SECONDARY_TOE, applySecondaryToe } from './units.js?v=6011d6ec';
+import { UNITS, UNIT_NAMES, buildUnit, buildCreature, preloadMkcx, preloadServer, makeServerFixture, makeShieldShell, preloadContainer, makeContainerFixture, preloadFabricator, makeIsaoDrone, makeBulletCloud, makeRewardSolid, makeShellSolid, makeDebris, makeDotBurst, makePortalCloud, preloadPortalRing, makePortalRing, makeHeartCloud, makeDotEnemy, preloadTerraformer, makeTerraformerFixture } from './units.js?v=6011d6ec';
+import { LOOKS, LOOK_NAMES } from './looks.js?v=6011d6ec';
+import { makeCellIndex } from './cellindex.js?v=6011d6ec';
+import { CREATURE_TINTS, ENEMY_SPEC, INTROS, computeWavePlan, accentFor } from './enemyspec.js?v=6011d6ec';
+import { PICKUPS } from './pickups.js?v=6011d6ec';
+import { rankFor, rankLabel, badgeSVG, killReq, eliteReq } from './ranks.js?v=6011d6ec';
+import { beamStep, isBeamStep, PEN_SOFT_FRAC, PEN_HARD_FRAC } from './beamranks.js?v=6011d6ec';
+import { burn, sweepAdvance, wallBite as wallBiteFor } from './beamburn.js?v=6011d6ec';
+import { arcPoint, projectToArc, toeForCrossing, crossingForToe } from './arc.js?v=6011d6ec';
 import { WORMHOLE_PRESET, WORMHOLE_RENDER, RING_SPIN, TRAVEL,
-  travelRate, advancePhase } from './portalfx.js?v=ecc12837';
-import { WORMHOLE_FRAG } from './fx/wormhole.frag.js?v=ecc12837';
-import { makeScore } from './score.js?v=ecc12837';
-import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER } from './towers.js?v=ecc12837';
-import { makeEconomy, sellRefund } from './economy.js?v=ecc12837';
-import { makeBloom } from './postfx.js?v=ecc12837';
-import { TANK_FEEL, TANK_FEEL_KNOBS, makeTankFeel, stepTankFeel, landTankFeel, fireTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js?v=ecc12837';
-import { FEEL, loadFeel, saveFeel } from './feelstore.js?v=ecc12837';
+  travelRate, advancePhase } from './portalfx.js?v=6011d6ec';
+import { WORMHOLE_FRAG } from './fx/wormhole.frag.js?v=6011d6ec';
+import { makeScore } from './score.js?v=6011d6ec';
+import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER } from './towers.js?v=6011d6ec';
+import { makeEconomy, sellRefund } from './economy.js?v=6011d6ec';
+import { makeBloom } from './postfx.js?v=6011d6ec';
+import { TANK_FEEL, TANK_FEEL_KNOBS, makeTankFeel, stepTankFeel, landTankFeel, fireTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js?v=6011d6ec';
+import { FEEL, loadFeel, saveFeel } from './feelstore.js?v=6011d6ec';
 import { STRIKE_KNOBS, makeStrike, makeStrikeParams, grantStrikes, stepStrike,
   toggleArm, paintTarget, launchStrike, stepFall, skipFall, fallProgress,
-  strikeDamage, retargetStrike, orbitProgress } from './strike.js?v=ecc12837';
-import { radarBasis, radarProject, radarBearing, sweepAngle, radarPhosphor } from './radar.js?v=ecc12837';
-import { BLOOM_GROUPS } from './bloomweights.js?v=ecc12837';
-import { TOWER_LOOK_NAMES, DEFAULT_TOWER_LOOK, buildTowerLook, preloadLook } from './towerlooks.js?v=ecc12837';
-import { makeAudio } from './audio.js?v=ecc12837';
-import { DEATH_KEYS } from './audiomanifest.js?v=ecc12837';
+  strikeDamage, retargetStrike, orbitProgress } from './strike.js?v=6011d6ec';
+import { radarBasis, radarProject, radarBearing, sweepAngle, radarPhosphor } from './radar.js?v=6011d6ec';
+import { BLOOM_GROUPS } from './bloomweights.js?v=6011d6ec';
+import { TOWER_LOOK_NAMES, DEFAULT_TOWER_LOOK, buildTowerLook, preloadLook } from './towerlooks.js?v=6011d6ec';
+import { makeAudio } from './audio.js?v=6011d6ec';
+import { DEATH_KEYS } from './audiomanifest.js?v=6011d6ec';
 
 export function initTdTab(root) {
   let active = false;
@@ -8555,9 +8555,14 @@ export function initTdTab(root) {
       // building pressure; two things moving reads as noise
       sp.obj.userData.tick(t * (1 + 2.2 * waveCharge));
       if (sp.obj.userData.setDim) sp.obj.userData.setDim(1 + 1.5 * waveCharge);
+      // THE SHAKE IS GONE (operator, 2026-09-02). A scale pulse used to beat
+      // here as the charge built — right for a dot-cloud orb, wrong for a
+      // standing ring, which is architecture and should not throb. The ring's
+      // pre-wave tell is the wormhole winding up (portalfx.travelRate); adding
+      // a shake on top was the "two things moving reads as noise" this very
+      // comment warns about.
       const s0 = sp.obj.userData.sizeScale ?? 1;
-      const beat = 1 + waveCharge * (0.18 + 0.12 * Math.sin(t * (9 + 22 * waveCharge)));
-      sp.obj.scale.setScalar(s0 * beat);
+      sp.obj.scale.setScalar(s0);
       // proximity discovers the source: the minimap beacon lights up
       if (!sp.found && dist3(player.pos, graph.centers[sp.ci]) < cellSide * 5) sp.found = true;
     }
