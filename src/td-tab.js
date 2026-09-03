@@ -19,57 +19,57 @@
 
 import * as THREE from '../vendor/three.module.js';
 import GUI from '../vendor/lil-gui.esm.js';
-import { generateSphereMesh, relax } from './grid.js?v=d60b80bb';
-import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=d60b80bb';
-import { mulberry32, randomSeed } from './rng.js?v=d60b80bb';
-import { computeBerths, berthIndexFor } from './berths.js?v=d60b80bb';
-import { wantsSecondary, shellsForAll } from './autofire.js?v=d60b80bb';
-import { printPhase, printOffset, printOn, patternSecsFor } from './printpath.js?v=d60b80bb';
-import { createBeamRig, PLASMA_DEFAULTS, BOARD_PRESET, BEAM_PEAK } from './beamdraw.js?v=d60b80bb';
-import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3, segKey, tangentDir, tangentBasis } from './vec3.js?v=d60b80bb';
-import { CREATURES, waveJelly } from './creatures.js?v=d60b80bb';
-import { brief, dwellFor } from './isaobriefs.js?v=d60b80bb';
-import { drawEmotion } from './emotions.js?v=d60b80bb';
+import { generateSphereMesh, relax } from './grid.js?v=17f42c04';
+import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=17f42c04';
+import { mulberry32, randomSeed } from './rng.js?v=17f42c04';
+import { computeBerths, berthIndexFor } from './berths.js?v=17f42c04';
+import { wantsSecondary, shellsForAll } from './autofire.js?v=17f42c04';
+import { printPhase, printOffset, printOn, patternSecsFor } from './printpath.js?v=17f42c04';
+import { createBeamRig, PLASMA_DEFAULTS, BOARD_PRESET, BEAM_PEAK } from './beamdraw.js?v=17f42c04';
+import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3, segKey, tangentDir, tangentBasis } from './vec3.js?v=17f42c04';
+import { CREATURES, waveJelly } from './creatures.js?v=17f42c04';
+import { brief, dwellFor } from './isaobriefs.js?v=17f42c04';
+import { drawEmotion } from './emotions.js?v=17f42c04';
 import { ACHIEVEMENTS, ACHV_GROUPS, achievement, blankRun, earned, freshlyEarned,
   sanitiseRecord }
-  from './achievements.js?v=d60b80bb';
+  from './achievements.js?v=17f42c04';
 import { applyFontPack, currentFontPack, FONT_NAMES,
-  loadTypeFeel } from './fonts.js?v=d60b80bb';
-import { SECONDARY_TOE, applySecondaryToe } from './units.js?v=d60b80bb';
-import { UNITS, UNIT_NAMES, buildUnit, buildCreature, preloadMkcx, preloadServer, makeServerFixture, makeShieldShell, preloadContainer, makeContainerFixture, preloadFabricator, makeIsaoDrone, makeBulletCloud, makeRewardSolid, makeShellSolid, makeDebris, makeDotBurst, makePortalCloud, preloadPortalRing, makePortalRing, makeHeartCloud, makeDotEnemy, preloadTerraformer, makeTerraformerFixture } from './units.js?v=d60b80bb';
-import { LOOKS, LOOK_NAMES } from './looks.js?v=d60b80bb';
-import { makeCellIndex } from './cellindex.js?v=d60b80bb';
-import { CREATURE_TINTS, ENEMY_SPEC, INTROS, computeWavePlan, accentFor } from './enemyspec.js?v=d60b80bb';
-import { PICKUPS } from './pickups.js?v=d60b80bb';
-import { rankFor, rankLabel, badgeSVG, killReq, eliteReq } from './ranks.js?v=d60b80bb';
-import { beamStep, isBeamStep, PEN_SOFT_FRAC, PEN_HARD_FRAC } from './beamranks.js?v=d60b80bb';
-import { burn, sweepAdvance, wallBite as wallBiteFor } from './beamburn.js?v=d60b80bb';
-import { arcPoint, projectToArc, toeForCrossing, crossingForToe } from './arc.js?v=d60b80bb';
+  loadTypeFeel } from './fonts.js?v=17f42c04';
+import { SECONDARY_TOE, applySecondaryToe } from './units.js?v=17f42c04';
+import { UNITS, UNIT_NAMES, buildUnit, buildCreature, preloadMkcx, preloadServer, makeServerFixture, makeShieldShell, preloadContainer, makeContainerFixture, preloadFabricator, makeIsaoDrone, makeBulletCloud, makeRewardSolid, makeShellSolid, makeDebris, makeDotBurst, makePortalCloud, preloadPortalRing, makePortalRing, makeHeartCloud, makeDotEnemy, preloadTerraformer, makeTerraformerFixture } from './units.js?v=17f42c04';
+import { LOOKS, LOOK_NAMES } from './looks.js?v=17f42c04';
+import { makeCellIndex } from './cellindex.js?v=17f42c04';
+import { CREATURE_TINTS, ENEMY_SPEC, INTROS, computeWavePlan, accentFor } from './enemyspec.js?v=17f42c04';
+import { PICKUPS } from './pickups.js?v=17f42c04';
+import { rankFor, rankLabel, badgeSVG, killReq, eliteReq } from './ranks.js?v=17f42c04';
+import { beamStep, isBeamStep, PEN_SOFT_FRAC, PEN_HARD_FRAC } from './beamranks.js?v=17f42c04';
+import { burn, sweepAdvance, wallBite as wallBiteFor } from './beamburn.js?v=17f42c04';
+import { arcPoint, projectToArc, toeForCrossing, crossingForToe } from './arc.js?v=17f42c04';
 import { WORMHOLE_PRESET, WORMHOLE_UNIFORM_DEFAULTS, RING_SPIN, TRAVEL,
-  travelRate, advancePhase } from './portalfx.js?v=d60b80bb';
-import { WORMHOLE_FRAG } from './fx/wormhole.frag.js?v=d60b80bb';
-import { CORONA_FRAG } from './fx/corona.frag.js?v=d60b80bb';
-import { labLine, parseLabQuery } from './lab.js?v=d60b80bb';
-import { bakeGalaxyCube } from './galaxybake.js?v=d60b80bb';
-import { SKY_PRESET } from './galaxyseed.js?v=d60b80bb';
-import { makeScore } from './score.js?v=d60b80bb';
-import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER } from './towers.js?v=d60b80bb';
-import { makeEconomy, sellRefund } from './economy.js?v=d60b80bb';
-import { pickTier } from './perftier.js?v=d60b80bb';
-import { STICK, stickVector, knobOffset } from './stick.js?v=d60b80bb';
-import { registerServiceWorker } from './pwa.js?v=d60b80bb';
-import { makeBloom } from './postfx.js?v=d60b80bb';
-import { TANK_FEEL, TANK_FEEL_KNOBS, makeTankFeel, stepTankFeel, landTankFeel, fireTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js?v=d60b80bb';
-import { FEEL, loadFeel, saveFeel } from './feelstore.js?v=d60b80bb';
+  travelRate, advancePhase } from './portalfx.js?v=17f42c04';
+import { WORMHOLE_FRAG } from './fx/wormhole.frag.js?v=17f42c04';
+import { CORONA_FRAG } from './fx/corona.frag.js?v=17f42c04';
+import { labLine, parseLabQuery } from './lab.js?v=17f42c04';
+import { bakeGalaxyCube } from './galaxybake.js?v=17f42c04';
+import { SKY_PRESET } from './galaxyseed.js?v=17f42c04';
+import { makeScore } from './score.js?v=17f42c04';
+import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER } from './towers.js?v=17f42c04';
+import { makeEconomy, sellRefund } from './economy.js?v=17f42c04';
+import { pickTier } from './perftier.js?v=17f42c04';
+import { STICK, stickVector, knobOffset } from './stick.js?v=17f42c04';
+import { registerServiceWorker } from './pwa.js?v=17f42c04';
+import { makeBloom } from './postfx.js?v=17f42c04';
+import { TANK_FEEL, TANK_FEEL_KNOBS, makeTankFeel, stepTankFeel, landTankFeel, fireTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js?v=17f42c04';
+import { FEEL, loadFeel, saveFeel } from './feelstore.js?v=17f42c04';
 import { STRIKE_KNOBS, makeStrike, makeStrikeParams, grantStrikes, stepStrike,
   toggleArm, paintTarget, launchStrike, stepFall, skipFall, fallProgress,
-  strikeDamage, retargetStrike, orbitProgress } from './strike.js?v=d60b80bb';
+  strikeDamage, retargetStrike, orbitProgress } from './strike.js?v=17f42c04';
 import { radarBasis, radarProject, radarBearing, sweepAngle, radarPhosphor,
-  proximitySectors, SENSOR_LEVELS, sensorColor } from './radar.js?v=d60b80bb';
-import { BLOOM_GROUPS } from './bloomweights.js?v=d60b80bb';
-import { TOWER_LOOK_NAMES, DEFAULT_TOWER_LOOK, buildTowerLook, preloadLook } from './towerlooks.js?v=d60b80bb';
-import { makeAudio } from './audio.js?v=d60b80bb';
-import { DEATH_KEYS } from './audiomanifest.js?v=d60b80bb';
+  proximitySectors, SENSOR_LEVELS, sensorColor } from './radar.js?v=17f42c04';
+import { BLOOM_GROUPS } from './bloomweights.js?v=17f42c04';
+import { TOWER_LOOK_NAMES, DEFAULT_TOWER_LOOK, buildTowerLook, preloadLook } from './towerlooks.js?v=17f42c04';
+import { makeAudio } from './audio.js?v=17f42c04';
+import { DEATH_KEYS } from './audiomanifest.js?v=17f42c04';
 
 export function initTdTab(root) {
   let active = false;
@@ -7596,6 +7596,10 @@ export function initTdTab(root) {
   // easing. Slow enough that the traverse READS as the tower noticing you.
   const TRACK_RATE = 5.0;
   const TRACK_EVERY = 0.15;   // seconds between retargets; the ease covers it
+  // How many tethers a slow tower DRAWS per shot, however many it slows.
+  // The field is universal; the picture is bounded (see the slowfield
+  // branch in stepTowers).
+  const SLOW_BOLTS = 3;
   const aimV = new THREE.Vector3();
 
   // Point a directional head at what it is shooting. Only heads that HAVE a
@@ -7675,26 +7679,38 @@ export function initTdTab(root) {
         damageEnemy(target, tNow, eff.dmg, true);
         spawnBeam(muzzle, add3(target.pos, scale3(norm3(target.pos), cellSide * 0.3)), tw.def.color);
       } else if (atk === 'slowfield') {
-        // tether EVERY hostile in range: chip damage + the slow
+        // THE FIELD IS UNIVERSAL, THE PICTURE IS THREE BOLTS. Every hostile
+        // in range is still slowed — that is two numbers written on an
+        // enemy and it costs nothing. What cost tower × enemy was the
+        // PICTURE: a lightning bolt AND a 12-point dot burst spawned per
+        // hostile per shot, which is precisely the product ?stress=T:W was
+        // built to measure (towerXenemyInRange predicting liveBolts and
+        // liveBursts). Now the NEAREST three get a bolt and nobody gets a
+        // burst, so the effect's draw cost is bounded by the tower count
+        // alone and a crowd is free. The nearest three are also the three
+        // the player is looking at.
+        const near = [];   // { e, d }, ascending, at most SLOW_BOLTS
         for (const e of enemies) {
-          if (!e.alive || chord(tp, e.pos) > range) continue;
+          if (!e.alive) continue;
+          const d = chord(tp, e.pos);
+          if (d > range) continue;
           // A tower with no damage must not call damageEnemy at all: even at
           // 0 it resets a regenerator's out-of-combat clock and fires the
           // on-hit reactions — a barbed ACCELERATES when hit, so a "slow"
           // tower would have been speeding it up.
           if (eff.dmg > 0) damageEnemy(e, tNow, eff.dmg, true);
-          if (e.alive) {
-            e.slowFactor = eff.slowFactor;
-            e.slowUntil = tNow + eff.slowDur;
-            spawnLightning(muzzle, e.pos, tw.def.color, tNow);
-            const spark = makeDotBurst(tw.def.color, norm3(e.pos), 12);
-            spark.scale.setScalar(cellSide * 0.3);
-            const spp = add3(e.pos, scale3(norm3(e.pos), cellSide * 0.2));
-            spark.position.set(spp[0], spp[1], spp[2]);
-            scene.add(spark);
-            debris.push(spark);
+          if (!e.alive) continue;
+          e.slowFactor = eff.slowFactor;
+          e.slowUntil = tNow + eff.slowDur;
+          // insertion into a 3-slot list: one pass, no sort of the crowd
+          let i = near.length;
+          while (i > 0 && near[i - 1].d > d) i--;
+          if (i < SLOW_BOLTS) {
+            near.splice(i, 0, { e, d });
+            if (near.length > SLOW_BOLTS) near.pop();
           }
         }
+        for (const t3 of near) spawnLightning(muzzle, t3.e.pos, tw.def.color, tNow);
       } else if (atk === 'spread') {
         for (let p = 0; p < eff.pellets; p++) {
           const ang = (p - (eff.pellets - 1) / 2) * 0.22;

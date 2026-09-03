@@ -19,12 +19,12 @@
 // domain is a sphere (tangent-plane projection + reprojection). The merge
 // and subdivision bookkeeping is identical to the 2D version.
 
-import { mulberry32 } from './rng.js?v=d60b80bb';
-import { bestCandidateSphere } from './sample.js?v=d60b80bb';
-import { sphericalDelaunay } from './hull.js?v=d60b80bb';
+import { mulberry32 } from './rng.js?v=17f42c04';
+import { bestCandidateSphere } from './sample.js?v=17f42c04';
+import { sphericalDelaunay } from './hull.js?v=17f42c04';
 import {
   sub3, add3, scale3, dot3, cross3, len3, norm3, mean3, tangentBasis,
-} from './vec3.js?v=d60b80bb';
+} from './vec3.js?v=17f42c04';
 
 const QUAD_ANGLE_MIN = 0.2 * Math.PI; // 36°  (same limits as the 2D version)
 const QUAD_ANGLE_MAX = 0.9 * Math.PI; // 162°
