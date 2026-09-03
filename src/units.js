@@ -16,14 +16,14 @@
 
 import * as THREE from '../vendor/three.module.js';
 import { EMOTION_IDS, emotion, phosphorFor } from './emotions.js';
-import { printPhase, printOffset, printOn } from './printpath.js?v=abb533e2';
+import { printPhase, printOffset, printOn } from './printpath.js?v=aa74d088';
 import { loadGlb, mergeByMaterial, fitModel, tintModel, makeShellRack,
-  addEdgeOutlines, makeHeatSleeve } from './glbmodels.js?v=abb533e2';
-import { CREATURES, waveJelly, swimWave, spherePts, bulletPts, missilePts, heartPts, torusPts, towerHeadPts, enemyDotPts, portalPts } from './creatures.js?v=abb533e2';
-import { TOWER_FEEL, TOWER_HEADS, headKindFor } from './towerfeel.js?v=abb533e2';
+  addEdgeOutlines, makeHeatSleeve } from './glbmodels.js?v=aa74d088';
+import { CREATURES, waveJelly, swimWave, spherePts, bulletPts, missilePts, heartPts, torusPts, towerHeadPts, enemyDotPts, portalPts } from './creatures.js?v=aa74d088';
+import { TOWER_FEEL, TOWER_HEADS, headKindFor } from './towerfeel.js?v=aa74d088';
 import { STARGATE_PTS, STARGATE_STROKE,
-  HORIZON_N, stargateHorizon } from './stargate.js?v=abb533e2';
-import { ENEMY_SPEC } from './enemyspec.js?v=abb533e2';
+  HORIZON_N, stargateHorizon } from './stargate.js?v=aa74d088';
+import { ENEMY_SPEC } from './enemyspec.js?v=aa74d088';
 
 function normalizeToUnit(group) {
   group.updateMatrixWorld(true);
@@ -1166,6 +1166,16 @@ export function makeHeartCloud(bodyHex) {
 // hierarchy contract, so every name below applies to both.
 const MKCX_URLS = { mkcx: 'assets/models/mkcx.glb', mkcx2: 'assets/models/mkcx2.glb' };
 const MKCX_ROOTS = ['MKCX_Root', 'MKCX2_Root'];
+// The heat gauges are SLEEVES the game adds (a dedicated basic material is
+// the only thing legible at gameplay distance). Lengths per casting: the
+// MK-CX/2's are 1.5x the MK-CX's (operator, 2026-09-03), all three weapons.
+// Positions are sleeve CENTRES along the barrel, so a longer sleeve grows
+// both ways: the main one still starts ahead of the cradle and the
+// secondaries' still end short of their muzzles.
+const MKCX_SLEEVES = {
+  mkcx: { main: { len: 1.65, z: 2.05 }, sec: { len: 0.62, z: 0.72 } },
+  mkcx2: { main: { len: 2.475, z: 2.05 }, sec: { len: 0.93, z: 0.72 } },
+};
 // Hover_Gear is the nacelle/lift-emitter skirt — the part that should stay
 // planted while the body rises off it. Preserved through the merge for that
 // reason, not because it animates on its own.
@@ -2468,7 +2478,8 @@ function makeMkcx(cols, id = 'mkcx') {
       // legible thing on the tank and it was too short a band to read at
       // gameplay distance. Pushed forward so the longer sleeve still sits on
       // the barrel rather than starting inside the mantlet.
-      radius: 0.34, len: 1.65, z: 2.05, color: cols.walkerHi ?? 0x7df9ff,
+      radius: 0.34, len: MKCX_SLEEVES[id].main.len, z: MKCX_SLEEVES[id].main.z,
+      color: cols.walkerHi ?? 0x7df9ff,
     });
   }
   // No added gun tubes: the model already HAS secondary gun barrels, and
@@ -2496,9 +2507,9 @@ function makeMkcx(cols, id = 'mkcx') {
       // own PBR. The secondaries get the same instrument — one sleeve per
       // gun, one shared material so both heat together.
       const sl = makeHeatSleeve(guns[0], {
-        radius: 0.16, len: 0.62, z: 0.72, color: cols.walkerHi ?? 0x7df9ff });
+        radius: 0.16, len: MKCX_SLEEVES[id].sec.len, z: MKCX_SLEEVES[id].sec.z, color: cols.walkerHi ?? 0x7df9ff });
       const sr = makeHeatSleeve(guns[1], {
-        radius: 0.16, len: 0.62, z: 0.72, color: cols.walkerHi ?? 0x7df9ff });
+        radius: 0.16, len: MKCX_SLEEVES[id].sec.len, z: MKCX_SLEEVES[id].sec.z, color: cols.walkerHi ?? 0x7df9ff });
       sr.material.dispose();
       sr.material = sl.material;
       g.userData.laserSleeveMat = sl.material;

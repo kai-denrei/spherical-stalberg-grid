@@ -37,7 +37,17 @@ and 2.9 tall filled a fifth of the frame. It now projects the box's eight
 corners along the view direction and solves the distance at which the
 widest sits at a horizontal limit and the tallest at a vertical one that
 leaves the toolbar band free. The MK-CX/2 is twice the size it was; compact
-units are unchanged in feel. `?zoom=N` scales the fit. The viewer and board now preload
+units are unchanged in feel. `?zoom=N` scales the fit.
+
+**Second pass (operator, same day): elevated, and longer gauges.** The main
+gun clipped the secondaries on traverse, so the blade now stands on a
+faceted pedestal 0.22 tall with the trunnion raised: bore at 2.02, barrel
+underside 1.87, the secondaries' shells top out at 1.60. The sibling's test
+rotates the turret through 360° in 3° steps and asserts the barrel's world
+box never meets any secondary part, 720 checks, closest approach 0.27 m.
+The three heat sleeves the game adds are 1.5× longer on this casting, from
+a per-casting table; positions are sleeve centres, so the main one still
+starts ahead of the cradle and the secondaries' end short of their muzzles. The viewer and board now preload
 the casting they were asked for; before, both preloaded only the default
 and a variant would have shown the procedural fallback forever.
 
