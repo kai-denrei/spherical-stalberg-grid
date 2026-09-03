@@ -6,6 +6,33 @@ Demo links assume `npm run serve` (port 8144) or the
 
 ---
 
+## `69c6240` — phase 4: the sound rail, and the capture sizes its own frame
+
+The ruling was that a cinematic re-uses the game's own sounds where one
+fits and is space silence where none does; no new sound is authored.
+`src/cine/sound.js` is the rail per scene — cues `{ t, key, gain }` over
+`audiomanifest` keys — pure and Node-tested (in range, sorted, every key
+in the manifest). Two clients read the one rail so they cannot drift:
+the cine tab fires a cue through the game's own `sfx` the frame the
+*live* clock crosses it, never on a seek (a capture is silent), and
+`scripts/cine-mux.mjs` lays the same cues onto a finished clip with
+ffmpeg — `adelay` per cue, `amix` without normalisation so each cue
+keeps its level, trimmed to the picture. THE GATE: the throat's warning
+as the march flies out, the tension under the pull-back, the alert as
+the swarm comes through. THE PLANET: silence, then the tension under the
+graze. THE TANK: the engine under everything, three mains, the spool,
+the beam, the spool down, the thruster on the roll-out.
+
+**The capture sizes its own frame now.** One clip's frames came out
+1920×1167: headless Chrome's 87 px bar was inside the canvas that run
+and not the others, so the scene composed at the wrong aspect and
+libx264 refused the odd height. The page takes `?size=WxH` and sets the
+drawing buffer to exactly that (`setSize` with `updateStyle` false,
+pixel ratio 1); the capture script passes it. The canvas is the frame;
+the window is irrelevant.
+
+---
+
 ## `f3bd75d` — phase 4: the film pass
 
 Letterbox, grain, vignette and a title card, drawn *in the canvas*. A DOM
