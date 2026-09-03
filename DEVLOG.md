@@ -6,6 +6,21 @@ Demo links assume `npm run serve` (port 8144) or the
 
 ---
 
+## `10fa17c` — the announcement cards were sitting on the tank
+
+A phone photo of DRIVE showed the NEW THREAT and NEW TOWER cards stacked on
+each other in the middle of the frame, over the tank. The ruler had never
+listed those cards, and its own viewport was 331px, a 418px window minus
+Chrome's bar, so a lane placed for it landed mid-frame on a real phone. The
+cards are one-line captions on the shell now, sprite inline, stacked
+top-left under the HUD; the ruler lists them, pins both, and shell runs use
+a window tall enough that the viewport is the phone's 418 or 390. Zero
+overlaps in both modes. The tank-in-view report itself is still open: the
+replica frames the tank at 2.5 cells, so the boot probe now paints its facts
+onto the shell's caption lane for a phone screenshot to carry.
+
+---
+
 ## `e6a4988` — the proximity sensor in cells and colour
 
 The sensor graded contacts by thirds of the scope's reach, a fraction of

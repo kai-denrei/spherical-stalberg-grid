@@ -75,7 +75,10 @@ token — the corner badge was retired from the game view).
   reassemble from stderr; the EXPORT button in the viewer downloads it),
   `#tabname`.
   Headless clamps windows to ~500px wide and CROPS screenshots — for
-  layout bugs, log `innerWidth` from the page before touching CSS.
+  layout bugs, log `innerWidth` from the page before touching CSS. And
+  headless=new keeps ~87px of its own bar: `--window-size=908,505` gives a
+  908×418 viewport (a phone's), `844,477` gives 844×390 — the `?layout`
+  line prints the real viewport; rule against THAT, never the window.
 - A `@media (pointer: coarse)` rule cannot be exercised by any desktop
   browser, headless included — pair it with a width clause
   (`, (max-width: 560px)`) or the rules inside are unverifiable and can
