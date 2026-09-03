@@ -6,6 +6,49 @@ Demo links assume `npm run serve` (port 8144) or the
 
 ---
 
+## `12c5c29` — the slow field keeps its reach and loses its cost
+
+The operator's question from the stress probe — "do fps go down MORE with
+huge waves AND lots of slow towers, because the tower effect must link to
+all units?" — was yes, and `?stress=8:60&perf=26` says by how much. Eight
+slow towers over a crowd: `towerXenemyInRange=231` predicted `liveBolts=190`
+and `liveBursts=237`, and the scene carried 520 children. The tether drew a
+lightning bolt *and* a 12-point dot burst per hostile per shot, so the
+picture cost tower × enemy while the mechanic cost nothing — a slow is
+`slowFactor` and `slowUntil` written on an enemy.
+
+The split is the fix. The field stays universal; the picture becomes
+bounded. Every hostile in range is still slowed, the nearest three get a
+bolt, and nobody gets a burst at all. The nearest three are also the three
+the player is watching, so the read improves rather than degrades: three
+legible arcs onto the front of the crowd instead of forty overlapping ones
+onto all of it.
+
+```js
+const near = [];   // { e, d }, ascending, at most SLOW_BOLTS
+for (const e of enemies) {
+  ...
+  e.slowFactor = eff.slowFactor;
+  e.slowUntil = tNow + eff.slowDur;
+  let i = near.length;
+  while (i > 0 && near[i - 1].d > d) i--;
+  if (i < SLOW_BOLTS) { near.splice(i, 0, { e, d }); if (near.length > SLOW_BOLTS) near.pop(); }
+}
+for (const t3 of near) spawnLightning(muzzle, t3.e.pos, tw.def.color, tNow);
+```
+
+The nearest-three selection is a three-slot insertion inside the pass that
+already walks the crowd to apply the field, so nothing is sorted and no
+second traversal is added.
+
+Same probe, same instant, after the change: `liveBolts=12`,
+`liveBursts=1`, 107 scene children — against 244 tower-enemy pairs. The
+effect's draw cost is bounded by the tower count alone now, and a crowd is
+free. Measured both ways with the fix stashed and restored, so the
+before-numbers are this machine's, not a memory of them.
+
+---
+
 ## `a9b4d6f` — the katakana パ was Jekyll
 
 The Bridge and Shikaku minigames showed only their パ mark on Pages while
