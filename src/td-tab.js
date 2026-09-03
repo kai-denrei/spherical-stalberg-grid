@@ -19,56 +19,57 @@
 
 import * as THREE from '../vendor/three.module.js';
 import GUI from '../vendor/lil-gui.esm.js';
-import { generateSphereMesh, relax } from './grid.js?v=e6d6f471';
-import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=e6d6f471';
-import { mulberry32, randomSeed } from './rng.js?v=e6d6f471';
-import { computeBerths, berthIndexFor } from './berths.js?v=e6d6f471';
-import { wantsSecondary, shellsForAll } from './autofire.js?v=e6d6f471';
-import { printPhase, printOffset, printOn, patternSecsFor } from './printpath.js?v=e6d6f471';
-import { createBeamRig, PLASMA_DEFAULTS, BOARD_PRESET, BEAM_PEAK } from './beamdraw.js?v=e6d6f471';
-import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3, segKey, tangentDir, tangentBasis } from './vec3.js?v=e6d6f471';
-import { CREATURES, waveJelly } from './creatures.js?v=e6d6f471';
-import { brief, dwellFor } from './isaobriefs.js?v=e6d6f471';
-import { drawEmotion } from './emotions.js?v=e6d6f471';
+import { generateSphereMesh, relax } from './grid.js?v=9885c97b';
+import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=9885c97b';
+import { mulberry32, randomSeed } from './rng.js?v=9885c97b';
+import { computeBerths, berthIndexFor } from './berths.js?v=9885c97b';
+import { wantsSecondary, shellsForAll } from './autofire.js?v=9885c97b';
+import { printPhase, printOffset, printOn, patternSecsFor } from './printpath.js?v=9885c97b';
+import { createBeamRig, PLASMA_DEFAULTS, BOARD_PRESET, BEAM_PEAK } from './beamdraw.js?v=9885c97b';
+import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3, segKey, tangentDir, tangentBasis } from './vec3.js?v=9885c97b';
+import { CREATURES, waveJelly } from './creatures.js?v=9885c97b';
+import { brief, dwellFor } from './isaobriefs.js?v=9885c97b';
+import { drawEmotion } from './emotions.js?v=9885c97b';
 import { ACHIEVEMENTS, ACHV_GROUPS, achievement, blankRun, earned, freshlyEarned,
   sanitiseRecord }
-  from './achievements.js?v=e6d6f471';
+  from './achievements.js?v=9885c97b';
 import { applyFontPack, currentFontPack, FONT_NAMES,
-  loadTypeFeel } from './fonts.js?v=e6d6f471';
-import { SECONDARY_TOE, applySecondaryToe } from './units.js?v=e6d6f471';
-import { UNITS, UNIT_NAMES, buildUnit, buildCreature, preloadMkcx, preloadServer, makeServerFixture, makeShieldShell, preloadContainer, makeContainerFixture, preloadFabricator, makeIsaoDrone, makeBulletCloud, makeRewardSolid, makeShellSolid, makeDebris, makeDotBurst, makePortalCloud, preloadPortalRing, makePortalRing, makeHeartCloud, makeDotEnemy, preloadTerraformer, makeTerraformerFixture } from './units.js?v=e6d6f471';
-import { LOOKS, LOOK_NAMES } from './looks.js?v=e6d6f471';
-import { makeCellIndex } from './cellindex.js?v=e6d6f471';
-import { CREATURE_TINTS, ENEMY_SPEC, INTROS, computeWavePlan, accentFor } from './enemyspec.js?v=e6d6f471';
-import { PICKUPS } from './pickups.js?v=e6d6f471';
-import { rankFor, rankLabel, badgeSVG, killReq, eliteReq } from './ranks.js?v=e6d6f471';
-import { beamStep, isBeamStep, PEN_SOFT_FRAC, PEN_HARD_FRAC } from './beamranks.js?v=e6d6f471';
-import { burn, sweepAdvance, wallBite as wallBiteFor } from './beamburn.js?v=e6d6f471';
-import { arcPoint, projectToArc, toeForCrossing, crossingForToe } from './arc.js?v=e6d6f471';
+  loadTypeFeel } from './fonts.js?v=9885c97b';
+import { SECONDARY_TOE, applySecondaryToe } from './units.js?v=9885c97b';
+import { UNITS, UNIT_NAMES, buildUnit, buildCreature, preloadMkcx, preloadServer, makeServerFixture, makeShieldShell, preloadContainer, makeContainerFixture, preloadFabricator, makeIsaoDrone, makeBulletCloud, makeRewardSolid, makeShellSolid, makeDebris, makeDotBurst, makePortalCloud, preloadPortalRing, makePortalRing, makeHeartCloud, makeDotEnemy, preloadTerraformer, makeTerraformerFixture } from './units.js?v=9885c97b';
+import { LOOKS, LOOK_NAMES } from './looks.js?v=9885c97b';
+import { makeCellIndex } from './cellindex.js?v=9885c97b';
+import { CREATURE_TINTS, ENEMY_SPEC, INTROS, computeWavePlan, accentFor } from './enemyspec.js?v=9885c97b';
+import { PICKUPS } from './pickups.js?v=9885c97b';
+import { rankFor, rankLabel, badgeSVG, killReq, eliteReq } from './ranks.js?v=9885c97b';
+import { beamStep, isBeamStep, PEN_SOFT_FRAC, PEN_HARD_FRAC } from './beamranks.js?v=9885c97b';
+import { burn, sweepAdvance, wallBite as wallBiteFor } from './beamburn.js?v=9885c97b';
+import { arcPoint, projectToArc, toeForCrossing, crossingForToe } from './arc.js?v=9885c97b';
 import { WORMHOLE_PRESET, WORMHOLE_UNIFORM_DEFAULTS, RING_SPIN, TRAVEL,
-  travelRate, advancePhase } from './portalfx.js?v=e6d6f471';
-import { WORMHOLE_FRAG } from './fx/wormhole.frag.js?v=e6d6f471';
-import { CORONA_FRAG } from './fx/corona.frag.js?v=e6d6f471';
-import { labLine, parseLabQuery } from './lab.js?v=e6d6f471';
-import { bakeGalaxyCube } from './galaxybake.js?v=e6d6f471';
-import { SKY_PRESET } from './galaxyseed.js?v=e6d6f471';
-import { makeScore } from './score.js?v=e6d6f471';
-import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER } from './towers.js?v=e6d6f471';
-import { makeEconomy, sellRefund } from './economy.js?v=e6d6f471';
-import { pickTier } from './perftier.js?v=e6d6f471';
-import { registerServiceWorker } from './pwa.js?v=e6d6f471';
-import { makeBloom } from './postfx.js?v=e6d6f471';
-import { TANK_FEEL, TANK_FEEL_KNOBS, makeTankFeel, stepTankFeel, landTankFeel, fireTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js?v=e6d6f471';
-import { FEEL, loadFeel, saveFeel } from './feelstore.js?v=e6d6f471';
+  travelRate, advancePhase } from './portalfx.js?v=9885c97b';
+import { WORMHOLE_FRAG } from './fx/wormhole.frag.js?v=9885c97b';
+import { CORONA_FRAG } from './fx/corona.frag.js?v=9885c97b';
+import { labLine, parseLabQuery } from './lab.js?v=9885c97b';
+import { bakeGalaxyCube } from './galaxybake.js?v=9885c97b';
+import { SKY_PRESET } from './galaxyseed.js?v=9885c97b';
+import { makeScore } from './score.js?v=9885c97b';
+import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER } from './towers.js?v=9885c97b';
+import { makeEconomy, sellRefund } from './economy.js?v=9885c97b';
+import { pickTier } from './perftier.js?v=9885c97b';
+import { STICK, stickVector, knobOffset } from './stick.js?v=9885c97b';
+import { registerServiceWorker } from './pwa.js?v=9885c97b';
+import { makeBloom } from './postfx.js?v=9885c97b';
+import { TANK_FEEL, TANK_FEEL_KNOBS, makeTankFeel, stepTankFeel, landTankFeel, fireTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js?v=9885c97b';
+import { FEEL, loadFeel, saveFeel } from './feelstore.js?v=9885c97b';
 import { STRIKE_KNOBS, makeStrike, makeStrikeParams, grantStrikes, stepStrike,
   toggleArm, paintTarget, launchStrike, stepFall, skipFall, fallProgress,
-  strikeDamage, retargetStrike, orbitProgress } from './strike.js?v=e6d6f471';
+  strikeDamage, retargetStrike, orbitProgress } from './strike.js?v=9885c97b';
 import { radarBasis, radarProject, radarBearing, sweepAngle, radarPhosphor,
-  proximitySectors, SENSOR_LEVELS } from './radar.js?v=e6d6f471';
-import { BLOOM_GROUPS } from './bloomweights.js?v=e6d6f471';
-import { TOWER_LOOK_NAMES, DEFAULT_TOWER_LOOK, buildTowerLook, preloadLook } from './towerlooks.js?v=e6d6f471';
-import { makeAudio } from './audio.js?v=e6d6f471';
-import { DEATH_KEYS } from './audiomanifest.js?v=e6d6f471';
+  proximitySectors, SENSOR_LEVELS } from './radar.js?v=9885c97b';
+import { BLOOM_GROUPS } from './bloomweights.js?v=9885c97b';
+import { TOWER_LOOK_NAMES, DEFAULT_TOWER_LOOK, buildTowerLook, preloadLook } from './towerlooks.js?v=9885c97b';
+import { makeAudio } from './audio.js?v=9885c97b';
+import { DEATH_KEYS } from './audiomanifest.js?v=9885c97b';
 
 export function initTdTab(root) {
   let active = false;
@@ -3492,7 +3493,7 @@ export function initTdTab(root) {
   // (The operator's first phone screen: "cannot figure out the controls".)
   const SHELL_WORDS = [
     ['RAM THEM · drive straight through them',
-      'RAM THEM · TAP THE GROUND beyond them — the tank drives there and rams what it crosses'],
+      'RAM THEM · TAP THE GROUND beyond them, or DRAG on the left half to drive — through them'],
     ['hold to sweep them with the lasers', 'hold &#8767; (bottom right) to sweep them with the plasma'],
     ['Build Towers — tap any HIGH GROUND cell, from any camera. ',
       'BUILD · tap the BUILD button, then any HIGH GROUND cell. Hold a tower to upgrade. '],
@@ -3500,7 +3501,7 @@ export function initTdTab(root) {
   function shellWords(html) {
     if (!mobileShell) return html;
     if (html.startsWith('THROTTLE ·')) {
-      return 'TAP TO GO · tap where you want the tank, tap again to change your mind. It drives itself.';
+      return 'TAP TO GO · tap where you want the tank and it drives itself; DRAG on the left half to take the wheel.';
     }
     for (const [a, b] of SHELL_WORDS) html = html.replace(a, b);
     return html;
@@ -3928,14 +3929,14 @@ export function initTdTab(root) {
     if (introEl && !introEl.classList.contains('hidden')) return;
     coach.t += dt;
     if (coach.step === 0) {
-      if (!coach.shown) { coach.shown = true; tutBanner('TAP THE GROUND &middot; the tank drives there', { hold: true }); }
+      if (!coach.shown) { coach.shown = true; tutBanner('TAP THE GROUND &middot; the tank drives there &middot; or DRAG on the left to drive it yourself', { hold: true }); }
       coach.pulseT -= dt;
       if (coach.pulseT <= 0) {
         coach.pulseT = 1.2;
         const c = coachTarget();
         if (c >= 0) { paintCell(c, look().floors.hintFlash); setTimeout(() => paintCell(c, floorColorOf(c)), 700); }
       }
-      if (gotoCi >= 0 || coach.t > 45) { coach.step = 1; coach.t = 0; coach.shown = false; }
+      if (gotoCi >= 0 || stick || coach.t > 45) { coach.step = 1; coach.t = 0; coach.shown = false; }
     } else if (coach.step === 1) {
       if (!coach.shown) {
         coach.shown = true;
@@ -3962,6 +3963,48 @@ export function initTdTab(root) {
   for (const sel of ['#td-pad-fire', '#td-pad-laser']) {
     const el = root.querySelector(sel);
     if (el) el.addEventListener('pointerdown', () => { coach.fired = true; }, { once: true });
+  }
+  // THE STICK (src/stick.js; operator, 2026-09-03: "I cannot find a way to
+  // move the tank manually anymore"). Shell, DRIVE mode, left half of the
+  // board, not on a control: a finger down puts the ring there, a drag
+  // drives — throttle up/down, steer past the band — and a finger that
+  // never left the dead zone was a tap, which the tap handlers still get.
+  // Release stops the tank (throttle 0, keys off); a stick is held.
+  const stickEl = root.querySelector('#td-stick');
+  const stickKnob = stickEl && stickEl.querySelector('.stick-knob');
+  let stick = null;   // { id, x, y }
+  function stickApply(dx, dy) {
+    const v = stickVector(dx, dy, STICK);
+    if (!v.active) return false;
+    throttle = v.throttle; cruise = false;
+    keys.left = v.left; keys.right = v.right;
+    keys.fast = false; keys.slow = false;
+    paintThrottle();
+    if (stickKnob) { const [kx, ky] = knobOffset(dx, dy, STICK); stickKnob.style.transform = `translate(${kx}px, ${ky}px)`; }
+    return true;
+  }
+  function stickEnd() {
+    if (!stick) return;
+    stick = null;
+    throttle = 0; keys.left = false; keys.right = false;
+    paintThrottle();
+    if (stickEl) stickEl.classList.add('hidden');
+  }
+  if (stickEl) {
+    container.addEventListener('pointerdown', (ev) => {
+      if (!mobileShell || buildMode || stick || ev.pointerType === 'mouse' && ev.button !== 0) return;
+      if (ev.clientX > innerWidth * 0.5) return;                 // the right half is the thumbs' side
+      if (ev.target && ev.target.closest && ev.target.closest('button, .tzone, #td-launch, #td-shop, .minimap')) return;
+      stick = { id: ev.pointerId, x: ev.clientX, y: ev.clientY, moved: false };
+      stickEl.style.left = `${ev.clientX}px`; stickEl.style.top = `${ev.clientY}px`;
+      if (stickKnob) stickKnob.style.transform = 'translate(0,0)';
+      stickEl.classList.remove('hidden');
+    }, true);
+    addEventListener('pointermove', (ev) => {
+      if (!stick || ev.pointerId !== stick.id) return;
+      if (stickApply(ev.clientX - stick.x, ev.clientY - stick.y)) { stick.moved = true; if (gotoCi >= 0) stopGoto(); }
+    });
+    for (const evt of ['pointerup', 'pointercancel']) addEventListener(evt, (ev) => { if (stick && ev.pointerId === stick.id) stickEnd(); });
   }
   function syncMobMode() {
     if (!mobModeEl) return;
@@ -8801,7 +8844,7 @@ export function initTdTab(root) {
   }
   function renderAnalysis(final) {
     msgEl.innerHTML = `<div class="msg-head">transmission · ${final ? 'final' : 'sector cleared'} · analysis</div>`
-      + `<div class="go-verdict dbf-title">${final ? 'OBJECT STÅLBERG-9' : `SECTOR ${round} OF ${SECTORS_TOTAL}`} · AFTER-ACTION</div>`
+      + `<div class="go-verdict dbf-title">${final ? 'STÅLHEART' : `SECTOR ${round} OF ${SECTORS_TOTAL}`} · AFTER-ACTION</div>`
       + `<div class="dbf-grid">${winRoster()}${winAttribution()}${winTempo()}${winRecords()}${winReplay()}${winDefence()}</div>`
       + `<button class="msg-proceed" data-final="${final ? 1 : 0}">&#9656; proceed to orders</button>`;
     msgEl.classList.remove('hidden');
@@ -8903,7 +8946,7 @@ export function initTdTab(root) {
         // machines that asked it first.
         const n = coins();
         msgEl.innerHTML = `<div class="msg-head">transmission · final · campaign</div>`
-          + `<div class="go-verdict best">OBJECT STÅLBERG-9 IS YOURS</div>`
+          + `<div class="go-verdict best">STÅLHEART IS YOURS</div>`
           + `<div class="go-reason">every portal on the shell destroyed, all `
           + `${SECTORS_TOTAL} sectors open — there is nothing left to breach</div>`
           + `<div class="go-grid"><span>SCORE <b>${fmt(score.points)}</b> · best ${fmt(score.best)}</span></div>`
@@ -11215,8 +11258,14 @@ export function initTdTab(root) {
   const wantCine = cineParam !== '0' && (cineParam !== null || !debugging);
   let opening = null;
   if (introParam === '1') opening = () => showIntro();
-  else if (!debugging && introParam !== '0') {
+  else if (!debugging && introParam !== '0' && !mobileShell) {
+    // not on the shell: the manual PAUSES the game with the tank in its
+    // berth at the deploy framing (operator's phone: "starts in this view
+    // and impossible to move"); the coach and the tutorial's shell words
+    // teach there, without a modal
     opening = () => showIntro(() => { if (runTutorial) startTutorial(); else showBriefing(); });
+  } else if (mobileShell && !debugging && introParam !== '0') {
+    opening = () => { if (runTutorial) startTutorial(); else showBriefing(); };
   } else if (runTutorial) opening = () => startTutorial();
   else if (!debugging) opening = () => showBriefing();
 
@@ -11911,6 +11960,46 @@ export function initTdTab(root) {
         + ` -> thumb -> step ${s2} "${b2}" -> biomass -> "${b3}" -> order=${ok} -> done=${coach.done} seen=${seen}`
         + ` ${s0 === 0 && s1 === 1 && s2 === 2 && /BUILD/.test(b3) && coach.done && seen ? '(three marks, each cleared by its own action)' : '<-- WRONG'}`);
     }, 1500);
+  }
+
+  // ?stickprobe=1 — the floating stick through real PointerEvents: a finger
+  // down on the left half, a drag up and left, then a release. Expect the
+  // ring to appear, throttle up and steer left while held, and both to
+  // clear on release; and a plain tap (no travel) to leave throttle at 0.
+  if (urlParams.get('stickprobe') === '1') {
+    setTimeout(() => {
+      dismissIntro(); endShot(); deploy = null; if (buildMode) setView('third');
+      const ev = (type, x, y) => container.dispatchEvent(new PointerEvent(type, {
+        clientX: x, clientY: y, pointerId: 11, pointerType: 'touch', isPrimary: true, bubbles: true, button: 0 }));
+      const x0 = innerWidth * 0.25, y0 = innerHeight * 0.6;
+      ev('pointerdown', x0, y0);
+      const shown = stickEl && !stickEl.classList.contains('hidden');
+      ev('pointermove', x0 - 40, y0 - 60);
+      const held = { thr: throttle, left: keys.left, right: keys.right, auto: autoMode };
+      ev('pointerup', x0 - 40, y0 - 60);
+      const rel = { thr: throttle, left: keys.left, hidden: stickEl && stickEl.classList.contains('hidden') };
+      ev('pointerdown', x0, y0); ev('pointerup', x0, y0);
+      const tap = { thr: throttle };
+      console.log(`STICK shell=${mobileShell} ring=${shown} held: thr=${held.thr.toFixed(2)} left=${held.left} right=${held.right}`
+        + ` | released: thr=${rel.thr} left=${rel.left} ring-hidden=${rel.hidden} | tap: thr=${tap.thr}`
+        + ` ${shown && held.thr > 0.7 && held.left && !held.right && rel.thr === 0 && !rel.left && rel.hidden && tap.thr === 0 ? '(drives, steers, releases, and a tap is a tap)' : '<-- WRONG'}`);
+    }, 1500);
+  }
+
+  // ?stateprobe=1 — the boot, as a log: every 2 s for 24 s, what state the
+  // game is in. For "it starts and I cannot move" reports, where the
+  // question is WHICH thing is holding the tank — a pause, a shot, a deploy
+  // that never ends, a death loop — and a screenshot cannot say.
+  if (urlParams.get('stateprobe') === '1') {
+    const line = (k) => {
+      const cp = camera.position;
+      console.log(`STATE t=${(k * 2).toString().padStart(2)}s paused=${paused} shot=${shot ? shot.id : '-'}`
+        + ` deploy=${deploy ? `#${deploy.n}@${deployProgress().toFixed(2)}` : '-'} intro=${introEl && !introEl.classList.contains('hidden')}`
+        + ` tutorial=${tutorialActive} hp=${playerHP} lostDeploys=${tankLostDeploys} down=${!!playerDown}`
+        + ` cur=${player.cur}(${dungeon.tags[player.cur] === BLOCKED ? 'BLOCKED' : 'open'}) next=${player.next}`
+        + ` auto=${autoMode} thr=${throttle.toFixed(2)} goto=${gotoCi} cam=(${cp.x.toFixed(2)},${cp.y.toFixed(2)},${cp.z.toFixed(2)}) view=${params.view}`);
+    };
+    for (let k = 0; k <= 12; k++) setTimeout(() => line(k), k * 2000);
   }
 
   // ?whatsat=x,y — after 3s, name every element under that screen point,

@@ -5,22 +5,22 @@
    back to a system face until the subset is rebuilt. */
 @font-face {
   font-family: 'VT323';
-  src: url('assets/fonts/VT323.woff2?v=e6d6f471') format('woff2');
+  src: url('assets/fonts/VT323.woff2?v=9885c97b') format('woff2');
   font-weight: 400; font-style: normal; font-display: swap;
 }
 @font-face {
   font-family: 'Press Start 2P';
-  src: url('assets/fonts/PressStart2P.woff2?v=e6d6f471') format('woff2');
+  src: url('assets/fonts/PressStart2P.woff2?v=9885c97b') format('woff2');
   font-weight: 400; font-style: normal; font-display: swap;
 }
 @font-face {
   font-family: 'Share Tech Mono';
-  src: url('assets/fonts/ShareTechMono.woff2?v=e6d6f471') format('woff2');
+  src: url('assets/fonts/ShareTechMono.woff2?v=9885c97b') format('woff2');
   font-weight: 400; font-style: normal; font-display: swap;
 }
 @font-face {
   font-family: 'DotGothic16';
-  src: url('assets/fonts/DotGothic16.woff2?v=e6d6f471') format('woff2');
+  src: url('assets/fonts/DotGothic16.woff2?v=9885c97b') format('woff2');
   font-weight: 400; font-style: normal; font-display: swap;
 }
 
@@ -3852,7 +3852,20 @@ body.mobile-shell #td-vars .vars-close { width: 44px; height: 44px; }
    every selector in those blocks, and each rule states the WHOLE geometry —
    a property left unsaid is a property the phone block still owns.
    ?coarse=1 makes the ruler apply those blocks, so this is measured now. */
-body.mobile-shell #tab-td .minimap { left: 14px; bottom: 14px; top: auto; right: auto; }
+/* the radar TOP-RIGHT under the switch (operator: bottom-left is under the
+   fingers); the thumbs pinned to the bottom-right corner so the two never
+   meet, even at the ruler's 303 px height */
+body.mobile-shell #tab-td .minimap { left: auto; bottom: auto; right: 14px; top: 68px; }
+body.mobile-shell #tab-td #td-pad-fire { right: 14px; bottom: 14px; left: auto; top: auto; }
+body.mobile-shell #tab-td #td-pad-laser { right: 92px; bottom: 22px; left: auto; top: auto; }
+/* the floating stick */
+#td-stick { display: none; }
+body.mobile-shell #td-stick { display: block; position: fixed; z-index: 40; width: 0; height: 0; pointer-events: none; }
+body.mobile-shell #td-stick.hidden { display: none; }
+body.mobile-shell #td-stick .stick-ring { position: absolute; left: -72px; top: -72px; width: 144px; height: 144px;
+  border-radius: 50%; border: 2px solid rgba(159, 220, 255, 0.55); background: rgba(20, 32, 44, 0.25); }
+body.mobile-shell #td-stick .stick-knob { position: absolute; left: -26px; top: -26px; width: 52px; height: 52px;
+  border-radius: 50%; background: rgba(159, 220, 255, 0.8); box-shadow: 0 0 14px rgba(0, 208, 255, 0.6); }
 body.mobile-shell #tab-td #td-stats.hud-panel { top: 46px; left: 14px; right: auto; max-width: none; font-size: 11px; line-height: 1.38; }
 body.mobile-shell #tab-td #td-next {
   top: 8px; left: 50%; right: auto; transform: translateX(-50%);

@@ -12,7 +12,7 @@
 export const LORE_WORLD = [
   {
     id: 'world',
-    name: 'OBJECT STÅLBERG-9',
+    name: 'STÅLHEART',
     tag: 'the vessel',
     body: 'An artificial spheroid eleven kilometres across, found dark and '
       + 'cold on a slow polar orbit of a dead gas giant. Its surface is a '

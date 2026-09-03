@@ -5,18 +5,18 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
   <title>spherical stålberg grid</title>
   <meta name="theme-color" content="#10131a">
-  <link rel="manifest" href="./manifest.webmanifest?v=e6d6f471">
-  <link rel="apple-touch-icon" href="./icons/apple-touch-icon.png?v=e6d6f471">
+  <link rel="manifest" href="./manifest.webmanifest?v=9885c97b">
+  <link rel="apple-touch-icon" href="./icons/apple-touch-icon.png?v=9885c97b">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="SphereGrid">
-  <link rel="stylesheet" href="./styles.css?v=e6d6f471">
+  <link rel="stylesheet" href="./styles.css?v=9885c97b">
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
-  <link rel="icon" href="favicon.svg?v=e6d6f471" type="image/svg+xml">
-  <meta name="cb" content="e6d6f471">
-  <link rel="icon" type="image/svg+xml" href="./cb-shapes/38.svg?v=e6d6f471">
+  <link rel="icon" href="favicon.svg?v=9885c97b" type="image/svg+xml">
+  <meta name="cb" content="9885c97b">
+  <link rel="icon" type="image/svg+xml" href="./cb-shapes/24.svg?v=9885c97b">
   <!-- cb-badge retired from the game view (operator ruling): the build
        token lives in the DEV LOG tab, which reads meta[name="cb"] itself -->
 </head>
@@ -150,8 +150,10 @@
     <button id="vars-toggle" type="button" title="variables (V-less: ⚙)">⚙</button>
     <!-- the mobile shell's own pieces: a rotate prompt (landscape only, ruling
          2) and its one big mode switch (ruling 3). Both inert on desktop. -->
-    <div id="td-rotate"><div>&#8635;</div><p>STÅLBERG-9 is played in landscape.<br>Rotate your phone.</p></div>
+    <div id="td-rotate"><div>&#8635;</div><p>STÅLHEART is played in landscape.<br>Rotate your phone.</p></div>
     <button id="mob-mode" type="button">BUILD</button>
+    <!-- the floating stick: appears under the finger on the left half in DRIVE (src/stick.js) -->
+    <div id="td-stick" class="hidden" aria-hidden="true"><div class="stick-ring"></div><div class="stick-knob"></div></div>
     <!-- frame readout, top-left after ⚙ — toggled by ` or the panel -->
     <div id="td-perf" class="hidden"></div>
     <!-- the variables MODAL: the lil-gui panel re-homed here as pages -->
@@ -236,7 +238,7 @@
     <div id="td-launch" class="caution-frame" aria-label="launch control">
       <button id="td-safety" class="safety" type="button" aria-pressed="false" aria-label="safety">
         <span class="lbl-on">ON</span>
-        <img id="td-safety-img" class="switch-img" src="assets/ui/switch-off.png?v=e6d6f471" alt="" width="120" height="200">
+        <img id="td-safety-img" class="switch-img" src="assets/ui/switch-off.png?v=9885c97b" alt="" width="120" height="200">
         <span class="lbl-off">OFF</span>
       </button>
       <div id="td-launch-readout">
@@ -550,6 +552,6 @@
     </div>
   </div>
 
-  <script type="module" src="./src/main.js?v=e6d6f471"></script>
+  <script type="module" src="./src/main.js?v=9885c97b"></script>
 </body>
 </html>

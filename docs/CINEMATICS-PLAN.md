@@ -221,6 +221,9 @@ has been measured on a phone.
 
 ## 8. Open questions and risks
 
+- **The gate's last frames** (operator, 2026-09-03): the ring should end at the size it has in the game, in a game-world — a board under it, the wire planet, the scale a player knows. Beat 3 is a hold today; it becomes a pull-back that lands on that.
+
+
 - ~~Real GPU in headless Chrome on this Mac is unknown.~~ Answered in §6:
   it is the M4, thirty times SwiftShader. The verification recipe in
   CLAUDE.md keeps SwiftShader for correctness runs; captures use the GPU.

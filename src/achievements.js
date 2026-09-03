@@ -63,7 +63,7 @@ export const ACHIEVEMENTS = [
   { id: 'halfway', name: 'HALF THE SHELL', group: 'campaign',
     note: 'three sectors of five. the far side is not far any more',
     test: (s) => s.sectorsCleared >= 3 },
-  { id: 'planet', name: 'STÅLBERG-9 IS YOURS', group: 'campaign',
+  { id: 'planet', name: 'STÅLHEART IS YOURS', group: 'campaign',
     note: 'every portal on the shell, all five sectors. there is nothing left to breach',
     test: (s) => s.planetCleared },
 

@@ -29,10 +29,10 @@ export const BRIEFS = {
   arrival: {
     id: 'arrival',
     face: 'scan',
-    title: 'OBJECT STÅLBERG-9',
+    title: 'STÅLHEART',
     once: true,
     lines: [
-      'Object Stålberg-9. Eleven kilometres of engineered shell, found dark '
+      'Stålheart. Eleven kilometres of engineered shell, found dark '
         + 'and cold on a slow orbit of a dead world.',
       'Nothing about it is natural. Nothing about it is finished.',
       'One tank, landed light, weapons free. That is the entire survey.',
