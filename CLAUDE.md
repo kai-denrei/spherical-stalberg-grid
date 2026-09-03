@@ -30,6 +30,13 @@ token — the corner badge was retired from the game view).
   units). Keep green; they don't cover the render layer.
 - Headless verification: Chrome with `--use-angle=swiftshader
   --enable-unsafe-swiftshader` (NOT `--disable-gpu`, it kills WebGL).
+  Headless WITHOUT those flags uses the real M4 through ANGLE Metal
+  (measured 2026-09-03: ~45 G sine-folds/s vs SwiftShader's 1.4) — that is
+  the path for RENDERS, not for correctness runs: `scripts/cine-capture.mjs
+  --url … --seconds N --fps 30 --size 1920x1080 --out renders/x` drives a
+  scene that called `installCine` (src/cine/kit.js) one frame per
+  `__cine.seek(t)` over CDP and encodes with ffmpeg; `#portal?bench=SIZE:FRAMES:STEPS:OCTAVES`
+  times the wormhole at a full-frame pixel count; `?gl=1` names the GL.
   Console lines (e.g. the `?tick` state logs) only surface with
   `--enable-logging=stderr` — without it they're absent, not broken.
   Virtual time does not advance `performance.now()` → use the URL hooks:

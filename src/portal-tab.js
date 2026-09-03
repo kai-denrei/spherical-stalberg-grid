@@ -22,6 +22,7 @@
 // Ported per ~/Dev/procedural3dvisuals/docs/PORTING.md, which has a section
 // for exactly this case. Its two warnings are honoured below and marked.
 import * as THREE from '../vendor/three.module.js';
+import { installCine } from './cine/kit.js?v=f1a393f0';
 import { OrbitControls } from '../vendor/OrbitControls.js';
 import GUI from '../vendor/lil-gui.esm.js';
 import { CORONA_FRAG } from './fx/corona.frag.js';
@@ -90,6 +91,14 @@ export function initPortalTab(root) {
   const hud = root.querySelector('#portal-hud');
 
   const renderer = new THREE.WebGLRenderer({ antialias: true });
+  // ?gl=1 — name the GL underneath: SwiftShader (software) or a real GPU.
+  // The cinematics plan prices its offline render on this one fact.
+  if (new URLSearchParams(location.search).get('gl') === '1') {
+    const gl = renderer.getContext();
+    const ext = gl.getExtension('WEBGL_debug_renderer_info');
+    console.log(`GL renderer="${ext ? gl.getParameter(ext.UNMASKED_RENDERER_WEBGL) : gl.getParameter(gl.RENDERER)}"`
+      + ` version="${gl.getParameter(gl.VERSION)}" maxTex=${gl.getParameter(gl.MAX_TEXTURE_SIZE)}`);
+  }
   renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
   container.appendChild(renderer.domElement);
 
@@ -219,7 +228,10 @@ export function initPortalTab(root) {
     if (vol) { disc.scale.set(1, 1, 1); vol.add(disc); }
     else { disc.scale.setScalar(apertureR); g.add(disc); }
     discs.push(disc);
-    spinners.push({ a: rotorA, b: rotorB, yaw });
+    spinners.push({ a: rotorA, b: rotorB, yaw,
+      // rest poses, so a capture can SET a rotor from t instead of accumulating
+      restA: rotorA ? rotorA.rotation.z : 0, restB: rotorB ? rotorB.rotation.z : 0,
+      restYaw: yaw ? yaw.rotation.y : 0 });
     rings.add(g);
     return g;
   }
@@ -511,8 +523,10 @@ export function initPortalTab(root) {
       + ` &nbsp;·&nbsp; one shared target`;
   }
 
+  let cineHold = false;   // a capture is driving the clock: the loop stands aside
   function frame() {
     requestAnimationFrame(frame);
+    if (cineHold) return;
     if (!active) return;
     renderer.info.reset();
     const dt = Math.min(0.05, clock.getDelta());
@@ -526,6 +540,44 @@ export function initPortalTab(root) {
     paintHud();
   }
   frame();
+  // THE CAPTURE SEAM (docs/CINEMATICS-PLAN.md, phase 0). seek(t) puts the
+  // bench at exactly t: the integrated phases become t × rate (the same
+  // thing the accumulator converges to, without the accumulation), and one
+  // frame is rendered synchronously. scripts/cine-capture.mjs calls this
+  // per frame over CDP.
+  // Two things the first cut got wrong, both caught by rendering frame 1
+  // twice from two Chromes and diffing (4.6% of bytes differed, and frames
+  // 1 and 2 of one run were IDENTICAL): the rotors accumulate `rate × dt`,
+  // so a dt of 0 froze them where the live loop had left them; and the
+  // corona's update gate compares t to the live loop's last render time, so
+  // a seek to t=0.03 after the loop had reached t=2 rendered nothing. Every
+  // time-dependent thing is now SET from t, and the gate is reset.
+  const hidden = [];
+  installCine({
+    hold: (on) => {
+      cineHold = on;
+      if (on) {
+        scene.traverse((o) => { if (/collision/i.test(o.name || '') && o.visible) { o.visible = false; hidden.push(o); } });
+      } else {
+        for (const o of hidden.splice(0)) o.visible = true;
+        clock.getDelta();
+      }
+    },
+    seek: (t) => {
+      phase.travel = P.speed * P.timeScale * t;
+      phase.spin = EFFECTS.wormhole.defaults.uSpin * P.timeScale * t;
+      for (const sp of spinners) {
+        if (sp.a) sp.a.rotation.z = sp.restA + P.spinA * t;
+        if (sp.b) sp.b.rotation.z = sp.restB + P.spinB * t;
+        if (sp.yaw) sp.yaw.rotation.y = sp.restYaw + P.yaw * t;
+      }
+      lastFxAt = -1e9;
+      renderer.info.reset();
+      step(0, t);
+      postfx.setEnabled(P.bloom);
+      postfx.render();
+    },
+  });
 
   // ?portalperf=1 — THE DECISION, AS NUMBERS. Sweeps target size and march
   // parameters and reports both costs: measured milliseconds (honest but
@@ -622,6 +674,35 @@ export function initPortalTab(root) {
       console.log(`FXPROBE travelling 0 -> 6 of phase moves ${dPhase.toFixed(3)}`
         + `  ${dPhase > 0.5 ? 'travel is live' : '<-- TRAVEL DOES NOTHING'}`);
     }, 900);
+  }
+
+  // ?bench=SIZE:FRAMES — time the wormhole at a FULL-FRAME size, on whatever
+  // GL is underneath, with the readback stall so the GPU's work is inside the
+  // interval. Runs SYNCHRONOUSLY inside init, without --virtual-time-budget
+  // (which freezes performance.now): the load event waits for it, so the
+  // lines are out before headless takes its screenshot. A 1440² target is
+  // 1080p's pixel count (2.07M); 2880² is 4K's (8.3M). This is the number the
+  // cinematics plan prices the offline render on.
+  if (urlParams.get('bench')) {
+    const [sz, nf, st, oc] = urlParams.get('bench').split(':').map(Number);
+    const size = sz || 1440, frames = nf || 10;
+    if (st) P.steps = st;        // the board's preset is 120:12; the bench idles at 40:6
+    if (oc) P.octaves = oc;
+    const gl = renderer.getContext();
+    const ext = gl.getExtension('WEBGL_debug_renderer_info');
+    const who = ext ? gl.getParameter(ext.UNMASKED_RENDERER_WEBGL) : gl.getParameter(gl.RENDERER);
+    const short = /SwiftShader/.test(who) ? 'SwiftShader' : /Apple M/.test(who) ? who.replace(/.*(Apple M\d+).*/, '$1') : who;
+    P.rtSize = size;
+    renderCorona(0, true); renderCorona(0.033, true);   // warm: compile, allocate
+    const t0 = performance.now();
+    for (let i = 0; i < frames; i++) renderCorona(i / 30, true);
+    const ms = (performance.now() - t0) / frames;
+    const folds = fragmentWork();
+    console.log(`BENCH gl=${short} rt=${size}x${size} (${(size * size / 1e6).toFixed(2)}M px)`
+      + ` steps=${Math.round(P.steps)} octaves=${Math.round(P.octaves)} frames=${frames}`
+      + ` ms/frame=${ms.toFixed(1)} fps=${(1000 / ms).toFixed(1)}`
+      + ` folds/frame=${(folds / 1e9).toFixed(2)}G rate=${(folds / ms / 1e6).toFixed(1)}Gfolds/s`
+      + ` ${ms > 0.5 ? '' : '<-- clock did not advance (virtual time?)'}`);
   }
 
   if (urlParams.get('portalperf') === '1') {

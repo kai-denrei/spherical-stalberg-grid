@@ -5,22 +5,22 @@
    back to a system face until the subset is rebuilt. */
 @font-face {
   font-family: 'VT323';
-  src: url('assets/fonts/VT323.woff2?v=e328ebc1') format('woff2');
+  src: url('assets/fonts/VT323.woff2?v=f1a393f0') format('woff2');
   font-weight: 400; font-style: normal; font-display: swap;
 }
 @font-face {
   font-family: 'Press Start 2P';
-  src: url('assets/fonts/PressStart2P.woff2?v=e328ebc1') format('woff2');
+  src: url('assets/fonts/PressStart2P.woff2?v=f1a393f0') format('woff2');
   font-weight: 400; font-style: normal; font-display: swap;
 }
 @font-face {
   font-family: 'Share Tech Mono';
-  src: url('assets/fonts/ShareTechMono.woff2?v=e328ebc1') format('woff2');
+  src: url('assets/fonts/ShareTechMono.woff2?v=f1a393f0') format('woff2');
   font-weight: 400; font-style: normal; font-display: swap;
 }
 @font-face {
   font-family: 'DotGothic16';
-  src: url('assets/fonts/DotGothic16.woff2?v=e328ebc1') format('woff2');
+  src: url('assets/fonts/DotGothic16.woff2?v=f1a393f0') format('woff2');
   font-weight: 400; font-style: normal; font-display: swap;
 }
 
@@ -3908,3 +3908,8 @@ body.mobile-shell #td-toast .wave-role, body.mobile-shell #td-wave .wave-name, b
   body.mobile-shell #td-rotate p { margin: 0; line-height: 1.6; max-width: 82vw; }   /* clipped at 390px without this */
 }
 @keyframes td-rotate-hint { 0%, 100% { transform: rotate(0); } 50% { transform: rotate(-90deg); } }
+
+/* --- cinematic capture (src/cine/kit.js): the frame is the picture ------- */
+body.cine-capture #tabbar, body.cine-capture #chrome-toggle, body.cine-capture #cb-badge,
+body.cine-capture #vars-toggle, body.cine-capture .lil-gui, body.cine-capture #portal-gui,
+body.cine-capture #portal-hud { display: none !important; }

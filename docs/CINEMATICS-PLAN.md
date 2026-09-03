@@ -135,14 +135,23 @@ Each phase is small, has a probe, and leaves the game untouched.
 
 | # | phase | done when |
 |---|---|---|
-| 0 | **Instrument.** Fixed-step clock, `?frame=`, the CDP capture harness, ffmpeg; the GPU-vs-SwiftShader question answered by measurement | a 3 s clip of the existing board renders at 1080p from headless; the seconds-per-frame for a full-screen wormhole is a number |
+| 0 | **Instrument.** ✔ 2026-09-03 — `src/cine/kit.js` (seek seam), `scripts/cine-capture.mjs` (CDP, GPU, ffmpeg), `?bench=` on the portal bench; GPU vs SwiftShader measured (§6) | ✔ a 3 s 1080p clip of the portal bench in 14 s, byte-deterministic across runs; 1080p wormhole = 68.6 ms/frame on the M4 |
 | 1 | **THE GATE.** Ring at a higher segment count (sibling), procedural weathered PBR + galaxy PMREM, shadows + GTAO, wormhole full screen at the cinema tier, one alien crossing (option a, plus c if ruled), a 12 s rail | a 12 s 1080p clip and a 4K still; the ring reflects the sky; the crossing reads |
 | 2 | **THE PLANET.** Galaxy field live or 2048-bake with bloom on the cores, wide-line wire planet, fresnel atmosphere, a slow 15 s orbit rail | a 15 s clip; the wire survives at 4K; galaxies have depth |
 | 3 | **THE TANK.** MK-CX/2 with the weathered material + PMREM + outlines, shells with flash/light/smoke/recoil, plasma at a cinema preset with heat haze, a 12 s rail | a 12 s clip; the flash lights the hull; the plasma reads as mass |
 | 4 | **Polish + sound.** TAA/SMAA on the live tier, film grain, letterbox, titles; a sound rail per scene | three clips the operator would post |
 | 5 | **In-app.** The `#cine` tab plays each rail at the live tier; the roadmap's attract mode and Isao's exposition scenes are hosted here | the attract mode plays from the lock screen at ≥ 30 fps on the desktop tier |
 
-## 5. Rulings — for the operator
+## 5. Rulings — operator, 2026-09-03
+
+All six, per the plan's recommendations: (1) the wire planet, elevated;
+(2) dot clouds at cinema density for the swarm, volumetric SDF cores for the
+hard tier; (3) both offline video and in-app real time from one rail;
+(4) procedural, seeded textures; (5) 16:9, **12 seconds** each; (6) sound
+re-uses in-game sounds where one fits and is **space silence** where none
+does — no new sound is authored for a cinematic.
+
+### (as they were put)
 
 1. **The planet's look.** The game's neon-wire identity, elevated (wide
    lines, atmosphere, galaxies), or a "realistic" planet that is a different
@@ -159,12 +168,45 @@ Each phase is small, has a probe, and leaves the game untouched.
    plan's guess; 4K30 offline, 1080p60 live.
 6. **Sound.** Now, per scene, or after the three pictures stand?
 
-## 6. Open questions and risks
+## 6. Phase 0 — measured, 2026-09-03
 
-- **Real GPU in headless Chrome on this Mac** is unknown. SwiftShader at
-  1080p × 120 steps × 12 octaves is likely tens of seconds a frame; 600
-  frames is hours. Phase 0 measures both paths before anything is built on
-  them.
+**Headless Chrome on this Mac uses the real GPU.** With no `--use-angle`
+flag (or `--use-angle=metal`) the renderer string is
+`ANGLE Metal Renderer: Apple M4`; SwiftShader is only what the verification
+recipe asks for. The portal bench's `?bench=SIZE:FRAMES:STEPS:OCTAVES`
+times the wormhole at a full-frame pixel count with the readback stall:
+
+| GL | target (px) | steps × octaves | ms / frame | rate |
+|---|---|---|---|---|
+| M4 (Metal) | 384² (the board) | 120 × 12 | 5.7 | 37 Gfolds/s |
+| M4 | 1440² (= 1080p) | 120 × 12 | **68.6** | 43.5 |
+| M4 | 2880² (= 4K) | 120 × 12 | 263 | 45.4 |
+| M4 | 2880² | 200 × 16 | 575 | 46.1 |
+| SwiftShader | 128² | 120 × 12 | 16.9 | **1.4** |
+
+So: the M4 does ~45 G sine-folds a second; SwiftShader ~1.4, thirty times
+slower, and did not finish three 384² frames inside five minutes. What it
+prices: a **live full-screen wormhole at 1080p is 14.6 fps** at the preset,
+so the live tier needs half resolution (~30 ms) or fewer steps; **offline
+4K at 200 × 16 is 0.58 s a frame**, a 12-second clip in about 3.5 minutes.
+
+**The capture harness works and is deterministic.** `src/cine/kit.js`
+gives a scene a `seek(t)` seam; `scripts/cine-capture.mjs` drives Chrome
+over CDP (no SwiftShader flags), one frame per seek, PNGs then ffmpeg. The
+portal bench is the first scene on it: a 3 s 1080p clip renders in 14 s at
+0.15 s a frame. Frame 1 rendered from two separate Chromes is
+byte-identical, and frames 1, 2, 3 are three distinct pictures — after two
+bugs the diff caught: rotors accumulated `rate × dt` (a dt of 0 froze them
+wherever the live loop had left them, different in every run), and the
+corona's update gate compared t to the live loop's last render time, so a
+seek to t = 0.03 after the loop had reached t = 2 rendered nothing. Every
+time-dependent thing is now SET from t.
+
+## 7. Open questions and risks
+
+- ~~Real GPU in headless Chrome on this Mac is unknown.~~ Answered in §6:
+  it is the M4, thirty times SwiftShader. The verification recipe in
+  CLAUDE.md keeps SwiftShader for correctness runs; captures use the GPU.
 - **Memory.** A 4K frame with two bloom composers and a supersample is
   ~400 MB of targets; fine for one Chrome, and the machine's rule is one
   Chrome anyway.
