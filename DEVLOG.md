@@ -6,6 +6,32 @@ Demo links assume `npm run serve` (port 8144) or the
 
 ---
 
+## `70631c1` — cinematics, the capture path that renders
+
+The CDP-driven harness hung on the M4 for any frame where the wormhole disc
+filled a canvas wider than about 1500 px, and only there: 1920×1080 and
+1600×1080 never returned, 1280×720 and 1080×1080 rendered, and the same
+frame drawn by a plain headless page rendered at once. Some thirty bisect
+runs removed each variable in turn: bloom, shadows, tone mapping, the
+metrics override, Chrome's flags, the live loop, the disc's filter and
+colour space and mipmaps, a fence after the march, the draw moved inside an
+animation frame, the read-back instead of the compositor screenshot. A
+flat-colour disc rendered every time; Chrome's stderr showed no GPU error.
+The cause is not found, and the commit says so; the knobs stay for the next
+attempt.
+
+**What works: one plain Chrome per frame.** `--mode launch` opens the page
+at `?t=T&once=1&dump=1`; it waits for its assets, draws the frame twice
+(the post chain's first draw read back black), reads its own canvas in the
+same task and emits the PNG as console chunks, which the harness reassembles
+from stderr, the way the reverse export ships a GLB. The compositor is not
+involved: a once-drawn frame never reached headless's own screenshot. At
+the cinema tier a 1080p frame takes 1.5 s and is byte-identical across two
+launches. A 12-second clip is about nine minutes; the CDP mode stays the
+default below 1280 wide, where it is three times faster.
+
+---
+
 ## `4f1b212` — cinematics, phase 0: the seam, the harness, and the number
 
 The research and plan are `docs/CINEMATICS-PLAN.md`; the operator ruled on
