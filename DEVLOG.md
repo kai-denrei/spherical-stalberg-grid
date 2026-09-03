@@ -6,6 +6,54 @@ Demo links assume `npm run serve` (port 8144) or the
 
 ---
 
+## `5b68538`..`c5d46b0` — cinematics 1c: the crossing, and the landing
+
+Beat 3 of THE GATE was a drift. It carries two things now.
+
+**The crossing.** Five phage — the wave-1 swarm, white belt, "hunt its
+source" — pour *out* of the gate toward the retreating camera from 7.5 s,
+starts 0.3 s apart, on lanes inside the 1.8 m clearance that widen as each
+body comes on, so the swarm spreads past the lens instead of converging on
+it. The crossing is a depth composite and nothing more: the aperture's
+disc is opaque on the plane z = 0, a body behind it is hidden and a body in
+front is drawn, and a phage emerging is exactly the part of it that has
+crossed. The plan's screen-space refraction was cut — new shader work on
+the wide-canvas geometry that hung the M4 for thirty bisect runs.
+
+`src/cine/cloud.js` draws a dot enemy at cinema density. The generator is
+not touched (`creatures.js` is a verbatim port of the lab) and densifying
+is a property of the cloud, not the shape: every base point becomes one
+hard core point plus nine halo points scattered by a seeded gaussian, both
+size-attenuated so the body grows as it comes at the camera. `units.js`
+exports `dotShapePts` so the cinematic densifies the game's own creature
+rather than carrying a copy. Judged on stills at 9.6 s and 11.4 s: the
+first cut read as cotton, the lander's skeleton lost under its own glow;
+the core is bigger and the halo tighter and dimmer now, and the legs and
+capsid stay legible with the glow as a rim on them.
+
+**The landing.** The operator's own open question: the ring should end at
+the size it has in the game, in a game-world. `src/cine/planet.js` runs
+`generateSphereMesh` + `relax` — the same two calls `td-tab.js` makes — at
+420 points and draws the quads' edges in the `tronColors` look's own edge
+material over a dark body that receives the sun's shadow. No dungeon, no
+HUD, no enemies, no tank. **The scale is measured, not chosen**: the gate
+scene already computes `k`, the factor that brings the cast's aperture to
+1.8 m, and a unit-radius board sphere scaled by `k` *is* the board's
+planet at this ring's scale. It came out 7.8 m in radius with 0.64 m
+cells — the gate spans about three cells of a twelve-cell-radius world —
+which is the game's real proportion, and not the forty-metre guess made
+before the number was read. The rail's last key backs off to 22 m so the
+disc reads as a planet and not a ball, the ring in the upper third, the
+phage coming past it.
+
+One thing the probe caught on the way: `applyWeatheredMaterial` now
+dresses a material only if *every* mesh wearing it has a `uv`, and on the
+ring that is 5 of 35 — the main batch. The other thirty are the pods'
+cloned materials, whose meshes carry no `uv`; the earlier "35 dressed" had
+them sampling one texel each.
+
+---
+
 ## `161ac51` — cinematics 1b: weathered metal from a seed
 
 The gate's ring wore flat greys because the game lights nothing, and a
