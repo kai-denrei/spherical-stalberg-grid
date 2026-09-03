@@ -19,55 +19,55 @@
 
 import * as THREE from '../vendor/three.module.js';
 import GUI from '../vendor/lil-gui.esm.js';
-import { generateSphereMesh, relax } from './grid.js?v=fbfdd645';
-import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=fbfdd645';
-import { mulberry32, randomSeed } from './rng.js?v=fbfdd645';
-import { computeBerths, berthIndexFor } from './berths.js?v=fbfdd645';
-import { wantsSecondary, shellsForAll } from './autofire.js?v=fbfdd645';
-import { printPhase, printOffset, printOn, patternSecsFor } from './printpath.js?v=fbfdd645';
-import { createBeamRig, PLASMA_DEFAULTS, BOARD_PRESET, BEAM_PEAK } from './beamdraw.js?v=fbfdd645';
-import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3, segKey, tangentDir, tangentBasis } from './vec3.js?v=fbfdd645';
-import { CREATURES, waveJelly } from './creatures.js?v=fbfdd645';
-import { brief, dwellFor } from './isaobriefs.js?v=fbfdd645';
-import { drawEmotion } from './emotions.js?v=fbfdd645';
+import { generateSphereMesh, relax } from './grid.js?v=7f9b369a';
+import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=7f9b369a';
+import { mulberry32, randomSeed } from './rng.js?v=7f9b369a';
+import { computeBerths, berthIndexFor } from './berths.js?v=7f9b369a';
+import { wantsSecondary, shellsForAll } from './autofire.js?v=7f9b369a';
+import { printPhase, printOffset, printOn, patternSecsFor } from './printpath.js?v=7f9b369a';
+import { createBeamRig, PLASMA_DEFAULTS, BOARD_PRESET, BEAM_PEAK } from './beamdraw.js?v=7f9b369a';
+import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3, segKey, tangentDir, tangentBasis } from './vec3.js?v=7f9b369a';
+import { CREATURES, waveJelly } from './creatures.js?v=7f9b369a';
+import { brief, dwellFor } from './isaobriefs.js?v=7f9b369a';
+import { drawEmotion } from './emotions.js?v=7f9b369a';
 import { ACHIEVEMENTS, ACHV_GROUPS, achievement, blankRun, earned, freshlyEarned,
   sanitiseRecord }
-  from './achievements.js?v=fbfdd645';
+  from './achievements.js?v=7f9b369a';
 import { applyFontPack, currentFontPack, FONT_NAMES,
-  loadTypeFeel } from './fonts.js?v=fbfdd645';
-import { SECONDARY_TOE, applySecondaryToe } from './units.js?v=fbfdd645';
-import { UNITS, UNIT_NAMES, buildUnit, buildCreature, preloadMkcx, preloadServer, makeServerFixture, makeShieldShell, preloadContainer, makeContainerFixture, preloadFabricator, makeIsaoDrone, makeBulletCloud, makeRewardSolid, makeShellSolid, makeDebris, makeDotBurst, makePortalCloud, preloadPortalRing, makePortalRing, makeHeartCloud, makeDotEnemy, preloadTerraformer, makeTerraformerFixture } from './units.js?v=fbfdd645';
-import { LOOKS, LOOK_NAMES } from './looks.js?v=fbfdd645';
-import { makeCellIndex } from './cellindex.js?v=fbfdd645';
-import { CREATURE_TINTS, ENEMY_SPEC, INTROS, computeWavePlan, accentFor } from './enemyspec.js?v=fbfdd645';
-import { PICKUPS } from './pickups.js?v=fbfdd645';
-import { rankFor, rankLabel, badgeSVG, killReq, eliteReq } from './ranks.js?v=fbfdd645';
-import { beamStep, isBeamStep, PEN_SOFT_FRAC, PEN_HARD_FRAC } from './beamranks.js?v=fbfdd645';
-import { burn, sweepAdvance, wallBite as wallBiteFor } from './beamburn.js?v=fbfdd645';
-import { arcPoint, projectToArc, toeForCrossing, crossingForToe } from './arc.js?v=fbfdd645';
+  loadTypeFeel } from './fonts.js?v=7f9b369a';
+import { SECONDARY_TOE, applySecondaryToe } from './units.js?v=7f9b369a';
+import { UNITS, UNIT_NAMES, buildUnit, buildCreature, preloadMkcx, preloadServer, makeServerFixture, makeShieldShell, preloadContainer, makeContainerFixture, preloadFabricator, makeIsaoDrone, makeBulletCloud, makeRewardSolid, makeShellSolid, makeDebris, makeDotBurst, makePortalCloud, preloadPortalRing, makePortalRing, makeHeartCloud, makeDotEnemy, preloadTerraformer, makeTerraformerFixture } from './units.js?v=7f9b369a';
+import { LOOKS, LOOK_NAMES } from './looks.js?v=7f9b369a';
+import { makeCellIndex } from './cellindex.js?v=7f9b369a';
+import { CREATURE_TINTS, ENEMY_SPEC, INTROS, computeWavePlan, accentFor } from './enemyspec.js?v=7f9b369a';
+import { PICKUPS } from './pickups.js?v=7f9b369a';
+import { rankFor, rankLabel, badgeSVG, killReq, eliteReq } from './ranks.js?v=7f9b369a';
+import { beamStep, isBeamStep, PEN_SOFT_FRAC, PEN_HARD_FRAC } from './beamranks.js?v=7f9b369a';
+import { burn, sweepAdvance, wallBite as wallBiteFor } from './beamburn.js?v=7f9b369a';
+import { arcPoint, projectToArc, toeForCrossing, crossingForToe } from './arc.js?v=7f9b369a';
 import { WORMHOLE_PRESET, RING_SPIN, TRAVEL,
-  travelRate, advancePhase } from './portalfx.js?v=fbfdd645';
-import { WORMHOLE_FRAG } from './fx/wormhole.frag.js?v=fbfdd645';
-import { CORONA_FRAG } from './fx/corona.frag.js?v=fbfdd645';
-import { labLine, parseLabQuery } from './lab.js?v=fbfdd645';
-import { bakeGalaxyCube } from './galaxybake.js?v=fbfdd645';
-import { makeScore } from './score.js?v=fbfdd645';
-import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER } from './towers.js?v=fbfdd645';
-import { makeEconomy, sellRefund } from './economy.js?v=fbfdd645';
-import { pickTier } from './perftier.js?v=fbfdd645';
-import { registerServiceWorker } from './pwa.js?v=fbfdd645';
-import { makeBloom } from './postfx.js?v=fbfdd645';
-import { TANK_FEEL, TANK_FEEL_KNOBS, makeTankFeel, stepTankFeel, landTankFeel, fireTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js?v=fbfdd645';
-import { FEEL, loadFeel, saveFeel } from './feelstore.js?v=fbfdd645';
+  travelRate, advancePhase } from './portalfx.js?v=7f9b369a';
+import { WORMHOLE_FRAG } from './fx/wormhole.frag.js?v=7f9b369a';
+import { CORONA_FRAG } from './fx/corona.frag.js?v=7f9b369a';
+import { labLine, parseLabQuery } from './lab.js?v=7f9b369a';
+import { bakeGalaxyCube } from './galaxybake.js?v=7f9b369a';
+import { makeScore } from './score.js?v=7f9b369a';
+import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER } from './towers.js?v=7f9b369a';
+import { makeEconomy, sellRefund } from './economy.js?v=7f9b369a';
+import { pickTier } from './perftier.js?v=7f9b369a';
+import { registerServiceWorker } from './pwa.js?v=7f9b369a';
+import { makeBloom } from './postfx.js?v=7f9b369a';
+import { TANK_FEEL, TANK_FEEL_KNOBS, makeTankFeel, stepTankFeel, landTankFeel, fireTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js?v=7f9b369a';
+import { FEEL, loadFeel, saveFeel } from './feelstore.js?v=7f9b369a';
 import { STRIKE_KNOBS, makeStrike, makeStrikeParams, grantStrikes, stepStrike,
   toggleArm, paintTarget, launchStrike, stepFall, skipFall, fallProgress,
-  strikeDamage, retargetStrike, orbitProgress } from './strike.js?v=fbfdd645';
+  strikeDamage, retargetStrike, orbitProgress } from './strike.js?v=7f9b369a';
 import { radarBasis, radarProject, radarBearing, sweepAngle, radarPhosphor,
-  proximitySectors, SENSOR_LEVELS } from './radar.js?v=fbfdd645';
-import { BLOOM_GROUPS } from './bloomweights.js?v=fbfdd645';
-import { TOWER_LOOK_NAMES, DEFAULT_TOWER_LOOK, buildTowerLook, preloadLook } from './towerlooks.js?v=fbfdd645';
-import { makeAudio } from './audio.js?v=fbfdd645';
-import { DEATH_KEYS } from './audiomanifest.js?v=fbfdd645';
+  proximitySectors, SENSOR_LEVELS } from './radar.js?v=7f9b369a';
+import { BLOOM_GROUPS } from './bloomweights.js?v=7f9b369a';
+import { TOWER_LOOK_NAMES, DEFAULT_TOWER_LOOK, buildTowerLook, preloadLook } from './towerlooks.js?v=7f9b369a';
+import { makeAudio } from './audio.js?v=7f9b369a';
+import { DEATH_KEYS } from './audiomanifest.js?v=7f9b369a';
 
 export function initTdTab(root) {
   let active = false;
@@ -11231,13 +11231,16 @@ export function initTdTab(root) {
   function applyLabSky() {
     if (!lab.on) return;
     if (lab.bg === 'galaxy') {
-      if (labSky && labSky.seed === lab.galaxySeed) return;
+      const key = `${lab.galaxySeed}/${lab.galaxyScale}/${lab.galaxies}`;
+      if (labSky && labSky.key === key) return;
       if (labSky) labSky.dispose();
       const t0 = performance.now();
-      labSky = bakeGalaxyCube(renderer, { seed: lab.galaxySeed, face: tier.name === 'phone' ? 512 : 1024 });
-      labSky.seed = lab.galaxySeed;
-      console.log(`LABSKY seed=${lab.galaxySeed} face=${labSky.face} arms=${labSky.params.arms}`
-        + ` palette="${labSky.params.palette}" bakeMs=${(performance.now() - t0).toFixed(1)} (cpu, incl. compile)`);
+      labSky = bakeGalaxyCube(renderer, { seed: lab.galaxySeed, face: tier.name === 'phone' ? 512 : 1024,
+        scale: lab.galaxyScale, galaxies: lab.galaxies });
+      labSky.key = key;
+      console.log(`LABSKY seed=${lab.galaxySeed} face=${labSky.face} scale=${labSky.scale} galaxies=${labSky.galaxies}`
+        + ` arms=${labSky.params.arms} palette="${labSky.params.palette}"`
+        + ` bakeMs=${(performance.now() - t0).toFixed(1)} (cpu, incl. compile)`);
     } else if (labSky) { labSky.dispose(); labSky = null; }
   }
   if (lab.on) {
@@ -11251,6 +11254,8 @@ export function initTdTab(root) {
     f.add(lab, 'bg', ['none', 'galaxy']).name('background').onChange(applyLabSky);
     f.add(lab, 'galaxySeed', 0, 99999, 1).name('galaxy seed').onFinishChange(applyLabSky);
     f.add({ roll: () => { lab.galaxySeed = Math.floor(Math.random() * 100000); applyLabSky(); f.controllersRecursive().forEach((c) => c.updateDisplay()); } }, 'roll').name('🎲 new galaxy');
+    f.add(lab, 'galaxyScale', 0.25, 4, 0.05).name('galaxy size').onFinishChange(applyLabSky);
+    f.add(lab, 'galaxies', 1, 8, 1).name('galaxies').onFinishChange(applyLabSky);
     f.add(lab, 'bgIntensity', 0, 1.5, 0.05).name('sky intensity');
     f.add(lab, 'fx', ['wormhole', 'corona']).name('portal effect').onChange((v) => { ensureWormhole(); setBoardEffect(v); });
     f.add(lab, 'whSize', [128, 192, 256, 384, 512, 768]).name('portal target px').onChange((n) => {

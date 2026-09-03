@@ -45,6 +45,26 @@ export function galaxyParams(seed) {
   };
 }
 
+// Where N galaxies sit, from the seed. The first is always the home galaxy
+// at the tuned placement; the rest are scattered on the far sky, no two
+// within ~35° of each other, each with a seed of its own. Distance is the
+// demo's zoom: nearer is bigger, and the sprite scale follows clip.w.
+export const HOME_GALAXY = { dir: [15, -3.5, -12], tilt: [1.1, 0.3, 0.6] };
+export function galaxyLayout(seed, count = 1) {
+  const rng = mulberry32((seed >>> 0) ^ 0x6A1A8);
+  const norm = (v) => { const l = Math.hypot(...v) || 1; return v.map((x) => x / l); };
+  const out = [{ seed: seed >>> 0, dir: norm(HOME_GALAXY.dir), dist: Math.hypot(...HOME_GALAXY.dir), tilt: HOME_GALAXY.tilt }];
+  let guard = 0;
+  while (out.length < count && guard++ < 400) {
+    const d = norm([gaussian(rng), gaussian(rng), gaussian(rng)]);
+    const far = out.every((g) => g.dir[0] * d[0] + g.dir[1] * d[1] + g.dir[2] * d[2] < Math.cos(0.6));
+    if (!far) continue;
+    out.push({ seed: (seed * 7919 + out.length * 104729) >>> 0, dir: d,
+      dist: 24 + rng() * 30, tilt: [rng() * Math.PI, rng() * Math.PI, rng() * Math.PI] });
+  }
+  return out;
+}
+
 export function buildGalaxyStars(seed, n = 300000) {
   const rng = mulberry32(seed >>> 0);
   const d0 = new Float32Array(n * 4), d1 = new Float32Array(n * 4), pp = new Float32Array(n);

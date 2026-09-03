@@ -1,5 +1,5 @@
 // galaxyseed.mjs — the sky is a function of the seed, and only the seed.
-import { GALAXY_PALETTES, buildFieldStars, buildGalaxyDust, buildGalaxyStars, galaxyParams } from '../src/galaxyseed.js';
+import { GALAXY_PALETTES, HOME_GALAXY, buildFieldStars, buildGalaxyDust, buildGalaxyStars, galaxyLayout, galaxyParams } from '../src/galaxyseed.js';
 
 let failures = 0;
 const check = (name, cond, detail = '') => {
@@ -33,6 +33,22 @@ check('params inside the demo\'s clamps', [0, 2, 3, 4, 5].includes(P.arms) && P.
 check('params deterministic', JSON.stringify(galaxyParams(7)) === JSON.stringify(galaxyParams(7)));
 const arms = new Set([...Array(40).keys()].map((s) => galaxyParams(s).arms));
 check(`seeds reach more than one arm count (${[...arms].join(',')})`, arms.size >= 3);
+
+console.log('layout:');
+const one = galaxyLayout(4414, 1), eight = galaxyLayout(4414, 8);
+check('one galaxy is the home galaxy at the tuned placement', one.length === 1 && one[0].seed === 4414
+  && Math.abs(one[0].dist - Math.hypot(...HOME_GALAXY.dir)) < 1e-9 && one[0].tilt === HOME_GALAXY.tilt);
+check('eight galaxies, the first still home', eight.length === 8 && eight[0].seed === 4414);
+check('every extra galaxy has its own seed', new Set(eight.map((g) => g.seed)).size === 8);
+let apart = true;
+for (let i = 0; i < 8; i++) for (let j = i + 1; j < 8; j++) {
+  const a = eight[i].dir, b = eight[j].dir;
+  if (a[0] * b[0] + a[1] * b[1] + a[2] * b[2] >= Math.cos(0.6)) apart = false;
+}
+check('no two galaxies within ~35° of each other', apart);
+check('directions are unit vectors, distances beyond the home disc', eight.every((g) => Math.abs(Math.hypot(...g.dir) - 1) < 1e-9)
+  && eight.slice(1).every((g) => g.dist >= 24 && g.dist <= 54));
+check('layout is deterministic', JSON.stringify(galaxyLayout(9, 5)) === JSON.stringify(galaxyLayout(9, 5)));
 
 if (failures) { console.error(`galaxyseed: ${failures} FAILED`); process.exit(1); }
 console.log('galaxyseed: all green');

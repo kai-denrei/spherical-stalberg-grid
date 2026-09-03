@@ -23,6 +23,9 @@ const seeded = parseLabQuery('?lab=1&labwave=8&labbg=galaxy&labfx=corona&labseed
 check('labwave= seeds the multiplier', seeded.waveMult === 8);
 check('labbg= / labfx= pick choices', seeded.bg === 'galaxy' && seeded.fx === 'corona');
 check('labseed= seeds the galaxy', seeded.galaxySeed === 77);
+const sky = parseLabQuery('?lab=1&labscale=2.5&labgalaxies=5');
+check('labscale= / labgalaxies= size and count the sky', sky.galaxyScale === 2.5 && sky.galaxies === 5);
+check('galaxy count clamps to 8', parseLabQuery('?lab=1&labgalaxies=40').galaxies === 8);
 check('lab<Key>= reaches any knob', seeded.holdWaves === true && seeded.whSize === 192 && seeded.bloom === false);
 const clamped = parseLabQuery('?lab=1&labwave=999&labbg=nebula&labWhSize=300&labOctaves=-4');
 check('out-of-range clamps, unknown choices are ignored', clamped.waveMult === 20 && clamped.bg === 'none'

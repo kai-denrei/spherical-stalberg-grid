@@ -14,8 +14,8 @@
 // weighted pass anyway (postfx.js: "the sky must not bloom").
 import * as THREE from '../vendor/three.module.js';
 import {
-  GALAXY_PALETTES, buildFieldStars, buildGalaxyDust, buildGalaxyStars, galaxyParams,
-} from './galaxyseed.js?v=fbfdd645';
+  GALAXY_PALETTES, buildFieldStars, buildGalaxyDust, buildGalaxyStars, galaxyLayout, galaxyParams,
+} from './galaxyseed.js?v=7f9b369a';
 
 const STAR_VERT = /* glsl */ `
 attribute vec4 d0; attribute vec4 d1; attribute float pp;
@@ -127,51 +127,70 @@ function pointsOf(geomAttrs, material) {
  * Bake the sky. Returns { texture, params, dispose } — texture is a cube
  * texture ready for scene.background.
  * @param {THREE.WebGLRenderer} renderer
- * @param {object} opts  seed, face (px per cube face), stars, dust, field
+ * @param {object} opts  seed, face (px per cube face), stars, dust, field,
+ *                       scale (1 = the tuned size; it is the demo's zoom, so 2 is twice as
+ *                       close and twice as wide), galaxies (1..8; the extras are scattered
+ *                       from the seed, each with a seed of its own)
  */
 export function bakeGalaxyCube(renderer, opts = {}) {
-  const { seed = 4414, face = 1024, stars = 300000, dust = 24000, field = 2600 } = opts;
-  const P = galaxyParams(seed);
-  const pal = GALAXY_PALETTES[P.pal];
+  const { seed = 4414, face = 1024, stars = 300000, dust = 24000, field = 2600, scale = 1, galaxies = 1 } = opts;
   const uPt = face / 2;   // world → pixel for gl.POINTS at a 90° cube face: h / (2 tan 45°)
-
-  const common = {
-    uSpin: { value: 40 }, uArms: { value: P.arms }, uTwist: { value: P.twist },
-    uArmStr: { value: 0.62 }, uBar: { value: P.bar }, uCore: { value: P.core },
-    uTempG: { value: P.temp }, uPt: { value: uPt }, uMode: { value: 0 }, uGain: { value: 0.6 },
-    uC0: { value: new THREE.Vector3(...pal.c0) }, uC1: { value: new THREE.Vector3(...pal.c1) },
-    uC2: { value: new THREE.Vector3(...pal.c2) },
-  };
-  const uni = (over) => {
-    const u = {};
-    for (const [k, v] of Object.entries(common)) u[k] = { value: v.value };
-    for (const [k, v] of Object.entries(over)) u[k] = { value: v };
-    return u;
-  };
   const base = { vertexShader: STAR_VERT, fragmentShader: STAR_FRAG, depthTest: false, depthWrite: false, transparent: true };
-  // sprite scale: the demo draws at ~915 px-per-unit from 15 units out; a 90° face at
-  // 1024 px is 512, so the stars are scaled up to land 1–3 px rather than under one,
-  // where the demo's own sub-pixel attenuation (att) would fade the whole disc to nothing
-  const starMat = new THREE.ShaderMaterial({ ...base, uniforms: uni({ uMode: 0, uPt: uPt * 1.4, uGain: 1.2 }), blending: THREE.AdditiveBlending });
-  // dust lanes: dark occluders (dst *= 1 - a), then a faint warm emission
-  const occMat = new THREE.ShaderMaterial({ ...base, uniforms: uni({ uMode: 1 }), blending: THREE.CustomBlending,
-    blendSrc: THREE.ZeroFactor, blendDst: THREE.OneMinusSrcAlphaFactor, blendEquation: THREE.AddEquation });
-  const emitMat = new THREE.ShaderMaterial({ ...base, uniforms: uni({ uMode: 2 }), blending: THREE.AdditiveBlending });
+  const materials = [];
+
+  // one galaxy: three Points (stars, dust occluders, dust emission) on its own look
+  function makeGalaxy(gseed, nStars, nDust) {
+    const P = galaxyParams(gseed);
+    const pal = GALAXY_PALETTES[P.pal];
+    const common = {
+      uSpin: 40, uArms: P.arms, uTwist: P.twist, uArmStr: 0.62, uBar: P.bar, uCore: P.core,
+      uTempG: P.temp, uPt: uPt, uMode: 0, uGain: 0.6,
+      uC0: new THREE.Vector3(...pal.c0), uC1: new THREE.Vector3(...pal.c1), uC2: new THREE.Vector3(...pal.c2),
+    };
+    const uni = (over) => {
+      const u = {};
+      for (const [k, v] of Object.entries({ ...common, ...over })) u[k] = { value: v };
+      return u;
+    };
+    // sprite scale: the demo draws at ~915 px-per-unit from 15 units out; a 90° face at
+    // 1024 px is 512, so the stars are scaled up to land 1–3 px rather than under one,
+    // where the demo's own sub-pixel attenuation (att) would fade the whole disc to nothing
+    const starMat = new THREE.ShaderMaterial({ ...base, uniforms: uni({ uMode: 0, uPt: uPt * 1.4, uGain: 1.2 }), blending: THREE.AdditiveBlending });
+    // dust lanes: dark occluders (dst *= 1 - a), then a faint warm emission
+    const occMat = new THREE.ShaderMaterial({ ...base, uniforms: uni({ uMode: 1 }), blending: THREE.CustomBlending,
+      blendSrc: THREE.ZeroFactor, blendDst: THREE.OneMinusSrcAlphaFactor, blendEquation: THREE.AddEquation });
+    const emitMat = new THREE.ShaderMaterial({ ...base, uniforms: uni({ uMode: 2 }), blending: THREE.AdditiveBlending });
+    materials.push(starMat, occMat, emitMat);
+    const S = buildGalaxyStars(gseed, nStars), D = buildGalaxyDust(gseed, nDust);
+    const g = new THREE.Group();
+    g.add(pointsOf([['d0', S.d0, 4], ['d1', S.d1, 4], ['pp', S.pp, 1]], starMat));
+    g.add(pointsOf([['d0', D.d0, 4], ['d1', D.d1, 4], ['pp', D.pp, 1]], occMat));
+    g.add(pointsOf([['d0', D.d0, 4], ['d1', D.d1, 4], ['pp', D.pp, 1]], emitMat));
+    return { group: g, params: { ...P, palette: pal.name } };
+  }
+
   const fieldMat = new THREE.ShaderMaterial({ vertexShader: FIELD_VERT, fragmentShader: FIELD_FRAG,
     uniforms: { uPt: { value: uPt } }, depthTest: false, depthWrite: false, transparent: true, blending: THREE.AdditiveBlending });
-
-  const S = buildGalaxyStars(seed, stars), D = buildGalaxyDust(seed, dust), F = buildFieldStars(seed, field);
+  materials.push(fieldMat);
+  const F = buildFieldStars(seed, field);
   const scene = new THREE.Scene();
-  const galaxy = new THREE.Group();
-  galaxy.add(pointsOf([['d0', S.d0, 4], ['d1', S.d1, 4], ['pp', S.pp, 1]], starMat));
-  galaxy.add(pointsOf([['d0', D.d0, 4], ['d1', D.d1, 4], ['pp', D.pp, 1]], occMat));
-  galaxy.add(pointsOf([['d0', D.d0, 4], ['d1', D.d1, 4], ['pp', D.pp, 1]], emitMat));
-  // off to one side and tilted: the disc is ~20 units across and sits ~19.5
-  // out, so it spans ~55° of sky and the planet is not inside it
-  galaxy.position.set(15, -3.5, -12);
-  galaxy.rotation.set(1.1, 0.3, 0.6);
-  scene.add(galaxy);
   scene.add(pointsOf([['p0', F.p0, 4], ['p1', F.p1, 2]], fieldMat));
+
+  // the home galaxy off to one side and tilted — a ~20-unit disc ~19.5 out
+  // spans ~55° of sky and the planet is not inside it — then the others on
+  // the far sky. Size is distance: the demo zooms by moving the eye, and so
+  // does this, so a bigger galaxy is also a nearer, brighter one.
+  const layout = galaxyLayout(seed, Math.max(1, Math.min(8, Math.round(galaxies))));
+  const s = Math.max(0.1, scale);
+  let params = null;
+  layout.forEach((L, i) => {
+    const gal = makeGalaxy(L.seed, i === 0 ? stars : Math.round(stars * 0.4), i === 0 ? dust : Math.round(dust * 0.4));
+    const dist = L.dist / s;
+    gal.group.position.set(L.dir[0] * dist, L.dir[1] * dist, L.dir[2] * dist);
+    gal.group.rotation.set(L.tilt[0], L.tilt[1], L.tilt[2]);
+    scene.add(gal.group);
+    if (i === 0) params = gal.params;
+  });
 
   const rt = new THREE.WebGLCubeRenderTarget(face, { generateMipmaps: false, minFilter: THREE.LinearFilter, magFilter: THREE.LinearFilter });
   const cam = new THREE.CubeCamera(0.1, 1000, rt);
@@ -181,7 +200,7 @@ export function bakeGalaxyCube(renderer, opts = {}) {
   cam.update(renderer, scene);
   renderer.sortObjects = prevSort;
   scene.traverse((o) => { if (o.geometry) o.geometry.dispose(); });
-  for (const m of [starMat, occMat, emitMat, fieldMat]) m.dispose();
+  for (const m of materials) m.dispose();
 
-  return { texture: rt.texture, params: { ...P, palette: pal.name }, face, dispose: () => rt.dispose() };
+  return { texture: rt.texture, params, face, scale: s, galaxies: layout.length, dispose: () => rt.dispose() };
 }

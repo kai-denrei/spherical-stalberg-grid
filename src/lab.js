@@ -21,6 +21,8 @@ export const LAB_DEFAULTS = {
   immortalTank: true,    // playerHit returns before the hull counter
   bg: 'none',            // scene.background: the look's colour, or a baked sky
   galaxySeed: 4414,      // NGC-4414, the demo's own
+  galaxyScale: 1,        // the demo's zoom: 2 is twice as near and twice as wide
+  galaxies: 1,           // the home galaxy, plus this many minus one on the far sky
   bgIntensity: 0.5,      // scene.backgroundIntensity — "faint" is a number
   fx: 'wormhole',        // the disc's fragment shader
   whSize: 384,           // wormhole target, px (the tier's, then the knob's)
@@ -38,6 +40,8 @@ export const LAB_KNOBS = [
   { key: 'immortalTank', label: 'immortal tank', group: 'health', bool: true },
   { key: 'bg', label: 'background', group: 'sky', choices: ['none', 'galaxy'] },
   { key: 'galaxySeed', label: 'galaxy seed', group: 'sky', min: 0, max: 99999, step: 1 },
+  { key: 'galaxyScale', label: 'galaxy size', group: 'sky', min: 0.25, max: 4, step: 0.05 },
+  { key: 'galaxies', label: 'galaxies', group: 'sky', min: 1, max: 8, step: 1 },
   { key: 'bgIntensity', label: 'sky intensity', group: 'sky', min: 0, max: 1.5, step: 0.05 },
   { key: 'fx', label: 'portal effect', group: 'portal', choices: ['wormhole', 'corona'] },
   { key: 'whSize', label: 'portal target px', group: 'portal', choices: [128, 192, 256, 384, 512, 768] },
@@ -52,7 +56,7 @@ export const LAB_KNOBS = [
 // "labwaveMult" is not a thing anyone types). The tier's wormhole numbers
 // are the starting point for the portal knobs so the lab opens on what the
 // board is actually doing, and a bare `?lab=1` changes nothing about it.
-const ALIASES = { labwave: 'waveMult', labbg: 'bg', labfx: 'fx', labseed: 'galaxySeed' };
+const ALIASES = { labwave: 'waveMult', labbg: 'bg', labfx: 'fx', labseed: 'galaxySeed', labscale: 'galaxyScale', labgalaxies: 'galaxies' };
 
 export function parseLabQuery(search, tier = null) {
   const q = new URLSearchParams(search || '');
