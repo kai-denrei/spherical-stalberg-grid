@@ -19,52 +19,55 @@
 
 import * as THREE from '../vendor/three.module.js';
 import GUI from '../vendor/lil-gui.esm.js';
-import { generateSphereMesh, relax } from './grid.js?v=03fdc11d';
-import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=03fdc11d';
-import { mulberry32, randomSeed } from './rng.js?v=03fdc11d';
-import { computeBerths, berthIndexFor } from './berths.js?v=03fdc11d';
-import { wantsSecondary, shellsForAll } from './autofire.js?v=03fdc11d';
-import { printPhase, printOffset, printOn, patternSecsFor } from './printpath.js?v=03fdc11d';
-import { createBeamRig, PLASMA_DEFAULTS, BOARD_PRESET, BEAM_PEAK } from './beamdraw.js?v=03fdc11d';
-import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3, segKey, tangentDir, tangentBasis } from './vec3.js?v=03fdc11d';
-import { CREATURES, waveJelly } from './creatures.js?v=03fdc11d';
-import { brief, dwellFor } from './isaobriefs.js?v=03fdc11d';
-import { drawEmotion } from './emotions.js?v=03fdc11d';
+import { generateSphereMesh, relax } from './grid.js?v=fbfdd645';
+import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=fbfdd645';
+import { mulberry32, randomSeed } from './rng.js?v=fbfdd645';
+import { computeBerths, berthIndexFor } from './berths.js?v=fbfdd645';
+import { wantsSecondary, shellsForAll } from './autofire.js?v=fbfdd645';
+import { printPhase, printOffset, printOn, patternSecsFor } from './printpath.js?v=fbfdd645';
+import { createBeamRig, PLASMA_DEFAULTS, BOARD_PRESET, BEAM_PEAK } from './beamdraw.js?v=fbfdd645';
+import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3, segKey, tangentDir, tangentBasis } from './vec3.js?v=fbfdd645';
+import { CREATURES, waveJelly } from './creatures.js?v=fbfdd645';
+import { brief, dwellFor } from './isaobriefs.js?v=fbfdd645';
+import { drawEmotion } from './emotions.js?v=fbfdd645';
 import { ACHIEVEMENTS, ACHV_GROUPS, achievement, blankRun, earned, freshlyEarned,
   sanitiseRecord }
-  from './achievements.js?v=03fdc11d';
+  from './achievements.js?v=fbfdd645';
 import { applyFontPack, currentFontPack, FONT_NAMES,
-  loadTypeFeel } from './fonts.js?v=03fdc11d';
-import { SECONDARY_TOE, applySecondaryToe } from './units.js?v=03fdc11d';
-import { UNITS, UNIT_NAMES, buildUnit, buildCreature, preloadMkcx, preloadServer, makeServerFixture, makeShieldShell, preloadContainer, makeContainerFixture, preloadFabricator, makeIsaoDrone, makeBulletCloud, makeRewardSolid, makeShellSolid, makeDebris, makeDotBurst, makePortalCloud, preloadPortalRing, makePortalRing, makeHeartCloud, makeDotEnemy, preloadTerraformer, makeTerraformerFixture } from './units.js?v=03fdc11d';
-import { LOOKS, LOOK_NAMES } from './looks.js?v=03fdc11d';
-import { makeCellIndex } from './cellindex.js?v=03fdc11d';
-import { CREATURE_TINTS, ENEMY_SPEC, INTROS, computeWavePlan, accentFor } from './enemyspec.js?v=03fdc11d';
-import { PICKUPS } from './pickups.js?v=03fdc11d';
-import { rankFor, rankLabel, badgeSVG, killReq, eliteReq } from './ranks.js?v=03fdc11d';
-import { beamStep, isBeamStep, PEN_SOFT_FRAC, PEN_HARD_FRAC } from './beamranks.js?v=03fdc11d';
-import { burn, sweepAdvance, wallBite as wallBiteFor } from './beamburn.js?v=03fdc11d';
-import { arcPoint, projectToArc, toeForCrossing, crossingForToe } from './arc.js?v=03fdc11d';
+  loadTypeFeel } from './fonts.js?v=fbfdd645';
+import { SECONDARY_TOE, applySecondaryToe } from './units.js?v=fbfdd645';
+import { UNITS, UNIT_NAMES, buildUnit, buildCreature, preloadMkcx, preloadServer, makeServerFixture, makeShieldShell, preloadContainer, makeContainerFixture, preloadFabricator, makeIsaoDrone, makeBulletCloud, makeRewardSolid, makeShellSolid, makeDebris, makeDotBurst, makePortalCloud, preloadPortalRing, makePortalRing, makeHeartCloud, makeDotEnemy, preloadTerraformer, makeTerraformerFixture } from './units.js?v=fbfdd645';
+import { LOOKS, LOOK_NAMES } from './looks.js?v=fbfdd645';
+import { makeCellIndex } from './cellindex.js?v=fbfdd645';
+import { CREATURE_TINTS, ENEMY_SPEC, INTROS, computeWavePlan, accentFor } from './enemyspec.js?v=fbfdd645';
+import { PICKUPS } from './pickups.js?v=fbfdd645';
+import { rankFor, rankLabel, badgeSVG, killReq, eliteReq } from './ranks.js?v=fbfdd645';
+import { beamStep, isBeamStep, PEN_SOFT_FRAC, PEN_HARD_FRAC } from './beamranks.js?v=fbfdd645';
+import { burn, sweepAdvance, wallBite as wallBiteFor } from './beamburn.js?v=fbfdd645';
+import { arcPoint, projectToArc, toeForCrossing, crossingForToe } from './arc.js?v=fbfdd645';
 import { WORMHOLE_PRESET, RING_SPIN, TRAVEL,
-  travelRate, advancePhase } from './portalfx.js?v=03fdc11d';
-import { WORMHOLE_FRAG } from './fx/wormhole.frag.js?v=03fdc11d';
-import { makeScore } from './score.js?v=03fdc11d';
-import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER } from './towers.js?v=03fdc11d';
-import { makeEconomy, sellRefund } from './economy.js?v=03fdc11d';
-import { pickTier } from './perftier.js?v=03fdc11d';
-import { registerServiceWorker } from './pwa.js?v=03fdc11d';
-import { makeBloom } from './postfx.js?v=03fdc11d';
-import { TANK_FEEL, TANK_FEEL_KNOBS, makeTankFeel, stepTankFeel, landTankFeel, fireTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js?v=03fdc11d';
-import { FEEL, loadFeel, saveFeel } from './feelstore.js?v=03fdc11d';
+  travelRate, advancePhase } from './portalfx.js?v=fbfdd645';
+import { WORMHOLE_FRAG } from './fx/wormhole.frag.js?v=fbfdd645';
+import { CORONA_FRAG } from './fx/corona.frag.js?v=fbfdd645';
+import { labLine, parseLabQuery } from './lab.js?v=fbfdd645';
+import { bakeGalaxyCube } from './galaxybake.js?v=fbfdd645';
+import { makeScore } from './score.js?v=fbfdd645';
+import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER } from './towers.js?v=fbfdd645';
+import { makeEconomy, sellRefund } from './economy.js?v=fbfdd645';
+import { pickTier } from './perftier.js?v=fbfdd645';
+import { registerServiceWorker } from './pwa.js?v=fbfdd645';
+import { makeBloom } from './postfx.js?v=fbfdd645';
+import { TANK_FEEL, TANK_FEEL_KNOBS, makeTankFeel, stepTankFeel, landTankFeel, fireTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js?v=fbfdd645';
+import { FEEL, loadFeel, saveFeel } from './feelstore.js?v=fbfdd645';
 import { STRIKE_KNOBS, makeStrike, makeStrikeParams, grantStrikes, stepStrike,
   toggleArm, paintTarget, launchStrike, stepFall, skipFall, fallProgress,
-  strikeDamage, retargetStrike, orbitProgress } from './strike.js?v=03fdc11d';
+  strikeDamage, retargetStrike, orbitProgress } from './strike.js?v=fbfdd645';
 import { radarBasis, radarProject, radarBearing, sweepAngle, radarPhosphor,
-  proximitySectors, SENSOR_LEVELS } from './radar.js?v=03fdc11d';
-import { BLOOM_GROUPS } from './bloomweights.js?v=03fdc11d';
-import { TOWER_LOOK_NAMES, DEFAULT_TOWER_LOOK, buildTowerLook, preloadLook } from './towerlooks.js?v=03fdc11d';
-import { makeAudio } from './audio.js?v=03fdc11d';
-import { DEATH_KEYS } from './audiomanifest.js?v=03fdc11d';
+  proximitySectors, SENSOR_LEVELS } from './radar.js?v=fbfdd645';
+import { BLOOM_GROUPS } from './bloomweights.js?v=fbfdd645';
+import { TOWER_LOOK_NAMES, DEFAULT_TOWER_LOOK, buildTowerLook, preloadLook } from './towerlooks.js?v=fbfdd645';
+import { makeAudio } from './audio.js?v=fbfdd645';
+import { DEATH_KEYS } from './audiomanifest.js?v=fbfdd645';
 
 export function initTdTab(root) {
   let active = false;
@@ -216,6 +219,14 @@ export function initTdTab(root) {
       || (mobileParam === '1' ? 'phone' : mobileParam === '0' ? 'desktop' : null),
   });
   const whRender = { ...tier.wormhole };
+
+  // THE STRESS LAB (operator, 2026-09-03; src/lab.js). `?lab=1` and nothing
+  // else changes: every branch below is `lab.on && …`, so a run without the
+  // flag executes the code it executed yesterday. The lab opens on the
+  // tier's own portal numbers; a URL may override them (`?labWhSize=`).
+  const lab = parseLabQuery(location.search, tier) || { on: false };
+  if (lab.on) { whRender.size = lab.whSize; whRender.updateHz = lab.whHz; }
+  let labSky = null;   // { texture, seed, dispose } once baked
 
   // --- scene ---------------------------------------------------------------
   const container = root.querySelector('#td-app');
@@ -5322,7 +5333,7 @@ export function initTdTab(root) {
     wave++;
     waveActive = true; waveAge = 0;
     tfMilestone(wave);   // the Terraformer keeps time in waves
-    const plan = computeWavePlan(wave, round, params.waveSize);
+    const plan = computeWavePlan(wave, round, params.waveSize, lab.on ? lab.waveMult : 1);
     // NEW THREAT reveal the first time a headline type appears
     if (!seenTypes.has(plan.headline)) {
       seenTypes.add(plan.headline);
@@ -6536,6 +6547,9 @@ export function initTdTab(root) {
   }
 
   function playerHit(killerType = null) {
+    // the lab's tank is a timer with no body to lose: the shove stays, so
+    // being hit still reads, and the hull counter never moves
+    if (lab.on && lab.immortalTank) { bumpLeft = Math.max(bumpLeft, BUMP_LEN * 0.5); return; }
     // the shield takes it: a hard flash on the bubble, nothing on the hull
     if (shieldT > 0) {
       if (shieldObj) shieldObj.material.opacity = 1;
@@ -6743,7 +6757,7 @@ export function initTdTab(root) {
     eco.leak(); // a breach kills the streak — HK's rule, our Heart
     streakMark = 0;
     if (ws) ws.leaks++;
-    if (!tutorialActive) heartHP -= dmg;
+    if (!tutorialActive && !(lab.on && lab.immortalHeart)) heartHP -= dmg;
     heartSprite.userData.hit(); // orange/red Wave flare
     updateHud();
     if (heartHP <= 0) loseGame('the heart is lost');
@@ -8182,6 +8196,20 @@ export function initTdTab(root) {
     uDepthHue: { value: 0.12 },
   };
   for (const [k, v] of Object.entries(WORMHOLE_PRESET)) whUniforms[k] = { value: v };
+  // the UNION with the corona's uniforms (the bench's rule, portal-tab.js):
+  // a uniform a program declares and the object lacks is a hard failure, so
+  // switching effects must never remove one. The lab is the only switcher.
+  whUniforms.uRingRadius = { value: 1.0 };
+  const BOARD_FX = { wormhole: { frag: WORMHOLE_FRAG, exposure: WORMHOLE_PRESET.uExposure },
+                     corona: { frag: CORONA_FRAG, exposure: 30 } };
+  function setBoardEffect(name) {
+    const spec = BOARD_FX[name];
+    if (!spec || !whMat) return;
+    whMat.fragmentShader = spec.frag;
+    whMat.needsUpdate = true;
+    whUniforms.uExposure.value = spec.exposure;   // they differ ~5x; corona's 30 on the wormhole is a white disc
+    whLastAt = -1e9;                              // march now, whatever the Hz
+  }
 
   function ensureWormhole() {
     if (whRt) return whRt;
@@ -9208,7 +9236,7 @@ export function initTdTab(root) {
   const perfEl = root.querySelector('#td-perf');
   let perfOn = false, perfFrames = 0, perfAcc = 0, perfFps = 0;
   const PERF_KEY = 'ssg.td.perf';
-  function setPerfOverlay(on) {
+  function setPerfOverlay(on, persist = true) {
     perfOn = !!on;
     if (perfEl) {
       perfEl.classList.toggle('hidden', !perfOn);
@@ -9217,20 +9245,57 @@ export function initTdTab(root) {
       if (perfOn && !perfEl.textContent) perfEl.textContent = 'measuring…';
     }
     renderer.info.autoReset = !perfOn;
-    try { localStorage.setItem(PERF_KEY, perfOn ? '1' : '0'); } catch { /* fine */ }
+    if (persist) { try { localStorage.setItem(PERF_KEY, perfOn ? '1' : '0'); } catch { /* fine */ } }
     if (perfCtl) perfCtl.updateDisplay();
   }
+  // GPU TIME, from the GPU (2026-09-03). fps says whether the frame fits;
+  // it does not say which side of the bus is full. One TIME_ELAPSED query is
+  // opened around frame() and read back a few frames later — one per frame,
+  // not one per draw: per-draw queries split the render pass on a tiled GPU
+  // and overcount ~4x (research.md). Only while the readout is on.
+  const gl = renderer.getContext();
+  const gpuExt = gl.getExtension('EXT_disjoint_timer_query_webgl2');
+  const gpuPending = [];
+  let gpuOpen = null, perfGpu = 0, gpuAcc = 0, gpuN = 0;
+  function gpuBegin() {
+    if (!perfOn || !gpuExt || gpuOpen) return;
+    gpuOpen = gl.createQuery(); gl.beginQuery(gpuExt.TIME_ELAPSED_EXT, gpuOpen);
+  }
+  function gpuEnd() {
+    if (!gpuOpen) return;
+    gl.endQuery(gpuExt.TIME_ELAPSED_EXT); gpuPending.push(gpuOpen); gpuOpen = null;
+    for (let i = gpuPending.length - 1; i >= 0; i--) {
+      const q = gpuPending[i];
+      if (!gl.getQueryParameter(q, gl.QUERY_RESULT_AVAILABLE)) continue;
+      gpuAcc += gl.getQueryParameter(q, gl.QUERY_RESULT) / 1e6; gpuN++;
+      gl.deleteQuery(q); gpuPending.splice(i, 1);
+    }
+  }
+  let labLineAcc = 0;
   function perfTick(dt) {
     if (!perfOn || !perfEl) return;
     perfFrames++; perfAcc += dt;
     if (perfAcc < 0.5) { renderer.info.reset(); return; }
     const fps = perfFrames / perfAcc;
     perfFps = perfFps ? perfFps * 0.5 + fps * 0.5 : fps;
+    if (gpuN) { const g = gpuAcc / gpuN; perfGpu = perfGpu ? perfGpu * 0.5 + g * 0.5 : g; gpuAcc = 0; gpuN = 0; }
     const r = renderer.info.render;
     perfEl.innerHTML = `<b>${perfFps.toFixed(0)}</b> fps · ${(1000 / perfFps).toFixed(1)} ms`
+      + (gpuExt ? ` · gpu ${perfGpu.toFixed(1)} ms` : '')
       + ` · <b>${r.calls}</b> calls · ${(r.triangles / 1000).toFixed(1)}k tris`
       + ` · ${(r.points / 1000).toFixed(1)}k pts`
-      + (whRt ? ` · wh ${whRender.size}@${whRender.updateHz}` : '');
+      + (whRt ? ` · wh ${whRender.size}@${whRender.updateHz}` : '')
+      + (lab.on ? ` · <b>LAB</b> ×${lab.waveMult}` : '');
+    // the lab's line, every 2 s, for a headless run to grep
+    labLineAcc += perfAcc;
+    if (lab.on && labLineAcc >= 2) {
+      labLineAcc = 0;
+      console.log(labLine({ fps: perfFps, ms: 1000 / perfFps, gpuMs: gpuExt ? perfGpu : NaN,
+        calls: r.calls, tris: r.triangles, pts: r.points,
+        enemies: enemies.reduce((n, e) => n + (e.alive ? 1 : 0), 0), wave,
+        waveMult: lab.waveMult, bg: lab.bg, fx: lab.fx, whSize: whRender.size, whHz: whRender.updateHz,
+        steps: whUniforms.uSteps.value, octaves: whUniforms.uTurbOctaves.value, bloom: lab.bloom }));
+    }
     perfFrames = 0; perfAcc = 0;
     renderer.info.reset();
   }
@@ -9269,7 +9334,9 @@ export function initTdTab(root) {
       simWatch();
       return;
     }
+    gpuBegin();
     frame(dt, false);
+    gpuEnd();
   }
 
   let simFrameNo = 0;
@@ -9395,7 +9462,7 @@ export function initTdTab(root) {
             programmeSpent();
             showBrief('gates');
           } else showSitrep(); // the recap IS the cleared card now
-        } else if (waveAge >= params.waveCap && spawnPoints.some((s) => s.alive)) {
+        } else if (waveAge >= params.waveCap && spawnPoints.some((s) => s.alive) && !(lab.on && lab.holdWaves)) {
           armWave(); // safety: the field is stalled — but it still announces
         }
       } else if (spawnPoints.some((s) => s.alive)) {
@@ -9403,7 +9470,7 @@ export function initTdTab(root) {
         // arm early enough that the countdown consumes the last WAVE_WARN of
         // the gap — the total wait from cleared to spawned is unchanged
         const gap = params.waveGap * (wave < 2 ? 1.6 : 1); // breathe early
-        if (interClock >= gap - WAVE_WARN) armWave();
+        if (interClock >= gap - WAVE_WARN && !(lab.on && lab.holdWaves)) armWave();
       } else if (waveIn < 0) {
         waveCharge = 0;
       }
@@ -9426,7 +9493,7 @@ export function initTdTab(root) {
     if (!frozen && eco) { ecoClockT += dt; if (eco.biomass >= CHEAPEST_TOWER) ecoAffordT += dt; }
     if (tutorialActive) tutorial.tick(dt);
     if (!frozen) {
-      updateEnemies(dt, t);
+      if (!(lab.on && lab.freezeEnemies)) updateEnemies(dt, t);
       checkRewards();
       updateProjectiles(dt, t);
       updateLasers(dt, t);
@@ -9578,7 +9645,10 @@ export function initTdTab(root) {
 
     // main view — the map-layer chrome needs no hiding any more; nothing
     // renders that layer
-    scene.background = mainBg;
+    // the lab's sky: a cubemap baked once, drawn faint. postfx blacks the
+    // background out of its weighted pass, so it never blooms whatever it is.
+    scene.background = lab.on && labSky ? labSky.texture : mainBg;
+    scene.backgroundIntensity = lab.on && labSky ? lab.bgIntensity : 1;
     if (simSkip) return; // sim pass: state advanced, nothing painted
     // in PoV the camera sits inside the creature — hide it there
     playerMesh.visible = params.view !== 'pov';
@@ -11157,6 +11227,46 @@ export function initTdTab(root) {
   // about any control changes, only where it lives and how it is reached.
   perfCtl = gui.add({ get on() { return perfOn; }, set on(v) { setPerfOverlay(v); } }, 'on')
     .name('fps readout (`)');
+  // THE LAB PAGE. A folder here becomes a page in VARS below, for free.
+  function applyLabSky() {
+    if (!lab.on) return;
+    if (lab.bg === 'galaxy') {
+      if (labSky && labSky.seed === lab.galaxySeed) return;
+      if (labSky) labSky.dispose();
+      const t0 = performance.now();
+      labSky = bakeGalaxyCube(renderer, { seed: lab.galaxySeed, face: tier.name === 'phone' ? 512 : 1024 });
+      labSky.seed = lab.galaxySeed;
+      console.log(`LABSKY seed=${lab.galaxySeed} face=${labSky.face} arms=${labSky.params.arms}`
+        + ` palette="${labSky.params.palette}" bakeMs=${(performance.now() - t0).toFixed(1)} (cpu, incl. compile)`);
+    } else if (labSky) { labSky.dispose(); labSky = null; }
+  }
+  if (lab.on) {
+    const f = gui.addFolder('lab');
+    f.add(lab, 'waveMult', 1, 20, 1).name('wave ×');
+    f.add({ spawn: () => spawnWave() }, 'spawn').name('⚡ spawn a wave now');
+    f.add(lab, 'holdWaves').name('hold waves');
+    f.add(lab, 'freezeEnemies').name('freeze enemies');
+    f.add(lab, 'immortalHeart').name('immortal heart');
+    f.add(lab, 'immortalTank').name('immortal tank');
+    f.add(lab, 'bg', ['none', 'galaxy']).name('background').onChange(applyLabSky);
+    f.add(lab, 'galaxySeed', 0, 99999, 1).name('galaxy seed').onFinishChange(applyLabSky);
+    f.add({ roll: () => { lab.galaxySeed = Math.floor(Math.random() * 100000); applyLabSky(); f.controllersRecursive().forEach((c) => c.updateDisplay()); } }, 'roll').name('🎲 new galaxy');
+    f.add(lab, 'bgIntensity', 0, 1.5, 0.05).name('sky intensity');
+    f.add(lab, 'fx', ['wormhole', 'corona']).name('portal effect').onChange((v) => { ensureWormhole(); setBoardEffect(v); });
+    f.add(lab, 'whSize', [128, 192, 256, 384, 512, 768]).name('portal target px').onChange((n) => {
+      // setSize keeps the texture object, so the gates' materials stay bound
+      whRender.size = n; if (whRt) { whRt.setSize(n, n); whUniforms.uResolution.value.set(n, n, 1); whLastAt = -1e9; }
+    });
+    f.add(lab, 'whHz', 1, 60, 1).name('portal update Hz').onChange((v) => { whRender.updateHz = v; });
+    f.add(lab, 'steps', 8, 240, 1).name('march steps').onChange((v) => { whUniforms.uSteps.value = v; whLastAt = -1e9; });
+    f.add(lab, 'octaves', 1, 16, 1).name('turbulence octaves').onChange((v) => { whUniforms.uTurbOctaves.value = v; whLastAt = -1e9; });
+    f.add(lab, 'bloom').name('bloom').onChange((v) => postfx.setEnabled(v));
+    // what the URL asked for, applied once the board exists
+    applyLabSky();
+    if (lab.fx !== 'wormhole') { ensureWormhole(); setBoardEffect(lab.fx); }
+    whUniforms.uSteps.value = lab.steps; whUniforms.uTurbOctaves.value = lab.octaves;
+    postfx.setEnabled(lab.bloom);
+  }
   (function buildVarsModal() {
     const modal = root.querySelector('#td-vars');
     if (!modal) return;
@@ -11164,12 +11274,20 @@ export function initTdTab(root) {
     const body = modal.querySelector('.vars-body');
     const pages = [];
     // page 1: everything that was loose at the root
+    // a page WRAPPING a lil-gui block, not a page that IS one: the modal's
+    // stylesheet forces every `.lil-gui` inside it visible (!important), so a
+    // page carrying that class could never be hidden — every other page was
+    // drawn underneath the game page, scrolled out of sight (found 2026-09-03
+    // when the lab page came up as the game page)
     const gamePage = document.createElement('div');
-    gamePage.className = 'vars-page lil-gui';
+    gamePage.className = 'vars-page';
+    const gameBlock = document.createElement('div');
+    gameBlock.className = 'lil-gui';
     const gameKids = document.createElement('div');
     gameKids.className = 'children';
     for (const c of gui.controllers) gameKids.appendChild(c.domElement);
-    gamePage.appendChild(gameKids);
+    gameBlock.appendChild(gameKids);
+    gamePage.appendChild(gameBlock);
     pages.push({ title: 'game', el: gamePage });
     // one page per folder, the folder's own element moved whole
     for (const f of gui.folders) {
@@ -11204,6 +11322,14 @@ export function initTdTab(root) {
     // ?vars=1 opens it; ?fps=1 turns the readout on — for screenshots and
     // for linking a state rather than describing it
     if (urlParams.get('vars') === '1') document.body.classList.add('vars-open');
+    if (lab.on) {
+      const i = pages.findIndex((pg) => pg.title === 'lab');
+      if (i >= 0) show(i);
+      document.body.classList.add('vars-open');
+      setPerfOverlay(true, false);   // the lab reads the readout; it does not set your preference
+      console.log(`LAB on mult=${lab.waveMult} bg=${lab.bg} fx=${lab.fx} wh=${whRender.size}@${whRender.updateHz}`
+        + ` immortal=${lab.immortalHeart ? 'heart' : ''}${lab.immortalTank ? '+tank' : ''} gpuQuery=${!!gpuExt}`);
+    }
   })();
   {
     let saved = null;
@@ -11250,7 +11376,7 @@ export function initTdTab(root) {
         + ` | radar=2D, no second WebGL context`
         + ` | scene objects=${objs} clouds=${clouds} cloudVerts=${points}`
         + ` | geometries=${mem.geometries}`);
-      renderer.info.autoReset = true;
+      renderer.info.autoReset = !perfOn;   // hand the counters back to the readout if it is on
     };
   }
 

@@ -180,7 +180,7 @@ export function typesByWave(wave) {
 // per-wave spawn plan: the NEWEST type in bulk + a seeded sprinkle of ≤2
 // earlier types. Counts use the same density tiers as the live spawner so
 // the preview never lies. Pure + deterministic.
-export function computeWavePlan(wave, round = 1, waveSize = 4) {
+export function computeWavePlan(wave, round = 1, waveSize = 4, mult = 1) {
   const avail = typesByWave(wave);
   const headline = avail[avail.length - 1];
   const earlier = avail.slice(0, -1);
@@ -194,6 +194,10 @@ export function computeWavePlan(wave, round = 1, waveSize = 4) {
   // all heart damage — median 10->5 before the kit exists). The first
   // three waves taper: 55% / 70% / 85% of their scheduled size.
   if (wave <= 3) base = Math.max(2, Math.round(base * (0.4 + 0.15 * wave)));
+  // THE LAB'S MULTIPLIER (?lab=1). Applied after the taper so the opening
+  // waves stay proportionally gentle, and to `base` rather than to each
+  // count so every density rule below scales together. 1 is the game.
+  if (mult !== 1) base = Math.max(1, Math.round(base * mult));
   const density = (t) => {
     const s = ENEMY_SPEC[t];
     return s.boss ? 1
