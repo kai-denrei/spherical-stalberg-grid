@@ -10,11 +10,12 @@
 // Every time-dependent thing is SET from t: rotors, phases, the camera.
 // A capture seeks; the live loop just calls update(t) with a running t.
 import * as THREE from '../../vendor/three.module.js';
-import { preloadPortalRing, makePortalRing } from '../units.js?v=17f42c04';
-import { bakeGalaxyCube } from '../galaxybake.js?v=17f42c04';
-import { SKY_PRESET } from '../galaxyseed.js?v=17f42c04';
-import { createWormholeTarget, RING_SPIN, TRAVEL } from './wormholebg.js?v=17f42c04';
-import { compileRail } from './rail.js?v=17f42c04';
+import { preloadPortalRing, makePortalRing } from '../units.js?v=2b277e00';
+import { bakeGalaxyCube } from '../galaxybake.js?v=2b277e00';
+import { SKY_PRESET } from '../galaxyseed.js?v=2b277e00';
+import { createWormholeTarget, RING_SPIN, TRAVEL } from './wormholebg.js?v=2b277e00';
+import { compileRail } from './rail.js?v=2b277e00';
+import { applyWeatheredMaterial } from './materials.js?v=2b277e00';
 
 export const GATE_LEN = 12;
 
@@ -111,6 +112,23 @@ export function createGate({ renderer, scene, camera, tier = {} }) {
         if (m.emissive) m.emissive.setHex(0x000000);
       }
     });
+    // PHASE 1b: THE WEATHERED METAL, over that base. Seeded, baked at load,
+    // bound by material name (cine/materials.js); the maps become the
+    // material and CINE_METAL above is what a `?weather=0` bisect falls
+    // back to. `?wrepeat=N` tiles the maps N times across the ring's UVs
+    // and `?wnormal=N` scales the normal map — the two knobs a still is
+    // judged on, so they are on the URL rather than in the file.
+    const wq = new URLSearchParams(location.search);
+    if (wq.get('weather') !== '0') {
+      const n = applyWeatheredMaterial(ring, {
+        seed: 4414, size: tier.name === 'cinema' ? 1024 : 512,
+        // judged on stills at t=8: repeat 1 / normal 1 read as brushed
+        // steel on the ring's UV scale; 0.5 / 0.6 read as worn plate
+        repeat: parseFloat(wq.get('wrepeat')) || 0.5,
+        normalScale: parseFloat(wq.get('wnormal')) || 0.6,
+      });
+      console.log(`WEATHER dressed ${n} materials on the ring (${tier.name === 'cinema' ? 1024 : 512}px)`);
+    }
     // the cast is fitted to board scale; bring the aperture back to ~1.8 m
     const ap = ring.userData.aperture;
     if (ap) {
@@ -148,7 +166,7 @@ export function createGate({ renderer, scene, camera, tier = {} }) {
         if (!o.isMesh) return;
         for (const m of Array.isArray(o.material) ? o.material : [o.material]) {
           const k = m.name || '(unnamed)';
-          const e = seen.get(k) || { meshes: [], m };
+          const e = seen.get(k) || { meshes: [], m, geo: o.geometry };
           e.meshes.push(o.name); seen.set(k, e);
         }
       });
@@ -156,6 +174,8 @@ export function createGate({ renderer, scene, camera, tier = {} }) {
         const m = e.m;
         console.log(`MAT ${k} color=#${m.color ? m.color.getHexString() : '-'} emissive=#${m.emissive ? m.emissive.getHexString() : '-'}`
           + ` ei=${m.emissiveIntensity ?? '-'} rough=${m.roughness ?? '-'} metal=${m.metalness ?? '-'}`
+          + ` maps=${['map', 'aoMap', 'roughnessMap', 'metalnessMap', 'normalMap'].filter((s) => m[s]).join('/') || 'none'}`
+          + ` uv=${(() => { const g = e.geo; return g ? ['uv', 'uv1', 'uv2'].filter((a) => g.attributes[a]).join('/') || 'NONE' : '?'; })()}`
           + ` inGlows=${(ring.userData.glows || []).includes(m)} meshes=${e.meshes.length} e.g. ${e.meshes.slice(0, 3).join(',')}`);
       }
     }
