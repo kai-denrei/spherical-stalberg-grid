@@ -6,6 +6,62 @@ Demo links assume `npm run serve` (port 8144) or the
 
 ---
 
+## `161ac51` — cinematics 1b: weathered metal from a seed
+
+The gate's ring wore flat greys because the game lights nothing, and a
+cinematic lights its metal. The plan wanted the weathering to be a
+material rather than a paint job — procedural and seeded, so it obeys
+"deterministic everything" and ships in kilobytes. It does: nothing is
+shipped, the maps are baked at load from a seed.
+
+`src/weathered.js` is the baker, pure and Node-tested. Value noise on a
+mulberry32 table (no SimplexNoise vendored: every other seeded field in
+the project is one stream from one seed), fractal-summed, with integer
+per-axis lattice periods so that every map tiles by construction — the
+test measures the seam and holds it under 3/255. Per-axis periods are what
+let the scratches be anisotropic (a 64:8 stretch) and still not show a
+join. Three RGBA map sets come out: albedo, ORM, normal.
+
+**The ORM packing is forced, not chosen.** three r160 reads `roughnessMap`
+from the GREEN channel and `metalnessMap` from BLUE (`aoMap` from RED), so
+the research note's single-channel `RedFormat` maps would have fed both a
+hard zero — a texture with one channel samples as `(r, 0, 0, 1)`. AO,
+roughness and metalness in one RGB texture is glTF's own convention, reads
+correctly in all three slots, and is one upload instead of three.
+
+The patina is teal-verdigris by the night's ruling: rust-orange is the
+drifter's belt and violet is barbed, prime, and the throat light already in
+the scene. Oxide takes patches, not the surface — the first cut covered 59%
+of it, measured by the bake's own coverage number (counted from the mask,
+because `metalnessMap` alone cannot tell corroded steel from rubber, which
+is never metallic anywhere), and the threshold moved until it sat near a
+sixth.
+
+`src/cine/materials.js` is the three.js side. One bake per *preset*
+(gunmetal / steel / rubber), cached by its knobs, and a walk that dresses
+any model in place by the `M_Armour` / `M_Steel` / `M_Detail` / `M_Turret`
+/ `M_Track` / `M_Rubber` names `units.js` already uses for the container,
+the crane, the ring and the MK-CX/2 — one baker, every asset, no copies.
+The ring's grey ladder survives as a per-name tint multiplying the albedo,
+which is what a material's colour *is* once a map is bound; five bakes for
+five rungs would be five seconds and sixty megabytes for a distinction a
+multiplier makes. Two things a DataTexture does not do by itself: it
+defaults to nearest filtering with no mipmaps (a lookup table's settings,
+a screen-door under a raking light), and a map bound to a mesh with no
+`uv` attribute samples one texel for the whole surface. The ring's
+`M_Steel` and `M_Rubber` batches come out of `mergeByMaterial` without a
+`uv` (`?matprobe=1` prints it now), so a material is dressed only if every
+mesh wearing it has one; the honest fix — UVs surviving the merge — is
+named in `glbmodels.js`.
+
+Judged on stills at t=8 and t=11. Repeat 1 and normal 1 on the ring's UV
+scale read as **brushed steel**, the machined finish the note itself warns
+against; the scratches got shorter and shallower, the pits took more of
+the height, and the gate binds at repeat 0.5 / normal 0.6. `?wrepeat=N`,
+`?wnormal=N` and `?weather=0` are on the URL for the next judgement.
+
+---
+
 ## `12c5c29` — the slow field keeps its reach and loses its cost
 
 The operator's question from the stress probe — "do fps go down MORE with
