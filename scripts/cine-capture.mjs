@@ -27,6 +27,8 @@ const from = Number(args.from || 0);                 // start time on the rail (
 const [W, H] = (args.size || '1920x1080').split('x').map(Number);
 const out = args.out || 'renders/clip';
 const scale = Number(args.scale || 1);          // 2 = supersample, downscaled by ffmpeg
+const stepMs = Number(args.stepms || 120000);   // a seek or a screenshot slower than this is a hang, not a render
+const debug = !!args.debug;                     // echo the page's console as it arrives
 if (!url) { console.error('usage: --url <page> [--seconds 3 --fps 30 --size 1920x1080 --out renders/x --scale 1 --swiftshader]'); process.exit(2); }
 mkdirSync(out, { recursive: true });
 
@@ -57,11 +59,20 @@ ws.addEventListener('message', (e) => {
     const { resolve, reject } = pending.get(msg.id); pending.delete(msg.id);
     msg.error ? reject(new Error(JSON.stringify(msg.error))) : resolve(msg.result);
   } else if (msg.method === 'Runtime.consoleAPICalled') {
-    consoleLines.push(msg.params.args.map((a) => a.value ?? a.description ?? '').join(' '));
+    const line = msg.params.args.map((a) => a.value ?? a.description ?? '').join(' ');
+    consoleLines.push(line);
+    if (debug) console.log('  [page]', line.slice(0, 200));
+  } else if (msg.method === 'Runtime.exceptionThrown' && debug) {
+    console.log('  [page exception]', JSON.stringify(msg.params.exceptionDetails).slice(0, 300));
   }
 });
 const send = (method, params = {}) => new Promise((resolve, reject) => {
   const i = ++id; pending.set(i, { resolve, reject }); ws.send(JSON.stringify({ id: i, method, params }));
+  setTimeout(() => {
+    if (!pending.has(i)) return;
+    pending.delete(i);
+    reject(new Error(`${method} did not answer in ${stepMs} ms`));
+  }, stepMs);
 });
 const evaluate = async (expression, awaitPromise = false) => {
   const r = await send('Runtime.evaluate', { expression, awaitPromise, returnByValue: true });
@@ -91,9 +102,12 @@ const gl = await evaluate(`(() => { const c = document.querySelector('canvas'); 
 const frames = Math.round(seconds * fps);
 console.log(`cine-capture: ${url} → ${out}  ${W}x${H}${scale > 1 ? ` (rendered at ${scale}x)` : ''} ${fps} fps × ${seconds}s = ${frames} frames  gl="${gl}"`);
 const tStart = Date.now();
+process.on('unhandledRejection', (e) => { console.error('cine-capture: ' + e.message); try { chrome.kill(); } catch {} process.exit(1); });
 for (let i = 0; i < frames; i++) {
   const t = from + i / fps;
+  if (debug) console.log(`  seek ${t.toFixed(3)}`);
   await evaluate(`__cine.seek(${t})`, true);
+  if (debug) console.log('  seek done, capturing');
   const shot = await send('Page.captureScreenshot', { format: 'png', fromSurface: true });
   writeFileSync(join(out, `f${String(i).padStart(5, '0')}.png`), Buffer.from(shot.data, 'base64'));
   if (i % fps === 0 || i === frames - 1) {
