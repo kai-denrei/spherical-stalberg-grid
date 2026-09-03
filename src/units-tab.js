@@ -15,23 +15,23 @@ import { GLTFExporter } from '../vendor/GLTFExporter.js';
 import { buildUnit, preloadMkcx, makeDebris, makeDotBurst, makeBulletCloud,
   makeDotEnemy, makeRewardSolid, makeShellSolid, makePortalCloud,
   preloadServer, makeServerFixture, preloadContainer, makeContainerFixture,
-  preloadFabricator, makeFabricatorDrone, makeIsaoDrone } from './units.js?v=11ced389';
+  preloadFabricator, makeFabricatorDrone, makeIsaoDrone } from './units.js?v=03fdc11d';
 import { TANK_FEEL, TANK_FEEL_KNOBS, formatFeelCode, makeTankFeel, stepTankFeel,
-  landTankFeel, fireTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js?v=11ced389';
+  landTankFeel, fireTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js?v=03fdc11d';
 import { FEEL, loadFeel, saveFeel, resetFeel,
-  TOWER, HEADS, loadTower, saveTower, resetTower } from './feelstore.js?v=11ced389';
+  TOWER, HEADS, loadTower, saveTower, resetTower } from './feelstore.js?v=03fdc11d';
 import { TOWER_FEEL_KNOBS, formatTowerFeel, clampTowerParams,
-  formatTowerHeads, HEAD_CHOICES, HEAD_AS_SHIPPED } from './towerfeel.js?v=11ced389';
-import { CREATURE_TINTS, accentFor } from './enemyspec.js?v=11ced389';
+  formatTowerHeads, HEAD_CHOICES, HEAD_AS_SHIPPED } from './towerfeel.js?v=03fdc11d';
+import { CREATURE_TINTS, accentFor } from './enemyspec.js?v=03fdc11d';
 import { buildTowerLook, TOWER_LOOK_NAMES, DEFAULT_TOWER_LOOK, preloadLook } from './towerlooks.js';
 import { TOWER_BY_KEY, TOWERS } from './towers.js';
 import { LOOKS } from './looks.js';
 import { makeBloom } from './postfx.js';
-import { makeAudio } from './audio.js?v=11ced389';
+import { makeAudio } from './audio.js?v=03fdc11d';
 import { GROUPS, GROUP_LABELS, GROUP_EMPTY, entriesIn } from './unitcatalog.js';
 import { FONT_NAMES, TYPE_KNOBS, TYPE_FEEL, makeTypeParams, loadTypeFeel, saveTypeFeel,
-  formatTypeCode, applyFontPack, currentFontPack, currentShoutPack } from './fonts.js?v=11ced389';
-import { LORE, LORE_WORLD, loreText, loreAll } from './lore.js?v=11ced389';
+  formatTypeCode, applyFontPack, currentFontPack, currentShoutPack } from './fonts.js?v=03fdc11d';
+import { LORE, LORE_WORLD, loreText, loreAll } from './lore.js?v=03fdc11d';
 
 let roundTex = null;
 function roundDotTex() {
@@ -651,6 +651,9 @@ export function initUnitsTab(root) {
   const exportToken = (document.querySelector('meta[name="cb"]') || {}).content || 'dev';
   function exportCurrent(onDone) {
     if (!current || !currentEntry) return;
+    // the bench addresses everything by name; an unnamed root is the one
+    // node it cannot
+    if (!current.name) current.name = `${currentEntry.id}_Game_Root`;
     current.updateMatrixWorld(true);
     new GLTFExporter().parse(current, (buf) => onDone(buf, `${currentEntry.id}_game_${exportToken}.glb`),
       (err) => console.error('[export] failed', err), { binary: true, onlyVisible: true });
