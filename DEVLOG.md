@@ -73,6 +73,14 @@ page had been drawing underneath it, out of sight. It is wrapped now. And
 `?perf=` handed the renderer's counters back to auto-reset when it was done,
 which zeroed the readout's draw count for the rest of the run.
 
+**Added the same evening (`373c21b`): galaxy size and count.** Size is the
+demo's zoom — the disc moves nearer rather than scaling up, so a bigger
+galaxy is also a nearer, brighter one with larger sprites, as in the
+Cabinet. Count (1–8) lays the extras out from the seed (`galaxyLayout`: no
+two within ~35°, each with a seed of its own and 40% of the star budget);
+the home galaxy stays where it was tuned. `labscale=` and `labgalaxies=` on
+the URL; either change rebakes.
+
 **Measured, M4, 1600×1000.** ×12 with 95 enemies alive: 60 fps, 6.0 ms GPU.
 The sky: +0.2 ms. The bake: 60–150 ms of CPU at boot including the first
 shader compile.
