@@ -6,6 +6,44 @@ Demo links assume `npm run serve` (port 8144) or the
 
 ---
 
+## `4f1b212` — cinematics, phase 0: the seam, the harness, and the number
+
+The research and plan are `docs/CINEMATICS-PLAN.md`; the operator ruled on
+all six questions per the plan's recommendations, with 16:9 and twelve
+seconds per scene and in-game sounds or space silence. Phase 0 instruments.
+
+**The fact everything is priced on.** Headless Chrome on this Mac uses the
+real M4 through ANGLE Metal when the SwiftShader flags are left off. A new
+`?bench=SIZE:FRAMES:STEPS:OCTAVES` on the portal bench times the wormhole at
+a full-frame pixel count with the readback stall:
+
+| GL | target | steps × octaves | ms / frame |
+|---|---|---|---|
+| M4 | 1440² (1080p) | 120 × 12 | 68.6 |
+| M4 | 2880² (4K) | 200 × 16 | 575 |
+| SwiftShader | 128² | 120 × 12 | 16.9 |
+
+The M4 does about 45 G sine-folds a second, SwiftShader 1.4. A live
+full-screen wormhole at 1080p is 14.6 fps at the preset, so the live tier
+needs half resolution or fewer steps; a 12-second 4K clip is about three
+and a half minutes offline.
+
+**The seam and the harness.** `src/cine/kit.js` gives a scene `seek(t)`,
+holds its own loop, hides the chrome and resolves one frame after the
+render. `scripts/cine-capture.mjs` drives Chrome over CDP on the GPU, one
+screenshot per seek, then ffmpeg. The portal bench is the first scene: a
+3-second 1080p clip in 14 seconds.
+
+**Determinism, caught by a diff.** Frame 1 from two Chromes differed in
+4.6% of bytes and frames 1 and 2 of one run were identical. The rotors
+accumulated rate × dt, so a zero dt froze them wherever the live loop had
+left them, and the corona's update gate compared t to the live loop's last
+render time, so an early seek rendered nothing. Every time-dependent thing
+is now set from t. After: three distinct frames, each byte-identical across
+two separate Chromes.
+
+---
+
 ## `b368368` — the sky is in the game
 
 Tried in the lab, then kept: **two galaxies, small (size 0.25) and far, small
