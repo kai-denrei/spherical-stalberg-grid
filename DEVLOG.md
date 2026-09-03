@@ -6,6 +6,34 @@ Demo links assume `npm run serve` (port 8144) or the
 
 ---
 
+## `f2f5c67` — the wire survives at 4K
+
+Phase 2's "done when" and the plan's item 10. The first 4K still of the
+gate's landing showed the planet as a hairline: a 1-px GL line at 3840
+wide is nothing, and the planet's identity goes with it. three's Line2
+addons draw a line as screen-space quads with a width in pixels. The
+sibling's `node_modules` carry three **0.180**, not the r160 the plan
+assumed; every symbol the trio imports resolves in r160, so the three
+files are vendored with their imports rewritten and loaded on demand
+(`planet.js` `widenWire`) — a failure to load or compile leaves the 1-px
+wire and says so in the console, and the still is the test. It loaded,
+compiled and drew.
+
+Two things it needed. The width is in pixels of the material's *own*
+`resolution` uniform, which the first probe read off an unsized canvas
+("3px at 300x150" for a 1280×720 frame), so every scene sets it from the
+drawing buffer per draw. And the load is asynchronous: a capture draws one
+frame when `ready()` says so, and the import lands after the ring does, so
+the first gate 4K still still had the thin wire; every scene's `ready()`
+waits for the wire now.
+
+Width follows the frame height — 3 px at 1080p, 6 at 4K, 2 at 720p — on
+THE PLANET, the gate's landing and the tank's world alike. `?wide=N`
+overrides; `?wide=0` is the 1-px line. `renders/gate-4k-wide-t11.9/` is
+the still, next to the thin one.
+
+---
+
 ## `edb6022` — cinematics phases 2 and 3: THE PLANET and THE TANK
 
 Two new scenes on the cine tab, `?scene=planet` and `?scene=tank`, both
