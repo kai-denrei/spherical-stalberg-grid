@@ -158,6 +158,23 @@ export const LORE = {
       + 'mecha-realism concept art, dramatic three-quarter view, '
       + 'cinematic HDR, 8k',
   },
+  mkcx2: {
+    name: 'MK-CX/2 "DENREI-KAI"',
+    tag: 'the MK-CX with the top taken off',
+    body: 'The same machine, re-skinned by a yard that had seen it fight. '
+      + 'The turret block is gone; the gun rides a blade a hand high on a '
+      + 'deck that runs flat from the knife of the nose to the tail. Nine '
+      + 'shells sit flush in the rear deck where a hand can count them, and '
+      + 'two indicator strips the length of the roof say from orbit what '
+      + 'the hull has left. Lower, wider, harder to hit. The crews call it '
+      + 'the razor.',
+    visual: 'streamlined flat-deck hover tank, supercar wedge silhouette, '
+      + 'blade-thin turret with long cannon, nine shells recessed in the '
+      + 'rear deck, two long cyan indicator strips along the roof, nacelle '
+      + 'skirt with lift emitters, hard chamfers, gunmetal with cyan neon, '
+      + 'mecha-realism concept art, dramatic three-quarter view, '
+      + 'cinematic HDR, 8k',
+  },
 
   // --- towers -------------------------------------------------------------
   isao: {

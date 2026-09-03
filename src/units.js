@@ -16,14 +16,14 @@
 
 import * as THREE from '../vendor/three.module.js';
 import { EMOTION_IDS, emotion, phosphorFor } from './emotions.js';
-import { printPhase, printOffset, printOn } from './printpath.js?v=ec60ced9';
+import { printPhase, printOffset, printOn } from './printpath.js?v=e9f13c0d';
 import { loadGlb, mergeByMaterial, fitModel, tintModel, makeShellRack,
-  addEdgeOutlines, makeHeatSleeve } from './glbmodels.js?v=ec60ced9';
-import { CREATURES, waveJelly, swimWave, spherePts, bulletPts, missilePts, heartPts, torusPts, towerHeadPts, enemyDotPts, portalPts } from './creatures.js?v=ec60ced9';
-import { TOWER_FEEL, TOWER_HEADS, headKindFor } from './towerfeel.js?v=ec60ced9';
+  addEdgeOutlines, makeHeatSleeve } from './glbmodels.js?v=e9f13c0d';
+import { CREATURES, waveJelly, swimWave, spherePts, bulletPts, missilePts, heartPts, torusPts, towerHeadPts, enemyDotPts, portalPts } from './creatures.js?v=e9f13c0d';
+import { TOWER_FEEL, TOWER_HEADS, headKindFor } from './towerfeel.js?v=e9f13c0d';
 import { STARGATE_PTS, STARGATE_STROKE,
-  HORIZON_N, stargateHorizon } from './stargate.js?v=ec60ced9';
-import { ENEMY_SPEC } from './enemyspec.js?v=ec60ced9';
+  HORIZON_N, stargateHorizon } from './stargate.js?v=e9f13c0d';
+import { ENEMY_SPEC } from './enemyspec.js?v=e9f13c0d';
 
 function normalizeToUnit(group) {
   group.updateMatrixWorld(true);
@@ -1159,7 +1159,13 @@ export function makeHeartCloud(bodyHex) {
 //   Turret_Pivot            — the main gun; aiming reads its world +Z
 //   Secondary_L/R_Gun_Pivot — the twin mini-lasers
 // Everything else merges. 58 meshes becomes roughly a dozen.
-const MKCX_URL = 'assets/models/mkcx.glb';
+// Two castings of the same rig. 'mkcx2' is the MK-CX with the top taken off
+// (operator, 2026-09-03: flat deck, no turret block, the nine shells racked on
+// the hull, big deck indicators) — authored beside the original in
+// blueprint-to-life as its own subject so the original is untouched. Same
+// hierarchy contract, so every name below applies to both.
+const MKCX_URLS = { mkcx: 'assets/models/mkcx.glb', mkcx2: 'assets/models/mkcx2.glb' };
+const MKCX_ROOTS = ['MKCX_Root', 'MKCX2_Root'];
 // Hover_Gear is the nacelle/lift-emitter skirt — the part that should stay
 // planted while the body rises off it. Preserved through the merge for that
 // reason, not because it animates on its own.
@@ -1223,7 +1229,8 @@ export function secondaryPivots(g) {
 }
 
 const MKCX_PIVOTS = ['Turret_Pivot', 'Secondary_L_Gun_Pivot', 'Secondary_R_Gun_Pivot',
-  'Hover_Gear', ...MKCX_LIFTERS];
+  'Hover_Gear', ...MKCX_LIFTERS,
+  'ShellRack_Mount'];   // mkcx2: the deck empty the game's shells sit on
 // The barrel glow strips are authored floating +0.20 above the barrel axis.
 // At our scale they don't read as strips ON the gun — they read as a stray
 // bright line hanging in front of the tank. Dropped before the merge, since
@@ -1233,17 +1240,17 @@ const MKCX_PIVOTS = ['Turret_Pivot', 'Secondary_L_Gun_Pivot', 'Secondary_R_Gun_P
 // two big triangles laid over the hull with its corners poking out at the
 // front and back. Never render a collision proxy.
 const MKCX_DROP = ['Hull_Collision', 'Barrel_Glow_1', 'Barrel_Glow_2'];
-let mkcxProto = null;
+const mkcxProtos = { mkcx: null, mkcx2: null };
 
 // Anyone who asks for the mkcx gets its load started for them, and can
 // subscribe to know when the real model has replaced the fallback. Without
 // this, every tab has to remember to preload, and one that forgets shows
 // the procedural tank forever with nothing to say why.
 const mkcxReadyCbs = [];
-export function onMkcxReady(cb) {
-  if (mkcxProto) { cb(); return; }
-  mkcxReadyCbs.push(cb);
-  preloadMkcx();
+export function onMkcxReady(cb, id = 'mkcx') {
+  if (mkcxProtos[id]) { cb(); return; }
+  mkcxReadyCbs.push([id, cb]);
+  preloadMkcx(id);
 }
 
 // Blueprint callouts: which authored node to hang each label on, and what to
@@ -1270,15 +1277,18 @@ const MKCX_CALLOUTS = [
   ['EngineDeck_Grille', 'engine deck'],
   ['Driver_Hatch', 'driver hatch'],
   ['Sensor_Mast', 'sensor mast'],
+  ['Deck_Glow_1', 'deck indicator'],     // mkcx2
+  ['Shell_Socket_5', 'shell rack'],      // mkcx2
   ['Callout_4', 'muzzle'],   // authored empty at the barrel tip
 ];
+const mkcxRootOf = (scene) => MKCX_ROOTS.map((n) => scene.getObjectByName(n)).find(Boolean) || scene;
 
 // Drop an empty at each callout's world position, parented to the model root,
 // BEFORE the merge welds those nodes away. Empties are not meshes, so they
 // survive the merge untouched and are carried by fitModel's scale and
 // recentring like everything else — no coordinates to keep in sync by hand.
 function markCallouts(scene) {
-  const root = scene.getObjectByName('MKCX_Root') || scene;
+  const root = mkcxRootOf(scene);
   root.updateMatrixWorld(true);
   const marks = [];
   const p = new THREE.Vector3();
@@ -1308,7 +1318,7 @@ function markCallouts(scene) {
 // body against it: re-merging an already-merged scene, and re-marking it,
 // which is why parts whose node is a Group (and so survives a merge) ended
 // up with a label each per call. The promise, not the scene, is the guard.
-let mkcxLoad = null;
+const mkcxLoads = { mkcx: null, mkcx2: null };
 // Authored GLBs ship their collision volumes as visible red wireframes —
 // helper meshes for the DCC, noise everywhere else. Hidden, not removed:
 // a future physics pass may want to read them.
@@ -2160,10 +2170,11 @@ export function makeIsaoDrone(tint = 0xbfe6ff) {
   return g;
 }
 
-export function preloadMkcx() {
-  if (mkcxLoad) return mkcxLoad;
-  mkcxLoad = loadGlb(MKCX_URL).then((scene) => {
-    if (!scene) { mkcxLoad = null; return false; }   // let a retry happen
+export function preloadMkcx(id = 'mkcx') {
+  if (!MKCX_URLS[id]) return Promise.resolve(false);
+  if (mkcxLoads[id]) return mkcxLoads[id];
+  mkcxLoads[id] = loadGlb(MKCX_URLS[id]).then((scene) => {
+    if (!scene) { mkcxLoads[id] = null; return false; }   // let a retry happen
     const marks = markCallouts(scene);
     // The merge parents each batch to its OWNER, and everything outside a
     // preserved pivot is owned by the root we hand it — the glTF SCENE, a
@@ -2173,9 +2184,9 @@ export function preloadMkcx() {
     // pivots: the turret and secondaries rose while the hull stayed put.
     // attach() re-parents them without moving them.
     const merged = mergeByMaterial(scene, MKCX_PIVOTS, MKCX_DROP);
-    const inner = merged.getObjectByName('MKCX_Root');
+    const inner = MKCX_ROOTS.map((n) => merged.getObjectByName(n)).find(Boolean);
     if (inner) for (const c of [...merged.children]) if (c !== inner) inner.attach(c);
-    mkcxProto = fitModel(merged, {
+    const proto = fitModel(merged, {
       // NOTE which of these actually binds. The model is 10.82 long (the
       // barrel juts far forward) against 2.86 tall, so maxSpan decides the
       // scale and height never gets a say. Raising span is what makes the
@@ -2191,20 +2202,23 @@ export function preloadMkcx() {
     // imported model has none, which is most of why it read as a lump next
     // to the procedural units. Built on the PROTOTYPE so EdgesGeometry runs
     // once and every clone shares it.
-    addEdgeOutlines(mkcxProto, { angle: 28, opacity: 0.85 });
-    mkcxProto.userData.callouts = marks;
-    while (mkcxReadyCbs.length) mkcxReadyCbs.shift()();
+    addEdgeOutlines(proto, { angle: 28, opacity: 0.85 });
+    proto.userData.callouts = marks;
+    mkcxProtos[id] = proto;
+    for (let i = mkcxReadyCbs.length - 1; i >= 0; i--) {
+      if (mkcxReadyCbs[i][0] === id) mkcxReadyCbs.splice(i, 1)[0][1]();
+    }
     return true;
   });
-  return mkcxLoad;
+  return mkcxLoads[id];
 }
 
-export function mkcxReady() { return !!mkcxProto; }
+export function mkcxReady(id = 'mkcx') { return !!mkcxProtos[id]; }
 
-function makeMkcx(cols) {
+function makeMkcx(cols, id = 'mkcx') {
   // self-starting: asking for it is enough to begin the load
-  if (!mkcxProto) { preloadMkcx(); return makeTank(cols); } // never nothing
-  const g = mkcxProto.clone(true);
+  if (!mkcxProtos[id]) { preloadMkcx(id); return makeTank(cols); } // never nothing
+  const g = mkcxProtos[id].clone(true);
   // A shade LADDER, not a flat wash. The model's four structural materials
   // sit within 0.05 luminance of each other — all muddy olive-grey — so one
   // uniform tint turned the whole tank into a single coloured mass. Giving
@@ -2293,7 +2307,9 @@ function makeMkcx(cols) {
   // (0, 1.56, 1.15), so the deck runs at y 1.56-1.57; the secondaries are at
   // z 2.30, and "behind" them is toward -z.
   const DECK_Y = 1.60;   // just proud of the deck, so it reads as fitted
-  const deckStrips = glow ? [
+  // mkcx2 authors its own deck indicators (Deck_Glow_1/2, on M_Glow, so the
+  // health tint paints them); the three the game adds are the MK-CX's
+  const deckStrips = glow && id === 'mkcx' ? [
     [0, DECK_Y, -2.92, 2.30, 0.05, 0.42],   // the long one across the stern
     [-0.86, DECK_Y, 1.72, 0.46, 0.05, 0.60], // behind the left secondary
     [0.86, DECK_Y, 1.72, 0.46, 0.05, 0.60],  // and the right
@@ -2417,7 +2433,16 @@ function makeMkcx(cols) {
   // one onto the turret roof: 3x3, row-major, index < ammo lit. Parented to
   // the turret so it sweeps with the gun exactly as the original does.
   // Turret_Pivot's local bounds are y 0.07..1.34, so the roof is ~1.34.
-  if (turret) {
+  // mkcx2 racks the shells IN THE HULL: nine sockets in the rear deck and
+  // an empty at their centre, so the dots sit flush on the flat top with no
+  // plate and no turret under them (they do not sweep with the gun, which is
+  // the point — the deck is the rack).
+  const rackMount = g.getObjectByName('ShellRack_Mount');
+  if (rackMount) {
+    g.userData.ammoDots = makeShellRack(rackMount, {
+      y: 0.13, dot: 0.15, gapX: 0.46, gapZ: 0.50, plate: null,
+    });
+  } else if (turret) {
     // The turret roof the artist drew is a small hexagon; a 3x3 rack sized
     // to be readable overhangs it. So the rack brings its own dark plate,
     // sized to hold all nine — the same read as the procedural tank's.
@@ -2584,6 +2609,7 @@ export const UNITS = {
   jellyfish: { kind: 'cloud' },
   tank: { kind: 'mesh', make: makeTank },
   mkcx: { kind: 'mesh', make: makeMkcx },
+  mkcx2: { kind: 'mesh', make: (cols) => makeMkcx(cols, 'mkcx2') },
   drone: { kind: 'mesh', make: makeDrone },
   ghost: { kind: 'mesh', make: makeGhost },
   scoutufo: { kind: 'mesh', make: makeUfo },

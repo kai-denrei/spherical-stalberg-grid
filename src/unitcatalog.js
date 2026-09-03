@@ -54,6 +54,9 @@ const PLAYER_UNITS = [
   { id: 'mkcx', kind: 'unit', label: 'mkcx',
     note: 'authored hover tank; turret and both secondary guns stay articulated',
     sounds: TANK_SOUNDS },
+  { id: 'mkcx2', kind: 'unit', label: 'mkcx-2',
+    note: 'the MK-CX with the top taken off: flat deck, blade turret, shells racked in the hull, deck indicators',
+    sounds: TANK_SOUNDS },
   // BOBBY builds everything the player owns, so he belongs on the friendly
   // side with the machines he prints. kind:'fixture' because he is cast the
   // same way the server and the containers are — an authored .glb loaded
