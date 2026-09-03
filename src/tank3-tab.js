@@ -4,12 +4,12 @@
 import * as THREE from '../vendor/three.module.js';
 import GUI from '../vendor/lil-gui.esm.js';
 import { OrbitControls } from '../vendor/OrbitControls.js';
-import { createPlanetTankGame, DYING_T } from './tanks2.js?v=9032cb00';
-import { buildUnit, onMkcxReady, makeBulletCloud, makeDebris } from './units.js?v=9032cb00';
-import { LOOKS } from './looks.js?v=9032cb00';
-import { mulberry32 } from './rng.js?v=9032cb00';
-import { norm3, scale3 } from './vec3.js?v=9032cb00';
-import { makeBloom } from './postfx.js?v=9032cb00';
+import { createPlanetTankGame, DYING_T } from './tanks2.js?v=cfa6e31e';
+import { buildUnit, onMkcxReady, makeBulletCloud, makeDebris } from './units.js?v=cfa6e31e';
+import { LOOKS } from './looks.js?v=cfa6e31e';
+import { mulberry32 } from './rng.js?v=cfa6e31e';
+import { norm3, scale3 } from './vec3.js?v=cfa6e31e';
+import { makeBloom } from './postfx.js?v=cfa6e31e';
 
 const DT = 1 / 60;
 const TANK_SCALE = 0.09;    // world radius of each tank
@@ -65,7 +65,7 @@ export function initTank3Tab(root) {
   // battle mesh tank; barrel is local +Z. Disable the sweep tick (manual
   // aim). Scale so the normalized-to-unit group renders at TANK_SCALE.
   function makeTankMesh(cols) {
-    const g = buildUnit('mkcx', cols); // authored hover tank, procedural fallback
+    const g = buildUnit('mkcx2', cols); // the fielded hover tank (MK-CX/2), procedural fallback
     g.userData.tick = null;                                  // no turret sweep
     g.scale.setScalar((g.userData.baseScale ?? 1) * TANK_SCALE);
     return g;

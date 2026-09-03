@@ -16,14 +16,14 @@
 
 import * as THREE from '../vendor/three.module.js';
 import { EMOTION_IDS, emotion, phosphorFor } from './emotions.js';
-import { printPhase, printOffset, printOn } from './printpath.js?v=9032cb00';
+import { printPhase, printOffset, printOn } from './printpath.js?v=cfa6e31e';
 import { loadGlb, mergeByMaterial, fitModel, tintModel, makeShellRack,
-  addEdgeOutlines, makeHeatSleeve } from './glbmodels.js?v=9032cb00';
-import { CREATURES, waveJelly, swimWave, spherePts, bulletPts, missilePts, heartPts, torusPts, towerHeadPts, enemyDotPts, portalPts } from './creatures.js?v=9032cb00';
-import { TOWER_FEEL, TOWER_HEADS, headKindFor } from './towerfeel.js?v=9032cb00';
+  addEdgeOutlines, makeHeatSleeve } from './glbmodels.js?v=cfa6e31e';
+import { CREATURES, waveJelly, swimWave, spherePts, bulletPts, missilePts, heartPts, torusPts, towerHeadPts, enemyDotPts, portalPts } from './creatures.js?v=cfa6e31e';
+import { TOWER_FEEL, TOWER_HEADS, headKindFor } from './towerfeel.js?v=cfa6e31e';
 import { STARGATE_PTS, STARGATE_STROKE,
-  HORIZON_N, stargateHorizon } from './stargate.js?v=9032cb00';
-import { ENEMY_SPEC } from './enemyspec.js?v=9032cb00';
+  HORIZON_N, stargateHorizon } from './stargate.js?v=cfa6e31e';
+import { ENEMY_SPEC } from './enemyspec.js?v=cfa6e31e';
 
 function normalizeToUnit(group) {
   group.updateMatrixWorld(true);
@@ -1162,8 +1162,9 @@ export function makeHeartCloud(bodyHex) {
 // Two castings of the same rig. 'mkcx2' is the MK-CX with the top taken off
 // (operator, 2026-09-03: flat deck, no turret block, the nine shells racked on
 // the hull, big deck indicators) — authored beside the original in
-// blueprint-to-life as its own subject so the original is untouched. Same
-// hierarchy contract, so every name below applies to both.
+// blueprint-to-life as its own subject. THE MK-CX/2 IS THE FIELDED UNIT
+// (operator, later that day): every default below is 'mkcx2'; the MK-CX
+// stays castable as a relic in the units viewer, and nowhere else.
 const MKCX_URLS = { mkcx: 'assets/models/mkcx.glb', mkcx2: 'assets/models/mkcx2.glb' };
 const MKCX_ROOTS = ['MKCX_Root', 'MKCX2_Root'];
 // The heat gauges are SLEEVES the game adds (a dedicated basic material is
@@ -1257,7 +1258,7 @@ const mkcxProtos = { mkcx: null, mkcx2: null };
 // this, every tab has to remember to preload, and one that forgets shows
 // the procedural tank forever with nothing to say why.
 const mkcxReadyCbs = [];
-export function onMkcxReady(cb, id = 'mkcx') {
+export function onMkcxReady(cb, id = 'mkcx2') {
   if (mkcxProtos[id]) { cb(); return; }
   mkcxReadyCbs.push([id, cb]);
   preloadMkcx(id);
@@ -2180,7 +2181,7 @@ export function makeIsaoDrone(tint = 0xbfe6ff) {
   return g;
 }
 
-export function preloadMkcx(id = 'mkcx') {
+export function preloadMkcx(id = 'mkcx2') {
   if (!MKCX_URLS[id]) return Promise.resolve(false);
   if (mkcxLoads[id]) return mkcxLoads[id];
   mkcxLoads[id] = loadGlb(MKCX_URLS[id]).then((scene) => {
@@ -2223,9 +2224,9 @@ export function preloadMkcx(id = 'mkcx') {
   return mkcxLoads[id];
 }
 
-export function mkcxReady(id = 'mkcx') { return !!mkcxProtos[id]; }
+export function mkcxReady(id = 'mkcx2') { return !!mkcxProtos[id]; }
 
-function makeMkcx(cols, id = 'mkcx') {
+function makeMkcx(cols, id = 'mkcx2') {
   // self-starting: asking for it is enough to begin the load
   if (!mkcxProtos[id]) { preloadMkcx(id); return makeTank(cols); } // never nothing
   const g = mkcxProtos[id].clone(true);
@@ -2619,8 +2620,8 @@ export const UNITS = {
   phage: { kind: 'cloud' },
   jellyfish: { kind: 'cloud' },
   tank: { kind: 'mesh', make: makeTank },
-  mkcx: { kind: 'mesh', make: makeMkcx },
-  mkcx2: { kind: 'mesh', make: (cols) => makeMkcx(cols, 'mkcx2') },
+  mkcx: { kind: 'mesh', make: (cols) => makeMkcx(cols, 'mkcx') },     // the relic
+  mkcx2: { kind: 'mesh', make: (cols) => makeMkcx(cols, 'mkcx2') },   // the fielded unit
   drone: { kind: 'mesh', make: makeDrone },
   ghost: { kind: 'mesh', make: makeGhost },
   scoutufo: { kind: 'mesh', make: makeUfo },

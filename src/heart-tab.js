@@ -15,16 +15,16 @@
 
 import * as THREE from '../vendor/three.module.js';
 import GUI from '../vendor/lil-gui.esm.js';
-import { generateSphereMesh, relax } from './grid.js?v=9032cb00';
-import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=9032cb00';
-import { mulberry32, randomSeed } from './rng.js?v=9032cb00';
-import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3 } from './vec3.js?v=9032cb00';
-import { CREATURES, waveJelly } from './creatures.js?v=9032cb00';
-import { UNITS, UNIT_NAMES, buildUnit, buildCreature, onMkcxReady, makeOrbCloud, makeBulletCloud, makeDebris, makeDotBurst, makePortalCloud, makeHeartCloud } from './units.js?v=9032cb00';
-import { LOOKS, LOOK_NAMES } from './looks.js?v=9032cb00';
-import { makeCellIndex } from './cellindex.js?v=9032cb00';
-import { CREATURE_TINTS, ENEMY_SPEC, INTROS } from './enemyspec.js?v=9032cb00';
-import { makeBloom } from './postfx.js?v=9032cb00';
+import { generateSphereMesh, relax } from './grid.js?v=cfa6e31e';
+import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=cfa6e31e';
+import { mulberry32, randomSeed } from './rng.js?v=cfa6e31e';
+import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3 } from './vec3.js?v=cfa6e31e';
+import { CREATURES, waveJelly } from './creatures.js?v=cfa6e31e';
+import { UNITS, UNIT_NAMES, buildUnit, buildCreature, onMkcxReady, makeOrbCloud, makeBulletCloud, makeDebris, makeDotBurst, makePortalCloud, makeHeartCloud } from './units.js?v=cfa6e31e';
+import { LOOKS, LOOK_NAMES } from './looks.js?v=cfa6e31e';
+import { makeCellIndex } from './cellindex.js?v=cfa6e31e';
+import { CREATURE_TINTS, ENEMY_SPEC, INTROS } from './enemyspec.js?v=cfa6e31e';
+import { makeBloom } from './postfx.js?v=cfa6e31e';
 
 export function initHeartTab(root) {
   let active = false;
@@ -49,7 +49,7 @@ export function initHeartTab(root) {
     // mkcx by default: the authored hover tank. Async — buildUnit falls
     // back to the procedural tank until the bytes land, then
     // onMkcxReady swaps it in.
-    creature: 'mkcx',
+    creature: 'mkcx2',
     // balance (operator pass): heavier early waves, but a richer field —
     // more triads on the ground and a longer breath between waves
     orbs: 14,

@@ -19,57 +19,57 @@
 
 import * as THREE from '../vendor/three.module.js';
 import GUI from '../vendor/lil-gui.esm.js';
-import { generateSphereMesh, relax } from './grid.js?v=9032cb00';
-import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=9032cb00';
-import { mulberry32, randomSeed } from './rng.js?v=9032cb00';
-import { computeBerths, berthIndexFor } from './berths.js?v=9032cb00';
-import { wantsSecondary, shellsForAll } from './autofire.js?v=9032cb00';
-import { printPhase, printOffset, printOn, patternSecsFor } from './printpath.js?v=9032cb00';
-import { createBeamRig, PLASMA_DEFAULTS, BOARD_PRESET, BEAM_PEAK } from './beamdraw.js?v=9032cb00';
-import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3, segKey, tangentDir, tangentBasis } from './vec3.js?v=9032cb00';
-import { CREATURES, waveJelly } from './creatures.js?v=9032cb00';
-import { brief, dwellFor } from './isaobriefs.js?v=9032cb00';
-import { drawEmotion } from './emotions.js?v=9032cb00';
+import { generateSphereMesh, relax } from './grid.js?v=cfa6e31e';
+import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=cfa6e31e';
+import { mulberry32, randomSeed } from './rng.js?v=cfa6e31e';
+import { computeBerths, berthIndexFor } from './berths.js?v=cfa6e31e';
+import { wantsSecondary, shellsForAll } from './autofire.js?v=cfa6e31e';
+import { printPhase, printOffset, printOn, patternSecsFor } from './printpath.js?v=cfa6e31e';
+import { createBeamRig, PLASMA_DEFAULTS, BOARD_PRESET, BEAM_PEAK } from './beamdraw.js?v=cfa6e31e';
+import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3, segKey, tangentDir, tangentBasis } from './vec3.js?v=cfa6e31e';
+import { CREATURES, waveJelly } from './creatures.js?v=cfa6e31e';
+import { brief, dwellFor } from './isaobriefs.js?v=cfa6e31e';
+import { drawEmotion } from './emotions.js?v=cfa6e31e';
 import { ACHIEVEMENTS, ACHV_GROUPS, achievement, blankRun, earned, freshlyEarned,
   sanitiseRecord }
-  from './achievements.js?v=9032cb00';
+  from './achievements.js?v=cfa6e31e';
 import { applyFontPack, currentFontPack, FONT_NAMES,
-  loadTypeFeel } from './fonts.js?v=9032cb00';
-import { SECONDARY_TOE, applySecondaryToe } from './units.js?v=9032cb00';
-import { UNITS, UNIT_NAMES, buildUnit, buildCreature, preloadMkcx, preloadServer, makeServerFixture, makeShieldShell, preloadContainer, makeContainerFixture, preloadFabricator, makeIsaoDrone, makeBulletCloud, makeRewardSolid, makeShellSolid, makeDebris, makeDotBurst, makePortalCloud, preloadPortalRing, makePortalRing, makeHeartCloud, makeDotEnemy, preloadTerraformer, makeTerraformerFixture } from './units.js?v=9032cb00';
-import { LOOKS, LOOK_NAMES } from './looks.js?v=9032cb00';
-import { makeCellIndex } from './cellindex.js?v=9032cb00';
-import { CREATURE_TINTS, ENEMY_SPEC, INTROS, computeWavePlan, accentFor } from './enemyspec.js?v=9032cb00';
-import { PICKUPS } from './pickups.js?v=9032cb00';
-import { rankFor, rankLabel, badgeSVG, killReq, eliteReq } from './ranks.js?v=9032cb00';
-import { beamStep, isBeamStep, PEN_SOFT_FRAC, PEN_HARD_FRAC } from './beamranks.js?v=9032cb00';
-import { burn, sweepAdvance, wallBite as wallBiteFor } from './beamburn.js?v=9032cb00';
-import { arcPoint, projectToArc, toeForCrossing, crossingForToe } from './arc.js?v=9032cb00';
+  loadTypeFeel } from './fonts.js?v=cfa6e31e';
+import { SECONDARY_TOE, applySecondaryToe } from './units.js?v=cfa6e31e';
+import { UNITS, UNIT_NAMES, buildUnit, buildCreature, preloadMkcx, preloadServer, makeServerFixture, makeShieldShell, preloadContainer, makeContainerFixture, preloadFabricator, makeIsaoDrone, makeBulletCloud, makeRewardSolid, makeShellSolid, makeDebris, makeDotBurst, makePortalCloud, preloadPortalRing, makePortalRing, makeHeartCloud, makeDotEnemy, preloadTerraformer, makeTerraformerFixture } from './units.js?v=cfa6e31e';
+import { LOOKS, LOOK_NAMES } from './looks.js?v=cfa6e31e';
+import { makeCellIndex } from './cellindex.js?v=cfa6e31e';
+import { CREATURE_TINTS, ENEMY_SPEC, INTROS, computeWavePlan, accentFor } from './enemyspec.js?v=cfa6e31e';
+import { PICKUPS } from './pickups.js?v=cfa6e31e';
+import { rankFor, rankLabel, badgeSVG, killReq, eliteReq } from './ranks.js?v=cfa6e31e';
+import { beamStep, isBeamStep, PEN_SOFT_FRAC, PEN_HARD_FRAC } from './beamranks.js?v=cfa6e31e';
+import { burn, sweepAdvance, wallBite as wallBiteFor } from './beamburn.js?v=cfa6e31e';
+import { arcPoint, projectToArc, toeForCrossing, crossingForToe } from './arc.js?v=cfa6e31e';
 import { WORMHOLE_PRESET, WORMHOLE_UNIFORM_DEFAULTS, RING_SPIN, TRAVEL,
-  travelRate, advancePhase } from './portalfx.js?v=9032cb00';
-import { WORMHOLE_FRAG } from './fx/wormhole.frag.js?v=9032cb00';
-import { CORONA_FRAG } from './fx/corona.frag.js?v=9032cb00';
-import { labLine, parseLabQuery } from './lab.js?v=9032cb00';
-import { bakeGalaxyCube } from './galaxybake.js?v=9032cb00';
-import { SKY_PRESET } from './galaxyseed.js?v=9032cb00';
-import { makeScore } from './score.js?v=9032cb00';
-import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER } from './towers.js?v=9032cb00';
-import { makeEconomy, sellRefund } from './economy.js?v=9032cb00';
-import { pickTier } from './perftier.js?v=9032cb00';
-import { STICK, stickVector, knobOffset } from './stick.js?v=9032cb00';
-import { registerServiceWorker } from './pwa.js?v=9032cb00';
-import { makeBloom } from './postfx.js?v=9032cb00';
-import { TANK_FEEL, TANK_FEEL_KNOBS, makeTankFeel, stepTankFeel, landTankFeel, fireTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js?v=9032cb00';
-import { FEEL, loadFeel, saveFeel } from './feelstore.js?v=9032cb00';
+  travelRate, advancePhase } from './portalfx.js?v=cfa6e31e';
+import { WORMHOLE_FRAG } from './fx/wormhole.frag.js?v=cfa6e31e';
+import { CORONA_FRAG } from './fx/corona.frag.js?v=cfa6e31e';
+import { labLine, parseLabQuery } from './lab.js?v=cfa6e31e';
+import { bakeGalaxyCube } from './galaxybake.js?v=cfa6e31e';
+import { SKY_PRESET } from './galaxyseed.js?v=cfa6e31e';
+import { makeScore } from './score.js?v=cfa6e31e';
+import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER } from './towers.js?v=cfa6e31e';
+import { makeEconomy, sellRefund } from './economy.js?v=cfa6e31e';
+import { pickTier } from './perftier.js?v=cfa6e31e';
+import { STICK, stickVector, knobOffset } from './stick.js?v=cfa6e31e';
+import { registerServiceWorker } from './pwa.js?v=cfa6e31e';
+import { makeBloom } from './postfx.js?v=cfa6e31e';
+import { TANK_FEEL, TANK_FEEL_KNOBS, makeTankFeel, stepTankFeel, landTankFeel, fireTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js?v=cfa6e31e';
+import { FEEL, loadFeel, saveFeel } from './feelstore.js?v=cfa6e31e';
 import { STRIKE_KNOBS, makeStrike, makeStrikeParams, grantStrikes, stepStrike,
   toggleArm, paintTarget, launchStrike, stepFall, skipFall, fallProgress,
-  strikeDamage, retargetStrike, orbitProgress } from './strike.js?v=9032cb00';
+  strikeDamage, retargetStrike, orbitProgress } from './strike.js?v=cfa6e31e';
 import { radarBasis, radarProject, radarBearing, sweepAngle, radarPhosphor,
-  proximitySectors, SENSOR_LEVELS, sensorColor } from './radar.js?v=9032cb00';
-import { BLOOM_GROUPS } from './bloomweights.js?v=9032cb00';
-import { TOWER_LOOK_NAMES, DEFAULT_TOWER_LOOK, buildTowerLook, preloadLook } from './towerlooks.js?v=9032cb00';
-import { makeAudio } from './audio.js?v=9032cb00';
-import { DEATH_KEYS } from './audiomanifest.js?v=9032cb00';
+  proximitySectors, SENSOR_LEVELS, sensorColor } from './radar.js?v=cfa6e31e';
+import { BLOOM_GROUPS } from './bloomweights.js?v=cfa6e31e';
+import { TOWER_LOOK_NAMES, DEFAULT_TOWER_LOOK, buildTowerLook, preloadLook } from './towerlooks.js?v=cfa6e31e';
+import { makeAudio } from './audio.js?v=cfa6e31e';
+import { DEATH_KEYS } from './audiomanifest.js?v=cfa6e31e';
 
 export function initTdTab(root) {
   let active = false;
@@ -111,7 +111,7 @@ export function initTdTab(root) {
     // mkcx by default: the authored hover tank. Async — buildUnit falls
     // back to the procedural tank until the bytes land, then
     // onMkcxReady swaps it in.
-    creature: 'mkcx',
+    creature: 'mkcx2',
     // balance (operator pass): heavier early waves, but a richer field —
     // more triads on the ground and a longer breath between waves
     orbs: 14,
@@ -1745,7 +1745,7 @@ export function initTdTab(root) {
           tmpObj.up.set(nrm2[0], nrm2[1], nrm2[2]);
           tmpObj.lookAt(ec[0], ec[1], ec[2]);
           g.quaternion.copy(tmpObj.quaternion);
-          const tank = buildCreature('mkcx', look());
+          const tank = buildCreature('mkcx2', look());   // the fielded unit
           tank.scale.setScalar(0.32);
           // counter-stretch: the parent's z-squash would flatten the hull
           tank.scale.z /= 0.55;
@@ -4161,7 +4161,9 @@ export function initTdTab(root) {
       `<div class="msg-scroll">` +
       `<div class="gcards">` +
       glossCard('#ff6a88', spriteShot('heart', heartIcon), 'the stalheart', 'the terraformer at the pole — without it the colony dies') +
-      glossCard('#9fdcff', spriteShot('tank', unitIcon('tank', look().walker)), 'your tank', 'W/Q-E drive · A/D steer · SPACE shell · SHIFT lasers · 1/2/3 views · U upgrade · ESC pause') +
+      glossCard('#9fdcff', spriteShot('tank', unitIcon('tank', look().walker)), 'your tank', mobileShell
+        ? 'TAP the ground to send it · DRAG on the left to drive · ◉ shell · ∿ plasma · BUILD switch top-right · hold a tower to upgrade'
+        : 'W/Q-E drive · A/D steer · SPACE shell · SHIFT lasers · 1/2/3 views · U upgrade · ESC pause') +
       glossCard('#9fdcff', spriteShot('tower-' + params.towerLook, () => buildTowerLook(params.towerLook, TOWER_BY_KEY.single)), 'towers', 'your army — build them on the HIGH GROUND (walls) in BUILD mode') +
       glossCard('#ffb000', spriteShot('triad', makeTriadIcon), 'missile triads', 'drive over = +3 shells · shells also blast walls open') +
       glossCard('#66ff88', spriteShot('phage', unitIcon('phage', CREATURE_TINTS.phage)), 'fodder', 'soft creatures — RAM them, it’s free') +
@@ -6911,7 +6913,7 @@ export function initTdTab(root) {
   // the choice is instant and the tank is never missing.
   function applyCreature() {
     const chosen = params.creature;
-    if (chosen === 'mkcx' || chosen === 'mkcx2') {
+    if (chosen === 'mkcx' || chosen === 'mkcx2') {   // both castings are async
       preloadMkcx(chosen).then((ok) => {
         if (ok && params.creature === chosen) { buildActors(); placeActors(); }
       });
@@ -9931,7 +9933,7 @@ export function initTdTab(root) {
   applyLook();
   // a unit whose model loads asynchronously needs its bytes kicked off; it
   // renders the procedural fallback until they arrive
-  if (params.creature === 'mkcx') applyCreature();
+  if (params.creature === 'mkcx' || params.creature === 'mkcx2') applyCreature();
 
   // ?walk=N teleports the wanderer N hops along the shortest route (demo)
   const walkN = parseInt(urlParams.get('walk') || '0', 10);
@@ -12050,7 +12052,7 @@ export function initTdTab(root) {
         + ` deploy=${deploy ? `#${deploy.n}@${deployProgress().toFixed(2)}` : '-'} intro=${introEl && !introEl.classList.contains('hidden')}`
         + ` tutorial=${tutorialActive} hp=${playerHP} lostDeploys=${tankLostDeploys} down=${!!playerDown}`
         + ` cur=${player.cur}(${dungeon.tags[player.cur] === BLOCKED ? 'BLOCKED' : 'open'}) next=${player.next}`
-        + ` auto=${autoMode} thr=${throttle.toFixed(2)} goto=${gotoCi} view=${params.view}`
+        + ` auto=${autoMode} thr=${throttle.toFixed(2)} goto=${gotoCi} view=${params.view} unit=${params.creature}`
         + ` camToTank=${(cp.distanceTo(new THREE.Vector3(...player.pos)) / cellSide).toFixed(1)}cells`
         + ` tankVisible=${!!(playerMesh && playerMesh.visible)} inFrustum=${(() => { const f = new THREE.Frustum(); camera.updateMatrixWorld(); f.setFromProjectionMatrix(new THREE.Matrix4().multiplyMatrices(camera.projectionMatrix, camera.matrixWorldInverse)); return f.containsPoint(new THREE.Vector3(...player.pos)); })()} ${extra}`);
     };

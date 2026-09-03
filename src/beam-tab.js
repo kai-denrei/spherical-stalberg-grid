@@ -114,7 +114,7 @@ export function initBeamTab(root) {
     // buildCreature takes the look's COLOUR set, not the whole look record —
     // the same two keys every other caller in this project passes
     const L = LOOKS[lookName] || LOOKS.tronColors;
-    tank = buildCreature('mkcx', { walker: L.walker ?? 0x9fdcff,
+    tank = buildCreature('mkcx2', { walker: L.walker ?? 0x9fdcff,
       walkerHi: L.walkerHi ?? 0xffffff });
     // 0.85 of a cell, which is what the board runs — the lab used 1.0 while a
     // cell meant nothing here, and now it means something.
