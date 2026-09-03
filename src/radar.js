@@ -9,7 +9,7 @@
 // Ours scopes a SPHERE, so a contact is projected onto the tangent plane of
 // the scope's centre — player-centred heading-up, or heart-centred.
 
-import { sub3, scale3, dot3, cross3, norm3 } from './vec3.js?v=9885c97b';
+import { sub3, scale3, dot3, cross3, norm3 } from './vec3.js?v=06963fb0';
 
 export const SWEEP_PERIOD = 2.6;   // seconds per revolution
 export const PHOSPHOR_DECAY = 1.12; // brightness lost per full turn behind the beam
@@ -73,6 +73,25 @@ export function radarPhosphor(bearing, sweep) {
 export const SENSOR_SECTORS = 4;
 export const SENSOR_LEVELS = 3;
 
+// THE RULE, IN CELLS (operator, 2026-09-03): nothing beyond 4 cells; blue
+// at 4, orange at 3, red at 2 or closer. Only solid-core contacts reach
+// this function — the board filters. Ordered nearest-first so a level is
+// its colour and its arc count at once.
+export const SENSOR_RINGS = [
+  { cells: 2, level: 3, color: '#ff4433', name: 'red' },
+  { cells: 3, level: 2, color: '#ff8a3d', name: 'orange' },
+  { cells: 4, level: 1, color: '#3fa9ff', name: 'blue' },
+];
+export function sensorLevelCells(cells) {
+  if (!(cells >= 0)) return 0;
+  for (const r of SENSOR_RINGS) if (cells <= r.cells + 1e-9) return r.level;   // 3 cells is 3 cells, float or not
+  return 0;
+}
+export function sensorColor(level) {
+  const r = SENSOR_RINGS.find((x) => x.level === level);
+  return r ? r.color : null;
+}
+
 // Which sector a bearing falls in. 0 = ahead (±45°), then clockwise:
 // 1 starboard, 2 astern, 3 port.
 export function sensorSector(bearing) {
@@ -89,17 +108,23 @@ export function sensorLevel(distFrac) {
 }
 
 // contacts: [[x,y,z] world positions]. Returns one entry per sector:
-// { level, dist } with dist as a fraction of the reach (Infinity if none).
-export function proximitySectors(contacts, centerPos, basis, reach) {
+// { level, dist, cells } with dist as a fraction of the reach (Infinity if
+// none). With `cellSide` given the level is the CELL rule (SENSOR_RINGS)
+// and the reach no longer gates — four cells is four cells whatever the
+// scope shows; without it, the old thirds-of-reach grading.
+export function proximitySectors(contacts, centerPos, basis, reach, cellSide = 0) {
   const out = [];
-  for (let i = 0; i < SENSOR_SECTORS; i++) out.push({ level: 0, dist: Infinity });
+  for (let i = 0; i < SENSOR_SECTORS; i++) out.push({ level: 0, dist: Infinity, cells: Infinity });
   for (const pos of contacts) {
     const d = sub3(pos, centerPos);
     const x = dot3(d, basis.right), y = -dot3(d, basis.fwd);
-    const frac = Math.hypot(x, y) / reach;
-    if (frac > 1) continue;
+    const dist = Math.hypot(x, y);
+    const frac = dist / reach;
+    const cells = cellSide > 0 ? dist / cellSide : Infinity;
+    const level = cellSide > 0 ? sensorLevelCells(cells) : (frac > 1 ? 0 : sensorLevel(frac));
+    if (!level) continue;
     const sec = sensorSector(radarBearing(x, y));
-    if (frac < out[sec].dist) out[sec] = { level: sensorLevel(frac), dist: frac };
+    if (frac < out[sec].dist) out[sec] = { level, dist: frac, cells };
   }
   return out;
 }

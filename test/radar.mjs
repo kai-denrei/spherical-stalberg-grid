@@ -2,7 +2,7 @@
 // them: heading is up, starboard is right, the beam brightens what it just
 // passed, and out-of-range contacts pin to the rim instead of vanishing.
 import {
-  sensorSector, sensorLevel, proximitySectors, SENSOR_SECTORS,
+  sensorSector, sensorLevel, proximitySectors, SENSOR_SECTORS, sensorLevelCells, sensorColor, SENSOR_RINGS,
   SWEEP_PERIOD, radarBasis, radarProject, radarBearing, sweepAngle,
   radarPhosphor,
 } from '../src/radar.js';
@@ -90,6 +90,19 @@ console.log('proximity sensor:');
   check('the NEAREST contact in a sector sets its level', two[0].level === 3 && approx(two[0].dist, 0.2, 1e-9));
   check('a contact past the reach does not register', proximitySectors([at(1.5, 0)], c, basis, 1)[0].level === 0);
   check(`sector count is ${SENSOR_SECTORS}`, proximitySectors([], c, basis, 1).length === SENSOR_SECTORS);
+  // THE CELL RULE (operator, 2026-09-03)
+  check('nothing beyond 4 cells', sensorLevelCells(4.01) === 0 && sensorLevelCells(9) === 0);
+  check('blue at 4 cells (level 1)', sensorLevelCells(4) === 1 && sensorLevelCells(3.5) === 1 && sensorColor(1) === '#3fa9ff');
+  check('orange at 3 (level 2)', sensorLevelCells(3) === 2 && sensorLevelCells(2.5) === 2 && sensorColor(2) === '#ff8a3d');
+  check('red at 2 and closer (level 3)', sensorLevelCells(2) === 3 && sensorLevelCells(0.3) === 3 && sensorColor(3) === '#ff4433');
+  check('garbage is nothing', sensorLevelCells(NaN) === 0 && sensorLevelCells(-1) === 0 && sensorColor(0) === null);
+  check('the rings are nearest-first', SENSOR_RINGS.every((r, i) => i === 0 || r.cells > SENSOR_RINGS[i - 1].cells));
+  const cs = 0.1;   // a cell
+  const byCells = proximitySectors([at(5 * cs, 0), at(0, 4 * cs), at(-3 * cs, 0), at(0, -2 * cs)], c, basis, 0.25, cs);
+  check('with a cell side: 5/4/3/2 cells -> 0/1/2/3 (nothing/blue/orange/red)',
+    byCells.map((x) => x.level).join('/') === '0/1/2/3', byCells.map((x) => x.level).join('/'));
+  check('...and the scope reach no longer gates (4 cells > 0.25 reach still blue)', byCells[1].level === 1);
+  check('...cells are reported', approx(byCells[3].cells, 2, 1e-9));
 }
 
 console.log(failures ? `\n${failures} FAILURES` : '\nall radar invariants hold');

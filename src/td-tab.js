@@ -19,57 +19,57 @@
 
 import * as THREE from '../vendor/three.module.js';
 import GUI from '../vendor/lil-gui.esm.js';
-import { generateSphereMesh, relax } from './grid.js?v=9885c97b';
-import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=9885c97b';
-import { mulberry32, randomSeed } from './rng.js?v=9885c97b';
-import { computeBerths, berthIndexFor } from './berths.js?v=9885c97b';
-import { wantsSecondary, shellsForAll } from './autofire.js?v=9885c97b';
-import { printPhase, printOffset, printOn, patternSecsFor } from './printpath.js?v=9885c97b';
-import { createBeamRig, PLASMA_DEFAULTS, BOARD_PRESET, BEAM_PEAK } from './beamdraw.js?v=9885c97b';
-import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3, segKey, tangentDir, tangentBasis } from './vec3.js?v=9885c97b';
-import { CREATURES, waveJelly } from './creatures.js?v=9885c97b';
-import { brief, dwellFor } from './isaobriefs.js?v=9885c97b';
-import { drawEmotion } from './emotions.js?v=9885c97b';
+import { generateSphereMesh, relax } from './grid.js?v=06963fb0';
+import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=06963fb0';
+import { mulberry32, randomSeed } from './rng.js?v=06963fb0';
+import { computeBerths, berthIndexFor } from './berths.js?v=06963fb0';
+import { wantsSecondary, shellsForAll } from './autofire.js?v=06963fb0';
+import { printPhase, printOffset, printOn, patternSecsFor } from './printpath.js?v=06963fb0';
+import { createBeamRig, PLASMA_DEFAULTS, BOARD_PRESET, BEAM_PEAK } from './beamdraw.js?v=06963fb0';
+import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3, segKey, tangentDir, tangentBasis } from './vec3.js?v=06963fb0';
+import { CREATURES, waveJelly } from './creatures.js?v=06963fb0';
+import { brief, dwellFor } from './isaobriefs.js?v=06963fb0';
+import { drawEmotion } from './emotions.js?v=06963fb0';
 import { ACHIEVEMENTS, ACHV_GROUPS, achievement, blankRun, earned, freshlyEarned,
   sanitiseRecord }
-  from './achievements.js?v=9885c97b';
+  from './achievements.js?v=06963fb0';
 import { applyFontPack, currentFontPack, FONT_NAMES,
-  loadTypeFeel } from './fonts.js?v=9885c97b';
-import { SECONDARY_TOE, applySecondaryToe } from './units.js?v=9885c97b';
-import { UNITS, UNIT_NAMES, buildUnit, buildCreature, preloadMkcx, preloadServer, makeServerFixture, makeShieldShell, preloadContainer, makeContainerFixture, preloadFabricator, makeIsaoDrone, makeBulletCloud, makeRewardSolid, makeShellSolid, makeDebris, makeDotBurst, makePortalCloud, preloadPortalRing, makePortalRing, makeHeartCloud, makeDotEnemy, preloadTerraformer, makeTerraformerFixture } from './units.js?v=9885c97b';
-import { LOOKS, LOOK_NAMES } from './looks.js?v=9885c97b';
-import { makeCellIndex } from './cellindex.js?v=9885c97b';
-import { CREATURE_TINTS, ENEMY_SPEC, INTROS, computeWavePlan, accentFor } from './enemyspec.js?v=9885c97b';
-import { PICKUPS } from './pickups.js?v=9885c97b';
-import { rankFor, rankLabel, badgeSVG, killReq, eliteReq } from './ranks.js?v=9885c97b';
-import { beamStep, isBeamStep, PEN_SOFT_FRAC, PEN_HARD_FRAC } from './beamranks.js?v=9885c97b';
-import { burn, sweepAdvance, wallBite as wallBiteFor } from './beamburn.js?v=9885c97b';
-import { arcPoint, projectToArc, toeForCrossing, crossingForToe } from './arc.js?v=9885c97b';
+  loadTypeFeel } from './fonts.js?v=06963fb0';
+import { SECONDARY_TOE, applySecondaryToe } from './units.js?v=06963fb0';
+import { UNITS, UNIT_NAMES, buildUnit, buildCreature, preloadMkcx, preloadServer, makeServerFixture, makeShieldShell, preloadContainer, makeContainerFixture, preloadFabricator, makeIsaoDrone, makeBulletCloud, makeRewardSolid, makeShellSolid, makeDebris, makeDotBurst, makePortalCloud, preloadPortalRing, makePortalRing, makeHeartCloud, makeDotEnemy, preloadTerraformer, makeTerraformerFixture } from './units.js?v=06963fb0';
+import { LOOKS, LOOK_NAMES } from './looks.js?v=06963fb0';
+import { makeCellIndex } from './cellindex.js?v=06963fb0';
+import { CREATURE_TINTS, ENEMY_SPEC, INTROS, computeWavePlan, accentFor } from './enemyspec.js?v=06963fb0';
+import { PICKUPS } from './pickups.js?v=06963fb0';
+import { rankFor, rankLabel, badgeSVG, killReq, eliteReq } from './ranks.js?v=06963fb0';
+import { beamStep, isBeamStep, PEN_SOFT_FRAC, PEN_HARD_FRAC } from './beamranks.js?v=06963fb0';
+import { burn, sweepAdvance, wallBite as wallBiteFor } from './beamburn.js?v=06963fb0';
+import { arcPoint, projectToArc, toeForCrossing, crossingForToe } from './arc.js?v=06963fb0';
 import { WORMHOLE_PRESET, WORMHOLE_UNIFORM_DEFAULTS, RING_SPIN, TRAVEL,
-  travelRate, advancePhase } from './portalfx.js?v=9885c97b';
-import { WORMHOLE_FRAG } from './fx/wormhole.frag.js?v=9885c97b';
-import { CORONA_FRAG } from './fx/corona.frag.js?v=9885c97b';
-import { labLine, parseLabQuery } from './lab.js?v=9885c97b';
-import { bakeGalaxyCube } from './galaxybake.js?v=9885c97b';
-import { SKY_PRESET } from './galaxyseed.js?v=9885c97b';
-import { makeScore } from './score.js?v=9885c97b';
-import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER } from './towers.js?v=9885c97b';
-import { makeEconomy, sellRefund } from './economy.js?v=9885c97b';
-import { pickTier } from './perftier.js?v=9885c97b';
-import { STICK, stickVector, knobOffset } from './stick.js?v=9885c97b';
-import { registerServiceWorker } from './pwa.js?v=9885c97b';
-import { makeBloom } from './postfx.js?v=9885c97b';
-import { TANK_FEEL, TANK_FEEL_KNOBS, makeTankFeel, stepTankFeel, landTankFeel, fireTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js?v=9885c97b';
-import { FEEL, loadFeel, saveFeel } from './feelstore.js?v=9885c97b';
+  travelRate, advancePhase } from './portalfx.js?v=06963fb0';
+import { WORMHOLE_FRAG } from './fx/wormhole.frag.js?v=06963fb0';
+import { CORONA_FRAG } from './fx/corona.frag.js?v=06963fb0';
+import { labLine, parseLabQuery } from './lab.js?v=06963fb0';
+import { bakeGalaxyCube } from './galaxybake.js?v=06963fb0';
+import { SKY_PRESET } from './galaxyseed.js?v=06963fb0';
+import { makeScore } from './score.js?v=06963fb0';
+import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER } from './towers.js?v=06963fb0';
+import { makeEconomy, sellRefund } from './economy.js?v=06963fb0';
+import { pickTier } from './perftier.js?v=06963fb0';
+import { STICK, stickVector, knobOffset } from './stick.js?v=06963fb0';
+import { registerServiceWorker } from './pwa.js?v=06963fb0';
+import { makeBloom } from './postfx.js?v=06963fb0';
+import { TANK_FEEL, TANK_FEEL_KNOBS, makeTankFeel, stepTankFeel, landTankFeel, fireTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js?v=06963fb0';
+import { FEEL, loadFeel, saveFeel } from './feelstore.js?v=06963fb0';
 import { STRIKE_KNOBS, makeStrike, makeStrikeParams, grantStrikes, stepStrike,
   toggleArm, paintTarget, launchStrike, stepFall, skipFall, fallProgress,
-  strikeDamage, retargetStrike, orbitProgress } from './strike.js?v=9885c97b';
+  strikeDamage, retargetStrike, orbitProgress } from './strike.js?v=06963fb0';
 import { radarBasis, radarProject, radarBearing, sweepAngle, radarPhosphor,
-  proximitySectors, SENSOR_LEVELS } from './radar.js?v=9885c97b';
-import { BLOOM_GROUPS } from './bloomweights.js?v=9885c97b';
-import { TOWER_LOOK_NAMES, DEFAULT_TOWER_LOOK, buildTowerLook, preloadLook } from './towerlooks.js?v=9885c97b';
-import { makeAudio } from './audio.js?v=9885c97b';
-import { DEATH_KEYS } from './audiomanifest.js?v=9885c97b';
+  proximitySectors, SENSOR_LEVELS, sensorColor } from './radar.js?v=06963fb0';
+import { BLOOM_GROUPS } from './bloomweights.js?v=06963fb0';
+import { TOWER_LOOK_NAMES, DEFAULT_TOWER_LOOK, buildTowerLook, preloadLook } from './towerlooks.js?v=06963fb0';
+import { makeAudio } from './audio.js?v=06963fb0';
+import { DEATH_KEYS } from './audiomanifest.js?v=06963fb0';
 
 export function initTdTab(root) {
   let active = false;
@@ -9804,13 +9804,19 @@ export function initTdTab(root) {
     if (mapMode !== 'heart') {
       // sensorDemo: positions a probe injects so the arcs can be LOOKED AT
       // without a live solid contact on the board; empty in play
-      const hard = [...sensorDemo];
+      // demo contacts are RELATIVE (fwd/right in cells): world-fixed ones
+      // drifted in bearing and distance as the tank drove, and the
+      // screenshot showed the wrong colours in the wrong sectors
+      const hard = sensorDemo.map((d) => norm3([cpos[0] + basis.fwd[0] * d.fwd * cellSide + basis.right[0] * d.right * cellSide,
+        cpos[1] + basis.fwd[1] * d.fwd * cellSide + basis.right[1] * d.right * cellSide,
+        cpos[2] + basis.fwd[2] * d.fwd * cellSide + basis.right[2] * d.right * cellSide]));
       for (const e of enemies) {
         if (!e.alive || e.spec.rammable) continue;
         if (e.spec.cloaked && !e.decloaked) continue;
         hard.push(e.pos);
       }
-      const secs = proximitySectors(hard, cpos, basis, range);
+      // the CELL rule: blue at 4, orange at 3, red at 2 (radar.js SENSOR_RINGS)
+      const secs = proximitySectors(hard, cpos, basis, range, cellSide);
       const pulse = 0.72 + 0.28 * Math.sin(t * 9);
       for (let i = 0; i < secs.length; i++) {
         const lv = secs[i].level;
@@ -9821,7 +9827,7 @@ export function initTdTab(root) {
         const half = Math.PI / 4 - 0.14;   // a gap between sectors
         for (let k = 0; k < lv; k++) {
           const rr = R - 3 - k * 4.5;
-          ctx.strokeStyle = lv >= 3 ? '#ff4433' : lv === 2 ? '#ff8a3d' : '#ffb347';
+          ctx.strokeStyle = sensorColor(lv) || '#3fa9ff';
           ctx.globalAlpha = (lv >= 3 ? pulse : 0.85) * (k === SENSOR_LEVELS - 1 ? 1 : 0.8);
           ctx.lineWidth = 2.5;
           ctx.beginPath(); ctx.arc(cx, cy, rr, mid - half, mid + half); ctx.stroke();
@@ -12145,14 +12151,16 @@ export function initTdTab(root) {
       const put = (fwd, right) => norm3([player.pos[0] + basis.fwd[0] * fwd + basis.right[0] * right,
         player.pos[1] + basis.fwd[1] * fwd + basis.right[1] * right,
         player.pos[2] + basis.fwd[2] * fwd + basis.right[2] * right]);
-      const secs = proximitySectors([put(reach * 0.2, reach * 0.45)], player.pos, basis, reach);
-      // and leave three demo contacts on the scope for the screenshot:
-      // starboard level 2, astern level 1, port level 3
-      sensorDemo.push(put(reach * 0.2, reach * 0.45), put(-reach * 0.85, 0), put(0, -reach * 0.15));
+      // the cell rule, one contact per sector: ahead 5 cells (nothing),
+      // starboard 4 (blue), astern 3 (orange), port 2 (red)
+      const c = cellSide;
+      const secs = proximitySectors([put(5 * c, 0), put(0, 4 * c), put(-3 * c, 0), put(0, -2 * c)], player.pos, basis, reach, cellSide);
+      sensorDemo.push({ fwd: 0, right: 4 }, { fwd: -3, right: 0 }, { fwd: 0, right: -2 });
       const levels = secs.map((x) => x.level).join('/');
-      console.log(`SENSORPROBE levels ahead/stbd/astern/port = ${levels}`
-        + ` ${secs[1].level === 2 && secs[0].level === 0 ? '(starboard, level 2 — correct)' : '<-- WRONG SECTOR OR LEVEL'}`
-        + ` | reach ${reach.toFixed(2)} = ${(reach / cellSide).toFixed(1)} cells of warning at the rim`);
+      const colors = secs.map((x) => sensorColor(x.level) || 'none').join('/');
+      console.log(`SENSORPROBE cells ahead/stbd/astern/port = 5/4/3/2 -> levels ${levels} colours ${colors}`
+        + ` ${levels === '0/1/2/3' ? '(nothing / blue / orange / red — the rule)' : '<-- WRONG'}`
+        + ` | scope reach ${reach.toFixed(2)} = ${(reach / cellSide).toFixed(1)} cells`);
     }, 1500);
   }
 
