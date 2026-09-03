@@ -23,6 +23,7 @@ const args = Object.fromEntries(process.argv.slice(2).map((a, i, all) =>
   a.startsWith('--') ? [a.slice(2), all[i + 1] && !all[i + 1].startsWith('--') ? all[i + 1] : '1'] : []).filter((x) => x.length));
 const url = args.url;
 const seconds = Number(args.seconds || 3), fps = Number(args.fps || 30);
+const from = Number(args.from || 0);                 // start time on the rail (a still: --from 6 --seconds 0.034)
 const [W, H] = (args.size || '1920x1080').split('x').map(Number);
 const out = args.out || 'renders/clip';
 const scale = Number(args.scale || 1);          // 2 = supersample, downscaled by ffmpeg
@@ -78,14 +79,20 @@ while (!(await evaluate('typeof window.__cine === "object"'))) {
   if (Date.now() - t0 > 60000) { console.error('page never installed __cine'); chrome.kill(); process.exit(1); }
   await new Promise((r) => setTimeout(r, 250));
 }
-await new Promise((r) => setTimeout(r, 1500));   // models and textures landing
+// a scene that exposes __cineReady() is waited for (models landing); others get 1.5 s
+const tr = Date.now();
+while (Date.now() - tr < 60000) {
+  const ready = await evaluate('typeof window.__cineReady === "function" ? window.__cineReady() : null');
+  if (ready === true || (ready === null && Date.now() - tr > 1500)) break;
+  await new Promise((r) => setTimeout(r, 200));
+}
 
 const gl = await evaluate(`(() => { const c = document.querySelector('canvas'); const g = c && (c.getContext('webgl2') || c.getContext('webgl')); if (!g) return '?'; const e = g.getExtension('WEBGL_debug_renderer_info'); return e ? g.getParameter(e.UNMASKED_RENDERER_WEBGL) : g.getParameter(g.RENDERER); })()`);
 const frames = Math.round(seconds * fps);
 console.log(`cine-capture: ${url} → ${out}  ${W}x${H}${scale > 1 ? ` (rendered at ${scale}x)` : ''} ${fps} fps × ${seconds}s = ${frames} frames  gl="${gl}"`);
 const tStart = Date.now();
 for (let i = 0; i < frames; i++) {
-  const t = i / fps;
+  const t = from + i / fps;
   await evaluate(`__cine.seek(${t})`, true);
   const shot = await send('Page.captureScreenshot', { format: 'png', fromSurface: true });
   writeFileSync(join(out, `f${String(i).padStart(5, '0')}.png`), Buffer.from(shot.data, 'base64'));

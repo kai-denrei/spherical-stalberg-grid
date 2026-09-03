@@ -39,6 +39,22 @@ export const WORMHOLE_PRESET = {
 // disc is a small thing on screen and 384 fills it.
 export const WORMHOLE_RENDER = { size: 384, updateHz: 30 };
 
+// The shader's SECONDARY uniforms — the ones no preset carries and every
+// host used to copy by hand (the bench's SHARED, the board's whUniforms, and
+// a third copy in the cinematics that got uNear WRONG: 0 instead of 1.5,
+// and the disc showed a distant speck instead of a tunnel). One source now;
+// a preset overrides these, never replaces them.
+export const WORMHOLE_UNIFORM_DEFAULTS = {
+  uTurbFreq: 2.0,
+  uStepScale: 1 / 3,
+  uColorBias: 1.1,     // NEVER below 1.0 — at exactly 1.0 the singularity is 0/0 (real NaN)
+  uEpsilon: 1e-4,
+  uMinStep: 0.02,      // 0 stalls the march at the wall
+  uNear: 1.5,          // below ~1.2 the throat crossing leaves the frame
+  uDepthHue: 0.12,
+  uRingRadius: 1.0,
+};
+
 // The ring's own idle, also from the bench.
 export const RING_SPIN = { rotorA: 0.77, rotorB: -0.09, yaw: 0 };
 
