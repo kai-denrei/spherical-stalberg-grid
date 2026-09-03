@@ -22,7 +22,7 @@
 // Ported per ~/Dev/procedural3dvisuals/docs/PORTING.md, which has a section
 // for exactly this case. Its two warnings are honoured below and marked.
 import * as THREE from '../vendor/three.module.js';
-import { installCine } from './cine/kit.js?v=ade5ce2d';
+import { installCine } from './cine/kit.js?v=35febb02';
 import { OrbitControls } from '../vendor/OrbitControls.js';
 import GUI from '../vendor/lil-gui.esm.js';
 import { CORONA_FRAG } from './fx/corona.frag.js';
@@ -554,6 +554,7 @@ export function initPortalTab(root) {
   // time-dependent thing is now SET from t, and the gate is reset.
   const hidden = [];
   installCine({
+    canvas: renderer.domElement,
     hold: (on) => {
       cineHold = on;
       if (on) {
@@ -684,10 +685,12 @@ export function initPortalTab(root) {
   // 1080p's pixel count (2.07M); 2880² is 4K's (8.3M). This is the number the
   // cinematics plan prices the offline render on.
   if (urlParams.get('bench')) {
-    const [sz, nf, st, oc] = urlParams.get('bench').split(':').map(Number);
+    const [sz, nf, st, oc, nr] = urlParams.get('bench').split(':').map(Number);
     const size = sz || 1440, frames = nf || 10;
     if (st) P.steps = st;        // the board's preset is 120:12; the bench idles at 40:6
     if (oc) P.octaves = oc;
+    if (nr) fxUniforms.uNear.value = nr;   // the ray's start: the cinematic flies it in from 0.45
+    setEffect('wormhole'); P.effect = 'wormhole';
     const gl = renderer.getContext();
     const ext = gl.getExtension('WEBGL_debug_renderer_info');
     const who = ext ? gl.getParameter(ext.UNMASKED_RENDERER_WEBGL) : gl.getParameter(gl.RENDERER);
@@ -698,7 +701,7 @@ export function initPortalTab(root) {
     for (let i = 0; i < frames; i++) renderCorona(i / 30, true);
     const ms = (performance.now() - t0) / frames;
     const folds = fragmentWork();
-    console.log(`BENCH gl=${short} rt=${size}x${size} (${(size * size / 1e6).toFixed(2)}M px)`
+    console.log(`BENCH gl=${short} rt=${size}x${size} (${(size * size / 1e6).toFixed(2)}M px) uNear=${fxUniforms.uNear.value}`
       + ` steps=${Math.round(P.steps)} octaves=${Math.round(P.octaves)} frames=${frames}`
       + ` ms/frame=${ms.toFixed(1)} fps=${(1000 / ms).toFixed(1)}`
       + ` folds/frame=${(folds / 1e9).toFixed(2)}G rate=${(folds / ms / 1e6).toFixed(1)}Gfolds/s`

@@ -10,11 +10,11 @@
 // Every time-dependent thing is SET from t: rotors, phases, the camera.
 // A capture seeks; the live loop just calls update(t) with a running t.
 import * as THREE from '../../vendor/three.module.js';
-import { preloadPortalRing, makePortalRing } from '../units.js?v=ade5ce2d';
-import { bakeGalaxyCube } from '../galaxybake.js?v=ade5ce2d';
-import { SKY_PRESET } from '../galaxyseed.js?v=ade5ce2d';
-import { createWormholeTarget, RING_SPIN, TRAVEL } from './wormholebg.js?v=ade5ce2d';
-import { compileRail } from './rail.js?v=ade5ce2d';
+import { preloadPortalRing, makePortalRing } from '../units.js?v=35febb02';
+import { bakeGalaxyCube } from '../galaxybake.js?v=35febb02';
+import { SKY_PRESET } from '../galaxyseed.js?v=35febb02';
+import { createWormholeTarget, RING_SPIN, TRAVEL } from './wormholebg.js?v=35febb02';
+import { compileRail } from './rail.js?v=35febb02';
 
 export const GATE_LEN = 12;
 
@@ -44,7 +44,7 @@ const NEAR_IN = 0.45, NEAR_OUT = 1.5, BEAT1 = 4.0;
 
 export function createGate({ renderer, scene, camera, tier = {} }) {
   const whSize = tier.wormhole ?? 1024;
-  const wh = createWormholeTarget({ size: whSize });
+  const wh = createWormholeTarget({ size: whSize, filter: tier.name === 'cinema' ? 'nearest' : 'linear' });
   const rail = compileRail(GATE_RAIL, { fov: 40 });
 
   // THE SKY: the game's bake, at a cinema face size, as background and as
@@ -126,10 +126,14 @@ export function createGate({ renderer, scene, camera, tier = {} }) {
       // OPAQUE, unlike the board's additive disc: inside the throat the sky
       // must not shine through the wormhole, and from outside the aperture
       // is a hole into somewhere else, not a glow over the stars
+      // ?disc=front|nomap|tone — variants for bisecting a GPU hang that only
+      // happens with this disc filling a canvas wider than ~1500 px
+      const dv = new URLSearchParams(location.search).get('disc') || '';
       disc = new THREE.Mesh(new THREE.CircleGeometry(1, 96), new THREE.MeshBasicMaterial({
-        map: wh.rt.texture, side: THREE.DoubleSide, toneMapped: false,
+        map: dv === 'nomap' ? null : wh.rt.texture, color: dv === 'nomap' ? 0x8040c0 : 0xffffff,
+        side: dv === 'front' ? THREE.FrontSide : THREE.DoubleSide, toneMapped: dv === 'tone',
       }));
-      ap.add(disc);
+      if (new URLSearchParams(location.search).get('nodisc') !== '1') ap.add(disc);
     }
     for (const k of ['rotorA', 'rotorB', 'yaw']) {
       const o = ring.userData[k];

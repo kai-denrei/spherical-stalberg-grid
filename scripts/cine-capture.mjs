@@ -31,15 +31,68 @@ const stepMs = Number(args.stepms || 120000);   // a seek or a screenshot slower
 const debug = !!args.debug;                     // echo the page's console as it arrives
 if (!url) { console.error('usage: --url <page> [--seconds 3 --fps 30 --size 1920x1080 --out renders/x --scale 1 --swiftshader]'); process.exit(2); }
 mkdirSync(out, { recursive: true });
-
 const CHROME = process.env.CHROME || '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome';
-const flags = ['--headless=new', '--remote-debugging-port=0', `--window-size=${W * scale},${H * scale}`,
-  '--hide-scrollbars', '--mute-audio', '--no-first-run'];
+
+// --mode launch: ONE CHROME PER FRAME, plain headless --screenshot at ?t=T.
+// Slower (a launch and the scene's own load per frame, ~3-5 s at the cinema
+// tier) but it is the path that never hung: the CDP-driven page stalled on
+// the M4 for any frame where the wormhole disc filled a canvas wider than
+// ~1500 px, through every variant tried (filter, colour space, fence, rAF,
+// flags), while plain headless drew the same frame at once. Headless=new
+// keeps ~87 px of chrome above the viewport, so the window is taller than
+// the frame by that much and the screenshot is cropped to the frame.
+if ((args.mode || 'cdp') === 'launch') {
+  const { execFileSync: run, spawnSync } = await import('node:child_process');
+  const CHROME_BAR = Number(args.bar || 87);
+  const frames = Math.round(seconds * fps);
+  const sep = url.includes('?') ? '&' : '?';
+  const [base, hash] = url.split('#');
+  console.log(`cine-capture (launch mode): ${url} → ${out}  ${W}x${H} ${fps} fps × ${seconds}s = ${frames} frames`);
+  const tStart = Date.now();
+  for (let i = 0; i < frames; i++) {
+    const t = from + i / fps;
+    const f = join(out, `f${String(i).padStart(5, '0')}.png`);
+    const u = `${base}${sep}t=${t}&once=1&dump=1${hash ? '#' + hash : ''}`;
+    // the PNG arrives as PNGCHUNK console lines on Chrome's stderr; the
+    // --screenshot flag only makes headless wait for the budget and exit
+    const err = spawnSync(CHROME, ['--headless=new', `--window-size=${W * scale},${H * scale + CHROME_BAR}`, '--hide-scrollbars',
+      '--enable-logging=stderr', '--v=0', '--timeout=60000', `--virtual-time-budget=${args.budget || 4000}`,
+      `--screenshot=${f}.shot.png`, u], { encoding: 'utf8', maxBuffer: 256 * 1024 * 1024 }).stderr || '';
+    const chunks = new Map(); let total = 0;
+    for (const m of err.matchAll(/PNGCHUNK (\d+)\/(\d+) ([A-Za-z0-9+/=]+)/g)) { chunks.set(Number(m[1]), m[3]); total = Number(m[2]); }
+    if (!total || chunks.size !== total) { console.error(`frame ${i}: got ${chunks.size}/${total} chunks — the page did not draw (ready never true?)`); process.exit(1); }
+    writeFileSync(f, Buffer.from(Array.from({ length: total }, (_, k) => chunks.get(k + 1)).join(''), 'base64'));
+    try { run('rm', ['-f', `${f}.shot.png`]); } catch {}
+    if (i % fps === 0 || i === frames - 1) {
+      const el = (Date.now() - tStart) / 1000;
+      process.stdout.write(`  frame ${i + 1}/${frames}  ${(el / (i + 1)).toFixed(2)} s/frame  eta ${((frames - i - 1) * el / (i + 1)).toFixed(0)}s\n`);
+    }
+  }
+  const mp4 = `${out}.mp4`;
+  const vf = scale > 1 ? ['-vf', `scale=${W}:${H}:flags=lanczos`] : [];
+  run('ffmpeg', ['-y', '-loglevel', 'error', '-framerate', String(fps), '-i', join(out, 'f%05d.png'),
+    ...vf, '-c:v', 'libx264', '-pix_fmt', 'yuv420p', '-crf', '18', '-movflags', '+faststart', mp4], { stdio: 'inherit' });
+  const info = run('ffprobe', ['-v', 'error', '-select_streams', 'v:0', '-count_frames',
+    '-show_entries', 'stream=nb_read_frames,width,height', '-of', 'csv=p=0', mp4]).toString().trim();
+  console.log(`cine-capture: ${mp4}  [${info}]  ${((Date.now() - tStart) / 1000).toFixed(0)}s total`);
+  process.exit(0);
+}
+
+// --window WxH: Chrome's window apart from the page's metrics (a 1920x1080
+// WINDOW hung on a frame a 1280x720 one rendered; the canvas is what the
+// read-back captures, so the window can be anything)
+const [WW, WH] = (args.window || `${W * scale}x${H * scale}`).split('x').map(Number);
+const flags = ['--headless=new', '--remote-debugging-port=0', `--window-size=${WW},${WH}`];
+if (!args.minimal) flags.push('--hide-scrollbars', '--mute-audio', '--no-first-run');
+if (args.chromelog) flags.push('--enable-logging=stderr', '--v=0');   // Chrome's own stderr → --chromelog <file>
 if (args.swiftshader) flags.push('--use-angle=swiftshader', '--enable-unsafe-swiftshader');
+else if (args.angle) flags.push(`--use-angle=${args.angle}`);   // metal (default) | gl
 const chrome = spawn(CHROME, [...flags, 'about:blank'], { stdio: ['ignore', 'ignore', 'pipe'] });
+const chromeLog = args.chromelog ? (await import('node:fs')).createWriteStream(args.chromelog) : null;
 const port = await new Promise((resolve, reject) => {
   let buf = '';
   chrome.stderr.on('data', (d) => {
+    if (chromeLog) chromeLog.write(d);
     buf += d;
     const m = buf.match(/DevTools listening on ws:\/\/127\.0\.0\.1:(\d+)/);
     if (m) resolve(Number(m[1]));
@@ -82,7 +135,9 @@ const evaluate = async (expression, awaitPromise = false) => {
 
 await send('Runtime.enable');
 await send('Page.enable');
-await send('Emulation.setDeviceMetricsOverride', { width: W * scale, height: H * scale, deviceScaleFactor: 1, mobile: false });
+// --nometrics: rely on --window-size alone (the override is a suspect when a
+// frame that renders fine in plain headless hangs only under the harness)
+if (!args.nometrics) await send('Emulation.setDeviceMetricsOverride', { width: W * scale, height: H * scale, deviceScaleFactor: 1, mobile: false });
 await send('Page.navigate', { url });
 // wait for the scene to install its seam
 const t0 = Date.now();
@@ -106,10 +161,17 @@ process.on('unhandledRejection', (e) => { console.error('cine-capture: ' + e.mes
 for (let i = 0; i < frames; i++) {
   const t = from + i / fps;
   if (debug) console.log(`  seek ${t.toFixed(3)}`);
-  await evaluate(`__cine.seek(${t})`, true);
-  if (debug) console.log('  seek done, capturing');
-  const shot = await send('Page.captureScreenshot', { format: 'png', fromSurface: true });
-  writeFileSync(join(out, `f${String(i).padStart(5, '0')}.png`), Buffer.from(shot.data, 'base64'));
+  // the canvas read-back (no compositor involved) when the scene offers it;
+  // the compositor screenshot for a page that only has seek()
+  let png;
+  const url = await evaluate(`typeof __cine.frame === 'function' ? __cine.frame(${t}) : null`, true);
+  if (url) png = Buffer.from(url.slice(url.indexOf(',') + 1), 'base64');
+  else {
+    await evaluate(`__cine.seek(${t})`, true);
+    if (debug) console.log('  seek done, capturing');
+    png = Buffer.from((await send('Page.captureScreenshot', { format: 'png', fromSurface: true })).data, 'base64');
+  }
+  writeFileSync(join(out, `f${String(i).padStart(5, '0')}.png`), png);
   if (i % fps === 0 || i === frames - 1) {
     const el = (Date.now() - tStart) / 1000;
     process.stdout.write(`  frame ${i + 1}/${frames}  ${(el / (i + 1)).toFixed(2)} s/frame  eta ${((frames - i - 1) * el / (i + 1)).toFixed(0)}s\n`);
