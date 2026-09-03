@@ -10,14 +10,16 @@
 // Every time-dependent thing is SET from t: rotors, phases, the camera.
 // A capture seeks; the live loop just calls update(t) with a running t.
 import * as THREE from '../../vendor/three.module.js';
-import { preloadPortalRing, makePortalRing } from '../units.js?v=301d5322';
-import { bakeGalaxyCube } from '../galaxybake.js?v=301d5322';
-import { SKY_PRESET } from '../galaxyseed.js?v=301d5322';
-import { createWormholeTarget, RING_SPIN, TRAVEL } from './wormholebg.js?v=301d5322';
-import { compileRail } from './rail.js?v=301d5322';
-import { applyWeatheredMaterial } from './materials.js?v=301d5322';
-import { makeCinemaCloud } from './cloud.js?v=301d5322';
-import { CREATURE_TINTS, accentFor } from '../enemyspec.js?v=301d5322';
+import { preloadPortalRing, makePortalRing } from '../units.js?v=b0473f12';
+import { bakeGalaxyCube } from '../galaxybake.js?v=b0473f12';
+import { SKY_PRESET } from '../galaxyseed.js?v=b0473f12';
+import { createWormholeTarget, RING_SPIN, TRAVEL } from './wormholebg.js?v=b0473f12';
+import { compileRail } from './rail.js?v=b0473f12';
+import { applyWeatheredMaterial } from './materials.js?v=b0473f12';
+import { makeCinemaCloud } from './cloud.js?v=b0473f12';
+import { CREATURE_TINTS, accentFor } from '../enemyspec.js?v=b0473f12';
+import { makeWirePlanet } from './planet.js?v=b0473f12';
+import { LOOKS } from '../looks.js?v=b0473f12';
 
 export const GATE_LEN = 12;
 
@@ -34,7 +36,14 @@ export const GATE_RAIL = [
   { t: 0.0, pos: [0.10, 0.06, 2.30], look: [0.08, 0.05, -2], fov: 40 },
   { t: 4.0, pos: [0.12, 0.08, 2.30], look: [0.06, 0.04, -2] },
   { t: 8.0, pos: [1.60, 0.90, 7.20], look: [0, 0, 0] },
-  { t: 12.0, pos: [-0.80, 0.60, 8.00], look: [0, 0.1, 0] },
+  // beat 3 LANDS (ruling C, 2026-09-04): the pull-back keeps going until
+  // the wire planet's horizon is under the ring — the ring at the size it
+  // has in the game, on a board a player knows, the swarm coming past
+  // measured: the planet is 7.8 m in radius under a 3.6 m aperture — on the
+  // board the gate spans ~3 cells of a ~12-cell-radius world, and that IS
+  // the scale a player knows. Back far enough that the disc reads as a
+  // planet and not a ball, the ring in the upper third.
+  { t: 12.0, pos: [-4.5, 3.6, 22.0], look: [0, -2.2, 0] },
 ];
 
 // Beat 1 is the march's own fly-out: the ray's start distance (uNear) ramps
@@ -174,6 +183,21 @@ export function createGate({ renderer, scene, camera, tier = {} }) {
       // put the aperture at the origin: the rail is authored around it
       ring.position.sub(apertureWorld);
       ring.updateMatrixWorld(true);
+      // THE PLANET UNDER IT. k is the exact factor between the board's
+      // units and the cinematic's metres (the aperture is 1.8 m here and
+      // whatever the cast fitted it to there), so a unit-radius board
+      // sphere scaled by k IS the board's planet at this ring's scale —
+      // ~45 m across, cells ~3 m, the ring spanning about one. It sits
+      // tangent under the ring's foot. ?noplanet=1 removes it.
+      if (new URLSearchParams(location.search).get('noplanet') !== '1') {
+        const look = LOOKS.tronColors;
+        const planet = makeWirePlanet({ seed: 4414, n: 420, edges: look.edges, body: look.bg });
+        planet.scale.setScalar(k);
+        const box = new THREE.Box3().setFromObject(ring);
+        planet.position.set(0, box.min.y - k, 0);
+        root.add(planet);
+        console.log(`PLANET radius ${k.toFixed(1)} m, cell ${(planet.userData.cellSide * k).toFixed(2)} m, foot at y=${box.min.y.toFixed(2)}`);
+      }
       // OPAQUE, unlike the board's additive disc: inside the throat the sky
       // must not shine through the wormhole, and from outside the aperture
       // is a hole into somewhere else, not a glow over the stars
