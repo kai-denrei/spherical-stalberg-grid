@@ -81,6 +81,12 @@ two within ~35°, each with a seed of its own and 40% of the star budget);
 the home galaxy stays where it was tuned. `labscale=` and `labgalaxies=` on
 the URL; either change rebakes.
 
+**And (`f2c40e9`): small cores by default.** A big bulge is a bright blot that
+fights the board, so the seeded core range is 0.08–0.16 instead of the
+demo's 0.08–0.42 — the same one draw from the stream, so every other seeded
+value is unchanged for every seed. `core size ×` (0.25–3, `labcore=`) scales
+it for anyone who wants the blot back.
+
 **Measured, M4, 1600×1000.** ×12 with 95 enemies alive: 60 fps, 6.0 ms GPU.
 The sky: +0.2 ms. The bake: 60–150 ms of CPU at boot including the first
 shader compile.
