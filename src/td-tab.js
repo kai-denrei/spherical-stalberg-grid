@@ -19,57 +19,57 @@
 
 import * as THREE from '../vendor/three.module.js';
 import GUI from '../vendor/lil-gui.esm.js';
-import { generateSphereMesh, relax } from './grid.js?v=cfa6e31e';
-import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=cfa6e31e';
-import { mulberry32, randomSeed } from './rng.js?v=cfa6e31e';
-import { computeBerths, berthIndexFor } from './berths.js?v=cfa6e31e';
-import { wantsSecondary, shellsForAll } from './autofire.js?v=cfa6e31e';
-import { printPhase, printOffset, printOn, patternSecsFor } from './printpath.js?v=cfa6e31e';
-import { createBeamRig, PLASMA_DEFAULTS, BOARD_PRESET, BEAM_PEAK } from './beamdraw.js?v=cfa6e31e';
-import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3, segKey, tangentDir, tangentBasis } from './vec3.js?v=cfa6e31e';
-import { CREATURES, waveJelly } from './creatures.js?v=cfa6e31e';
-import { brief, dwellFor } from './isaobriefs.js?v=cfa6e31e';
-import { drawEmotion } from './emotions.js?v=cfa6e31e';
+import { generateSphereMesh, relax } from './grid.js?v=d60b80bb';
+import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=d60b80bb';
+import { mulberry32, randomSeed } from './rng.js?v=d60b80bb';
+import { computeBerths, berthIndexFor } from './berths.js?v=d60b80bb';
+import { wantsSecondary, shellsForAll } from './autofire.js?v=d60b80bb';
+import { printPhase, printOffset, printOn, patternSecsFor } from './printpath.js?v=d60b80bb';
+import { createBeamRig, PLASMA_DEFAULTS, BOARD_PRESET, BEAM_PEAK } from './beamdraw.js?v=d60b80bb';
+import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3, segKey, tangentDir, tangentBasis } from './vec3.js?v=d60b80bb';
+import { CREATURES, waveJelly } from './creatures.js?v=d60b80bb';
+import { brief, dwellFor } from './isaobriefs.js?v=d60b80bb';
+import { drawEmotion } from './emotions.js?v=d60b80bb';
 import { ACHIEVEMENTS, ACHV_GROUPS, achievement, blankRun, earned, freshlyEarned,
   sanitiseRecord }
-  from './achievements.js?v=cfa6e31e';
+  from './achievements.js?v=d60b80bb';
 import { applyFontPack, currentFontPack, FONT_NAMES,
-  loadTypeFeel } from './fonts.js?v=cfa6e31e';
-import { SECONDARY_TOE, applySecondaryToe } from './units.js?v=cfa6e31e';
-import { UNITS, UNIT_NAMES, buildUnit, buildCreature, preloadMkcx, preloadServer, makeServerFixture, makeShieldShell, preloadContainer, makeContainerFixture, preloadFabricator, makeIsaoDrone, makeBulletCloud, makeRewardSolid, makeShellSolid, makeDebris, makeDotBurst, makePortalCloud, preloadPortalRing, makePortalRing, makeHeartCloud, makeDotEnemy, preloadTerraformer, makeTerraformerFixture } from './units.js?v=cfa6e31e';
-import { LOOKS, LOOK_NAMES } from './looks.js?v=cfa6e31e';
-import { makeCellIndex } from './cellindex.js?v=cfa6e31e';
-import { CREATURE_TINTS, ENEMY_SPEC, INTROS, computeWavePlan, accentFor } from './enemyspec.js?v=cfa6e31e';
-import { PICKUPS } from './pickups.js?v=cfa6e31e';
-import { rankFor, rankLabel, badgeSVG, killReq, eliteReq } from './ranks.js?v=cfa6e31e';
-import { beamStep, isBeamStep, PEN_SOFT_FRAC, PEN_HARD_FRAC } from './beamranks.js?v=cfa6e31e';
-import { burn, sweepAdvance, wallBite as wallBiteFor } from './beamburn.js?v=cfa6e31e';
-import { arcPoint, projectToArc, toeForCrossing, crossingForToe } from './arc.js?v=cfa6e31e';
+  loadTypeFeel } from './fonts.js?v=d60b80bb';
+import { SECONDARY_TOE, applySecondaryToe } from './units.js?v=d60b80bb';
+import { UNITS, UNIT_NAMES, buildUnit, buildCreature, preloadMkcx, preloadServer, makeServerFixture, makeShieldShell, preloadContainer, makeContainerFixture, preloadFabricator, makeIsaoDrone, makeBulletCloud, makeRewardSolid, makeShellSolid, makeDebris, makeDotBurst, makePortalCloud, preloadPortalRing, makePortalRing, makeHeartCloud, makeDotEnemy, preloadTerraformer, makeTerraformerFixture } from './units.js?v=d60b80bb';
+import { LOOKS, LOOK_NAMES } from './looks.js?v=d60b80bb';
+import { makeCellIndex } from './cellindex.js?v=d60b80bb';
+import { CREATURE_TINTS, ENEMY_SPEC, INTROS, computeWavePlan, accentFor } from './enemyspec.js?v=d60b80bb';
+import { PICKUPS } from './pickups.js?v=d60b80bb';
+import { rankFor, rankLabel, badgeSVG, killReq, eliteReq } from './ranks.js?v=d60b80bb';
+import { beamStep, isBeamStep, PEN_SOFT_FRAC, PEN_HARD_FRAC } from './beamranks.js?v=d60b80bb';
+import { burn, sweepAdvance, wallBite as wallBiteFor } from './beamburn.js?v=d60b80bb';
+import { arcPoint, projectToArc, toeForCrossing, crossingForToe } from './arc.js?v=d60b80bb';
 import { WORMHOLE_PRESET, WORMHOLE_UNIFORM_DEFAULTS, RING_SPIN, TRAVEL,
-  travelRate, advancePhase } from './portalfx.js?v=cfa6e31e';
-import { WORMHOLE_FRAG } from './fx/wormhole.frag.js?v=cfa6e31e';
-import { CORONA_FRAG } from './fx/corona.frag.js?v=cfa6e31e';
-import { labLine, parseLabQuery } from './lab.js?v=cfa6e31e';
-import { bakeGalaxyCube } from './galaxybake.js?v=cfa6e31e';
-import { SKY_PRESET } from './galaxyseed.js?v=cfa6e31e';
-import { makeScore } from './score.js?v=cfa6e31e';
-import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER } from './towers.js?v=cfa6e31e';
-import { makeEconomy, sellRefund } from './economy.js?v=cfa6e31e';
-import { pickTier } from './perftier.js?v=cfa6e31e';
-import { STICK, stickVector, knobOffset } from './stick.js?v=cfa6e31e';
-import { registerServiceWorker } from './pwa.js?v=cfa6e31e';
-import { makeBloom } from './postfx.js?v=cfa6e31e';
-import { TANK_FEEL, TANK_FEEL_KNOBS, makeTankFeel, stepTankFeel, landTankFeel, fireTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js?v=cfa6e31e';
-import { FEEL, loadFeel, saveFeel } from './feelstore.js?v=cfa6e31e';
+  travelRate, advancePhase } from './portalfx.js?v=d60b80bb';
+import { WORMHOLE_FRAG } from './fx/wormhole.frag.js?v=d60b80bb';
+import { CORONA_FRAG } from './fx/corona.frag.js?v=d60b80bb';
+import { labLine, parseLabQuery } from './lab.js?v=d60b80bb';
+import { bakeGalaxyCube } from './galaxybake.js?v=d60b80bb';
+import { SKY_PRESET } from './galaxyseed.js?v=d60b80bb';
+import { makeScore } from './score.js?v=d60b80bb';
+import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER } from './towers.js?v=d60b80bb';
+import { makeEconomy, sellRefund } from './economy.js?v=d60b80bb';
+import { pickTier } from './perftier.js?v=d60b80bb';
+import { STICK, stickVector, knobOffset } from './stick.js?v=d60b80bb';
+import { registerServiceWorker } from './pwa.js?v=d60b80bb';
+import { makeBloom } from './postfx.js?v=d60b80bb';
+import { TANK_FEEL, TANK_FEEL_KNOBS, makeTankFeel, stepTankFeel, landTankFeel, fireTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js?v=d60b80bb';
+import { FEEL, loadFeel, saveFeel } from './feelstore.js?v=d60b80bb';
 import { STRIKE_KNOBS, makeStrike, makeStrikeParams, grantStrikes, stepStrike,
   toggleArm, paintTarget, launchStrike, stepFall, skipFall, fallProgress,
-  strikeDamage, retargetStrike, orbitProgress } from './strike.js?v=cfa6e31e';
+  strikeDamage, retargetStrike, orbitProgress } from './strike.js?v=d60b80bb';
 import { radarBasis, radarProject, radarBearing, sweepAngle, radarPhosphor,
-  proximitySectors, SENSOR_LEVELS, sensorColor } from './radar.js?v=cfa6e31e';
-import { BLOOM_GROUPS } from './bloomweights.js?v=cfa6e31e';
-import { TOWER_LOOK_NAMES, DEFAULT_TOWER_LOOK, buildTowerLook, preloadLook } from './towerlooks.js?v=cfa6e31e';
-import { makeAudio } from './audio.js?v=cfa6e31e';
-import { DEATH_KEYS } from './audiomanifest.js?v=cfa6e31e';
+  proximitySectors, SENSOR_LEVELS, sensorColor } from './radar.js?v=d60b80bb';
+import { BLOOM_GROUPS } from './bloomweights.js?v=d60b80bb';
+import { TOWER_LOOK_NAMES, DEFAULT_TOWER_LOOK, buildTowerLook, preloadLook } from './towerlooks.js?v=d60b80bb';
+import { makeAudio } from './audio.js?v=d60b80bb';
+import { DEATH_KEYS } from './audiomanifest.js?v=d60b80bb';
 
 export function initTdTab(root) {
   let active = false;
@@ -12027,6 +12027,45 @@ export function initTdTab(root) {
         + ` | released: thr=${rel.thr} left=${rel.left} ring-hidden=${rel.hidden} | tap: thr=${tap.thr}`
         + ` ${shown && held.thr > 0.7 && held.left && !held.right && rel.thr === 0 && !rel.left && rel.hidden && tap.thr === 0 ? '(drives, steers, releases, and a tap is a tap)' : '<-- WRONG'}`);
     }, 1500);
+  }
+
+  // ?stress=T:W — the operator's question (2026-09-03): "do fps go down MORE
+  // with huge waves AND lots of slow towers, because the tower effect must
+  // link to all units?" T slow towers on the placeable roofs nearest the
+  // Heart, W phages queued at the first gate; pair with ?perf=N for the
+  // draw-call readout at the same instant, and this logs what the field
+  // itself is holding: live bolts, live bursts, enemies in range of a slow
+  // tower, and the product that predicts them.
+  if (urlParams.get('stress')) {
+    const [T, W] = urlParams.get('stress').split(':').map(Number);
+    setTimeout(() => {
+      dismissIntro(); endShot(); deploy = null;
+      eco.addBiomass(99999);
+      const dh = bfsDist(graph.adj, [dungeon.heart], () => true);
+      const roofs = [];
+      for (let ci = 0; ci < graph.centers.length; ci++) if (!placeError(ci)) roofs.push(ci);
+      roofs.sort((a, b) => dh[a] - dh[b]);
+      for (let i = 0; i < Math.min(T, roofs.length); i++) commitTower('slow', roofs[i]);
+      // the crowd: at the gate nearest the Heart, so the towers' ranges cover it
+      const gate = spawnPoints.filter((sp) => sp.alive).sort((a, b) => dh[a.ci] - dh[b.ci])[0];
+      if (gate) for (let i = 0; i < W; i++) spawnQueue.push({ type: 'phage', sp: gate, at: spawnClock + i * 0.05 });
+      waveActive = true;
+      console.log(`STRESS placed ${Math.min(T, roofs.length)} slow towers, queued ${gate ? W : 0} phages at gate ${gate ? gate.ci : '-'}`);
+    }, 1200);
+    const perfAtS = parseFloat(urlParams.get('perf') || '6');
+    setTimeout(() => {
+      const alive = enemies.filter((e) => e.alive);
+      let inRange = 0;
+      for (const tw of towers) {
+        if (tw.def.attack !== 'slowfield') continue;
+        const r = effectiveStats(tw.def, tw.tier).range * cellSide;
+        for (const e of alive) if (chord(graph.centers[tw.ci], e.pos) <= r) inRange++;
+      }
+      const bolts = beams.filter((b) => b.dg).length;
+      console.log(`STRESS at ${perfAtS}s: slowTowers=${towers.filter((t) => t.def.attack === 'slowfield').length}`
+        + ` enemiesAlive=${alive.length} towerXenemyInRange=${inRange} liveBolts=${bolts} liveBursts=${debris.length}`
+        + ` sceneChildren=${scene.children.length}`);
+    }, perfAtS * 1000 - 20);
   }
 
   // ?stateprobe=1 — the boot, as a log: every 2 s for 24 s, what state the
