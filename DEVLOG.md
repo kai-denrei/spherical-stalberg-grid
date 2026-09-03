@@ -6,6 +6,19 @@ Demo links assume `npm run serve` (port 8144) or the
 
 ---
 
+## `ae5ca3b` — two views means two
+
+The phone report of a tank below the frame and only the plasma tips in view,
+from a camera that felt too high, was the drone view: Isao's camera. On the
+shell one tap on Isao, who hovers beside the tank printing towers, offered
+the ride in a toast whose button sits in the caption lane, and one more tap
+took it, and the shell labels every non-orbit camera DRIVE. The shell now
+folds first person, the drone ride and the bastion cam into third person,
+offers no ride on a tap, and rides its chase eye 22% lower as asked. The
+desktop keeps all its views and its pose.
+
+---
+
 ## `10fa17c` — the announcement cards were sitting on the tank
 
 A phone photo of DRIVE showed the NEW THREAT and NEW TOWER cards stacked on
