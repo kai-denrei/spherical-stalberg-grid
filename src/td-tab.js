@@ -19,57 +19,57 @@
 
 import * as THREE from '../vendor/three.module.js';
 import GUI from '../vendor/lil-gui.esm.js';
-import { generateSphereMesh, relax } from './grid.js?v=7097e367';
-import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=7097e367';
-import { mulberry32, randomSeed } from './rng.js?v=7097e367';
-import { computeBerths, berthIndexFor } from './berths.js?v=7097e367';
-import { wantsSecondary, shellsForAll } from './autofire.js?v=7097e367';
-import { printPhase, printOffset, printOn, patternSecsFor } from './printpath.js?v=7097e367';
-import { createBeamRig, PLASMA_DEFAULTS, BOARD_PRESET, BEAM_PEAK } from './beamdraw.js?v=7097e367';
-import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3, segKey, tangentDir, tangentBasis } from './vec3.js?v=7097e367';
-import { CREATURES, waveJelly } from './creatures.js?v=7097e367';
-import { brief, dwellFor } from './isaobriefs.js?v=7097e367';
-import { drawEmotion } from './emotions.js?v=7097e367';
+import { generateSphereMesh, relax } from './grid.js?v=9032cb00';
+import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=9032cb00';
+import { mulberry32, randomSeed } from './rng.js?v=9032cb00';
+import { computeBerths, berthIndexFor } from './berths.js?v=9032cb00';
+import { wantsSecondary, shellsForAll } from './autofire.js?v=9032cb00';
+import { printPhase, printOffset, printOn, patternSecsFor } from './printpath.js?v=9032cb00';
+import { createBeamRig, PLASMA_DEFAULTS, BOARD_PRESET, BEAM_PEAK } from './beamdraw.js?v=9032cb00';
+import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3, segKey, tangentDir, tangentBasis } from './vec3.js?v=9032cb00';
+import { CREATURES, waveJelly } from './creatures.js?v=9032cb00';
+import { brief, dwellFor } from './isaobriefs.js?v=9032cb00';
+import { drawEmotion } from './emotions.js?v=9032cb00';
 import { ACHIEVEMENTS, ACHV_GROUPS, achievement, blankRun, earned, freshlyEarned,
   sanitiseRecord }
-  from './achievements.js?v=7097e367';
+  from './achievements.js?v=9032cb00';
 import { applyFontPack, currentFontPack, FONT_NAMES,
-  loadTypeFeel } from './fonts.js?v=7097e367';
-import { SECONDARY_TOE, applySecondaryToe } from './units.js?v=7097e367';
-import { UNITS, UNIT_NAMES, buildUnit, buildCreature, preloadMkcx, preloadServer, makeServerFixture, makeShieldShell, preloadContainer, makeContainerFixture, preloadFabricator, makeIsaoDrone, makeBulletCloud, makeRewardSolid, makeShellSolid, makeDebris, makeDotBurst, makePortalCloud, preloadPortalRing, makePortalRing, makeHeartCloud, makeDotEnemy, preloadTerraformer, makeTerraformerFixture } from './units.js?v=7097e367';
-import { LOOKS, LOOK_NAMES } from './looks.js?v=7097e367';
-import { makeCellIndex } from './cellindex.js?v=7097e367';
-import { CREATURE_TINTS, ENEMY_SPEC, INTROS, computeWavePlan, accentFor } from './enemyspec.js?v=7097e367';
-import { PICKUPS } from './pickups.js?v=7097e367';
-import { rankFor, rankLabel, badgeSVG, killReq, eliteReq } from './ranks.js?v=7097e367';
-import { beamStep, isBeamStep, PEN_SOFT_FRAC, PEN_HARD_FRAC } from './beamranks.js?v=7097e367';
-import { burn, sweepAdvance, wallBite as wallBiteFor } from './beamburn.js?v=7097e367';
-import { arcPoint, projectToArc, toeForCrossing, crossingForToe } from './arc.js?v=7097e367';
+  loadTypeFeel } from './fonts.js?v=9032cb00';
+import { SECONDARY_TOE, applySecondaryToe } from './units.js?v=9032cb00';
+import { UNITS, UNIT_NAMES, buildUnit, buildCreature, preloadMkcx, preloadServer, makeServerFixture, makeShieldShell, preloadContainer, makeContainerFixture, preloadFabricator, makeIsaoDrone, makeBulletCloud, makeRewardSolid, makeShellSolid, makeDebris, makeDotBurst, makePortalCloud, preloadPortalRing, makePortalRing, makeHeartCloud, makeDotEnemy, preloadTerraformer, makeTerraformerFixture } from './units.js?v=9032cb00';
+import { LOOKS, LOOK_NAMES } from './looks.js?v=9032cb00';
+import { makeCellIndex } from './cellindex.js?v=9032cb00';
+import { CREATURE_TINTS, ENEMY_SPEC, INTROS, computeWavePlan, accentFor } from './enemyspec.js?v=9032cb00';
+import { PICKUPS } from './pickups.js?v=9032cb00';
+import { rankFor, rankLabel, badgeSVG, killReq, eliteReq } from './ranks.js?v=9032cb00';
+import { beamStep, isBeamStep, PEN_SOFT_FRAC, PEN_HARD_FRAC } from './beamranks.js?v=9032cb00';
+import { burn, sweepAdvance, wallBite as wallBiteFor } from './beamburn.js?v=9032cb00';
+import { arcPoint, projectToArc, toeForCrossing, crossingForToe } from './arc.js?v=9032cb00';
 import { WORMHOLE_PRESET, WORMHOLE_UNIFORM_DEFAULTS, RING_SPIN, TRAVEL,
-  travelRate, advancePhase } from './portalfx.js?v=7097e367';
-import { WORMHOLE_FRAG } from './fx/wormhole.frag.js?v=7097e367';
-import { CORONA_FRAG } from './fx/corona.frag.js?v=7097e367';
-import { labLine, parseLabQuery } from './lab.js?v=7097e367';
-import { bakeGalaxyCube } from './galaxybake.js?v=7097e367';
-import { SKY_PRESET } from './galaxyseed.js?v=7097e367';
-import { makeScore } from './score.js?v=7097e367';
-import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER } from './towers.js?v=7097e367';
-import { makeEconomy, sellRefund } from './economy.js?v=7097e367';
-import { pickTier } from './perftier.js?v=7097e367';
-import { STICK, stickVector, knobOffset } from './stick.js?v=7097e367';
-import { registerServiceWorker } from './pwa.js?v=7097e367';
-import { makeBloom } from './postfx.js?v=7097e367';
-import { TANK_FEEL, TANK_FEEL_KNOBS, makeTankFeel, stepTankFeel, landTankFeel, fireTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js?v=7097e367';
-import { FEEL, loadFeel, saveFeel } from './feelstore.js?v=7097e367';
+  travelRate, advancePhase } from './portalfx.js?v=9032cb00';
+import { WORMHOLE_FRAG } from './fx/wormhole.frag.js?v=9032cb00';
+import { CORONA_FRAG } from './fx/corona.frag.js?v=9032cb00';
+import { labLine, parseLabQuery } from './lab.js?v=9032cb00';
+import { bakeGalaxyCube } from './galaxybake.js?v=9032cb00';
+import { SKY_PRESET } from './galaxyseed.js?v=9032cb00';
+import { makeScore } from './score.js?v=9032cb00';
+import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER } from './towers.js?v=9032cb00';
+import { makeEconomy, sellRefund } from './economy.js?v=9032cb00';
+import { pickTier } from './perftier.js?v=9032cb00';
+import { STICK, stickVector, knobOffset } from './stick.js?v=9032cb00';
+import { registerServiceWorker } from './pwa.js?v=9032cb00';
+import { makeBloom } from './postfx.js?v=9032cb00';
+import { TANK_FEEL, TANK_FEEL_KNOBS, makeTankFeel, stepTankFeel, landTankFeel, fireTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js?v=9032cb00';
+import { FEEL, loadFeel, saveFeel } from './feelstore.js?v=9032cb00';
 import { STRIKE_KNOBS, makeStrike, makeStrikeParams, grantStrikes, stepStrike,
   toggleArm, paintTarget, launchStrike, stepFall, skipFall, fallProgress,
-  strikeDamage, retargetStrike, orbitProgress } from './strike.js?v=7097e367';
+  strikeDamage, retargetStrike, orbitProgress } from './strike.js?v=9032cb00';
 import { radarBasis, radarProject, radarBearing, sweepAngle, radarPhosphor,
-  proximitySectors, SENSOR_LEVELS, sensorColor } from './radar.js?v=7097e367';
-import { BLOOM_GROUPS } from './bloomweights.js?v=7097e367';
-import { TOWER_LOOK_NAMES, DEFAULT_TOWER_LOOK, buildTowerLook, preloadLook } from './towerlooks.js?v=7097e367';
-import { makeAudio } from './audio.js?v=7097e367';
-import { DEATH_KEYS } from './audiomanifest.js?v=7097e367';
+  proximitySectors, SENSOR_LEVELS, sensorColor } from './radar.js?v=9032cb00';
+import { BLOOM_GROUPS } from './bloomweights.js?v=9032cb00';
+import { TOWER_LOOK_NAMES, DEFAULT_TOWER_LOOK, buildTowerLook, preloadLook } from './towerlooks.js?v=9032cb00';
+import { makeAudio } from './audio.js?v=9032cb00';
+import { DEATH_KEYS } from './audiomanifest.js?v=9032cb00';
 
 export function initTdTab(root) {
   let active = false;
@@ -2192,6 +2192,14 @@ export function initTdTab(root) {
   // follow-cam — mean exactly "is the free camera up", and that meaning is
   // unchanged. It is assigned in ONE place, here.
   function setView(v) {
+    // THE SHELL HAS TWO VIEWS (ruling 3): DRIVE is third person, BUILD is
+    // orbit. First person, the drone ride and the bastion cam are desktop
+    // pleasures; on a phone the drone ride was one tap on Isao (he hovers
+    // beside the tank printing towers) and one on the toast's button in the
+    // caption lane — and the operator was riding him without knowing it:
+    // "the tank is below the frame, I only see the tip of its plasma, the
+    // POV looks too high". ?view= keeps its say, for probes.
+    if (mobileShell && (v === 'pov' || v === 'drone' || v === 'bastion') && !viewOverride) v = 'third';
     // the drone view needs a drone: he is normally on shift from the first
     // second, but a board that has not finished loading his bytes yet would
     // hand you an empty camera. Ask for him, and fall through to orbit —
@@ -2437,7 +2445,10 @@ export function initTdTab(root) {
     let eye, look;
     if (params.view === 'third') {
       // behind and above; pulls back as the creature grows so it stays framed
-      eye = add3(add3(c, scale3(n, params.wallHeight * 2.6 + cellSide * 1.1 + unitScale * 1.8)),
+      // the shell rides a little LOWER behind (operator: "3rd person,
+      // somewhat low behind"); the desktop pose is untouched
+      const lift = mobileShell ? 0.78 : 1;
+      eye = add3(add3(c, scale3(n, (params.wallHeight * 2.6 + cellSide * 1.1 + unitScale * 1.8) * lift)),
         scale3(h, -(cellSide * 1.8 + unitScale * 1.6)));
       look = add3(add3(c, scale3(n, params.wallHeight * 0.4 + unitScale * 0.5)),
         scale3(h, cellSide * 1.4));
@@ -3184,7 +3195,7 @@ export function initTdTab(root) {
       // better gesture than tapping past two other cameras to find it. It
       // asks first: a mis-tap that hijacks your camera mid-wave is worse
       // than no shortcut at all.
-      if (isao && params.view !== 'drone') {
+      if (isao && params.view !== 'drone' && !mobileShell) {
         const r0 = renderer.domElement.getBoundingClientRect();
         ndc.set(((ev.clientX - r0.left) / r0.width) * 2 - 1,
           -((ev.clientY - r0.top) / r0.height) * 2 + 1);
@@ -3869,6 +3880,7 @@ export function initTdTab(root) {
   // tapped the button, so a ReferenceError shipped. Now the probe taps it.
   const mobModeEl = root.querySelector('#mob-mode');
   let mobModeLast = -1;
+  let viewOverride = false;   // ?view= asked for a view by name: the shell's two-view rule stands aside
   if (mobModeEl) mobModeEl.addEventListener('click', () => { toggleView(); syncMobMode(); });
   // SCREEN WAKE LOCK (plan §2.8). A phone dims and sleeps on a screen that is
   // not being touched, and a wave that is going well is exactly that. Shell
@@ -9895,7 +9907,8 @@ export function initTdTab(root) {
   }
   if (Number.isFinite(wallOverride)) params.wallHeight = wallOverride;
   const viewOv = urlParams.get('view');
-  if (['pov', 'third', 'orbit', 'drone'].includes(viewOv)) { setView(viewOv); }
+  viewOverride = ['pov', 'third', 'orbit', 'drone'].includes(viewOv);
+  if (viewOverride) { setView(viewOv); }
   // the drone view is the one that can be REFUSED at boot (his bytes are
   // still in flight), so it is re-asked for once he lands rather than
   // silently leaving you in orbit
@@ -11971,6 +11984,22 @@ export function initTdTab(root) {
       console.log(`COACH step0="${b0}" (step ${s0}) -> goto target=${target} -> "${b1}" (step ${s1})`
         + ` -> thumb -> step ${s2} "${b2}" -> biomass -> "${b3}" -> order=${ok} -> done=${coach.done} seen=${seen}`
         + ` ${s0 === 0 && s1 === 1 && s2 === 2 && /BUILD/.test(b3) && coach.done && seen ? '(three marks, each cleared by its own action)' : '<-- WRONG'}`);
+    }, 1500);
+  }
+
+  // ?viewprobe=1 — the shell's two-view rule: setView('drone') and 'pov'
+  // land on third; the toast's TAKE CONTROL never appears on a tap.
+  if (urlParams.get('viewprobe') === '1') {
+    setTimeout(() => {
+      dismissIntro(); endShot(); deploy = null;
+      const before = params.view;
+      setView('drone'); const a = params.view;
+      setView('pov'); const b = params.view;
+      setView('orbit'); const c = params.view;
+      setView('third');
+      const offered = toastEl && !toastEl.classList.contains('hidden') && /TAKE CONTROL/.test(toastEl.textContent);
+      console.log(`VIEWPROBE shell=${mobileShell} start=${before} drone->${a} pov->${b} orbit->${c} rideOffered=${offered}`
+        + ` ${mobileShell ? (a === 'third' && b === 'third' && c === 'orbit' && !offered ? '(two views, no ride)' : '<-- WRONG') : ''}`);
     }, 1500);
   }
 
