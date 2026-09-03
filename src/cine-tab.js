@@ -6,12 +6,12 @@
 // the wormhole target and sky face sizes. scripts/cine-capture.mjs drives
 // __cine.seek(t) for the offline render.
 import * as THREE from '../vendor/three.module.js';
-import { makeBloom } from './postfx.js?v=288a8743';
-import { installCine } from './cine/kit.js?v=288a8743';
-import { createGate } from './cine/gate.js?v=288a8743';
-import { createPlanet } from './cine/planetscene.js?v=288a8743';
-import { createTank } from './cine/tankscene.js?v=288a8743';
-import { rateFromSample, fitSize, marchBudgetMs, createGovernor } from './cine/governor.js?v=288a8743';
+import { makeBloom } from './postfx.js?v=6a210d02';
+import { installCine } from './cine/kit.js?v=6a210d02';
+import { createGate } from './cine/gate.js?v=6a210d02';
+import { createPlanet } from './cine/planetscene.js?v=6a210d02';
+import { createTank } from './cine/tankscene.js?v=6a210d02';
+import { rateFromSample, fitSize, marchBudgetMs, createGovernor } from './cine/governor.js?v=6a210d02';
 
 const SCENES = { gate: createGate, planet: createPlanet, tank: createTank };
 // Two tiers (plan §2.1): the same rail, rendered live or offline.

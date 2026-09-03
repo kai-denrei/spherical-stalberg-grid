@@ -12,7 +12,7 @@
 // come from generateSphereMesh + relax, the same calls td-tab.js makes, and
 // the edge look is the board's own from looks.js, passed in by the scene.
 import * as THREE from '../../vendor/three.module.js';
-import { generateSphereMesh, relax } from '../grid.js?v=288a8743';
+import { generateSphereMesh, relax } from '../grid.js?v=6a210d02';
 
 /**
  * @param seed       the sphere's seed — a board seed names a planet
@@ -54,6 +54,7 @@ export function makeWirePlanet({
     blending: edges.additive ? THREE.AdditiveBlending : THREE.NormalBlending,
     depthWrite: !edges.additive,
   }));
+  wire.userData.edgePositions = pos;
 
   // the body: a hair under the wire so the far side's lines are hidden by
   // depth, and lit (not basic) so the sun's shadow of what stands on it lands
@@ -69,4 +70,44 @@ export function makeWirePlanet({
   g.userData.body = bodyMesh;
   g.userData.cellSide = mesh.defaultSide;
   return g;
+}
+
+/**
+ * WIDE LINES (plan §2.10): a 1-px GL line vanishes at 4K and the planet's
+ * identity with it. three's Line2 trio draws a line as screen-space quads
+ * with a width in pixels. The addons are vendored from the sibling's three
+ * 0.180 against our r160, so they are loaded on demand and a failure to
+ * load or compile leaves the 1-px wire in place and says so — the still
+ * is the test. `resolution` must be the render size in pixels, set once
+ * here and again by the scene on resize.
+ *
+ * @returns Promise<boolean> — true if the wide wire replaced the thin one
+ */
+export async function widenWire(planet, { width = 2, resolution = [1920, 1080] } = {}) {
+  const wire = planet.userData.wire;
+  if (!wire || !(width > 0)) return false;
+  try {
+    const [{ LineSegments2 }, { LineSegmentsGeometry }, { LineMaterial }] = await Promise.all([
+      import('../../vendor/LineSegments2.js'), import('../../vendor/LineSegmentsGeometry.js'), import('../../vendor/LineMaterial.js'),
+    ]);
+    const lg = new LineSegmentsGeometry();
+    lg.setPositions(wire.userData.edgePositions);
+    const m = wire.material;
+    const lm = new LineMaterial({
+      color: m.color.getHex(), linewidth: width, worldUnits: false,
+      transparent: true, opacity: m.opacity, blending: m.blending, depthWrite: m.depthWrite,
+    });
+    lm.resolution.set(resolution[0], resolution[1]);
+    const wide = new LineSegments2(lg, lm);
+    wide.computeLineDistances();
+    planet.remove(wire);
+    planet.add(wide);
+    planet.userData.wire = wide;
+    planet.userData.thinWire = wire;
+    console.log(`WIDE ok: ${width}px at ${resolution[0]}x${resolution[1]}`);
+    return true;
+  } catch (e) {
+    console.warn(`WIDE fail: ${e && e.message ? e.message : e}`);
+    return false;
+  }
 }

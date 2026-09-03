@@ -15,15 +15,15 @@
 // countdown the game steps by dt; here it is written from the shot times,
 // so a seek lands on the same frame as a play-through.
 import * as THREE from '../../vendor/three.module.js';
-import { buildCreature, preloadMkcx, makeBulletCloud } from '../units.js?v=288a8743';
-import { bakeGalaxyCube } from '../galaxybake.js?v=288a8743';
-import { SKY_PRESET } from '../galaxyseed.js?v=288a8743';
-import { LOOKS } from '../looks.js?v=288a8743';
-import { compileRail } from './rail.js?v=288a8743';
-import { makeWirePlanet } from './planet.js?v=288a8743';
-import { applyWeatheredMaterial } from './materials.js?v=288a8743';
-import { createBeamRig, PLASMA_DEFAULTS, BOARD_PRESET, BEAM_PEAK } from '../beamdraw.js?v=288a8743';
-import { TANK_FEEL, makeTankFeel, applyTankFeel } from '../tankfeel.js?v=288a8743';
+import { buildCreature, preloadMkcx, makeBulletCloud } from '../units.js?v=6a210d02';
+import { bakeGalaxyCube } from '../galaxybake.js?v=6a210d02';
+import { SKY_PRESET } from '../galaxyseed.js?v=6a210d02';
+import { LOOKS } from '../looks.js?v=6a210d02';
+import { compileRail } from './rail.js?v=6a210d02';
+import { makeWirePlanet, widenWire } from './planet.js?v=6a210d02';
+import { applyWeatheredMaterial } from './materials.js?v=6a210d02';
+import { createBeamRig, PLASMA_DEFAULTS, BOARD_PRESET, BEAM_PEAK } from '../beamdraw.js?v=6a210d02';
+import { TANK_FEEL, makeTankFeel, applyTankFeel } from '../tankfeel.js?v=6a210d02';
 
 export const TANK_LEN = 12;
 
@@ -104,6 +104,9 @@ export function createTank({ renderer, scene, camera, tier = {} }) {
   const planet = makeWirePlanet({ seed: 4414, n: 600, relaxIters: 80, edges: look.edges, body: look.bg });
   planet.scale.setScalar(R);
   root.add(planet);
+  const wide = q.get('wide') != null ? parseFloat(q.get('wide')) : Math.max(1.5, renderer.domElement.height / 360);
+  let wideReady = !(wide > 0);
+  if (wide > 0) widenWire(planet, { width: wide, resolution: [renderer.domElement.width, renderer.domElement.height] }).then(() => { wideReady = true; });
 
   // THE PLASMA RIG at a cinema point count (?plasma=N per gun)
   const plasma = { ...PLASMA_DEFAULTS, points: parseInt(q.get('plasma')) || PLASMA_DEFAULTS.points * 4 };
@@ -277,6 +280,8 @@ export function createTank({ renderer, scene, camera, tier = {} }) {
         rig.draw(g, { from: from3.slice(), dir: dir3.slice(), len: 26 / R, heat: h, lift: r, scale: CELL, time: t, peak: BEAM_PEAK });
       }
     } else rig.hide();
+    const wm = planet.userData.wire && planet.userData.wire.material;
+    if (wm && wm.resolution) wm.resolution.set(renderer.domElement.width, renderer.domElement.height);
     // the roll: the wire moves under a tank that stays at the pole
     const roll = Math.max(0, t - ROLL.t0);
     planet.rotation.x = -(ROLL.speed * roll) / R;
@@ -290,7 +295,7 @@ export function createTank({ renderer, scene, camera, tier = {} }) {
 
   return {
     name: 'tank', duration: TANK_LEN, update,
-    ready: () => !!tank,
+    ready: () => !!tank && wideReady,
     wormhole: null,
     dispose() { sky.dispose(); pmrem.dispose(); },
   };

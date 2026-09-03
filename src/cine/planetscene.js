@@ -13,11 +13,11 @@
 //
 // Every time-dependent thing is SET from t. A capture seeks.
 import * as THREE from '../../vendor/three.module.js';
-import { bakeGalaxyCube } from '../galaxybake.js?v=288a8743';
-import { SKY_PRESET } from '../galaxyseed.js?v=288a8743';
-import { LOOKS } from '../looks.js?v=288a8743';
-import { compileRail } from './rail.js?v=288a8743';
-import { makeWirePlanet } from './planet.js?v=288a8743';
+import { bakeGalaxyCube } from '../galaxybake.js?v=6a210d02';
+import { SKY_PRESET } from '../galaxyseed.js?v=6a210d02';
+import { LOOKS } from '../looks.js?v=6a210d02';
+import { compileRail } from './rail.js?v=6a210d02';
+import { makeWirePlanet, widenWire } from './planet.js?v=6a210d02';
 
 export const PLANET_LEN = 12;
 export const PLANET_R = 7.8;          // THE GATE's measured radius: one scale, two cinematics
@@ -84,6 +84,14 @@ export function createPlanet({ renderer, scene, camera, tier = {} }) {
   const planet = makeWirePlanet({ seed: 4414, n, relaxIters: 80, edges: look.edges, body: look.bg });
   planet.scale.setScalar(PLANET_R);
   root.add(planet);
+  // THE WIDE WIRE (plan §2.10), on by default: width follows the frame
+  // height — 3 px at 1080p, 6 at 4K, 2 at 720p — so the planet's identity
+  // survives at any size. ?wide=N overrides, ?wide=0 is the 1-px line.
+  const wide = q.get('wide') != null ? parseFloat(q.get('wide')) : Math.max(1.5, renderer.domElement.height / 360);
+  let wideReady = !(wide > 0);
+  if (wide > 0) {
+    widenWire(planet, { width: wide, resolution: [renderer.domElement.width, renderer.domElement.height] }).then(() => { wideReady = true; });
+  }
 
   // THE ATMOSPHERE: a rim just off the surface and a haze past the limb.
   // ?atmo=0 removes both (the ruling's second cut).
@@ -102,6 +110,12 @@ export function createPlanet({ renderer, scene, camera, tier = {} }) {
   function update(t) {
     // a slow turn under the camera, SET from t
     planet.rotation.y = t * 0.05;
+    // a wide line's width is in pixels of ITS resolution uniform, which the
+    // first probe read off an unsized canvas (300x150 for a 1280x720 frame):
+    // set from the drawing buffer at every draw, so a capture at any size
+    // and a live resize both get the width they asked for
+    const wm = planet.userData.wire && planet.userData.wire.material;
+    if (wm && wm.resolution) wm.resolution.set(renderer.domElement.width, renderer.domElement.height);
     const p = rail.poseAt(t);
     camera.position.set(p.pos[0], p.pos[1], p.pos[2]);
     camera.up.set(p.up[0], p.up[1], p.up[2]);
@@ -111,7 +125,7 @@ export function createPlanet({ renderer, scene, camera, tier = {} }) {
 
   return {
     name: 'planet', duration: PLANET_LEN, update,
-    ready: () => true,
+    ready: () => wideReady,
     wormhole: null,                   // nothing for the governor to size
     dispose() { sky.dispose(); },
   };

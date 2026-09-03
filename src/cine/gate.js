@@ -10,16 +10,16 @@
 // Every time-dependent thing is SET from t: rotors, phases, the camera.
 // A capture seeks; the live loop just calls update(t) with a running t.
 import * as THREE from '../../vendor/three.module.js';
-import { preloadPortalRing, makePortalRing } from '../units.js?v=288a8743';
-import { bakeGalaxyCube } from '../galaxybake.js?v=288a8743';
-import { SKY_PRESET } from '../galaxyseed.js?v=288a8743';
-import { createWormholeTarget, RING_SPIN, TRAVEL } from './wormholebg.js?v=288a8743';
-import { compileRail } from './rail.js?v=288a8743';
-import { applyWeatheredMaterial } from './materials.js?v=288a8743';
-import { makeCinemaCloud } from './cloud.js?v=288a8743';
-import { CREATURE_TINTS, accentFor } from '../enemyspec.js?v=288a8743';
-import { makeWirePlanet } from './planet.js?v=288a8743';
-import { LOOKS } from '../looks.js?v=288a8743';
+import { preloadPortalRing, makePortalRing } from '../units.js?v=6a210d02';
+import { bakeGalaxyCube } from '../galaxybake.js?v=6a210d02';
+import { SKY_PRESET } from '../galaxyseed.js?v=6a210d02';
+import { createWormholeTarget, RING_SPIN, TRAVEL } from './wormholebg.js?v=6a210d02';
+import { compileRail } from './rail.js?v=6a210d02';
+import { applyWeatheredMaterial } from './materials.js?v=6a210d02';
+import { makeCinemaCloud } from './cloud.js?v=6a210d02';
+import { CREATURE_TINTS, accentFor } from '../enemyspec.js?v=6a210d02';
+import { makeWirePlanet, widenWire } from './planet.js?v=6a210d02';
+import { LOOKS } from '../looks.js?v=6a210d02';
 
 export const GATE_LEN = 12;
 
@@ -99,7 +99,7 @@ export function createGate({ renderer, scene, camera, tier = {} }) {
 
   const root = new THREE.Group();
   scene.add(root);
-  let ring = null, disc = null, apertureWorld = new THREE.Vector3();
+  let ring = null, disc = null, landing = null, wideReady = true, apertureWorld = new THREE.Vector3();
 
   // the swarm, at cinema density: the game's phage, ten points for one.
   // ?nocross=1 removes it; ?cdens=N sets the density; ?csize=N the scale
@@ -177,6 +177,12 @@ export function createGate({ renderer, scene, camera, tier = {} }) {
         const box = new THREE.Box3().setFromObject(ring);
         planet.position.set(0, box.min.y - k, 0);
         root.add(planet);
+        landing = planet;
+        const wq2 = new URLSearchParams(location.search);
+        const wide = wq2.get('wide') != null ? parseFloat(wq2.get('wide')) : Math.max(1.5, renderer.domElement.height / 360);
+        // ready() waits for this: a capture draws ONE frame, and the dynamic
+        // import lands after the ring does (the first 4K still had the thin wire)
+        if (wide > 0) { wideReady = false; widenWire(planet, { width: wide, resolution: [renderer.domElement.width, renderer.domElement.height] }).then(() => { wideReady = true; }); }
         console.log(`PLANET radius ${k.toFixed(1)} m, cell ${(planet.userData.cellSide * k).toFixed(2)} m, foot at y=${box.min.y.toFixed(2)}`);
       }
       // OPAQUE, unlike the board's additive disc: inside the throat the sky
@@ -234,6 +240,9 @@ export function createGate({ renderer, scene, camera, tier = {} }) {
       if (u.rotorB) u.rotorB.rotation.z = rests.rotorB + RING_SPIN.rotorB * t;
       if (u.yaw) u.yaw.rotation.y = rests.yaw + RING_SPIN.yaw * t;
     }
+    // the wide wire's width is in pixels of its resolution uniform: per draw
+    const wm = landing && landing.userData.wire && landing.userData.wire.material;
+    if (wm && wm.resolution) wm.resolution.set(renderer.domElement.width, renderer.domElement.height);
     // the crossing: every body SET from t (a capture seeks; nothing accumulates)
     for (let i = 0; i < swarm.length; i++) {
       const c = swarm[i];
@@ -256,7 +265,7 @@ export function createGate({ renderer, scene, camera, tier = {} }) {
 
   return {
     name: 'gate', duration: GATE_LEN, update,
-    ready: () => !!ring,
+    ready: () => !!ring && wideReady,
     wormhole: wh,                                   // the governor's lever
     lockUp: (t) => t < BEAT1 + 1.5,                 // the full-frame beat: never step UP inside it
     dispose() { wh.dispose(); sky.dispose(); pmrem.dispose(); },
