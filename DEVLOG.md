@@ -6,6 +6,21 @@ Demo links assume `npm run serve` (port 8144) or the
 
 ---
 
+## `e6a4988` — the proximity sensor in cells and colour
+
+The sensor graded contacts by thirds of the scope's reach, a fraction of
+whatever the radar showed and not a distance a player feels. It grades in
+cells now, only for the solid tier: nothing beyond four, blue at four,
+orange at three, red at two or closer, each ring its level and its colour in
+one table in radar.js, and the scope's reach no longer gates. Two small
+things the probe caught: three cells computed as a hair over three fell into
+the wrong ring until the comparison got a tolerance, and the probe's demo
+contacts were world-fixed points that drifted as the tank drove, so the
+first screenshot showed the right rule in the wrong sectors; they are
+relative to the tank now.
+
+---
+
 ## `c7bf443` — the four from the phone
 
 The operator's second device session: no way to move the tank manually, the
