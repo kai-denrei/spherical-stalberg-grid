@@ -6,6 +6,82 @@ Demo links assume `npm run serve` (port 8144) or the
 
 ---
 
+## `40801df` — measured: a live background behind the planet, aurora vs galaxy-forge
+
+The operator asked what it would cost to put something like the Fable
+Cabinet's `#aurora` or `#galaxy-forge` behind the planet, which is a flat
+near-black today (`mainBg` 0x0d1017 on the board, 0x05070d in tank2).
+Measured rather than guessed, on this Mac mini's M4, with headless Chrome
+on the real GPU (`--use-angle=metal`) and one `EXT_disjoint_timer_query`
+per frame — the per-draw variant overcounts about 4x on Apple's tile-based
+GPU because every query boundary splits the render pass, which is worth
+knowing before anyone trusts a number from it.
+
+**What each demo is.** The aurora is one fullscreen fragment shader: per
+pixel it evaluates five-octave value noise about 25 times (four per curtain
+for up to six curtains, plus the milky way, ridge and trees), three star
+layers and a palette. Cost is pure fill, linear in pixels. Galaxy-forge is
+the opposite shape: 300k star points (up to 420k) and 48k dust points,
+positions computed in the vertex shader, additive point sprites, a
+quarter-res bloom and a composite — ten draws. Its cost is vertex work and
+sprite overdraw, and barely moves with resolution. Both ship an adaptive
+quality loop, which is the authors saying they expected to miss 60 somewhere.
+
+**GPU ms per frame, M4, whole-frame query, mean (p90):**
+
+| target | aurora | galaxy-forge |
+|---|---|---|
+| 512×320 (0.16 Mpx) | 1.8 (3.0) | 4.6 (7.3) |
+| 960×600 (0.58 Mpx) | 4.6 (6.3) | — |
+| 1600×1000, desktop 1x | 10.9 (13.6) | 3.9 (6.7) |
+| 3200×2000, desktop 2x | self-throttled to 2048×1280: 18.2, **50 fps** | 5.8 (8.2) |
+| 585×1266, phone tier | 5.2 (7.6) | 3.2 (5.7) |
+
+So the aurora is ~7 ms per megapixel plus ~0.6 fixed, on an M4. At a
+Retina 2x it cannot hold 60 on its own, which its adaptive loop already
+knows. Galaxy-forge floors at 3–5 ms whatever the size.
+
+**What the board has to spare.** Same rig, `?cine=0#td`: 10.2 ms mean (p90
+17.7) at 1x with 1,117 draws a frame; **45 ms at 2x, 29 fps**. tank2: 1.1 ms
+at 1x, 2.7 at 2x. The 2x board number is the headline here and has nothing
+to do with backgrounds: on this GPU the desktop tier at Retina (full-res
+bloom mip chain over 6.4 Mpx, eleven hundred draws) is already GPU-bound.
+Verify on the real screen with `?perf=1` before believing a headless
+figure, but if it holds, the desktop tier's `bloomScale: 1.0` and
+`dprCap: 2` are the two knobs, and `bloomScale` is the cheaper one to turn.
+
+**How either would go in, and what it would then cost.** Not as a canvas
+behind the canvas — as a render target the board draws into and reads as
+`scene.background`, exactly the wormhole's arrangement (`WORMHOLE_RENDER`,
+a size and an update rate, per tier).
+
+- *Aurora, live.* It is time-driven, so it wants updates. 512×320 at 24–30
+  Hz is 1.8 ms on the frames that render it, under 1 ms averaged, upscaled
+  3x onto the board — soft ribbons survive that; the star layer does not
+  (`uStars` to 0, or keep the stars in the game). Drop the ridge, trees, snow
+  band and shooting star: a planet in space has no horizon, and those are
+  ~15% of the shader. On a phone the same target is 5–9 ms per update once a
+  phone GPU's 3–5x deficit to the M4 is applied, so the phone tier gets
+  256×160 at 20 Hz or nothing. Verdict: affordable at 1x, marginal at 2x
+  where the board is already over, and it needs a tier entry.
+- *Galaxy-forge, baked.* Its motion is a slow spin and an intro; as a
+  backdrop it is a texture rendered once at boot (4–6 ms, once) or refreshed
+  at 1–2 Hz, and then a full-screen quad per frame at well under 0.2 ms.
+  Bake at device resolution or the star points blur. It carries its own
+  bloom, so give the background group a weight of 0 in `bloomweights` or
+  the board's chain will bloom the core a second time. Verdict: effectively
+  free at every tier, and it is a space picture, which is what is behind a
+  planet.
+- *Both.* A baked galaxy with one thin live aurora ribbon at 384×240 is
+  under 1 ms a frame on the M4 and reads as a nebula.
+
+Recommendation, if one is picked: galaxy-forge baked, behind everything,
+excluded from bloom; the aurora only as a small live layer over it, and
+only on the desktop tier. Neither should be started before the 2x board
+number is understood, because that is where the frame budget actually is.
+
+---
+
 ## `1bad331` — MK-CX/2: the tank with the top taken off
 
 The operator's ask, from two screenshots: lose the dark turret block between
