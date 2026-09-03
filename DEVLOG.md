@@ -47,7 +47,18 @@ rotates the turret through 360° in 3° steps and asserts the barrel's world
 box never meets any secondary part, 720 checks, closest approach 0.27 m.
 The three heat sleeves the game adds are 1.5× longer on this casting, from
 a per-casting table; positions are sleeve centres, so the main one still
-starts ahead of the cradle and the secondaries' end short of their muzzles. The viewer and board now preload
+starts ahead of the cradle and the secondaries' end short of their muzzles.
+
+**Reverse export.** The units viewer has an EXPORT button: the current unit
+as the game dresses it, cast model plus shell rack, heat sleeves, tint and
+edge outlines, as one `.glb` to hand back to `blueprint-to-life`.
+`vendor/GLTFExporter.js` is three r160's, matching the vendored three, with
+its texture-decompression import stubbed to the identity since nothing here
+carries a compressed texture. `?export=1&dump=1` runs it headless and emits
+the bytes as numbered base64 console chunks, since Chrome truncates one long
+line; a shell reassembles them. The first one, the MK-CX/2, is 3.4 MB, 79
+nodes, 30 meshes and 18 outline line sets, and lives in the sibling under
+`design/game-exports/`. The viewer and board now preload
 the casting they were asked for; before, both preloaded only the default
 and a variant would have shown the procedural fallback forever.
 

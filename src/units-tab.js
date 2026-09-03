@@ -11,26 +11,27 @@
 // one context no matter how long the roster grows.
 import * as THREE from '../vendor/three.module.js';
 import { OrbitControls } from '../vendor/OrbitControls.js';
+import { GLTFExporter } from '../vendor/GLTFExporter.js';
 import { buildUnit, preloadMkcx, makeDebris, makeDotBurst, makeBulletCloud,
   makeDotEnemy, makeRewardSolid, makeShellSolid, makePortalCloud,
   preloadServer, makeServerFixture, preloadContainer, makeContainerFixture,
-  preloadFabricator, makeFabricatorDrone, makeIsaoDrone } from './units.js?v=aa74d088';
+  preloadFabricator, makeFabricatorDrone, makeIsaoDrone } from './units.js?v=11ced389';
 import { TANK_FEEL, TANK_FEEL_KNOBS, formatFeelCode, makeTankFeel, stepTankFeel,
-  landTankFeel, fireTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js?v=aa74d088';
+  landTankFeel, fireTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js?v=11ced389';
 import { FEEL, loadFeel, saveFeel, resetFeel,
-  TOWER, HEADS, loadTower, saveTower, resetTower } from './feelstore.js?v=aa74d088';
+  TOWER, HEADS, loadTower, saveTower, resetTower } from './feelstore.js?v=11ced389';
 import { TOWER_FEEL_KNOBS, formatTowerFeel, clampTowerParams,
-  formatTowerHeads, HEAD_CHOICES, HEAD_AS_SHIPPED } from './towerfeel.js?v=aa74d088';
-import { CREATURE_TINTS, accentFor } from './enemyspec.js?v=aa74d088';
+  formatTowerHeads, HEAD_CHOICES, HEAD_AS_SHIPPED } from './towerfeel.js?v=11ced389';
+import { CREATURE_TINTS, accentFor } from './enemyspec.js?v=11ced389';
 import { buildTowerLook, TOWER_LOOK_NAMES, DEFAULT_TOWER_LOOK, preloadLook } from './towerlooks.js';
 import { TOWER_BY_KEY, TOWERS } from './towers.js';
 import { LOOKS } from './looks.js';
 import { makeBloom } from './postfx.js';
-import { makeAudio } from './audio.js?v=aa74d088';
+import { makeAudio } from './audio.js?v=11ced389';
 import { GROUPS, GROUP_LABELS, GROUP_EMPTY, entriesIn } from './unitcatalog.js';
 import { FONT_NAMES, TYPE_KNOBS, TYPE_FEEL, makeTypeParams, loadTypeFeel, saveTypeFeel,
-  formatTypeCode, applyFontPack, currentFontPack, currentShoutPack } from './fonts.js?v=aa74d088';
-import { LORE, LORE_WORLD, loreText, loreAll } from './lore.js?v=aa74d088';
+  formatTypeCode, applyFontPack, currentFontPack, currentShoutPack } from './fonts.js?v=11ced389';
+import { LORE, LORE_WORLD, loreText, loreAll } from './lore.js?v=11ced389';
 
 let roundTex = null;
 function roundDotTex() {
@@ -639,6 +640,51 @@ export function initUnitsTab(root) {
       section(GROUP_LABELS[g].toUpperCase());
       for (const c of entriesIn(g)) if (LORE[c.id]) entry(LORE[c.id]);
     }
+  }
+  // REVERSE EXPORT (operator, 2026-09-03): the unit AS THE GAME DRESSES IT —
+  // the cast model plus the shell rack, the heat sleeves, the tint and the
+  // edge outlines — as one .glb, to hand back to blueprint-to-life. The
+  // authored model went one way through its export script; this is the
+  // other direction, so what the game shows can be looked at on the bench.
+  // Lines export as glTF LINES primitives; a basic material as unlit-ish
+  // PBR; the emissive tint travels as emissive. Nothing is re-derived.
+  const exportToken = (document.querySelector('meta[name="cb"]') || {}).content || 'dev';
+  function exportCurrent(onDone) {
+    if (!current || !currentEntry) return;
+    current.updateMatrixWorld(true);
+    new GLTFExporter().parse(current, (buf) => onDone(buf, `${currentEntry.id}_game_${exportToken}.glb`),
+      (err) => console.error('[export] failed', err), { binary: true, onlyVisible: true });
+  }
+  const exportBtn = root.querySelector('#units-export');
+  if (exportBtn) {
+    exportBtn.addEventListener('click', () => exportCurrent((buf, name) => {
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(new Blob([buf], { type: 'model/gltf-binary' }));
+      a.download = name;
+      a.click();
+      URL.revokeObjectURL(a.href);
+      exportBtn.textContent = '✓ ' + name;
+      setTimeout(() => { exportBtn.textContent = 'export'; }, 1600);
+    }));
+  }
+  // ?export=1 — run the exporter headless and report what it produced;
+  // ?dump=1 adds the bytes as base64 in numbered console chunks (Chrome
+  // truncates a very long console line), so a shell can reassemble the
+  // .glb without a download dialog.
+  if (new URLSearchParams(location.search).get('export') === '1') {
+    setTimeout(() => exportCurrent((buf, name) => {
+      let nodes = 0, meshes = 0, lines = 0;
+      current.traverse((o) => { nodes++; if (o.isMesh) meshes++; if (o.isLineSegments || o.isLine) lines++; });
+      console.log(`EXPORT ${name} bytes=${buf.byteLength} nodes=${nodes} meshes=${meshes} lines=${lines}`);
+      if (new URLSearchParams(location.search).get('dump') === '1') {
+        const bytes = new Uint8Array(buf);
+        let b64 = '';
+        for (let i = 0; i < bytes.length; i += 0x8000) b64 += String.fromCharCode.apply(null, bytes.subarray(i, i + 0x8000));
+        b64 = btoa(b64);
+        const CH = 40000, n = Math.ceil(b64.length / CH);
+        for (let i = 0; i < n; i++) console.log(`GLBCHUNK ${i + 1}/${n} ${b64.slice(i * CH, (i + 1) * CH)}`);
+      }
+    }), 6000);
   }
   const loreBtn = root.querySelector('#units-lore');
   if (loreBtn && lorePanel) {

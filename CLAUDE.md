@@ -56,6 +56,9 @@ token — the corner badge was retired from the game view).
   `?pressprobe=1`, `?modalprobe=1`, `?wake=1`, `?tier=phone|desktop`,
   `?sw=0`, `?whatsat=x,y` (name the element stack under a point),
   `?coarse=1` (apply the phone's coarse-pointer CSS headless), `?coach=1`,
+  `#units?unit=X&export=1&dump=1` (reverse-export the unit as the game
+  dresses it: the .glb arrives as `GLBCHUNK i/n <base64>` console lines —
+  reassemble from stderr; the EXPORT button in the viewer downloads it),
   `#tabname`.
   Headless clamps windows to ~500px wide and CROPS screenshots — for
   layout bugs, log `innerWidth` from the page before touching CSS.
