@@ -13,7 +13,7 @@
 // material's colour is once a map is bound. Five bakes for five rungs would
 // be five seconds and sixty megabytes for a distinction a multiplier makes.
 import * as THREE from '../../vendor/three.module.js';
-import { bakeWeatheredMetal } from '../weathered.js?v=b0473f12';
+import { bakeWeatheredMetal } from '../weathered.js?v=288a8743';
 
 // Which preset each named surface wears, and how bright a rung it is. The
 // tints are the RING_REPAINT ladder's ratios (armour 0xc2c8ce down to
@@ -25,6 +25,19 @@ export const WEATHER_BY_NAME = {
   M_Steel: { preset: 'steel', tint: 1.00 },
   M_Track: { preset: 'steel', tint: 0.72 },
   M_Rubber: { preset: 'rubber', tint: 1.00 },
+};
+
+// THE DARK BASE. The board's grey ladder lifts every structural material
+// to a light grey WITH a grey emissive so the machines show on an unlit
+// board; under a sun, a sky and ACES that reads white-hot (the first tank
+// still: a paper cut-out). A cinematic lights its metal, so before any map
+// is bound every named material goes to a dark grey with no emissive —
+// and a material whose meshes have no uv (the merge drops it; see
+// glbmodels.js) STAYS here, which is a flat dark metal rather than nothing.
+export const CINE_BASE = {
+  M_Armour: [0x4b5157, 0.78, 0.35], M_Turret: [0x454b51, 0.80, 0.35],
+  M_Detail: [0x3c4247, 0.70, 0.45], M_Steel: [0x5a6168, 0.50, 0.80],
+  M_Track: [0x30353a, 0.85, 0.30], M_Rubber: [0x1f2225, 0.95, 0.05],
 };
 
 const cache = new Map();
@@ -108,6 +121,11 @@ export function applyWeatheredMaterial(root, {
       done.add(m);
       // a material with no roughness has no PBR slots to bind (MeshBasic, Points)
       if (m.roughness === undefined) continue;
+      // the dark base first, maps or not
+      const base = CINE_BASE[m.name];
+      if (base) { m.color.setHex(base[0]); m.roughness = base[1]; m.metalness = base[2]; }
+      if (!keepEmissive && m.emissive) { m.emissive.setHex(0x000000); m.emissiveIntensity = 0; }
+      m.needsUpdate = true;
       if (!hasUv.get(m)) { skipped.push(m.name); continue; }
       const { preset = 'gunmetal', tint = 1, ...knobs } = typeof spec === 'string' ? { preset: spec } : spec;
       const tx = makeWeatheredTextures({ seed, size, preset, repeat, ...knobs });

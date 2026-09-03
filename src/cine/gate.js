@@ -10,16 +10,16 @@
 // Every time-dependent thing is SET from t: rotors, phases, the camera.
 // A capture seeks; the live loop just calls update(t) with a running t.
 import * as THREE from '../../vendor/three.module.js';
-import { preloadPortalRing, makePortalRing } from '../units.js?v=b0473f12';
-import { bakeGalaxyCube } from '../galaxybake.js?v=b0473f12';
-import { SKY_PRESET } from '../galaxyseed.js?v=b0473f12';
-import { createWormholeTarget, RING_SPIN, TRAVEL } from './wormholebg.js?v=b0473f12';
-import { compileRail } from './rail.js?v=b0473f12';
-import { applyWeatheredMaterial } from './materials.js?v=b0473f12';
-import { makeCinemaCloud } from './cloud.js?v=b0473f12';
-import { CREATURE_TINTS, accentFor } from '../enemyspec.js?v=b0473f12';
-import { makeWirePlanet } from './planet.js?v=b0473f12';
-import { LOOKS } from '../looks.js?v=b0473f12';
+import { preloadPortalRing, makePortalRing } from '../units.js?v=288a8743';
+import { bakeGalaxyCube } from '../galaxybake.js?v=288a8743';
+import { SKY_PRESET } from '../galaxyseed.js?v=288a8743';
+import { createWormholeTarget, RING_SPIN, TRAVEL } from './wormholebg.js?v=288a8743';
+import { compileRail } from './rail.js?v=288a8743';
+import { applyWeatheredMaterial } from './materials.js?v=288a8743';
+import { makeCinemaCloud } from './cloud.js?v=288a8743';
+import { CREATURE_TINTS, accentFor } from '../enemyspec.js?v=288a8743';
+import { makeWirePlanet } from './planet.js?v=288a8743';
+import { LOOKS } from '../looks.js?v=288a8743';
 
 export const GATE_LEN = 12;
 
@@ -133,31 +133,12 @@ export function createGate({ renderer, scene, camera, tier = {} }) {
       if (m.emissive) { m.emissive.setHex(0x8fd4ff); m.emissiveIntensity = 1.1; }
     }
     // The board's grey ladder (RING_REPAINT) lifts every structural material
-    // to a light grey WITH a grey emissive, so the ring shows on a black
-    // board. Under a sun, a sky and tone mapping that lifts to pastel
-    // (matprobe: M_Armour #c2c8ce + emissive #4a5057). A cinematic lights
-    // its metal, so the metal goes back to dark greys with no emissive — the
-    // base the weathered maps (phase 1b) will sit on.
-    const CINE_METAL = {
-      M_Armour: [0x4b5157, 0.78, 0.35], M_Turret: [0x454b51, 0.80, 0.35],
-      M_Detail: [0x3c4247, 0.70, 0.45], M_Steel: [0x5a6168, 0.50, 0.80],
-      M_Rubber: [0x1f2225, 0.95, 0.05],
-    };
-    const done = new Set();
-    ring.traverse((o) => {
-      if (!o.isMesh) return;
-      for (const m of Array.isArray(o.material) ? o.material : [o.material]) {
-        const spec = CINE_METAL[m.name];
-        if (!spec || done.has(m)) continue;
-        done.add(m);
-        m.color.setHex(spec[0]); m.roughness = spec[1]; m.metalness = spec[2];
-        if (m.emissive) m.emissive.setHex(0x000000);
-      }
-    });
+    // to a light grey WITH a grey emissive; a cinematic lights its metal.
+    // The dark base (CINE_BASE) and the maps both live in cine/materials.js
+    // now, and apply by name; a material without uv keeps the base.
     // PHASE 1b: THE WEATHERED METAL, over that base. Seeded, baked at load,
     // bound by material name (cine/materials.js); the maps become the
-    // material and CINE_METAL above is what a `?weather=0` bisect falls
-    // back to. `?wrepeat=N` tiles the maps N times across the ring's UVs
+    // material. `?weather=0` leaves the board's ladder for a bisect. `?wrepeat=N` tiles the maps N times across the ring's UVs
     // and `?wnormal=N` scales the normal map — the two knobs a still is
     // judged on, so they are on the URL rather than in the file.
     const wq = new URLSearchParams(location.search);

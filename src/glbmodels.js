@@ -96,9 +96,14 @@ export function mergeByMaterial(root, pivotNames = [], exclude = []) {
     g.applyMatrix4(inv.multiply(o.matrixWorld));
     // mergeGeometries needs an identical attribute set across the batch and
     // returns null rather than throwing when they differ — so normalize to
-    // the two attributes every part is guaranteed to have.
+    // the attributes every part is guaranteed to have: position, normal,
+    // and uv IF the whole batch carries one (decided below, per batch).
+    // uv used to be dropped here with everything else, which is why no
+    // merged model could wear a texture: the cinematics' weathered metal
+    // (cine/materials.js) found every batch uv-less (2026-09-04). The board
+    // binds no maps, so a kept uv is inert there.
     for (const name of Object.keys(g.attributes)) {
-      if (name !== 'position' && name !== 'normal') g.deleteAttribute(name);
+      if (name !== 'position' && name !== 'normal' && name !== 'uv') g.deleteAttribute(name);
     }
     if (!g.attributes.normal) g.computeVertexNormals();
     const mat = Array.isArray(o.material) ? o.material[0] : o.material;
@@ -112,6 +117,9 @@ export function mergeByMaterial(root, pivotNames = [], exclude = []) {
   for (const o of originals) o.parent?.remove(o);
   for (const [owner, byMat] of batches) {
     for (const [mat, geos] of byMat) {
+      // a batch keeps uv only if every part has it; one part without would
+      // make mergeGeometries return null and the model fall apart
+      if (!geos.every((g) => g.attributes.uv)) for (const g of geos) if (g.attributes.uv) g.deleteAttribute('uv');
       const merged = geos.length === 1 ? geos[0] : mergeGeometries(geos, false);
       if (!merged) { // defensive: keep the parts rather than lose the model
         for (const g of geos) owner.add(new THREE.Mesh(g, mat));
