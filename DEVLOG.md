@@ -6,6 +6,19 @@ Demo links assume `npm run serve` (port 8144) or the
 
 ---
 
+## `04ddc18` — the MK-CX/2 is the fielded tank
+
+By the operator's ruling the MK-CX/2 is the default wherever the MK-CX was:
+the board's player unit, the battle, heart and tank3 tabs, the beam lab, the
+berth hulls, and the casting module's own defaults. The MK-CX stays castable
+only as a relic in the units viewer. The same commit repaired the briefing
+met on the shell after the tutorial: its glossary buttons had rendered as
+full-width bars because their selector list had been cut off from the Play
+button's rule by a block inserted between them, and its tank card now speaks
+the shell's controls instead of keys.
+
+---
+
 ## `ae5ca3b` — two views means two
 
 The phone report of a tank below the frame and only the plasma tips in view,
