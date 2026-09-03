@@ -6,6 +6,21 @@ Demo links assume `npm run serve` (port 8144) or the
 
 ---
 
+## `69a4e9c` — cinematics: the governor
+
+The live tier is measured on the device instead of read from a table. At
+scene start one wormhole march at 512px is timed with a readback stall, the
+median of three, which gives the device's sine-folds per second; the largest
+target whose march fits 40% of a frame at the target fps is arithmetic. While
+the scene plays, a smoothed frame time steps the target down after a second
+over budget and up after five seconds of headroom, one step per three
+seconds and never up during the full-frame beat. The look is never touched.
+The HUD prints the rate, the fit and every step. On this machine the fit is
+384px at 60 fps and 256 at 120, where the tier table said 512; no phone has
+been measured yet, and the HUD line is how one will be.
+
+---
+
 ## `70631c1` — cinematics, the capture path that renders
 
 The CDP-driven harness hung on the M4 for any frame where the wormhole disc
