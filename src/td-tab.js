@@ -19,57 +19,57 @@
 
 import * as THREE from '../vendor/three.module.js';
 import GUI from '../vendor/lil-gui.esm.js';
-import { generateSphereMesh, relax } from './grid.js?v=06963fb0';
-import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=06963fb0';
-import { mulberry32, randomSeed } from './rng.js?v=06963fb0';
-import { computeBerths, berthIndexFor } from './berths.js?v=06963fb0';
-import { wantsSecondary, shellsForAll } from './autofire.js?v=06963fb0';
-import { printPhase, printOffset, printOn, patternSecsFor } from './printpath.js?v=06963fb0';
-import { createBeamRig, PLASMA_DEFAULTS, BOARD_PRESET, BEAM_PEAK } from './beamdraw.js?v=06963fb0';
-import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3, segKey, tangentDir, tangentBasis } from './vec3.js?v=06963fb0';
-import { CREATURES, waveJelly } from './creatures.js?v=06963fb0';
-import { brief, dwellFor } from './isaobriefs.js?v=06963fb0';
-import { drawEmotion } from './emotions.js?v=06963fb0';
+import { generateSphereMesh, relax } from './grid.js?v=65f5db19';
+import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=65f5db19';
+import { mulberry32, randomSeed } from './rng.js?v=65f5db19';
+import { computeBerths, berthIndexFor } from './berths.js?v=65f5db19';
+import { wantsSecondary, shellsForAll } from './autofire.js?v=65f5db19';
+import { printPhase, printOffset, printOn, patternSecsFor } from './printpath.js?v=65f5db19';
+import { createBeamRig, PLASMA_DEFAULTS, BOARD_PRESET, BEAM_PEAK } from './beamdraw.js?v=65f5db19';
+import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3, segKey, tangentDir, tangentBasis } from './vec3.js?v=65f5db19';
+import { CREATURES, waveJelly } from './creatures.js?v=65f5db19';
+import { brief, dwellFor } from './isaobriefs.js?v=65f5db19';
+import { drawEmotion } from './emotions.js?v=65f5db19';
 import { ACHIEVEMENTS, ACHV_GROUPS, achievement, blankRun, earned, freshlyEarned,
   sanitiseRecord }
-  from './achievements.js?v=06963fb0';
+  from './achievements.js?v=65f5db19';
 import { applyFontPack, currentFontPack, FONT_NAMES,
-  loadTypeFeel } from './fonts.js?v=06963fb0';
-import { SECONDARY_TOE, applySecondaryToe } from './units.js?v=06963fb0';
-import { UNITS, UNIT_NAMES, buildUnit, buildCreature, preloadMkcx, preloadServer, makeServerFixture, makeShieldShell, preloadContainer, makeContainerFixture, preloadFabricator, makeIsaoDrone, makeBulletCloud, makeRewardSolid, makeShellSolid, makeDebris, makeDotBurst, makePortalCloud, preloadPortalRing, makePortalRing, makeHeartCloud, makeDotEnemy, preloadTerraformer, makeTerraformerFixture } from './units.js?v=06963fb0';
-import { LOOKS, LOOK_NAMES } from './looks.js?v=06963fb0';
-import { makeCellIndex } from './cellindex.js?v=06963fb0';
-import { CREATURE_TINTS, ENEMY_SPEC, INTROS, computeWavePlan, accentFor } from './enemyspec.js?v=06963fb0';
-import { PICKUPS } from './pickups.js?v=06963fb0';
-import { rankFor, rankLabel, badgeSVG, killReq, eliteReq } from './ranks.js?v=06963fb0';
-import { beamStep, isBeamStep, PEN_SOFT_FRAC, PEN_HARD_FRAC } from './beamranks.js?v=06963fb0';
-import { burn, sweepAdvance, wallBite as wallBiteFor } from './beamburn.js?v=06963fb0';
-import { arcPoint, projectToArc, toeForCrossing, crossingForToe } from './arc.js?v=06963fb0';
+  loadTypeFeel } from './fonts.js?v=65f5db19';
+import { SECONDARY_TOE, applySecondaryToe } from './units.js?v=65f5db19';
+import { UNITS, UNIT_NAMES, buildUnit, buildCreature, preloadMkcx, preloadServer, makeServerFixture, makeShieldShell, preloadContainer, makeContainerFixture, preloadFabricator, makeIsaoDrone, makeBulletCloud, makeRewardSolid, makeShellSolid, makeDebris, makeDotBurst, makePortalCloud, preloadPortalRing, makePortalRing, makeHeartCloud, makeDotEnemy, preloadTerraformer, makeTerraformerFixture } from './units.js?v=65f5db19';
+import { LOOKS, LOOK_NAMES } from './looks.js?v=65f5db19';
+import { makeCellIndex } from './cellindex.js?v=65f5db19';
+import { CREATURE_TINTS, ENEMY_SPEC, INTROS, computeWavePlan, accentFor } from './enemyspec.js?v=65f5db19';
+import { PICKUPS } from './pickups.js?v=65f5db19';
+import { rankFor, rankLabel, badgeSVG, killReq, eliteReq } from './ranks.js?v=65f5db19';
+import { beamStep, isBeamStep, PEN_SOFT_FRAC, PEN_HARD_FRAC } from './beamranks.js?v=65f5db19';
+import { burn, sweepAdvance, wallBite as wallBiteFor } from './beamburn.js?v=65f5db19';
+import { arcPoint, projectToArc, toeForCrossing, crossingForToe } from './arc.js?v=65f5db19';
 import { WORMHOLE_PRESET, WORMHOLE_UNIFORM_DEFAULTS, RING_SPIN, TRAVEL,
-  travelRate, advancePhase } from './portalfx.js?v=06963fb0';
-import { WORMHOLE_FRAG } from './fx/wormhole.frag.js?v=06963fb0';
-import { CORONA_FRAG } from './fx/corona.frag.js?v=06963fb0';
-import { labLine, parseLabQuery } from './lab.js?v=06963fb0';
-import { bakeGalaxyCube } from './galaxybake.js?v=06963fb0';
-import { SKY_PRESET } from './galaxyseed.js?v=06963fb0';
-import { makeScore } from './score.js?v=06963fb0';
-import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER } from './towers.js?v=06963fb0';
-import { makeEconomy, sellRefund } from './economy.js?v=06963fb0';
-import { pickTier } from './perftier.js?v=06963fb0';
-import { STICK, stickVector, knobOffset } from './stick.js?v=06963fb0';
-import { registerServiceWorker } from './pwa.js?v=06963fb0';
-import { makeBloom } from './postfx.js?v=06963fb0';
-import { TANK_FEEL, TANK_FEEL_KNOBS, makeTankFeel, stepTankFeel, landTankFeel, fireTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js?v=06963fb0';
-import { FEEL, loadFeel, saveFeel } from './feelstore.js?v=06963fb0';
+  travelRate, advancePhase } from './portalfx.js?v=65f5db19';
+import { WORMHOLE_FRAG } from './fx/wormhole.frag.js?v=65f5db19';
+import { CORONA_FRAG } from './fx/corona.frag.js?v=65f5db19';
+import { labLine, parseLabQuery } from './lab.js?v=65f5db19';
+import { bakeGalaxyCube } from './galaxybake.js?v=65f5db19';
+import { SKY_PRESET } from './galaxyseed.js?v=65f5db19';
+import { makeScore } from './score.js?v=65f5db19';
+import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER } from './towers.js?v=65f5db19';
+import { makeEconomy, sellRefund } from './economy.js?v=65f5db19';
+import { pickTier } from './perftier.js?v=65f5db19';
+import { STICK, stickVector, knobOffset } from './stick.js?v=65f5db19';
+import { registerServiceWorker } from './pwa.js?v=65f5db19';
+import { makeBloom } from './postfx.js?v=65f5db19';
+import { TANK_FEEL, TANK_FEEL_KNOBS, makeTankFeel, stepTankFeel, landTankFeel, fireTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js?v=65f5db19';
+import { FEEL, loadFeel, saveFeel } from './feelstore.js?v=65f5db19';
 import { STRIKE_KNOBS, makeStrike, makeStrikeParams, grantStrikes, stepStrike,
   toggleArm, paintTarget, launchStrike, stepFall, skipFall, fallProgress,
-  strikeDamage, retargetStrike, orbitProgress } from './strike.js?v=06963fb0';
+  strikeDamage, retargetStrike, orbitProgress } from './strike.js?v=65f5db19';
 import { radarBasis, radarProject, radarBearing, sweepAngle, radarPhosphor,
-  proximitySectors, SENSOR_LEVELS, sensorColor } from './radar.js?v=06963fb0';
-import { BLOOM_GROUPS } from './bloomweights.js?v=06963fb0';
-import { TOWER_LOOK_NAMES, DEFAULT_TOWER_LOOK, buildTowerLook, preloadLook } from './towerlooks.js?v=06963fb0';
-import { makeAudio } from './audio.js?v=06963fb0';
-import { DEATH_KEYS } from './audiomanifest.js?v=06963fb0';
+  proximitySectors, SENSOR_LEVELS, sensorColor } from './radar.js?v=65f5db19';
+import { BLOOM_GROUPS } from './bloomweights.js?v=65f5db19';
+import { TOWER_LOOK_NAMES, DEFAULT_TOWER_LOOK, buildTowerLook, preloadLook } from './towerlooks.js?v=65f5db19';
+import { makeAudio } from './audio.js?v=65f5db19';
+import { DEATH_KEYS } from './audiomanifest.js?v=65f5db19';
 
 export function initTdTab(root) {
   let active = false;
@@ -11997,15 +11997,29 @@ export function initTdTab(root) {
   // question is WHICH thing is holding the tank — a pause, a shot, a deploy
   // that never ends, a death loop — and a screenshot cannot say.
   if (urlParams.get('stateprobe') === '1') {
+    // on the shell the line also goes to the caption lane: a phone has no
+    // console, and the fact that decides a "the tank is not in view" report
+    // (the tank's screen-y, the visual viewport vs the canvas) is only
+    // measurable THERE
+    const onScreen = (txt) => { if (mobileShell && toastEl) { toastEl.innerHTML = `<div class="wave-role" style="font-size:9px;text-align:left;white-space:pre-wrap">${txt}</div>`; toastEl.classList.remove('hidden'); } };
     const line = (k) => {
       const cp = camera.position;
+      const ndc = new THREE.Vector3(...player.pos).project(camera);
+      const vv = window.visualViewport;
+      const extra = `tankScreen=(${ndc.x.toFixed(2)},${ndc.y.toFixed(2)}) canvas=${renderer.domElement.width}x${renderer.domElement.height}`
+        + ` inner=${innerWidth}x${innerHeight} visual=${vv ? `${Math.round(vv.width)}x${Math.round(vv.height)}@${Math.round(vv.offsetTop)}` : '-'}`
+        + ` dpr=${devicePixelRatio} view=${params.view} camToTank=${(cp.distanceTo(new THREE.Vector3(...player.pos)) / cellSide).toFixed(1)}c`
+        + ` thr=${throttle.toFixed(2)} stick=${!!stick} laser=${keys.laser}`;
+      onScreen(`t=${k * 2}s ${extra}`);
       console.log(`STATE t=${(k * 2).toString().padStart(2)}s paused=${paused} shot=${shot ? shot.id : '-'}`
         + ` deploy=${deploy ? `#${deploy.n}@${deployProgress().toFixed(2)}` : '-'} intro=${introEl && !introEl.classList.contains('hidden')}`
         + ` tutorial=${tutorialActive} hp=${playerHP} lostDeploys=${tankLostDeploys} down=${!!playerDown}`
         + ` cur=${player.cur}(${dungeon.tags[player.cur] === BLOCKED ? 'BLOCKED' : 'open'}) next=${player.next}`
-        + ` auto=${autoMode} thr=${throttle.toFixed(2)} goto=${gotoCi} cam=(${cp.x.toFixed(2)},${cp.y.toFixed(2)},${cp.z.toFixed(2)}) view=${params.view}`);
+        + ` auto=${autoMode} thr=${throttle.toFixed(2)} goto=${gotoCi} view=${params.view}`
+        + ` camToTank=${(cp.distanceTo(new THREE.Vector3(...player.pos)) / cellSide).toFixed(1)}cells`
+        + ` tankVisible=${!!(playerMesh && playerMesh.visible)} inFrustum=${(() => { const f = new THREE.Frustum(); camera.updateMatrixWorld(); f.setFromProjectionMatrix(new THREE.Matrix4().multiplyMatrices(camera.projectionMatrix, camera.matrixWorldInverse)); return f.containsPoint(new THREE.Vector3(...player.pos)); })()} ${extra}`);
     };
-    for (let k = 0; k <= 12; k++) setTimeout(() => line(k), k * 2000);
+    for (let k = 0; k <= 30; k++) setTimeout(() => line(k), k * 2000);
   }
 
   // ?whatsat=x,y — after 3s, name every element under that screen point,
