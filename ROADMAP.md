@@ -594,6 +594,36 @@ should still not be bolted onto TD work.
 
 ---
 
+## Potential roadmap — the META WORLD (operator note, 2026-09-03)
+
+Filed as a direction, not a commitment. The operator's words, lightly arranged:
+
+- **A generated system, not a single sphere.** Something in the manner of the
+  Fable Cabinet's `#starforge` (`localhost:8777/#starforge`, in
+  `~/Dev/onkochishin/reference/FABLE-SHOWCASE/`) generates the meta world:
+  a star system of planets and moons.
+- **One game = one moon.** A single session is the fight for one moon, which
+  is what the board already is — a sphere with a portal on it.
+- **A longer game conquers several.** Moons first, then the planets they
+  orbit, across the system. Clearing STÅLBERG-9 stops being the end and
+  becomes one node.
+- **A dashboard / meta map in between.** Between sessions the player is on
+  the system view: what is held, what is next, what it costs to go there.
+  That screen is where a campaign lives, and where the ranks, lore and
+  achievements that already exist would finally have somewhere to be read.
+
+What it would touch, if picked up: the board generator gets a seed from the
+system rather than from a slider; the win condition becomes "this node";
+persistence grows from a single save to a campaign; and the perf tiers gain a
+third render site (the map). Nothing here needs deciding until the mobile
+shell and the drone have landed.
+
+Related, measured the same day: the cost of a live procedural background
+behind the planet (the Cabinet's `#aurora` and `#galaxy-forge`) — see the
+2026-09-03 DEVLOG entry once written.
+
+---
+
 ## Ideas to test
 
 - **Deliberate defect placement.** A closed quad sphere is topologically
