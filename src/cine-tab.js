@@ -6,12 +6,13 @@
 // the wormhole target and sky face sizes. scripts/cine-capture.mjs drives
 // __cine.seek(t) for the offline render.
 import * as THREE from '../vendor/three.module.js';
-import { makeBloom } from './postfx.js?v=6a210d02';
-import { installCine } from './cine/kit.js?v=6a210d02';
-import { createGate } from './cine/gate.js?v=6a210d02';
-import { createPlanet } from './cine/planetscene.js?v=6a210d02';
-import { createTank } from './cine/tankscene.js?v=6a210d02';
-import { rateFromSample, fitSize, marchBudgetMs, createGovernor } from './cine/governor.js?v=6a210d02';
+import { makeBloom } from './postfx.js?v=2470ade6';
+import { installCine } from './cine/kit.js?v=2470ade6';
+import { createGate } from './cine/gate.js?v=2470ade6';
+import { createPlanet } from './cine/planetscene.js?v=2470ade6';
+import { createFilmPass, makeTitleTexture, titleAlphaAt, FILM_DEFAULTS } from './cine/film.js?v=2470ade6';
+import { createTank } from './cine/tankscene.js?v=2470ade6';
+import { rateFromSample, fitSize, marchBudgetMs, createGovernor } from './cine/governor.js?v=2470ade6';
 
 const SCENES = { gate: createGate, planet: createPlanet, tank: createTank };
 // Two tiers (plan §2.1): the same rail, rendered live or offline.
@@ -45,6 +46,26 @@ export function initCineTab(root) {
   const which = SCENES[q.get('scene')] ? q.get('scene') : 'gate';
   const cine = SCENES[which]({ renderer, scene, camera, tier });
 
+  // THE FILM PASS (phase 4): letterbox, grain, vignette, a title card — in
+  // the canvas, after the OutputPass, so a capture carries it. ?film=0
+  // drops the pass; ?bars=N ?grain=N ?vignette=N ?title=0 are the knobs.
+  // The title waits for the CRT face to load: a card drawn before that is
+  // the fallback font, and a capture's single draw must not race it.
+  const TITLES = { gate: ['THE GATE', 'STÅLHEART'], planet: ['THE PLANET', 'STÅLHEART'], tank: ['THE TANK', 'MK-CX/2'] };
+  const filmOn = q.get('film') !== '0';
+  const film = filmOn ? createFilmPass({
+    bars: q.get('bars') != null ? parseFloat(q.get('bars')) : FILM_DEFAULTS.bars,
+    grain: q.get('grain') != null ? parseFloat(q.get('grain')) : FILM_DEFAULTS.grain,
+    vignette: q.get('vignette') != null ? parseFloat(q.get('vignette')) : FILM_DEFAULTS.vignette,
+  }) : null;
+  if (film) postfx.addFinalPass(film.pass);
+  let filmReady = !film || q.get('title') === '0';
+  if (film && !filmReady) {
+    const [title, sub] = TITLES[which] || [which.toUpperCase(), ''];
+    const fontReady = document.fonts && document.fonts.load ? document.fonts.load("48px 'VT323'").catch(() => null) : Promise.resolve();
+    fontReady.then(() => { film.setTitle(makeTitleTexture({ title, sub })); filmReady = true; });
+  }
+
   // THE GOVERNOR (src/cine/governor.js). Live only: a capture has a fixed
   // tier by design. Calibrate this device with one timed march, fit the
   // largest target the frame budget affords, then govern by frame time.
@@ -74,6 +95,7 @@ export function initCineTab(root) {
     const w = container.clientWidth || 1, h = container.clientHeight || 1;
     renderer.setSize(w, h);
     postfx.setSize(w, h);
+    if (film) film.setSize(renderer.domElement.width, renderer.domElement.height);
     camera.aspect = w / h;
     camera.updateProjectionMatrix();
   }
@@ -88,6 +110,7 @@ export function initCineTab(root) {
   let fpsSmooth = 0;
   function draw(at) {
     cine.update(at);
+    if (film) film.set(at, { titleAlpha: q.get('title') === '0' ? 0 : titleAlphaAt(at) });
     if (noBloom) renderer.render(scene, camera); else postfx.render();
     if (hud) {
       const w = cine.wormhole ? cine.wormhole.size : tier.wormhole;
@@ -110,7 +133,7 @@ export function initCineTab(root) {
     requestAnimationFrame(frame);
     if (!active || held || noLoop) return;
     if (once) {
-      if (drewOnce >= 2 || !cine.ready()) return;
+      if (drewOnce >= 2 || !cine.ready() || !filmReady) return;
       drewOnce++; draw(park ?? 0);
       // the FIRST draw of the post chain came back black (11 KB PNG) from a
       // same-task read-back; the second draw is the frame

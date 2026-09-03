@@ -24,7 +24,7 @@ import { ShaderPass } from '../vendor/ShaderPass.js';
 import { OutputPass } from '../vendor/OutputPass.js';
 import * as THREE from '../vendor/three.module.js';
 import { buildWeightMap, materialConflicts, clampWeight, DEFAULT_BLOOM_WEIGHTS }
-  from './bloomweights.js?v=6a210d02';
+  from './bloomweights.js?v=2470ade6';
 
 const COARSE = typeof matchMedia === 'function'
   && matchMedia('(pointer: coarse)').matches;
@@ -171,6 +171,10 @@ export function makeBloom(renderer, scene, camera, opts = {}) {
     },
     setEnabled(v) { enabled = !!v; },
     get enabled() { return enabled; },
+    // a pass AFTER the OutputPass, in display space (the cinematics' film
+    // pass: letterbox, grain, titles). The composer renders its last
+    // enabled pass to the screen, so appending is enough.
+    addFinalPass(pass) { finalComposer.addPass(pass); },
     // fn() -> [[group, [roots]], ...], read fresh each frame so the caller
     // never has to tell us when its collections change.
     setGroups(fn) { groupsFn = typeof fn === 'function' ? fn : null; },
