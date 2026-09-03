@@ -28,9 +28,10 @@ for (let i = 0; i < F.n; i++) { const r = Math.hypot(F.p0[i * 4], F.p0[i * 4 + 1
 check('field stars sit on the 150..260 shell', shell && F.p1.length === 1000);
 const P = galaxyParams(4414);
 check('params inside the demo\'s clamps', [0, 2, 3, 4, 5].includes(P.arms) && P.twist >= 2.2 && P.twist <= 10.5
-  && P.core >= 0.08 && P.core <= 0.42 && P.bar >= 0 && P.bar <= 0.8 && P.temp >= 0 && P.temp <= 1
+  && P.core >= 0.08 && P.core <= 0.16 && P.bar >= 0 && P.bar <= 0.8 && P.temp >= 0 && P.temp <= 1
   && P.pal >= 0 && P.pal < GALAXY_PALETTES.length);
 check('params deterministic', JSON.stringify(galaxyParams(7)) === JSON.stringify(galaxyParams(7)));
+check('cores are small for every seed', [...Array(200).keys()].every((s) => galaxyParams(s).core <= 0.16));
 const arms = new Set([...Array(40).keys()].map((s) => galaxyParams(s).arms));
 check(`seeds reach more than one arm count (${[...arms].join(',')})`, arms.size >= 3);
 

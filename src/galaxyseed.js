@@ -38,7 +38,10 @@ export function galaxyParams(seed) {
   return {
     arms,
     twist: clamp(2.2 + rng() * 8.3, 2.2, 10.5),
-    core: clamp(0.08 + rng() * 0.34, 0.08, 0.42),
+    // SMALL cores by default (operator, 2026-09-03): the demo ranges to 0.42,
+    // and a big bulge is a bright blot that fights the board. Same one draw
+    // from the stream, so bar, temp and palette land where they always did.
+    core: clamp(0.08 + rng() * 0.08, 0.08, 0.16),
     bar: clamp(rng() * 0.8, 0, 0.8),
     temp: clamp(rng(), 0, 1),
     pal: Math.floor(rng() * GALAXY_PALETTES.length),

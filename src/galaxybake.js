@@ -15,7 +15,7 @@
 import * as THREE from '../vendor/three.module.js';
 import {
   GALAXY_PALETTES, buildFieldStars, buildGalaxyDust, buildGalaxyStars, galaxyLayout, galaxyParams,
-} from './galaxyseed.js?v=7f9b369a';
+} from './galaxyseed.js?v=01088613';
 
 const STAR_VERT = /* glsl */ `
 attribute vec4 d0; attribute vec4 d1; attribute float pp;
@@ -130,10 +130,11 @@ function pointsOf(geomAttrs, material) {
  * @param {object} opts  seed, face (px per cube face), stars, dust, field,
  *                       scale (1 = the tuned size; it is the demo's zoom, so 2 is twice as
  *                       close and twice as wide), galaxies (1..8; the extras are scattered
- *                       from the seed, each with a seed of its own)
+ *                       from the seed, each with a seed of its own), coreScale (× the
+ *                       seeded core size; 1 is the seed's own, already small)
  */
 export function bakeGalaxyCube(renderer, opts = {}) {
-  const { seed = 4414, face = 1024, stars = 300000, dust = 24000, field = 2600, scale = 1, galaxies = 1 } = opts;
+  const { seed = 4414, face = 1024, stars = 300000, dust = 24000, field = 2600, scale = 1, galaxies = 1, coreScale = 1 } = opts;
   const uPt = face / 2;   // world → pixel for gl.POINTS at a 90° cube face: h / (2 tan 45°)
   const base = { vertexShader: STAR_VERT, fragmentShader: STAR_FRAG, depthTest: false, depthWrite: false, transparent: true };
   const materials = [];
@@ -141,6 +142,7 @@ export function bakeGalaxyCube(renderer, opts = {}) {
   // one galaxy: three Points (stars, dust occluders, dust emission) on its own look
   function makeGalaxy(gseed, nStars, nDust) {
     const P = galaxyParams(gseed);
+    P.core = Math.max(0.02, Math.min(0.6, P.core * coreScale));
     const pal = GALAXY_PALETTES[P.pal];
     const common = {
       uSpin: 40, uArms: P.arms, uTwist: P.twist, uArmStr: 0.62, uBar: P.bar, uCore: P.core,
@@ -202,5 +204,5 @@ export function bakeGalaxyCube(renderer, opts = {}) {
   scene.traverse((o) => { if (o.geometry) o.geometry.dispose(); });
   for (const m of materials) m.dispose();
 
-  return { texture: rt.texture, params, face, scale: s, galaxies: layout.length, dispose: () => rt.dispose() };
+  return { texture: rt.texture, params, face, scale: s, galaxies: layout.length, coreScale, dispose: () => rt.dispose() };
 }
