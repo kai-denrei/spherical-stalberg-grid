@@ -16,14 +16,14 @@
 
 import * as THREE from '../vendor/three.module.js';
 import { EMOTION_IDS, emotion, phosphorFor } from './emotions.js';
-import { printPhase, printOffset, printOn } from './printpath.js?v=2b277e00';
+import { printPhase, printOffset, printOn } from './printpath.js?v=301d5322';
 import { loadGlb, mergeByMaterial, fitModel, tintModel, makeShellRack,
-  addEdgeOutlines, makeHeatSleeve } from './glbmodels.js?v=2b277e00';
-import { CREATURES, waveJelly, swimWave, spherePts, bulletPts, missilePts, heartPts, torusPts, towerHeadPts, enemyDotPts, portalPts } from './creatures.js?v=2b277e00';
-import { TOWER_FEEL, TOWER_HEADS, headKindFor } from './towerfeel.js?v=2b277e00';
+  addEdgeOutlines, makeHeatSleeve } from './glbmodels.js?v=301d5322';
+import { CREATURES, waveJelly, swimWave, spherePts, bulletPts, missilePts, heartPts, torusPts, towerHeadPts, enemyDotPts, portalPts } from './creatures.js?v=301d5322';
+import { TOWER_FEEL, TOWER_HEADS, headKindFor } from './towerfeel.js?v=301d5322';
 import { STARGATE_PTS, STARGATE_STROKE,
-  HORIZON_N, stargateHorizon } from './stargate.js?v=2b277e00';
-import { ENEMY_SPEC } from './enemyspec.js?v=2b277e00';
+  HORIZON_N, stargateHorizon } from './stargate.js?v=301d5322';
+import { ENEMY_SPEC } from './enemyspec.js?v=301d5322';
 
 function normalizeToUnit(group) {
   group.updateMatrixWorld(true);
@@ -717,8 +717,14 @@ const HARD_CORE = {
   phantom: () => new THREE.IcosahedronGeometry(0.24), // the Predator glint
 };
 
+// The shape behind a dot enemy, as points. Exported so a cinematic can
+// densify the game's own creature (cine/cloud.js) instead of carrying a copy.
+export function dotShapePts(type, dens = 1) {
+  return (DOT_SHAPES[type] || ((d = 1) => spherePts(Math.round(140 * d))))(dens);
+}
+
 export function makeDotEnemy(type, cols, dens = 1) {
-  const base = (DOT_SHAPES[type] || ((d = 1) => spherePts(Math.round(140 * d))))(dens);
+  const base = dotShapePts(type, dens);
   const pos = new Float32Array(base.length * 3);
   const col = new Float32Array(base.length * 3);
   const cBody = new THREE.Color(cols.walker);

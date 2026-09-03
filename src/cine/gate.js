@@ -10,12 +10,14 @@
 // Every time-dependent thing is SET from t: rotors, phases, the camera.
 // A capture seeks; the live loop just calls update(t) with a running t.
 import * as THREE from '../../vendor/three.module.js';
-import { preloadPortalRing, makePortalRing } from '../units.js?v=2b277e00';
-import { bakeGalaxyCube } from '../galaxybake.js?v=2b277e00';
-import { SKY_PRESET } from '../galaxyseed.js?v=2b277e00';
-import { createWormholeTarget, RING_SPIN, TRAVEL } from './wormholebg.js?v=2b277e00';
-import { compileRail } from './rail.js?v=2b277e00';
-import { applyWeatheredMaterial } from './materials.js?v=2b277e00';
+import { preloadPortalRing, makePortalRing } from '../units.js?v=301d5322';
+import { bakeGalaxyCube } from '../galaxybake.js?v=301d5322';
+import { SKY_PRESET } from '../galaxyseed.js?v=301d5322';
+import { createWormholeTarget, RING_SPIN, TRAVEL } from './wormholebg.js?v=301d5322';
+import { compileRail } from './rail.js?v=301d5322';
+import { applyWeatheredMaterial } from './materials.js?v=301d5322';
+import { makeCinemaCloud } from './cloud.js?v=301d5322';
+import { CREATURE_TINTS, accentFor } from '../enemyspec.js?v=301d5322';
 
 export const GATE_LEN = 12;
 
@@ -42,6 +44,19 @@ export const GATE_RAIL = [
 // circular seam where their scales met (t=4.6 still). The disc fills the
 // frame at 2.3 m anyway, so one march does it.
 const NEAR_IN = 0.45, NEAR_OUT = 1.5, BEAT1 = 4.0;
+
+// THE CROSSING (phase 1c, ruled 2026-09-04): five phage — the wave-1 swarm,
+// white belt, "hunt its source" — pour OUT of the gate toward the
+// retreating camera, from t = 7.5, starts 0.3 s apart. The aperture's disc
+// is opaque and sits on the plane z = 0, so a body behind the plane is
+// hidden by depth and a body in front is drawn: the crossing is a
+// depth composite, nothing more (the plan's screen-space refraction was
+// cut — it is new shader work on the exact wide-canvas geometry that hung
+// the M4). Lanes are offsets inside the 1.8 m clearance, and they widen
+// as the body comes on, so the swarm spreads past the camera instead of
+// converging on it.
+const CROSSING = { t0: 7.5, stagger: 0.3, dur: 4.6, n: 5, zIn: -1.4, zOut: 6.2 };
+const LANES = [[0.45, 0.30], [-0.60, 0.50], [0.20, -0.70], [-0.30, -0.15], [0.80, -0.45]];
 
 export function createGate({ renderer, scene, camera, tier = {} }) {
   const whSize = tier.wormhole ?? 1024;
@@ -76,6 +91,24 @@ export function createGate({ renderer, scene, camera, tier = {} }) {
   const root = new THREE.Group();
   scene.add(root);
   let ring = null, disc = null, apertureWorld = new THREE.Vector3();
+
+  // the swarm, at cinema density: the game's phage, ten points for one.
+  // ?nocross=1 removes it; ?cdens=N sets the density; ?csize=N the scale
+  const cq = new URLSearchParams(location.search);
+  const swarm = [];
+  if (cq.get('nocross') !== '1') {
+    const dens = parseFloat(cq.get('cdens')) || 10, csize = parseFloat(cq.get('csize')) || 0.55;
+    for (let i = 0; i < CROSSING.n; i++) {
+      const c = makeCinemaCloud('phage', {
+        density: dens, size: csize, seed: 4414 + i,
+        body: CREATURE_TINTS.phage, accent: accentFor('phage'),
+      });
+      c.visible = false;
+      root.add(c);
+      swarm.push(c);
+    }
+    console.log(`CROSSING ${swarm.length} phage x ${swarm[0] ? swarm[0].userData.points : 0} points`);
+  }
   const rests = {};
   preloadPortalRing().then((ok) => {
     if (!ok) return;
@@ -196,6 +229,19 @@ export function createGate({ renderer, scene, camera, tier = {} }) {
       if (u.rotorB) u.rotorB.rotation.z = rests.rotorB + RING_SPIN.rotorB * t;
       if (u.yaw) u.yaw.rotation.y = rests.yaw + RING_SPIN.yaw * t;
     }
+    // the crossing: every body SET from t (a capture seeks; nothing accumulates)
+    for (let i = 0; i < swarm.length; i++) {
+      const c = swarm[i];
+      const s = (t - CROSSING.t0 - i * CROSSING.stagger) / CROSSING.dur;
+      if (s < 0 || s > 1.15) { c.visible = false; continue; }
+      c.visible = true;
+      const [lx, ly] = LANES[i % LANES.length];
+      const ease = s < 0.25 ? s * 4 * (2 - s * 4) * 0.5 + s : s;   // out of the throat, then steady
+      c.position.set(lx * (1 + s * 1.6), ly * (1 + s * 1.3), CROSSING.zIn + (CROSSING.zOut - CROSSING.zIn) * ease);
+      // head first: the phage's head is +Y and it travels +Z; then a slow roll
+      c.rotation.set(-Math.PI / 2 + Math.sin(t * 1.7 + i) * 0.12, 0, t * 0.9 + i * 1.3);
+    }
+
     const p = rail.poseAt(t);
     camera.position.set(p.pos[0], p.pos[1], p.pos[2]);
     camera.up.set(p.up[0], p.up[1], p.up[2]);
