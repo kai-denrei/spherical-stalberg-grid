@@ -6,6 +6,24 @@ Demo links assume `npm run serve` (port 8144) or the
 
 ---
 
+## `b368368` — the sky is in the game
+
+Tried in the lab, then kept: **two galaxies, small (size 0.25) and far, small
+cores (×0.25), at intensity 0.65, and a fresh seed on every reset.** That is
+`SKY_PRESET` in `galaxyseed.js`; `regenerate()` draws the seed and bakes, so
+a new game, a retry and a `?seed=` all get a new sky and a rebuild that keeps
+the run keeps its sky. One bake per run (~90–110 ms of CPU including the first
+shader compile, once), then the cubemap is `scene.background` at the preset's
+intensity — measured at +0.2 ms a frame. postfx blacks the background out of
+its weighted pass, so it does not bloom.
+
+The seed is the one non-deterministic thing on the board, and it is on
+purpose: the sky is dressing, not game logic, and the operator asked for a
+different one each time. The lab's sky knobs drive the same bake and open on
+the run's own sky, so `?lab=1` shows what the game shows and lets you turn it.
+
+---
+
 ## `ff3c175` — the stress lab: `?lab=1` on the real board
 
 The operator's ask, the same afternoon the background was measured: an
