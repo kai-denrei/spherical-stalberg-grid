@@ -23,6 +23,12 @@ function gaussian(rng) {
   return Math.sqrt(-2 * Math.log(u)) * Math.cos(6.2831853 * v);
 }
 
+// THE GAME'S SKY (operator, 2026-09-03, after trying it in the lab): two
+// galaxies, small and far, faint. The seed is fresh on every reset — the sky
+// is dressing, not game logic, so it is the one thing on the board that is
+// allowed a non-deterministic seed.
+export const SKY_PRESET = { galaxies: 2, scale: 0.25, coreScale: 0.25, intensity: 0.65 };
+
 export const GALAXY_PALETTES = [
   { name: 'Andromeda', c0: [1.00, 0.70, 0.40], c1: [0.93, 0.87, 0.80], c2: [0.55, 0.70, 1.00], core: [1.00, 0.84, 0.58] },
   { name: 'Ember Veil', c0: [0.95, 0.38, 0.14], c1: [1.00, 0.70, 0.32], c2: [1.00, 0.90, 0.60], core: [1.00, 0.60, 0.22] },

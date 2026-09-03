@@ -12,6 +12,7 @@
 // consumes it under `lab.on && …` and nothing else — a run without the flag
 // runs the code it ran yesterday.
 import { clampParams, knobProblems } from './knobs.js';
+import { SKY_PRESET } from './galaxyseed.js';
 
 export const LAB_DEFAULTS = {
   waveMult: 1,           // × computeWavePlan's base, after the opening taper
@@ -19,12 +20,13 @@ export const LAB_DEFAULTS = {
   freezeEnemies: false,  // updateEnemies skipped: the field stands still
   immortalHeart: true,   // heartHit never decrements
   immortalTank: true,    // playerHit returns before the hull counter
-  bg: 'none',            // scene.background: the look's colour, or a baked sky
-  galaxySeed: 4414,      // NGC-4414, the demo's own
-  galaxyScale: 1,        // the demo's zoom: 2 is twice as near and twice as wide
-  galaxies: 1,           // the home galaxy, plus this many minus one on the far sky
-  galaxyCore: 1,         // × the seeded core size (seeded small; a big bulge fights the board)
-  bgIntensity: 0.5,      // scene.backgroundIntensity — "faint" is a number
+  // the sky opens on what the game does (SKY_PRESET); the seed is the run's
+  bg: 'galaxy',          // scene.background: a baked sky, or the look's colour
+  galaxySeed: 4414,      // replaced by the run's fresh seed unless the URL names one
+  galaxyScale: SKY_PRESET.scale,      // the demo's zoom: 2 is twice as near and twice as wide
+  galaxies: SKY_PRESET.galaxies,      // the home galaxy, plus this many minus one on the far sky
+  galaxyCore: SKY_PRESET.coreScale,   // × the seeded core size (seeded small; a big bulge fights the board)
+  bgIntensity: SKY_PRESET.intensity,  // scene.backgroundIntensity — "faint" is a number
   fx: 'wormhole',        // the disc's fragment shader
   whSize: 384,           // wormhole target, px (the tier's, then the knob's)
   whHz: 30,              // wormhole march rate

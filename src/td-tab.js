@@ -19,55 +19,56 @@
 
 import * as THREE from '../vendor/three.module.js';
 import GUI from '../vendor/lil-gui.esm.js';
-import { generateSphereMesh, relax } from './grid.js?v=01088613';
-import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=01088613';
-import { mulberry32, randomSeed } from './rng.js?v=01088613';
-import { computeBerths, berthIndexFor } from './berths.js?v=01088613';
-import { wantsSecondary, shellsForAll } from './autofire.js?v=01088613';
-import { printPhase, printOffset, printOn, patternSecsFor } from './printpath.js?v=01088613';
-import { createBeamRig, PLASMA_DEFAULTS, BOARD_PRESET, BEAM_PEAK } from './beamdraw.js?v=01088613';
-import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3, segKey, tangentDir, tangentBasis } from './vec3.js?v=01088613';
-import { CREATURES, waveJelly } from './creatures.js?v=01088613';
-import { brief, dwellFor } from './isaobriefs.js?v=01088613';
-import { drawEmotion } from './emotions.js?v=01088613';
+import { generateSphereMesh, relax } from './grid.js?v=e328ebc1';
+import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=e328ebc1';
+import { mulberry32, randomSeed } from './rng.js?v=e328ebc1';
+import { computeBerths, berthIndexFor } from './berths.js?v=e328ebc1';
+import { wantsSecondary, shellsForAll } from './autofire.js?v=e328ebc1';
+import { printPhase, printOffset, printOn, patternSecsFor } from './printpath.js?v=e328ebc1';
+import { createBeamRig, PLASMA_DEFAULTS, BOARD_PRESET, BEAM_PEAK } from './beamdraw.js?v=e328ebc1';
+import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3, segKey, tangentDir, tangentBasis } from './vec3.js?v=e328ebc1';
+import { CREATURES, waveJelly } from './creatures.js?v=e328ebc1';
+import { brief, dwellFor } from './isaobriefs.js?v=e328ebc1';
+import { drawEmotion } from './emotions.js?v=e328ebc1';
 import { ACHIEVEMENTS, ACHV_GROUPS, achievement, blankRun, earned, freshlyEarned,
   sanitiseRecord }
-  from './achievements.js?v=01088613';
+  from './achievements.js?v=e328ebc1';
 import { applyFontPack, currentFontPack, FONT_NAMES,
-  loadTypeFeel } from './fonts.js?v=01088613';
-import { SECONDARY_TOE, applySecondaryToe } from './units.js?v=01088613';
-import { UNITS, UNIT_NAMES, buildUnit, buildCreature, preloadMkcx, preloadServer, makeServerFixture, makeShieldShell, preloadContainer, makeContainerFixture, preloadFabricator, makeIsaoDrone, makeBulletCloud, makeRewardSolid, makeShellSolid, makeDebris, makeDotBurst, makePortalCloud, preloadPortalRing, makePortalRing, makeHeartCloud, makeDotEnemy, preloadTerraformer, makeTerraformerFixture } from './units.js?v=01088613';
-import { LOOKS, LOOK_NAMES } from './looks.js?v=01088613';
-import { makeCellIndex } from './cellindex.js?v=01088613';
-import { CREATURE_TINTS, ENEMY_SPEC, INTROS, computeWavePlan, accentFor } from './enemyspec.js?v=01088613';
-import { PICKUPS } from './pickups.js?v=01088613';
-import { rankFor, rankLabel, badgeSVG, killReq, eliteReq } from './ranks.js?v=01088613';
-import { beamStep, isBeamStep, PEN_SOFT_FRAC, PEN_HARD_FRAC } from './beamranks.js?v=01088613';
-import { burn, sweepAdvance, wallBite as wallBiteFor } from './beamburn.js?v=01088613';
-import { arcPoint, projectToArc, toeForCrossing, crossingForToe } from './arc.js?v=01088613';
+  loadTypeFeel } from './fonts.js?v=e328ebc1';
+import { SECONDARY_TOE, applySecondaryToe } from './units.js?v=e328ebc1';
+import { UNITS, UNIT_NAMES, buildUnit, buildCreature, preloadMkcx, preloadServer, makeServerFixture, makeShieldShell, preloadContainer, makeContainerFixture, preloadFabricator, makeIsaoDrone, makeBulletCloud, makeRewardSolid, makeShellSolid, makeDebris, makeDotBurst, makePortalCloud, preloadPortalRing, makePortalRing, makeHeartCloud, makeDotEnemy, preloadTerraformer, makeTerraformerFixture } from './units.js?v=e328ebc1';
+import { LOOKS, LOOK_NAMES } from './looks.js?v=e328ebc1';
+import { makeCellIndex } from './cellindex.js?v=e328ebc1';
+import { CREATURE_TINTS, ENEMY_SPEC, INTROS, computeWavePlan, accentFor } from './enemyspec.js?v=e328ebc1';
+import { PICKUPS } from './pickups.js?v=e328ebc1';
+import { rankFor, rankLabel, badgeSVG, killReq, eliteReq } from './ranks.js?v=e328ebc1';
+import { beamStep, isBeamStep, PEN_SOFT_FRAC, PEN_HARD_FRAC } from './beamranks.js?v=e328ebc1';
+import { burn, sweepAdvance, wallBite as wallBiteFor } from './beamburn.js?v=e328ebc1';
+import { arcPoint, projectToArc, toeForCrossing, crossingForToe } from './arc.js?v=e328ebc1';
 import { WORMHOLE_PRESET, RING_SPIN, TRAVEL,
-  travelRate, advancePhase } from './portalfx.js?v=01088613';
-import { WORMHOLE_FRAG } from './fx/wormhole.frag.js?v=01088613';
-import { CORONA_FRAG } from './fx/corona.frag.js?v=01088613';
-import { labLine, parseLabQuery } from './lab.js?v=01088613';
-import { bakeGalaxyCube } from './galaxybake.js?v=01088613';
-import { makeScore } from './score.js?v=01088613';
-import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER } from './towers.js?v=01088613';
-import { makeEconomy, sellRefund } from './economy.js?v=01088613';
-import { pickTier } from './perftier.js?v=01088613';
-import { registerServiceWorker } from './pwa.js?v=01088613';
-import { makeBloom } from './postfx.js?v=01088613';
-import { TANK_FEEL, TANK_FEEL_KNOBS, makeTankFeel, stepTankFeel, landTankFeel, fireTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js?v=01088613';
-import { FEEL, loadFeel, saveFeel } from './feelstore.js?v=01088613';
+  travelRate, advancePhase } from './portalfx.js?v=e328ebc1';
+import { WORMHOLE_FRAG } from './fx/wormhole.frag.js?v=e328ebc1';
+import { CORONA_FRAG } from './fx/corona.frag.js?v=e328ebc1';
+import { labLine, parseLabQuery } from './lab.js?v=e328ebc1';
+import { bakeGalaxyCube } from './galaxybake.js?v=e328ebc1';
+import { SKY_PRESET } from './galaxyseed.js?v=e328ebc1';
+import { makeScore } from './score.js?v=e328ebc1';
+import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER } from './towers.js?v=e328ebc1';
+import { makeEconomy, sellRefund } from './economy.js?v=e328ebc1';
+import { pickTier } from './perftier.js?v=e328ebc1';
+import { registerServiceWorker } from './pwa.js?v=e328ebc1';
+import { makeBloom } from './postfx.js?v=e328ebc1';
+import { TANK_FEEL, TANK_FEEL_KNOBS, makeTankFeel, stepTankFeel, landTankFeel, fireTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js?v=e328ebc1';
+import { FEEL, loadFeel, saveFeel } from './feelstore.js?v=e328ebc1';
 import { STRIKE_KNOBS, makeStrike, makeStrikeParams, grantStrikes, stepStrike,
   toggleArm, paintTarget, launchStrike, stepFall, skipFall, fallProgress,
-  strikeDamage, retargetStrike, orbitProgress } from './strike.js?v=01088613';
+  strikeDamage, retargetStrike, orbitProgress } from './strike.js?v=e328ebc1';
 import { radarBasis, radarProject, radarBearing, sweepAngle, radarPhosphor,
-  proximitySectors, SENSOR_LEVELS } from './radar.js?v=01088613';
-import { BLOOM_GROUPS } from './bloomweights.js?v=01088613';
-import { TOWER_LOOK_NAMES, DEFAULT_TOWER_LOOK, buildTowerLook, preloadLook } from './towerlooks.js?v=01088613';
-import { makeAudio } from './audio.js?v=01088613';
-import { DEATH_KEYS } from './audiomanifest.js?v=01088613';
+  proximitySectors, SENSOR_LEVELS } from './radar.js?v=e328ebc1';
+import { BLOOM_GROUPS } from './bloomweights.js?v=e328ebc1';
+import { TOWER_LOOK_NAMES, DEFAULT_TOWER_LOOK, buildTowerLook, preloadLook } from './towerlooks.js?v=e328ebc1';
+import { makeAudio } from './audio.js?v=e328ebc1';
+import { DEATH_KEYS } from './audiomanifest.js?v=e328ebc1';
 
 export function initTdTab(root) {
   let active = false;
@@ -226,7 +227,27 @@ export function initTdTab(root) {
   // tier's own portal numbers; a URL may override them (`?labWhSize=`).
   const lab = parseLabQuery(location.search, tier) || { on: false };
   if (lab.on) { whRender.size = lab.whSize; whRender.updateHz = lab.whHz; }
-  let labSky = null;   // { texture, seed, dispose } once baked
+  // THE SKY: a seeded galaxy field baked into a cubemap once per run (see
+  // galaxybake.js; measured +0.2 ms a frame at 1x). The seed is fresh on every
+  // reset — the sky is dressing, not game logic. The lab's knobs drive the same
+  // bake when the lab is on; without it the game's SKY_PRESET does.
+  let sky = null;        // { texture, key, dispose } once baked
+  let skySeed = randomSeed() % 100000;
+  function applySky() {
+    const want = lab.on
+      ? (lab.bg === 'galaxy' ? { seed: lab.galaxySeed, scale: lab.galaxyScale, galaxies: lab.galaxies, coreScale: lab.galaxyCore } : null)
+      : { seed: skySeed, scale: SKY_PRESET.scale, galaxies: SKY_PRESET.galaxies, coreScale: SKY_PRESET.coreScale };
+    if (!want) { if (sky) { sky.dispose(); sky = null; } return; }
+    const key = `${want.seed}/${want.scale}/${want.galaxies}/${want.coreScale}`;
+    if (sky && sky.key === key) return;
+    if (sky) sky.dispose();
+    const t0 = performance.now();
+    sky = bakeGalaxyCube(renderer, { ...want, face: tier.name === 'phone' ? 512 : 1024 });
+    sky.key = key;
+    console.log(`SKY seed=${want.seed} face=${sky.face} scale=${sky.scale} galaxies=${sky.galaxies}`
+      + ` core=${sky.params.core.toFixed(3)} arms=${sky.params.arms} palette="${sky.params.palette}"`
+      + ` bakeMs=${(performance.now() - t0).toFixed(1)} (cpu, incl. compile)${lab.on ? ' lab' : ''}`);
+  }
 
   // --- scene ---------------------------------------------------------------
   const container = root.querySelector('#td-app');
@@ -4800,6 +4821,10 @@ export function initTdTab(root) {
 
   // --- generation ----------------------------------------------------------
   function regenerate() {
+    // a fresh sky for a fresh board. Bakes only when the seed changed, so a
+    // rebuild that keeps the run keeps the sky.
+    skySeed = randomSeed() % 100000;
+    if (!lab.on) applySky();
     const t0 = performance.now();
     ctlLog('regenerate:before');
     runGen++;   // anything the old run left in flight is now stale by number
@@ -9647,8 +9672,8 @@ export function initTdTab(root) {
     // renders that layer
     // the lab's sky: a cubemap baked once, drawn faint. postfx blacks the
     // background out of its weighted pass, so it never blooms whatever it is.
-    scene.background = lab.on && labSky ? labSky.texture : mainBg;
-    scene.backgroundIntensity = lab.on && labSky ? lab.bgIntensity : 1;
+    scene.background = sky ? sky.texture : mainBg;
+    scene.backgroundIntensity = sky ? (lab.on ? lab.bgIntensity : SKY_PRESET.intensity) : 1;
     if (simSkip) return; // sim pass: state advanced, nothing painted
     // in PoV the camera sits inside the creature — hide it there
     playerMesh.visible = params.view !== 'pov';
@@ -11228,22 +11253,10 @@ export function initTdTab(root) {
   perfCtl = gui.add({ get on() { return perfOn; }, set on(v) { setPerfOverlay(v); } }, 'on')
     .name('fps readout (`)');
   // THE LAB PAGE. A folder here becomes a page in VARS below, for free.
-  function applyLabSky() {
-    if (!lab.on) return;
-    if (lab.bg === 'galaxy') {
-      const key = `${lab.galaxySeed}/${lab.galaxyScale}/${lab.galaxies}/${lab.galaxyCore}`;
-      if (labSky && labSky.key === key) return;
-      if (labSky) labSky.dispose();
-      const t0 = performance.now();
-      labSky = bakeGalaxyCube(renderer, { seed: lab.galaxySeed, face: tier.name === 'phone' ? 512 : 1024,
-        scale: lab.galaxyScale, galaxies: lab.galaxies, coreScale: lab.galaxyCore });
-      labSky.key = key;
-      console.log(`LABSKY seed=${lab.galaxySeed} face=${labSky.face} scale=${labSky.scale} galaxies=${labSky.galaxies}`
-        + ` core=${labSky.params.core.toFixed(3)} arms=${labSky.params.arms} palette="${labSky.params.palette}"`
-        + ` bakeMs=${(performance.now() - t0).toFixed(1)} (cpu, incl. compile)`);
-    } else if (labSky) { labSky.dispose(); labSky = null; }
-  }
+  const applyLabSky = applySky;   // the lab's knobs feed the same bake
   if (lab.on) {
+    // the lab opens on the run's own sky unless the URL named a seed
+    if (!urlParams.has('labseed') && !urlParams.has('labGalaxySeed')) lab.galaxySeed = skySeed;
     const f = gui.addFolder('lab');
     f.add(lab, 'waveMult', 1, 20, 1).name('wave ×');
     f.add({ spawn: () => spawnWave() }, 'spawn').name('⚡ spawn a wave now');

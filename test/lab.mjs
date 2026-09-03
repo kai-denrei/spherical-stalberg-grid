@@ -2,6 +2,7 @@
 // sound, the console line carries every field. No DOM, no three.js.
 import { LAB_DEFAULTS, LAB_KNOBS, labKnobProblems, labLine, parseLabQuery } from '../src/lab.js';
 import { computeWavePlan } from '../src/enemyspec.js';
+import { SKY_PRESET } from '../src/galaxyseed.js';
 
 let failures = 0;
 const check = (name, cond, detail = '') => {
@@ -12,6 +13,8 @@ const check = (name, cond, detail = '') => {
 console.log('lab:');
 check('knob table validates against its defaults', labKnobProblems().length === 0, labKnobProblems().join('; '));
 check('no flag, no lab', parseLabQuery('') === null && parseLabQuery('?fps=1&perf=2') === null);
+check('the lab opens on the game\'s own sky', LAB_DEFAULTS.bg === 'galaxy' && LAB_DEFAULTS.galaxies === SKY_PRESET.galaxies
+  && LAB_DEFAULTS.galaxyScale === SKY_PRESET.scale && LAB_DEFAULTS.galaxyCore === SKY_PRESET.coreScale && LAB_DEFAULTS.bgIntensity === SKY_PRESET.intensity);
 check('?lab=0 is not the lab', parseLabQuery('?lab=0') === null);
 const bare = parseLabQuery('?lab=1');
 check('bare ?lab=1 opens on the defaults', bare && bare.on === true
@@ -29,7 +32,7 @@ check('galaxy count clamps to 8', parseLabQuery('?lab=1&labgalaxies=40').galaxie
 check('labcore= scales the core', parseLabQuery('?lab=1&labcore=0.5').galaxyCore === 0.5);
 check('lab<Key>= reaches any knob', seeded.holdWaves === true && seeded.whSize === 192 && seeded.bloom === false);
 const clamped = parseLabQuery('?lab=1&labwave=999&labbg=nebula&labWhSize=300&labOctaves=-4');
-check('out-of-range clamps, unknown choices are ignored', clamped.waveMult === 20 && clamped.bg === 'none'
+check('out-of-range clamps, unknown choices are ignored', clamped.waveMult === 20 && clamped.bg === 'galaxy'
   && clamped.whSize === 384 && clamped.octaves === 1);
 const line = labLine({ fps: 59.6, ms: 16.78, gpuMs: 4.21, calls: 1117, tris: 400000, pts: 90000, enemies: 240,
   wave: 7, waveMult: 8, bg: 'galaxy', fx: 'corona', whSize: 384, whHz: 30, steps: 120, octaves: 12, bloom: true });
