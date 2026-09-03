@@ -6,6 +6,25 @@ Demo links assume `npm run serve` (port 8144) or the
 
 ---
 
+## `f3bd75d` — phase 4: the film pass
+
+Letterbox, grain, vignette and a title card, drawn *in the canvas*. A DOM
+overlay would be the easy way and the wrong one: the capture reads the
+drawing buffer (`kit.js` `frame()`), so anything outside the canvas is
+not in the clip. `src/cine/film.js` is a `ShaderPass` appended after the
+`OutputPass` — `postfx` gained `addFinalPass`, and the composer renders
+its last enabled pass to the screen, so appending is enough — in display
+space: a 2.39:1 letterbox inside the 16:9 frame, a vignette, grain hashed
+from `(pixel, floor(t·24))` so a seek lands on the same grain as a
+play-through and two renders match, and a title card in the game's own
+CRT face (VT323) drawn once on a 2D canvas and faded by an envelope that
+is a function of t. The tab waits for the font to load before drawing
+the card, and a capture's single draw waits for the card; a title drawn
+before the face lands is the fallback font. `?film=0`, `?bars`, `?grain`,
+`?vignette`, `?title=0`.
+
+---
+
 ## `f2f5c67` — the wire survives at 4K
 
 Phase 2's "done when" and the plan's item 10. The first 4K still of the
