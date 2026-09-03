@@ -6,6 +6,79 @@ Demo links assume `npm run serve` (port 8144) or the
 
 ---
 
+## `ff3c175` — the stress lab: `?lab=1` on the real board
+
+The operator's ask, the same afternoon the background was measured: an
+environment to stress-test the engine — Stålheart and tank immortal, a
+slider that multiplies the wave until the frame drops, a background that
+goes in and out, the teleport effect swapped, and a number for all of it.
+Plus the PoC that prompted it: a galaxy drawn once from a seed, faint,
+projected 360°.
+
+**Shape.** A mode on the TD board, not a tab. `?lab=1` opens VARS on a LAB
+page and turns the frame readout on; without the flag every lab branch is
+dead (`lab.on && …`) and the board runs the code it ran before. A separate
+tab would have measured a copy, and copies of the board are the debt the
+ROADMAP already names.
+
+**The page.** wave × (1–20), ⚡ spawn a wave now, hold waves, freeze
+enemies, immortal heart, immortal tank, background (none / galaxy), galaxy
+seed + 🎲, sky intensity, portal effect (wormhole / corona), portal target
+px, portal update Hz, march steps, turbulence octaves, bloom. Each is a
+knob in `src/lab.js`'s table (validated by `knobProblems` like the feel
+knobs), and each is reachable from the URL as `lab<Knob>=` — `labwave=8`,
+`labbg=galaxy`, `labfx=corona`, `labseed=7`.
+
+**The multiplier** is a fourth argument to `computeWavePlan`, applied to
+`base` after the opening taper so every density rule scales together and
+the headline type does not change. `mult = 1` is byte-identical to the game
+and a test says so.
+
+**Immortality** is one condition in each of `heartHit` and `playerHit` —
+the tutorial's own "no damage" precedent for the heart, and an early return
+that keeps the shove for the tank, so a hit still reads.
+
+**GPU ms.** fps says whether the frame fits; it does not say which side of
+the bus is full. `perfTick` now opens one `EXT_disjoint_timer_query_webgl2`
+TIME_ELAPSED query around `frame()` and reads it back a few frames later.
+One per frame, not one per draw: per-draw queries split the render pass on
+Apple's tiled GPU and overcount about 4x (research.md, 2026-09-03). The
+readout shows `gpu N ms` beside the CPU ms, and the lab prints a `LAB …`
+line every 2 s for a headless run to grep.
+
+**The sky.** `src/galaxyseed.js` is galaxy-forge's generators (Fable
+Cabinet, `reference/FABLE-SHOWCASE/galaxy-forge`) on `mulberry32`: one seed
+names arms, twist, bar, core, palette and every star. `src/galaxybake.js`
+is its star and dust shaders on `THREE.Points` — the demo's `uVP` replaced
+by three's matrices, the ignite pinned past its end — rendered by a
+`CubeCamera` into a 1024/face cubemap (512 on the phone tier), once, with
+no bloom and no composite. The board draws it as `scene.background` at
+`scene.backgroundIntensity`, which is what "faint" means; postfx already
+blacks the background out of its weighted pass, so it cannot bloom. One
+lesson in the porting: at the cube camera's 90° the demo's sprites landed
+under a pixel and its own sub-pixel attenuation faded the disc to nothing —
+the galaxy was moved closer and the sprite scale raised until the stars
+land at 1–3 px again.
+
+**The portal.** The board's wormhole uniforms are now the union with the
+corona's (the `#portal` bench's rule: a uniform a program declares and the
+object lacks is a hard failure, so switching must never remove one), and
+`setBoardEffect` swaps the fragment source. Target size goes through
+`whRt.setSize`, which keeps the texture object so the gates stay bound.
+
+**Two bugs found on the way, both fixed.** The VARS modal's GAME page
+carried the `lil-gui` class, and the modal's stylesheet forces every
+`.lil-gui` inside it visible — so it could never be hidden and every other
+page had been drawing underneath it, out of sight. It is wrapped now. And
+`?perf=` handed the renderer's counters back to auto-reset when it was done,
+which zeroed the readout's draw count for the rest of the run.
+
+**Measured, M4, 1600×1000.** ×12 with 95 enemies alive: 60 fps, 6.0 ms GPU.
+The sky: +0.2 ms. The bake: 60–150 ms of CPU at boot including the first
+shader compile.
+
+---
+
 ## `40801df` — measured: a live background behind the planet, aurora vs galaxy-forge
 
 The operator asked what it would cost to put something like the Fable
