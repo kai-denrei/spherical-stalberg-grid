@@ -6,8 +6,8 @@
 // money, spent gladly). Same fragment, same uniform names, same integrated
 // phases (portalfx.js), so a preset copied off the bench is the truth here.
 import * as THREE from '../../vendor/three.module.js';
-import { WORMHOLE_FRAG } from '../fx/wormhole.frag.js?v=ab944437';
-import { WORMHOLE_PRESET, WORMHOLE_UNIFORM_DEFAULTS, RING_SPIN, TRAVEL } from '../portalfx.js?v=ab944437';
+import { WORMHOLE_FRAG } from '../fx/wormhole.frag.js?v=e6d6f471';
+import { WORMHOLE_PRESET, WORMHOLE_UNIFORM_DEFAULTS, RING_SPIN, TRAVEL } from '../portalfx.js?v=e6d6f471';
 
 export { RING_SPIN, TRAVEL };
 
@@ -70,9 +70,11 @@ export function createWormholeTarget({ size = 1024, width = size, height = size,
     },
     // CALIBRATE: one march at `size`, timed with the readback stall so the
     // GPU's work is inside the interval (the bench's method). Returns ms.
-    // Median of three: one sample swung 9.8–14.8 ms on the same machine
-    // (25–38 Gfolds/s), enough to move the pick a size.
-    calibrate(renderer, { size: n = 512, t = 1, samples = 3 } = {}) {
+    // MINIMUM of five. One sample swung 9.8–14.8 ms on the same machine
+    // and the median of three still swung 9.9–14.1 (38 vs 27 Gfolds/s —
+    // enough to move the pick a size). A capability is the FASTEST the
+    // device did it; every slower sample is contention, not capability.
+    calibrate(renderer, { size: n = 512, t = 1, samples = 5 } = {}) {
       const keep = api.size;
       api.setSize(n);
       api.render(renderer, t);                     // warm: compile, allocate (fenced)
@@ -83,8 +85,7 @@ export function createWormholeTarget({ size = 1024, width = size, height = size,
         ms.push(performance.now() - t0);
       }
       api.setSize(keep);
-      ms.sort((a, b) => a - b);
-      return ms[ms.length >> 1];
+      return Math.min(...ms);
     },
     // phases are SET from t, never accumulated: a capture seeks
     render(renderer, t, { travelRate = TRAVEL.max, spinRate = 0.15 } = {}) {
