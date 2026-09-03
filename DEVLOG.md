@@ -30,7 +30,14 @@ do not sweep with the gun, and a model that brings its own deck strips
 gets none from the game.
 
 Selectable, not default: `mkcx2` in the catalogue with lore, `?creature=mkcx2`
-on the board, `?unit=mkcx2` in the viewer. The viewer and board now preload
+on the board, `?unit=mkcx2` in the viewer. **The viewer's framing changed
+with it** (`?unit=`, "so I can see it in big"): the old fit put the longest
+axis against the screen's height with a 1.9× margin, so a tank 10.8 long
+and 2.9 tall filled a fifth of the frame. It now projects the box's eight
+corners along the view direction and solves the distance at which the
+widest sits at a horizontal limit and the tallest at a vertical one that
+leaves the toolbar band free. The MK-CX/2 is twice the size it was; compact
+units are unchanged in feel. `?zoom=N` scales the fit. The viewer and board now preload
 the casting they were asked for; before, both preloaded only the default
 and a variant would have shown the procedural fallback forever.
 

@@ -14,23 +14,23 @@ import { OrbitControls } from '../vendor/OrbitControls.js';
 import { buildUnit, preloadMkcx, makeDebris, makeDotBurst, makeBulletCloud,
   makeDotEnemy, makeRewardSolid, makeShellSolid, makePortalCloud,
   preloadServer, makeServerFixture, preloadContainer, makeContainerFixture,
-  preloadFabricator, makeFabricatorDrone, makeIsaoDrone } from './units.js?v=e9f13c0d';
+  preloadFabricator, makeFabricatorDrone, makeIsaoDrone } from './units.js?v=abb533e2';
 import { TANK_FEEL, TANK_FEEL_KNOBS, formatFeelCode, makeTankFeel, stepTankFeel,
-  landTankFeel, fireTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js?v=e9f13c0d';
+  landTankFeel, fireTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js?v=abb533e2';
 import { FEEL, loadFeel, saveFeel, resetFeel,
-  TOWER, HEADS, loadTower, saveTower, resetTower } from './feelstore.js?v=e9f13c0d';
+  TOWER, HEADS, loadTower, saveTower, resetTower } from './feelstore.js?v=abb533e2';
 import { TOWER_FEEL_KNOBS, formatTowerFeel, clampTowerParams,
-  formatTowerHeads, HEAD_CHOICES, HEAD_AS_SHIPPED } from './towerfeel.js?v=e9f13c0d';
-import { CREATURE_TINTS, accentFor } from './enemyspec.js?v=e9f13c0d';
+  formatTowerHeads, HEAD_CHOICES, HEAD_AS_SHIPPED } from './towerfeel.js?v=abb533e2';
+import { CREATURE_TINTS, accentFor } from './enemyspec.js?v=abb533e2';
 import { buildTowerLook, TOWER_LOOK_NAMES, DEFAULT_TOWER_LOOK, preloadLook } from './towerlooks.js';
 import { TOWER_BY_KEY, TOWERS } from './towers.js';
 import { LOOKS } from './looks.js';
 import { makeBloom } from './postfx.js';
-import { makeAudio } from './audio.js?v=e9f13c0d';
+import { makeAudio } from './audio.js?v=abb533e2';
 import { GROUPS, GROUP_LABELS, GROUP_EMPTY, entriesIn } from './unitcatalog.js';
 import { FONT_NAMES, TYPE_KNOBS, TYPE_FEEL, makeTypeParams, loadTypeFeel, saveTypeFeel,
-  formatTypeCode, applyFontPack, currentFontPack, currentShoutPack } from './fonts.js?v=e9f13c0d';
-import { LORE, LORE_WORLD, loreText, loreAll } from './lore.js?v=e9f13c0d';
+  formatTypeCode, applyFontPack, currentFontPack, currentShoutPack } from './fonts.js?v=abb533e2';
+import { LORE, LORE_WORLD, loreText, loreAll } from './lore.js?v=abb533e2';
 
 let roundTex = null;
 function roundDotTex() {
@@ -219,15 +219,40 @@ export function initUnitsTab(root) {
   // Frame whatever was built. Units differ in size by more than 10x, so the
   // camera distance is derived from the object's own bounds rather than
   // fixed — otherwise half the roster is a speck and the rest overflows.
+  // ?zoom=N scales the fit (1 = the catalogue's framing, 1.6 = "in big")
+  const zoomParam = parseFloat(new URLSearchParams(location.search).get('zoom') || '1') || 1;
   function frame(obj) {
     const box = new THREE.Box3().setFromObject(obj);
     if (box.isEmpty()) return;
     const size = new THREE.Vector3(); box.getSize(size);
     const centre = new THREE.Vector3(); box.getCenter(centre);
-    const span = Math.max(size.x, size.y, size.z) || 1;
-    const dist = span / (2 * Math.tan((camera.fov * Math.PI) / 360)) * 1.9;
+    // Fit what the camera will actually SEE. The old fit put the longest
+    // axis against the screen's height with a 1.9x margin, so a tank 10.8
+    // long and 2.9 tall filled a fifth of the frame (operator: "so I can
+    // see it in big"); a bounding-sphere fit then over-filled for compact
+    // units and ran the procedural tank into the toolbar. So: project the
+    // box's eight corners along the view direction below and solve the
+    // distance at which the widest one sits at the horizontal limit and
+    // the tallest at the vertical one. The vertical limit is 0.5 of the
+    // half-height, because the bottom 28% of the viewport is the toolbar.
+    const dir = new THREE.Vector3(0.55, 0.42, 0.72).normalize();     // centre -> eye
+    const right = new THREE.Vector3().crossVectors(new THREE.Vector3(0, 1, 0), dir).normalize();
+    const up = new THREE.Vector3().crossVectors(dir, right).normalize();
+    const vfov = (camera.fov * Math.PI) / 360;
+    const tanV = Math.tan(vfov), tanH = tanV * (camera.aspect || 1);
+    const LIM_H = 0.90, LIM_V = 0.50;
+    let dist = 0.5;
+    const c = new THREE.Vector3();
+    for (let i = 0; i < 8; i++) {
+      c.set(i & 1 ? box.max.x : box.min.x, i & 2 ? box.max.y : box.min.y, i & 4 ? box.max.z : box.min.z).sub(centre);
+      const dz = c.dot(dir);                   // toward the eye: nearer corners need more room
+      dist = Math.max(dist,
+        Math.abs(c.dot(right)) / (tanH * LIM_H) + dz,
+        Math.abs(c.dot(up)) / (tanV * LIM_V) + dz);
+    }
+    dist /= zoomParam;
     controls.target.copy(centre);
-    camera.position.set(centre.x + dist * 0.55, centre.y + dist * 0.42, centre.z + dist * 0.72);
+    camera.position.copy(centre).addScaledVector(dir, dist);
     camera.near = Math.max(0.001, dist * 0.02);
     camera.far = dist * 40;
     camera.updateProjectionMatrix();
