@@ -6,9 +6,10 @@
 // the wormhole target and sky face sizes. scripts/cine-capture.mjs drives
 // __cine.seek(t) for the offline render.
 import * as THREE from '../vendor/three.module.js';
-import { makeBloom } from './postfx.js?v=35febb02';
-import { installCine } from './cine/kit.js?v=35febb02';
-import { createGate } from './cine/gate.js?v=35febb02';
+import { makeBloom } from './postfx.js?v=ab944437';
+import { installCine } from './cine/kit.js?v=ab944437';
+import { createGate } from './cine/gate.js?v=ab944437';
+import { rateFromSample, fitSize, marchBudgetMs, createGovernor } from './cine/governor.js?v=ab944437';
 
 const SCENES = { gate: createGate };
 // Two tiers (plan §2.1): the same rail, rendered live or offline.
@@ -42,6 +43,31 @@ export function initCineTab(root) {
   const which = SCENES[q.get('scene')] ? q.get('scene') : 'gate';
   const cine = SCENES[which]({ renderer, scene, camera, tier });
 
+  // THE GOVERNOR (src/cine/governor.js). Live only: a capture has a fixed
+  // tier by design. Calibrate this device with one timed march, fit the
+  // largest target the frame budget affords, then govern by frame time.
+  // ?gov=0 leaves the tier's size alone; ?fps=N sets the target (default
+  // 60 on a fine pointer, 30 on a coarse one); ?govprobe=1 logs the pick.
+  const govOn = q.get('capture') !== '1' && q.get('gov') !== '0' && cine.wormhole;
+  const targetFps = parseFloat(q.get('fps')) || (matchMedia('(pointer: coarse)').matches ? 30 : 60);
+  const gov = { rate: 0, calMs: 0, fit: 0, g: null, budget: 1000 / targetFps };
+  if (govOn) {
+    const wh = cine.wormhole;
+    const steps = Math.round(wh.uniforms.uSteps.value), oct = Math.round(wh.uniforms.uTurbOctaves.value);
+    gov.calMs = wh.calibrate(renderer, { size: 512 });
+    gov.rate = rateFromSample(512, steps, oct, gov.calMs);
+    gov.fit = fitSize({ rate: gov.rate, budgetMs: marchBudgetMs(targetFps), steps, octaves: oct });
+    wh.setSize(gov.fit);
+    gov.g = createGovernor({ budgetMs: gov.budget, initial: gov.fit });
+    console.log(`GOV calibrate 512² ${steps}x${oct} = ${gov.calMs.toFixed(1)} ms -> ${(gov.rate / 1e9).toFixed(1)} Gfolds/s;`
+      + ` target ${targetFps} fps, march budget ${marchBudgetMs(targetFps).toFixed(1)} ms -> ${gov.fit}px`
+      + ` (tier said ${tier.wormhole})`);
+    if (q.get('govprobe') === '1') {
+      setTimeout(() => console.log(`GOV after 3 s: size=${cine.wormhole.size} frame=${gov.g.frameMs.toFixed(1)} ms`
+        + ` steps=${JSON.stringify(gov.g.steps)}`), 3000);
+    }
+  }
+
   function resize() {
     const w = container.clientWidth || 1, h = container.clientHeight || 1;
     renderer.setSize(w, h);
@@ -57,10 +83,16 @@ export function initCineTab(root) {
   const clock = new THREE.Clock();
   const noBloom = q.get('nobloom') === '1';
   if (noBloom) postfx.setEnabled(false);
+  let fpsSmooth = 0;
   function draw(at) {
     cine.update(at);
     if (noBloom) renderer.render(scene, camera); else postfx.render();
-    if (hud) hud.textContent = `${cine.name} · ${at.toFixed(2)} s / ${cine.duration} s · ${tier.name} · wormhole ${tier.wormhole}px`;
+    if (hud) {
+      const w = cine.wormhole ? cine.wormhole.size : tier.wormhole;
+      hud.textContent = `${cine.name} · ${at.toFixed(2)} s / ${cine.duration} s · ${tier.name} · wormhole ${w}px`
+        + (gov.g ? ` · ${fpsSmooth.toFixed(0)} fps · ${(gov.rate / 1e9).toFixed(0)} G/s · fit ${gov.fit}`
+          + (gov.g.steps.length ? ` · ${gov.g.steps[gov.g.steps.length - 1].why === 'over' ? '↓' : '↑'}${gov.g.size}` : '') : '');
+    }
   }
   // ?loop=0 — never draw from the live loop; only a seek draws (a capture
   // page has no use for a live loop, and drawing dozens of frames before the
@@ -97,6 +129,11 @@ export function initCineTab(root) {
     const dt = Math.min(0.05, clock.getDelta());
     if (park == null) t = (t + dt) % cine.duration; else t = park;
     draw(t);
+    if (gov.g) {
+      fpsSmooth += ((dt > 0 ? 1 / dt : 60) - fpsSmooth) * 0.1;
+      const r = gov.g.tick(dt * 1000, performance.now(), { lockUp: cine.lockUp ? cine.lockUp(t) : false });
+      if (r.changed) cine.wormhole.setSize(r.size);
+    }
   }
   frame();
   installCine({

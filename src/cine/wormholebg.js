@@ -6,8 +6,8 @@
 // money, spent gladly). Same fragment, same uniform names, same integrated
 // phases (portalfx.js), so a preset copied off the bench is the truth here.
 import * as THREE from '../../vendor/three.module.js';
-import { WORMHOLE_FRAG } from '../fx/wormhole.frag.js?v=35febb02';
-import { WORMHOLE_PRESET, WORMHOLE_UNIFORM_DEFAULTS, RING_SPIN, TRAVEL } from '../portalfx.js?v=35febb02';
+import { WORMHOLE_FRAG } from '../fx/wormhole.frag.js?v=ab944437';
+import { WORMHOLE_PRESET, WORMHOLE_UNIFORM_DEFAULTS, RING_SPIN, TRAVEL } from '../portalfx.js?v=ab944437';
 
 export { RING_SPIN, TRAVEL };
 
@@ -37,13 +37,17 @@ export function createWormholeTarget({ size = 1024, width = size, height = size,
   // hang: sampling this target from a disc filling a canvas wider than
   // ~1500 px never returned; a flat-colour disc did
   const rv = (typeof location !== 'undefined' && new URLSearchParams(location.search).get('rt')) || (filter === 'nearest' ? 'nearest' : '');
-  const rt = new THREE.WebGLRenderTarget(width, height, {
-    minFilter: rv === 'mip' ? THREE.LinearMipmapLinearFilter : rv === 'nearest' ? THREE.NearestFilter : THREE.LinearFilter,
-    magFilter: rv === 'nearest' ? THREE.NearestFilter : THREE.LinearFilter,
-    generateMipmaps: rv === 'mip',
-    depthBuffer: false, stencilBuffer: false,
-  });
-  rt.texture.colorSpace = rv === 'linear' ? THREE.NoColorSpace : THREE.SRGBColorSpace;
+  const makeRt = (w, h) => {
+    const t = new THREE.WebGLRenderTarget(w, h, {
+      minFilter: rv === 'mip' ? THREE.LinearMipmapLinearFilter : rv === 'nearest' ? THREE.NearestFilter : THREE.LinearFilter,
+      magFilter: rv === 'nearest' ? THREE.NearestFilter : THREE.LinearFilter,
+      generateMipmaps: rv === 'mip',
+      depthBuffer: false, stencilBuffer: false,
+    });
+    t.texture.colorSpace = rv === 'linear' ? THREE.NoColorSpace : THREE.SRGBColorSpace;
+    return t;
+  };
+  let rt = makeRt(width, height);
   const scene = new THREE.Scene();
   const cam = new THREE.Camera();
   const g = new THREE.BufferGeometry();
@@ -54,8 +58,34 @@ export function createWormholeTarget({ size = 1024, width = size, height = size,
     fragmentShader: WORMHOLE_FRAG, uniforms, depthTest: false, depthWrite: false,
   });
   scene.add(new THREE.Mesh(g, mat));
-  return {
-    rt, uniforms, size, width, height,
+  const api = {
+    get rt() { return rt; }, uniforms, size, width, height,
+    // THE GOVERNOR'S LEVER: a new target at n². The look is untouched; the
+    // pixels soften. Callers read .rt each frame (it is a new object).
+    setSize(n) {
+      if (n === api.size) return;
+      rt.dispose(); rt = makeRt(n, n);
+      api.size = api.width = api.height = n;
+      uniforms.uResolution.value.set(n, n, 1);
+    },
+    // CALIBRATE: one march at `size`, timed with the readback stall so the
+    // GPU's work is inside the interval (the bench's method). Returns ms.
+    // Median of three: one sample swung 9.8–14.8 ms on the same machine
+    // (25–38 Gfolds/s), enough to move the pick a size.
+    calibrate(renderer, { size: n = 512, t = 1, samples = 3 } = {}) {
+      const keep = api.size;
+      api.setSize(n);
+      api.render(renderer, t);                     // warm: compile, allocate (fenced)
+      const ms = [];
+      for (let i = 0; i < samples; i++) {
+        const t0 = performance.now();
+        api.render(renderer, t + 0.033 * (i + 1));
+        ms.push(performance.now() - t0);
+      }
+      api.setSize(keep);
+      ms.sort((a, b) => a - b);
+      return ms[ms.length >> 1];
+    },
     // phases are SET from t, never accumulated: a capture seeks
     render(renderer, t, { travelRate = TRAVEL.max, spinRate = 0.15 } = {}) {
       uniforms.uTime.value = t;
@@ -78,4 +108,5 @@ export function createWormholeTarget({ size = 1024, width = size, height = size,
     },
     dispose() { rt.dispose(); g.dispose(); mat.dispose(); },
   };
+  return api;
 }

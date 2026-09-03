@@ -10,11 +10,11 @@
 // Every time-dependent thing is SET from t: rotors, phases, the camera.
 // A capture seeks; the live loop just calls update(t) with a running t.
 import * as THREE from '../../vendor/three.module.js';
-import { preloadPortalRing, makePortalRing } from '../units.js?v=35febb02';
-import { bakeGalaxyCube } from '../galaxybake.js?v=35febb02';
-import { SKY_PRESET } from '../galaxyseed.js?v=35febb02';
-import { createWormholeTarget, RING_SPIN, TRAVEL } from './wormholebg.js?v=35febb02';
-import { compileRail } from './rail.js?v=35febb02';
+import { preloadPortalRing, makePortalRing } from '../units.js?v=ab944437';
+import { bakeGalaxyCube } from '../galaxybake.js?v=ab944437';
+import { SKY_PRESET } from '../galaxyseed.js?v=ab944437';
+import { createWormholeTarget, RING_SPIN, TRAVEL } from './wormholebg.js?v=ab944437';
+import { compileRail } from './rail.js?v=ab944437';
 
 export const GATE_LEN = 12;
 
@@ -168,6 +168,7 @@ export function createGate({ renderer, scene, camera, tier = {} }) {
     const u = Math.min(1, t / BEAT1);
     wh.uniforms.uNear.value = NEAR_IN + (NEAR_OUT - NEAR_IN) * (u * u * (3 - 2 * u));
     wh.render(renderer, t, { travelRate: TRAVEL.max, spinRate: 0.15 });
+    if (disc && disc.material.map !== wh.rt.texture) { disc.material.map = wh.rt.texture; disc.material.needsUpdate = true; }
 
     if (ring) {
       const u = ring.userData;
@@ -185,6 +186,8 @@ export function createGate({ renderer, scene, camera, tier = {} }) {
   return {
     name: 'gate', duration: GATE_LEN, update,
     ready: () => !!ring,
+    wormhole: wh,                                   // the governor's lever
+    lockUp: (t) => t < BEAT1 + 1.5,                 // the full-frame beat: never step UP inside it
     dispose() { wh.dispose(); sky.dispose(); pmrem.dispose(); },
   };
 }

@@ -202,7 +202,24 @@ corona's update gate compared t to the live loop's last render time, so a
 seek to t = 0.03 after the loop had reached t = 2 rendered nothing. Every
 time-dependent thing is now SET from t.
 
-## 7. Open questions and risks
+## 7. The governor — 2026-09-03
+
+The live tier is not a row in a table; it is measured on the device
+(`src/cine/governor.js`, tested). At scene start one march at 512² is timed
+with the readback stall (median of three) and gives the device's sine-folds
+per second; the largest target whose march fits the frame budget (40% of a
+frame at the target fps: 60 on a fine pointer, 30 on a coarse one) is
+arithmetic. While the scene plays, a smoothed frame time steps the target
+down after a second over budget and up after five seconds of headroom, one
+step per three seconds, never up during the full-frame beat. The look is
+never touched: only the target's pixels and update rate. The HUD prints the
+rate, the fit and every step, so a phone report is a number.
+
+Measured here: the M4 headless calibrates at 25–38 Gfolds/s and fits 384px
+at 60 fps, 512 at 30, 256 at 120 — where the tier table said 512. Nothing
+has been measured on a phone.
+
+## 8. Open questions and risks
 
 - ~~Real GPU in headless Chrome on this Mac is unknown.~~ Answered in §6:
   it is the M4, thirty times SwiftShader. The verification recipe in
