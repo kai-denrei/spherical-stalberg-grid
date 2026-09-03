@@ -6,6 +6,36 @@ Demo links assume `npm run serve` (port 8144) or the
 
 ---
 
+## `1bad331` — MK-CX/2: the tank with the top taken off
+
+The operator's ask, from two screenshots: lose the dark turret block between
+the hull and the shell rack, flatten the top into a supercar wedge, put the
+nine shells straight on the flat hull rather than on a separate plate, and
+keep large blue indicators on top. Tried as a second casting so the MK-CX
+stays.
+
+**The model** is a new subject in `blueprint-to-life` beside the MK-CX,
+sharing its tub, nacelles, armament and hierarchy contract. The deck drops
+and runs flat from the nose to a raked tail; the gun rides a blade a third
+the old turret's height with a low cradle; nine flush sockets and a mount
+empty sit in the rear deck; two glow strips run the roof's length on the
+health-tinted material. Exported by a new Node script there, no browser
+download needed: 459 KB, 57 meshes.
+
+**The casting** generalises the mkcx path to two ids instead of copying
+it: one URL table, one prototype per id, the preload and ready hooks take
+an id. Two things branch on what the model has rather than on its name: a
+rack mount present means the dots sit flush on the deck with no plate and
+do not sweep with the gun, and a model that brings its own deck strips
+gets none from the game.
+
+Selectable, not default: `mkcx2` in the catalogue with lore, `?creature=mkcx2`
+on the board, `?unit=mkcx2` in the viewer. The viewer and board now preload
+the casting they were asked for; before, both preloaded only the default
+and a variant would have shown the procedural fallback forever.
+
+---
+
 ## `1cf2b02` — the first phone screen: the ruler's blind spot, and a coach
 
 The operator's first screen on a real phone: the radar filling the
