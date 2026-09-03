@@ -6,6 +6,25 @@ Demo links assume `npm run serve` (port 8144) or the
 
 ---
 
+## `c7bf443` — the four from the phone
+
+The operator's second device session: no way to move the tank manually, the
+radar under the fingers, a start that sits in the deploy view with nothing
+moving, and the intro's name. The third explained the first. A real-time
+headless runner (`scripts/headless-wait.mjs`, because the virtual-time
+recipe stops the frame loop's clock and replicates any time-driven flow
+wrongly) with `?stateprobe=1` showed the boot: the cold open ends, the
+deploy starts, and the field manual pauses the game with the tank in its
+berth at the deploy framing. After the manual, the tank stands with the
+throttle at zero, and the shell has no throttle. The manual is skipped on
+the shell now, and a floating stick on the left half of the board drives
+the tank by hand: a ring under the finger, drag to drive and steer, release
+to stop, and a plain tap is still tap-to-go. The radar moved under the BUILD
+switch with the thumbs pinned to the corner, zero overlaps under the coarse
+ruler in both modes, and every intro string says Stålheart.
+
+---
+
 ## `69a4e9c` — cinematics: the governor
 
 The live tier is measured on the device instead of read from a table. At
