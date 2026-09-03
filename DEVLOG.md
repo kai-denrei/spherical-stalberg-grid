@@ -6,6 +6,52 @@ Demo links assume `npm run serve` (port 8144) or the
 
 ---
 
+## `edb6022` — cinematics phases 2 and 3: THE PLANET and THE TANK
+
+Two new scenes on the cine tab, `?scene=planet` and `?scene=tank`, both
+drawing the game's own things at a cinema tier, both set from t.
+
+**THE PLANET** (`src/cine/planetscene.js`) is the wire world at the
+board's default resolution — `generateSphereMesh` + `relax`, the
+`tronColors` edges and body — under the galaxy bake, with the one thing
+the game lacks: an atmosphere, as two fresnel shells, a rim just off the
+surface and a haze past the limb. Wide, then close, then a graze over the
+cells, then back out to the silhouette THE GATE lands on. The planet is
+7.8 m in radius, the gate's measured number, so the last beat here is the
+last beat there minus the ring — a rhyme by construction.
+
+**THE TANK** (`src/cine/tankscene.js`) is the MK-CX/2 by `buildCreature`,
+on the beam lab's exact client contract — planet at the origin, tank at
+the pole, +Z a tangent — on a 40 m world with 3.2 m cells, so the hull is
+five metres and the ratio is the game's. Three shells as `makeBulletCloud`
+tracers; the recoil as tankfeel's own `applyTankFeel`, its countdown
+written from the shot times so a seek lands where a play-through would;
+the plasma as beamdraw's rig at four times the board's plume points; a
+muzzle flash as a sprite plus a point light that touches the hull; then
+rolling out over the wire. The cast has no muzzle callout, so the tip is
+measured off the barrel's own +Z extent and kept as an empty under
+`Barrel_Pivot`, where it recoils and traverses with the gun.
+
+**The merge keeps `uv` now.** The first tank still was a paper cut-out,
+and `?matprobe=1` said why twice over: `mergeByMaterial` deleted every
+attribute but position and normal so that batches could merge at all, so
+*no* merged model — ring, tank, container — could wear a texture, and the
+weathered metal had found every batch uv-less. A batch keeps `uv` if every
+part has it; one part without would make `mergeGeometries` return null
+and the model fall apart, so that batch drops it. The board binds no
+maps, so a kept `uv` is inert there; on the cinema tier all ten of the
+tank's hull materials take the maps. What was still white after that was
+the game's own blueprint outline pass at 0.85 and the glow parts' white
+emissive — both named by a `BRIGHT` probe line before anything was
+touched. The outlines stay, as a rim at 0.22 (`?outline=N`); the lift
+emitters, deck strips and turret drum take the CRT cyan, dim.
+
+The dark base (`CINE_BASE`) lives in `cine/materials.js` now and applies
+by name before any map, so a material without `uv` is a flat dark metal
+rather than the board's emissive ladder.
+
+---
+
 ## `5b68538`..`c5d46b0` — cinematics 1c: the crossing, and the landing
 
 Beat 3 of THE GATE was a drift. It carries two things now.
