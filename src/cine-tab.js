@@ -6,13 +6,15 @@
 // the wormhole target and sky face sizes. scripts/cine-capture.mjs drives
 // __cine.seek(t) for the offline render.
 import * as THREE from '../vendor/three.module.js';
-import { makeBloom } from './postfx.js?v=2470ade6';
-import { installCine } from './cine/kit.js?v=2470ade6';
-import { createGate } from './cine/gate.js?v=2470ade6';
-import { createPlanet } from './cine/planetscene.js?v=2470ade6';
-import { createFilmPass, makeTitleTexture, titleAlphaAt, FILM_DEFAULTS } from './cine/film.js?v=2470ade6';
-import { createTank } from './cine/tankscene.js?v=2470ade6';
-import { rateFromSample, fitSize, marchBudgetMs, createGovernor } from './cine/governor.js?v=2470ade6';
+import { makeBloom } from './postfx.js?v=07138cae';
+import { installCine } from './cine/kit.js?v=07138cae';
+import { createGate } from './cine/gate.js?v=07138cae';
+import { createPlanet } from './cine/planetscene.js?v=07138cae';
+import { createFilmPass, makeTitleTexture, titleAlphaAt, FILM_DEFAULTS } from './cine/film.js?v=07138cae';
+import { SOUND_RAILS, cuesBetween } from './cine/sound.js?v=07138cae';
+import { makeAudio } from './audio.js?v=07138cae';
+import { createTank } from './cine/tankscene.js?v=07138cae';
+import { rateFromSample, fitSize, marchBudgetMs, createGovernor } from './cine/governor.js?v=07138cae';
 
 const SCENES = { gate: createGate, planet: createPlanet, tank: createTank };
 // Two tiers (plan §2.1): the same rail, rendered live or offline.
@@ -91,9 +93,20 @@ export function initCineTab(root) {
     }
   }
 
+  // ?size=WxH — the drawing buffer EXACTLY that, whatever the window is.
+  // A capture used to take the viewport, and headless Chrome's own bar is
+  // not accounted the same way run to run: one clip's frames came out
+  // 1920x1167 (the bar's 87 px inside the canvas), composed at the wrong
+  // aspect, and libx264 refused the odd height. With the size on the URL
+  // the canvas is the frame and the window is irrelevant.
+  const fixed = (q.get('size') || '').match(/^(\d+)x(\d+)$/);
   function resize() {
-    const w = container.clientWidth || 1, h = container.clientHeight || 1;
-    renderer.setSize(w, h);
+    let w = container.clientWidth || 1, h = container.clientHeight || 1;
+    if (fixed) {
+      w = parseInt(fixed[1]); h = parseInt(fixed[2]);
+      renderer.setPixelRatio(1);
+      renderer.setSize(w, h, false);   // the buffer is w x h; CSS keeps the canvas in the container
+    } else renderer.setSize(w, h);
     postfx.setSize(w, h);
     if (film) film.setSize(renderer.domElement.width, renderer.domElement.height);
     camera.aspect = w / h;
@@ -102,6 +115,13 @@ export function initCineTab(root) {
   addEventListener('resize', resize);
   resize();
 
+  // THE SOUND RAIL (cine/sound.js): the live loop fires a cue the frame
+  // the clock crosses it, through the game's own sfx; a seek fires nothing
+  // (a capture is silent — scripts/cine-mux.mjs lays the same rail onto
+  // the clip). ?sound=0 mutes.
+  const rail = q.get('sound') === '0' ? [] : (SOUND_RAILS[which] || []);
+  const sfx = rail.length ? makeAudio({ seed: 1 }) : null;
+  if (sfx) sfx.arm();
   let t = 0, held = false, active = false;
   const park = q.get('t') != null ? parseFloat(q.get('t')) : null;
   const clock = new THREE.Clock();
@@ -152,7 +172,9 @@ export function initCineTab(root) {
       return;
     }
     const dt = Math.min(0.05, clock.getDelta());
+    const t0 = t;
     if (park == null) t = (t + dt) % cine.duration; else t = park;
+    if (sfx && park == null) for (const c of cuesBetween(rail, t0, t)) sfx.play(c.key, { gain: c.gain ?? 1 });
     draw(t);
     if (gov.g) {
       fpsSmooth += ((dt > 0 ? 1 / dt : 60) - fpsSmooth) * 0.1;

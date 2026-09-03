@@ -52,7 +52,10 @@ if ((args.mode || 'cdp') === 'launch') {
   for (let i = 0; i < frames; i++) {
     const t = from + i / fps;
     const f = join(out, `f${String(i).padStart(5, '0')}.png`);
-    const u = `${base}${sep}t=${t}&once=1&dump=1${hash ? '#' + hash : ''}`;
+    // size on the URL: the page sizes its drawing buffer to the frame
+    // itself, so Chrome's bar accounting (87 px, but not every run) cannot
+    // put the wrong aspect or an odd height into the clip
+    const u = `${base}${sep}t=${t}&once=1&dump=1&size=${W * scale}x${H * scale}${hash ? '#' + hash : ''}`;
     // the PNG arrives as PNGCHUNK console lines on Chrome's stderr; the
     // --screenshot flag only makes headless wait for the budget and exit
     const err = spawnSync(CHROME, ['--headless=new', `--window-size=${W * scale},${H * scale + CHROME_BAR}`, '--hide-scrollbars',
