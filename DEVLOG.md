@@ -6,6 +6,19 @@ Demo links assume `npm run serve` (port 8144) or the
 
 ---
 
+## `a9b4d6f` — the katakana パ was Jekyll
+
+The Bridge and Shikaku minigames showed only their パ mark on Pages while
+HDT worked, filed since 2026-09-01 as unreproduced because localhost renders
+them clean. Walking the app's 67-module graph against the live site found
+seven modules returning 404, all under `src/skins/` and all named with a
+leading underscore: GitHub Pages runs a site through Jekyll unless told not
+to, and Jekyll drops every underscore-prefixed file. A `.nojekyll` at the
+root turns that off. Localhost serves everything, which is why the bug could
+never be seen here and read as a phone problem.
+
+---
+
 ## `04ddc18` — the MK-CX/2 is the fielded tank
 
 By the operator's ruling the MK-CX/2 is the default wherever the MK-CX was:
