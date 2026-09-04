@@ -19,68 +19,68 @@
 
 import * as THREE from '../vendor/three.module.js';
 import GUI from '../vendor/lil-gui.esm.js';
-import { generateSphereMesh, relax } from './grid.js?v=63600e3e';
-import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=63600e3e';
-import { compileRail } from './cine/rail.js?v=63600e3e';
-import { SCRIPTS } from './cine/scripts.js?v=63600e3e';
-import { cuesBetween } from './cine/sound.js?v=63600e3e';
-import { installCine } from './cine/kit.js?v=63600e3e';
-import { mulberry32, randomSeed } from './rng.js?v=63600e3e';
-import { computeBerths, berthIndexFor } from './berths.js?v=63600e3e';
-import { wantsSecondary, shellsForAll } from './autofire.js?v=63600e3e';
-import { printPhase, printOffset, printOn, patternSecsFor } from './printpath.js?v=63600e3e';
-import { createBeamRig, PLASMA_DEFAULTS, BOARD_PRESET, BEAM_PEAK } from './beamdraw.js?v=63600e3e';
-import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3, segKey, tangentDir, tangentBasis } from './vec3.js?v=63600e3e';
-import { CREATURES, waveJelly } from './creatures.js?v=63600e3e';
-import { brief, dwellFor } from './isaobriefs.js?v=63600e3e';
-import { drawEmotion } from './emotions.js?v=63600e3e';
+import { generateSphereMesh, relax } from './grid.js?v=5cebd566';
+import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=5cebd566';
+import { compileRail } from './cine/rail.js?v=5cebd566';
+import { SCRIPTS } from './cine/scripts.js?v=5cebd566';
+import { cuesBetween } from './cine/sound.js?v=5cebd566';
+import { installCine } from './cine/kit.js?v=5cebd566';
+import { mulberry32, randomSeed } from './rng.js?v=5cebd566';
+import { computeBerths, berthIndexFor } from './berths.js?v=5cebd566';
+import { wantsSecondary, shellsForAll } from './autofire.js?v=5cebd566';
+import { printPhase, printOffset, printOn, patternSecsFor } from './printpath.js?v=5cebd566';
+import { createBeamRig, PLASMA_DEFAULTS, BOARD_PRESET, BEAM_PEAK } from './beamdraw.js?v=5cebd566';
+import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3, segKey, tangentDir, tangentBasis } from './vec3.js?v=5cebd566';
+import { CREATURES, waveJelly } from './creatures.js?v=5cebd566';
+import { brief, dwellFor } from './isaobriefs.js?v=5cebd566';
+import { drawEmotion } from './emotions.js?v=5cebd566';
 import { ACHIEVEMENTS, ACHV_GROUPS, achievement, blankRun, earned, freshlyEarned,
   sanitiseRecord }
-  from './achievements.js?v=63600e3e';
+  from './achievements.js?v=5cebd566';
 import { applyFontPack, currentFontPack, FONT_NAMES,
-  loadTypeFeel } from './fonts.js?v=63600e3e';
-import { SECONDARY_TOE, applySecondaryToe } from './units.js?v=63600e3e';
-import { UNITS, UNIT_NAMES, buildUnit, buildCreature, preloadMkcx, preloadServer, makeServerFixture, makeShieldShell, preloadContainer, makeContainerFixture, preloadFabricator, makeIsaoDrone, makeBulletCloud, makeRewardSolid, makeShellSolid, makeDebris, makeDotBurst, makePortalCloud, preloadPortalRing, makePortalRing, makeHeartCloud, makeDotEnemy, makeSurvivor, preloadTerraformer, makeTerraformerFixture } from './units.js?v=63600e3e';
-import { LOOKS, LOOK_NAMES } from './looks.js?v=63600e3e';
-import { makeCellIndex } from './cellindex.js?v=63600e3e';
-import { CREATURE_TINTS, ENEMY_SPEC, INTROS, computeWavePlan, accentFor } from './enemyspec.js?v=63600e3e';
-import { PICKUPS } from './pickups.js?v=63600e3e';
-import { rankFor, rankLabel, badgeSVG, killReq, eliteReq } from './ranks.js?v=63600e3e';
-import { beamStep, isBeamStep, PEN_SOFT_FRAC, PEN_HARD_FRAC } from './beamranks.js?v=63600e3e';
-import { burn, sweepAdvance, wallBite as wallBiteFor } from './beamburn.js?v=63600e3e';
-import { arcPoint, projectToArc, toeForCrossing, crossingForToe } from './arc.js?v=63600e3e';
+  loadTypeFeel } from './fonts.js?v=5cebd566';
+import { SECONDARY_TOE, applySecondaryToe } from './units.js?v=5cebd566';
+import { UNITS, UNIT_NAMES, buildUnit, buildCreature, preloadMkcx, preloadServer, makeServerFixture, makeShieldShell, preloadContainer, makeContainerFixture, preloadFabricator, makeIsaoDrone, makeBulletCloud, makeRewardSolid, makeShellSolid, makeDebris, makeDotBurst, makePortalCloud, preloadPortalRing, makePortalRing, makeHeartCloud, makeDotEnemy, makeSurvivor, preloadTerraformer, makeTerraformerFixture } from './units.js?v=5cebd566';
+import { LOOKS, LOOK_NAMES } from './looks.js?v=5cebd566';
+import { makeCellIndex } from './cellindex.js?v=5cebd566';
+import { CREATURE_TINTS, ENEMY_SPEC, INTROS, computeWavePlan, accentFor } from './enemyspec.js?v=5cebd566';
+import { PICKUPS } from './pickups.js?v=5cebd566';
+import { rankFor, rankLabel, badgeSVG, killReq, eliteReq } from './ranks.js?v=5cebd566';
+import { beamStep, isBeamStep, PEN_SOFT_FRAC, PEN_HARD_FRAC } from './beamranks.js?v=5cebd566';
+import { burn, sweepAdvance, wallBite as wallBiteFor } from './beamburn.js?v=5cebd566';
+import { arcPoint, projectToArc, toeForCrossing, crossingForToe } from './arc.js?v=5cebd566';
 import { MINE_TUNE, makeField, layMine, armMines, restock, mineAt,
-  inFan, trip, chain, nextChained, minePolar } from './mines.js?v=63600e3e';
+  inFan, trip, chain, nextChained, minePolar } from './mines.js?v=5cebd566';
 import { RESCUE_TUNE, makeRescue, placeSurvivors, stepBoard, stepGrab,
   disembark, loseCarried, lockOn, waveMix, standing as standingSurv,
   aboard as aboardSurv, missionOver, verdict as rescueVerdict,
-  grabProgress } from './rescue.js?v=63600e3e';
+  grabProgress } from './rescue.js?v=5cebd566';
 import { WORMHOLE_PRESET, WORMHOLE_UNIFORM_DEFAULTS, RING_SPIN, TRAVEL,
-  travelRate, advancePhase } from './portalfx.js?v=63600e3e';
-import { WORMHOLE_FRAG } from './fx/wormhole.frag.js?v=63600e3e';
-import { CORONA_FRAG } from './fx/corona.frag.js?v=63600e3e';
-import { labLine, parseLabQuery } from './lab.js?v=63600e3e';
-import { bakeGalaxyCube } from './galaxybake.js?v=63600e3e';
-import { SKY_PRESET } from './galaxyseed.js?v=63600e3e';
-import { makeScore } from './score.js?v=63600e3e';
-import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER } from './towers.js?v=63600e3e';
-import { makeEconomy, sellRefund } from './economy.js?v=63600e3e';
-import { pickTier } from './perftier.js?v=63600e3e';
-import { applyWeatheredMaterial } from './cine/materials.js?v=63600e3e';
-import { STICK, stickVector, knobOffset } from './stick.js?v=63600e3e';
-import { registerServiceWorker } from './pwa.js?v=63600e3e';
-import { makeBloom } from './postfx.js?v=63600e3e';
-import { TANK_FEEL, TANK_FEEL_KNOBS, makeTankFeel, stepTankFeel, landTankFeel, fireTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js?v=63600e3e';
-import { FEEL, loadFeel, saveFeel } from './feelstore.js?v=63600e3e';
+  travelRate, advancePhase } from './portalfx.js?v=5cebd566';
+import { WORMHOLE_FRAG } from './fx/wormhole.frag.js?v=5cebd566';
+import { CORONA_FRAG } from './fx/corona.frag.js?v=5cebd566';
+import { labLine, parseLabQuery } from './lab.js?v=5cebd566';
+import { bakeGalaxyCube } from './galaxybake.js?v=5cebd566';
+import { SKY_PRESET } from './galaxyseed.js?v=5cebd566';
+import { makeScore } from './score.js?v=5cebd566';
+import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER } from './towers.js?v=5cebd566';
+import { makeEconomy, sellRefund } from './economy.js?v=5cebd566';
+import { pickTier } from './perftier.js?v=5cebd566';
+import { applyWeatheredMaterial } from './cine/materials.js?v=5cebd566';
+import { STICK, stickVector, knobOffset } from './stick.js?v=5cebd566';
+import { registerServiceWorker } from './pwa.js?v=5cebd566';
+import { makeBloom } from './postfx.js?v=5cebd566';
+import { TANK_FEEL, TANK_FEEL_KNOBS, makeTankFeel, stepTankFeel, landTankFeel, fireTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js?v=5cebd566';
+import { FEEL, loadFeel, saveFeel } from './feelstore.js?v=5cebd566';
 import { STRIKE_KNOBS, makeStrike, makeStrikeParams, grantStrikes, stepStrike,
   toggleArm, paintTarget, launchStrike, stepFall, skipFall, fallProgress,
-  strikeDamage, retargetStrike, orbitProgress } from './strike.js?v=63600e3e';
+  strikeDamage, retargetStrike, orbitProgress } from './strike.js?v=5cebd566';
 import { radarBasis, radarProject, radarBearing, sweepAngle, radarPhosphor,
-  proximitySectors, SENSOR_LEVELS, sensorColor } from './radar.js?v=63600e3e';
-import { BLOOM_GROUPS } from './bloomweights.js?v=63600e3e';
-import { TOWER_LOOK_NAMES, DEFAULT_TOWER_LOOK, buildTowerLook, preloadLook } from './towerlooks.js?v=63600e3e';
-import { makeAudio } from './audio.js?v=63600e3e';
-import { DEATH_KEYS } from './audiomanifest.js?v=63600e3e';
+  proximitySectors, SENSOR_LEVELS, sensorColor } from './radar.js?v=5cebd566';
+import { BLOOM_GROUPS } from './bloomweights.js?v=5cebd566';
+import { TOWER_LOOK_NAMES, DEFAULT_TOWER_LOOK, buildTowerLook, preloadLook } from './towerlooks.js?v=5cebd566';
+import { makeAudio } from './audio.js?v=5cebd566';
+import { DEATH_KEYS } from './audiomanifest.js?v=5cebd566';
 
 export function initTdTab(root) {
   let active = false;
@@ -4063,6 +4063,10 @@ export function initTdTab(root) {
   };
 
   function startTutorial() {
+    // THE CAMPAIGN'S TUTORIAL TEACHES THE CAMPAIGN — towers, build mode, the
+    // gates. Every sentence of it is false on a mission, and it would be the
+    // FIRST thing an operator opening ?mission=rescue on a cold browser saw.
+    if (rescueOn) return;
     tutorialActive = true;
     root.classList.add('tutoring');
     tutorial.phase = 'setup';
@@ -4383,6 +4387,46 @@ export function initTdTab(root) {
   // clean load. Dismiss by tap or any key; whatever was queued (tutorial or
   // briefing) runs after. The sim is frozen while it is up.
   const introEl = root.querySelector('#td-intro');
+  // THE FIELD MANUAL IS A BRIEFING, so on a mission it must brief THAT
+  // mission. Every line of the campaign's manual — protect the heart, grab
+  // triads, destroy all portals, build on the high ground — is false here,
+  // and it is the first thing anyone opening `?mission=rescue` on a cold
+  // browser reads. Same frame, same keys block, different sheet of paper.
+  if (rescueOn && introEl) {
+    const head = introEl.querySelector('.fm-head');
+    const body = introEl.querySelector('.fm-body');
+    if (head) head.innerHTML = '&#9626; MISSION BRIEF &middot; RESCUE';
+    if (body) {
+      // the keys block is rebuilt too, not reused: it still offered SHIFT for
+      // lasers that are not fitted and U to upgrade towers that cannot be
+      // built, and a control legend that lists controls you do not have is
+      // the same lie as the manual it sits under
+      const keys = body.querySelector('.fm-keys');
+      if (keys) {
+        keys.innerHTML = '<span>W A S D / arrows</span><span>drive</span>'
+          + '<span>SPACE</span><span>shell &mdash; you have ' + rescueTune.shells + '</span>'
+          + (rescueTune.lasers ? '<span>SHIFT</span><span>lasers</span>' : '')
+          + '<span>N</span><span>lay a MINE one cell ahead</span>'
+          + '<span>Q / E</span><span>cruise up / down</span>'
+          + '<span>1 / 2 / 3</span><span>orbit &middot; 1st &middot; 3rd</span>'
+          + '<span>M / V</span><span>map / cycle view</span>'
+          + '<span>H / ESC</span><span>hint / pause</span>';
+      }
+      body.innerHTML =
+        `<div class="fm-line"><b>${rescueTune.survivors} STRANDED</b> &mdash; orange beacons, out along the lanes</div>`
+        + `<div class="fm-line">drive to one and <b>STOP</b> &mdash; a second parked, and they board</div>`
+        + `<div class="fm-line">the hull seats <b>${rescueTune.seats}</b> &middot; deliver them at the St&aring;lheart</div>`
+        + `<div class="fm-line fm-warn">&#9888; lose the hull with someone aboard and they go with it</div>`
+        + `<div class="fm-line">something reaching a beacon <b>GRABS</b> them &mdash; kill it and they get up</div>`
+        + `<div class="fm-line">RAM the soft ones &middot; free, and there are a lot of them</div>`
+        + `<div class="fm-line fm-warn">&#9888; DO NOT RAM units with SOLID elements &mdash; shells and mines only</div>`
+        + `<div class="fm-line"><b>NO RESUPPLY.</b> ${rescueTune.hulls} hulls &middot; ${rescueTune.shells} shells`
+        + ` &middot; ${rescueTune.mines} mines${rescueTune.lasers ? '' : ' &middot; no secondaries'}</div>`
+        + `<div class="fm-line">no towers, no orbital, no Terraformer &mdash; that is the whole budget</div>`
+        + `<div class="fm-line">the gates keep sending. Taking your time IS the way to lose</div>`;
+      if (keys) body.appendChild(keys);
+    }
+  }
   let introAfter = null;
   function dismissIntro() {
     if (!introEl || introEl.classList.contains('hidden')) return;
