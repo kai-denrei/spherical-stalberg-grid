@@ -57,6 +57,18 @@ token — the corner badge was retired from the game view).
   `?charge=0..1` (TD: park the wave clock inside the warning window —
   `?tick` drives motion, NOT the wave scheduler, so winding it forward
   leaves the countdown where it was),
+  the MINES: `?mines=N` (rack size), `?minelay=N` (lay a row ahead and leave
+  it standing — the only way to photograph a field, since the probe blows
+  everything it lays), `?minearcs=0` (hide the red fan), `?mineprobe=1`
+  (three beats: a row from the front — ONE trip and no chain is the correct
+  answer, a claymore's arc points away from the row behind it; the same row
+  from behind for the chain; the hull in front of its own mine for the
+  friendly fire),
+  the RESCUE mission: `?mission=rescue` (the seam every mission hangs on),
+  `?survivors=N`, `?lasers=1` (refit the secondaries — they are stripped by
+  default, and that is the mission's load-bearing number),
+  `?rescueprobe=1` (drive-by at speed, the phone's drive-by with the lever
+  at zero, the stop, both seats, delivery, the end card),
   the mobile shell's own: `?mobile=1|0` (force the shell on/off — a headless
   run is never coarse), `?goto=1`, `?mobbuild=1` + `?pin=1` (with `?layout`:
   enter BUILD through the button, pin a caption + Isao), `?tapprobe=1`,
