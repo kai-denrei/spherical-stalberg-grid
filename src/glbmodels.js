@@ -315,7 +315,9 @@ export function addEdgeOutlines(root, { angle = 28, opacity = 0.85, color = 0xff
     blending: THREE.AdditiveBlending, depthWrite: false,
   });
   const meshes = [];
-  root.traverse((o) => { if (o.isMesh && o.geometry) meshes.push(o); });
+  // not the helpers: a hidden collision box outlined is a red box with a
+  // diagonal across the container's face (the metal lab, 2026-09-04)
+  root.traverse((o) => { if (o.isMesh && o.geometry && o.visible && !/collision|callout|helper/i.test(o.name || '')) meshes.push(o); });
   for (const m of meshes) {
     m.add(new THREE.LineSegments(new THREE.EdgesGeometry(m.geometry, angle), mat));
   }

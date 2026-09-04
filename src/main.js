@@ -1,27 +1,51 @@
 // main.js — tab shell. Each tab lazily initializes its own renderer/scene the
 // first time it's shown and pauses (skips its loop body) while hidden.
 
-import { wireDevlogBadge } from './devlog.js?v=84d0cdef';
-import { initHomeTab } from './home-tab.js?v=84d0cdef';
-import { initGridTab } from './grid-tab.js?v=84d0cdef';
-import { initMazeTab } from './maze-tab.js?v=84d0cdef';
-import { initOrganicTab } from './organic-tab.js?v=84d0cdef';
-import { initBattleTab } from './battle-tab.js?v=84d0cdef';
-import { initHeartTab } from './heart-tab.js?v=84d0cdef';
-import { initTdTab } from './td-tab.js?v=84d0cdef';
-import { initTankTab } from './tank-tab.js?v=84d0cdef';
-import { initTank2Tab } from './tank2-tab.js?v=84d0cdef';
-import { initTank3Tab } from './tank3-tab.js?v=84d0cdef';
-import { initUnitsTab } from './units-tab.js?v=84d0cdef';
-import { initBeamTab } from './beam-tab.js?v=84d0cdef';
-import { initMetalTab } from './metal-tab.js?v=84d0cdef';
-import { initPortalTab } from './portal-tab.js?v=84d0cdef';
-import { initCineTab } from './cine-tab.js?v=84d0cdef';
-import { initHowTab, initStackTab, initLogTab } from './how-tab.js?v=84d0cdef';
-import { initSimTab } from './sim-tab.js?v=84d0cdef';
-import { initRecordTab } from './recordtab.js?v=84d0cdef';
+import { wireDevlogBadge } from './devlog.js?v=2d6b2444';
+import { initHomeTab } from './home-tab.js?v=2d6b2444';
+import { initGridTab } from './grid-tab.js?v=2d6b2444';
+import { initMazeTab } from './maze-tab.js?v=2d6b2444';
+import { initOrganicTab } from './organic-tab.js?v=2d6b2444';
+import { initBattleTab } from './battle-tab.js?v=2d6b2444';
+import { initHeartTab } from './heart-tab.js?v=2d6b2444';
+import { initTdTab } from './td-tab.js?v=2d6b2444';
+import { initTankTab } from './tank-tab.js?v=2d6b2444';
+import { initTank2Tab } from './tank2-tab.js?v=2d6b2444';
+import { initTank3Tab } from './tank3-tab.js?v=2d6b2444';
+import { initUnitsTab } from './units-tab.js?v=2d6b2444';
+import { initBeamTab } from './beam-tab.js?v=2d6b2444';
+import { initMetalTab } from './metal-tab.js?v=2d6b2444';
+import { initPortalTab } from './portal-tab.js?v=2d6b2444';
+import { initCineTab } from './cine-tab.js?v=2d6b2444';
+import { initHowTab, initStackTab, initLogTab } from './how-tab.js?v=2d6b2444';
+import { initSimTab } from './sim-tab.js?v=2d6b2444';
+import { initRecordTab } from './recordtab.js?v=2d6b2444';
 import { applyFontPack, DEFAULT_FONT, DEFAULT_SHOUT_FONT,
-  loadTypeFeel } from './fonts.js?v=84d0cdef';
+
+  loadTypeFeel } from './fonts.js?v=2d6b2444';
+
+
+// ?coarse=1 — apply the phone's coarse-pointer CSS headless, for ANY tab.
+// No desktop browser can match (pointer: coarse); the media conditions in
+// the loaded sheets are rewritten so the phone's blocks apply and the
+// desktop's do not. Lifted from the TD tab (which keeps its own copy under
+// ?mobile=1) so the metal lab's bottom sheet can be verified the same way.
+if (new URLSearchParams(location.search).get('coarse') === '1') {
+  for (const sheet of document.styleSheets) {
+    let rules;
+    try { rules = sheet.cssRules; } catch { continue; }
+    for (const r of rules) {
+      if (!(r instanceof CSSMediaRule)) continue;
+      const t = r.media.mediaText;
+      if (!/pointer:\s*(coarse|fine)|hover:\s*(none|hover)/.test(t)) continue;
+      r.media.mediaText = t
+        .replace(/\(pointer:\s*coarse\)/g, '(min-width: 0px)')
+        .replace(/\(hover:\s*none\)/g, '(min-width: 0px)')
+        .replace(/\(pointer:\s*fine\)/g, '(min-width: 99999px)')
+        .replace(/\(hover:\s*hover\)/g, '(min-width: 99999px)');
+    }
+  }
+}
 
 // The typeface pack is APP-WIDE and applied before any tab boots: it writes
 // custom properties onto <html>, and a tab that measures its own layout on

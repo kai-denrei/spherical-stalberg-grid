@@ -46,7 +46,10 @@ export function initMetalTab(root) {
 
   const scene = new THREE.Scene();
   const camera = new THREE.PerspectiveCamera(38, 1, 0.02, 200);
-  camera.position.set(3.2, 1.8, 4.2);
+  // ?az=deg&el=deg&dist=N aims the lab from the URL (a still is the test)
+  const az = (parseFloat(q.get('az')) || 37) * Math.PI / 180, el = (parseFloat(q.get('el')) || 19) * Math.PI / 180;
+  const dist = parseFloat(q.get('dist')) || 5.6;
+  camera.position.set(Math.sin(az) * Math.cos(el) * dist, 0.6 + Math.sin(el) * dist, Math.cos(az) * Math.cos(el) * dist);
   const controls = new OrbitControls(camera, renderer.domElement);
   controls.enableDamping = true; controls.dampingFactor = 0.08;
   controls.target.set(0, 0.6, 0);
@@ -64,6 +67,8 @@ export function initMetalTab(root) {
   sun.shadow.camera.left = sun.shadow.camera.bottom = -6; sun.shadow.camera.right = sun.shadow.camera.top = 6;
   scene.add(sun);
   const fill = new THREE.DirectionalLight(0x8ab4ff, 0.7); fill.position.set(-6, 4, 5); scene.add(fill);
+  // a rim from behind, so a side seen against the sky is not a black card
+  const rim = new THREE.DirectionalLight(0x9fdcff, 0.9); rim.position.set(2, 3, -7); scene.add(rim);
   const hemi = new THREE.HemisphereLight(0xc9d4e6, 0x141216, 0.30); scene.add(hemi);
   // a floor that takes the shadow, so the cast stands on something
   const floor = new THREE.Mesh(new THREE.CircleGeometry(6, 64), new THREE.MeshStandardMaterial({ color: 0x07090d, roughness: 1 }));
@@ -88,13 +93,23 @@ export function initMetalTab(root) {
     // rubber
     rBase: hex(r0.baseHex), rRoughLo: r0.roughness[0], rRoughHi: r0.roughness[1],
     // the binding
-    repeat: 1.0, normalScale: 0.6,
+    // judged from the side (2026-09-04): repeat 1 / normal 0.6 read as a
+    // paper-thin panel on the container; 2 / 1.0 shows the plate
+    repeat: 2.0, normalScale: 1.0,
     tArmour: WEATHER_BY_NAME.M_Armour.tint, tTurret: WEATHER_BY_NAME.M_Turret.tint, tDetail: WEATHER_BY_NAME.M_Detail.tint,
     tSteel: WEATHER_BY_NAME.M_Steel.tint, tTrack: WEATHER_BY_NAME.M_Track.tint, tRubber: WEATHER_BY_NAME.M_Rubber.tint,
     // the scene
     exposure: 0.85, env: 0.35, sunI: 2.2, bloom: 0.32,
   };
   const toHex = (s) => parseInt(String(s).replace('#', ''), 16);
+  // URL overrides for any knob (?repeat=3&gNormal=1.2&gBase=%23555c63 …): a
+  // headless still can test a setting the sliders would need a hand for
+  for (const [k, v] of q.entries()) {
+    if (!(k in P) || k === 'subject') continue;
+    if (typeof P[k] === 'number') { const n = parseFloat(v); if (Number.isFinite(n)) P[k] = n; }
+    else if (typeof P[k] === 'boolean') P[k] = v !== '0';
+    else if (typeof P[k] === 'string') P[k] = v.startsWith('#') ? v : '#' + v;
+  }
 
   // the knobs as the baker wants them: three presets and the name map
   function presets() {
@@ -129,7 +144,13 @@ export function initMetalTab(root) {
     await sub.preload();
     const obj = sub.make(LOOKS.tronColors);
     if (!obj) { hud.textContent = `${sub.label}: no cast`; return; }
-    obj.traverse((o) => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; } });
+    obj.traverse((o) => {
+      if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; }
+      // remember which line sets the cast SHOWS: the outline slider may
+      // only touch those. A hidden set (a callout, a bound) un-hidden by
+      // the slider drew a red box with a diagonal across the container.
+      if (o.isLineSegments) o.userData.labOutline = o.visible;
+    });
     obj.updateMatrixWorld(true);
     box.setFromObject(obj); box.getSize(size); box.getCenter(centre);
     const k = 2.6 / Math.max(size.x, size.y, size.z, 1e-6);
@@ -159,7 +180,10 @@ export function initMetalTab(root) {
     // the outlines as a rim, the glow parts as the CRT cyan — the tank
     // scene's choices, on sliders here
     cast.traverse((o) => {
-      if (o.isLineSegments && o.material) { o.material.opacity = P.outline; o.material.transparent = true; o.visible = P.outline > 0; }
+      // the outline pass only — never the model's own callout lines, which
+      // are authored red and shipped hidden: un-hiding them drew a red box
+      // with a diagonal across the container's face
+      if (o.isLineSegments && o.material && o.userData.labOutline) { o.material.opacity = P.outline; o.material.transparent = true; o.visible = P.outline > 0; }
       if (o.isMesh) for (const m of Array.isArray(o.material) ? o.material : [o.material]) {
         if (m && /^M_Glow/.test(m.name || '') && m.emissive) { m.emissive.setHex(0x7df9ff); m.emissiveIntensity = P.glow; m.color.setHex(0x101418); }
       }
@@ -176,8 +200,18 @@ export function initMetalTab(root) {
     postfx.setParams({ strength: P.bloom });
   }
 
-  // THE GUI
+  // THE GUI — on a phone it is a bottom sheet with big rows (styles.css,
+  // the coarse/narrow block) and the gear button shows or hides it: the
+  // panel at desktop size was "impossible to tweak" on the device
   const gui = new GUI({ title: 'METAL', container: root });
+  const gear = root.querySelector('#metal-gear');
+  if (gear) gear.addEventListener('click', () => { root.classList.toggle('panel-hidden'); });
+  // ?layout=1 — where the panel actually is (a phone layout is only
+  // trustworthy as rectangles, never as a screenshot's impression)
+  if (q.get('layout') === '1') setTimeout(() => {
+    const r = gui.domElement.getBoundingClientRect(), cs = getComputedStyle(gui.domElement);
+    console.log(`METAL layout: gui ${Math.round(r.left)}..${Math.round(r.right)} x ${Math.round(r.top)}..${Math.round(r.bottom)} pos=${cs.position} display=${cs.display} vis=${cs.visibility} inner=${innerWidth}x${innerHeight} class=${gui.domElement.className}`);
+  }, 2500);
   gui.add(P, 'subject', Object.keys(SUBJECTS)).onChange(buildCast);
   gui.add(P, 'spin');
   gui.add(P, 'weather').name('weathered').onChange(() => { buildCast(); });

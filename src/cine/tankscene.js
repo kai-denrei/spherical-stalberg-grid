@@ -15,15 +15,15 @@
 // countdown the game steps by dt; here it is written from the shot times,
 // so a seek lands on the same frame as a play-through.
 import * as THREE from '../../vendor/three.module.js';
-import { buildCreature, preloadMkcx, makeBulletCloud } from '../units.js?v=84d0cdef';
-import { bakeGalaxyCube } from '../galaxybake.js?v=84d0cdef';
-import { SKY_PRESET } from '../galaxyseed.js?v=84d0cdef';
-import { LOOKS } from '../looks.js?v=84d0cdef';
-import { compileRail } from './rail.js?v=84d0cdef';
-import { makeWirePlanet, widenWire } from './planet.js?v=84d0cdef';
-import { applyWeatheredMaterial } from './materials.js?v=84d0cdef';
-import { createBeamRig, PLASMA_DEFAULTS, BOARD_PRESET, BEAM_PEAK } from '../beamdraw.js?v=84d0cdef';
-import { TANK_FEEL, makeTankFeel, applyTankFeel } from '../tankfeel.js?v=84d0cdef';
+import { buildCreature, preloadMkcx, makeBulletCloud } from '../units.js?v=2d6b2444';
+import { bakeGalaxyCube } from '../galaxybake.js?v=2d6b2444';
+import { SKY_PRESET } from '../galaxyseed.js?v=2d6b2444';
+import { LOOKS } from '../looks.js?v=2d6b2444';
+import { compileRail } from './rail.js?v=2d6b2444';
+import { makeWirePlanet, widenWire } from './planet.js?v=2d6b2444';
+import { applyWeatheredMaterial } from './materials.js?v=2d6b2444';
+import { createBeamRig, PLASMA_DEFAULTS, BOARD_PRESET, BEAM_PEAK } from '../beamdraw.js?v=2d6b2444';
+import { TANK_FEEL, makeTankFeel, applyTankFeel } from '../tankfeel.js?v=2d6b2444';
 
 export const TANK_LEN = 12;
 
@@ -156,7 +156,8 @@ export function createTank({ renderer, scene, camera, tier = {} }) {
     // glow stays lit but not white-hot.
     const ol = q.get('outline') == null ? 0.22 : parseFloat(q.get('outline'));
     tank.traverse((o) => {
-      if (o.isLineSegments && o.material) { o.material.opacity = ol; o.material.transparent = true; o.material.color.setHex(look.walkerHi ?? 0xffffff); o.visible = ol > 0; }
+      // only the line sets the cast shows; a hidden set (a callout, a bound) stays hidden
+      if (o.isLineSegments && o.material && o.visible) { o.material.opacity = ol; o.material.transparent = true; o.material.color.setHex(look.walkerHi ?? 0xffffff); o.visible = ol > 0; }
       // the glow parts — lift emitters, deck strips, the turret drum — wear a
       // WHITE emissive on the board; here they take the CRT cyan, dim, and
       // the unlit basics (heat sleeves, the shell rack) go the same way. A
