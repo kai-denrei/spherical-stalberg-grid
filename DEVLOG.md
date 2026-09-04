@@ -6,6 +6,30 @@ Demo links assume `npm run serve` (port 8144) or the
 
 ---
 
+## `1295b08` — THE STRIKE v2: a dual portal, a large wave, the console, the fall, the crater
+
+The operator's ruling: the strike hits a *dual portal* from which a large
+wave emerged — dramatic. The director gained what that needs. A `gate`
+verb raises gates side by side, N hops from the tank (`addSpawnPoint`
+takes a cell now); `spawn` may pour from the raised pair alternately;
+`strike` may target them. Rail keys carry `at`, the frame a key is
+authored in — `tank` (the chase rig), `gates` (the raised pair's
+midpoint, facing the tank) or `target` (the strike's cell) — and the
+frame switches at the key, as a cut. **The rail holds across a cut**:
+between two keys in different frames it keeps the earlier pose until the
+later key's time, because blending a tank-relative pose toward a
+target-relative one had walked the camera four cells ahead of the tank,
+into the Terraformer.
+
+The script runs 32 s: in front of the dual portal as 150 phage, ten
+drifters and four coronas pour out at the lens; the cut to the tank and
+the console; the safety and the launch at 12 s; the board's own strikecam
+riding the munition down ("TGT CELL 1027 · 9780M"); two portals off the
+board; the rail back on the crater as the survivors scatter under the
+radar's red arcs. `renders/dir-strike.mp4`.
+
+---
+
 ## `3b9afc1` — the metal lab
 
 "Sliders to arrange the look and feel on large models of the Tank /
