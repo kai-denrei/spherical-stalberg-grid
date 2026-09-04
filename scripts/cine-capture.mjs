@@ -58,11 +58,17 @@ if ((args.mode || 'cdp') === 'launch') {
     const u = `${base}${sep}t=${t}&once=1&dump=1&size=${W * scale}x${H * scale}${hash ? '#' + hash : ''}`;
     // the PNG arrives as PNGCHUNK console lines on Chrome's stderr; the
     // --screenshot flag only makes headless wait for the budget and exit
-    const err = spawnSync(CHROME, ['--headless=new', `--window-size=${W * scale},${H * scale + CHROME_BAR}`, '--hide-scrollbars',
-      '--enable-logging=stderr', '--v=0', '--timeout=60000', `--virtual-time-budget=${args.budget || 4000}`,
-      `--screenshot=${f}.shot.png`, u], { encoding: 'utf8', maxBuffer: 256 * 1024 * 1024 }).stderr || '';
-    const chunks = new Map(); let total = 0;
-    for (const m of err.matchAll(/PNGCHUNK (\d+)\/(\d+) ([A-Za-z0-9+/=]+)/g)) { chunks.set(Number(m[1]), m[3]); total = Number(m[2]); }
+    // the FIRST frame after a bust overruns the budget on a cold load and
+    // comes back empty; the same launch a second time draws. One retry.
+    let chunks = new Map(), total = 0;
+    for (let attempt = 0; attempt < 2 && (!total || chunks.size !== total); attempt++) {
+      const err = spawnSync(CHROME, ['--headless=new', `--window-size=${W * scale},${H * scale + CHROME_BAR}`, '--hide-scrollbars',
+        '--enable-logging=stderr', '--v=0', '--timeout=60000', `--virtual-time-budget=${args.budget || 4000}`,
+        `--screenshot=${f}.shot.png`, u], { encoding: 'utf8', maxBuffer: 256 * 1024 * 1024 }).stderr || '';
+      chunks = new Map(); total = 0;
+      for (const m of err.matchAll(/PNGCHUNK (\d+)\/(\d+) ([A-Za-z0-9+/=]+)/g)) { chunks.set(Number(m[1]), m[3]); total = Number(m[2]); }
+      if ((!total || chunks.size !== total) && attempt === 0) console.error(`frame ${i}: ${chunks.size}/${total} chunks on a cold load — once more`);
+    }
     if (!total || chunks.size !== total) { console.error(`frame ${i}: got ${chunks.size}/${total} chunks — the page did not draw (ready never true?)`); process.exit(1); }
     writeFileSync(f, Buffer.from(Array.from({ length: total }, (_, k) => chunks.get(k + 1)).join(''), 'base64'));
     try { run('rm', ['-f', `${f}.shot.png`]); } catch {}

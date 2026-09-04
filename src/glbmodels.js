@@ -63,6 +63,24 @@ export function loadGlb(url) {
 // intact, so a preserved pivot still sits exactly where the artist put it.
 //
 // With no pivots this is a full flatten, which is what a static prop wants.
+// uv by box projection: each vertex takes the two coordinates across its
+// normal's dominant axis, in the geometry's own frame, scaled so one unit
+// of the model is one repeat — the same scale a texture on the authored
+// parts sees, near enough for a weathered plate.
+function boxProjectUv(g) {
+  const pos = g.attributes.position, nrm = g.attributes.normal;
+  const n = pos.count;
+  const uv = new Float32Array(n * 2);
+  for (let i = 0; i < n; i++) {
+    const x = pos.getX(i), y = pos.getY(i), z = pos.getZ(i);
+    const nx = Math.abs(nrm.getX(i)), ny = Math.abs(nrm.getY(i)), nz = Math.abs(nrm.getZ(i));
+    let u, v;
+    if (nx >= ny && nx >= nz) { u = z; v = y; } else if (ny >= nz) { u = x; v = z; } else { u = x; v = y; }
+    uv[i * 2] = u; uv[i * 2 + 1] = v;
+  }
+  return new THREE.BufferAttribute(uv, 2);
+}
+
 export function mergeByMaterial(root, pivotNames = [], exclude = []) {
   root.updateMatrixWorld(true);
   // Drop unwanted parts BEFORE merging — afterwards they are welded into a
@@ -106,6 +124,12 @@ export function mergeByMaterial(root, pivotNames = [], exclude = []) {
       if (name !== 'position' && name !== 'normal' && name !== 'uv') g.deleteAttribute(name);
     }
     if (!g.attributes.normal) g.computeVertexNormals();
+    // A part without uv gets a BOX PROJECTION in its own frame — the
+    // standard fallback — so the batch keeps uv and can wear a texture.
+    // The ring's pod parts came without one (2026-09-04), and one bare
+    // part made mergeByMaterial drop uv for the whole batch: the pods wore
+    // the dark base while the plates wore the weathered metal.
+    if (!g.attributes.uv) g.setAttribute('uv', boxProjectUv(g));
     const mat = Array.isArray(o.material) ? o.material[0] : o.material;
     if (!batches.has(owner)) batches.set(owner, new Map());
     const byMat = batches.get(owner);
