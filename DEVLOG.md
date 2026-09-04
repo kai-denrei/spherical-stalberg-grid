@@ -6,6 +6,35 @@ Demo links assume `npm run serve` (port 8144) or the
 
 ---
 
+## `ed67eaf` — GATE v2 and PLANET v2 on the director
+
+**THE PLANET v2** — "lived-in, regular game elements going on" — is the
+board under an orbit camera with the game on it: towers at the heart and
+the gates, a wave down two lanes, drifters from the far gate, the tank on
+AUTO; then a cut down to a graze beside the tank and a cut back out. Two
+things the orbit needed. The board draws only the carved sector, so from
+three radii out the world was a lit fragment on nothing: a script with
+`globe: true` draws every quad edge of the board's *own* sphere mesh,
+faint, under the sector — the game's pipeline, not a second one. It has
+to sit **above the wall tops**: the uncarved cells are dark rock with
+walls, and a globe at the planet's radius drew nothing at any opacity
+through three probes — in scene, visible, radius 1, camera at three
+units, far plane 60, all logged — until `?glober=1.6` filled the frame
+and named the occluder. And the orbit frame faces the heart, z out
+through it, so a key at `[0, 8, 40]` hangs above the action; world axes
+had put the sector on the limb.
+
+**THE GATE v2** — "a normal-sized portal on a built planet, with towers
+and enemies and the tank; starts like a wormhole, then brings us into
+the action" — is the cine tab's wormhole beats at 720p (CDP capture
+works under the hang width; 240 frames in 63 s) cut to a director
+script: one gate raised seven to eleven hops out, two rapid towers on
+it, eighty phage and four drifters pouring out, the tank arriving to ram
+it, a cut to the chase. `renders/gate-v2.mp4` is the two halves
+concatenated, 30 s.
+
+---
+
 ## `1295b08` — THE STRIKE v2: a dual portal, a large wave, the console, the fall, the crater
 
 The operator's ruling: the strike hits a *dual portal* from which a large

@@ -288,7 +288,12 @@ fixed dt for capture.
   the cine tab's wormhole and *cuts* to the director's board; the tank's
   hydraulics are the game's own `stopEngine`/engine-on with its sounds.
 
-### Order
+### Order — status 2026-09-04
+
+All five have first cuts at 720p in `renders/`: `dir-ram.mp4` (30 s),
+`dir-strike.mp4` (32 s, the dual portal by ruling), `dir-tank.mp4`
+(24 s), `gate-v2.mp4` (30 s, wormhole + board), `dir-planet.mp4` (30 s,
+with the globe). Sound for the director scripts is still open.
 
 1. **Director mode** — the seam. Unblocks all five. Probe: a 6 s scripted
    run captured twice is byte-identical.
