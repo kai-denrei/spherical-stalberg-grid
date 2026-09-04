@@ -6,7 +6,7 @@ Demo links assume `npm run serve` (port 8144) or the
 
 ---
 
-## `8a0825c` — the RESCUE mission: six stranded, two seats, no resupply
+## `8a0825c`…`1c54f9d` — the RESCUE mission: six stranded, two seats, no resupply
 
 `#td?mission=rescue`. The operator's brief was one paragraph — *"a handful
 of astronauts stranded, requires smart use of limited mines and shells to
@@ -116,6 +116,38 @@ RESCUEPROBE end   ended=true saved=2 lost=4 THE CARD FIRED
 `?survivors=N`, `?lasers=1`. `test/rescue.mjs` pins the rest with no
 renderer, including the spacing degradation and the verdict scoring out of
 what was placed.
+
+### Three holes the verification found, and none of them by reading
+
+Worth naming, because all three were invisible in the code and obvious the
+moment something ran.
+
+**The stop clause was desktop-only.** It read the throttle, and the phone
+has no throttle — the stick and tap-to-go drive the hull with the lever
+sitting at zero, so every drive-by would have boarded and the clause that
+*is* the mode would have silently done nothing on the shell. It reads both
+halves now: the control is not asking for speed, **and** the hull is
+measurably under `boardSpeed` cells per second. The probe grew the beat
+that catches it — lever at zero, hull rolling across the beacon — and that
+beat passes only because of the second half.
+
+**Killing the gates threw the campaign's victory modal** over a mission
+with four survivors still standing in the road. Shutting the spawns off to
+ferry at leisure is a legitimate plan and rather a good one; it just is not
+a win. `checkVictory` belongs to the campaign.
+
+**A 170-second soak ended "the heart is lost" at 0/6.** On this mission the
+Stålheart is where you *deliver* people — making it a second thing to
+defend adds an objective the brief did not ask for, and loses the run to
+something the player was never there to stop. It takes no damage on a
+rescue; the creature is still consumed, so the field clears the same way.
+Re-run: "the field is clear", and no runtime errors across the whole three
+minutes.
+
+And the ending is now an ending: `endRescue` sets the same run-over flag
+every other ending uses, and `loseGame` returns straight after it instead
+of falling through to a verdict that counts sectors, towers and portals
+this mission never had.
 
 ### And the astronaut question the handoff asked
 
