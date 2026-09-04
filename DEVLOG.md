@@ -6,6 +6,24 @@ Demo links assume `npm run serve` (port 8144) or the
 
 ---
 
+## `82880d8` — the shell watches its own camera
+
+Build `42e61776`, two phone screenshots: the eye at deck height looking
+down the corridor, the secondaries firing from the bottom edge, no tank
+— "recurring", "a game stopper on mobile". Every reading of the code says
+the shell cannot be in first person (`setView` folds it; only the `2` key
+and a probe ask for it), and the pose cannot be read on the device. So
+the shell watches for the *symptom*: in DRIVE with no shot, no deploy
+and no pause, the tank out of the camera's frustum for 1.5 s is a stuck
+camera, whatever stuck it. The watchdog ends any shot, forces third,
+snaps the goal, and paints what it found — view, build, shot, deploy,
+camToTank, cur/next — on the caption lane so the next screenshot carries
+the cause. `?viewwatch=0` turns it off. Belt and braces: the pose folds
+pov to third on the shell, and the mode button names its destination —
+DRIVE ends any shot, sets third and snaps: the reset button.
+
+---
+
 ## `8148cc1` — the shell's chase eye looks nearer the tank
 
 "On mobile I still do not see the tank — it's stuck too high or too
