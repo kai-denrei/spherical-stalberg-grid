@@ -6,6 +6,50 @@ Demo links assume `npm run serve` (port 8144) or the
 
 ---
 
+## `3e7efe4` — the director: a cinematic is a scripted run of the board itself
+
+The operator's second direction, after the night's three clips: 720p is
+enough while the direction moves, and every cinematic they want is *the
+game* — the tank ramming through two hundred phage with a torus boss and
+the radar zooming on the proximity danger; an orbital strike with the
+safety, the launch and a live target; a gate that opens as the wormhole
+and lands in the action on a built planet; the tank starting engine-off
+and spooling for the hydraulics. A scene that draws those from a
+separate file is a second copy of the board, the one thing this project
+has refused to copy. So the cinematics moved *into* the board.
+
+`#td?director=NAME` runs a script from `src/cine/scripts.js` — pure data,
+Node-tested: a rail in cells, in the tank's own frame at every frame (a
+chase rig: "behind-left, low" stays behind-left as the tank drives), and
+cues the board executes when its clock crosses them, the way the sound
+rail's do. The verbs are the closure's own functions: `spawn` queues at a
+gate, `goto` is `gotoCell`, `strike` presses the real safety and launch
+buttons, `engine` is the spool-up and `stopEngine`, `radar` scales the
+scope's canvas in place. With `?capture=1` the loop is *held* from the
+first frame and the capture harness steps the sim at 1/30 s through
+`installCine`'s `seek` — the cine tab's seam — and `Page.captureScreenshot`
+takes the whole page, radar and console included, at 720p, under the
+width that hung the M4. 900 frames in 100 s.
+
+Four things the first RAM captures taught, each read off the state line
+the director prints every two seconds (`?dirlog=1`), never off a still:
+the tank stood at the berth because the pre-roll had not waited for a
+berth exit that is staged *after* the models land (`deploysDone`); the
+queue held 200 and the tank held still because **a shot freezes the
+sim** — the cold open's rule, exactly wrong for a scripted run, so the
+director's shot is exempt from both freeze gates; a `goto` from the
+berth is refused for want of a path and now retries per frame; and two
+hundred phage reaching the heart ended the run and the shot with it — a
+scripted run cannot be lost (`heartHit`, `loseTank`, `destroyPlayer`,
+`loseGame`, `checkVictory` all yield under the director), Isao's briefs
+are silenced, and the rail comes back whatever ended it.
+
+`renders/dir-ram.mp4` is the first run: the tank out of the berth, up the
+lane through the crowd, through the gate with the knot on it, the radar
+at 2.8× with the arcs red, then on to the heart.
+
+---
+
 ## `69c6240` — phase 4: the sound rail, and the capture sizes its own frame
 
 The ruling was that a cinematic re-uses the game's own sounds where one
