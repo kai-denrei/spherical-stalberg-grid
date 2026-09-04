@@ -6,6 +6,24 @@ Demo links assume `npm run serve` (port 8144) or the
 
 ---
 
+## `8148cc1` — the shell's chase eye looks nearer the tank
+
+"On mobile I still do not see the tank — it's stuck too high or too
+forward", on the build that fixed the tutorial's handoff. The pose
+explains it: the shell's eye rides lower behind (0.78, the earlier ask)
+but the look point stayed 1.4 cells *ahead* of the tank, and a low eye
+looking far ahead puts the tank at screen-y −0.43 — the bottom fifth of
+a phone's short landscape viewport, under the stick and the fire pad.
+The look point decides where the tank sits in the frame, not the eye's
+height: the shell looks 0.45 cells ahead now and the tank rides a third
+up the frame; the replica after the handoff paints
+`tankScreen=(0.00,-0.25)` on the caption lane. The desktop keeps its
+look-ahead. Also today: the metal's default is the operator's read
+(medium grey, half-metal oxide at 38%, their light), and COPY shows the
+preset on screen.
+
+---
+
 ## `283ba81` — the metal lab on a phone, and the sides of the metal
 
 From the phone: "on mobile it's impossible to tweak" and "the sides
