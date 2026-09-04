@@ -6,6 +6,78 @@ Demo links assume `npm run serve` (port 8144) or the
 
 ---
 
+## `1b28304` — a deep-link button on every lab
+
+Every lab tab is a tuning surface, and the answer a tuning session produces
+is a set of numbers. Until this, the only way to carry one out of the tab
+was to read the sliders off a screenshot — so a look that took twenty
+minutes to find could not be handed to anyone, or to yourself tomorrow.
+
+The 🔗 button copies the whole panel as a URL **and** writes it into the
+address bar. Both, deliberately: on a phone the clipboard refuses often
+enough that a button which only copies is one that sometimes does nothing
+at all (the metal lab already learned that — *"I cannot copy paste the
+value"*), and an address bar is a fallback every device has.
+
+### Two rules make it usable rather than merely correct
+
+**Only what differs.** A link that restates every default is unreadable,
+and worse, it *pins* values that should follow the code — open it in a
+month and you are looking at last month's defaults on this month's model.
+The diff is the message; everything else is inherited.
+
+**Never a `#`.** Colours live in these params as `'#rrggbb'`, and a `#` in
+a query string ends the query and starts the fragment. One unescaped hash
+truncates the link at the first colour — which surfaces as *"the link only
+carries half my settings"* and as nothing else, so it is a test rather
+than a comment:
+
+```js
+check('a colour loses its hash', encodeValue('#4b5157') === '4b5157');
+```
+
+One-shot flags — a probe, a capture, a dump — are stripped through
+`DROP_KEYS`. A shared address that re-runs somebody's probe is one nobody
+trusts.
+
+### Two labs could not have read one back
+
+`beam` and `portal` each parsed four *named* URL keys and nothing else. A
+link to either would have been an address the lab ignores, which is worse
+than no button — so both now take the same generic pass over their own
+panel that `astro` and `metal` already had. Their named parameters
+(`?sweepmode`, `?labside`, `?portalfx`) keep their own handling. `portal`'s
+own comment had already asked for this — *"so a look can be linked rather
+than described"* — for a single parameter; it is true of the whole panel
+now.
+
+### The units viewer already had one
+
+And I did not notice until the probe threw: adding mine put a second
+`#units-link` in the document. Its button is better placed than mine would
+have been — in the viewer chrome, with a label — so mine is gone and
+theirs is untouched. Worth writing down as the general shape: **before
+adding a control to a tab, grep the tab for the control.**
+
+### The probe
+
+`?dlprobe=1` presses whichever lab's button is open and logs the URL. One
+probe for all of them, because they all come through one function — and it
+is the only thing that actually checks the round trip:
+
+```
+DEEPLINK ASTRO:  …?seed=99&outline=0.6&path=straight&personH=1.2&tankLen=14#astro
+DEEPLINK METAL:  …?gBase=aabbcc&repeat=3.5&seed=99&spin=0&unit=container#metal
+DEEPLINK BEAM:   …?seed=99&exposure=1.4&reachCells=7#beam
+DEEPLINK PORTAL: …?seed=99&radius=1.4&steps=64#portal
+```
+
+Note `unit=container` on the metal line: that lab's `subject` knob is read
+from `?unit=` by its own parser, so the link has to emit it under that
+name or it would not round-trip the model it was tuned on.
+
+---
+
 ## `c5d3bc3` / `1f72484` — the study gets sliders, and RESCUE 2: the raid
 
 Two asks in one message, and the second one is a second mission.
