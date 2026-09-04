@@ -1,5 +1,5 @@
 // scripts.mjs — the director's scripts are well-formed before the board runs one.
-import { SCRIPTS, VERBS } from '../src/cine/scripts.js';
+import { SCRIPTS, VERBS, ANCHORS } from '../src/cine/scripts.js';
 import { compileRail } from '../src/cine/rail.js';
 let failures = 0;
 const check = (name, cond, detail = '') => {
@@ -17,6 +17,7 @@ for (const [name, sc] of Object.entries(SCRIPTS)) {
   const p = rail.poseAt(sc.len / 2);
   check(`${name}: a pose mid-way is finite`, [...p.pos, ...p.look].every(Number.isFinite) && p.fov > 0);
   check(`${name}: the camera never sits inside the tank`, sc.rail.every((k) => Math.hypot(k.pos[0], k.pos[1], k.pos[2]) > 0.6));
+  check(`${name}: every anchor known`, sc.rail.every((k) => !k.at || ANCHORS.includes(k.at)));
 }
 console.log(failures === 0 ? 'scripts: all good' : `scripts: ${failures} FAILURES`);
 process.exit(failures === 0 ? 0 : 1);

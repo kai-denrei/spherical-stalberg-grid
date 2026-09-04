@@ -18,6 +18,12 @@
 //   hud      { show: 'full'|'radar'|'none' }
 //   biomass  { n }
 //   warp     { to: 'open'|ci }                                     set the tank down on a cell, stopped
+//   gate     { count, hops: [lo, hi] }                              raise gates side by side, hops from the tank
+//
+// A rail key may say at: 'tank' (default) | 'gates' | 'target' — the frame
+// it is authored in; the frame switches at the key (a cut). spawn's gate
+// may be 'raised' (the gates the script raised, alternating); strike's
+// target may be 'gates'.
 //
 // A script may also say waves:false (the board's own wave clock held) and
 // immune:false (the run can be lost; default: it cannot).
@@ -25,7 +31,8 @@
 // Pure: no three.js, no DOM. Node-tested (test/scripts.mjs): cues in
 // range and sorted, every verb known, every rail key well-formed.
 
-export const VERBS = ['spawn', 'tower', 'goto', 'throttle', 'steer', 'fire', 'laser', 'engine', 'view', 'strike', 'radar', 'hud', 'biomass', 'warp'];
+export const VERBS = ['spawn', 'tower', 'goto', 'throttle', 'steer', 'fire', 'laser', 'engine', 'view', 'strike', 'radar', 'hud', 'biomass', 'warp', 'gate'];
+export const ANCHORS = ['tank', 'gates', 'target'];
 
 // Rail keys: pos/look in CELLS, in the tank's frame at t=0 — x right, y up
 // (off the surface), z forward (the tank's heading). The board maps them
@@ -58,19 +65,31 @@ export const SCRIPTS = {
     ],
   },
 
-  // THE STRIKE: the safety, the launch, the strikecam, a crowd hit.
+  // THE STRIKE (operator, 2026-09-04: "hit a dual portal from which a
+  // large wave emerged — dramatic"): two gates raised side by side, the
+  // wave pouring out at the lens, a cut to the tank and the console — the
+  // safety, the launch — the strikecam riding the munition down (the
+  // board's own camera; the rail yields), and the rail back on the crater
+  // and the dead gates as the crowd scatters.
   strike: {
-    len: 22, seed: 4414, hud: 'full',
+    len: 32, seed: 4414, hud: 'full', waves: false,
     rail: [
-      { t: 0, pos: [-2.5, 1.4, -3.5], look: [0, 0.5, 1.5], fov: 42 },
-      { t: 5, pos: [-1.5, 1.2, -2.8], look: [0, 0.5, 2.0] },
-      { t: 22, pos: [-1.5, 1.2, -2.8], look: [0, 0.5, 2.0] },           // the strikecam takes over while it falls
+      { t: 0, at: 'gates', pos: [0.0, 0.9, 3.2], look: [0, 0.6, 0], fov: 40 },     // in front of the dual portal, facing it
+      { t: 5, at: 'gates', pos: [1.6, 1.4, 4.2], look: [0, 0.6, -0.5] },
+      { t: 9, at: 'gates', pos: [-1.8, 2.2, 5.5], look: [0, 0.5, 0] },
+      { t: 9.05, at: 'tank', pos: [-1.3, 1.1, -2.4], look: [0, 0.6, 1.5] },        // CUT: the tank and the console
+      { t: 13, at: 'tank', pos: [-1.1, 1.0, -2.0], look: [0, 0.6, 1.5] },
+      { t: 20, at: 'target', pos: [0.0, 2.6, 4.5], look: [0, 0.3, 0] },            // the rail is back at impact: the crater
+      { t: 26, at: 'target', pos: [2.6, 3.0, 6.0], look: [0, 0.3, 0] },
+      { t: 32, at: 'target', pos: [4.0, 4.5, 9.0], look: [0, 0.2, 0] },
     ],
     cues: [
       { t: 0.0, do: 'biomass', n: 2000 },
-      { t: 0.0, do: 'spawn', type: 'phage', count: 40, gate: 'nearest', every: 0.15 },
-      { t: 0.0, do: 'spawn', type: 'drifter', count: 6, gate: 'nearest', every: 0.6 },
-      { t: 6.0, do: 'strike', target: 'crowd' },
+      { t: 0.0, do: 'gate', count: 2, hops: [8, 13] },
+      { t: 0.0, do: 'spawn', type: 'phage', count: 150, gate: 'raised', every: 0.06 },
+      { t: 0.0, do: 'spawn', type: 'drifter', count: 10, gate: 'raised', every: 0.5 },
+      { t: 1.0, do: 'spawn', type: 'corona', count: 4, gate: 'raised', every: 1.2 },
+      { t: 12.0, do: 'strike', target: 'gates' },
     ],
   },
 
