@@ -98,8 +98,9 @@ export function initMetalTab(root) {
     repeat: 2.0, normalScale: 1.0,
     tArmour: WEATHER_BY_NAME.M_Armour.tint, tTurret: WEATHER_BY_NAME.M_Turret.tint, tDetail: WEATHER_BY_NAME.M_Detail.tint,
     tSteel: WEATHER_BY_NAME.M_Steel.tint, tTrack: WEATHER_BY_NAME.M_Track.tint, tRubber: WEATHER_BY_NAME.M_Rubber.tint,
-    // the scene
-    exposure: 0.85, env: 0.35, sunI: 2.2, bloom: 0.32,
+    // the scene — the light the operator judged the grey under (their
+    // phone, 2026-09-04): a metal takes its brightness from its environment
+    exposure: 1.2, env: 0.5, sunI: 3.75, bloom: 0.15,
   };
   const toHex = (s) => parseInt(String(s).replace('#', ''), 16);
   // URL overrides for any knob (?repeat=3&gNormal=1.2&gBase=%23555c63 …): a
@@ -274,11 +275,17 @@ export function initMetalTab(root) {
   const copyBtn = root.querySelector('#metal-copy');
   let flashT = 0;
   const flash = (msg) => { hud.textContent = msg; flashT = performance.now() + 2500; };
+  // the preset is also SHOWN, selectable, because on a phone the clipboard
+  // may refuse and the button itself sat under the status bar (operator,
+  // 2026-09-04: "I cannot copy paste the value")
+  const srcEl = root.querySelector('#metal-src');
+  if (srcEl) srcEl.addEventListener('click', () => srcEl.classList.add('hidden'));
   if (copyBtn) copyBtn.addEventListener('click', () => {
     const src = presetSource();
+    if (srcEl) { srcEl.textContent = src + '\n[ tap to close ]'; srcEl.classList.remove('hidden'); }
     const ok = () => { flash('preset copied to clipboard'); console.log('METALLAB preset:\n' + src); };
     (navigator.clipboard ? navigator.clipboard.writeText(src) : Promise.reject(new Error('no clipboard')))
-      .then(ok, (e) => { console.log(`METALLAB preset (clipboard ${e && e.message}):\n` + src); flash('preset in the console (clipboard refused)'); });
+      .then(ok, (e) => { console.log(`METALLAB preset (clipboard ${e && e.message}):\n` + src); flash('preset shown (clipboard refused)'); });
   });
 
   function resize() {

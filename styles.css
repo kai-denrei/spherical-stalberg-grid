@@ -5,22 +5,22 @@
    back to a system face until the subset is rebuilt. */
 @font-face {
   font-family: 'VT323';
-  src: url('assets/fonts/VT323.woff2?v=2d6b2444') format('woff2');
+  src: url('assets/fonts/VT323.woff2?v=bb928f44') format('woff2');
   font-weight: 400; font-style: normal; font-display: swap;
 }
 @font-face {
   font-family: 'Press Start 2P';
-  src: url('assets/fonts/PressStart2P.woff2?v=2d6b2444') format('woff2');
+  src: url('assets/fonts/PressStart2P.woff2?v=bb928f44') format('woff2');
   font-weight: 400; font-style: normal; font-display: swap;
 }
 @font-face {
   font-family: 'Share Tech Mono';
-  src: url('assets/fonts/ShareTechMono.woff2?v=2d6b2444') format('woff2');
+  src: url('assets/fonts/ShareTechMono.woff2?v=bb928f44') format('woff2');
   font-weight: 400; font-style: normal; font-display: swap;
 }
 @font-face {
   font-family: 'DotGothic16';
-  src: url('assets/fonts/DotGothic16.woff2?v=2d6b2444') format('woff2');
+  src: url('assets/fonts/DotGothic16.woff2?v=bb928f44') format('woff2');
   font-weight: 400; font-style: normal; font-display: swap;
 }
 
@@ -4022,4 +4022,17 @@ body.dir-hud-radar [id^="td-pad-"], body.dir-hud-radar #td-stick, body.dir-hud-r
   #tab-metal .lil-gui.root .controller { touch-action: pan-y; }
   #metal-hud { bottom: auto; top: 104px; left: 12px; right: 12px; font-size: 11px; }   /* under the tab bar's home button */
   #metal-copy { top: 12px; bottom: auto; left: auto; right: 64px; }
+}
+
+/* the preset, on screen: selectable text, tap to close */
+#metal-src { position: absolute; left: 12px; right: 12px; top: 120px; z-index: 9; max-height: 60vh; overflow: auto; margin: 0;
+  padding: 12px 14px; border-radius: 10px; border: 1px solid rgba(120, 200, 255, 0.35); background: rgba(6, 14, 22, 0.94);
+  color: #dff4ff; font: 12px ui-monospace, Menlo, monospace; white-space: pre-wrap; -webkit-user-select: text; user-select: text; }
+#metal-src.hidden { display: none; }
+@media (pointer: coarse), (max-width: 700px) {
+  /* under the phone's status bar and the tab bar: the buttons sat behind the clock */
+  #metal-gear { top: calc(env(safe-area-inset-top, 0px) + 112px); right: 12px; }
+  #metal-copy { top: calc(env(safe-area-inset-top, 0px) + 112px); right: 64px; left: auto; bottom: auto; }
+  #metal-hud { top: calc(env(safe-area-inset-top, 0px) + 168px); }
+  #metal-src { top: calc(env(safe-area-inset-top, 0px) + 168px); font-size: 13px; }
 }

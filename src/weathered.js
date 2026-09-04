@@ -105,15 +105,21 @@ export function fbm(noise, u, v, { px, py, octaves = 3, salt = 0, gain = 0.5 } =
 // ---------------------------------------------------------------------------
 export const WEATHER_PRESETS = {
   // the standing look: dark cool gunmetal, oxide in teal
+  // MEDIUM GREY by the operator's call (2026-09-04, from the phone, on the
+  // tank): the first cut's 0x3d4247 read as a black card from the side
+  // ...and the read is the operator's own from the lab (metal 128..242,
+  // oxide 38%): under a black sky a fully metallic plate is black whatever
+  // its base, so the oxide keeps half its metalness and takes more of the
+  // surface — the diffuse half is what catches the sun and reads as grey
   gunmetal: {
-    baseHex: 0x3d4247, patinaHex: 0x0d1c1a,
-    metalness: [0.10, 0.95], roughness: [0.20, 0.80],
-    patinaEdge: [0.60, 0.80], patinaBias: 0.0,
+    baseHex: 0x6e747b, patinaHex: 0x0d1c1a,
+    metalness: [0.50, 0.95], roughness: [0.20, 0.80],
+    patinaEdge: [0.60, 0.80], patinaBias: 0.04,   // 36.7% coverage at seed 4414 — the operator's 38%
     scratch: 1.0, pit: 1.0, normalStrength: 1.0,
   },
   // structural steel: darker, rougher, less oxide (it is replaced more often)
   steel: {
-    baseHex: 0x35393d, patinaHex: 0x0d1c1a,
+    baseHex: 0x5a6067, patinaHex: 0x0d1c1a,
     metalness: [0.18, 0.90], roughness: [0.30, 0.85],
     patinaEdge: [0.60, 0.80], patinaBias: -0.12,
     scratch: 1.2, pit: 0.8, normalStrength: 1.0,

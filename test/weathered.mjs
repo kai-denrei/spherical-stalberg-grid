@@ -57,14 +57,16 @@ const s = weatherStats(A);
 
 // THE CHANNEL THAT DOES THE WORK. three.js reads metalnessMap from BLUE;
 // if the patina did not collapse it, corrosion would not read at all.
+// the operator's read (2026-09-04): oxide keeps half its metalness, so the
+// floor sits near 128 and the raw plate near 242
 check(`metalness spans its band (${s.metalMin}..${s.metalMax} of 255)`,
-  s.metalMin < 60 && s.metalMax > 220,
-  `expected a low patina floor and a high raw-plate ceiling, got ${s.metalMin}..${s.metalMax}`);
+  s.metalMin < 145 && s.metalMin > 100 && s.metalMax > 220,
+  `expected a half-metal patina floor and a high raw-plate ceiling, got ${s.metalMin}..${s.metalMax}`);
 // PLATE WITH PATCHES, not patches of plate. Counted by the bake from the
 // oxide mask itself — the maps cannot answer it, because metalnessMap alone
 // cannot tell corroded steel from rubber, which is never metallic anywhere.
 check(`oxide takes patches, not the surface (${(A.coverage * 100).toFixed(1)}%)`,
-  A.coverage > 0.02 && A.coverage < 0.30, `${A.coverage}`);
+  A.coverage > 0.05 && A.coverage < 0.50, `${A.coverage}`);
 
 // roughness must stay inside the preset's declared band, plus the scratch
 // and oxide bumps the baker adds on top of it (0.18 + 0.14 at most)
@@ -72,8 +74,9 @@ const [rLo, rHi] = WEATHER_PRESETS.gunmetal.roughness;
 check(`roughness inside its band (${s.roughMin}..${s.roughMax} of 255)`,
   s.roughMin >= Math.floor(rLo * 255) - 2 && s.roughMax <= Math.ceil((rHi + 0.32) * 255) + 2,
   `band ${rLo}..${rHi} (+0.32 bumps) => ${Math.floor(rLo * 255)}..${Math.ceil((rHi + 0.32) * 255)}`);
-check('the plate is dark: mean albedo under 90/255',
-  (() => { let t = 0, c = 0; for (let i = 0; i < A.albedo.length; i++) if (i % 4 !== 3) { t += A.albedo[i]; c++; } return t / c < 90; })());
+// MEDIUM GREY by the operator's call (2026-09-04): a plate, not a card
+check('the plate is a medium grey: mean albedo in 70..150',
+  (() => { let t = 0, c = 0; for (let i = 0; i < A.albedo.length; i++) if (i % 4 !== 3) { t += A.albedo[i]; c++; } const m = t / c; return m > 70 && m < 150; })());
 
 // THE SEAM. Integer per-axis periods are the only reason the maps tile; if
 // a frequency ever stops dividing its period this is the test that says so.
