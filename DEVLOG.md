@@ -6,6 +6,26 @@ Demo links assume `npm run serve` (port 8144) or the
 
 ---
 
+## `283ba81` — the metal lab on a phone, and the sides of the metal
+
+From the phone: "on mobile it's impossible to tweak" and "the sides
+should be covered to display the texture, currently from the side it
+looks paper thin". The panel is a bottom sheet on a coarse pointer or a
+narrow screen — full width, under half the viewport, scrollable, rows a
+thumb can hit — with a gear to hide it; the shell's coarse block hides
+every `.lil-gui`, so this one says `display: block` back. Measured, not
+eyeballed: 0..908 × 226..418 on the phone's landscape viewport, through
+the TD tab's `?coarse=1` rewrite, which moved to `main.js` so any tab can
+be verified that way. The sides: repeat 1 / normal 0.6 read as paper; 2 /
+1.0 shows the plate, and a rim light from behind keeps a side against
+the sky from going black. Every knob is a URL param and `?az=&el=&dist=`
+aim the camera, so a still can test a setting. The red box with a
+diagonal across the container was the outline slider un-hiding a line
+set the cast ships hidden; the slider only touches line sets that were
+visible when the cast was built.
+
+---
+
 ## `a5e2259` — a bare part gets a box-projected uv at the merge
 
 `mergeByMaterial` kept `uv` only when every part of a batch had one, and
