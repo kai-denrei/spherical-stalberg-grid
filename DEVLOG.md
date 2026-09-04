@@ -6,6 +6,30 @@ Demo links assume `npm run serve` (port 8144) or the
 
 ---
 
+## `18e2b0a` — the tutorial's handoff hands back DRIVE on the shell
+
+The operator's phone, build `1974eb11`, a fresh start: "the camera starts
+too high, the 3rd person view does not work for drive." The screenshot
+had BUILD lit and the eye over the board. The tutorial's build phase
+calls `setView('orbit')` and nothing in the tutorial ever took the view
+out of it; on the shell orbit *is* the build eye, so a fresh player who
+finished the tutorial was parked 14.7 cells over the board. The handoff
+sets third on the shell now; the desktop keeps its post-build framing.
+
+Measured both ways, which took a replica that could reach the handoff at
+all: `?tutstep` clears scripted pairs, but the build phase ends on a
+*tower*, which no clear can stand in for — it places one on the nearest
+legal cell now, and the state probe runs 140 s and names the tutorial
+phase, the open modal and build mode. After the handoff: `view=third
+build=false camToTank=3.5cells`. With `?handoff=0`, the negative control:
+`view=orbit build=true camToTank=14.7cells` — the phone.
+
+One thing the replica also showed on the way: a fresh shell start with
+the tutorial off sits paused at the deploy under `#td-msg` — the
+briefing, by design, waiting for PLAY.
+
+---
+
 ## `ed67eaf` — GATE v2 and PLANET v2 on the director
 
 **THE PLANET v2** — "lived-in, regular game elements going on" — is the
