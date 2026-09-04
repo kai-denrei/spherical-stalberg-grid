@@ -6,6 +6,70 @@ Demo links assume `npm run serve` (port 8144) or the
 
 ---
 
+## `2aa7364` — the missions, selectable
+
+Both missions were reachable only by typing a query parameter. They are
+three buttons in the tab bar's play group now — **TD / rescue / raid** —
+and three cards in the home launcher, each carrying the line you want to
+have read *before* you start it.
+
+### A mission button is a link, not a tab switch
+
+`?mission=` is read once, when the board builds. Switching missions means
+loading the page again; pretending otherwise gives a board that says "raid"
+and plays the campaign. So the buttons navigate, through `paramLink` from
+the deep-link module:
+
+```js
+export function paramLink({ base, hash, key, value = '', carry = '' }) {
+  return deepLink({ base, hash, carry, params: { [key]: value }, defaults: { [key]: '' } });
+}
+```
+
+The empty-string default is the load-bearing part: it makes the plain **TD**
+button *clear* the key, so "back to the campaign" is the same code path as
+"pick one" rather than a second branch. The seed you were on comes along in
+`carry`.
+
+### Two things it had to fix rather than add
+
+**`activate()` used `querySelector`** to mark the active tab — which can
+only ever find the *first* button for a tab. TD has three now, so the
+campaign button would have been lit whichever mission you were in. It marks
+all of them, and lights the one whose mission is running:
+
+```js
+for (const b of document.querySelectorAll(`#tabbar button[data-tab="${key}"]`)) {
+  b.classList.toggle('active', on && (b.dataset.mission ?? missionNow) === missionNow);
+}
+```
+
+The `??` is what leaves every other tab alone: a button with no
+`data-mission` compares `missionNow` to itself and behaves exactly as before.
+
+**The launcher's `go()` took an id**; it takes the entry, because an entry
+can now carry a mission. Picking the mission you are already in does nothing
+rather than reloading the board you are looking at, and its card reads
+**· RUNNING** instead of offering itself as somewhere to go.
+
+### The probe
+
+The tab bar collapses behind the ☰ menu, so which button is lit is not
+something a screenshot can show. `?tabprobe=1` logs every button with its
+mission and its state:
+
+```
+?mission=rescue2 →  td mission=""        label="TD"     active=false
+                    td mission="rescue"  label="rescue" active=false
+                    td mission="rescue2" label="raid"   active=true
+                    metal mission=-      label="metal"  active=false
+```
+
+Exactly one of the three in each of the three cases, and a tab with no
+mission at all unaffected.
+
+---
+
 ## `1b28304` — a deep-link button on every lab
 
 Every lab tab is a tuning surface, and the answer a tuning session produces
