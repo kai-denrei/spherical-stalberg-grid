@@ -19,68 +19,68 @@
 
 import * as THREE from '../vendor/three.module.js';
 import GUI from '../vendor/lil-gui.esm.js';
-import { generateSphereMesh, relax } from './grid.js?v=64a520b9';
-import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=64a520b9';
-import { compileRail } from './cine/rail.js?v=64a520b9';
-import { SCRIPTS } from './cine/scripts.js?v=64a520b9';
-import { cuesBetween } from './cine/sound.js?v=64a520b9';
-import { installCine } from './cine/kit.js?v=64a520b9';
-import { mulberry32, randomSeed } from './rng.js?v=64a520b9';
-import { computeBerths, berthIndexFor } from './berths.js?v=64a520b9';
-import { wantsSecondary, shellsForAll } from './autofire.js?v=64a520b9';
-import { printPhase, printOffset, printOn, patternSecsFor } from './printpath.js?v=64a520b9';
-import { createBeamRig, PLASMA_DEFAULTS, BOARD_PRESET, BEAM_PEAK } from './beamdraw.js?v=64a520b9';
-import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3, segKey, tangentDir, tangentBasis } from './vec3.js?v=64a520b9';
-import { CREATURES, waveJelly } from './creatures.js?v=64a520b9';
-import { brief, dwellFor } from './isaobriefs.js?v=64a520b9';
-import { drawEmotion } from './emotions.js?v=64a520b9';
+import { generateSphereMesh, relax } from './grid.js?v=63600e3e';
+import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=63600e3e';
+import { compileRail } from './cine/rail.js?v=63600e3e';
+import { SCRIPTS } from './cine/scripts.js?v=63600e3e';
+import { cuesBetween } from './cine/sound.js?v=63600e3e';
+import { installCine } from './cine/kit.js?v=63600e3e';
+import { mulberry32, randomSeed } from './rng.js?v=63600e3e';
+import { computeBerths, berthIndexFor } from './berths.js?v=63600e3e';
+import { wantsSecondary, shellsForAll } from './autofire.js?v=63600e3e';
+import { printPhase, printOffset, printOn, patternSecsFor } from './printpath.js?v=63600e3e';
+import { createBeamRig, PLASMA_DEFAULTS, BOARD_PRESET, BEAM_PEAK } from './beamdraw.js?v=63600e3e';
+import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3, segKey, tangentDir, tangentBasis } from './vec3.js?v=63600e3e';
+import { CREATURES, waveJelly } from './creatures.js?v=63600e3e';
+import { brief, dwellFor } from './isaobriefs.js?v=63600e3e';
+import { drawEmotion } from './emotions.js?v=63600e3e';
 import { ACHIEVEMENTS, ACHV_GROUPS, achievement, blankRun, earned, freshlyEarned,
   sanitiseRecord }
-  from './achievements.js?v=64a520b9';
+  from './achievements.js?v=63600e3e';
 import { applyFontPack, currentFontPack, FONT_NAMES,
-  loadTypeFeel } from './fonts.js?v=64a520b9';
-import { SECONDARY_TOE, applySecondaryToe } from './units.js?v=64a520b9';
-import { UNITS, UNIT_NAMES, buildUnit, buildCreature, preloadMkcx, preloadServer, makeServerFixture, makeShieldShell, preloadContainer, makeContainerFixture, preloadFabricator, makeIsaoDrone, makeBulletCloud, makeRewardSolid, makeShellSolid, makeDebris, makeDotBurst, makePortalCloud, preloadPortalRing, makePortalRing, makeHeartCloud, makeDotEnemy, makeSurvivor, preloadTerraformer, makeTerraformerFixture } from './units.js?v=64a520b9';
-import { LOOKS, LOOK_NAMES } from './looks.js?v=64a520b9';
-import { makeCellIndex } from './cellindex.js?v=64a520b9';
-import { CREATURE_TINTS, ENEMY_SPEC, INTROS, computeWavePlan, accentFor } from './enemyspec.js?v=64a520b9';
-import { PICKUPS } from './pickups.js?v=64a520b9';
-import { rankFor, rankLabel, badgeSVG, killReq, eliteReq } from './ranks.js?v=64a520b9';
-import { beamStep, isBeamStep, PEN_SOFT_FRAC, PEN_HARD_FRAC } from './beamranks.js?v=64a520b9';
-import { burn, sweepAdvance, wallBite as wallBiteFor } from './beamburn.js?v=64a520b9';
-import { arcPoint, projectToArc, toeForCrossing, crossingForToe } from './arc.js?v=64a520b9';
+  loadTypeFeel } from './fonts.js?v=63600e3e';
+import { SECONDARY_TOE, applySecondaryToe } from './units.js?v=63600e3e';
+import { UNITS, UNIT_NAMES, buildUnit, buildCreature, preloadMkcx, preloadServer, makeServerFixture, makeShieldShell, preloadContainer, makeContainerFixture, preloadFabricator, makeIsaoDrone, makeBulletCloud, makeRewardSolid, makeShellSolid, makeDebris, makeDotBurst, makePortalCloud, preloadPortalRing, makePortalRing, makeHeartCloud, makeDotEnemy, makeSurvivor, preloadTerraformer, makeTerraformerFixture } from './units.js?v=63600e3e';
+import { LOOKS, LOOK_NAMES } from './looks.js?v=63600e3e';
+import { makeCellIndex } from './cellindex.js?v=63600e3e';
+import { CREATURE_TINTS, ENEMY_SPEC, INTROS, computeWavePlan, accentFor } from './enemyspec.js?v=63600e3e';
+import { PICKUPS } from './pickups.js?v=63600e3e';
+import { rankFor, rankLabel, badgeSVG, killReq, eliteReq } from './ranks.js?v=63600e3e';
+import { beamStep, isBeamStep, PEN_SOFT_FRAC, PEN_HARD_FRAC } from './beamranks.js?v=63600e3e';
+import { burn, sweepAdvance, wallBite as wallBiteFor } from './beamburn.js?v=63600e3e';
+import { arcPoint, projectToArc, toeForCrossing, crossingForToe } from './arc.js?v=63600e3e';
 import { MINE_TUNE, makeField, layMine, armMines, restock, mineAt,
-  inFan, trip, chain, nextChained, minePolar } from './mines.js?v=64a520b9';
+  inFan, trip, chain, nextChained, minePolar } from './mines.js?v=63600e3e';
 import { RESCUE_TUNE, makeRescue, placeSurvivors, stepBoard, stepGrab,
   disembark, loseCarried, lockOn, waveMix, standing as standingSurv,
   aboard as aboardSurv, missionOver, verdict as rescueVerdict,
-  grabProgress } from './rescue.js?v=64a520b9';
+  grabProgress } from './rescue.js?v=63600e3e';
 import { WORMHOLE_PRESET, WORMHOLE_UNIFORM_DEFAULTS, RING_SPIN, TRAVEL,
-  travelRate, advancePhase } from './portalfx.js?v=64a520b9';
-import { WORMHOLE_FRAG } from './fx/wormhole.frag.js?v=64a520b9';
-import { CORONA_FRAG } from './fx/corona.frag.js?v=64a520b9';
-import { labLine, parseLabQuery } from './lab.js?v=64a520b9';
-import { bakeGalaxyCube } from './galaxybake.js?v=64a520b9';
-import { SKY_PRESET } from './galaxyseed.js?v=64a520b9';
-import { makeScore } from './score.js?v=64a520b9';
-import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER } from './towers.js?v=64a520b9';
-import { makeEconomy, sellRefund } from './economy.js?v=64a520b9';
-import { pickTier } from './perftier.js?v=64a520b9';
-import { applyWeatheredMaterial } from './cine/materials.js?v=64a520b9';
-import { STICK, stickVector, knobOffset } from './stick.js?v=64a520b9';
-import { registerServiceWorker } from './pwa.js?v=64a520b9';
-import { makeBloom } from './postfx.js?v=64a520b9';
-import { TANK_FEEL, TANK_FEEL_KNOBS, makeTankFeel, stepTankFeel, landTankFeel, fireTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js?v=64a520b9';
-import { FEEL, loadFeel, saveFeel } from './feelstore.js?v=64a520b9';
+  travelRate, advancePhase } from './portalfx.js?v=63600e3e';
+import { WORMHOLE_FRAG } from './fx/wormhole.frag.js?v=63600e3e';
+import { CORONA_FRAG } from './fx/corona.frag.js?v=63600e3e';
+import { labLine, parseLabQuery } from './lab.js?v=63600e3e';
+import { bakeGalaxyCube } from './galaxybake.js?v=63600e3e';
+import { SKY_PRESET } from './galaxyseed.js?v=63600e3e';
+import { makeScore } from './score.js?v=63600e3e';
+import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER } from './towers.js?v=63600e3e';
+import { makeEconomy, sellRefund } from './economy.js?v=63600e3e';
+import { pickTier } from './perftier.js?v=63600e3e';
+import { applyWeatheredMaterial } from './cine/materials.js?v=63600e3e';
+import { STICK, stickVector, knobOffset } from './stick.js?v=63600e3e';
+import { registerServiceWorker } from './pwa.js?v=63600e3e';
+import { makeBloom } from './postfx.js?v=63600e3e';
+import { TANK_FEEL, TANK_FEEL_KNOBS, makeTankFeel, stepTankFeel, landTankFeel, fireTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js?v=63600e3e';
+import { FEEL, loadFeel, saveFeel } from './feelstore.js?v=63600e3e';
 import { STRIKE_KNOBS, makeStrike, makeStrikeParams, grantStrikes, stepStrike,
   toggleArm, paintTarget, launchStrike, stepFall, skipFall, fallProgress,
-  strikeDamage, retargetStrike, orbitProgress } from './strike.js?v=64a520b9';
+  strikeDamage, retargetStrike, orbitProgress } from './strike.js?v=63600e3e';
 import { radarBasis, radarProject, radarBearing, sweepAngle, radarPhosphor,
-  proximitySectors, SENSOR_LEVELS, sensorColor } from './radar.js?v=64a520b9';
-import { BLOOM_GROUPS } from './bloomweights.js?v=64a520b9';
-import { TOWER_LOOK_NAMES, DEFAULT_TOWER_LOOK, buildTowerLook, preloadLook } from './towerlooks.js?v=64a520b9';
-import { makeAudio } from './audio.js?v=64a520b9';
-import { DEATH_KEYS } from './audiomanifest.js?v=64a520b9';
+  proximitySectors, SENSOR_LEVELS, sensorColor } from './radar.js?v=63600e3e';
+import { BLOOM_GROUPS } from './bloomweights.js?v=63600e3e';
+import { TOWER_LOOK_NAMES, DEFAULT_TOWER_LOOK, buildTowerLook, preloadLook } from './towerlooks.js?v=63600e3e';
+import { makeAudio } from './audio.js?v=63600e3e';
+import { DEATH_KEYS } from './audiomanifest.js?v=63600e3e';
 
 export function initTdTab(root) {
   let active = false;
@@ -6650,14 +6650,19 @@ export function initTdTab(root) {
   }
 
   let survPingT = 0;
+  let rescueLastPos = null;
   function stepRescue(dt, tNow) {
     if (!rescueOn || rescueEnded || !graph || !player.pos) return;
     // the stop clause, read off the CONTROL rather than off the motion: the
     // player's hand on the lever is the thing they can feel, and a tank
     // coasting to a halt with the throttle open has not stopped, it is about
     // to move again.
-    const slow = Math.abs(throttle) <= rescueTune.boardThrottle && !cruise
-      && !keys.fast && !keys.slow;
+    const asking = Math.abs(throttle) > rescueTune.boardThrottle || cruise
+      || keys.fast || keys.slow || gotoCi >= 0;
+    const movedCells = rescueLastPos ? dist3(player.pos, rescueLastPos) / cellSide : 0;
+    rescueLastPos = player.pos.slice();
+    const moving = dt > 0 && movedCells / dt > rescueTune.boardSpeed;
+    const slow = !asking && !moving;
     survPingT -= dt;
     const ping = survPingT <= 0;
     if (ping) survPingT = 0.55;
@@ -9504,6 +9509,11 @@ export function initTdTab(root) {
     if (director) return;   // a scripted run has no end but its length
 
     if (player.won || tutorialActive) return; // the tutorial is failure/win-proof
+    // A RESCUE IS NOT WON BY KILLING THE GATES. Shutting the spawns off so
+    // you can ferry at leisure is a legitimate plan and a rather good one —
+    // but the people are still down there, and the mission ends when they are
+    // accounted for and at no other moment.
+    if (rescueOn) return;
     if (spawnPoints.length > 0 && spawnPoints.every((s) => !s.alive) && enemies.every((e) => !e.alive)) {
       player.won = true;
       sectorsCleared = round;
@@ -13535,7 +13545,23 @@ export function initTdTab(root) {
         + ` boardT=${sv.boardT.toFixed(2)}`
         + ` ${aboardSurv(rescue) === 0 && sv.boardT === 0 ? 'NOTHING HAPPENS — correct' : '<-- boarded while driving'}`);
 
+      // 1b. THE PHONE'S DRIVE-BY. Lever at zero — the shell has no lever —
+      // but the hull moving. This is the case the throttle clause alone
+      // cannot see, and the case the phone would hit every single time.
+      throttle = 0;
+      const n0 = norm3(sv.pos);
+      const t0 = norm3([-n0[2], 0, n0[0]]);
+      for (let k = 0; k < 40; k++) {
+        tt += 0.05;
+        player.pos = arcPoint(n0, t0, cellSide * (-0.9 + k * 0.045));
+        stepRescue(0.05, tt);
+      }
+      console.log(`RESCUEPROBE roll  lever=0 but MOVING aboard=${aboardSurv(rescue)}`
+        + ` boardT=${sv.boardT.toFixed(2)}`
+        + ` ${aboardSurv(rescue) === 0 ? 'NOTHING HAPPENS — correct' : '<-- boarded on the roll'}`);
+
       // 2. stop on it
+      player.pos = sv.pos.slice();
       throttle = 0;
       run(40);
       console.log(`RESCUEPROBE load  stopped aboard=${aboardSurv(rescue)} state=${sv.state}`

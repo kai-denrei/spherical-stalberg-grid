@@ -25,8 +25,8 @@
 //   hull, and then both go with it. That is what makes carrying a pair a bet
 //   rather than an optimisation.
 
-import { makeParams, clampParams, formatKnobs, knobProblems } from './knobs.js?v=64a520b9';
-import { dot3 } from './vec3.js?v=64a520b9';
+import { makeParams, clampParams, formatKnobs, knobProblems } from './knobs.js?v=63600e3e';
+import { dot3 } from './vec3.js?v=63600e3e';
 
 export const RESCUE_TUNE = {
   survivors: 6,
@@ -36,7 +36,11 @@ export const RESCUE_TUNE = {
   apart: 3,            // cells between two survivors — a field, not a huddle
   boardCells: 1.0,     // how close the hull must be
   boardSecs: 1.0,      // ...and for how long
-  boardThrottle: 0.34, // ...under this much throttle. The stop clause.
+  boardThrottle: 0.34, // ...with the lever under this. The stop clause, half of it —
+  boardSpeed: 0.35,    // ...and the hull actually under this many cells/s, which is
+                       // the half that also works on a phone: the shell has no
+                       // throttle at all, so read off the lever alone the clause is
+                       // unenforceable there and every drive-by would board.
   lockCells: 2.0,      // an enemy this close to a standing survivor peels off
   grabSecs: 1.5,       // the window to kill the grabber
   hulls: 3,
@@ -58,6 +62,7 @@ export const RESCUE_KNOBS = [
   { key: 'boardCells', label: 'board within (cells)', group: 'ferry', min: 0.4, max: 3, step: 0.1 },
   { key: 'boardSecs', label: 'board time (s)', group: 'ferry', min: 0.2, max: 4, step: 0.1 },
   { key: 'boardThrottle', label: 'board under throttle', group: 'ferry', min: 0.05, max: 1, step: 0.02 },
+  { key: 'boardSpeed', label: 'board under (cells/s)', group: 'ferry', min: 0.05, max: 2, step: 0.05 },
   { key: 'lockCells', label: 'lock-on (cells)', group: 'threat', min: 0.5, max: 6, step: 0.5 },
   { key: 'grabSecs', label: 'grab window (s)', group: 'threat', min: 0.3, max: 6, step: 0.1 },
   { key: 'hulls', label: 'hulls', group: 'budget', min: 1, max: 6, step: 1 },
