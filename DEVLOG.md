@@ -6,6 +6,19 @@ Demo links assume `npm run serve` (port 8144) or the
 
 ---
 
+## `a5e2259` — a bare part gets a box-projected uv at the merge
+
+`mergeByMaterial` kept `uv` only when every part of a batch had one, and
+the ring's pod parts came without: one bare part dropped `uv` for the
+whole batch, so the pods wore the dark base while the plates wore the
+weathered metal. A part without `uv` now gets a box projection in its own
+frame — the two coordinates across its normal's dominant axis, one model
+unit per repeat — the standard fallback, and every batch keeps `uv`. On
+the ring: 35 materials dressed, `M_Steel` and `M_Rubber` with all five
+maps. The launch-mode capture also retries a cold first frame once.
+
+---
+
 ## `18e2b0a` — the tutorial's handoff hands back DRIVE on the shell
 
 The operator's phone, build `1974eb11`, a fresh start: "the camera starts
