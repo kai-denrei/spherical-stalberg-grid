@@ -19,57 +19,61 @@
 
 import * as THREE from '../vendor/three.module.js';
 import GUI from '../vendor/lil-gui.esm.js';
-import { generateSphereMesh, relax } from './grid.js?v=07138cae';
-import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=07138cae';
-import { mulberry32, randomSeed } from './rng.js?v=07138cae';
-import { computeBerths, berthIndexFor } from './berths.js?v=07138cae';
-import { wantsSecondary, shellsForAll } from './autofire.js?v=07138cae';
-import { printPhase, printOffset, printOn, patternSecsFor } from './printpath.js?v=07138cae';
-import { createBeamRig, PLASMA_DEFAULTS, BOARD_PRESET, BEAM_PEAK } from './beamdraw.js?v=07138cae';
-import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3, segKey, tangentDir, tangentBasis } from './vec3.js?v=07138cae';
-import { CREATURES, waveJelly } from './creatures.js?v=07138cae';
-import { brief, dwellFor } from './isaobriefs.js?v=07138cae';
-import { drawEmotion } from './emotions.js?v=07138cae';
+import { generateSphereMesh, relax } from './grid.js?v=edc465df';
+import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=edc465df';
+import { compileRail } from './cine/rail.js?v=edc465df';
+import { SCRIPTS } from './cine/scripts.js?v=edc465df';
+import { cuesBetween } from './cine/sound.js?v=edc465df';
+import { installCine } from './cine/kit.js?v=edc465df';
+import { mulberry32, randomSeed } from './rng.js?v=edc465df';
+import { computeBerths, berthIndexFor } from './berths.js?v=edc465df';
+import { wantsSecondary, shellsForAll } from './autofire.js?v=edc465df';
+import { printPhase, printOffset, printOn, patternSecsFor } from './printpath.js?v=edc465df';
+import { createBeamRig, PLASMA_DEFAULTS, BOARD_PRESET, BEAM_PEAK } from './beamdraw.js?v=edc465df';
+import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3, segKey, tangentDir, tangentBasis } from './vec3.js?v=edc465df';
+import { CREATURES, waveJelly } from './creatures.js?v=edc465df';
+import { brief, dwellFor } from './isaobriefs.js?v=edc465df';
+import { drawEmotion } from './emotions.js?v=edc465df';
 import { ACHIEVEMENTS, ACHV_GROUPS, achievement, blankRun, earned, freshlyEarned,
   sanitiseRecord }
-  from './achievements.js?v=07138cae';
+  from './achievements.js?v=edc465df';
 import { applyFontPack, currentFontPack, FONT_NAMES,
-  loadTypeFeel } from './fonts.js?v=07138cae';
-import { SECONDARY_TOE, applySecondaryToe } from './units.js?v=07138cae';
-import { UNITS, UNIT_NAMES, buildUnit, buildCreature, preloadMkcx, preloadServer, makeServerFixture, makeShieldShell, preloadContainer, makeContainerFixture, preloadFabricator, makeIsaoDrone, makeBulletCloud, makeRewardSolid, makeShellSolid, makeDebris, makeDotBurst, makePortalCloud, preloadPortalRing, makePortalRing, makeHeartCloud, makeDotEnemy, preloadTerraformer, makeTerraformerFixture } from './units.js?v=07138cae';
-import { LOOKS, LOOK_NAMES } from './looks.js?v=07138cae';
-import { makeCellIndex } from './cellindex.js?v=07138cae';
-import { CREATURE_TINTS, ENEMY_SPEC, INTROS, computeWavePlan, accentFor } from './enemyspec.js?v=07138cae';
-import { PICKUPS } from './pickups.js?v=07138cae';
-import { rankFor, rankLabel, badgeSVG, killReq, eliteReq } from './ranks.js?v=07138cae';
-import { beamStep, isBeamStep, PEN_SOFT_FRAC, PEN_HARD_FRAC } from './beamranks.js?v=07138cae';
-import { burn, sweepAdvance, wallBite as wallBiteFor } from './beamburn.js?v=07138cae';
-import { arcPoint, projectToArc, toeForCrossing, crossingForToe } from './arc.js?v=07138cae';
+  loadTypeFeel } from './fonts.js?v=edc465df';
+import { SECONDARY_TOE, applySecondaryToe } from './units.js?v=edc465df';
+import { UNITS, UNIT_NAMES, buildUnit, buildCreature, preloadMkcx, preloadServer, makeServerFixture, makeShieldShell, preloadContainer, makeContainerFixture, preloadFabricator, makeIsaoDrone, makeBulletCloud, makeRewardSolid, makeShellSolid, makeDebris, makeDotBurst, makePortalCloud, preloadPortalRing, makePortalRing, makeHeartCloud, makeDotEnemy, preloadTerraformer, makeTerraformerFixture } from './units.js?v=edc465df';
+import { LOOKS, LOOK_NAMES } from './looks.js?v=edc465df';
+import { makeCellIndex } from './cellindex.js?v=edc465df';
+import { CREATURE_TINTS, ENEMY_SPEC, INTROS, computeWavePlan, accentFor } from './enemyspec.js?v=edc465df';
+import { PICKUPS } from './pickups.js?v=edc465df';
+import { rankFor, rankLabel, badgeSVG, killReq, eliteReq } from './ranks.js?v=edc465df';
+import { beamStep, isBeamStep, PEN_SOFT_FRAC, PEN_HARD_FRAC } from './beamranks.js?v=edc465df';
+import { burn, sweepAdvance, wallBite as wallBiteFor } from './beamburn.js?v=edc465df';
+import { arcPoint, projectToArc, toeForCrossing, crossingForToe } from './arc.js?v=edc465df';
 import { WORMHOLE_PRESET, WORMHOLE_UNIFORM_DEFAULTS, RING_SPIN, TRAVEL,
-  travelRate, advancePhase } from './portalfx.js?v=07138cae';
-import { WORMHOLE_FRAG } from './fx/wormhole.frag.js?v=07138cae';
-import { CORONA_FRAG } from './fx/corona.frag.js?v=07138cae';
-import { labLine, parseLabQuery } from './lab.js?v=07138cae';
-import { bakeGalaxyCube } from './galaxybake.js?v=07138cae';
-import { SKY_PRESET } from './galaxyseed.js?v=07138cae';
-import { makeScore } from './score.js?v=07138cae';
-import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER } from './towers.js?v=07138cae';
-import { makeEconomy, sellRefund } from './economy.js?v=07138cae';
-import { pickTier } from './perftier.js?v=07138cae';
-import { STICK, stickVector, knobOffset } from './stick.js?v=07138cae';
-import { registerServiceWorker } from './pwa.js?v=07138cae';
-import { makeBloom } from './postfx.js?v=07138cae';
-import { TANK_FEEL, TANK_FEEL_KNOBS, makeTankFeel, stepTankFeel, landTankFeel, fireTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js?v=07138cae';
-import { FEEL, loadFeel, saveFeel } from './feelstore.js?v=07138cae';
+  travelRate, advancePhase } from './portalfx.js?v=edc465df';
+import { WORMHOLE_FRAG } from './fx/wormhole.frag.js?v=edc465df';
+import { CORONA_FRAG } from './fx/corona.frag.js?v=edc465df';
+import { labLine, parseLabQuery } from './lab.js?v=edc465df';
+import { bakeGalaxyCube } from './galaxybake.js?v=edc465df';
+import { SKY_PRESET } from './galaxyseed.js?v=edc465df';
+import { makeScore } from './score.js?v=edc465df';
+import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER } from './towers.js?v=edc465df';
+import { makeEconomy, sellRefund } from './economy.js?v=edc465df';
+import { pickTier } from './perftier.js?v=edc465df';
+import { STICK, stickVector, knobOffset } from './stick.js?v=edc465df';
+import { registerServiceWorker } from './pwa.js?v=edc465df';
+import { makeBloom } from './postfx.js?v=edc465df';
+import { TANK_FEEL, TANK_FEEL_KNOBS, makeTankFeel, stepTankFeel, landTankFeel, fireTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js?v=edc465df';
+import { FEEL, loadFeel, saveFeel } from './feelstore.js?v=edc465df';
 import { STRIKE_KNOBS, makeStrike, makeStrikeParams, grantStrikes, stepStrike,
   toggleArm, paintTarget, launchStrike, stepFall, skipFall, fallProgress,
-  strikeDamage, retargetStrike, orbitProgress } from './strike.js?v=07138cae';
+  strikeDamage, retargetStrike, orbitProgress } from './strike.js?v=edc465df';
 import { radarBasis, radarProject, radarBearing, sweepAngle, radarPhosphor,
-  proximitySectors, SENSOR_LEVELS, sensorColor } from './radar.js?v=07138cae';
-import { BLOOM_GROUPS } from './bloomweights.js?v=07138cae';
-import { TOWER_LOOK_NAMES, DEFAULT_TOWER_LOOK, buildTowerLook, preloadLook } from './towerlooks.js?v=07138cae';
-import { makeAudio } from './audio.js?v=07138cae';
-import { DEATH_KEYS } from './audiomanifest.js?v=07138cae';
+  proximitySectors, SENSOR_LEVELS, sensorColor } from './radar.js?v=edc465df';
+import { BLOOM_GROUPS } from './bloomweights.js?v=edc465df';
+import { TOWER_LOOK_NAMES, DEFAULT_TOWER_LOOK, buildTowerLook, preloadLook } from './towerlooks.js?v=edc465df';
+import { makeAudio } from './audio.js?v=edc465df';
+import { DEATH_KEYS } from './audiomanifest.js?v=edc465df';
 
 export function initTdTab(root) {
   let active = false;
@@ -664,6 +668,8 @@ export function initTdTab(root) {
     drawEmotion(ctx, briefQ.face, { w: briefFace.width, h: briefFace.height, t: briefFaceT });
   }
   function showBrief(id) {
+    if (director) return;   // Isao does not caption a cinematic
+
     const b = brief(id);
     if (!b || !briefEl) return;
     if (b.once && briefSeen.includes(id)) return;
@@ -1361,6 +1367,7 @@ export function initTdTab(root) {
   // somebody else's tank. Bumped by regenerate.
   let runGen = 0;
   let deployCount = 0;
+  let deploysDone = 0;   // berth exits completed — the director waits for the first
   // counted separately: a death-hold deploy is the one that must never
   // cross a run, and a fresh run's own deploy would mask it in a total
   let tankLostDeploys = 0;
@@ -5498,7 +5505,7 @@ export function initTdTab(root) {
       if (spec.regen && e.hp < spec.hp && tNow - (e.lastHitT ?? -9) > 1.2) {
         e.hp = Math.min(spec.hp, e.hp + spec.regen * dt);
         const sv = e.scale0 * (0.7 + 0.3 * e.hp / spec.hp);
-        e.obj.scale.setScalar(sv);
+        e.obj.scale.setScalar(sv * (e.dirScale || 1));   // the director may enlarge a type (a boss, for a shot)
         e.obj.userData.s0 = sv;
       }
       let pace = ENEMY_SPEED * spec.speed * (e.paceJitter ?? 1);
@@ -6485,6 +6492,8 @@ export function initTdTab(root) {
   // dialog box rather than a destruction.
   const DEATH_HOLD = 1.15; // s of wreck before the modal
   function destroyPlayer() {
+    if (director && director.sc.immune !== false) return;   // a scripted run cannot be lost
+
     if (!playerMesh) return;
     stopEngine(0.12, true);   // quiet: the hydraulics don't get to set it down
     feel.hoverT = 0;          // hover fails instantly — it DROPS
@@ -6578,6 +6587,8 @@ export function initTdTab(root) {
     'send THIS transmission twice',
   ];
   function loseGame(reason) {
+    if (director && director.sc.immune !== false) return;   // a scripted run cannot be lost
+
     if (player.won) return;
     player.won = true; // stops motion; same flag, sadder modal
     destroyPlayer();
@@ -6658,6 +6669,8 @@ export function initTdTab(root) {
   const DOWN_DASH = 1.0;   // seconds of camera, wreck -> camp
 
   function loseTank() {
+    if (director && director.sc.immune !== false) return;   // a scripted run is not a run that can be lost
+
     // THE RANK SURVIVES THE HULL (operator, 2026-09-02). It used to be
     // stripped here — "the insignia belonged to that hull" — and that was a
     // read of who the tank IS. The tank is not the pilot. The pilot is the
@@ -6829,12 +6842,15 @@ export function initTdTab(root) {
       // forward is the direction the hull is already going, so the handover
       // is continuous rather than a stop.
       deploy = null;
+      deploysDone++;
       throttle = 0; cruise = false; autoMode = false;
       paintThrottle();
     }
   }
 
   function heartHit(dmg = 1) {
+    if (director && director.sc.immune !== false) return;
+
     run.heartHits += dmg;
     eco.leak(); // a breach kills the streak — HK's rule, our Heart
     streakMark = 0;
@@ -8710,6 +8726,8 @@ export function initTdTab(root) {
   if (lapEl) lapEl.addEventListener('click', endLap);
 
   function checkVictory() {
+    if (director) return;   // a scripted run has no end but its length
+
     if (player.won || tutorialActive) return; // the tutorial is failure/win-proof
     if (spawnPoints.length > 0 && spawnPoints.every((s) => !s.alive) && enemies.every((e) => !e.alive)) {
       player.won = true;
@@ -9309,7 +9327,7 @@ export function initTdTab(root) {
     if (moving && !engineHandle) {
       engineHandle = sfx.loop('tank_thruster', { gain: 0.001, rate: 0.92 });
     }
-    if (!moving && engineIdle >= ENGINE_STOP) {
+    if (!moving && engineIdle >= ENGINE_STOP && !(director && director.engineHold)) {
       stopEngine();
     } else if (engineHandle) {
       // gain is nearly linear in level; pitch spans 0.92..1.14 so the bed is
@@ -9411,6 +9429,7 @@ export function initTdTab(root) {
     }
     const now = performance.now();
     const dt = Math.min((now - lastFrame) / 1000, 0.1); // clamp tab-switch gaps
+    if (director && director.held) { lastFrame = now; return; }   // the capture steps the clock, not the loop
     perfTick(dt);   // the readout rides the loop's OWN dt — it must not take a second one
     updateEngine(dt);
     lastFrame = now;
@@ -9468,7 +9487,11 @@ export function initTdTab(root) {
     const handOn = keys.laser || keys.fast || keys.slow || keys.left || keys.right
       || throttle !== 0;
     if (tutorial.frozen && (handOn || cruise)) { tutorial.frozen = false; hideTutBanner(); }
-    const frozen = buildFrozen() || shotActive() || tutorial.frozen;
+    // THE DIRECTOR'S SHOT FILMS THE SIM, it does not freeze it: the cold
+    // open's rule (a shot holds the world still) is exactly wrong for a
+    // scripted run — the first RAM capture had 200 queued and none alive
+    const dirShot = !!(director && shot && shot.id === 'director');
+    const frozen = buildFrozen() || (shotActive() && !dirShot) || tutorial.frozen;
     // The BUILD pause holds the WORLD still, not the DRIVER. Planning with
     // the tank parked where the last wave left it meant switching out of
     // build, repositioning, and switching back — three actions for one
@@ -9478,7 +9501,7 @@ export function initTdTab(root) {
     // the third — beat three IS the tank driving itself out of the berth
     // DEPLOY drives THROUGH a shot — that is how the cinematic's last frame
     // and DEPLOY's first frame meet — so the gate only stops free driving
-    const driveFrozen = shotActive() || tutorial.frozen;
+    const driveFrozen = (shotActive() && !dirShot) || tutorial.frozen;
 
     bumpLeft = Math.max(0, bumpLeft - dt);
     recoilLeft = Math.max(0, recoilLeft - dt);
@@ -9724,8 +9747,15 @@ export function initTdTab(root) {
     buildFollowTank(dt);
     updateCameraGoal();
 
-    camera.position.lerp(camGoal.pos, 0.14);
-    camera.quaternion.slerp(camGoal.quat, 0.14);
+    if (director && shot && shot.id === 'director') {
+      // THE DIRECTOR'S RAIL IS THE CAMERA: no ease, no lag, the pose is the pose
+      camera.position.copy(camGoal.pos);
+      camera.quaternion.copy(camGoal.quat);
+    } else {
+      camera.position.lerp(camGoal.pos, 0.14);
+      camera.quaternion.slerp(camGoal.quat, 0.14);
+    }
+    if (director) directorFrame(dt);
 
     heartSprite.userData.tick(t);
 
@@ -12083,6 +12113,239 @@ export function initTdTab(root) {
         + ` sceneChildren=${scene.children.length}`);
     }, perfAtS * 1000 - 20);
   }
+
+  // ============================================================================
+  // THE DIRECTOR (docs/CINEMATICS-PLAN.md §9). ?director=NAME runs one of
+  // src/cine/scripts.js on THIS board: a seeded, scripted run with a camera
+  // rail on top, the input off, the HUD as the script wants it, and — with
+  // ?capture=1 — the sim stepped at a fixed dt by the capture harness
+  // (installCine seek) so two renders are the same clip. Every item the
+  // operator asked for is the game; this is how the game gets filmed
+  // without a second copy of the board.
+  //
+  // The rail is a CHASE RIG: keys are in cells, in the tank's own frame at
+  // every frame — x right, y up off the surface, z the heading — so a shot
+  // authored "behind-left, low" stays behind-left as the tank drives.
+  // ============================================================================
+  let director = null;
+  const directorName = urlParams.get('director');
+  if (directorName && SCRIPTS[directorName]) {
+    const sc = SCRIPTS[directorName];
+    const rail = compileRail(sc.rail, { fov: 42 });
+    director = {
+      name: directorName, sc, rail, t0: -1, dirT: 0, held: false, engineHold: false,
+      radar: null,            // { t0, from, to, over }
+      scales: {},             // type -> visual scale the script asked for
+      strikeShotResume: false,
+    };
+    const dRight = new THREE.Vector3(), dUp = new THREE.Vector3(), dFwd = new THREE.Vector3();
+    const dEye = new THREE.Vector3(), dLook = new THREE.Vector3(), dM = new THREE.Matrix4();
+    // the tank's frame: up = the radial, forward = the smoothed heading
+    function tankFrame() {
+      const n = norm3(player.pos);
+      dUp.set(n[0], n[1], n[2]);
+      const h = player.smoothDir || [0, 0, 1];
+      dFwd.set(h[0], h[1], h[2]);
+      dFwd.addScaledVector(dUp, -dFwd.dot(dUp)).normalize();
+      if (dFwd.lengthSq() < 1e-6) dFwd.set(1, 0, 0).addScaledVector(dUp, -dUp.x).normalize();
+      dRight.crossVectors(dFwd, dUp).normalize();
+    }
+    function placeRel(out, rel, base) {
+      out.copy(base)
+        .addScaledVector(dRight, rel[0] * cellSide)
+        .addScaledVector(dUp, rel[1] * cellSide)
+        .addScaledVector(dFwd, rel[2] * cellSide);
+    }
+    const dBase = new THREE.Vector3();
+    function railPose(u, out) {
+      const p = rail.poseAt(u * sc.len);
+      tankFrame();
+      dBase.set(player.pos[0], player.pos[1], player.pos[2]);
+      placeRel(dEye, p.pos, dBase);
+      placeRel(dLook, p.look, dBase);
+      out.pos.copy(dEye);
+      dM.lookAt(dEye, dLook, dUp);          // camera convention: looks down -Z
+      out.quat.setFromRotationMatrix(dM);
+      if (camera.fov !== p.fov) { camera.fov = p.fov; camera.updateProjectionMatrix(); }
+    }
+    function beginDirectorShot() {
+      startShot({ id: 'director', dur: sc.len, poseAt: railPose, skippable: false });
+      // the shot's clock is ours: keep it in step with dirT
+      shot.left = Math.max(1e-3, sc.len - director.dirT);
+    }
+    const dh = () => bfsDist(graph.adj, [player.cur], () => true);
+    const aliveGates = () => spawnPoints.filter((sp) => sp.alive);
+    function gateFor(sel) {
+      const gs = aliveGates();
+      if (!gs.length) return null;
+      const d = dh();
+      const sorted = gs.slice().sort((a, b) => d[a.ci] - d[b.ci]);
+      if (sel === 'far') return sorted[sorted.length - 1];
+      if (typeof sel === 'number') return sorted[Math.min(sel, sorted.length - 1)];
+      return sorted[0];
+    }
+    function crowdCell() {
+      const count = new Map();
+      for (const e of enemies) if (e.alive) count.set(e.cur, (count.get(e.cur) || 0) + 1);
+      let best = -1, bn = 0;
+      for (const [ci, n] of count) if (n > bn) { bn = n; best = ci; }
+      return best;
+    }
+    function bossCell() {
+      const b = enemies.find((e) => e.alive && e.type === 'knot');
+      return b ? b.cur : -1;
+    }
+    const VERB = {
+      biomass: (c) => eco.addBiomass(c.n),
+      hud: (c) => { document.body.classList.remove('dir-hud-none', 'dir-hud-radar'); if (c.show !== 'full') document.body.classList.add(`dir-hud-${c.show}`); },
+      spawn: (c) => {
+        const g = gateFor(c.gate);
+        if (!g) return;
+        if (c.scale) director.scales[c.type] = c.scale;
+        for (let i = 0; i < c.count; i++) spawnQueue.push({ type: c.type, sp: g, at: spawnClock + i * (c.every ?? 0.1) });
+        waveActive = true;
+      },
+      tower: (c) => {
+        const d = dh();
+        const roofs = [];
+        for (let ci = 0; ci < graph.centers.length; ci++) if (!placeError(ci)) roofs.push(ci);
+        const anchor = c.near === 'heart' ? bfsDist(graph.adj, [dungeon.heart], () => true)
+          : c.near === 'gate' ? (gateFor('nearest') ? bfsDist(graph.adj, [gateFor('nearest').ci], () => true) : d) : d;
+        roofs.sort((a, b) => anchor[a] - anchor[b]);
+        for (let i = 0; i < Math.min(c.count, roofs.length); i++) commitTower(c.key, roofs[i]);
+      },
+      goto: (c) => {
+        let ci = -1;
+        if (c.to === 'gate') { const g = gateFor('nearest'); ci = g ? g.ci : -1; }
+        else if (c.to === 'far') { const g = gateFor('far'); ci = g ? g.ci : -1; }
+        else if (c.to === 'heart') ci = dungeon.heart;
+        else if (c.to === 'boss') ci = bossCell();
+        else if (c.to === 'crowd') ci = crowdCell();
+        else if (typeof c.to === 'number') ci = c.to;
+        if (ci < 0 || !gotoCell(ci)) director.pendingGoto = c;   // no path yet (berthed): retry per frame
+        else director.pendingGoto = null;
+      },
+      throttle: (c) => { stopGoto(); autoMode = false; cruise = false; throttle = c.v; },
+      steer: (c) => { keys.left = c.v < 0; keys.right = c.v > 0; },
+      fire: () => fire(),
+      laser: (c) => { keys.laser = !!c.on; },
+      engine: (c) => {
+        if (c.on) { director.engineHold = true; if (!engineRunning) { sfx.play('tank_spool_up'); engineRunning = true; } }
+        else { director.engineHold = false; stopEngine(); }
+      },
+      view: (c) => setView(c.name),
+      strike: (c) => {
+        const ci = c.target === 'gate' ? (gateFor('nearest') ? gateFor('nearest').ci : -1)
+          : c.target === 'tank' ? player.cur : crowdCell();
+        if (ci < 0) return;
+        strike.ready = Math.max(1, strike.ready); strike.reserved = 0;
+        if (!strike.armed) safetyEl.click();
+        if (paintTarget(strike, ci) === 'locked') { armUiKey = ''; syncArmUi(); }
+        // the board's own strike camera rides the munition down; the rail
+        // yields to it and takes the camera back at impact
+        endShot();
+        director.strikeShotResume = true;
+        launchBtn.click();
+      },
+      radar: (c) => { director.radar = { t0: director.dirT, from: director.radar ? director.radar.to : 1, to: c.zoom, over: c.over ?? 2 }; },
+    };
+    // a clean board: no intro, no cold open, no berth, no tutorial — the
+    // same three lines every probe uses
+    // THE DEPLOY IS THE BERTH EXIT (deployStep drives the tank out and hands
+    // it back stopped), so the director lets it finish and starts its clock
+    // on the far side: every script opens on a tank standing free.
+    // the boot's modals — the intro and the briefing — pause the board; a
+    // script wants neither, and the briefing has no flag to skip it
+    function directorUnpause() {
+      dismissIntro();
+      msgEl.classList.add('hidden');
+      paused = false;
+    }
+    function directorStart() {
+      directorUnpause(); endShot(); clearBriefs();
+      tutorialActive = false;
+      throttle = 0; keys.laser = false;
+      director.t0 = t; director.dirT = 0;
+      // cues at t = 0 fire before the first frame, so the first frame is
+      // already the scene (a crowd queued, the HUD set)
+      for (const c of sc.cues) if (c.t === 0) VERB[c.do] && VERB[c.do](c);
+      beginDirectorShot();
+      snapCamera();
+      console.log(`DIRECTOR ${directorName}: ${sc.len} s, ${sc.cues.length} cues, hud=${sc.hud}, capture=${urlParams.get('capture') === '1'}`
+        + ` deploysDone=${deploysDone} deploy=${!!deploy} cur=${player.cur} next=${player.next} gates=${aliveGates().length}`);
+    }
+    // per frame, from the loop: cues on the clock, the radar zoom, the
+    // strike's hand-back
+    window.__directorFrame = (dt) => {
+      if (director.t0 < 0) return;
+      const prev = director.dirT;
+      director.dirT = t - director.t0;
+      for (const c of cuesBetween(sc.cues, prev, director.dirT)) if (c.t > 0 && VERB[c.do]) VERB[c.do](c);
+      if (director.radar) {
+        const r = director.radar;
+        const u = Math.min(1, Math.max(0, (director.dirT - r.t0) / r.over));
+        const k = r.from + (r.to - r.from) * (u * u * (3 - 2 * u));
+        radarEl.style.transformOrigin = 'right bottom';
+        radarEl.style.transform = `scale(${k.toFixed(3)})`;
+      }
+      if (director.pendingGoto && !deploy) { const c = director.pendingGoto; director.pendingGoto = null; VERB.goto(c); }
+      for (const e of enemies) if (e.alive && !e.dirScale && director.scales[e.type]) e.dirScale = director.scales[e.type];
+      // ?dirlog=1 — the run's state every 2 s: what the stills cannot say
+      if (urlParams.get('dirlog') === '1' && Math.floor(director.dirT / 2) !== Math.floor(prev / 2)) {
+        console.log(`DIRLOG t=${director.dirT.toFixed(1)} cur=${player.cur} next=${player.next} goto=${gotoCi} auto=${autoMode} thr=${throttle.toFixed(2)}`
+          + ` cruise=${cruise} deploy=${!!deploy} pending=${!!director.pendingGoto} enemies=${enemies.filter((e) => e.alive).length} queued=${spawnQueue.length}`
+          + ` waveActive=${waveActive} shot=${shot ? shot.id : '-'} paused=${paused} frozen=${tutorial.frozen} won=${player.won} down=${!!playerDown}`);
+      }
+      if (director.strikeShotResume && strike.falling < 0 && !shot) { director.strikeShotResume = false; beginDirectorShot(); }
+      else if (!shot && !director.strikeShotResume && director.dirT < sc.len) beginDirectorShot();   // whatever ended it, the rail comes back
+      if (shot && shot.id === 'director') shot.left = Math.max(1e-3, sc.len - director.dirT);
+    };
+    // THE CAPTURE SEAM. seek(at) steps the sim from where it is to `at` at
+    // 1/30 s and renders; the harness captures the page after each. With
+    // ?capture=1 the loop is HELD from the start so the clock only moves
+    // under seeks — the live loop advancing before the first seek would
+    // put a different number of frames into every render.
+    const capturing = urlParams.get('capture') === '1';
+    if (capturing) { director.held = true; document.body.classList.add('cine-capture'); }
+    installCine({
+      hold: (on) => { director.held = on; },
+      seek: (at) => {
+        if (director.t0 < 0) {
+          directorUnpause();
+          // the berth exit is staged AFTER the models land and takes seconds;
+          // wait for one to have started AND finished, at the fixed step
+          let g = 0;
+          while ((deploysDone < 1 || deploy) && g++ < 1500) { directorUnpause(); frame(1 / 30, false); }
+          if (deploysDone < 1) console.warn('DIRECTOR: no berth exit happened in 50 s of pre-roll');
+          directorStart();
+        }
+        let guard = 0;
+        while (director.dirT < at - 1e-4 && guard++ < 4000) {
+          const step = Math.min(1 / 30, at - director.dirT);
+          const tBefore = t;
+          frame(step, false);
+          if (director.t0 >= 0) director.dirT = t - director.t0;
+          if (t === tBefore) {
+            // frame() refused the step: something holds the clock. Say what,
+            // once, rather than spin 4000 renders (the first capture did)
+            console.warn(`DIRECTOR seek stalled at ${director.dirT.toFixed(2)}s: paused=${paused} active=${active} mesh=${!!mesh}`
+              + ` deploy=${!!deploy} intro=${!!(introEl && !introEl.classList.contains('hidden'))} won=${player.won}`);
+            break;
+          }
+        }
+      },
+    });
+    window.__cineReady = () => !!(playerMesh && mesh && (typeof mkcxReady !== 'function' || mkcxReady('mkcx2')));
+    // live: start once the board is up (the berth callback has run)
+    if (!capturing) {
+      const poll = setInterval(() => {
+        if (director.t0 >= 0) { clearInterval(poll); return; }
+        directorUnpause();
+        if (deploysDone >= 1 && !deploy && playerMesh) { clearInterval(poll); directorStart(); }
+      }, 250);
+    }
+  }
+  function directorFrame(dt) { if (window.__directorFrame) window.__directorFrame(dt); }
 
   // ?stateprobe=1 — the boot, as a log: every 2 s for 24 s, what state the
   // game is in. For "it starts and I cannot move" reports, where the

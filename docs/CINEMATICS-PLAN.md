@@ -237,3 +237,77 @@ has been measured on a phone.
 - **The wormhole is a disc shader.** Going full screen means the throat
   geometry (uThroatRadius, uNear) is tuned for a disc; the bench will need a
   "full frame" mode before the effect is judged.
+
+## 9. The second direction — operator, 2026-09-04 morning
+
+After the night's three clips: *720p is enough, especially while the
+direction is still moving.* Then five items, each of them **the game**:
+
+1. **THE TANK, longer.** Start with the engine OFF; turn it on and off to
+   show the hydraulics and their sounds; on for good, move around, a turret
+   shot, then zoom around the tank as it fires the secondaries. A longer
+   shot is fine.
+2. **THE GATE ends wrong** — an enormous portal on a tiny planet. It should
+   be a normal-sized portal on a normally constructed planet, one that is
+   *built*: towers, enemies, the tank, action. The portal starts as the
+   wormhole, then brings us into the action.
+3. **THE RAM.** The tank ramming through dozens and dozens of enemies —
+   200 — and toward the end ONE large torus boss; the camera zooms on the
+   radar showing the proximity danger climbing.
+4. **THE STRIKE.** An orbital strike sequence: the button switch, the
+   strikecam, a live target hit.
+5. **THE PLANET** — atmosphere and galaxies read; the planet has to be
+   *lived-in*: regular game elements going on.
+
+### The decision: a director inside the TD tab
+
+Every item is the board — towers, enemies, the tank, the heart, the radar,
+the strike button. A cinematic that draws those from a separate scene is a
+second copy of the board, and the board is the one thing this project has
+refused to copy (the tabs are named debt for exactly that). So the
+cinematics move *into* the board: **director mode** — `#td?director=NAME`
+— a seeded, scripted run of the game with a camera rail on top, the input
+and any HUD the shot does not want switched off, and the sim stepped at a
+fixed dt for capture.
+
+- **Scripts are data** (`src/cine/scripts.js`, pure, Node-tested): a rail
+  (`rail.js` keys → `startShot`'s `poseAt`) plus timed cues — `spawn`,
+  `tower`, `drive`, `fire`, `laser`, `engine`, `strike`, `hud`, `radar` —
+  executed by the board when the sim clock crosses them, the way the sound
+  rail's cues are. The board exposes exactly the verbs the scripts use.
+- **The capture is the whole page at 720p.** `Page.captureScreenshot`
+  composites the WebGL frame with the radar (a 2D canvas) and the HUD (DOM)
+  — the radar zoom and the strike button are *in the frame* — and 1280 px
+  is under the width that hung the M4. `installCine({ seek })` on the
+  board: `seek(t)` steps the sim from where it is to `t` at 1/30 s and
+  renders; frames are captured in order in one Chrome (cdp mode).
+- **Determinism** is the board's own: seed, no `Math.random`, fixed dt.
+  Two renders of a script are the same clip.
+- **The night's scenes stay** as the set pieces they are (the wormhole
+  full-frame, the weathered metal, the crossing) — THE GATE v2 opens on
+  the cine tab's wormhole and *cuts* to the director's board; the tank's
+  hydraulics are the game's own `stopEngine`/engine-on with its sounds.
+
+### Order
+
+1. **Director mode** — the seam. Unblocks all five. Probe: a 6 s scripted
+   run captured twice is byte-identical.
+2. **THE RAM** — the most game: 200 phage from three gates, the tank on
+   AUTO through them, the knot last, the radar zoom.
+3. **THE STRIKE** — the strikecam already exists; the script arms, presses,
+   and the camera follows the fall onto a crowd.
+4. **THE TANK v2** — engine off → on/off → on; the drive; a main; the
+   secondaries under the zoom.
+5. **THE GATE v2** — the cine tab's wormhole beats, then the cut to the
+   board: a gate at cell scale with towers around it, the swarm coming out,
+   the tank arriving.
+6. **THE PLANET v2** — the orbit rail over a built board: gates, towers
+   firing, a wave in the lanes.
+
+### Open, for the operator
+
+- The RAM's boss: the **knot** is the board's torus boss (hp 5, not
+  rammable). Is the knot the one, or a new, larger torus?
+- The STRIKE's target: a crowd at a gate, or the gate itself?
+- Length per scene now that "longer is fine": 20 s for the TANK, 30 s for
+  the RAM?

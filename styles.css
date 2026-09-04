@@ -5,22 +5,22 @@
    back to a system face until the subset is rebuilt. */
 @font-face {
   font-family: 'VT323';
-  src: url('assets/fonts/VT323.woff2?v=07138cae') format('woff2');
+  src: url('assets/fonts/VT323.woff2?v=edc465df') format('woff2');
   font-weight: 400; font-style: normal; font-display: swap;
 }
 @font-face {
   font-family: 'Press Start 2P';
-  src: url('assets/fonts/PressStart2P.woff2?v=07138cae') format('woff2');
+  src: url('assets/fonts/PressStart2P.woff2?v=edc465df') format('woff2');
   font-weight: 400; font-style: normal; font-display: swap;
 }
 @font-face {
   font-family: 'Share Tech Mono';
-  src: url('assets/fonts/ShareTechMono.woff2?v=07138cae') format('woff2');
+  src: url('assets/fonts/ShareTechMono.woff2?v=edc465df') format('woff2');
   font-weight: 400; font-style: normal; font-display: swap;
 }
 @font-face {
   font-family: 'DotGothic16';
-  src: url('assets/fonts/DotGothic16.woff2?v=07138cae') format('woff2');
+  src: url('assets/fonts/DotGothic16.woff2?v=edc465df') format('woff2');
   font-weight: 400; font-style: normal; font-display: swap;
 }
 
@@ -3960,3 +3960,18 @@ body.cine-capture #portal-hud { display: none !important; }
 #cine-hud { position: absolute; left: 14px; bottom: 12px; z-index: 5; font: 12px ui-monospace, Menlo, monospace;
   color: #9fdcff; background: rgba(4, 8, 14, 0.6); padding: 5px 9px; border-radius: 6px; pointer-events: none; }
 body.cine-capture #cine-hud { display: none !important; }
+
+/* THE DIRECTOR's HUD (td-tab ?director=): a script asks for the full HUD,
+   the radar alone, or nothing. The scope scales in place for the zoom. */
+body.dir-hud-none #td-stats, body.dir-hud-none #td-wave, body.dir-hud-none #td-next, body.dir-hud-none #td-combo,
+body.dir-hud-none #td-danger, body.dir-hud-none #td-hint, body.dir-hud-none #td-throttle, body.dir-hud-none #td-callouts,
+body.dir-hud-none #td-sitrep, body.dir-hud-none #td-perf, body.dir-hud-none #td-lap, body.dir-hud-none #td-msg,
+body.dir-hud-none #td-toast, body.dir-hud-none #td-tower, body.dir-hud-none #td-tut, body.dir-hud-none #td-launch,
+body.dir-hud-none #td-safety, body.dir-hud-none #td-auto-radial, body.dir-hud-none .minimap, body.dir-hud-none #td-brief,
+body.dir-hud-none [id^="td-pad-"], body.dir-hud-none #td-stick, body.dir-hud-none #td-rotate { display: none !important; }
+body.dir-hud-radar #td-stats, body.dir-hud-radar #td-wave, body.dir-hud-radar #td-next, body.dir-hud-radar #td-combo,
+body.dir-hud-radar #td-hint, body.dir-hud-radar #td-throttle, body.dir-hud-radar #td-callouts,
+body.dir-hud-radar #td-sitrep, body.dir-hud-radar #td-perf, body.dir-hud-radar #td-lap, body.dir-hud-radar #td-msg,
+body.dir-hud-radar #td-toast, body.dir-hud-radar #td-tower, body.dir-hud-radar #td-tut, body.dir-hud-radar #td-launch,
+body.dir-hud-radar #td-safety, body.dir-hud-radar #td-auto-radial, body.dir-hud-radar #td-brief,
+body.dir-hud-radar [id^="td-pad-"], body.dir-hud-radar #td-stick, body.dir-hud-radar #td-rotate { display: none !important; }
