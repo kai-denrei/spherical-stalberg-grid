@@ -6,6 +6,143 @@ Demo links assume `npm run serve` (port 8144) or the
 
 ---
 
+## `c5d3bc3` / `1f72484` — the study gets sliders, and RESCUE 2: the raid
+
+Two asks in one message, and the second one is a second mission.
+
+### The study (`#astro`)
+
+*"Make the astronaut much smaller relative to the tank. Actually put a size
+slider for the tank and astronaut, and use the model for the tank that has
+the texture. For the loop animation, make the astronaut walk around the
+perimeter of the tank, without touching it."*
+
+**Both sizes are knobs.** The study's whole job is to settle a *ratio*, and
+a ratio settled by editing a constant and reloading is a ratio nobody
+settles. Person height and tank length are metres on sliders; the HUD
+prints the ratio they are making; the opening default goes 0.34 → **0.180**.
+`sizeAstro` and `sizeTank` both re-derive from the model's original box
+every call, so dragging a slider back and forth does not compound.
+
+**The hull is dressed the way a cinematic dresses it** —
+`applyWeatheredMaterial` with neither colour nor emissive kept, the stage's
+sky as `envMap`. The first still came out a paper cut-out with a textured
+barrel, because the cast *also* wears the game's blueprint pass: a white
+line on every edge at 0.85, which is its read at a cell's size on a black
+board and a wall of white under a lens. `cine/tankscene.js` had already
+solved exactly this, so the same treatment lands for the same reason — the
+lines stay as a **rim** at 0.22, `M_Glow` takes the dim cyan, and the stage
+drops to the cinematic's exposure.
+
+**The walk is a lap.** A circle about the hull at its measured *plan
+diagonal* plus a clearance — the diagonal, not the length, so "without
+touching it" holds at the corners and at every ratio the sliders can make.
+The heading comes from the path's own tangent, never a second sign
+convention.
+
+...and the frame and the floor follow the sliders, because a fixed 5.2 m
+camera sits *inside* a 10 m tank. The grid stays one square per metre: it is
+the ruler a stride is measured against.
+
+### Rescue 2 — the raid
+
+*"Larger map, more clearings… small groups of astronauts (with the 3D
+rendering)… hiding in containers… large groups of rammable enemies… within
+shot distance… walk animation… into the tank. Saved. If the tank is not
+static, they can be ran over and die. A little splash of red on the floor."*
+
+**The inversion is the whole design.** In Rescue 1, stopping is how you pick
+someone up. Here, stopping is how you avoid **killing** them. `runOver` and
+the save share one contact radius; the only difference between them is
+whether the hull was moving:
+
+```js
+export function runOver(sv, tankPos, tankSpeed, cellSide, tune) {
+  if (sv.state !== 'walking') return false;
+  if (tankSpeed <= tune.runoverSpeed) return false;
+  return groundDist(sv.pos, tankPos) <= tune.boardCells * cellSide;
+}
+```
+
+Three beats per camp: drive in (ramming the garrison is free — that is what
+it is *for*), get inside shot distance so the container opens, stand still
+while they walk out. A walker re-aims at the tank's **current** position
+every frame, so a player who repositions is followed rather than walked
+past — which matters, because repositioning is exactly the temptation.
+
+Two rulings taken on the operator's behalf. **No gate waves:** the brief
+names the threat as pre-placed groups, and a wave clock on top of that turns
+a puzzle back into the defence we already have. **Saved on boarding:** the
+brief ends at "into the tank. Saved.", so there is no drive home and no seat
+limit.
+
+A **garrison holds its camp** until the tank comes to it, then hunts the
+tank rather than the heart — it is guarding a container, and the thing that
+came for the container is the thing it walks at. Both are four-line local
+overrides of the exit choice in `updateEnemies`; neither is a second nav
+field.
+
+### The GLB, and a clone written rather than vendored
+
+The objection that put Rescue 1 on dot clouds does not apply here, and the
+reason is worth stating: it was about six separate **loads** of a 3.7 MB
+file. One parse plus N clones that *share* the geometry and the materials is
+one upload and nine GPU-skinned meshes of 25 bones — nothing.
+
+What it needs is a correct clone. `Object3D.clone()` copies a SkinnedMesh's
+`skeleton` **by reference**, so without a rebind every clone deforms *and
+stands* as one body — it looks exactly like the model failed to load.
+`cloneSkinned()` in `units.js` pairs source bones to clone bones by
+traversal order (clone preserves child order, so the two walks line up index
+for index) and re-`bind`s each mesh to a fresh Skeleton.
+
+Written here, not vendored: `SkeletonUtils` sits in four sibling repos'
+`node_modules` and all of them ship three **r180** against this project's
+**r160**. "An addon from the sibling's node_modules" is already a recorded
+dead end here, from the Line2 trio.
+
+**The splash does not fade.** It is the record of a mistake, and a mission
+about carrying people out should keep the ones it did not.
+
+### The map, and the shared seam
+
+`points 1600`, `rooms 26` — rooms is what "clearings" means on this
+generator — and **every sector open from the first frame**, because sector
+gating is the campaign's spine and a raid has nowhere to progress to. Camps
+sit on `dungeon.seeds`, which is exactly the farthest-point set the carve
+grew its rooms from: "a camp in a clearing" needs no second notion of what a
+clearing is.
+
+`missionOn` now guards the fourteen things the two missions **share** — the
+suppressed campaign systems, the briefing, the endings — while each keeps
+its own flag for its own rules. Writing `rescueOn || rescue2On` at fourteen
+sites is how the third mission breaks one of them.
+
+### One bug the regression caught, not the eye
+
+`startRescue2` reset the shared `rescue` object **before** its own guard, and
+it runs after `startRescue` — so it wiped Rescue 1's survivors on every board
+it built. The probe said "nobody stranded"; nothing threw. A shared object is
+reset by the owner of the mode, never by its neighbour.
+
+### The probes
+
+```
+RESCUE2PROBE far   open=false out=0 SHUT — correct
+RESCUE2PROBE call  open=true out=2/2 doors=1.00 models=1 OPEN, WALKING, RENDERED
+RESCUE2PROBE hold  saved=2 lost=0 walking=0 THEY REACHED THE TANK
+RESCUE2PROBE over  lost=2 splashes=2 speed=5.00 c/s RUN OVER, AND THE RED STAYS
+RESCUE2PROBE end   ended=true saved=3 lost=4 THE CARD FIRED
+```
+
+`?campgo=N` parks the hull just inside camp N's shot distance and leaves it
+there — the probe blows through the whole sequence in one tick, so there is
+no frame in it where a container stands open with people walking out. It
+fires at t+5 s, **after** the berth deploy, which drives the hull and would
+otherwise undo it.
+
+---
+
 ## `8a0825c`…`1c54f9d` — the RESCUE mission: six stranded, two seats, no resupply
 
 `#td?mission=rescue`. The operator's brief was one paragraph — *"a handful
