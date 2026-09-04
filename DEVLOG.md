@@ -6,6 +6,44 @@ Demo links assume `npm run serve` (port 8144) or the
 
 ---
 
+## `0506c0c` — the metal on the board, the tab bar in groups, the astronaut study
+
+"Add the metal effect to the default game." Every cast the board makes is
+dressed now — tank, containers, Terraformer, gates — at the tier's size,
+*keeping* the grey ladder's colour and emissive, because the board is
+lit at hemi 0.55 / sun 0.25 and the rungs are why the machines read. Two
+stills said the maps did nothing at all, and both reasons were physical.
+A metal shows what it *reflects*, and the board's materials had no
+environment: the dressed materials take the board's own sky bake through
+PMREM, on the casts only, so the wire stays what it is. And under that
+light the rung's *emissive* is most of what you see, so a map that
+modulates only the diffuse term is invisible — the emissive takes the
+albedo as its map too. A `board` preset is a detail overlay, a near-white
+base with a lighter oxide, so the mottle and the pits modulate a rung
+instead of dimming it. `?metal=0` returns the flat cast.
+
+The tab bar is five labelled groups — play, studies, cine, research,
+tech — and collapses to home plus the active tab as before. `#astro` is
+the astronaut study: `assets/models/astronaut.glb` is a Sketchfab rig
+with one mesh, twenty-five bones and one 1.03 s walk clip, on the lab
+stage with a clip picker, root motion, the skeleton, and the MK-CX/2
+beside it at the game's ratio (1.8 m to 5.3 m) — the rescue mission's
+first read.
+
+---
+
+## `c246c0e` — the tank is cast at its play size from the first frame
+
+"The tank got enormous … and now it seems fixed, weird." `buildActors`
+set a fresh cast to its *base* scale alone (~27× the tank) and relied on
+`placeActors` to multiply the unit scale in; `placeActors` runs on
+events, not per frame, so anything that skipped or threw between the two
+left a giant on the board until the next regenerate. The cast takes
+`unitScale × base` from the first frame now. A two-step size is a window;
+the first step is the final value.
+
+---
+
 ## `82880d8` — the shell watches its own camera
 
 Build `42e61776`, two phone screenshots: the eye at deck height looking
