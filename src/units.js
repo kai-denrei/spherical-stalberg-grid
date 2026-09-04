@@ -16,14 +16,14 @@
 
 import * as THREE from '../vendor/three.module.js';
 import { EMOTION_IDS, emotion, phosphorFor } from './emotions.js';
-import { printPhase, printOffset, printOn } from './printpath.js?v=7a71c986';
-import { loadGlb, mergeByMaterial, fitModel, tintModel, makeShellRack,
-  addEdgeOutlines, makeHeatSleeve } from './glbmodels.js?v=7a71c986';
-import { CREATURES, waveJelly, swimWave, spherePts, bulletPts, missilePts, heartPts, torusPts, towerHeadPts, enemyDotPts, portalPts, personPts } from './creatures.js?v=7a71c986';
-import { TOWER_FEEL, TOWER_HEADS, headKindFor } from './towerfeel.js?v=7a71c986';
+import { printPhase, printOffset, printOn } from './printpath.js?v=cfc3ca69';
+import { loadGlb, loadGlbWithClips, mergeByMaterial, fitModel, tintModel, makeShellRack,
+  addEdgeOutlines, makeHeatSleeve } from './glbmodels.js?v=cfc3ca69';
+import { CREATURES, waveJelly, swimWave, spherePts, bulletPts, missilePts, heartPts, torusPts, towerHeadPts, enemyDotPts, portalPts, personPts } from './creatures.js?v=cfc3ca69';
+import { TOWER_FEEL, TOWER_HEADS, headKindFor } from './towerfeel.js?v=cfc3ca69';
 import { STARGATE_PTS, STARGATE_STROKE,
-  HORIZON_N, stargateHorizon } from './stargate.js?v=7a71c986';
-import { ENEMY_SPEC } from './enemyspec.js?v=7a71c986';
+  HORIZON_N, stargateHorizon } from './stargate.js?v=cfc3ca69';
+import { ENEMY_SPEC } from './enemyspec.js?v=cfc3ca69';
 
 function normalizeToUnit(group) {
   group.updateMatrixWorld(true);
@@ -2258,6 +2258,106 @@ export function makeIsaoDrone(tint = 0xbfe6ff) {
       + ` inTree=${!!g.getObjectByName('Isao_CRT')}`);
   }
   return g;
+}
+
+// --- THE ASTRONAUT, as a game piece ---------------------------------------
+//
+// CLONING A RIGGED MODEL, without vendoring SkeletonUtils. Object3D.clone()
+// copies a SkinnedMesh's `skeleton` BY REFERENCE, so every clone shares one
+// set of bones — which means they all deform identically AND stand in the
+// same place, because the skin is driven by those bones' world matrices and
+// not by the clone's own transform. It looks like the model failed to load.
+//
+// The fix is twenty lines: clone the graph, pair source bones to clone bones
+// by traversal order (clone preserves child order, so the two walks line up
+// index for index), and re-`bind` every SkinnedMesh to a fresh Skeleton over
+// the cloned bones. Geometry and materials stay SHARED, which is the whole
+// reason this is cheap — one upload, N GPU-skinned instances.
+//
+// Written here rather than vendored on purpose: SkeletonUtils sits in four
+// sibling repos' node_modules and all of them ship three r180 against this
+// project's r160. "An addon from the sibling's node_modules" is already a
+// recorded dead end in .deban, from the Line2 trio.
+export function cloneSkinned(source) {
+  const clone = source.clone(true);
+  const src = [], dst = [];
+  source.traverse((o) => src.push(o));
+  clone.traverse((o) => dst.push(o));
+  const boneMap = new Map();
+  for (let i = 0; i < src.length; i++) if (src[i].isBone) boneMap.set(src[i], dst[i]);
+  for (let i = 0; i < src.length; i++) {
+    const s = src[i], d = dst[i];
+    if (!s.isSkinnedMesh || !d.isSkinnedMesh || !s.skeleton) continue;
+    const bones = s.skeleton.bones.map((b) => boneMap.get(b)).filter(Boolean);
+    d.bind(new THREE.Skeleton(bones, s.skeleton.boneInverses), s.bindMatrix.clone());
+    d.frustumCulled = false;   // a skinned bound box is the BIND pose's, not the frame's
+  }
+  return clone;
+}
+
+let astroLoad = null;
+// The prototype: one unit tall, feet on y=0, centred in x/z, facing +Z —
+// so a caller scales by ONE number in its own units and never touches the
+// file's centimetres again. Same contract every other cast here honours.
+export function preloadAstronaut() {
+  if (astroLoad) return astroLoad;
+  astroLoad = loadGlbWithClips('assets/models/astronaut.glb').then((res) => {
+    if (!res || !res.scene) { astroLoad = null; return null; }
+    const proto = res.scene;
+    proto.updateMatrixWorld(true);
+    const box = new THREE.Box3().setFromObject(proto);
+    const size = box.getSize(new THREE.Vector3());
+    const c = box.getCenter(new THREE.Vector3());
+    const k = 1 / Math.max(size.y, 1e-6);
+    // the normalisation goes on a WRAPPER, not on the rig: scaling the
+    // animated root would fight the clip, and re-centring it would move the
+    // thing the bones are posed relative to
+    const wrap = new THREE.Group();
+    proto.scale.setScalar(k);
+    proto.position.set(-c.x * k, -box.min.y * k, -c.z * k);
+    wrap.add(proto);
+    // THE BOARD IS LIT AT HEMI 0.55 / SUN 0.25 (looks.js). A standard
+    // material under that is near-black whatever its albedo — the same
+    // reason the containers carry a hand-painted emissive rung. So each of
+    // the suit's materials takes a dim emissive of its OWN colour: it reads
+    // on the board without becoming a lamp, and it stays the model's colours
+    // rather than a tint invented here.
+    wrap.traverse((o) => {
+      if (!o.isMesh) return;
+      o.castShadow = false; o.receiveShadow = false;
+      for (const m of Array.isArray(o.material) ? o.material : [o.material]) {
+        if (!m || !m.emissive || m.userData.astroLit) continue;
+        m.userData.astroLit = true;
+        m.emissive.copy(m.color).multiplyScalar(0.55);
+        m.emissiveMap = m.map || null;
+        m.emissiveIntensity = 1;
+        m.needsUpdate = true;
+      }
+    });
+    return { wrap, clips: res.clips };
+  });
+  return astroLoad;
+}
+
+// One astronaut, ready to walk. `tick(dt)` drives its own mixer, so the
+// caller owns nothing but a position and a heading.
+export function makeAstronaut(proto) {
+  if (!proto || !proto.wrap) return null;
+  const obj = cloneSkinned(proto.wrap);
+  const mixer = new THREE.AnimationMixer(obj);
+  let action = null;
+  if (proto.clips && proto.clips.length) {
+    action = mixer.clipAction(proto.clips[0]);
+    action.setLoop(THREE.LoopRepeat, Infinity);
+    // a deterministic-looking offset per instance so a group of three does
+    // not march in lockstep — the one thing that reads as "clones"
+    action.time = (obj.id % 17) / 17 * proto.clips[0].duration;
+    action.play();
+  }
+  obj.userData.tick = (dt) => mixer.update(dt);
+  obj.userData.setWalking = (on) => { if (action) action.paused = !on; };
+  obj.userData.dispose = () => { mixer.stopAllAction(); mixer.uncacheRoot(obj); };
+  return obj;
 }
 
 export function preloadMkcx(id = 'mkcx2') {

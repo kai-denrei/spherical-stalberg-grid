@@ -1,29 +1,29 @@
 // main.js — tab shell. Each tab lazily initializes its own renderer/scene the
 // first time it's shown and pauses (skips its loop body) while hidden.
 
-import { wireDevlogBadge } from './devlog.js?v=7a71c986';
-import { initHomeTab } from './home-tab.js?v=7a71c986';
-import { initGridTab } from './grid-tab.js?v=7a71c986';
-import { initMazeTab } from './maze-tab.js?v=7a71c986';
-import { initOrganicTab } from './organic-tab.js?v=7a71c986';
-import { initBattleTab } from './battle-tab.js?v=7a71c986';
-import { initHeartTab } from './heart-tab.js?v=7a71c986';
-import { initTdTab } from './td-tab.js?v=7a71c986';
-import { initTankTab } from './tank-tab.js?v=7a71c986';
-import { initTank2Tab } from './tank2-tab.js?v=7a71c986';
-import { initTank3Tab } from './tank3-tab.js?v=7a71c986';
-import { initUnitsTab } from './units-tab.js?v=7a71c986';
-import { initBeamTab } from './beam-tab.js?v=7a71c986';
-import { initAstroTab } from './astro-tab.js?v=7a71c986';
-import { initMetalTab } from './metal-tab.js?v=7a71c986';
-import { initPortalTab } from './portal-tab.js?v=7a71c986';
-import { initCineTab } from './cine-tab.js?v=7a71c986';
-import { initHowTab, initStackTab, initLogTab } from './how-tab.js?v=7a71c986';
-import { initSimTab } from './sim-tab.js?v=7a71c986';
-import { initRecordTab } from './recordtab.js?v=7a71c986';
+import { wireDevlogBadge } from './devlog.js?v=cfc3ca69';
+import { initHomeTab } from './home-tab.js?v=cfc3ca69';
+import { initGridTab } from './grid-tab.js?v=cfc3ca69';
+import { initMazeTab } from './maze-tab.js?v=cfc3ca69';
+import { initOrganicTab } from './organic-tab.js?v=cfc3ca69';
+import { initBattleTab } from './battle-tab.js?v=cfc3ca69';
+import { initHeartTab } from './heart-tab.js?v=cfc3ca69';
+import { initTdTab } from './td-tab.js?v=cfc3ca69';
+import { initTankTab } from './tank-tab.js?v=cfc3ca69';
+import { initTank2Tab } from './tank2-tab.js?v=cfc3ca69';
+import { initTank3Tab } from './tank3-tab.js?v=cfc3ca69';
+import { initUnitsTab } from './units-tab.js?v=cfc3ca69';
+import { initBeamTab } from './beam-tab.js?v=cfc3ca69';
+import { initAstroTab } from './astro-tab.js?v=cfc3ca69';
+import { initMetalTab } from './metal-tab.js?v=cfc3ca69';
+import { initPortalTab } from './portal-tab.js?v=cfc3ca69';
+import { initCineTab } from './cine-tab.js?v=cfc3ca69';
+import { initHowTab, initStackTab, initLogTab } from './how-tab.js?v=cfc3ca69';
+import { initSimTab } from './sim-tab.js?v=cfc3ca69';
+import { initRecordTab } from './recordtab.js?v=cfc3ca69';
 import { applyFontPack, DEFAULT_FONT, DEFAULT_SHOUT_FONT,
 
-  loadTypeFeel } from './fonts.js?v=7a71c986';
+  loadTypeFeel } from './fonts.js?v=cfc3ca69';
 
 
 // ?coarse=1 — apply the phone's coarse-pointer CSS headless, for ANY tab.

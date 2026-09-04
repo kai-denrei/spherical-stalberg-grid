@@ -19,68 +19,70 @@
 
 import * as THREE from '../vendor/three.module.js';
 import GUI from '../vendor/lil-gui.esm.js';
-import { generateSphereMesh, relax } from './grid.js?v=7a71c986';
-import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=7a71c986';
-import { compileRail } from './cine/rail.js?v=7a71c986';
-import { SCRIPTS } from './cine/scripts.js?v=7a71c986';
-import { cuesBetween } from './cine/sound.js?v=7a71c986';
-import { installCine } from './cine/kit.js?v=7a71c986';
-import { mulberry32, randomSeed } from './rng.js?v=7a71c986';
-import { computeBerths, berthIndexFor } from './berths.js?v=7a71c986';
-import { wantsSecondary, shellsForAll } from './autofire.js?v=7a71c986';
-import { printPhase, printOffset, printOn, patternSecsFor } from './printpath.js?v=7a71c986';
-import { createBeamRig, PLASMA_DEFAULTS, BOARD_PRESET, BEAM_PEAK } from './beamdraw.js?v=7a71c986';
-import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3, segKey, tangentDir, tangentBasis } from './vec3.js?v=7a71c986';
-import { CREATURES, waveJelly } from './creatures.js?v=7a71c986';
-import { brief, dwellFor } from './isaobriefs.js?v=7a71c986';
-import { drawEmotion } from './emotions.js?v=7a71c986';
+import { generateSphereMesh, relax } from './grid.js?v=cfc3ca69';
+import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=cfc3ca69';
+import { compileRail } from './cine/rail.js?v=cfc3ca69';
+import { SCRIPTS } from './cine/scripts.js?v=cfc3ca69';
+import { cuesBetween } from './cine/sound.js?v=cfc3ca69';
+import { installCine } from './cine/kit.js?v=cfc3ca69';
+import { mulberry32, randomSeed } from './rng.js?v=cfc3ca69';
+import { computeBerths, berthIndexFor } from './berths.js?v=cfc3ca69';
+import { wantsSecondary, shellsForAll } from './autofire.js?v=cfc3ca69';
+import { printPhase, printOffset, printOn, patternSecsFor } from './printpath.js?v=cfc3ca69';
+import { createBeamRig, PLASMA_DEFAULTS, BOARD_PRESET, BEAM_PEAK } from './beamdraw.js?v=cfc3ca69';
+import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3, segKey, tangentDir, tangentBasis } from './vec3.js?v=cfc3ca69';
+import { CREATURES, waveJelly } from './creatures.js?v=cfc3ca69';
+import { brief, dwellFor } from './isaobriefs.js?v=cfc3ca69';
+import { drawEmotion } from './emotions.js?v=cfc3ca69';
 import { ACHIEVEMENTS, ACHV_GROUPS, achievement, blankRun, earned, freshlyEarned,
   sanitiseRecord }
-  from './achievements.js?v=7a71c986';
+  from './achievements.js?v=cfc3ca69';
 import { applyFontPack, currentFontPack, FONT_NAMES,
-  loadTypeFeel } from './fonts.js?v=7a71c986';
-import { SECONDARY_TOE, applySecondaryToe } from './units.js?v=7a71c986';
-import { UNITS, UNIT_NAMES, buildUnit, buildCreature, preloadMkcx, preloadServer, makeServerFixture, makeShieldShell, preloadContainer, makeContainerFixture, preloadFabricator, makeIsaoDrone, makeBulletCloud, makeRewardSolid, makeShellSolid, makeDebris, makeDotBurst, makePortalCloud, preloadPortalRing, makePortalRing, makeHeartCloud, makeDotEnemy, makeSurvivor, preloadTerraformer, makeTerraformerFixture } from './units.js?v=7a71c986';
-import { LOOKS, LOOK_NAMES } from './looks.js?v=7a71c986';
-import { makeCellIndex } from './cellindex.js?v=7a71c986';
-import { CREATURE_TINTS, ENEMY_SPEC, INTROS, computeWavePlan, accentFor } from './enemyspec.js?v=7a71c986';
-import { PICKUPS } from './pickups.js?v=7a71c986';
-import { rankFor, rankLabel, badgeSVG, killReq, eliteReq } from './ranks.js?v=7a71c986';
-import { beamStep, isBeamStep, PEN_SOFT_FRAC, PEN_HARD_FRAC } from './beamranks.js?v=7a71c986';
-import { burn, sweepAdvance, wallBite as wallBiteFor } from './beamburn.js?v=7a71c986';
-import { arcPoint, projectToArc, toeForCrossing, crossingForToe } from './arc.js?v=7a71c986';
+  loadTypeFeel } from './fonts.js?v=cfc3ca69';
+import { SECONDARY_TOE, applySecondaryToe } from './units.js?v=cfc3ca69';
+import { UNITS, UNIT_NAMES, buildUnit, buildCreature, preloadMkcx, preloadServer, makeServerFixture, makeShieldShell, preloadContainer, makeContainerFixture, preloadFabricator, makeIsaoDrone, makeBulletCloud, makeRewardSolid, makeShellSolid, makeDebris, makeDotBurst, makePortalCloud, preloadPortalRing, makePortalRing, makeHeartCloud, makeDotEnemy, makeSurvivor, preloadAstronaut, makeAstronaut, preloadTerraformer, makeTerraformerFixture } from './units.js?v=cfc3ca69';
+import { LOOKS, LOOK_NAMES } from './looks.js?v=cfc3ca69';
+import { makeCellIndex } from './cellindex.js?v=cfc3ca69';
+import { CREATURE_TINTS, ENEMY_SPEC, INTROS, computeWavePlan, accentFor } from './enemyspec.js?v=cfc3ca69';
+import { PICKUPS } from './pickups.js?v=cfc3ca69';
+import { rankFor, rankLabel, badgeSVG, killReq, eliteReq } from './ranks.js?v=cfc3ca69';
+import { beamStep, isBeamStep, PEN_SOFT_FRAC, PEN_HARD_FRAC } from './beamranks.js?v=cfc3ca69';
+import { burn, sweepAdvance, wallBite as wallBiteFor } from './beamburn.js?v=cfc3ca69';
+import { arcPoint, projectToArc, toeForCrossing, crossingForToe } from './arc.js?v=cfc3ca69';
 import { MINE_TUNE, makeField, layMine, armMines, restock, mineAt,
-  inFan, trip, chain, nextChained, minePolar } from './mines.js?v=7a71c986';
+  inFan, trip, chain, nextChained, minePolar } from './mines.js?v=cfc3ca69';
 import { RESCUE_TUNE, makeRescue, placeSurvivors, stepBoard, stepGrab,
   disembark, loseCarried, lockOn, waveMix, standing as standingSurv,
   aboard as aboardSurv, missionOver, verdict as rescueVerdict,
-  grabProgress } from './rescue.js?v=7a71c986';
+  grabProgress, remaining as remainingSurv, exposed as exposedSurv,
+  RESCUE2_TUNE, makeCamps, stepCall, stepEmerge, walkStep, runOver,
+  awake as campAwake } from './rescue.js?v=cfc3ca69';
 import { WORMHOLE_PRESET, WORMHOLE_UNIFORM_DEFAULTS, RING_SPIN, TRAVEL,
-  travelRate, advancePhase } from './portalfx.js?v=7a71c986';
-import { WORMHOLE_FRAG } from './fx/wormhole.frag.js?v=7a71c986';
-import { CORONA_FRAG } from './fx/corona.frag.js?v=7a71c986';
-import { labLine, parseLabQuery } from './lab.js?v=7a71c986';
-import { bakeGalaxyCube } from './galaxybake.js?v=7a71c986';
-import { SKY_PRESET } from './galaxyseed.js?v=7a71c986';
-import { makeScore } from './score.js?v=7a71c986';
-import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER } from './towers.js?v=7a71c986';
-import { makeEconomy, sellRefund } from './economy.js?v=7a71c986';
-import { pickTier } from './perftier.js?v=7a71c986';
-import { applyWeatheredMaterial } from './cine/materials.js?v=7a71c986';
-import { STICK, stickVector, knobOffset } from './stick.js?v=7a71c986';
-import { registerServiceWorker } from './pwa.js?v=7a71c986';
-import { makeBloom } from './postfx.js?v=7a71c986';
-import { TANK_FEEL, TANK_FEEL_KNOBS, makeTankFeel, stepTankFeel, landTankFeel, fireTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js?v=7a71c986';
-import { FEEL, loadFeel, saveFeel } from './feelstore.js?v=7a71c986';
+  travelRate, advancePhase } from './portalfx.js?v=cfc3ca69';
+import { WORMHOLE_FRAG } from './fx/wormhole.frag.js?v=cfc3ca69';
+import { CORONA_FRAG } from './fx/corona.frag.js?v=cfc3ca69';
+import { labLine, parseLabQuery } from './lab.js?v=cfc3ca69';
+import { bakeGalaxyCube } from './galaxybake.js?v=cfc3ca69';
+import { SKY_PRESET } from './galaxyseed.js?v=cfc3ca69';
+import { makeScore } from './score.js?v=cfc3ca69';
+import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER } from './towers.js?v=cfc3ca69';
+import { makeEconomy, sellRefund } from './economy.js?v=cfc3ca69';
+import { pickTier } from './perftier.js?v=cfc3ca69';
+import { applyWeatheredMaterial } from './cine/materials.js?v=cfc3ca69';
+import { STICK, stickVector, knobOffset } from './stick.js?v=cfc3ca69';
+import { registerServiceWorker } from './pwa.js?v=cfc3ca69';
+import { makeBloom } from './postfx.js?v=cfc3ca69';
+import { TANK_FEEL, TANK_FEEL_KNOBS, makeTankFeel, stepTankFeel, landTankFeel, fireTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js?v=cfc3ca69';
+import { FEEL, loadFeel, saveFeel } from './feelstore.js?v=cfc3ca69';
 import { STRIKE_KNOBS, makeStrike, makeStrikeParams, grantStrikes, stepStrike,
   toggleArm, paintTarget, launchStrike, stepFall, skipFall, fallProgress,
-  strikeDamage, retargetStrike, orbitProgress } from './strike.js?v=7a71c986';
+  strikeDamage, retargetStrike, orbitProgress } from './strike.js?v=cfc3ca69';
 import { radarBasis, radarProject, radarBearing, sweepAngle, radarPhosphor,
-  proximitySectors, SENSOR_LEVELS, sensorColor } from './radar.js?v=7a71c986';
-import { BLOOM_GROUPS } from './bloomweights.js?v=7a71c986';
-import { TOWER_LOOK_NAMES, DEFAULT_TOWER_LOOK, buildTowerLook, preloadLook } from './towerlooks.js?v=7a71c986';
-import { makeAudio } from './audio.js?v=7a71c986';
-import { DEATH_KEYS } from './audiomanifest.js?v=7a71c986';
+  proximitySectors, SENSOR_LEVELS, sensorColor } from './radar.js?v=cfc3ca69';
+import { BLOOM_GROUPS } from './bloomweights.js?v=cfc3ca69';
+import { TOWER_LOOK_NAMES, DEFAULT_TOWER_LOOK, buildTowerLook, preloadLook } from './towerlooks.js?v=cfc3ca69';
+import { makeAudio } from './audio.js?v=cfc3ca69';
+import { DEATH_KEYS } from './audiomanifest.js?v=cfc3ca69';
 
 export function initTdTab(root) {
   let active = false;
@@ -657,6 +659,14 @@ export function initTdTab(root) {
   const rescueTune = { ...RESCUE_TUNE };
   const missionName = new URLSearchParams(location.search).get('mission') || '';
   const rescueOn = missionName === 'rescue';
+  // RESCUE 2 — the raid (docs/superpowers/specs/2026-09-05-rescue-2.md). Both
+  // missions stay, so they can be played against each other. `missionOn` is
+  // the guard everything they SHARE reads — the suppressed campaign systems,
+  // the briefing, the endings — while each mission's own rules key off its
+  // own flag. Writing the shared ones as `rescueOn || rescue2On` at fourteen
+  // sites is how the third mission breaks one of them.
+  const rescue2On = missionName === 'rescue2';
+  const missionOn = rescueOn || rescue2On;
   {
     const rq = new URLSearchParams(location.search);
     const ns = parseInt(rq.get('survivors'), 10);
@@ -666,18 +676,44 @@ export function initTdTab(root) {
     // so the rack starts at the mission's number and not the campaign's.
     if (rescueOn) { mineTune.start = rescueTune.mines; mineField = makeField(mineTune); }
   }
+  const rescue2Tune = { ...RESCUE2_TUNE };
+  {
+    const rq = new URLSearchParams(location.search);
+    const nc = parseInt(rq.get('camps'), 10);
+    if (Number.isFinite(nc)) rescue2Tune.camps = Math.max(1, Math.min(8, nc));
+    const ng = parseInt(rq.get('garrison'), 10);
+    if (Number.isFinite(ng)) rescue2Tune.garrison = Math.max(0, ng);
+    if (rq.get('lasers') === '1') rescue2Tune.lasers = true;
+    if (rescue2On) { mineTune.start = rescue2Tune.mines; mineField = makeField(mineTune); }
+  }
+  // A LARGER MAP WITH MORE CLEARINGS (the brief). `rooms` is what "clearings"
+  // means on this generator, so that is the number that moves most. Set on
+  // `params` HERE, before the first regenerate, because the board is built
+  // from them and a mission that resizes the map after the build resizes
+  // nothing. `?points=` and friends still win — a probe must be able to
+  // shrink it.
+  if (rescue2On) {
+    const rq = new URLSearchParams(location.search);
+    if (!rq.get('points')) params.points = 1600;
+    if (!rq.get('rooms')) params.rooms = 26;
+    params.roomRadius = 5;
+    params.obstacles = 0.16;
+  }
   let rescue = makeRescue(rescueTune);
   const survObjs = new Map();      // survivor id -> Group
   let rescueEnded = false;
-  if (rescueOn) {
+  if (missionOn) {
     // the key legend is the one line of chrome that TELLS you what game you
     // are playing; on a mission with no towers and no build mode it must not
     // still be advertising them
     const hintEl = root.querySelector('#td-hint');
     if (hintEl) {
-      hintEl.textContent = `RESCUE · drive to a beacon and STOP to load`
-        + ` · ${rescueTune.seats} seats · deliver at the Stålheart`
-        + ` · SPACE shell · N mine · no resupply`;
+      hintEl.textContent = rescue2On
+        ? `RAID · drive up to a container to open it · then STAND STILL while they walk out`
+          + ` · MOVING kills them · ram the soft ones · SPACE shell · N mine · no resupply`
+        : `RESCUE · drive to a beacon and STOP to load`
+          + ` · ${rescueTune.seats} seats · deliver at the Stålheart`
+          + ` · SPACE shell · N mine · no resupply`;
     }
   }
   const enemies = [];      // { cur, prev, next, prog, pos, dir, obj, alive }
@@ -877,7 +913,10 @@ export function initTdTab(root) {
   // player start (only at run start — expansions don't teleport you)
   function applySector(resetSpawn = false) {
     for (let i = 0; i < dungeon.tags.length; i++) {
-      dungeon.tags[i] = (tdFullTags[i] !== BLOCKED && tdSectorId[i] <= round)
+      // A RAID HAS NOWHERE TO PROGRESS TO. Sector gating is the campaign's
+      // spine; on rescue 2 the whole shell is the mission's ground from the
+      // first frame, so the sector clause simply does not apply.
+      dungeon.tags[i] = (tdFullTags[i] !== BLOCKED && (rescue2On || tdSectorId[i] <= round))
         ? tdFullTags[i] : BLOCKED;
     }
     let d = bfsDist(graph.adj, [dungeon.heart],
@@ -3516,7 +3555,7 @@ export function initTdTab(root) {
   // readout in the middle of the screen is worse than no readout, and this
   // one occupies the exact strip the beacons are read across. `display` and
   // not a class, because syncArmUi owns the class and would put it back.
-  if (rescueOn && armBtn) armBtn.style.display = 'none';
+  if (missionOn && armBtn) armBtn.style.display = 'none';
   const safetyEl = root.querySelector('#td-safety');
   const safetyImg = root.querySelector('#td-safety-img');
   const launchBtn = root.querySelector('#td-launch-btn');
@@ -3548,7 +3587,7 @@ export function initTdTab(root) {
   });
 
   function syncArmUi() {
-    if (rescueOn) return;   // there is no console to sync
+    if (missionOn) return;   // there is no console to sync
     if (buyMissileEl) {
       buyMissileEl.classList.toggle('hidden', !missileShop);
       if (missileShop) buyMissileEl.textContent = `+ ${missileCost()}kg`;
@@ -4066,7 +4105,7 @@ export function initTdTab(root) {
     // THE CAMPAIGN'S TUTORIAL TEACHES THE CAMPAIGN — towers, build mode, the
     // gates. Every sentence of it is false on a mission, and it would be the
     // FIRST thing an operator opening ?mission=rescue on a cold browser saw.
-    if (rescueOn) return;
+    if (missionOn) return;
     tutorialActive = true;
     root.classList.add('tutoring');
     tutorial.phase = 'setup';
@@ -4392,11 +4431,34 @@ export function initTdTab(root) {
   // triads, destroy all portals, build on the high ground — is false here,
   // and it is the first thing anyone opening `?mission=rescue` on a cold
   // browser reads. Same frame, same keys block, different sheet of paper.
-  if (rescueOn && introEl) {
+  if (missionOn && introEl) {
     const head = introEl.querySelector('.fm-head');
     const body = introEl.querySelector('.fm-body');
-    if (head) head.innerHTML = '&#9626; MISSION BRIEF &middot; RESCUE';
-    if (body) {
+    if (head) head.innerHTML = `&#9626; MISSION BRIEF &middot; ${rescue2On ? 'RAID' : 'RESCUE'}`;
+    if (body && rescue2On) {
+      const keys = body.querySelector('.fm-keys');
+      body.innerHTML =
+        `<div class="fm-line"><b>${rescue2Tune.camps} CAMPS</b> &mdash; a container in a clearing, astronauts hiding inside</div>`
+        + `<div class="fm-line">a big group of soft enemies is standing around each one</div>`
+        + `<div class="fm-line">RAM them &mdash; free, unlimited, and what they are there for</div>`
+        + `<div class="fm-line fm-warn">&#9888; DO NOT RAM units with SOLID elements &mdash; shells and mines only</div>`
+        + `<div class="fm-line">get close and the container <b>OPENS</b>. They walk out to you.</div>`
+        + `<div class="fm-line fm-warn">&#9888; <b>STAND STILL.</b> A moving hull runs them over, and the red stays on the floor</div>`
+        + `<div class="fm-line">reaching the tank is a save. There is no drive home.</div>`
+        + `<div class="fm-line"><b>NO RESUPPLY.</b> ${rescue2Tune.hulls} hulls &middot; ${rescue2Tune.shells} shells`
+        + ` &middot; ${rescue2Tune.mines} mines${rescue2Tune.lasers ? '' : ' &middot; no secondaries'}</div>`
+        + `<div class="fm-line">no towers, no orbital, no waves &mdash; the whole map is open, take your time</div>`;
+      if (keys) {
+        keys.innerHTML = '<span>W A S D / arrows</span><span>drive</span>'
+          + `<span>SPACE</span><span>shell &mdash; you have ${rescue2Tune.shells}</span>`
+          + '<span>N</span><span>lay a MINE one cell ahead</span>'
+          + '<span>Q / E</span><span>cruise up / down</span>'
+          + '<span>1 / 2 / 3</span><span>orbit &middot; 1st &middot; 3rd</span>'
+          + '<span>M / V</span><span>map / cycle view</span>'
+          + '<span>H / ESC</span><span>hint / pause</span>';
+        body.appendChild(keys);
+      }
+    } else if (body) {
       // the keys block is rebuilt too, not reused: it still offered SHIFT for
       // lasers that are not fitted and U to upgrade towers that cannot be
       // built, and a control legend that lists controls you do not have is
@@ -4978,14 +5040,14 @@ export function initTdTab(root) {
       + `<div class="hud-res"><span class="hud-biomass">${eco.biomass}kg`
       + ` ×${eco.multiplier().toFixed(2)}</span>`
       + `<span class="hud-wave">WAVE <b>${wave}</b> · R${round}</span></div>`
-      + (rescueOn ? rescueLine()
+      + (missionOn ? rescueLine()
         : `<div class="hud-obj">portals ${spAlive}/${spawnPoints.length}`
         + ` · ${programmeDone() ? 'WAVES SPENT — CLOSE THE GATES'
           : `wave ${sectorWave() + 1}/${params.wavesPerSector} of sector ${round}`}`
         + ` · built ${towers.length}</div>`)
-      + (rescueOn ? '' : isaoLine())
+      + (missionOn ? '' : isaoLine())
       + assistantLine()
-      + (rescueOn ? '' : terraLine())
+      + (missionOn ? '' : terraLine())
       + (alerts ? `<div class="hud-alert">${alerts}</div>` : '');
     if (dirBtnEl) {
       const eng = !manualActive();
@@ -5127,7 +5189,9 @@ export function initTdTab(root) {
 
   const nextEl = root.querySelector('#td-next');
   function updateNextPreview() {
-    if (player.won || tutorialActive || !nextEl) { nextEl && nextEl.classList.add('hidden'); return; }
+    // a raid sends no waves, so the preview is a countdown to nothing —
+    // and it sat at "in 0s" forever, which reads as a stuck game
+    if (player.won || tutorialActive || rescue2On || !nextEl) { nextEl && nextEl.classList.add('hidden'); return; }
     const n = wave + 1;
     const plan = rescueOn ? rescueWavePlan(n) : computeWavePlan(n, round, params.waveSize);
     const chips = plan.entries.map((e, i) => {
@@ -5396,6 +5460,7 @@ export function initTdTab(root) {
     // the mission strands its people and hands out its budget LAST, so it
     // overwrites the campaign's supply rather than being overwritten by it
     startRescue();
+    startRescue2();
     shieldT = 0;
     resetTankRank();
     carryingRegen = false;
@@ -5544,7 +5609,7 @@ export function initTdTab(root) {
     // a new game means a new magazine: leftovers do not survive regenerate
     strike.reserved = 0; strike.ready = 0; strike.gauge = 0;
     strike.armed = false; strike.target = -1; strike.falling = -1;
-    if (!rescueOn) grantStrikes(strike, spawnPoints.filter((sp2) => sp2.alive).length, strikeTune);
+    if (!missionOn) grantStrikes(strike, spawnPoints.filter((sp2) => sp2.alive).length, strikeTune);
   }
 
   // cheap hop estimate for spreading spawn points (chord distance in cells)
@@ -5706,6 +5771,10 @@ export function initTdTab(root) {
   }
 
   function armWave() {
+    // A RAID SENDS NOTHING. The brief names the threat as pre-placed groups;
+    // a wave clock on top of that turns a puzzle back into the defence we
+    // already have. The gates stand as scenery and as targets.
+    if (rescue2On) return;
     if (waveIn >= 0) return;
     // THE SECTOR HAS A FIXED PROGRAMME. Once it is spent no more waves are
     // sent, whatever the clock thinks — the remaining gates are a mop-up,
@@ -5849,6 +5918,13 @@ export function initTdTab(root) {
         e.obj.userData.s0 = sv;
       }
       let pace = ENEMY_SPEED * spec.speed * (e.paceJitter ?? 1);
+      // A GARRISON HOLDS ITS CAMP until the tank comes to it. A camp you have
+      // not reached should not be walking across the map at you — that is
+      // what makes them camps and not a wave. Once up, it stays up.
+      if (e.campId) {
+        const camp = campById(e.campId);
+        if (camp && !campAwake(camp, player.pos, cellSide, rescue2Tune)) pace = 0;
+      }
       if (tNow < e.behUntil) pace *= e.behMult; // on-hit reaction window
       if (tNow < e.slowUntil) pace *= e.slowFactor; // slow-tower debuff
       // the slow READS for its full duration: the whole cloud tints ice —
@@ -5921,6 +5997,14 @@ export function initTdTab(root) {
         if (lk) {
           const here = dist3(graph.centers[e.cur], lk.pos);
           const toward = exits.filter((c) => dist3(graph.centers[c], lk.pos) < here);
+          if (toward.length) pool = toward;
+        }
+        // ...and an awake garrison hunts the TANK, not the heart: it is
+        // guarding a container, and the thing that came for the container is
+        // the thing it walks at.
+        if (!pool && e.campId && player.pos) {
+          const here = dist3(graph.centers[e.cur], player.pos);
+          const toward = exits.filter((c) => dist3(graph.centers[c], player.pos) < here);
           if (toward.length) pool = toward;
         }
         if (!pool) {
@@ -6360,7 +6444,7 @@ export function initTdTab(root) {
     // is a driving exercise. One clause, one knob (`?lasers=1` refits them).
     const wantFire = (keys.laser || autoLaserWant) && guns
       && !player.won && !playerDown
-      && (!rescueOn || rescueTune.lasers);
+      && (!missionOn || rescueTune.lasers);
     // heat: build while firing, shed otherwise; overheat locks the trigger
     // until the tubes are fully cold (no feathering the cap)
     if (laserOverheat) {
@@ -6800,12 +6884,311 @@ export function initTdTab(root) {
   // measures — portals, sectors, towers built — is not what this mission is,
   // and a HUD that reads out the wrong objective is worse than a blank one.
   function rescueLine() {
+    if (rescue2On) return rescue2Line();
     if (!rescueOn) return '';
     const total = rescue.survivors.length;
     const held = rescue.survivors.filter((s) => s.state === 'standing' && s.grabT > 0).length;
     return `<div class="hud-obj">SAVED <b>${rescue.saved}/${total}</b>`
       + ` &middot; aboard ${aboardSurv(rescue)}/${rescueTune.seats}`
       + ` &middot; standing ${standingSurv(rescue)}`
+      + (held ? ` &middot; <b class="hp-heart">${held} GRABBED</b>` : '')
+      + (rescue.lost ? ` &middot; lost ${rescue.lost}` : '')
+      + `</div>`;
+  }
+
+
+  // --- RESCUE 2: THE RAID ---------------------------------------------------
+  // Rescue 1 is a defence with a ferry; this is a raid. The map is static, the
+  // threat is pre-placed, and every camp is the same three beats: drive in
+  // (ramming the garrison is free — that is what it is for), get inside SHOT
+  // DISTANCE so the container opens, then STAND STILL while they walk out to
+  // you. The inversion that makes it a different game: in Rescue 1 stopping
+  // is how you pick someone up; here stopping is how you avoid killing them.
+  const campObjs = new Map();    // camp id -> { obj, doorT, open }
+  const astroObjs = new Map();   // survivor id -> the GLB clone
+  const splashes = [];           // red on the floor, for the rest of the run
+  let astroProto = null;
+  let tankSpeedCells = 0;        // measured off the hull, in cells/s
+  let tankLastPos = null;
+
+  const campById = (id) => rescue.camps.find((k) => k.id === id) || null;
+
+  function clearRescue2() {
+    for (const [, v] of campObjs) { scene.remove(v.obj); disposeObj(v.obj); }
+    campObjs.clear();
+    for (const [, o] of astroObjs) {
+      if (o.userData.dispose) o.userData.dispose();
+      scene.remove(o); disposeObj(o);
+    }
+    astroObjs.clear();
+    for (const sp of splashes) { scene.remove(sp); sp.geometry.dispose(); sp.material.dispose(); }
+    splashes.length = 0;
+  }
+
+  // A LITTLE SPLASH OF RED ON THE FLOOR (the brief). It does NOT fade: this
+  // is the record of a mistake, and a mission about carrying people out
+  // should keep the ones it did not.
+  function bloodSplash(pos) {
+    const n = norm3(pos);
+    let t1 = cross3(n, [0, 1, 0]);
+    if (len3(t1) < 1e-3) t1 = cross3(n, [1, 0, 0]);
+    t1 = norm3(t1);
+    const t2 = norm3(cross3(n, t1));
+    const N = 54, arr = new Float32Array(N * 3), col = new Float32Array(N * 3);
+    const c = new THREE.Color(0xb3121b);
+    for (let i = 0; i < N; i++) {
+      // a hash, not Math.random: a replayed board must splash identically
+      const h = (k) => { const v = Math.sin(i * 12.9898 + k * 78.233 + pos[0] * 37.7) * 43758.5453; return v - Math.floor(v); };
+      const a = h(1) * Math.PI * 2;
+      const r = cellSide * 0.30 * Math.pow(h(2), 0.55);   // dense at the centre
+      const p = add3(scale3(n, 1 + cellSide * 0.02), add3(scale3(t1, Math.cos(a) * r), scale3(t2, Math.sin(a) * r)));
+      arr[i * 3] = p[0]; arr[i * 3 + 1] = p[1]; arr[i * 3 + 2] = p[2];
+      const b = 0.55 + 0.45 * h(3);
+      col[i * 3] = c.r * b; col[i * 3 + 1] = c.g * b; col[i * 3 + 2] = c.b * b;
+    }
+    const geo = new THREE.BufferGeometry();
+    geo.setAttribute('position', new THREE.BufferAttribute(arr, 3));
+    geo.setAttribute('color', new THREE.BufferAttribute(col, 3));
+    const pts = new THREE.Points(geo, new THREE.PointsMaterial({
+      size: 3.2, sizeAttenuation: false, vertexColors: true, transparent: true, opacity: 0.95 }));
+    scene.add(pts);
+    splashes.push(pts);
+    return pts;
+  }
+
+  // Open cells within `cells` of a centre — the ring a garrison stands in and
+  // nothing else. O(C) per camp at init, three times; not worth an index.
+  function cellsNear(ci, cells, skip = new Set()) {
+    const c0 = graph.centers[ci], r = cellSide * cells;
+    const out = [];
+    for (let i = 0; i < dungeon.tags.length; i++) {
+      if (dungeon.tags[i] === BLOCKED || skip.has(i)) continue;
+      if (dist3(graph.centers[i], c0) <= r) out.push(i);
+    }
+    return out;
+  }
+
+  // The garrison: a large group of RAMMABLE units ringed around the
+  // container, and from the second camp a solid one that must be shot. They
+  // are ordinary enemies in every respect except that they carry a campId,
+  // which is the only thing the nav reads.
+  function spawnGarrison(camp, rng) {
+    const kinds = Object.keys(ENEMY_SPEC);
+    const soft = kinds.filter((k) => ENEMY_SPEC[k].rammable && !ENEMY_SPEC[k].cloaked);
+    const hard = kinds.filter((k) => !ENEMY_SPEC[k].rammable);
+    const ring = cellsNear(camp.ci, rescue2Tune.garrisonCells, new Set([camp.ci]));
+    if (!ring.length) return 0;
+    let made = 0;
+    const put = (type) => {
+      const spec = ENEMY_SPEC[type];
+      if (!spec) return;
+      const ci = ring[Math.floor(rng() * ring.length) % ring.length];
+      const s0 = cellSide * spec.size * 0.7;
+      const obj = makeDotEnemy(type, { walker: CREATURE_TINTS[type], walkerHi: accentFor(type) });
+      obj.scale.setScalar(s0); obj.userData.s0 = s0;
+      scene.add(obj);
+      const exits = openNeighbors(ci);
+      enemies.push({
+        type, spec, scale0: s0, size: spec.size,
+        cur: ci, prev: -1, next: exits.length ? exits[Math.floor(rng() * exits.length)] : ci,
+        prog: rng() * 0.4, pos: graph.centers[ci].slice(), dir: [0, 1, 0],
+        obj, alive: true, phase: rng() * 6.283, paceJitter: 0.9 + rng() * 0.22,
+        hp: spec.hp, behMult: 1, behUntil: -1, touchCd: -1,
+        slowFactor: 1, slowUntil: -1,
+        campId: camp.id,          // the whole difference from a wave spawn
+      });
+      made++;
+    };
+    for (let i = 0; i < Math.round(rescue2Tune.garrison); i++) put(soft[i % soft.length]);
+    if (camp.id > 1) for (let i = 0; i < Math.round(rescue2Tune.hard); i++) put(hard[i % hard.length]);
+    return made;
+  }
+
+  function buildCamp(camp) {
+    const g = dressMetal(makeContainerFixture(0));
+    if (!g) {
+      // the bytes have not landed; the same wait tfStart does
+      preloadContainer().then((ok) => { if (ok && rescue2On && !campObjs.has(camp.id)) buildCamp(camp); });
+      return;
+    }
+    shutDoors(g);
+    const c = graph.centers[camp.ci], n = graph.normals[camp.ci], hc = graph.centers[dungeon.heart];
+    const f = cellSide * 0.55;
+    g.scale.set(f, f, f * 0.55);
+    g.position.set(c[0], c[1], c[2]);
+    tmpObj.position.copy(g.position); tmpObj.up.set(n[0], n[1], n[2]);
+    tmpObj.lookAt(hc[0], hc[1], hc[2]);
+    g.quaternion.copy(tmpObj.quaternion);
+    scene.add(g);
+    campObjs.set(camp.id, { obj: g, doorT: 0 });
+  }
+
+  // The doors swing to the angle the SHUT search found, plus a throw — so a
+  // container opens from wherever its authored rest pose happened to be
+  // rather than from an assumed zero. Same measurement, used backwards.
+  function stepCampDoors(dt) {
+    for (const camp of rescue.camps) {
+      const v = campObjs.get(camp.id);
+      if (!v || !camp.open) continue;
+      if (v.doorT >= 1) continue;
+      v.doorT = Math.min(1, v.doorT + dt / 0.7);
+      const e = v.doorT * v.doorT * (3 - 2 * v.doorT);
+      for (const [name, sign] of [['Door_L_Pivot', 1], ['Door_R_Pivot', -1]]) {
+        const piv = v.obj.getObjectByName(name);
+        if (!piv) continue;
+        const shut = piv.userData.shutAngle ?? 0;
+        piv.rotation.y = shut + sign * 1.15 * e;
+      }
+    }
+  }
+
+  function startRescue2() {
+    // THE GUARD COMES FIRST. Both missions share the `rescue` object, and
+    // this runs AFTER startRescue in regenerate — so resetting before the
+    // guard wiped Rescue 1's survivors on every board it built, which the
+    // probe reported as "nobody stranded". A shared object is reset by the
+    // owner of the mode, never by its neighbour.
+    if (!rescue2On) return;
+    clearRescue2();
+    rescue = makeRescue(rescue2Tune);
+    rescueEnded = false;
+    tankLastPos = null; tankSpeedCells = 0;
+    const rng = mulberry32((params.seed >>> 0) ^ 0x2a1de5);
+    const taken = new Set([dungeon.heart, dungeon.spawn, serverCi,
+      ...spawnPoints.map((sp) => sp.ci), ...berths.map((b) => b.ci)]);
+    // THE CLEARINGS ARE THE ROOM SEEDS. dungeon.seeds is exactly the
+    // farthest-point set the carve grew its rooms from, so "a camp in a
+    // clearing" needs no second notion of what a clearing is.
+    const cands = (dungeon.seeds || [])
+      .filter((ci) => dungeon.tags[ci] !== BLOCKED && !taken.has(ci) && dungeon.distToHeart[ci] > 0)
+      .map((ci) => ({ ci, d: dungeon.distToHeart[ci], pos: norm3(graph.centers[ci]) }));
+    makeCamps(rescue, cands, rng, cellSide, rescue2Tune);
+    let garrison = 0;
+    for (const camp of rescue.camps) { buildCamp(camp); garrison += spawnGarrison(camp, rng); }
+    ammo = Math.round(rescue2Tune.shells);
+    playerHP = Math.max(1, Math.round(rescue2Tune.hulls));
+    preloadAstronaut().then((pr) => {
+      astroProto = pr;
+      console.log(`RESCUE2 astronaut ${pr ? `proto ready, ${pr.clips.length} clip(s)` : 'FAILED to load'}`);
+    });
+    console.log(`RESCUE2 camps=${rescue.camps.length}/${rescue2Tune.camps}`
+      + `${rescue.short ? ` short=${rescue.short}` : ''} apart=${rescue.campApart}c`
+      + ` survivors=${rescue.survivors.length} garrison=${garrison}`
+      + ` cells=[${rescue.camps.map((k) => k.ci).join(',')}]`
+      + ` groups=[${rescue.camps.map((k) => k.group.length).join(',')}]`
+      + ` shells=${ammo} mines=${mineField.count} hulls=${playerHP}`
+      + ` lasers=${rescue2Tune.lasers ? 'on' : 'OFF'}`
+      + ` board=${dungeon.tags.filter((t) => t !== BLOCKED).length} open cells`);
+    updateHud();
+  }
+
+  function spawnAstronaut(sv) {
+    if (!astroProto) return null;
+    const o = makeAstronaut(astroProto);
+    if (!o) return null;
+    // a person, in cells: the study settled the ratio at about a sixth of the
+    // hull, and the hull is 0.85 of a cell
+    o.scale.setScalar(cellSide * 0.30);
+    astroObjs.set(sv.id, o);
+    scene.add(o);
+    placeAstronaut(sv, o);
+    return o;
+  }
+
+  function placeAstronaut(sv, o = astroObjs.get(sv.id)) {
+    if (!o) return;
+    const n = norm3(sv.pos);
+    o.position.set(sv.pos[0], sv.pos[1], sv.pos[2]);
+    // stood on the surface and facing where it is walking — the heading comes
+    // from the module's own step direction, never re-derived here
+    tmpObj.position.copy(o.position);
+    tmpObj.up.set(n[0], n[1], n[2]);
+    const d = sv.dir || [0, 0, 1];
+    tmpObj.lookAt(o.position.x + d[0], o.position.y + d[1], o.position.z + d[2]);
+    o.quaternion.copy(tmpObj.quaternion);
+  }
+
+  function dropAstronaut(id) {
+    const o = astroObjs.get(id);
+    if (!o) return;
+    if (o.userData.dispose) o.userData.dispose();
+    scene.remove(o); disposeObj(o);
+    astroObjs.delete(id);
+  }
+
+  function stepRescue2(dt, tNow) {
+    if (!rescue2On || rescueEnded || !graph || !player.pos) return;
+    // THE HULL'S OWN SPEED, in cells per second. Measured, not read off the
+    // throttle — the phone has no throttle, and this is the number that
+    // decides whether contact saves someone or kills them.
+    if (tankLastPos && dt > 0) tankSpeedCells = (dist3(player.pos, tankLastPos) / cellSide) / dt;
+    tankLastPos = player.pos.slice();
+    stepCampDoors(dt);
+    for (const camp of rescue.camps) {
+      campAwake(camp, player.pos, cellSide, rescue2Tune);
+      if (stepCall(camp, player.pos, cellSide, rescue2Tune) === 'open') {
+        sfx.play('tank_spool_up');
+        warnRing(camp.ci, 0xffb45e, 0.8, cellSide * 2.0);
+        showToast(`<div class="wave-num">CAMP ${camp.id} &#9656; HATCH OPEN</div>`
+          + `<div class="wave-role">${camp.group.length} coming out &middot; HOLD STILL</div>`, 2600);
+      }
+      const out = stepEmerge(camp, dt, rescue2Tune);
+      if (out) { spawnAstronaut(out); sfx.play('tank_pickup'); }
+    }
+    for (let i = 0; i < rescue.survivors.length; i++) {
+      const sv = rescue.survivors[i];
+      if (sv.state !== 'walking') { if (sv.state !== 'inside') dropAstronaut(sv.id); continue; }
+      const o = astroObjs.get(sv.id) || spawnAstronaut(sv);
+      // RUN OVER — before the walk and before the save, because the same
+      // contact radius does all three and the only difference is the hull's
+      // speed. Checking it first is what makes "not static" the loss.
+      if (runOver(sv, player.pos, tankSpeedCells, cellSide, rescue2Tune)) {
+        sv.state = 'lost'; rescue.lost++;
+        bloodSplash(sv.pos);
+        sfx.play('enemy_die_c');
+        bumpLeft = Math.max(bumpLeft, BUMP_LEN * 0.5);
+        showToast(`<div class="td-down">RUN OVER</div>`
+          + `<div class="td-down-sub">${remainingSurv(rescue)} still out there &middot; STOP to load</div>`, 2600);
+        dropAstronaut(sv.id);
+        updateHud();
+        continue;
+      }
+      const gr = stepGrab(rescue, i, survivorHeld(sv), dt, rescue2Tune);
+      if (gr === 'lost') {
+        bloodSplash(sv.pos);
+        sfx.play('danger_alert');
+        showToast(`<div class="td-down">ASTRONAUT ${sv.id} KILLED</div>`
+          + `<div class="td-down-sub">${remainingSurv(rescue)} still out there</div>`, 2400);
+        dropAstronaut(sv.id);
+        updateHud();
+        continue;
+      }
+      if (gr === 'grabbed') sfx.play('tower_slow');
+      if (walkStep(sv, player.pos, dt, cellSide, rescue2Tune) === 'saved') {
+        rescue.saved++;
+        sfx.play('tank_spool_up');
+        const burst = makeDotBurst(0xffb45e, norm3(sv.pos), 26);
+        burst.scale.setScalar(cellSide * 0.5);
+        burst.position.set(sv.pos[0], sv.pos[1], sv.pos[2]);
+        scene.add(burst); debris.push(burst);
+        showCallout(`ASTRONAUT ${sv.id} &#9656; ABOARD`, 'co-milestone');
+        dropAstronaut(sv.id);
+        updateHud();
+        continue;
+      }
+      if (o) { o.userData.tick(dt); placeAstronaut(sv, o); }
+    }
+    if (missionOver(rescue)) endRescue('every camp is accounted for');
+  }
+
+  function rescue2Line() {
+    const total = rescue.survivors.length;
+    const walking = rescue.survivors.filter((s) => s.state === 'walking').length;
+    const held = rescue.survivors.filter((s) => exposedSurv(s) && s.grabT > 0).length;
+    const opened = rescue.camps.filter((k) => k.open).length;
+    return `<div class="hud-obj">SAVED <b>${rescue.saved}/${total}</b>`
+      + ` &middot; camps ${opened}/${rescue.camps.length}`
+      + (walking ? ` &middot; <b>${walking} WALKING &mdash; HOLD STILL</b>` : '')
       + (held ? ` &middot; <b class="hp-heart">${held} GRABBED</b>` : '')
       + (rescue.lost ? ` &middot; lost ${rescue.lost}` : '')
       + `</div>`;
@@ -7224,7 +7607,7 @@ export function initTdTab(root) {
     clearRewards();
     // ...and on a rescue, nothing regrows either: the shell rack is the
     // mission's currency and a triad lying in a corridor refunds it.
-    if (rescueOn) return;
+    if (missionOn) return;
     regrowQueue.length = 0; // a new board owes nothing to the old one's picks
     const far = farCells();
     for (let k = 0; k < params.rewards && far.length > 0; k++) {
@@ -7393,7 +7776,7 @@ export function initTdTab(root) {
     // produce, so the last hull going is an ENDING with a score rather than a
     // game over with none — and the campaign's verdict, which counts sectors,
     // towers and portals this mission never had, must not run on top of it.
-    if (rescueOn) {
+    if (missionOn) {
       player.won = true;      // the run is over; the same flag every ending uses
       destroyPlayer();
       endRescue(reason);
@@ -7678,7 +8061,7 @@ export function initTdTab(root) {
     // "the heart is lost" at 0/6 with a survivor still standing in the road.
     // The mission ends when the people are accounted for, or when the last
     // hull goes, and at no other moment.
-    if (rescueOn) return;
+    if (missionOn) return;
 
     run.heartHits += dmg;
     eco.leak(); // a breach kills the streak — HK's rule, our Heart
@@ -9021,7 +9404,7 @@ export function initTdTab(root) {
   function tfMilestone(w) {
     // A RESCUE HAS NO SUPPLY LINE. No hull, no store, no mine case: the
     // budget is what you were given, which is the whole tactical statement.
-    if (rescueOn) return;
+    if (missionOn) return;
     if (w > 0 && w % TF.hullEvery === 0) tfStart('hull');
     else if (w > 0 && w % TF.containerEvery === 0) tfStart('container');
     // THE MINE CASE RIDES ITS OWN CLOCK, deliberately outside the else-if
@@ -9386,7 +9769,7 @@ export function initTdTab(root) {
     // NOTHING IS BUILT ON A RESCUE. The budget is the shells and the mines
     // you were given; a tower would answer the mission's only question for
     // you and it would answer it by waiting.
-    if (rescueOn) return;
+    if (missionOn) return;
     root.classList.add('shopping');
     // The strike owns the board while it is armed, flying, or just landed.
     // The tap DISPATCH already tries to route around the shop, but a modal
@@ -9577,7 +9960,7 @@ export function initTdTab(root) {
     // you can ferry at leisure is a legitimate plan and a rather good one —
     // but the people are still down there, and the mission ends when they are
     // accounted for and at no other moment.
-    if (rescueOn) return;
+    if (missionOn) return;
     if (spawnPoints.length > 0 && spawnPoints.every((s) => !s.alive) && enemies.every((e) => !e.alive)) {
       player.won = true;
       sectorsCleared = round;
@@ -9945,7 +10328,7 @@ export function initTdTab(root) {
     seedPortals(2); // fresh neutral gates in the new band
     // the new sector's budget arrives with its gates; unspent strikes carry —
     // hoarding one for the next sector is a legitimate play
-    if (!rescueOn) grantStrikes(strike, spawnPoints.filter((sp2) => sp2.alive).length, strikeTune);
+    if (!missionOn) grantStrikes(strike, spawnPoints.filter((sp2) => sp2.alive).length, strikeTune);
     recomputePortalDist();
     waveActive = false; interClock = 0;
     player.won = false;
@@ -10479,6 +10862,7 @@ export function initTdTab(root) {
     // stops it — those are the game speaking.
     if (!driveFrozen) stepMines(dt, t);   // arm, trip, chain — after the bodies moved
     if (!frozen) stepRescue(dt, t);       // board, grab, deliver
+    if (!frozen) stepRescue2(dt, t);      // call, emerge, walk, save — or run over
     // THE GATES' OWN MOTION: the ring's rotors turn, and a struck gate rides
     // out its recoil. The recoil is a SHOVE along its own normal that eases
     // back — the weight of a shell landing lives in that motion, not in a
@@ -10758,6 +11142,22 @@ export function initTdTab(root) {
           ctx.beginPath(); ctx.arc(cx, cy, rr, mid - half, mid + half); ctx.stroke();
         }
       }
+      ctx.globalAlpha = 1;
+    }
+
+    // THE CAMPS: a hollow orange box, always lit, filled once opened. On a
+    // raid this is the whole map — three of them on a board with no waves.
+    for (const camp of rescue.camps) {
+      const q = radarProject(camp.pos, cpos, basis, range);
+      const bx = cx + q.x * R, by = cy + q.y * R;
+      const left = camp.group.filter((sv) => sv.state === 'inside' || sv.state === 'walking').length;
+      ctx.globalAlpha = q.clamped ? 0.6 : 1;
+      ctx.strokeStyle = left ? '#ffb45e' : '#4a5560';
+      ctx.fillStyle = '#ffb45e';
+      ctx.lineWidth = 1.6;
+      ctx.beginPath();
+      ctx.rect(bx - 4.5, by - 4.5, 9, 9);
+      if (camp.open && left) ctx.fill(); else ctx.stroke();
       ctx.globalAlpha = 1;
     }
 
@@ -13588,6 +13988,122 @@ export function initTdTab(root) {
   }
 
   // ?pedprobe=1 — push the tank straight at the heart through the cushion and
+  // ?campgo=N — park the hull just inside camp N's shot distance and leave it
+  // there. The probe blows through the whole sequence in one tick, so there
+  // is no frame in it where a container is standing open with people walking
+  // out of it; this is that frame.
+  {
+    const cg = parseInt(urlParams.get('campgo') || '0', 10);
+    if (cg > 0) {
+      setTimeout(() => {
+        const camp = rescue.camps[cg - 1];
+        if (!camp) { console.log(`CAMPGO no camp ${cg}`); return; }
+        const nn = norm3(camp.pos);
+        let t1 = cross3(nn, [0, 1, 0]);
+        if (len3(t1) < 1e-3) t1 = cross3(nn, [1, 0, 0]);
+        const p2 = arcPoint(nn, norm3(t1), (rescue2Tune.callCells - 0.6) * cellSide);
+        const ci = cellIndex(p2);
+        player.pos = p2;
+        player.cur = ci >= 0 ? ci : player.cur;
+        player.next = player.cur;
+        player.prog = 0;
+        player.freeMode = true;
+        throttle = 0; cruise = false; autoMode = false;
+        paintThrottle();
+        setView('third');
+        console.log(`CAMPGO parked at camp ${cg} cell ${ci}, asked for ${(rescue2Tune.callCells - 0.6).toFixed(1)} cells`
+          + ` got ${(dist3(player.pos, camp.pos) / cellSide).toFixed(2)}c deploy=${!!deploy}`);
+        // ...and say every second what the mission thinks is happening, so a
+        // still that shows a shut container says WHY
+        let n2 = 0;
+        const tick = setInterval(() => {
+          if (++n2 > 8) { clearInterval(tick); return; }
+          console.log(`CAMPGO t+${n2}s dist=${(dist3(player.pos, camp.pos) / cellSide).toFixed(2)}c`
+            + ` call=${rescue2Tune.callCells} open=${camp.open} out=${camp.out}`
+            + ` models=${astroObjs.size} frozen=${buildFrozen()} shot=${shotActive()} won=${player.won}`
+            + ` box=${campObjs.has(camp.id)}`);
+        }, 1000);
+      }, 5000);   // AFTER the berth deploy, which drives the hull and would undo this
+    }
+  }
+
+  // ?rescue2probe=1 — the raid's own log line. Drives the board's stepRescue2,
+  // so shot distance, the doors, the emerge stagger, the walk, the save and
+  // the run-over are all exercised through the code the player touches.
+  if (urlParams.get('rescue2probe') === '1') {
+    preloadAstronaut().then(() => setTimeout(() => {
+      if (!rescue2On) { console.log('RESCUE2PROBE needs ?mission=rescue2'); return; }
+      const camp = rescue.camps[0];
+      if (!camp) { console.log('RESCUE2PROBE no camps'); return; }
+      const keepPos = player.pos.slice(), keepThr = throttle;
+      throttle = 0; cruise = false;
+      let tt = 300;
+      // hold the tank at `where` for n steps: set it BEFORE each step so the
+      // measured hull speed is honestly zero
+      const hold = (where, n) => {
+        for (let k = 0; k < n; k++) { tt += 0.05; player.pos = where.slice(); stepRescue2(0.05, tt); }
+      };
+      const along = (from, cells) => {
+        const nn = norm3(from);
+        let t1 = cross3(nn, [0, 1, 0]);
+        if (len3(t1) < 1e-3) t1 = cross3(nn, [1, 0, 0]);
+        t1 = norm3(t1);
+        return arcPoint(nn, t1, cells * cellSide);
+      };
+
+      // 1. OUT OF SHOT DISTANCE the container stays shut
+      hold(along(camp.pos, rescue2Tune.callCells + 1.0), 20);
+      console.log(`RESCUE2PROBE far   open=${camp.open} out=${camp.out}`
+        + ` ${!camp.open ? 'SHUT — correct' : '<-- opened from out of range'}`);
+
+      // 2. INSIDE IT, it opens and they start coming out
+      const near = along(camp.pos, rescue2Tune.callCells - 0.5);
+      hold(near, 60);
+      console.log(`RESCUE2PROBE call  open=${camp.open} out=${camp.out}/${camp.group.length}`
+        + ` doors=${(campObjs.get(camp.id) || {}).doorT?.toFixed?.(2) ?? '-'}`
+        + ` models=${astroObjs.size}`
+        + ` ${camp.open && camp.out > 0 && astroObjs.size > 0 ? 'OPEN, WALKING, RENDERED' : '<-- nobody came out'}`);
+
+      // 3. HOLD STILL and they arrive
+      const saved0 = rescue.saved;
+      hold(near, 900);
+      console.log(`RESCUE2PROBE hold  saved=${rescue.saved} (was ${saved0}) lost=${rescue.lost}`
+        + ` walking=${rescue.survivors.filter((x) => x.state === 'walking').length}`
+        + ` ${rescue.saved > saved0 ? 'THEY REACHED THE TANK' : '<-- nobody arrived'}`);
+
+      // 4. THE RUN-OVER. A second camp, opened, and then the hull MOVES
+      // through the walker instead of waiting for it.
+      const c2 = rescue.camps[1];
+      if (c2) {
+        const n2 = along(c2.pos, rescue2Tune.callCells - 0.5);
+        hold(n2, 60);
+        const sv = c2.group.find((x) => x.state === 'walking');
+        const lost0 = rescue.lost, splash0 = splashes.length;
+        if (sv) {
+          // drive THROUGH where the walker is standing: two steps a whole
+          // cell apart, which is far faster than runoverSpeed
+          for (let k = 0; k < 6; k++) {
+            tt += 0.05;
+            player.pos = arcPoint(norm3(sv.pos), norm3(cross3(norm3(sv.pos), [0, 1, 0])), cellSide * (0.6 - k * 0.25));
+            stepRescue2(0.05, tt);
+          }
+        }
+        console.log(`RESCUE2PROBE over  lost=${rescue.lost} (was ${lost0})`
+          + ` splashes=${splashes.length} (was ${splash0}) speed=${tankSpeedCells.toFixed(2)} c/s`
+          + ` ${rescue.lost > lost0 && splashes.length > splash0 ? 'RUN OVER, AND THE RED STAYS' : '<-- nothing was run over'}`);
+      }
+
+      // 5. the roster runs out and the card fires on its own
+      for (const x of rescue.survivors) {
+        if (x.state === 'inside' || x.state === 'walking') { x.state = 'lost'; rescue.lost++; dropAstronaut(x.id); }
+      }
+      hold(keepPos, 2);
+      console.log(`RESCUE2PROBE end   ended=${rescueEnded} saved=${rescue.saved} lost=${rescue.lost}`
+        + ` ${rescueEnded ? 'THE CARD FIRED' : '<-- mission did not end'}`);
+      player.pos = keepPos; throttle = keepThr;
+    }, 2200));
+  }
+
   // ?rescueprobe=1 — the mission's own log line. Drives the board's stepRescue
   // rather than the module, so the stop clause, the seats, the delivery and
   // the end card are exercised through the code the player touches.

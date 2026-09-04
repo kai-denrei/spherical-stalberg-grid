@@ -69,6 +69,21 @@ token — the corner badge was retired from the game view).
   default, and that is the mission's load-bearing number),
   `?rescueprobe=1` (drive-by at speed, the phone's drive-by with the lever
   at zero, the stop, both seats, delivery, the end card),
+  RESCUE 2, the raid: `?mission=rescue2` (a LARGER board — it sets points
+  1600 / rooms 26 unless the URL already named them — every sector open, no
+  waves at all), `?camps=N`, `?garrison=N`, `?rescue2probe=1` (shut out of
+  range, open inside it, the doors, the emerge, the walk home, the run-over
+  and its splash, the end card), `?campgo=N` (park the hull just inside camp
+  N's shot distance and LEAVE it — the probe blows through the sequence in
+  one tick, so this is the only way to photograph an open container with
+  people walking out of it; it fires at t+5 s, AFTER the berth deploy, which
+  drives the hull and would undo it),
+  the ASTRONAUT study (`#astro`): `?tankLen=` and `?personH=` in metres (the
+  ratio is the study's whole output and the HUD prints it), `?path=perimeter|
+  straight|spot`, `?clear=` (metres of daylight on the lap), `?outline=`
+  (the cast's blueprint edges — 0.22 is the cinematic's rim; at the game's
+  0.85 a dressed hull reads as a paper cut-out), `?exposure=`, `?env=`,
+  `?dist=`/`?az=`/`?el=` (dist is DERIVED from tankLen unless given),
   the mobile shell's own: `?mobile=1|0` (force the shell on/off — a headless
   run is never coarse), `?goto=1`, `?mobbuild=1` + `?pin=1` (with `?layout`:
   enter BUILD through the button, pin a caption + Isao), `?tapprobe=1`,

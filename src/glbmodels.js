@@ -54,6 +54,29 @@ export function loadGlb(url) {
   return p;
 }
 
+// ...and the same load, keeping the CLIPS. `loadGlb` resolves the scene alone
+// because every model this project casts is a static prop; the astronaut is
+// the first rigged one, and an animation is no use to a caller that never
+// received it. Separate cache, so a caller asking for either gets what it
+// asked for without the other's shape.
+const fullLoads = new Map();
+export function loadGlbWithClips(url) {
+  if (fullLoads.has(url)) return fullLoads.get(url);
+  if (typeof document === 'undefined') {
+    const none = Promise.resolve(null);
+    fullLoads.set(url, none);
+    return none;
+  }
+  const p = new Promise((resolve) => {
+    new GLTFLoader().load(`${url}${bustToken()}`,
+      (gltf) => resolve({ scene: gltf.scene, clips: gltf.animations || [] }),
+      undefined,
+      (err) => { console.warn(`[glbmodels] ${url} failed to load`, err); resolve(null); });
+  });
+  fullLoads.set(url, p);
+  return p;
+}
+
 // Collapse leaf meshes to ONE MESH PER (articulation owner, material).
 //
 // `pivotNames` are nodes that must keep moving — a turret that aims, a gun

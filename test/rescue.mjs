@@ -6,6 +6,8 @@ import {
   RESCUE_TUNE, makeRescue, placeSurvivors, stepBoard, stepGrab, disembark,
   loseCarried, lockOn, waveMix, standing, aboard, missionOver, verdict,
   grabProgress, groundDist, rescueKnobProblems,
+  RESCUE2_TUNE, makeCamps, stepCall, stepEmerge, walkStep, runOver, awake,
+  rescue2KnobProblems,
 } from '../src/rescue.js';
 
 let failures = 0;
@@ -221,6 +223,142 @@ console.log('the end:');
     st3.saved = st3.survivors.length;
     return verdict(st3).clean;
   })());
+}
+
+// ===========================================================================
+// RESCUE 2 — the raid
+// ===========================================================================
+console.log('rescue 2 — camps:');
+{
+  const st = makeRescue();
+  const rooms = cands().map((c) => ({ ...c, d: 12 }));
+  makeCamps(st, rooms, mulberry32(4414), CELL);
+  check('places every camp', st.camps.length === RESCUE2_TUNE.camps, `got ${st.camps.length}`);
+  check('each camp holds a small group', st.camps.every((k) =>
+    k.group.length >= RESCUE2_TUNE.groupMin && k.group.length <= RESCUE2_TUNE.groupMax));
+  check('the roster is every group, flattened',
+    st.survivors.length === st.camps.reduce((n, k) => n + k.group.length, 0));
+  check('everyone starts inside', st.survivors.every((s) => s.state === 'inside'));
+  let closest = Infinity;
+  for (let i = 0; i < st.camps.length; i++) {
+    for (let j = i + 1; j < st.camps.length; j++) {
+      closest = Math.min(closest, groundDist(st.camps[i].pos, st.camps[j].pos));
+    }
+  }
+  check('camps are spread', closest >= st.campApart * CELL);
+  const st2 = makeRescue();
+  makeCamps(st2, cands().map((c) => ({ ...c, d: 12 })), mulberry32(4414), CELL);
+  check('deterministic per seed',
+    st2.camps.map((k) => k.ci).join() === st.camps.map((k) => k.ci).join());
+  // nothing strands next door to the heart
+  const near = makeRescue();
+  makeCamps(near, cands().map((c) => ({ ...c, d: 3 })), mulberry32(1), CELL);
+  check('nothing camps inside the heart’s exclusion', near.camps.length === 0 && near.short === RESCUE2_TUNE.camps);
+  // ...and the SPACING gives way before the camp count does
+  const tight = makeRescue();
+  const ring = Array.from({ length: 5 }, (_, i) => {
+    const a = (i / 5) * Math.PI * 2, r = 0.18;
+    return { ci: i, d: 12, pos: [Math.sin(r) * Math.cos(a), Math.cos(r), Math.sin(r) * Math.sin(a)] };
+  });
+  makeCamps(tight, ring, mulberry32(2), CELL);
+  check('a tight board still gets every camp', tight.camps.length === RESCUE2_TUNE.camps);
+  check('...by giving up spread', tight.campApart < RESCUE2_TUNE.campApart && tight.short === 0);
+}
+
+console.log('rescue 2 — shot distance and the garrison:');
+{
+  const st = makeRescue();
+  makeCamps(st, cands().map((c) => ({ ...c, d: 12 })), mulberry32(4414), CELL);
+  const camp = st.camps[0];
+  const off = (from, cells, deg = 0) => {
+    const n = from;
+    const t = [-n[2], 0, n[0]];
+    const l = Math.hypot(...t) || 1;
+    const u0 = [t[0] / l, t[1] / l, t[2] / l];
+    const s2 = [n[1] * u0[2] - n[2] * u0[1], n[2] * u0[0] - n[0] * u0[2], n[0] * u0[1] - n[1] * u0[0]];
+    const th = deg * Math.PI / 180;
+    const u = [u0[0] * Math.cos(th) + s2[0] * Math.sin(th),
+      u0[1] * Math.cos(th) + s2[1] * Math.sin(th),
+      u0[2] * Math.cos(th) + s2[2] * Math.sin(th)];
+    const a = cells * CELL;
+    return [n[0] * Math.cos(a) + u[0] * Math.sin(a),
+      n[1] * Math.cos(a) + u[1] * Math.sin(a),
+      n[2] * Math.cos(a) + u[2] * Math.sin(a)];
+  };
+  check('out of shot distance it stays shut',
+    stepCall(camp, off(camp.pos, RESCUE2_TUNE.callCells + 0.5), CELL) === null && !camp.open);
+  check('nobody walks out of a shut container', stepEmerge(camp, 9) === null);
+  check('inside it, it opens', stepCall(camp, off(camp.pos, RESCUE2_TUNE.callCells - 0.5), CELL) === 'open');
+  check('...and only announces once', stepCall(camp, camp.pos, CELL) === null);
+
+  // the stagger: one out per emergeGap, and the whole group eventually
+  const first = stepEmerge(camp, 0);
+  check('the first steps out at once', first && first.state === 'walking');
+  check('the second waits its turn', stepEmerge(camp, RESCUE2_TUNE.emergeGap - 0.1) === null);
+  check('...then follows', stepEmerge(camp, 0.2) !== null);
+  for (let k = 0; k < 20; k++) stepEmerge(camp, RESCUE2_TUNE.emergeGap);
+  check('the whole group is out', camp.group.every((s) => s.state !== 'inside'));
+  check('an empty container gives nothing more', stepEmerge(camp, 9) === null);
+
+  // the garrison sleeps until the tank is near, and stays up after
+  const camp2 = st.camps[1];
+  check('a far camp is asleep', !awake(camp2, off(camp2.pos, RESCUE2_TUNE.wakeCells + 1), CELL));
+  check('a near tank wakes it', awake(camp2, off(camp2.pos, RESCUE2_TUNE.wakeCells - 1), CELL));
+  check('...and it stays awake', awake(camp2, off(camp2.pos, 40), CELL));
+}
+
+console.log('rescue 2 — the walk, the save and the run-over:');
+{
+  const st = makeRescue();
+  makeCamps(st, cands().map((c) => ({ ...c, d: 12 })), mulberry32(4414), CELL);
+  const camp = st.camps[0];
+  const along = (from, cells) => {
+    const n = from;
+    const t = [-n[2], 0, n[0]];
+    const l = Math.hypot(...t) || 1;
+    const u = [t[0] / l, t[1] / l, t[2] / l];
+    const a = cells * CELL;
+    return [n[0] * Math.cos(a) + u[0] * Math.sin(a),
+      n[1] * Math.cos(a) + u[1] * Math.sin(a),
+      n[2] * Math.cos(a) + u[2] * Math.sin(a)];
+  };
+  stepCall(camp, camp.pos, CELL);
+  const sv = stepEmerge(camp, 0);
+  const tank = along(camp.pos, 3);
+  let d0 = groundDist(sv.pos, tank);
+  walkStep(sv, tank, 0.1, CELL);
+  check('a walker closes the distance', groundDist(sv.pos, tank) < d0);
+  check('...and it points where it is going', !!sv.dir);
+  let guard = 0;
+  while (sv.state === 'walking' && guard++ < 2000) walkStep(sv, tank, 0.05, CELL);
+  check('it arrives', sv.state === 'saved', `after ${guard} steps`);
+
+  // ...and it arrives at a tank that MOVED after it set off — the whole
+  // reason the heading is re-aimed every frame
+  const sv2 = stepEmerge(camp, 9);
+  let moved = along(camp.pos, 3);
+  guard = 0;
+  while (sv2.state === 'walking' && guard++ < 4000) {
+    if (guard === 20) moved = along(camp.pos, -4);   // the player repositions
+    walkStep(sv2, moved, 0.05, CELL);
+  }
+  check('it follows a tank that repositioned', sv2.state === 'saved', `after ${guard} steps`);
+
+  // THE RUN-OVER: the same contact radius, the only difference is the speed
+  const sv3 = stepEmerge(camp, 9) || { id: 99, state: 'walking', pos: camp.pos.slice(), grabT: 0 };
+  sv3.state = 'walking';
+  const onTop = along(sv3.pos, RESCUE2_TUNE.boardCells - 0.2);
+  check('a parked hull runs nobody over',
+    !runOver(sv3, onTop, RESCUE2_TUNE.runoverSpeed - 0.01, CELL));
+  check('a moving hull at the SAME distance does',
+    runOver(sv3, onTop, RESCUE2_TUNE.runoverSpeed + 0.01, CELL));
+  const away = along(sv3.pos, RESCUE2_TUNE.boardCells + 0.4);
+  check('...but only on contact', !runOver(sv3, away, 5, CELL));
+  sv3.state = 'inside';
+  check('someone still in the container cannot be run over', !runOver(sv3, onTop, 5, CELL));
+  sv3.state = 'walking';
+  sv3.grabT = 0.2;
+  check('a held walker does not walk', walkStep(sv3, along(sv3.pos, 3), 0.5, CELL) === null);
 }
 
 console.log(failures ? `\n${failures} FAILURES` : '\nall rescue invariants hold');
