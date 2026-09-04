@@ -37,7 +37,7 @@ ws.addEventListener('message', (e) => {
   if (msg.id != null && pending.has(msg.id)) { pending.get(msg.id)(msg.result); pending.delete(msg.id); }
   else if (msg.method === 'Runtime.consoleAPICalled') {
     const line = msg.params.args.map((a) => a.value ?? a.description ?? '').join(' ');
-    if (!grep || grep.test(line)) console.log(line.slice(0, 300));
+    if (!grep || grep.test(line)) console.log(line.slice(0, 2000));   // a DIAG line is ~700 chars
   } else if (msg.method === 'Runtime.exceptionThrown') {
     console.log('[exception] ' + JSON.stringify(msg.params.exceptionDetails).slice(0, 300));
   }

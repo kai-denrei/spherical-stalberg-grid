@@ -6,13 +6,13 @@
 
 import * as THREE from '../vendor/three.module.js';
 import GUI from '../vendor/lil-gui.esm.js';
-import { generateSphereMesh, relax } from './grid.js?v=f2a9aeca';
-import { generateDungeon, BLOCKED, PATH, ROOM } from './dungeon.js?v=f2a9aeca';
-import { mulberry32, randomSeed } from './rng.js?v=f2a9aeca';
-import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3 } from './vec3.js?v=f2a9aeca';
-import { LOOKS, LOOK_NAMES } from './looks.js?v=f2a9aeca';
-import { makeCellIndex } from './cellindex.js?v=f2a9aeca';
-import { UNIT_NAMES, buildUnit, buildCreature, makeHeartCloud } from './units.js?v=f2a9aeca';
+import { generateSphereMesh, relax } from './grid.js?v=cf6adf11';
+import { generateDungeon, BLOCKED, PATH, ROOM } from './dungeon.js?v=cf6adf11';
+import { mulberry32, randomSeed } from './rng.js?v=cf6adf11';
+import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3 } from './vec3.js?v=cf6adf11';
+import { LOOKS, LOOK_NAMES } from './looks.js?v=cf6adf11';
+import { makeCellIndex } from './cellindex.js?v=cf6adf11';
+import { UNIT_NAMES, buildUnit, buildCreature, makeHeartCloud } from './units.js?v=cf6adf11';
 
 export function initMazeTab(root) {
   let active = false;
