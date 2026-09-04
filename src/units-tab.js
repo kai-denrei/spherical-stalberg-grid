@@ -15,23 +15,23 @@ import { GLTFExporter } from '../vendor/GLTFExporter.js';
 import { buildUnit, preloadMkcx, makeDebris, makeDotBurst, makeBulletCloud,
   makeDotEnemy, makeRewardSolid, makeShellSolid, makePortalCloud,
   preloadServer, makeServerFixture, preloadContainer, makeContainerFixture,
-  preloadFabricator, makeFabricatorDrone, makeIsaoDrone } from './units.js?v=a7d599ff';
+  preloadFabricator, makeFabricatorDrone, makeIsaoDrone } from './units.js?v=f2a9aeca';
 import { TANK_FEEL, TANK_FEEL_KNOBS, formatFeelCode, makeTankFeel, stepTankFeel,
-  landTankFeel, fireTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js?v=a7d599ff';
+  landTankFeel, fireTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js?v=f2a9aeca';
 import { FEEL, loadFeel, saveFeel, resetFeel,
-  TOWER, HEADS, loadTower, saveTower, resetTower } from './feelstore.js?v=a7d599ff';
+  TOWER, HEADS, loadTower, saveTower, resetTower } from './feelstore.js?v=f2a9aeca';
 import { TOWER_FEEL_KNOBS, formatTowerFeel, clampTowerParams,
-  formatTowerHeads, HEAD_CHOICES, HEAD_AS_SHIPPED } from './towerfeel.js?v=a7d599ff';
-import { CREATURE_TINTS, accentFor } from './enemyspec.js?v=a7d599ff';
+  formatTowerHeads, HEAD_CHOICES, HEAD_AS_SHIPPED } from './towerfeel.js?v=f2a9aeca';
+import { CREATURE_TINTS, accentFor } from './enemyspec.js?v=f2a9aeca';
 import { buildTowerLook, TOWER_LOOK_NAMES, DEFAULT_TOWER_LOOK, preloadLook } from './towerlooks.js';
 import { TOWER_BY_KEY, TOWERS } from './towers.js';
 import { LOOKS } from './looks.js';
 import { makeBloom } from './postfx.js';
-import { makeAudio } from './audio.js?v=a7d599ff';
+import { makeAudio } from './audio.js?v=f2a9aeca';
 import { GROUPS, GROUP_LABELS, GROUP_EMPTY, entriesIn } from './unitcatalog.js';
 import { FONT_NAMES, TYPE_KNOBS, TYPE_FEEL, makeTypeParams, loadTypeFeel, saveTypeFeel,
-  formatTypeCode, applyFontPack, currentFontPack, currentShoutPack } from './fonts.js?v=a7d599ff';
-import { LORE, LORE_WORLD, loreText, loreAll } from './lore.js?v=a7d599ff';
+  formatTypeCode, applyFontPack, currentFontPack, currentShoutPack } from './fonts.js?v=f2a9aeca';
+import { LORE, LORE_WORLD, loreText, loreAll } from './lore.js?v=f2a9aeca';
 
 let roundTex = null;
 function roundDotTex() {

@@ -19,61 +19,61 @@
 
 import * as THREE from '../vendor/three.module.js';
 import GUI from '../vendor/lil-gui.esm.js';
-import { generateSphereMesh, relax } from './grid.js?v=a7d599ff';
-import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=a7d599ff';
-import { compileRail } from './cine/rail.js?v=a7d599ff';
-import { SCRIPTS } from './cine/scripts.js?v=a7d599ff';
-import { cuesBetween } from './cine/sound.js?v=a7d599ff';
-import { installCine } from './cine/kit.js?v=a7d599ff';
-import { mulberry32, randomSeed } from './rng.js?v=a7d599ff';
-import { computeBerths, berthIndexFor } from './berths.js?v=a7d599ff';
-import { wantsSecondary, shellsForAll } from './autofire.js?v=a7d599ff';
-import { printPhase, printOffset, printOn, patternSecsFor } from './printpath.js?v=a7d599ff';
-import { createBeamRig, PLASMA_DEFAULTS, BOARD_PRESET, BEAM_PEAK } from './beamdraw.js?v=a7d599ff';
-import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3, segKey, tangentDir, tangentBasis } from './vec3.js?v=a7d599ff';
-import { CREATURES, waveJelly } from './creatures.js?v=a7d599ff';
-import { brief, dwellFor } from './isaobriefs.js?v=a7d599ff';
-import { drawEmotion } from './emotions.js?v=a7d599ff';
+import { generateSphereMesh, relax } from './grid.js?v=f2a9aeca';
+import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=f2a9aeca';
+import { compileRail } from './cine/rail.js?v=f2a9aeca';
+import { SCRIPTS } from './cine/scripts.js?v=f2a9aeca';
+import { cuesBetween } from './cine/sound.js?v=f2a9aeca';
+import { installCine } from './cine/kit.js?v=f2a9aeca';
+import { mulberry32, randomSeed } from './rng.js?v=f2a9aeca';
+import { computeBerths, berthIndexFor } from './berths.js?v=f2a9aeca';
+import { wantsSecondary, shellsForAll } from './autofire.js?v=f2a9aeca';
+import { printPhase, printOffset, printOn, patternSecsFor } from './printpath.js?v=f2a9aeca';
+import { createBeamRig, PLASMA_DEFAULTS, BOARD_PRESET, BEAM_PEAK } from './beamdraw.js?v=f2a9aeca';
+import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3, segKey, tangentDir, tangentBasis } from './vec3.js?v=f2a9aeca';
+import { CREATURES, waveJelly } from './creatures.js?v=f2a9aeca';
+import { brief, dwellFor } from './isaobriefs.js?v=f2a9aeca';
+import { drawEmotion } from './emotions.js?v=f2a9aeca';
 import { ACHIEVEMENTS, ACHV_GROUPS, achievement, blankRun, earned, freshlyEarned,
   sanitiseRecord }
-  from './achievements.js?v=a7d599ff';
+  from './achievements.js?v=f2a9aeca';
 import { applyFontPack, currentFontPack, FONT_NAMES,
-  loadTypeFeel } from './fonts.js?v=a7d599ff';
-import { SECONDARY_TOE, applySecondaryToe } from './units.js?v=a7d599ff';
-import { UNITS, UNIT_NAMES, buildUnit, buildCreature, preloadMkcx, preloadServer, makeServerFixture, makeShieldShell, preloadContainer, makeContainerFixture, preloadFabricator, makeIsaoDrone, makeBulletCloud, makeRewardSolid, makeShellSolid, makeDebris, makeDotBurst, makePortalCloud, preloadPortalRing, makePortalRing, makeHeartCloud, makeDotEnemy, preloadTerraformer, makeTerraformerFixture } from './units.js?v=a7d599ff';
-import { LOOKS, LOOK_NAMES } from './looks.js?v=a7d599ff';
-import { makeCellIndex } from './cellindex.js?v=a7d599ff';
-import { CREATURE_TINTS, ENEMY_SPEC, INTROS, computeWavePlan, accentFor } from './enemyspec.js?v=a7d599ff';
-import { PICKUPS } from './pickups.js?v=a7d599ff';
-import { rankFor, rankLabel, badgeSVG, killReq, eliteReq } from './ranks.js?v=a7d599ff';
-import { beamStep, isBeamStep, PEN_SOFT_FRAC, PEN_HARD_FRAC } from './beamranks.js?v=a7d599ff';
-import { burn, sweepAdvance, wallBite as wallBiteFor } from './beamburn.js?v=a7d599ff';
-import { arcPoint, projectToArc, toeForCrossing, crossingForToe } from './arc.js?v=a7d599ff';
+  loadTypeFeel } from './fonts.js?v=f2a9aeca';
+import { SECONDARY_TOE, applySecondaryToe } from './units.js?v=f2a9aeca';
+import { UNITS, UNIT_NAMES, buildUnit, buildCreature, preloadMkcx, preloadServer, makeServerFixture, makeShieldShell, preloadContainer, makeContainerFixture, preloadFabricator, makeIsaoDrone, makeBulletCloud, makeRewardSolid, makeShellSolid, makeDebris, makeDotBurst, makePortalCloud, preloadPortalRing, makePortalRing, makeHeartCloud, makeDotEnemy, preloadTerraformer, makeTerraformerFixture } from './units.js?v=f2a9aeca';
+import { LOOKS, LOOK_NAMES } from './looks.js?v=f2a9aeca';
+import { makeCellIndex } from './cellindex.js?v=f2a9aeca';
+import { CREATURE_TINTS, ENEMY_SPEC, INTROS, computeWavePlan, accentFor } from './enemyspec.js?v=f2a9aeca';
+import { PICKUPS } from './pickups.js?v=f2a9aeca';
+import { rankFor, rankLabel, badgeSVG, killReq, eliteReq } from './ranks.js?v=f2a9aeca';
+import { beamStep, isBeamStep, PEN_SOFT_FRAC, PEN_HARD_FRAC } from './beamranks.js?v=f2a9aeca';
+import { burn, sweepAdvance, wallBite as wallBiteFor } from './beamburn.js?v=f2a9aeca';
+import { arcPoint, projectToArc, toeForCrossing, crossingForToe } from './arc.js?v=f2a9aeca';
 import { WORMHOLE_PRESET, WORMHOLE_UNIFORM_DEFAULTS, RING_SPIN, TRAVEL,
-  travelRate, advancePhase } from './portalfx.js?v=a7d599ff';
-import { WORMHOLE_FRAG } from './fx/wormhole.frag.js?v=a7d599ff';
-import { CORONA_FRAG } from './fx/corona.frag.js?v=a7d599ff';
-import { labLine, parseLabQuery } from './lab.js?v=a7d599ff';
-import { bakeGalaxyCube } from './galaxybake.js?v=a7d599ff';
-import { SKY_PRESET } from './galaxyseed.js?v=a7d599ff';
-import { makeScore } from './score.js?v=a7d599ff';
-import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER } from './towers.js?v=a7d599ff';
-import { makeEconomy, sellRefund } from './economy.js?v=a7d599ff';
-import { pickTier } from './perftier.js?v=a7d599ff';
-import { STICK, stickVector, knobOffset } from './stick.js?v=a7d599ff';
-import { registerServiceWorker } from './pwa.js?v=a7d599ff';
-import { makeBloom } from './postfx.js?v=a7d599ff';
-import { TANK_FEEL, TANK_FEEL_KNOBS, makeTankFeel, stepTankFeel, landTankFeel, fireTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js?v=a7d599ff';
-import { FEEL, loadFeel, saveFeel } from './feelstore.js?v=a7d599ff';
+  travelRate, advancePhase } from './portalfx.js?v=f2a9aeca';
+import { WORMHOLE_FRAG } from './fx/wormhole.frag.js?v=f2a9aeca';
+import { CORONA_FRAG } from './fx/corona.frag.js?v=f2a9aeca';
+import { labLine, parseLabQuery } from './lab.js?v=f2a9aeca';
+import { bakeGalaxyCube } from './galaxybake.js?v=f2a9aeca';
+import { SKY_PRESET } from './galaxyseed.js?v=f2a9aeca';
+import { makeScore } from './score.js?v=f2a9aeca';
+import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER } from './towers.js?v=f2a9aeca';
+import { makeEconomy, sellRefund } from './economy.js?v=f2a9aeca';
+import { pickTier } from './perftier.js?v=f2a9aeca';
+import { STICK, stickVector, knobOffset } from './stick.js?v=f2a9aeca';
+import { registerServiceWorker } from './pwa.js?v=f2a9aeca';
+import { makeBloom } from './postfx.js?v=f2a9aeca';
+import { TANK_FEEL, TANK_FEEL_KNOBS, makeTankFeel, stepTankFeel, landTankFeel, fireTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js?v=f2a9aeca';
+import { FEEL, loadFeel, saveFeel } from './feelstore.js?v=f2a9aeca';
 import { STRIKE_KNOBS, makeStrike, makeStrikeParams, grantStrikes, stepStrike,
   toggleArm, paintTarget, launchStrike, stepFall, skipFall, fallProgress,
-  strikeDamage, retargetStrike, orbitProgress } from './strike.js?v=a7d599ff';
+  strikeDamage, retargetStrike, orbitProgress } from './strike.js?v=f2a9aeca';
 import { radarBasis, radarProject, radarBearing, sweepAngle, radarPhosphor,
-  proximitySectors, SENSOR_LEVELS, sensorColor } from './radar.js?v=a7d599ff';
-import { BLOOM_GROUPS } from './bloomweights.js?v=a7d599ff';
-import { TOWER_LOOK_NAMES, DEFAULT_TOWER_LOOK, buildTowerLook, preloadLook } from './towerlooks.js?v=a7d599ff';
-import { makeAudio } from './audio.js?v=a7d599ff';
-import { DEATH_KEYS } from './audiomanifest.js?v=a7d599ff';
+  proximitySectors, SENSOR_LEVELS, sensorColor } from './radar.js?v=f2a9aeca';
+import { BLOOM_GROUPS } from './bloomweights.js?v=f2a9aeca';
+import { TOWER_LOOK_NAMES, DEFAULT_TOWER_LOOK, buildTowerLook, preloadLook } from './towerlooks.js?v=f2a9aeca';
+import { makeAudio } from './audio.js?v=f2a9aeca';
+import { DEATH_KEYS } from './audiomanifest.js?v=f2a9aeca';
 
 export function initTdTab(root) {
   let active = false;
@@ -1451,6 +1451,75 @@ export function initTdTab(root) {
       setTimeout(() => toastEl.classList.add('hidden'), 6000);
     }
   }
+
+  // THE DIAGNOSTICS OVERLAY (operator, 2026-09-04, after four blind fixes of
+  // the phone's third-person view: "ultrathink a better approach"). The
+  // approach: the phone prints every number the camera and the tank depend
+  // on, on screen, from the game's own state — no URL, no keyboard: tap the
+  // hearts three times (or ?diag=1). A tap on the panel opens the last
+  // sixty lines as selectable text. A screenshot of this decides, in one
+  // go, whether the camera is where it should be, whether the tank mesh is
+  // drawing, and what the deploy, the shot and the view are doing.
+  const diagQ = new URLSearchParams(location.search);   // urlParams is declared far below; this runs at init
+  let diagEl = null, diagOn = diagQ.get('diag') === '1', diagT = 0, diagTaps = [], diagRing = [];
+  const diagNdc = new THREE.Vector3();
+  function diagLine() {
+    const cp = camera.position, pp = player.pos;
+    diagNdc.set(pp[0], pp[1], pp[2]).project(camera);
+    const vv = window.visualViewport;
+    const pm = playerMesh;
+    return [
+      `t=${t.toFixed(1)} build=${(document.querySelector('script[src*="main.js"]')?.src.match(/v=([0-9a-f]{8})/) || [, '?'])[1]} shell=${mobileShell}`,
+      `view=${params.view} buildMode=${buildMode} shot=${shot ? shot.id + '@' + (1 - shot.left / shot.dur).toFixed(2) : '-'} deploy=${deploy ? `#${deploy.n}@${deployProgress().toFixed(2)}` : '-'}`,
+      `paused=${paused} frozen=${tutorial.frozen} tutorial=${tutorialActive}/${tutorial.phase} down=${!!playerDown} won=${player.won} intro=${!!(introEl && !introEl.classList.contains('hidden'))} msg=${!!(msgEl && !msgEl.classList.contains('hidden'))}`,
+      `tank cur=${player.cur} next=${player.next} free=${!!player.freeMode} thr=${throttle.toFixed(2)} cruise=${cruise} auto=${autoMode} goto=${gotoCi} keys=${['left', 'right', 'fast', 'slow', 'fire', 'laser'].filter((k) => keys[k]).join(',') || '-'} stick=${!!stick}`,
+      `mesh vis=${!!(pm && pm.visible)} inScene=${!!(pm && pm.parent === scene)} scale=${pm ? pm.scale.x.toFixed(4) : '-'} unitScale=${unitScale.toFixed(4)} base=${pm ? (pm.userData.baseScale ?? 1) : '-'} pos=${pp.map((v) => v.toFixed(3)).join(',')}`,
+      `cam pos=${cp.x.toFixed(3)},${cp.y.toFixed(3)},${cp.z.toFixed(3)} toTank=${(cp.distanceTo(diagNdc.set(pp[0], pp[1], pp[2])) / cellSide).toFixed(2)}c fov=${camera.fov} aspect=${camera.aspect.toFixed(3)} far=${camera.far}`,
+      `tankScreen=${(() => { diagNdc.set(pp[0], pp[1], pp[2]).project(camera); return `${diagNdc.x.toFixed(2)},${diagNdc.y.toFixed(2)},${diagNdc.z.toFixed(3)}`; })()} inFrustum=${tankInFrustum()}`,
+      `canvas=${renderer.domElement.width}x${renderer.domElement.height} css=${renderer.domElement.clientWidth}x${renderer.domElement.clientHeight} inner=${innerWidth}x${innerHeight} visual=${vv ? `${Math.round(vv.width)}x${Math.round(vv.height)}@${Math.round(vv.offsetLeft)},${Math.round(vv.offsetTop)} s${vv.scale.toFixed(2)}` : '-'} dpr=${devicePixelRatio} cell=${cellSide.toFixed(4)} wall=${params.wallHeight}`,
+      `viewwatch fires=${vwFires} out=${vwOut.toFixed(1)}s`,
+    ].join('\n');
+  }
+  function diagToggle(on) {
+    diagOn = on;
+    if (!diagEl) {
+      diagEl = document.createElement('pre');
+      diagEl.id = 'td-diag';
+      diagEl.style.cssText = 'position:fixed;left:8px;top:calc(env(safe-area-inset-top,0px) + 92px);z-index:60;margin:0;max-width:62vw;padding:6px 8px;'
+        + 'font:10px/1.35 ui-monospace,Menlo,monospace;color:#9dffb0;background:rgba(0,10,4,0.82);border:1px solid rgba(100,255,140,0.4);'
+        + 'border-radius:6px;white-space:pre-wrap;pointer-events:auto;-webkit-user-select:text;user-select:text;';
+      diagEl.addEventListener('click', () => {
+        // the ring, as selectable text, for a copy — tap again to close
+        if (diagEl.dataset.ring === '1') { diagEl.dataset.ring = '0'; return; }
+        diagEl.dataset.ring = '1';
+        diagEl.textContent = 'DIAG ring (last 60, 2 s apart) — tap to close\n' + diagRing.join('\n---\n');
+      });
+      root.appendChild(diagEl);
+    }
+    diagEl.style.display = on ? 'block' : 'none';
+  }
+  const diagHearts = root.querySelector('#td-stats');   // statsEl is declared further down; this block runs at init
+  if (diagHearts) diagHearts.addEventListener('pointerdown', () => {
+    const now = performance.now();
+    diagTaps = diagTaps.filter((x) => now - x < 900); diagTaps.push(now);
+    if (diagTaps.length >= 3) { diagTaps = []; diagToggle(!diagOn); }
+  });
+  function diagTick(dt) {
+    if (!diagOn) return;
+    diagT += dt;
+    if (diagT < 0.25) return;
+    diagT = 0;
+    const line = diagLine();
+    if (diagEl && diagEl.dataset.ring !== '1') diagEl.textContent = 'DIAG · tap hearts ×3 to hide · tap panel for the ring\n' + line;
+    // the ring: one entry every 2 s, kept across a reload for a copy after the fact
+    if (!diagRing.length || (diagRing._t ?? -9) + 2 <= t) {
+      diagRing.push(line); diagRing._t = t;
+      if (diagRing.length > 60) diagRing.shift();
+      try { localStorage.setItem('td.diag', diagRing.join('\n---\n')); } catch (e) { /* private mode */ }
+      if (diagQ.get('diag') === '1') console.log('DIAG ' + line.replace(/\n/g, ' | '));
+    }
+  }
+  if (diagOn) setTimeout(() => diagToggle(true), 500);
 
   function ctlWatch(dt) {
     // what the player is asking for, not what the game decided to do with it
@@ -4232,6 +4301,8 @@ export function initTdTab(root) {
   // clickable glossaries. The sim stays frozen until the player begins.
   function showBriefing() {
     paused = true;
+    // ?autoplay=1 — the replica presses BEGIN itself, 1.5 s after the card
+    if (urlParams.get('autoplay') === '1') setTimeout(() => { const b = msgEl.querySelector('.msg-begin'); if (b) b.click(); }, 1500);
     msgEl.innerHTML = `<div class="msg-head">transmission · briefing</div>` +
       `<div class="msg-scroll">` +
       `<div class="gcards">` +
@@ -9827,6 +9898,7 @@ export function initTdTab(root) {
     }
     if (director) directorFrame(dt);
     if (urlParams.get('viewwatch') !== '0') viewWatch(dt);
+    diagTick(dt);
 
     heartSprite.userData.tick(t);
 
