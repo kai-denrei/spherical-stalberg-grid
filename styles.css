@@ -5,22 +5,22 @@
    back to a system face until the subset is rebuilt. */
 @font-face {
   font-family: 'VT323';
-  src: url('assets/fonts/VT323.woff2?v=82baea37') format('woff2');
+  src: url('assets/fonts/VT323.woff2?v=aca2a327') format('woff2');
   font-weight: 400; font-style: normal; font-display: swap;
 }
 @font-face {
   font-family: 'Press Start 2P';
-  src: url('assets/fonts/PressStart2P.woff2?v=82baea37') format('woff2');
+  src: url('assets/fonts/PressStart2P.woff2?v=aca2a327') format('woff2');
   font-weight: 400; font-style: normal; font-display: swap;
 }
 @font-face {
   font-family: 'Share Tech Mono';
-  src: url('assets/fonts/ShareTechMono.woff2?v=82baea37') format('woff2');
+  src: url('assets/fonts/ShareTechMono.woff2?v=aca2a327') format('woff2');
   font-weight: 400; font-style: normal; font-display: swap;
 }
 @font-face {
   font-family: 'DotGothic16';
-  src: url('assets/fonts/DotGothic16.woff2?v=82baea37') format('woff2');
+  src: url('assets/fonts/DotGothic16.woff2?v=aca2a327') format('woff2');
   font-weight: 400; font-style: normal; font-display: swap;
 }
 
@@ -3975,3 +3975,29 @@ body.dir-hud-radar #td-sitrep, body.dir-hud-radar #td-perf, body.dir-hud-radar #
 body.dir-hud-radar #td-toast, body.dir-hud-radar #td-tower, body.dir-hud-radar #td-tut, body.dir-hud-radar #td-launch,
 body.dir-hud-radar #td-safety, body.dir-hud-radar #td-auto-radial, body.dir-hud-radar #td-brief,
 body.dir-hud-radar [id^="td-pad-"], body.dir-hud-radar #td-stick, body.dir-hud-radar #td-rotate { display: none !important; }
+
+/* THE METAL LAB (metal-tab.js): the beam lab's chrome, same rules */
+#metal-app { position: absolute; inset: 0; }
+#metal-app canvas { display: block; width: 100%; height: 100%; }
+#metal-copy {
+  /* LEFT, not right: the lil-gui panel owns the right edge and swallowed it
+     there — the button existed and could not be clicked. */
+  position: absolute; left: 12px; bottom: 40px; z-index: 7;
+  width: 40px; height: 40px; padding: 0;
+  font: 600 18px ui-monospace, Menlo, monospace; line-height: 1;
+  color: #9fdcff; background: rgba(12, 26, 38, 0.85);
+  border: 1px solid #2b6b96; border-radius: 8px; cursor: pointer;
+}
+#metal-copy:hover { background: rgba(22, 50, 74, 0.95); color: #dff4ff; }
+#metal-copy:active { transform: translateY(1px); }
+#metal-hud.flash { color: #66ff88; text-shadow: 0 0 10px rgba(102, 255, 136, 0.6); }
+#metal-hud {
+  position: absolute; left: 12px; bottom: 12px; z-index: 6;
+  font: 600 12px ui-monospace, Menlo, monospace; letter-spacing: 0.08em;
+  color: #9fdcff; text-shadow: 0 0 8px rgba(0, 180, 255, 0.5);
+  pointer-events: none;
+  /* the drop-off readout is three lines: where the beam ends, what it
+     burned, and what it never reached. Without this they run off the edge
+     as one line and the last two are simply not there. */
+  white-space: pre-line; max-width: 60vw; line-height: 1.5;
+}

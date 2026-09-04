@@ -15,7 +15,7 @@
 import * as THREE from '../vendor/three.module.js';
 import {
   GALAXY_PALETTES, buildFieldStars, buildGalaxyDust, buildGalaxyStars, galaxyLayout, galaxyParams,
-} from './galaxyseed.js?v=82baea37';
+} from './galaxyseed.js?v=aca2a327';
 
 const STAR_VERT = /* glsl */ `
 attribute vec4 d0; attribute vec4 d1; attribute float pp;
