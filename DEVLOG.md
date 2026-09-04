@@ -6,6 +6,129 @@ Demo links assume `npm run serve` (port 8144) or the
 
 ---
 
+## `8a0825c` — the RESCUE mission: six stranded, two seats, no resupply
+
+`#td?mission=rescue`. The operator's brief was one paragraph — *"a handful
+of astronauts stranded, requires smart use of limited mines and shells to
+save; lots of rammable enemies and just a handful of more difficult one to
+manage; more tactical"* — and every decision taken on top of it is flagged
+in `docs/superpowers/specs/2026-09-05-rescue-mission.md` with the reason,
+so it is cheap to overrule after a play.
+
+### A variant, not a second game
+
+Same planet, same tank, same gates, same mines. Two things change — the
+**objective** and the **supply** — and everything else the board already
+does is exactly what a rescue needs. `?mission=` is the seam every later
+mission hangs on.
+
+### The three rules that are the mode
+
+**They strand on the LANES.** Six survivors, six to fourteen hops from the
+Stalheart, on open cells with a finite heart distance — which in this
+dungeon *is* the flow the horde walks. So the threat arrives without a
+second BFS field, and the map reads: the people you must save are standing
+in the road. An enemy within two cells of one peels off toward it — a short
+local override of the heart-seeking exit choice, four lines inside
+`updateEnemies`.
+
+**The stop clause.** Boarding needs the tank NEAR *and* SLOW for a whole
+second, and the clock resets the moment either stops being true:
+
+```js
+const slow = Math.abs(throttle) <= rescueTune.boardThrottle && !cruise
+  && !keys.fast && !keys.slow;
+```
+
+Read off the CONTROL, not off the motion — a tank coasting with the
+throttle open has not stopped, it is about to move again. Without the
+clause a pick-up is something that happens while you drive past, which is
+not a decision; standing still in the open with the horde coming is.
+
+**The grab window.** An enemy reaching a standing survivor does not kill
+them, it holds them for 1.5 s. Kill it inside that window and they stand
+back up — and there is no bookkeeping at all, because the model is just
+"is anything in contact right now", asked every frame. A rescue lost in a
+frame you never saw is one nobody feels they lost fairly, and 1.5 s is
+exactly one shell, one ram, or one mine you had the sense to lay earlier.
+
+Two seats, and anyone in the hatch when a hull goes is lost with it. That
+is the only way a survivor who was already *safe* dies, and it is what
+makes carrying a pair a bet rather than an optimisation.
+
+### The budget IS the mission
+
+```
+hulls 3   shells 8   mines 6   lasers OFF
+```
+
+Given once, never again: no towers, no orbital asset, no Terraformer, no
+pickups. The beams are stripped because they cost **heat, not ammo** — with
+them fitted "limited shells" means nothing and the mission is a driving
+exercise. `?lasers=1` refits them; it is the most overrulable number in the
+file.
+
+The chrome for all four suppressed systems is *hidden*, not left lying: the
+launch console (`display`, not a class — `syncArmUi` owns the class and
+would put it back), the Terraformer line, ISAO's line, the portals/sector
+objective row, and the key legend, which is the one line of chrome that
+tells you what game you are playing. A HUD that reads out the wrong
+objective is worse than a blank one.
+
+### The placer degrades its spacing, not its party
+
+The first live run stranded **four of six**: sector 1 is a deliberately
+tight board (84 open cells) and three cells of spacing would not fit them.
+That changes the mission's difficulty for a reason that has nothing to do
+with the mission — so `apart` became a *preference*, tried and relaxed
+3 → 2.5 → 2 → … until the whole party fits. The party size is the design;
+the spacing is the taste. `short` now only reports a genuinely impossible
+board, and the verdict scores out of what was actually **placed**.
+
+### What you see
+
+`personPts()` in `creatures.js` — a suited dot-cloud figure with **one arm
+up**, because the wave is the only pose that says "over here" from orbit,
+so it is built into the geometry rather than animated. `makeSurvivor()` in
+`units.js` adds the beacon: a column of dots climbing out of the helmet and
+fading. A static figure at twenty pixels is a smudge; a smudge with
+something rising out of it is a person. Grabbed turns both red and *stops*
+the column — the thing that says "over here" going still is the alarm. On
+the radar, an orange chevron that does **not** decay with the sweep: a
+survivor is not a contact you have to hunt for, and phosphor decay would
+make a person flicker.
+
+Deliberately NOT the astronaut GLB. It is 3.7 MB of skinned mesh with 25
+bones; six of them animating at this scale is a phone-tier disaster for
+something occupying twenty pixels.
+
+### The probe
+
+```
+RESCUE stranded=6/6 apart=2c shells=8 mines=6 hulls=3 lasers=OFF
+RESCUEPROBE past  throttle=1 aboard=0 boardT=0.00 NOTHING HAPPENS — correct
+RESCUEPROBE load  stopped aboard=1 state=aboard ABOARD
+RESCUEPROBE seats aboard=2/2 third=standing THE HATCH IS FULL
+RESCUEPROBE home  saved=2 aboard=0 standing=4 DELIVERED
+RESCUEPROBE end   ended=true saved=2 lost=4 THE CARD FIRED
+```
+
+`?survivors=N`, `?lasers=1`. `test/rescue.mjs` pins the rest with no
+renderer, including the spacing degradation and the verdict scoring out of
+what was placed.
+
+### And the astronaut question the handoff asked
+
+`docs/RESCUE-MISSION-NOTES.md`, answered from the file rather than from
+memory: `astronaut.glb`'s rig **is** a Mixamo skeleton with a rename
+applied — same bones, same parenting, same T-pose rest — so a Mixamo clip
+retargets by a *string map over the animation tracks*, no re-binding. One
+trap, and it is the kind that silently produces a broken idle: **the spine
+triple is named in reverse** (`Spine02` sits at the hips, `Spine` carries
+the shoulders), so those three map by position, not by name.
+
+---
+
 ## `f30d91d` — the mines: a claymore you place, not a shot you aim
 
 The fourth way to put a shell's worth into the hordes, and the first one
