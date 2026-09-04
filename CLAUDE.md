@@ -78,6 +78,14 @@ token — the corner badge was retired from the game view).
   one tick, so this is the only way to photograph an open container with
   people walking out of it; it fires at t+5 s, AFTER the berth deploy, which
   drives the hull and would undo it),
+  every LAB's deep link: the 🔗 button copies the tab's current panel as a
+  URL and writes it into the address bar (astro / metal / beam / portal /
+  cine; the units viewer has had its own since before this). Only what
+  DIFFERS from the defaults is written, colours lose their `#` (one in a
+  query truncates the link at the first colour), and one-shot flags are
+  stripped — `src/deeplink.js`, `DROP_KEYS`. `?dlprobe=1` presses the button
+  on whichever lab is open and logs the URL, which is the only way the
+  round-trip gets checked.
   the ASTRONAUT study (`#astro`): `?tankLen=` and `?personH=` in metres (the
   ratio is the study's whole output and the HUD prints it), `?path=perimeter|
   straight|spot`, `?clear=` (metres of daylight on the lap), `?outline=`

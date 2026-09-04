@@ -6,15 +6,16 @@
 // the wormhole target and sky face sizes. scripts/cine-capture.mjs drives
 // __cine.seek(t) for the offline render.
 import * as THREE from '../vendor/three.module.js';
-import { makeBloom } from './postfx.js?v=cfc3ca69';
-import { installCine } from './cine/kit.js?v=cfc3ca69';
-import { createGate } from './cine/gate.js?v=cfc3ca69';
-import { createPlanet } from './cine/planetscene.js?v=cfc3ca69';
-import { createFilmPass, makeTitleTexture, titleAlphaAt, FILM_DEFAULTS } from './cine/film.js?v=cfc3ca69';
-import { SOUND_RAILS, cuesBetween } from './cine/sound.js?v=cfc3ca69';
-import { makeAudio } from './audio.js?v=cfc3ca69';
-import { createTank } from './cine/tankscene.js?v=cfc3ca69';
-import { rateFromSample, fitSize, marchBudgetMs, createGovernor } from './cine/governor.js?v=cfc3ca69';
+import { makeBloom } from './postfx.js?v=fe7777f3';
+import { installCine } from './cine/kit.js?v=fe7777f3';
+import { createGate } from './cine/gate.js?v=fe7777f3';
+import { createPlanet } from './cine/planetscene.js?v=fe7777f3';
+import { createFilmPass, makeTitleTexture, titleAlphaAt, FILM_DEFAULTS } from './cine/film.js?v=fe7777f3';
+import { SOUND_RAILS, cuesBetween } from './cine/sound.js?v=fe7777f3';
+import { makeAudio } from './audio.js?v=fe7777f3';
+import { createTank } from './cine/tankscene.js?v=fe7777f3';
+import { rateFromSample, fitSize, marchBudgetMs, createGovernor } from './cine/governor.js?v=fe7777f3';
+import { deepLink, wireDeepLink } from './deeplink.js';
 
 const SCENES = { gate: createGate, planet: createPlanet, tank: createTank };
 // Two tiers (plan §2.1): the same rail, rendered live or offline.
@@ -27,6 +28,14 @@ export function initCineTab(root) {
   const q = new URLSearchParams(location.search);
   const container = root.querySelector('#cine-app');
   const hud = root.querySelector('#cine-hud');
+
+  // THE DEEP LINK. The cine tab is driven ENTIRELY by the URL — scene, film
+  // knobs, tier, size — so its link is the current address with the one-shot
+  // flags (a capture, a probe) taken out. Nothing to diff: the query IS the
+  // panel here.
+  wireDeepLink(root.querySelector('#cine-link'), () => deepLink({
+    base: location.origin + location.pathname, hash: 'cine', carry: location.search,
+  }), { label: 'CINE' });
   const tier = CINE_TIERS[q.get('tier')] || (q.get('capture') === '1' ? CINE_TIERS.cinema : CINE_TIERS.live);
   // a capture page hides the chrome from the first frame (launch mode never seeks)
   if (q.get('capture') === '1') document.body.classList.add('cine-capture');

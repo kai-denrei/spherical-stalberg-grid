@@ -5,22 +5,22 @@
    back to a system face until the subset is rebuilt. */
 @font-face {
   font-family: 'VT323';
-  src: url('assets/fonts/VT323.woff2?v=cfc3ca69') format('woff2');
+  src: url('assets/fonts/VT323.woff2?v=fe7777f3') format('woff2');
   font-weight: 400; font-style: normal; font-display: swap;
 }
 @font-face {
   font-family: 'Press Start 2P';
-  src: url('assets/fonts/PressStart2P.woff2?v=cfc3ca69') format('woff2');
+  src: url('assets/fonts/PressStart2P.woff2?v=fe7777f3') format('woff2');
   font-weight: 400; font-style: normal; font-display: swap;
 }
 @font-face {
   font-family: 'Share Tech Mono';
-  src: url('assets/fonts/ShareTechMono.woff2?v=cfc3ca69') format('woff2');
+  src: url('assets/fonts/ShareTechMono.woff2?v=fe7777f3') format('woff2');
   font-weight: 400; font-style: normal; font-display: swap;
 }
 @font-face {
   font-family: 'DotGothic16';
-  src: url('assets/fonts/DotGothic16.woff2?v=cfc3ca69') format('woff2');
+  src: url('assets/fonts/DotGothic16.woff2?v=fe7777f3') format('woff2');
   font-weight: 400; font-style: normal; font-display: swap;
 }
 
@@ -4013,6 +4013,26 @@ body.dir-hud-radar [id^="td-pad-"], body.dir-hud-radar #td-stick, body.dir-hud-r
   font: 600 18px ui-monospace, Menlo, monospace; line-height: 1;
   color: #9fdcff; background: rgba(12, 26, 38, 0.85);
   border: 1px solid #2b6b96; border-radius: 8px; cursor: pointer;
+}
+/* THE DEEP LINK, one class for every lab. A tuning session's answer is a
+   set of numbers, and until this button there was no way to carry one out of
+   the tab except by reading it off a screenshot. It sits ABOVE the preset-copy
+   button where a lab has one, so the left edge reads as a stack of tools and
+   the two never move relative to each other. */
+.lab-link {
+  position: absolute; left: 12px; bottom: 88px; z-index: 7;
+  width: 40px; height: 40px; padding: 0;
+  font: 600 17px ui-monospace, Menlo, monospace; line-height: 1;
+  color: #9fdcff; background: rgba(12, 26, 38, 0.85);
+  border: 1px solid #2b6b96; border-radius: 8px; cursor: pointer;
+}
+.lab-link:hover { background: rgba(22, 50, 74, 0.95); color: #dff4ff; }
+.lab-link:active { transform: translateY(1px); }
+@media (pointer: coarse), (max-width: 700px) {
+  /* the phone puts the lil-gui drawer across the bottom 46vh, so the bottom
+     edge is not a place a button can live; top-left is the one free corner
+     (the gear owns top-right, the preset copy sits beside it) */
+  .lab-link { left: 12px; bottom: auto; top: calc(env(safe-area-inset-top, 0px) + 112px); width: 44px; height: 44px; }
 }
 #metal-copy:hover { background: rgba(22, 50, 74, 0.95); color: #dff4ff; }
 #metal-copy:active { transform: translateY(1px); }

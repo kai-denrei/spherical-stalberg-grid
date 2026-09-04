@@ -21,6 +21,7 @@ import { WEATHER_PRESETS, weatherStats, bakeWeatheredMetal } from './weathered.j
 import { WEATHER_BY_NAME, applyWeatheredMaterial, makeWeatheredTextures } from './cine/materials.js';
 import { buildCreature, preloadMkcx, preloadContainer, makeContainerFixture, preloadTerraformer, makeTerraformerFixture,
   preloadPortalRing, makePortalRing, preloadFabricator, makeIsaoDrone } from './units.js';
+import { deepLink, wireDeepLink } from './deeplink.js';
 
 // the subjects: how each is cast and roughly how big it stands
 const SUBJECTS = {
@@ -105,6 +106,10 @@ export function initMetalTab(root) {
   const toHex = (s) => parseInt(String(s).replace('#', ''), 16);
   // URL overrides for any knob (?repeat=3&gNormal=1.2&gBase=%23555c63 …): a
   // headless still can test a setting the sliders would need a hand for
+  // the defaults, before the URL touches them — the deep link writes only
+  // what DIFFERS from these, so a shared address is the session and not the
+  // whole panel
+  const P0 = { ...P };
   for (const [k, v] of q.entries()) {
     if (!(k in P) || k === 'subject') continue;
     if (typeof P[k] === 'number') { const n = parseFloat(v); if (Number.isFinite(n)) P[k] = n; }
@@ -272,6 +277,17 @@ export function initMetalTab(root) {
       + `// tints: armour ${P.tArmour} turret ${P.tTurret} detail ${P.tDetail} steel ${P.tSteel} track ${P.tTrack} rubber ${P.tRubber}\n`
       + `// outline ${P.outline}, glow ${P.glow}, exposure ${P.exposure}, env ${P.env}, sun ${P.sunI}, bloom ${P.bloom}\n`;
   }
+  // THE DEEP LINK, beside the preset copy: the preset is for the code, the
+  // link is for a person. `subject` is named `unit` in the URL (the parse
+  // above reads it separately), so it is emitted under that name or the link
+  // would not round-trip the model it was tuned on.
+  wireDeepLink(root.querySelector('#metal-link'), () => deepLink({
+    base: location.origin + location.pathname, hash: 'metal',
+    params: { ...P, subject: undefined, unit: P.subject },
+    defaults: { ...P0, subject: undefined, unit: 'tank' },
+    carry: location.search,
+  }), { label: 'METAL', flash: (m) => flash(m) });
+
   const copyBtn = root.querySelector('#metal-copy');
   let flashT = 0;
   const flash = (msg) => { hud.textContent = msg; flashT = performance.now() + 2500; };

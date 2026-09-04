@@ -18,6 +18,7 @@ import { SKY_PRESET } from './galaxyseed.js';
 import { LOOKS } from './looks.js';
 import { buildCreature, preloadMkcx } from './units.js';
 import { applyWeatheredMaterial } from './cine/materials.js';
+import { deepLink, wireDeepLink } from './deeplink.js';
 
 export const ASTRO_URL = 'assets/models/astronaut.glb';
 // BOTH SIZES ARE SLIDERS NOW (operator, 2026-09-05: "make the astronaut much
@@ -112,6 +113,10 @@ export function initAstroTab(root) {
     env: 0.9,               // how much sky the metal and the suit reflect
     spin: false, tank: true, wire: true, scan: false,
   };
+  // the defaults, before the URL touches them — the deep link writes only
+  // what DIFFERS from these, so a shared address is the session and not the
+  // whole panel
+  const P0 = { ...P };
   for (const [k, v] of q.entries()) {
     if (!(k in P)) continue;
     if (typeof P[k] === 'number') { const n = parseFloat(v); if (Number.isFinite(n)) P[k] = n; }
@@ -249,6 +254,7 @@ export function initAstroTab(root) {
   }
 
   function hudLine() {
+    if (performance.now() < flashUntil) return;   // a flash outlives the 0.25 s refresh
     hud.textContent = astro
       ? `${clips.length} clip(s) · ${P.clip || '-'} · ${action ? (action.time % (action.getClip().duration || 1)).toFixed(2) : '0.00'} s · ${bones} bones`
         + ` · person ${P.personH.toFixed(2)} m · tank ${P.tankLen.toFixed(1)} m`
@@ -277,6 +283,18 @@ export function initAstroTab(root) {
     if (v && astro && !astro.userData.skel) { astro.userData.skel = new THREE.SkeletonHelper(astro); scene.add(astro.userData.skel); }
     if (astro && astro.userData.skel) astro.userData.skel.visible = v;
   });
+  // THE DEEP LINK. The ratio this study exists to settle is two numbers on
+  // two sliders; without this the only way to carry them out of the tab is to
+  // read them off a screenshot.
+  let flashUntil = 0;
+  wireDeepLink(root.querySelector('#astro-link'), () => deepLink({
+    base: location.origin + location.pathname, hash: 'astro', params: P, defaults: P0,
+    carry: location.search,
+    // `clip` is chosen by the FILE, not by the panel — writing it into a link
+    // pins a name that belongs to whatever .glb is loaded that day
+    skip: ['clip'],
+  }), { label: 'ASTRO', flash: (m) => { hud.textContent = m; flashUntil = performance.now() + 2200; } });
+
   const gear = root.querySelector('#astro-gear');
   if (gear) gear.addEventListener('click', () => { root.classList.toggle('panel-hidden'); });
 

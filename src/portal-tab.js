@@ -22,13 +22,14 @@
 // Ported per ~/Dev/procedural3dvisuals/docs/PORTING.md, which has a section
 // for exactly this case. Its two warnings are honoured below and marked.
 import * as THREE from '../vendor/three.module.js';
-import { installCine } from './cine/kit.js?v=cfc3ca69';
+import { installCine } from './cine/kit.js?v=fe7777f3';
 import { OrbitControls } from '../vendor/OrbitControls.js';
 import GUI from '../vendor/lil-gui.esm.js';
 import { CORONA_FRAG } from './fx/corona.frag.js';
 import { WORMHOLE_FRAG } from './fx/wormhole.frag.js';
 import { loadGlb, bustToken } from './glbmodels.js';
 import { makeBloom } from './postfx.js';
+import { deepLink, wireDeepLink } from './deeplink.js';
 
 // TWO CANDIDATES, ONE MACHINE. Corona is XorDev's ring singularity seen from
 // outside; Wormhole is the same raymarch and the same singularity retargeted
@@ -296,6 +297,22 @@ export function initPortalTab(root) {
     bloom: true,
     autoOrbit: false,
   };
+  // THE PANEL, FROM THE URL. One generic pass over every knob the panel
+  // owns, so a deep link can put the lab back exactly where it was — the
+  // link button below is only honest if the address it writes is an address
+  // this lab reads. Named parameters with their own meaning (?portalfx, ?bench, ?gl) keep
+  // their own handling above/below; they are not knobs.
+  const P0 = { ...P };   // the defaults, before the URL touches them
+  {
+    const dq = new URLSearchParams(location.search);
+    for (const [k, v] of dq.entries()) {
+      if (!(k in P) || typeof P[k] === 'function') continue;
+      if (typeof P[k] === 'number') { const n = parseFloat(v); if (Number.isFinite(n)) P[k] = n; }
+      else if (typeof P[k] === 'boolean') P[k] = v !== '0';
+      else if (typeof P[k] === 'string') P[k] = v.startsWith('#') ? v : (/^[0-9a-f]{6}$/i.test(v) ? '#' + v : v);
+    }
+  }
+
 
   const gui = new GUI({ container: root.querySelector('#portal-gui') || undefined, width: 268 });
   gui.title('portal + corona');
@@ -354,6 +371,13 @@ export function initPortalTab(root) {
   }
   let flashT = 0, flashMsg = '';
   function flashNote(m) { flashMsg = m; flashT = 2.0; }
+
+  // THE DEEP LINK. This tab's own comment already wanted it — "so a look can
+  // be linked rather than described" — for one parameter; now it is true of
+  // the whole panel.
+  wireDeepLink(root.querySelector('#portal-link'), () => deepLink({
+    base: location.origin + location.pathname, hash: 'portal', params: P, defaults: P0, carry: location.search,
+  }), { label: 'PORTAL', flash: flashNote });
   P.copyPreset = () => {
     const json = presetJson();
     const ok = () => { flashNote('preset copied to clipboard'); console.log('PORTAL preset:\n' + json); };

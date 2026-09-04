@@ -28,6 +28,7 @@ import { arcPoint, projectToArc, toeForCrossing, crossingForToe } from './arc.js
 import { burnReport, sweepAdvance } from './beamburn.js';
 import { createBeamRig, PLASMA_DEFAULTS } from './beamdraw.js';
 import { SAFE_HUES, ALARM_HUES } from './enemyspec.js';
+import { deepLink, wireDeepLink } from './deeplink.js';
 
 // the heat clock the secondary actually runs on, mirrored from td-tab so the
 // envelope tuned here is the envelope the weapon will fire
@@ -227,6 +228,22 @@ export function initBeamTab(root) {
     },
     reset: () => { Object.assign(P, DEFAULTS, WORLD_SCALED); gui.controllersRecursive().forEach((c) => c.updateDisplay()); },
   };
+  // THE PANEL, FROM THE URL. One generic pass over every knob the panel
+  // owns, so a deep link can put the lab back exactly where it was — the
+  // link button below is only honest if the address it writes is an address
+  // this lab reads. Named parameters with their own meaning (?sweepmode, ?sweepat, ?labside, ?labstagger) keep
+  // their own handling above/below; they are not knobs.
+  const P0 = { ...P };   // the defaults, before the URL touches them
+  {
+    const dq = new URLSearchParams(location.search);
+    for (const [k, v] of dq.entries()) {
+      if (!(k in P) || typeof P[k] === 'function') continue;
+      if (typeof P[k] === 'number') { const n = parseFloat(v); if (Number.isFinite(n)) P[k] = n; }
+      else if (typeof P[k] === 'boolean') P[k] = v !== '0';
+      else if (typeof P[k] === 'string') P[k] = v.startsWith('#') ? v : (/^[0-9a-f]{6}$/i.test(v) ? '#' + v : v);
+    }
+  }
+
 
   // THE SAME RIG THE BOARD DRAWS (beamdraw.js): a chained arc root plus a
   // plasma plume, not two straight ribbons. The lab used to build its own
@@ -361,6 +378,12 @@ export function initBeamTab(root) {
   // which is exactly how the operator experienced the first version.
   let flashT = 0, flashMsg = '';
   function flash(msg) { flashMsg = msg; flashT = 2.0; }
+
+  // THE DEEP LINK. The beam lab's whole output is a preset — the copy button
+  // hands it to the code, this hands the same state to a person.
+  wireDeepLink(root.querySelector('#beam-link'), () => deepLink({
+    base: location.origin + location.pathname, hash: 'beam', params: P, defaults: P0, carry: location.search,
+  }), { label: 'BEAM', flash });
 
   function copyPreset() {
     const json = presetJson();
