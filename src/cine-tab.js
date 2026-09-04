@@ -6,15 +6,15 @@
 // the wormhole target and sky face sizes. scripts/cine-capture.mjs drives
 // __cine.seek(t) for the offline render.
 import * as THREE from '../vendor/three.module.js';
-import { makeBloom } from './postfx.js?v=eb604d79';
-import { installCine } from './cine/kit.js?v=eb604d79';
-import { createGate } from './cine/gate.js?v=eb604d79';
-import { createPlanet } from './cine/planetscene.js?v=eb604d79';
-import { createFilmPass, makeTitleTexture, titleAlphaAt, FILM_DEFAULTS } from './cine/film.js?v=eb604d79';
-import { SOUND_RAILS, cuesBetween } from './cine/sound.js?v=eb604d79';
-import { makeAudio } from './audio.js?v=eb604d79';
-import { createTank } from './cine/tankscene.js?v=eb604d79';
-import { rateFromSample, fitSize, marchBudgetMs, createGovernor } from './cine/governor.js?v=eb604d79';
+import { makeBloom } from './postfx.js?v=71cddf4e';
+import { installCine } from './cine/kit.js?v=71cddf4e';
+import { createGate } from './cine/gate.js?v=71cddf4e';
+import { createPlanet } from './cine/planetscene.js?v=71cddf4e';
+import { createFilmPass, makeTitleTexture, titleAlphaAt, FILM_DEFAULTS } from './cine/film.js?v=71cddf4e';
+import { SOUND_RAILS, cuesBetween } from './cine/sound.js?v=71cddf4e';
+import { makeAudio } from './audio.js?v=71cddf4e';
+import { createTank } from './cine/tankscene.js?v=71cddf4e';
+import { rateFromSample, fitSize, marchBudgetMs, createGovernor } from './cine/governor.js?v=71cddf4e';
 
 const SCENES = { gate: createGate, planet: createPlanet, tank: createTank };
 // Two tiers (plan §2.1): the same rail, rendered live or offline.

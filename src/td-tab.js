@@ -19,62 +19,64 @@
 
 import * as THREE from '../vendor/three.module.js';
 import GUI from '../vendor/lil-gui.esm.js';
-import { generateSphereMesh, relax } from './grid.js?v=eb604d79';
-import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=eb604d79';
-import { compileRail } from './cine/rail.js?v=eb604d79';
-import { SCRIPTS } from './cine/scripts.js?v=eb604d79';
-import { cuesBetween } from './cine/sound.js?v=eb604d79';
-import { installCine } from './cine/kit.js?v=eb604d79';
-import { mulberry32, randomSeed } from './rng.js?v=eb604d79';
-import { computeBerths, berthIndexFor } from './berths.js?v=eb604d79';
-import { wantsSecondary, shellsForAll } from './autofire.js?v=eb604d79';
-import { printPhase, printOffset, printOn, patternSecsFor } from './printpath.js?v=eb604d79';
-import { createBeamRig, PLASMA_DEFAULTS, BOARD_PRESET, BEAM_PEAK } from './beamdraw.js?v=eb604d79';
-import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3, segKey, tangentDir, tangentBasis } from './vec3.js?v=eb604d79';
-import { CREATURES, waveJelly } from './creatures.js?v=eb604d79';
-import { brief, dwellFor } from './isaobriefs.js?v=eb604d79';
-import { drawEmotion } from './emotions.js?v=eb604d79';
+import { generateSphereMesh, relax } from './grid.js?v=71cddf4e';
+import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=71cddf4e';
+import { compileRail } from './cine/rail.js?v=71cddf4e';
+import { SCRIPTS } from './cine/scripts.js?v=71cddf4e';
+import { cuesBetween } from './cine/sound.js?v=71cddf4e';
+import { installCine } from './cine/kit.js?v=71cddf4e';
+import { mulberry32, randomSeed } from './rng.js?v=71cddf4e';
+import { computeBerths, berthIndexFor } from './berths.js?v=71cddf4e';
+import { wantsSecondary, shellsForAll } from './autofire.js?v=71cddf4e';
+import { printPhase, printOffset, printOn, patternSecsFor } from './printpath.js?v=71cddf4e';
+import { createBeamRig, PLASMA_DEFAULTS, BOARD_PRESET, BEAM_PEAK } from './beamdraw.js?v=71cddf4e';
+import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3, segKey, tangentDir, tangentBasis } from './vec3.js?v=71cddf4e';
+import { CREATURES, waveJelly } from './creatures.js?v=71cddf4e';
+import { brief, dwellFor } from './isaobriefs.js?v=71cddf4e';
+import { drawEmotion } from './emotions.js?v=71cddf4e';
 import { ACHIEVEMENTS, ACHV_GROUPS, achievement, blankRun, earned, freshlyEarned,
   sanitiseRecord }
-  from './achievements.js?v=eb604d79';
+  from './achievements.js?v=71cddf4e';
 import { applyFontPack, currentFontPack, FONT_NAMES,
-  loadTypeFeel } from './fonts.js?v=eb604d79';
-import { SECONDARY_TOE, applySecondaryToe } from './units.js?v=eb604d79';
-import { UNITS, UNIT_NAMES, buildUnit, buildCreature, preloadMkcx, preloadServer, makeServerFixture, makeShieldShell, preloadContainer, makeContainerFixture, preloadFabricator, makeIsaoDrone, makeBulletCloud, makeRewardSolid, makeShellSolid, makeDebris, makeDotBurst, makePortalCloud, preloadPortalRing, makePortalRing, makeHeartCloud, makeDotEnemy, preloadTerraformer, makeTerraformerFixture } from './units.js?v=eb604d79';
-import { LOOKS, LOOK_NAMES } from './looks.js?v=eb604d79';
-import { makeCellIndex } from './cellindex.js?v=eb604d79';
-import { CREATURE_TINTS, ENEMY_SPEC, INTROS, computeWavePlan, accentFor } from './enemyspec.js?v=eb604d79';
-import { PICKUPS } from './pickups.js?v=eb604d79';
-import { rankFor, rankLabel, badgeSVG, killReq, eliteReq } from './ranks.js?v=eb604d79';
-import { beamStep, isBeamStep, PEN_SOFT_FRAC, PEN_HARD_FRAC } from './beamranks.js?v=eb604d79';
-import { burn, sweepAdvance, wallBite as wallBiteFor } from './beamburn.js?v=eb604d79';
-import { arcPoint, projectToArc, toeForCrossing, crossingForToe } from './arc.js?v=eb604d79';
+  loadTypeFeel } from './fonts.js?v=71cddf4e';
+import { SECONDARY_TOE, applySecondaryToe } from './units.js?v=71cddf4e';
+import { UNITS, UNIT_NAMES, buildUnit, buildCreature, preloadMkcx, preloadServer, makeServerFixture, makeShieldShell, preloadContainer, makeContainerFixture, preloadFabricator, makeIsaoDrone, makeBulletCloud, makeRewardSolid, makeShellSolid, makeDebris, makeDotBurst, makePortalCloud, preloadPortalRing, makePortalRing, makeHeartCloud, makeDotEnemy, preloadTerraformer, makeTerraformerFixture } from './units.js?v=71cddf4e';
+import { LOOKS, LOOK_NAMES } from './looks.js?v=71cddf4e';
+import { makeCellIndex } from './cellindex.js?v=71cddf4e';
+import { CREATURE_TINTS, ENEMY_SPEC, INTROS, computeWavePlan, accentFor } from './enemyspec.js?v=71cddf4e';
+import { PICKUPS } from './pickups.js?v=71cddf4e';
+import { rankFor, rankLabel, badgeSVG, killReq, eliteReq } from './ranks.js?v=71cddf4e';
+import { beamStep, isBeamStep, PEN_SOFT_FRAC, PEN_HARD_FRAC } from './beamranks.js?v=71cddf4e';
+import { burn, sweepAdvance, wallBite as wallBiteFor } from './beamburn.js?v=71cddf4e';
+import { arcPoint, projectToArc, toeForCrossing, crossingForToe } from './arc.js?v=71cddf4e';
+import { MINE_TUNE, makeField, layMine, armMines, restock, mineAt,
+  inFan, trip, chain, nextChained, minePolar } from './mines.js?v=71cddf4e';
 import { WORMHOLE_PRESET, WORMHOLE_UNIFORM_DEFAULTS, RING_SPIN, TRAVEL,
-  travelRate, advancePhase } from './portalfx.js?v=eb604d79';
-import { WORMHOLE_FRAG } from './fx/wormhole.frag.js?v=eb604d79';
-import { CORONA_FRAG } from './fx/corona.frag.js?v=eb604d79';
-import { labLine, parseLabQuery } from './lab.js?v=eb604d79';
-import { bakeGalaxyCube } from './galaxybake.js?v=eb604d79';
-import { SKY_PRESET } from './galaxyseed.js?v=eb604d79';
-import { makeScore } from './score.js?v=eb604d79';
-import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER } from './towers.js?v=eb604d79';
-import { makeEconomy, sellRefund } from './economy.js?v=eb604d79';
-import { pickTier } from './perftier.js?v=eb604d79';
-import { applyWeatheredMaterial } from './cine/materials.js?v=eb604d79';
-import { STICK, stickVector, knobOffset } from './stick.js?v=eb604d79';
-import { registerServiceWorker } from './pwa.js?v=eb604d79';
-import { makeBloom } from './postfx.js?v=eb604d79';
-import { TANK_FEEL, TANK_FEEL_KNOBS, makeTankFeel, stepTankFeel, landTankFeel, fireTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js?v=eb604d79';
-import { FEEL, loadFeel, saveFeel } from './feelstore.js?v=eb604d79';
+  travelRate, advancePhase } from './portalfx.js?v=71cddf4e';
+import { WORMHOLE_FRAG } from './fx/wormhole.frag.js?v=71cddf4e';
+import { CORONA_FRAG } from './fx/corona.frag.js?v=71cddf4e';
+import { labLine, parseLabQuery } from './lab.js?v=71cddf4e';
+import { bakeGalaxyCube } from './galaxybake.js?v=71cddf4e';
+import { SKY_PRESET } from './galaxyseed.js?v=71cddf4e';
+import { makeScore } from './score.js?v=71cddf4e';
+import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER } from './towers.js?v=71cddf4e';
+import { makeEconomy, sellRefund } from './economy.js?v=71cddf4e';
+import { pickTier } from './perftier.js?v=71cddf4e';
+import { applyWeatheredMaterial } from './cine/materials.js?v=71cddf4e';
+import { STICK, stickVector, knobOffset } from './stick.js?v=71cddf4e';
+import { registerServiceWorker } from './pwa.js?v=71cddf4e';
+import { makeBloom } from './postfx.js?v=71cddf4e';
+import { TANK_FEEL, TANK_FEEL_KNOBS, makeTankFeel, stepTankFeel, landTankFeel, fireTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js?v=71cddf4e';
+import { FEEL, loadFeel, saveFeel } from './feelstore.js?v=71cddf4e';
 import { STRIKE_KNOBS, makeStrike, makeStrikeParams, grantStrikes, stepStrike,
   toggleArm, paintTarget, launchStrike, stepFall, skipFall, fallProgress,
-  strikeDamage, retargetStrike, orbitProgress } from './strike.js?v=eb604d79';
+  strikeDamage, retargetStrike, orbitProgress } from './strike.js?v=71cddf4e';
 import { radarBasis, radarProject, radarBearing, sweepAngle, radarPhosphor,
-  proximitySectors, SENSOR_LEVELS, sensorColor } from './radar.js?v=eb604d79';
-import { BLOOM_GROUPS } from './bloomweights.js?v=eb604d79';
-import { TOWER_LOOK_NAMES, DEFAULT_TOWER_LOOK, buildTowerLook, preloadLook } from './towerlooks.js?v=eb604d79';
-import { makeAudio } from './audio.js?v=eb604d79';
-import { DEATH_KEYS } from './audiomanifest.js?v=eb604d79';
+  proximitySectors, SENSOR_LEVELS, sensorColor } from './radar.js?v=71cddf4e';
+import { BLOOM_GROUPS } from './bloomweights.js?v=71cddf4e';
+import { TOWER_LOOK_NAMES, DEFAULT_TOWER_LOOK, buildTowerLook, preloadLook } from './towerlooks.js?v=71cddf4e';
+import { makeAudio } from './audio.js?v=71cddf4e';
+import { DEATH_KEYS } from './audiomanifest.js?v=71cddf4e';
 
 export function initTdTab(root) {
   let active = false;
@@ -106,6 +108,10 @@ export function initTdTab(root) {
     autoUpgrade: false, // the drones spend excess biomass on tiers by themselves
     look: 'tronColors', // visual identity, see looks.js
     wallTops: 'black', // obstacles read as voids; silhouettes matter here
+    // THE MINE'S ARC IS DRAWN. Off is a real mode, not a debug flag: a
+    // field you cannot see is the pvp/ambush game the operator named, and
+    // the fan is the only thing that makes a laid mine legible at all.
+    mineArcs: true,
     speed: 1.1, // cells per second, wanderer pace
     recoil: 8, // shell-recoil intensity, dialed to MAX per operator
     directive: 'wander', // auto-mode order: wander/avoid/ram/conserve/home/portal
@@ -624,6 +630,19 @@ export function initTdTab(root) {
   // --- battle state --------------------------------------------------------
   const AMMO_MAX = 9;
   let ammo = 3;
+  // THE MINE RACK. The field is the pure module's; everything three.js
+  // about a mine lives in mineObjs, keyed by the module's id — so the
+  // rules and the discs can never disagree about how many there are.
+  const mineTune = { ...MINE_TUNE };
+  {
+    const mq = new URLSearchParams(location.search);   // urlParams is a TDZ trap here
+    const n = parseInt(mq.get('mines'), 10);
+    if (Number.isFinite(n)) mineTune.start = Math.max(0, Math.min(mineTune.cap, n));
+    if (mq.get('minearcs') === '0') params.mineArcs = false;
+  }
+  let mineField = makeField(mineTune);
+  const mineObjs = new Map();   // id -> { grp, disc, ring, fan }
+  const mineProbeOn = new URLSearchParams(location.search).get('mineprobe') === '1';
   const enemies = [];      // { cur, prev, next, prog, pos, dir, obj, alive }
   const projectiles = [];  // { pos, dir, dist, mesh }
   const debris = [];       // scatter effects, tick(dt) -> alive
@@ -3027,6 +3046,7 @@ export function initTdTab(root) {
       return;
     }
     if (down && (k === ' ' || k === 'spacebar')) { fire(); ev.preventDefault(); return; }
+    if (down && k === 'n') { layMineNow(); ev.preventDefault(); return; }
     if (down && k === 'h') pulseHint();
     if (down && k === 'v') toggleView();
     if (down && k === 'x' && serverFound && !hackedRound) openHack();
@@ -3443,6 +3463,12 @@ export function initTdTab(root) {
     ev.preventDefault();
   }, { passive: false });
   root.querySelector('#td-pad-fire').addEventListener('click', () => fire());
+  {
+    // the third pad. A TAP, not a hold: laying is a discrete act and a held
+    // mine pad would empty the rack in a second.
+    const mb = root.querySelector('#td-pad-mine');
+    if (mb) mb.addEventListener('click', () => layMineNow());
+  }
 
   // --- LAUNCH CONTROL: DeepWatch's console, driving OUR state machine -------
   // The safety toggle arms, the readout narrates, the chunky button goes
@@ -4222,6 +4248,12 @@ export function initTdTab(root) {
     else if (cl.contains('msg-buystrike')) {
       if (eco.spend(SINK.strike)) { strike.reserved += 1; syncArmUi(); renderVerdict(false); }
     }
+    else if (cl.contains('msg-buymines')) {
+      if (mineField.count < mineTune.cap && eco.spend(SINK.mines)) {
+        restock(mineField, mineTune.caseSize, mineTune);
+        updateHud(); renderVerdict(false);
+      }
+    }
     else if (cl.contains('msg-next')) {
       if (!eco.spend(sectorToll())) return;   // the toll is the gate
       round++; hackedRound = false; syncHackBtn();
@@ -4854,7 +4886,8 @@ export function initTdTab(root) {
       + `${rankBadgeHud ? ' ' + rankBadgeHud : ''}</div>`
       + `<div class="hud-vitals">${hearts} <span class="hud-lbl">HEART</span>`
       + ` <span class="hp-you">♥${playerHP}</span>`
-      + ` <span class="hp-ammo${ammo === 0 ? ' out' : ''}">✦${ammo}</span></div>`
+      + ` <span class="hp-ammo${ammo === 0 ? ' out' : ''}">✦${ammo}</span>`
+      + ` <span class="hp-ammo hp-mine${mineField.count === 0 ? ' out' : ''}">⌖${mineField.count}</span></div>`
       + `<div class="hud-res"><span class="hud-biomass">${eco.biomass}kg`
       + ` ×${eco.multiplier().toFixed(2)}</span>`
       + `<span class="hud-wave">WAVE <b>${wave}</b> · R${round}</span></div>`
@@ -5266,6 +5299,7 @@ export function initTdTab(root) {
     baseUnitScale = cellSide * 0.5;
     unitScale = baseUnitScale;
     ammo = 3;
+    clearMines();   // a new run gets a fresh rack and an empty board
     sfx.reseed(params.seed); // pitch jitter is deterministic per seed
     deathPick = mulberry32((params.seed >>> 0) ^ 0x9e3779b9);
     heartHP = HEART_MAX;
@@ -5499,6 +5533,26 @@ export function initTdTab(root) {
       popped++;
     }
     return popped;
+  }
+
+  // ONE DOOR for "a shell's worth landed on a gate", so the cannon and the
+  // mine cannot drift apart. The operator's ruling on the mine is that it is
+  // "as 1 shell" against a portal — which is only true if it goes through
+  // exactly this function rather than through a second copy of it.
+  function gateTakesShell(sp) {
+    sp.found = true;          // a hit also marks the source on the scope
+    sp.hp--;
+    if (sp.hp <= 0) { killPortal(sp); return true; }
+    // wounded: it loses two power cores, takes a shove, and its light dims —
+    // a dying gate fades before it falls. The SHRINK is gone for a standing
+    // ring: architecture does not get smaller when you shoot it, it loses
+    // pieces.
+    gateTakesHit(sp);
+    if (!sp.obj.userData.grounded) {
+      sp.obj.scale.setScalar(sp.obj.userData.sizeScale * (0.65 + 0.35 * (sp.hp / 3)));
+    }
+    if (sp.obj.userData.setDim) sp.obj.userData.setDim(0.2 + 0.8 * (sp.hp / 3));
+    return false;
   }
 
   // WHAT A SHELL LANDING ON A GATE FEELS LIKE. It used to be a scale step and
@@ -5853,7 +5907,10 @@ export function initTdTab(root) {
   // so passive income is what got cheaper — getting close is what pays now.
   // Rams keep their premium on top; the orbital strike pays base, because
   // nothing about it is close.
-  const KILL_PAY = { tank: 1.0, tower: 0.5, strike: 0.5 };
+  // A MINE PAYS BETWEEN THE TWO. It is the player's own act — you drove
+  // there, you spent the mine, you chose the chokepoint — but it is not
+  // the hull going through them, which is what the full rate is for.
+  const KILL_PAY = { tank: 1.0, tower: 0.5, strike: 0.5, mine: 0.75 };
 
   // --- field promotion ------------------------------------------------------
   // HUD badge only. The first cut ALSO floated a sprite over the hull —
@@ -6400,6 +6457,230 @@ export function initTdTab(root) {
     updateHud();
   }
 
+
+  // --- THE MINES ------------------------------------------------------------
+  // src/mines.js owns every rule and every refusal; this owns the discs, the
+  // fan on the ground, the sounds, and the four damage doors a blast can go
+  // through (enemy, gate, tank, another mine). Operator's ruling, 2026-09-04:
+  // a CLAYMORE — instant on trigger, directional, no fuse, an arming window
+  // after the drop; laid one cell in FRONT of the tank facing its heading, so
+  // laying them while reversing builds a field between you and what you are
+  // backing away from. It trips on you too, and it hurts.
+  const MINE_BLUE = 0x6fd3ff;   // friendly: the disc, the ring, the scope
+  const MINE_RED = 0xff5a4a;    // the arc it will throw
+
+  // The mine's own polar coordinates, run BACKWARDS: given a distance in
+  // cells and a bearing off the axis, where is that on the ground? Every line
+  // of the fan and every dot of the disc is placed with this, so the drawing
+  // and minePolar's hit test are one geometry rather than two that have to be
+  // kept in agreement by hand — the mistake the beam made three times.
+  function minePoint(m, cells, th, lift = 0.16) {
+    const n = m.pos, d = m.dir;
+    const side = norm3(cross3(n, d));
+    const ct = Math.cos(th), st = Math.sin(th);
+    const u = [d[0] * ct + side[0] * st, d[1] * ct + side[1] * st, d[2] * ct + side[2] * st];
+    const a = cells * cellSide, ca = Math.cos(a), sa = Math.sin(a);
+    const r = 1 + cellSide * lift;
+    return [(n[0] * ca + u[0] * sa) * r, (n[1] * ca + u[1] * sa) * r, (n[2] * ca + u[2] * sa) * r];
+  }
+
+  const mineArcsShown = () => params.mineArcs;
+
+  const MINE_FAN_RAYS = 5, MINE_FAN_SEGS = 5, MINE_FAN_ARC = 18;
+  function makeMineFan(m) {
+    const half = (mineTune.arcDeg * Math.PI) / 360;
+    const v = [];
+    const push = (a, b) => { v.push(a[0], a[1], a[2], b[0], b[1], b[2]); };
+    // the rays, each a polyline along its own great circle — one straight
+    // line to the tip would sink through the ground over 2.5 cells
+    for (let r = 0; r < MINE_FAN_RAYS; r++) {
+      const th = -half + (2 * half * r) / (MINE_FAN_RAYS - 1);
+      for (let k = 0; k < MINE_FAN_SEGS; k++) {
+        const c0 = 0.3 + (mineTune.reach - 0.3) * (k / MINE_FAN_SEGS);
+        const c1 = 0.3 + (mineTune.reach - 0.3) * ((k + 1) / MINE_FAN_SEGS);
+        push(minePoint(m, c0, th), minePoint(m, c1, th));
+      }
+    }
+    // ...and the outer edge, so the reach is a line you can stand behind
+    for (let i = 0; i < MINE_FAN_ARC; i++) {
+      const t0 = -half + (2 * half * i) / MINE_FAN_ARC;
+      const t1 = -half + (2 * half * (i + 1)) / MINE_FAN_ARC;
+      push(minePoint(m, mineTune.reach, t0), minePoint(m, mineTune.reach, t1));
+    }
+    const geo = new THREE.BufferGeometry();
+    geo.setAttribute('position', new THREE.BufferAttribute(new Float32Array(v), 3));
+    return new THREE.LineSegments(geo, new THREE.LineBasicMaterial({
+      color: MINE_RED, transparent: true, opacity: 0.22 }));
+  }
+
+  function makeMineObj(m) {
+    const grp = new THREE.Group();
+    // the body: a small dot-cloud disc lying on the ground, the Braille idiom
+    const N = 26, dp = new Float32Array(N * 3);
+    for (let i = 0; i < N; i++) {
+      // golden angle: evenly covered, and no visible rings at this dot count
+      const q = minePoint(m, 0.06 + 0.16 * Math.sqrt((i + 0.5) / N), i * 2.399963);
+      dp[i * 3] = q[0]; dp[i * 3 + 1] = q[1]; dp[i * 3 + 2] = q[2];
+    }
+    const dgeo = new THREE.BufferGeometry();
+    dgeo.setAttribute('position', new THREE.BufferAttribute(dp, 3));
+    const disc = new THREE.Points(dgeo, new THREE.PointsMaterial({
+      color: MINE_BLUE, size: 2.6, sizeAttenuation: false, transparent: true, opacity: 0.55 }));
+    grp.add(disc);
+    // the ring: dim while arming, lit when live. This is the whole readout.
+    const R = 28, rp = new Float32Array(R * 3);
+    for (let i = 0; i < R; i++) {
+      const q = minePoint(m, 0.30, (i / R) * Math.PI * 2);
+      rp[i * 3] = q[0]; rp[i * 3 + 1] = q[1]; rp[i * 3 + 2] = q[2];
+    }
+    const rgeo = new THREE.BufferGeometry();
+    rgeo.setAttribute('position', new THREE.BufferAttribute(rp, 3));
+    const ring = new THREE.LineLoop(rgeo, new THREE.LineBasicMaterial({
+      color: MINE_BLUE, transparent: true, opacity: 0.3 }));
+    grp.add(ring);
+    const fan = makeMineFan(m);
+    grp.add(fan);
+    scene.add(grp);
+    const v = { grp, disc, ring, fan };
+    mineObjs.set(m.id, v);
+    syncMineObj(m, v);
+    return v;
+  }
+
+  function syncMineObj(m, v = mineObjs.get(m.id)) {
+    if (!v) return;
+    v.ring.material.opacity = m.live ? 0.85 : 0.3;
+    v.disc.material.opacity = m.live ? 0.9 : 0.45;
+    v.fan.visible = mineArcsShown();
+    v.fan.material.opacity = m.live ? 0.22 : 0.08;
+  }
+
+  function dropMineObj(id) {
+    const v = mineObjs.get(id);
+    if (!v) return;
+    scene.remove(v.grp);
+    v.grp.traverse((o) => {
+      if (o.geometry) o.geometry.dispose();
+      if (o.material) o.material.dispose();
+    });
+    mineObjs.delete(id);
+  }
+
+  function clearMines() {
+    for (const id of [...mineObjs.keys()]) dropMineObj(id);
+    mineField = makeField(mineTune);
+  }
+
+  // LAY ONE. The drop is one cell ahead ALONG THE GROUND — arcPoint, not
+  // pos + dir*cellSide, for the same reason the beam stopped using a chord.
+  // Frozen under exactly the gate the guns obey: a deploy, a shot, a pause,
+  // the tutorial's opening hold. Build mode is NOT on that list — the
+  // operator's brief is "place them at chokepoints during downtime", and
+  // downtime is build mode.
+  function layMineNow() {
+    if (player.won || playerDown || paused || deploy || !player.pos) return 'frozen';
+    if ((shotActive() && !(director && shot && shot.id === 'director')) || tutorial.frozen) return 'frozen';
+    const n = norm3(player.pos);
+    const d = norm3(sub3(player.smoothDir, scale3(n, dot3(player.smoothDir, n))));
+    const pos = arcPoint(n, d, cellSide);
+    const ci = cellIndex(pos);
+    const blocked = ci < 0 || dungeon.tags[ci] === BLOCKED;
+    const occupied = ci >= 0 && (towerByCell.has(ci) || ci === serverCi);
+    const r = layMine(mineField, { pos, dir: d, cellAhead: ci, blocked, occupied }, t, mineTune);
+    if (r === 'laid') {
+      makeMineObj(mineField.mines[mineField.mines.length - 1]);
+      sfx.play('tank_pickup');
+      pulseButton('#td-pad-mine');
+    }
+    updateHud();
+    if (mineProbeOn) console.log(`MINEPROBE lay ${r} ci=${ci} left=${mineField.count}`);
+    return r;
+  }
+
+  // THE BLAST. One array of points goes to the module and one array of
+  // indices comes back; the ORDER of that array is the contract that says
+  // which door each target goes through — enemies, then live gates, then the
+  // tank. Building it in one place is what keeps the three from disagreeing.
+  function blowMine(m, tNow) {
+    const live = enemies.filter((e) => e.alive);
+    const gates = spawnPoints.filter((sp) => sp.alive);
+    const pts = live.map((e) => e.pos)
+      .concat(gates.map((sp) => graph.centers[sp.ci]))
+      .concat([playerDown ? null : player.pos]);
+    const { targets, chain: chained } = trip(mineField, m, pts, cellSide, mineTune);
+    dropMineObj(m.id);
+    const ci = m.ci >= 0 ? m.ci : cellIndex(m.pos);
+    if (ci >= 0) warnRing(ci, MINE_RED, 0.45, cellSide * mineTune.reach);
+    sfx.play('tank_main');
+    let kills = 0, gateHits = 0, tankHit = false, hurt = 0;
+    for (const i of targets) {
+      if (i < live.length) {
+        const e = live[i];
+        const burst = makeDotBurst(MINE_RED, norm3(e.pos), 24);
+        burst.scale.setScalar(cellSide * 0.5);
+        burst.position.set(e.pos[0], e.pos[1], e.pos[2]);
+        scene.add(burst); debris.push(burst);
+        hurt++;
+        if (damageEnemy(e, tNow, mineTune.damage, true, 'mine')) kills++;
+      } else if (i < live.length + gates.length) {
+        gateTakesShell(gates[i - live.length]);
+        gateHits++;
+      } else {
+        // FRIENDLY FIRE IS THE POINT (operator). A claymore does not know
+        // whose it is; the same door a ram hit uses, so the shield and the
+        // lab's immortal tank behave identically.
+        tankHit = true;
+        playerHit('mine');
+      }
+    }
+    if (chained.length) chain(mineField, chained);
+    if (mineProbeOn) {
+      console.log(`MINEPROBE blast id=${m.id} targets=${targets.length} hurt=${hurt}`
+        + ` kills=${kills} gates=${gateHits} tank=${tankHit ? 'HIT' : '-'} hp=${playerHP}`
+        + ` chain=[${chained.join(',')}] rack=${mineField.count}`);
+    }
+    updateHud();
+    checkVictory();
+  }
+
+  // Per frame, after the enemies have moved. A chained mine owes its blast
+  // FIRST and one per frame, so a laid row goes off as a row rather than as
+  // one flash — the reason chain() is a queue and not a loop.
+  function stepMines(dt, tNow) {
+    if (!graph || !mineField.mines.length) return;
+    const armed = armMines(mineField, tNow, mineTune);
+    for (const id of armed) {
+      const m = mineField.mines.find((x) => x.id === id);
+      if (m) syncMineObj(m);
+    }
+    if (armed.length) sfx.play('tower_slow');
+    const queued = nextChained(mineField);
+    if (queued) { blowMine(queued, tNow); return; }
+    for (const m of mineField.mines) {
+      if (!m.alive || !m.live) continue;
+      let trod = false;
+      for (const e of enemies) {
+        if (!e.alive) continue;
+        if (inFan(m, e.pos, cellSide, mineTune)) { trod = true; break; }
+      }
+      if (!trod && !playerDown && player.pos && inFan(m, player.pos, cellSide, mineTune)) trod = true;
+      if (trod) { blowMine(m, tNow); return; }   // one detonation per frame
+    }
+  }
+
+  // A case from the yard or the debrief. What does not fit is LOST and said
+  // so — the cap is a decision about when to spend, not a silent ceiling.
+  function mineCase(where) {
+    const got = restock(mineField, mineTune.caseSize, mineTune);
+    const lost = mineTune.caseSize - got;
+    showToast(`<div class="wave-num">MINE CASE &#9656; +${got}</div>`
+      + `<div class="wave-role">${where} &middot; rack ${mineField.count}/${mineTune.cap}`
+      + `${lost ? ` &middot; ${lost} over the cap, lost` : ''}</div>`, 2400);
+    sfx.play('tank_pickup');
+    updateHud();
+    return got;
+  }
+
   function killProjectile(i) {
     scene.remove(projectiles[i].mesh);
     projectiles[i].mesh.geometry.dispose();
@@ -6520,22 +6801,8 @@ export function initTdTab(root) {
         for (const sp of spawnPoints) {
           if (!sp.alive) continue;
           if (dist3(p.pos, graph.centers[sp.ci]) < cellSide * 0.6) {
-            sp.found = true;
             hit = true;
-            sp.hp--;
-            if (sp.hp <= 0) {
-              killPortal(sp);
-            } else {
-              // wounded: it loses two power cores, takes a shove, and its
-              // light dims — a dying gate fades before it falls. The SHRINK
-              // is gone for a standing ring: architecture does not get
-              // smaller when you shoot it, it loses pieces.
-              gateTakesHit(sp);
-              if (!sp.obj.userData.grounded) {
-                sp.obj.scale.setScalar(sp.obj.userData.sizeScale * (0.65 + 0.35 * (sp.hp / 3)));
-              }
-              if (sp.obj.userData.setDim) sp.obj.userData.setDim(0.2 + 0.8 * (sp.hp / 3));
-            }
+            gateTakesShell(sp);
             updateHud();
             break;
           }
@@ -8258,7 +8525,8 @@ export function initTdTab(root) {
   // clock, you count it — and every fifth wave a new hull is printed and
   // racked in a berth, if there is room for one. While a job runs the rig
   // works visibly faster and the site pulses; when it lands, a toast says so.
-  const TF = { containerEvery: 2, hullEvery: 5, containerSecs: 7, hullSecs: 10, yardMax: 8 };
+  const TF = { containerEvery: 2, hullEvery: 5, containerSecs: 7, hullSecs: 10, yardMax: 8,
+    caseEvery: 3 };   // ...and a case of mines, between the other two clocks
   const tfYard = [];        // { obj, ci }
   const tfQueue = [];       // kinds waiting for the bed
   let tfJob = null;         // { kind, obj, ci, t, dur, pulseT }
@@ -8366,6 +8634,11 @@ export function initTdTab(root) {
   function tfMilestone(w) {
     if (w > 0 && w % TF.hullEvery === 0) tfStart('hull');
     else if (w > 0 && w % TF.containerEvery === 0) tfStart('container');
+    // THE MINE CASE RIDES ITS OWN CLOCK, deliberately outside the else-if
+    // chain above. A case is not a container and does not occupy the bed, so
+    // making it compete for the milestone would starve the YARD — and the
+    // yard is the clock the player counts. Every third wave, always.
+    if (w > 0 && w % TF.caseEvery === 0) mineCase('terraformer');
   }
   function tfTick(dt) {
     if (!tfJob) { if (tfQueue.length) tfStart(tfQueue.shift()); return; }
@@ -8423,7 +8696,9 @@ export function initTdTab(root) {
       return `<div class="hud-obj hud-isao">TERRAFORMER &#9656; printing ${tfJob.kind === 'hull' ? 'a new hull' : `store ${tfContainers + 1}`} ${pct}%</div>`;
     }
     const left = TF.hullEvery - (wave % TF.hullEvery);
-    return `<div class="hud-obj hud-isao">TERRAFORMER &#9656; yard ${tfYard.length} · next hull in ${left} wave${left === 1 ? '' : 's'}</div>`;
+    const mleft = TF.caseEvery - (wave % TF.caseEvery);
+    return `<div class="hud-obj hud-isao">TERRAFORMER &#9656; yard ${tfYard.length} · next hull in ${left} wave${left === 1 ? '' : 's'}`
+      + ` · mines in ${mleft}</div>`;
   }
 
   // How tall a standing gate is, in cells. Bigger than the tank (~0.85) on
@@ -9143,7 +9418,8 @@ export function initTdTab(root) {
   // hull and a strike missile. The sim's ledger (spent / earned) is what
   // says whether these bite; they are numbers, not rulings, and live here in
   // one place so the next measurement can move them.
-  const SINK = { tollBase: 250, tollStep: 150, hull: 400, strike: 350, drone: 500 };
+  const SINK = { tollBase: 250, tollStep: 150, hull: 400, strike: 350, drone: 500,
+    mines: 200 };   // a case of five, the cheapest thing on the table
   const sectorToll = () => SINK.tollBase + SINK.tollStep * (round - 1);
   function ordersBlock() {
     const toll = sectorToll();
@@ -9155,6 +9431,9 @@ export function initTdTab(root) {
       + (playerHP < PLAYER_MAX ? btn('msg-buyhull', '&#9881; print a spare hull', SINK.hull)
         : `<button disabled>&#9881; hulls full ${playerHP}/${PLAYER_MAX}</button>`)
       + btn('msg-buystrike', '&#10022; resupply one orbital strike', SINK.strike)
+      + (mineField.count >= mineTune.cap
+        ? `<button disabled>&#8982; mine rack full ${mineField.count}/${mineTune.cap}</button>`
+        : btn('msg-buymines', `&#8982; a case of ${mineTune.caseSize} mines &mdash; rack ${mineField.count}/${mineTune.cap}`, SINK.mines))
       + (assistant ? `<button disabled>&#9881; second drone on shift</button>`
         : btn('msg-buydrone', '&#9881; print a second drone — assists ISAO', SINK.drone))
       + btn('msg-next', `&rsaquo; breach sector ${round + 1} — bigger, farther, meaner`, toll);
@@ -9791,6 +10070,15 @@ export function initTdTab(root) {
       stepTowers(dt, t);
       updateTowerShots(dt, t);
     }
+    // MINES ARM THROUGH THE BUILD DOWNTIME, deliberately outside the block
+    // above. The operator's brief is "place them at chokepoints during
+    // downtime" — a mine that only starts its two seconds when the next wave
+    // opens is a mine you cannot pre-place, which is the whole feature. The
+    // war being frozen costs nothing here: nothing is moving to trip them
+    // except the tank, which DOES drive in build mode, and driving over your
+    // own mine going off is correct. A shot or the tutorial's hold still
+    // stops it — those are the game speaking.
+    if (!driveFrozen) stepMines(dt, t);   // arm, trip, chain — after the bodies moved
     // THE GATES' OWN MOTION: the ring's rotors turn, and a struck gate rides
     // out its recoil. The recoil is a SHOVE along its own normal that eases
     // back — the weight of a shell landing lives in that motion, not in a
@@ -10070,6 +10358,31 @@ export function initTdTab(root) {
           ctx.beginPath(); ctx.arc(cx, cy, rr, mid - half, mid + half); ctx.stroke();
         }
       }
+      ctx.globalAlpha = 1;
+    }
+
+    // LAID MINES: friendly blue, an arrowhead pointing along the arc, hollow
+    // while it is still arming. A field reads across the scope as a row of
+    // heads all facing the same way, which is what a laid field IS.
+    for (const m of mineField.mines) {
+      if (!m.alive) continue;
+      const q = radarProject(m.pos, cpos, basis, range);
+      // the head points along the mine's own axis, projected onto the scope:
+      // derived from the SAME dir the blast uses, never re-guessed here
+      const tip = radarProject(minePoint(m, 0.9, 0, 0), cpos, basis, range);
+      const hx = tip.x - q.x, hy = tip.y - q.y;
+      const hl = Math.hypot(hx, hy) || 1;
+      const ux = hx / hl, uy = hy / hl;
+      const bx = cx + q.x * R, by = cy + q.y * R;
+      const S = 5;
+      ctx.globalAlpha = 0.45 + 0.55 * radarPhosphor(radarBearing(q.x, q.y), sweep);
+      ctx.beginPath();
+      ctx.moveTo(bx + ux * S, by + uy * S);
+      ctx.lineTo(bx - ux * S * 0.5 - uy * S * 0.6, by - uy * S * 0.5 + ux * S * 0.6);
+      ctx.lineTo(bx - ux * S * 0.5 + uy * S * 0.6, by - uy * S * 0.5 - ux * S * 0.6);
+      ctx.closePath();
+      if (m.live) { ctx.fillStyle = '#6fd3ff'; ctx.fill(); }
+      else { ctx.strokeStyle = '#6fd3ff'; ctx.lineWidth = 1.2; ctx.stroke(); }
       ctx.globalAlpha = 1;
     }
 
@@ -11717,7 +12030,7 @@ export function initTdTab(root) {
         menu: '#chrome-toggle', modes: '#tab-td .tc-util', hud: '#td-stats',
         map: '#tab-td .minimap', tut: '#td-tut', throttle: '#td-throttle',
         steerL: '#td-pad-left', steerR: '#td-pad-right',
-        fire: '#td-pad-fire', laser: '#td-pad-laser',
+        fire: '#td-pad-fire', laser: '#td-pad-laser', mine: '#td-pad-mine',
         launch: '#td-launch', next: '#td-next', card: '#td-sitrep', hack: '#td-hack',
         // the two number slots, which only leave the centre when the
         // encouragement is switched off — and are exactly the pair most
@@ -12852,6 +13165,121 @@ export function initTdTab(root) {
   }
 
   // ?pedprobe=1 — push the tank straight at the heart through the cushion and
+  // ?minelay=N — lay a row of N ahead of the tank and leave them there. The
+  // probe above blows everything it lays, so there is no frame in it where a
+  // field is standing to be LOOKED at; this is that frame.
+  {
+    const nlay = parseInt(urlParams.get('minelay') || '0', 10);
+    if (nlay > 0) {
+      setTimeout(() => {
+        if (!graph || !player.pos) return;
+        const n0 = norm3(player.pos);
+        const d0 = norm3(sub3(player.smoothDir, scale3(n0, dot3(player.smoothDir, n0))));
+        for (let i = 1; i <= nlay; i++) {
+          const pos = arcPoint(n0, d0, cellSide * i * 1.4);
+          const r = layMine(mineField, { pos, dir: d0, cellAhead: cellIndex(pos) }, t, mineTune);
+          if (r === 'laid') makeMineObj(mineField.mines[mineField.mines.length - 1]);
+        }
+        console.log(`MINELAY ${nlay} rack=${mineField.count} live=${mineField.mines.filter((m) => m.alive).length}`);
+      }, 1500);
+    }
+  }
+
+  // ?mineprobe=1 — THE FIRST RUN OF THE FEATURE IS A LOG LINE, not a play
+  // session. Three beats, each the board's own stepMines rather than a second
+  // copy of the rules:
+  //   A  a row of three, a phage walking in from the FRONT — the ordinary
+  //      case. The front mine trips and NOTHING chains, because a claymore's
+  //      arc points away from the mines behind it. That is the shape, not a
+  //      bug, and the probe says so out loud.
+  //   B  a fresh row, a phage coming from BEHIND — the nearest mine trips and
+  //      its arc holds the other two, so the row goes off as a row.
+  //   C  the tank walked around IN FRONT of its own live mine. It trips, and
+  //      it takes the hull down one. Friendly fire is the operator's ruling
+  //      and it is the one thing a unit test cannot show landing on a HULL.
+  if (urlParams.get('mineprobe') === '1') {
+    setTimeout(() => {
+      if (!graph || !player.pos) { console.log('MINEPROBE no board'); return; }
+      const n0 = norm3(player.pos);
+      const d0 = norm3(sub3(player.smoothDir, scale3(n0, dot3(player.smoothDir, n0))));
+      let tt = 100;
+      const spec = ENEMY_SPEC.phage;
+      const s0 = cellSide * spec.size * 0.7;
+      const layRow = () => {
+        const out = [];
+        for (let i = 1; i <= 3; i++) {
+          const pos = arcPoint(n0, d0, cellSide * i * 1.2);
+          const r = layMine(mineField, { pos, dir: d0, cellAhead: cellIndex(pos) }, tt, mineTune);
+          out.push(`${i}:${r}`);
+          if (r === 'laid') makeMineObj(mineField.mines[mineField.mines.length - 1]);
+        }
+        return out.join(' ');
+      };
+      const aliveMines = () => mineField.mines.filter((m) => m.alive).length;
+      const walk = (from, to, steps) => {
+        const obj = makeDotEnemy('phage', { walker: CREATURE_TINTS.phage, walkerHi: accentFor('phage') });
+        obj.scale.setScalar(s0);
+        scene.add(obj);
+        const p0 = arcPoint(n0, d0, cellSide * from);
+        const e = { type: 'phage', spec, scale0: s0, size: spec.size,
+          cur: cellIndex(p0), prev: -1, next: cellIndex(p0), prog: 0,
+          pos: p0, dir: d0.slice(), obj, alive: true, phase: 0,
+          paceJitter: 1, hp: spec.hp, behMult: 1, behUntil: -1, touchCd: -1,
+          slowFactor: 1, slowUntil: -1 };
+        enemies.push(e);
+        for (let k = 0; k <= steps; k++) {
+          tt += 0.05;
+          if (e.alive) {
+            const q = arcPoint(n0, d0, cellSide * (from + (to - from) * (k / steps)));
+            e.pos = q;
+            e.obj.position.set(q[0], q[1], q[2]);
+          }
+          stepMines(0.05, tt);
+        }
+        return e;
+      };
+
+      console.log(`MINEPROBE A laid ${layRow()} rack=${mineField.count} hp=${playerHP}`
+        + ` arcs=${params.mineArcs ? 'on' : 'off'}`);
+      let n = aliveMines();
+      let e = walk(5, -1, 220);
+      console.log(`MINEPROBE A done blown=${n - aliveMines()}/${n}`
+        + ` phage=${e.alive ? `alive hp=${e.hp}` : 'DEAD'} tankHP=${playerHP}`
+        + ` ${n - aliveMines() === 1 ? 'ONE trip, no chain — the arc points away from the row'
+          : '<-- expected exactly one'}`);
+
+      // B — the same row, walked from behind: the near mine's arc holds the
+      // other two, so the queue empties one blast per frame
+      tt += 5;
+      console.log(`MINEPROBE B laid ${layRow()} rack=${mineField.count}`);
+      n = aliveMines();
+      e = walk(-1, 5, 220);
+      console.log(`MINEPROBE B done blown=${n - aliveMines()}/${n}`
+        + ` phage=${e.alive ? `alive hp=${e.hp}` : 'DEAD'} queue=${mineField.queue.length}`
+        + ` ${aliveMines() === 0 ? 'THE ROW WENT OFF AS A ROW' : '<-- mines left standing'}`);
+
+      // C — friendly fire. The hull is moved around in front of its own live
+      // mine; nothing else about the tank is touched.
+      tt += 5;
+      const cpos = arcPoint(n0, d0, cellSide * 1.2);
+      const cres = layMine(mineField, { pos: cpos, dir: d0, cellAhead: cellIndex(cpos) }, tt, mineTune);
+      if (cres === 'laid') makeMineObj(mineField.mines[mineField.mines.length - 1]);
+      const keep = player.pos.slice();
+      const hpC = playerHP;
+      // behind it first, to prove the tank can sit at its own mine's back
+      player.pos = arcPoint(n0, d0, cellSide * 0.6);
+      for (let k = 0; k < 60; k++) { tt += 0.05; stepMines(0.05, tt); }
+      const behindSafe = aliveMines() > 0;
+      player.pos = arcPoint(n0, d0, cellSide * 1.9);
+      for (let k = 0; k < 40; k++) { tt += 0.05; stepMines(0.05, tt); }
+      console.log(`MINEPROBE C lay=${cres} behind=${behindSafe ? 'SAFE' : '<-- tripped from behind'}`
+        + ` inFront hull ${hpC}->${playerHP}`
+        + ` ${playerHP === hpC - 1 ? 'FRIENDLY FIRE LANDS' : '<-- the tank took nothing'}`
+        + ` rack=${mineField.count}`);
+      player.pos = keep;
+    }, 1800);
+  }
+
   // report how close it gets, against the pad radius.
   if (urlParams.get('pedprobe') === '1') {
     setTimeout(() => {

@@ -5,22 +5,22 @@
    back to a system face until the subset is rebuilt. */
 @font-face {
   font-family: 'VT323';
-  src: url('assets/fonts/VT323.woff2?v=eb604d79') format('woff2');
+  src: url('assets/fonts/VT323.woff2?v=71cddf4e') format('woff2');
   font-weight: 400; font-style: normal; font-display: swap;
 }
 @font-face {
   font-family: 'Press Start 2P';
-  src: url('assets/fonts/PressStart2P.woff2?v=eb604d79') format('woff2');
+  src: url('assets/fonts/PressStart2P.woff2?v=71cddf4e') format('woff2');
   font-weight: 400; font-style: normal; font-display: swap;
 }
 @font-face {
   font-family: 'Share Tech Mono';
-  src: url('assets/fonts/ShareTechMono.woff2?v=eb604d79') format('woff2');
+  src: url('assets/fonts/ShareTechMono.woff2?v=71cddf4e') format('woff2');
   font-weight: 400; font-style: normal; font-display: swap;
 }
 @font-face {
   font-family: 'DotGothic16';
-  src: url('assets/fonts/DotGothic16.woff2?v=eb604d79') format('woff2');
+  src: url('assets/fonts/DotGothic16.woff2?v=71cddf4e') format('woff2');
   font-weight: 400; font-style: normal; font-display: swap;
 }
 
@@ -66,7 +66,7 @@
    The THROTTLE stays. It is a drag control that works fine with a mouse,
    and on desktop it is the only visible thing that says the tank drives. */
 @media (hover: hover) and (pointer: fine) and (min-width: 900px) {
-  #td-pad-left, #td-pad-right, #td-pad-fire, #td-pad-laser { display: none; }
+  #td-pad-left, #td-pad-right, #td-pad-fire, #td-pad-laser, #td-pad-mine { display: none; }
 }
 
 /* the victory lap's way back — a single chip, bottom centre, out of the way
@@ -612,6 +612,19 @@ html, body {
   color: #9ff8ff;
   border: 1px solid rgba(125, 249, 255, 0.45);
 }
+/* the third pad. A TAP, not a hold — laying is a discrete act — so it sits
+   in the same column as the laser but one step up the thumb's arc, out of
+   the reach it uses for the two it holds down. */
+.tfire-tertiary {
+  right: calc(max(16px, env(safe-area-inset-right)) + 92px);
+  bottom: calc(max(12px, env(safe-area-inset-bottom)) + min(26vh, 230px) + 80px);
+  width: 50px;
+  height: 50px;
+  font-size: 20px;
+  background: rgba(46, 30, 26, 0.5);
+  color: #ffc9a8;
+  border: 1px solid rgba(255, 138, 92, 0.5);
+}
 .tfire:active, .tfire.pressed {
   background: rgba(90, 200, 180, 0.5);
   color: #fff;
@@ -817,6 +830,13 @@ html, body {
     bottom: calc(max(12px, env(safe-area-inset-bottom)) + min(19vh, 168px) + 20px);
     background: rgba(22, 46, 58, 0.28);
     border-color: rgba(125, 249, 255, 0.3);
+  }
+  .tfire-tertiary {
+    width: 42px; height: 42px; font-size: 16px;
+    right: calc(max(14px, env(safe-area-inset-right)) + 68px);
+    bottom: calc(max(12px, env(safe-area-inset-bottom)) + min(19vh, 168px) + 72px);
+    background: rgba(46, 30, 26, 0.28);
+    border-color: rgba(255, 138, 92, 0.34);
   }
   /* the left strip steps aside for the lever rather than sitting under it */
   /* STEERING KEEPS THE EDGES, MIRRORED. Moving the left strip inboard to
@@ -3777,6 +3797,7 @@ body.mobile-shell #td-pad-dir, body.mobile-shell #td-pad-tank, body.mobile-shell
 body.mobile-shell #td-pad-map, body.mobile-shell #td-pad-ctrheart, body.mobile-shell #td-pad-ctrtank,
 body.mobile-shell #td-pad-sound { display: none !important; }
 body.mobile-shell #td-pad-fire, body.mobile-shell #td-pad-laser { min-width: 64px; min-height: 64px; font-size: 22px; }
+body.mobile-shell #td-pad-mine { min-width: 56px; min-height: 56px; font-size: 20px; }
 body.mobile-shell #td-app { touch-action: none; }
 /* Phase 4 — HUD SUBTRACTION PER MODE, AND CAPTIONS.
    DRIVE shows what a sub-second read needs: vitals + resources, the wave
@@ -3802,6 +3823,7 @@ body.mobile-shell #td-launch { top: 52px; width: auto; min-height: 0; padding: 4
 body.mobile-shell #td-launch-readout .target { display: none; }
 body.mobile-shell #td-launch-readout .status { font-size: 9px; }
 body.mobile-shell.mob-build #td-pad-fire, body.mobile-shell.mob-build #td-pad-laser,
+body.mobile-shell.mob-build #td-pad-mine,
 body.mobile-shell.mob-build #td-launch, body.mobile-shell.mob-build #tab-td .minimap,
 body.mobile-shell.mob-build #td-hack, body.mobile-shell.mob-build #td-hackprompt { display: none !important; }
 /* captions: Isao beside the radar on the bottom edge, the lane just above him */
@@ -3861,6 +3883,10 @@ body.mobile-shell #td-vars .vars-close { width: 44px; height: 44px; }
 body.mobile-shell #tab-td .minimap { left: auto; bottom: auto; right: 14px; top: 68px; }
 body.mobile-shell #tab-td #td-pad-fire { right: 14px; bottom: 14px; left: auto; top: auto; }
 body.mobile-shell #tab-td #td-pad-laser { right: 92px; bottom: 22px; left: auto; top: auto; }
+/* the mine pad stacks ABOVE the fire button rather than beside the laser:
+   the bottom row is the two the thumb holds, and a tap control in that row
+   is a tap control you hit while steering. */
+body.mobile-shell #tab-td #td-pad-mine { right: 18px; bottom: 88px; left: auto; top: auto; }
 /* the floating stick */
 #td-stick { display: none; }
 body.mobile-shell #td-stick { display: block; position: fixed; z-index: 40; width: 0; height: 0; pointer-events: none; }

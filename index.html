@@ -5,18 +5,18 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
   <title>spherical stålberg grid</title>
   <meta name="theme-color" content="#10131a">
-  <link rel="manifest" href="./manifest.webmanifest?v=eb604d79">
-  <link rel="apple-touch-icon" href="./icons/apple-touch-icon.png?v=eb604d79">
+  <link rel="manifest" href="./manifest.webmanifest?v=71cddf4e">
+  <link rel="apple-touch-icon" href="./icons/apple-touch-icon.png?v=71cddf4e">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="SphereGrid">
-  <link rel="stylesheet" href="./styles.css?v=eb604d79">
+  <link rel="stylesheet" href="./styles.css?v=71cddf4e">
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
-  <link rel="icon" href="favicon.svg?v=eb604d79" type="image/svg+xml">
-  <meta name="cb" content="eb604d79">
-  <link rel="icon" type="image/svg+xml" href="./cb-shapes/43.svg?v=eb604d79">
+  <link rel="icon" href="favicon.svg?v=71cddf4e" type="image/svg+xml">
+  <meta name="cb" content="71cddf4e">
+  <link rel="icon" type="image/svg+xml" href="./cb-shapes/49.svg?v=71cddf4e">
   <!-- cb-badge retired from the game view (operator ruling): the build
        token lives in the DEV LOG tab, which reads meta[name="cb"] itself -->
 </head>
@@ -211,14 +211,15 @@
           <div class="fm-keys fm-desktop">
             <span>W A S D / arrows</span><span>drive</span>
             <span>SPACE / SHIFT</span><span>shell / lasers</span>
+            <span>N</span><span>lay a MINE one cell ahead</span>
             <span>Q / E</span><span>cruise up / down</span>
             <span>1 / 2 / 3</span><span>orbit &middot; 1st &middot; 3rd</span>
             <span>M / V</span><span>map / cycle view</span>
             <span>U / H / ESC</span><span>upgrade / hint / pause</span>
             <span>X</span><span>hack the relay (in range)</span>
           </div>
-          <div class="fm-line fm-touch">side zones steer &middot; &#9673; shell &middot; &#8767; lasers &middot; lever = throttle</div>
-          <div class="fm-line fm-shell">DRIVE: tap where to go &middot; &#9673; shell &middot; &#8767; lasers<br>BUILD: tap HIGH GROUND &middot; hold a tower to upgrade &middot; drag orbits, pinch zooms</div>
+          <div class="fm-line fm-touch">side zones steer &middot; &#9673; shell &middot; &#8767; lasers &middot; &#8982; mine &middot; lever = throttle</div>
+          <div class="fm-line fm-shell">DRIVE: tap where to go &middot; &#9673; shell &middot; &#8767; lasers &middot; &#8982; mine<br>BUILD: tap HIGH GROUND &middot; hold a tower to upgrade &middot; drag orbits, pinch zooms</div>
         </div>
         <div class="fm-foot">[ TAP OR ANY KEY &mdash; ENGAGE ]</div>
       </div>
@@ -250,7 +251,7 @@
     <div id="td-launch" class="caution-frame" aria-label="launch control">
       <button id="td-safety" class="safety" type="button" aria-pressed="false" aria-label="safety">
         <span class="lbl-on">ON</span>
-        <img id="td-safety-img" class="switch-img" src="assets/ui/switch-off.png?v=eb604d79" alt="" width="120" height="200">
+        <img id="td-safety-img" class="switch-img" src="assets/ui/switch-off.png?v=71cddf4e" alt="" width="120" height="200">
         <span class="lbl-off">OFF</span>
       </button>
       <div id="td-launch-readout">
@@ -285,6 +286,7 @@
     </div>
     <button id="td-pad-fire" class="tfire tfire-primary" title="FIRE shell (Space)">&#9673;</button>
     <button id="td-pad-laser" class="tfire tfire-secondary" title="hold: lasers (Shift)">&#8767;</button>
+    <button id="td-pad-mine" class="tfire tfire-tertiary" title="lay a MINE one cell ahead (N)">&#8982;</button>
     <div class="tc-util">
       <button id="td-pad-ctrheart" title="centre the view on the heart">&#9829; CTR</button>
       <button id="td-pad-ctrtank" title="centre the view on the tank">&#9673; CTR</button>
@@ -294,7 +296,7 @@
       <button id="td-pad-orbit" title="camera: orbital — the whole shell">ORBIT</button>
       <button id="td-pad-sound" title="mute / unmute sound">&#128266;</button>
     </div>
-    <div id="td-hint">TD · towers mount the HIGH GROUND · B build · M threat map</div>
+    <div id="td-hint">TD · towers mount the HIGH GROUND · B build · M threat map · N mine</div>
   </div>
 
   <div id="tab-tank" class="tab tab-hidden">
@@ -576,6 +578,6 @@
     </div>
   </div>
 
-  <script type="module" src="./src/main.js?v=eb604d79"></script>
+  <script type="module" src="./src/main.js?v=71cddf4e"></script>
 </body>
 </html>
