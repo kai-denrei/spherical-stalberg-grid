@@ -1,29 +1,29 @@
 // main.js — tab shell. Each tab lazily initializes its own renderer/scene the
 // first time it's shown and pauses (skips its loop body) while hidden.
 
-import { wireDevlogBadge } from './devlog.js?v=fe7777f3';
-import { initHomeTab } from './home-tab.js?v=fe7777f3';
-import { initGridTab } from './grid-tab.js?v=fe7777f3';
-import { initMazeTab } from './maze-tab.js?v=fe7777f3';
-import { initOrganicTab } from './organic-tab.js?v=fe7777f3';
-import { initBattleTab } from './battle-tab.js?v=fe7777f3';
-import { initHeartTab } from './heart-tab.js?v=fe7777f3';
-import { initTdTab } from './td-tab.js?v=fe7777f3';
-import { initTankTab } from './tank-tab.js?v=fe7777f3';
-import { initTank2Tab } from './tank2-tab.js?v=fe7777f3';
-import { initTank3Tab } from './tank3-tab.js?v=fe7777f3';
-import { initUnitsTab } from './units-tab.js?v=fe7777f3';
-import { initBeamTab } from './beam-tab.js?v=fe7777f3';
-import { initAstroTab } from './astro-tab.js?v=fe7777f3';
-import { initMetalTab } from './metal-tab.js?v=fe7777f3';
-import { initPortalTab } from './portal-tab.js?v=fe7777f3';
-import { initCineTab } from './cine-tab.js?v=fe7777f3';
-import { initHowTab, initStackTab, initLogTab } from './how-tab.js?v=fe7777f3';
-import { initSimTab } from './sim-tab.js?v=fe7777f3';
-import { initRecordTab } from './recordtab.js?v=fe7777f3';
+import { wireDevlogBadge } from './devlog.js?v=f6eb8e95';
+import { initHomeTab } from './home-tab.js?v=f6eb8e95';
+import { initGridTab } from './grid-tab.js?v=f6eb8e95';
+import { initMazeTab } from './maze-tab.js?v=f6eb8e95';
+import { initOrganicTab } from './organic-tab.js?v=f6eb8e95';
+import { initBattleTab } from './battle-tab.js?v=f6eb8e95';
+import { initHeartTab } from './heart-tab.js?v=f6eb8e95';
+import { initTdTab } from './td-tab.js?v=f6eb8e95';
+import { initTankTab } from './tank-tab.js?v=f6eb8e95';
+import { initTank2Tab } from './tank2-tab.js?v=f6eb8e95';
+import { initTank3Tab } from './tank3-tab.js?v=f6eb8e95';
+import { initUnitsTab } from './units-tab.js?v=f6eb8e95';
+import { initBeamTab } from './beam-tab.js?v=f6eb8e95';
+import { initAstroTab } from './astro-tab.js?v=f6eb8e95';
+import { initMetalTab } from './metal-tab.js?v=f6eb8e95';
+import { initPortalTab } from './portal-tab.js?v=f6eb8e95';
+import { initCineTab } from './cine-tab.js?v=f6eb8e95';
+import { initHowTab, initStackTab, initLogTab } from './how-tab.js?v=f6eb8e95';
+import { initSimTab } from './sim-tab.js?v=f6eb8e95';
+import { initRecordTab } from './recordtab.js?v=f6eb8e95';
 import { applyFontPack, DEFAULT_FONT, DEFAULT_SHOUT_FONT,
-
-  loadTypeFeel } from './fonts.js?v=fe7777f3';
+  loadTypeFeel } from './fonts.js?v=f6eb8e95';
+import { paramLink } from './deeplink.js';
 
 
 // ?coarse=1 — apply the phone's coarse-pointer CSS headless, for ANY tab.
@@ -97,12 +97,23 @@ const tabs = {
 
 let current = null;
 
+// WHICH MISSION IS RUNNING. The board reads `?mission=` once, when it builds,
+// so this cannot change without a reload — which is exactly why the mission
+// buttons are navigations and not tab switches.
+const missionNow = new URLSearchParams(location.search).get('mission') || '';
+
 function activate(name) {
   if (current === name) return;
   for (const [key, tab] of Object.entries(tabs)) {
     const on = key === name;
     tab.root.classList.toggle('tab-hidden', !on);
-    document.querySelector(`#tabbar button[data-tab="${key}"]`).classList.toggle('active', on);
+    // ...all of them, not the first: TD now has three buttons (the campaign
+    // and the two missions) and only the one whose mission is running is the
+    // one that is active. querySelector would have lit the campaign whichever
+    // mission you were in.
+    for (const b of document.querySelectorAll(`#tabbar button[data-tab="${key}"]`)) {
+      b.classList.toggle('active', on && (b.dataset.mission ?? missionNow) === missionNow);
+    }
     if (on && !tab.api) tab.api = tab.init(tab.root);
     if (tab.api) tab.api.setActive(on);
   }
@@ -111,11 +122,38 @@ function activate(name) {
 
 for (const btn of document.querySelectorAll('#tabbar button')) {
   btn.addEventListener('click', () => {
+    // A MISSION BUTTON IS A LINK. `?mission=` is read at boot, so switching
+    // missions means loading the page again; the empty string on the plain TD
+    // button is what CLEARS it and goes back to the campaign, which is one
+    // code path for "pick one" and "go back" rather than two.
+    const m = btn.dataset.mission;
+    if (m !== undefined && m !== missionNow) {
+      location.href = paramLink({
+        base: location.origin + location.pathname, hash: btn.dataset.tab,
+        key: 'mission', value: m, carry: location.search,
+      });
+      return;
+    }
     location.hash = btn.dataset.tab;
     activate(btn.dataset.tab);
     // picking a mode closes the ☰ menu — selection IS the dismissal
     document.body.classList.remove('chrome-open');
   });
+}
+
+// ?tabprobe=1 — every tab button, with the mission it selects and whether it
+// is lit. TD carries three of them now (the campaign and the two missions)
+// and only one may be active; that used to be decided by a querySelector
+// that could only ever find the first, which is the kind of thing a
+// screenshot of a collapsed menu cannot show.
+if (new URLSearchParams(location.search).get('tabprobe') === '1') {
+  setTimeout(() => {
+    for (const b of document.querySelectorAll('#tabbar button')) {
+      console.log(`TABPROBE ${b.dataset.tab || 'home'}`
+        + ` mission=${b.dataset.mission === undefined ? '-' : `"${b.dataset.mission}"`}`
+        + ` label="${b.textContent.trim()}" active=${b.classList.contains('active')}`);
+    }
+  }, 400);
 }
 
 // deep-link: /#maze or /#grid opens that tab directly.

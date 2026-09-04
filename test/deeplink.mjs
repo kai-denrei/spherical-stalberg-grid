@@ -2,7 +2,7 @@
 // difference between a link that works and one that silently carries half of
 // what you meant: the '#' in a colour, and the diff-only rule.
 import {
-  encodeValue, sameAsDefault, deepLinkQuery, deepLink, DROP_KEYS,
+  encodeValue, sameAsDefault, deepLinkQuery, deepLink, paramLink, DROP_KEYS,
 } from '../src/deeplink.js';
 
 let failures = 0;
@@ -74,6 +74,23 @@ console.log('the whole address:');
     === '?scene=gate#cine');
   check('the drop list can be replaced',
     deepLink({ hash: 'td', carry: '?mission=rescue2', drop: new Set(['mission']) }) === '#td');
+}
+
+console.log('one parameter, set or cleared:');
+{
+  check('setting it writes it',
+    paramLink({ base: 'i.html', hash: 'td', key: 'mission', value: 'rescue' })
+      === 'i.html?mission=rescue#td');
+  check('context comes along',
+    paramLink({ base: '', hash: 'td', key: 'mission', value: 'rescue2', carry: '?seed=4414' })
+      === '?seed=4414&mission=rescue2#td');
+  // THE CAMPAIGN IS THE ABSENCE OF A MISSION. An empty value clears the key
+  // rather than writing mission= — one code path for "pick one" and "go back".
+  check('an empty value clears it',
+    paramLink({ base: 'i.html', hash: 'td', key: 'mission', value: '', carry: '?mission=rescue&seed=9' })
+      === 'i.html?seed=9#td');
+  check('...and clears it even when it was not there',
+    paramLink({ base: 'i.html', hash: 'td', key: 'mission', value: '' }) === 'i.html#td');
 }
 
 console.log('round trip:');

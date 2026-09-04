@@ -87,6 +87,15 @@ export function deepLink({ base = '', hash = '', params = null, defaults = {},
   return `${base}${qs ? `?${qs}` : ''}${h}`;
 }
 
+// A link to THIS page with one parameter set — or CLEARED, when the value is
+// the empty string, which is how "back to the campaign" is expressed without
+// a second code path. The mission buttons are the first user: a mission is
+// read once, at boot, when the board builds, so choosing one is a navigation
+// and the thing being navigated to is exactly this.
+export function paramLink({ base = '', hash = '', key, value = '', carry = '' }) {
+  return deepLink({ base, hash, carry, params: { [key]: value }, defaults: { [key]: '' } });
+}
+
 // --- the button -----------------------------------------------------------
 // Effectful, and the only part that touches a document. Copies the link AND
 // writes it into the address bar: on a phone the clipboard refuses often

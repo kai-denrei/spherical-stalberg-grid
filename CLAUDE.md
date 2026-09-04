@@ -69,6 +69,12 @@ token — the corner badge was retired from the game view).
   default, and that is the mission's load-bearing number),
   `?rescueprobe=1` (drive-by at speed, the phone's drive-by with the lever
   at zero, the stop, both seats, delivery, the end card),
+  the missions are SELECTABLE now — three buttons in the tab bar's play group
+  (TD / rescue / raid, `data-mission` on each) and three cards in the home
+  launcher; a mission is read once at boot so those are NAVIGATIONS built by
+  `paramLink`, and the empty string is what clears it back to the campaign.
+  `?tabprobe=1` logs every tab button with its mission and whether it is lit —
+  the tab bar collapses behind ☰, so a screenshot cannot show this.
   RESCUE 2, the raid: `?mission=rescue2` (a LARGER board — it sets points
   1600 / rooms 26 unless the URL already named them — every sector open, no
   waves at all), `?camps=N`, `?garrison=N`, `?rescue2probe=1` (shut out of

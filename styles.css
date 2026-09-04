@@ -5,22 +5,22 @@
    back to a system face until the subset is rebuilt. */
 @font-face {
   font-family: 'VT323';
-  src: url('assets/fonts/VT323.woff2?v=fe7777f3') format('woff2');
+  src: url('assets/fonts/VT323.woff2?v=f6eb8e95') format('woff2');
   font-weight: 400; font-style: normal; font-display: swap;
 }
 @font-face {
   font-family: 'Press Start 2P';
-  src: url('assets/fonts/PressStart2P.woff2?v=fe7777f3') format('woff2');
+  src: url('assets/fonts/PressStart2P.woff2?v=f6eb8e95') format('woff2');
   font-weight: 400; font-style: normal; font-display: swap;
 }
 @font-face {
   font-family: 'Share Tech Mono';
-  src: url('assets/fonts/ShareTechMono.woff2?v=fe7777f3') format('woff2');
+  src: url('assets/fonts/ShareTechMono.woff2?v=f6eb8e95') format('woff2');
   font-weight: 400; font-style: normal; font-display: swap;
 }
 @font-face {
   font-family: 'DotGothic16';
-  src: url('assets/fonts/DotGothic16.woff2?v=fe7777f3') format('woff2');
+  src: url('assets/fonts/DotGothic16.woff2?v=f6eb8e95') format('woff2');
   font-weight: 400; font-style: normal; font-display: swap;
 }
 
@@ -2003,6 +2003,14 @@ body.playing:not(.chrome-open) #tabbar { display: none !important; }
   border-radius: 12px;
   transition: border-color .12s, background .12s, transform .12s;
 }
+/* THE MISSION YOU ARE IN. A card that navigates to where you already are is
+   a card that reloads the board for nothing, so it says so instead. */
+.home-card.current {
+  border-color: rgba(255, 180, 94, 0.7);
+  box-shadow: inset 0 0 0 1px rgba(255, 180, 94, 0.25);
+  cursor: default;
+}
+.home-card.current .home-card-title::after { content: ' · RUNNING'; color: #ffb45e; font-size: 0.72em; letter-spacing: 0.12em; }
 .home-card:hover { border-color: rgba(111, 230, 255, .55); background: rgba(18, 27, 42, .9); transform: translateY(-1px); }
 .home-card:active { transform: translateY(0); }
 .home-card-title {

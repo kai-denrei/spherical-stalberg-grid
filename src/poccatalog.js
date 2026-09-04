@@ -6,7 +6,11 @@
 // be able to browse — so every entry owes an answer to "what does this show
 // me?", not just a name.
 //
-// `id` must match a key in main.js's tab table.
+// `id` must match a key in main.js's tab table. An entry may also carry
+// `mission`: the same tab, opened with `?mission=<value>` — and an empty
+// string means the plain campaign, so "go back" is the same code path as
+// "pick one". A mission is read once when the board builds, so those entries
+// navigate rather than switching tabs.
 
 export const POC_GROUPS = [
   {
@@ -15,6 +19,12 @@ export const POC_GROUPS = [
     note: 'where the pieces ended up',
     entries: [
       { id: 'td', title: 'TD', line: 'Tower defence on the sphere. Waves, a build mode, eight towers, a tank you drive. The one that is actually a game.' },
+      // MISSIONS. Same board, same tank, same gates — a different objective
+      // and a different supply. `mission` is read ONCE, when the board builds,
+      // so a card here is a LINK rather than a tab switch; the empty string on
+      // the TD entry above is what takes you back to the campaign.
+      { id: 'td', mission: 'rescue', title: 'rescue', line: 'Six astronauts stranded in the lanes. The hull seats two, you board by STOPPING beside them, and anyone in the hatch dies with the hull. Three hulls, eight shells, six mines, no resupply.' },
+      { id: 'td', mission: 'rescue2', title: 'raid', line: 'A bigger map, three camps in clearings, big soft garrisons to ram. Drive up and the container opens — then stand still while they walk out, because a moving hull runs them over.' },
       { id: 'heart', title: 'heart', line: 'Its predecessor: an open battlefield with a Heart to defend and enemies introduced one type per wave.' },
     ],
   },
