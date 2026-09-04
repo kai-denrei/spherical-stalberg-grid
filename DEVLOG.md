@@ -6,6 +6,120 @@ Demo links assume `npm run serve` (port 8144) or the
 
 ---
 
+## `f30d91d` — the mines: a claymore you place, not a shot you aim
+
+The fourth way to put a shell's worth into the hordes, and the first one
+that is a *decision made in advance*. The operator's rulings from
+2026-09-04, built as written: **B — claymore, directional**. Instant on
+trigger, damage in a forward arc, no fuse, an **arming window** after the
+drop. Laid **one cell in front of the tank**, facing the tank's heading
+at that instant — which is the whole reason the shape was chosen. Lay
+them while driving *backwards* and every drop faces what you are
+retreating from, and the field grows between you and it. The tank trips
+its own mines and takes the damage; a claymore does not know whose it is.
+
+### The rules are a pure module
+
+`src/mines.js` has no DOM and no three.js: supply, arming, the trigger
+fan, the blast arc, the chain, the rack cap, and every refusal
+(`'empty' | 'blocked' | 'occupied'`). `test/mines.mjs` pins all of it
+with no renderer.
+
+The geometry is a **wedge in polar coordinates on the surface** — an
+angular distance from the mine and a bearing off its axis:
+
+```js
+const a = dot3(p, n);                 // along the mine's normal
+const flat = sub3(p, scale3(n, a));   // the tangential part
+const dist = Math.atan2(len3(flat), a);            // = ARC LENGTH
+const off  = Math.abs(Math.atan2(dot3(u, side), dot3(u, mine.dir)));
+```
+
+`dist` is the standing rule — arc length, never a chord — and on a unit
+sphere the arc length from a point *is* the angle in radians, so
+`cells * cellSide` converts with no factor at all. `inFan` is that wedge
+cut short (1 cell); `inArc` is the full 2.5. Nothing behind a claymore
+can be caught, and that falls out of the shape rather than out of a
+special case: astern is more than 90° off the axis and the half-angle is
+60. The suite pins it anyway, because the obvious wrong implementation —
+an unsigned distance along the axis — fires the thing backwards and
+passes every forward test.
+
+The **drawing uses the same geometry backwards**. `minePoint(m, cells,
+th)` is those polar coordinates inverted, and every dot of the disc and
+every vertex of the fan is placed with it, so the picture and the hit
+test cannot drift. The fan's rays are polylines along their own great
+circles: one straight line to a tip 2.5 cells out sinks through the
+ground, which is the mistake the beam made three times.
+
+### The board owns the effects and four doors
+
+A blast hands the module **one array of points** — enemies, then live
+gates, then the tank — and gets back indices. That *order* is the
+contract that routes each target, built in one place so the three cannot
+disagree. A gate now takes a shell through **one function**,
+`gateTakesShell`, extracted out of the projectile loop: "a mine hurts a
+portal as one shell" is only true if it goes through the same code and
+not through a second copy of it.
+
+The chain is a **queue**, not a loop: mines caught in a blast trip on
+*following frames*, nearest first, so a laid row goes off as a row rather
+than as one flash.
+
+Mines arm **through the build downtime**, deliberately outside the frozen
+block. The brief is "place them at chokepoints during downtime"; a mine
+that starts its two seconds when the next wave opens is a mine you cannot
+pre-place. Nothing is moving to trip them there except the tank, which
+does drive in build mode — and driving over your own mine going off is
+correct.
+
+### Supply, and where the case comes from
+
+The Terraformer prints a case of five every third wave, on its own clock
+**outside** the hull/container `else if` chain: a case is not a container
+and does not occupy the print bed, and making it compete for the
+milestone would starve the yard the player counts. The debrief sells a
+case for 200 kg beside the spare hull and the strike. The rack caps at 20
+and says out loud what was lost over the cap.
+
+### What you see, and what you press
+
+A dot-cloud disc with a ring — dim while arming, lit when live — a red
+fan on the ground, and a friendly-blue arrowhead on the radar pointing
+along the arc, hollow while arming, so a laid field reads across the
+scope as a row of heads all facing the same way. `params.mineArcs` and
+`?minearcs=0` hide the fan: the secret-field modes the operator named.
+
+`N` lays one. On the phone a third pad sits **above** FIRE — a tap, not a
+hold, because a held mine pad empties the rack in a second, and the
+bottom row belongs to the two controls the thumb holds down.
+
+### The probe
+
+`?mineprobe=1` drives the board's own `stepMines`, three beats:
+
+```
+MINEPROBE A laid 1:laid 2:laid 3:laid rack=7 hp=3 arcs=on
+MINEPROBE blast id=3 targets=1 kills=1 chain=[]
+MINEPROBE A done blown=1/3 ONE trip, no chain — the arc points away from the row
+MINEPROBE B laid 1:occupied 2:occupied 3:laid rack=6
+MINEPROBE blast id=1 chain=[2,4] → blast id=2 chain=[4] → blast id=4
+MINEPROBE B done blown=3/3 THE ROW WENT OFF AS A ROW
+MINEPROBE C lay=laid behind=SAFE inFront hull 3->2 FRIENDLY FIRE LANDS
+```
+
+Beat A is the ordinary case and it is *supposed* to leave two standing.
+Beat B walks the phage in from behind, so the near mine's arc holds the
+other two. Beat C parks the hull at its own mine's back (safe) and then
+in front of it (−1). `?minelay=N` lays a row and leaves it there — the
+probe blows everything it lays, so there is no frame in it where a field
+is standing to be looked at.
+
+Not built, and named so they are not lost: fused mines (A), two kinds
+from one pool (C), the Vulture that pops out and chases (D).
+
+---
+
 ## `0506c0c` — the metal on the board, the tab bar in groups, the astronaut study
 
 "Add the metal effect to the default game." Every cast the board makes is
