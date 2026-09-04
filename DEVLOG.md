@@ -22,6 +22,12 @@ the cause. `?viewwatch=0` turns it off. Belt and braces: the pose folds
 pov to third on the shell, and the mode button names its destination —
 DRIVE ends any shot, sets third and snaps: the reset button.
 
+One more, found by the watchdog's negative test: `?view=orbit` at boot
+called `showBrief` before the director block's `let director` had run —
+a TDZ ReferenceError, uncaught, the tab half-initialised. Every guard
+that yields to the director is reachable from boot, so the declaration
+lives with the early state now.
+
 ---
 
 ## `8148cc1` — the shell's chase eye looks nearer the tank
