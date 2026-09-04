@@ -6,6 +6,24 @@ Demo links assume `npm run serve` (port 8144) or the
 
 ---
 
+## `3b9afc1` — the metal lab
+
+"Sliders to arrange the look and feel on large models of the Tank /
+Container / Isao / Terraformer / Portal in a separate tab." `#metal` is
+that tab, in the beam lab's idiom — a tuning surface that is a *client*
+of the thing it tunes. It casts the same objects `units.js` makes,
+normalised to lab scale on a floor that takes the shadow, under the
+cinematics' light (the galaxy bake as sky and environment, a key, a fill,
+ACES, bloom), and dresses them with the same `bakeWeatheredMetal` and
+`applyWeatheredMaterial` the cinematics call. The sliders are the bake's
+own knobs per preset, the binding's (repeat, normal scale, the tint
+ladder, the outline rim, the glow parts) and the light's; a change
+rebakes, debounced; the HUD reads the bake back the way the test does;
+COPY emits the presets as source for `weathered.js`.
+`?unit=tank|container|isao|terraformer|portal`.
+
+---
+
 ## `3e7efe4` — the director: a cinematic is a scripted run of the board itself
 
 The operator's second direction, after the night's three clips: 720p is
