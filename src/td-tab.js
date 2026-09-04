@@ -19,64 +19,68 @@
 
 import * as THREE from '../vendor/three.module.js';
 import GUI from '../vendor/lil-gui.esm.js';
-import { generateSphereMesh, relax } from './grid.js?v=71cddf4e';
-import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=71cddf4e';
-import { compileRail } from './cine/rail.js?v=71cddf4e';
-import { SCRIPTS } from './cine/scripts.js?v=71cddf4e';
-import { cuesBetween } from './cine/sound.js?v=71cddf4e';
-import { installCine } from './cine/kit.js?v=71cddf4e';
-import { mulberry32, randomSeed } from './rng.js?v=71cddf4e';
-import { computeBerths, berthIndexFor } from './berths.js?v=71cddf4e';
-import { wantsSecondary, shellsForAll } from './autofire.js?v=71cddf4e';
-import { printPhase, printOffset, printOn, patternSecsFor } from './printpath.js?v=71cddf4e';
-import { createBeamRig, PLASMA_DEFAULTS, BOARD_PRESET, BEAM_PEAK } from './beamdraw.js?v=71cddf4e';
-import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3, segKey, tangentDir, tangentBasis } from './vec3.js?v=71cddf4e';
-import { CREATURES, waveJelly } from './creatures.js?v=71cddf4e';
-import { brief, dwellFor } from './isaobriefs.js?v=71cddf4e';
-import { drawEmotion } from './emotions.js?v=71cddf4e';
+import { generateSphereMesh, relax } from './grid.js?v=64a520b9';
+import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=64a520b9';
+import { compileRail } from './cine/rail.js?v=64a520b9';
+import { SCRIPTS } from './cine/scripts.js?v=64a520b9';
+import { cuesBetween } from './cine/sound.js?v=64a520b9';
+import { installCine } from './cine/kit.js?v=64a520b9';
+import { mulberry32, randomSeed } from './rng.js?v=64a520b9';
+import { computeBerths, berthIndexFor } from './berths.js?v=64a520b9';
+import { wantsSecondary, shellsForAll } from './autofire.js?v=64a520b9';
+import { printPhase, printOffset, printOn, patternSecsFor } from './printpath.js?v=64a520b9';
+import { createBeamRig, PLASMA_DEFAULTS, BOARD_PRESET, BEAM_PEAK } from './beamdraw.js?v=64a520b9';
+import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3, segKey, tangentDir, tangentBasis } from './vec3.js?v=64a520b9';
+import { CREATURES, waveJelly } from './creatures.js?v=64a520b9';
+import { brief, dwellFor } from './isaobriefs.js?v=64a520b9';
+import { drawEmotion } from './emotions.js?v=64a520b9';
 import { ACHIEVEMENTS, ACHV_GROUPS, achievement, blankRun, earned, freshlyEarned,
   sanitiseRecord }
-  from './achievements.js?v=71cddf4e';
+  from './achievements.js?v=64a520b9';
 import { applyFontPack, currentFontPack, FONT_NAMES,
-  loadTypeFeel } from './fonts.js?v=71cddf4e';
-import { SECONDARY_TOE, applySecondaryToe } from './units.js?v=71cddf4e';
-import { UNITS, UNIT_NAMES, buildUnit, buildCreature, preloadMkcx, preloadServer, makeServerFixture, makeShieldShell, preloadContainer, makeContainerFixture, preloadFabricator, makeIsaoDrone, makeBulletCloud, makeRewardSolid, makeShellSolid, makeDebris, makeDotBurst, makePortalCloud, preloadPortalRing, makePortalRing, makeHeartCloud, makeDotEnemy, preloadTerraformer, makeTerraformerFixture } from './units.js?v=71cddf4e';
-import { LOOKS, LOOK_NAMES } from './looks.js?v=71cddf4e';
-import { makeCellIndex } from './cellindex.js?v=71cddf4e';
-import { CREATURE_TINTS, ENEMY_SPEC, INTROS, computeWavePlan, accentFor } from './enemyspec.js?v=71cddf4e';
-import { PICKUPS } from './pickups.js?v=71cddf4e';
-import { rankFor, rankLabel, badgeSVG, killReq, eliteReq } from './ranks.js?v=71cddf4e';
-import { beamStep, isBeamStep, PEN_SOFT_FRAC, PEN_HARD_FRAC } from './beamranks.js?v=71cddf4e';
-import { burn, sweepAdvance, wallBite as wallBiteFor } from './beamburn.js?v=71cddf4e';
-import { arcPoint, projectToArc, toeForCrossing, crossingForToe } from './arc.js?v=71cddf4e';
+  loadTypeFeel } from './fonts.js?v=64a520b9';
+import { SECONDARY_TOE, applySecondaryToe } from './units.js?v=64a520b9';
+import { UNITS, UNIT_NAMES, buildUnit, buildCreature, preloadMkcx, preloadServer, makeServerFixture, makeShieldShell, preloadContainer, makeContainerFixture, preloadFabricator, makeIsaoDrone, makeBulletCloud, makeRewardSolid, makeShellSolid, makeDebris, makeDotBurst, makePortalCloud, preloadPortalRing, makePortalRing, makeHeartCloud, makeDotEnemy, makeSurvivor, preloadTerraformer, makeTerraformerFixture } from './units.js?v=64a520b9';
+import { LOOKS, LOOK_NAMES } from './looks.js?v=64a520b9';
+import { makeCellIndex } from './cellindex.js?v=64a520b9';
+import { CREATURE_TINTS, ENEMY_SPEC, INTROS, computeWavePlan, accentFor } from './enemyspec.js?v=64a520b9';
+import { PICKUPS } from './pickups.js?v=64a520b9';
+import { rankFor, rankLabel, badgeSVG, killReq, eliteReq } from './ranks.js?v=64a520b9';
+import { beamStep, isBeamStep, PEN_SOFT_FRAC, PEN_HARD_FRAC } from './beamranks.js?v=64a520b9';
+import { burn, sweepAdvance, wallBite as wallBiteFor } from './beamburn.js?v=64a520b9';
+import { arcPoint, projectToArc, toeForCrossing, crossingForToe } from './arc.js?v=64a520b9';
 import { MINE_TUNE, makeField, layMine, armMines, restock, mineAt,
-  inFan, trip, chain, nextChained, minePolar } from './mines.js?v=71cddf4e';
+  inFan, trip, chain, nextChained, minePolar } from './mines.js?v=64a520b9';
+import { RESCUE_TUNE, makeRescue, placeSurvivors, stepBoard, stepGrab,
+  disembark, loseCarried, lockOn, waveMix, standing as standingSurv,
+  aboard as aboardSurv, missionOver, verdict as rescueVerdict,
+  grabProgress } from './rescue.js?v=64a520b9';
 import { WORMHOLE_PRESET, WORMHOLE_UNIFORM_DEFAULTS, RING_SPIN, TRAVEL,
-  travelRate, advancePhase } from './portalfx.js?v=71cddf4e';
-import { WORMHOLE_FRAG } from './fx/wormhole.frag.js?v=71cddf4e';
-import { CORONA_FRAG } from './fx/corona.frag.js?v=71cddf4e';
-import { labLine, parseLabQuery } from './lab.js?v=71cddf4e';
-import { bakeGalaxyCube } from './galaxybake.js?v=71cddf4e';
-import { SKY_PRESET } from './galaxyseed.js?v=71cddf4e';
-import { makeScore } from './score.js?v=71cddf4e';
-import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER } from './towers.js?v=71cddf4e';
-import { makeEconomy, sellRefund } from './economy.js?v=71cddf4e';
-import { pickTier } from './perftier.js?v=71cddf4e';
-import { applyWeatheredMaterial } from './cine/materials.js?v=71cddf4e';
-import { STICK, stickVector, knobOffset } from './stick.js?v=71cddf4e';
-import { registerServiceWorker } from './pwa.js?v=71cddf4e';
-import { makeBloom } from './postfx.js?v=71cddf4e';
-import { TANK_FEEL, TANK_FEEL_KNOBS, makeTankFeel, stepTankFeel, landTankFeel, fireTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js?v=71cddf4e';
-import { FEEL, loadFeel, saveFeel } from './feelstore.js?v=71cddf4e';
+  travelRate, advancePhase } from './portalfx.js?v=64a520b9';
+import { WORMHOLE_FRAG } from './fx/wormhole.frag.js?v=64a520b9';
+import { CORONA_FRAG } from './fx/corona.frag.js?v=64a520b9';
+import { labLine, parseLabQuery } from './lab.js?v=64a520b9';
+import { bakeGalaxyCube } from './galaxybake.js?v=64a520b9';
+import { SKY_PRESET } from './galaxyseed.js?v=64a520b9';
+import { makeScore } from './score.js?v=64a520b9';
+import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER } from './towers.js?v=64a520b9';
+import { makeEconomy, sellRefund } from './economy.js?v=64a520b9';
+import { pickTier } from './perftier.js?v=64a520b9';
+import { applyWeatheredMaterial } from './cine/materials.js?v=64a520b9';
+import { STICK, stickVector, knobOffset } from './stick.js?v=64a520b9';
+import { registerServiceWorker } from './pwa.js?v=64a520b9';
+import { makeBloom } from './postfx.js?v=64a520b9';
+import { TANK_FEEL, TANK_FEEL_KNOBS, makeTankFeel, stepTankFeel, landTankFeel, fireTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js?v=64a520b9';
+import { FEEL, loadFeel, saveFeel } from './feelstore.js?v=64a520b9';
 import { STRIKE_KNOBS, makeStrike, makeStrikeParams, grantStrikes, stepStrike,
   toggleArm, paintTarget, launchStrike, stepFall, skipFall, fallProgress,
-  strikeDamage, retargetStrike, orbitProgress } from './strike.js?v=71cddf4e';
+  strikeDamage, retargetStrike, orbitProgress } from './strike.js?v=64a520b9';
 import { radarBasis, radarProject, radarBearing, sweepAngle, radarPhosphor,
-  proximitySectors, SENSOR_LEVELS, sensorColor } from './radar.js?v=71cddf4e';
-import { BLOOM_GROUPS } from './bloomweights.js?v=71cddf4e';
-import { TOWER_LOOK_NAMES, DEFAULT_TOWER_LOOK, buildTowerLook, preloadLook } from './towerlooks.js?v=71cddf4e';
-import { makeAudio } from './audio.js?v=71cddf4e';
-import { DEATH_KEYS } from './audiomanifest.js?v=71cddf4e';
+  proximitySectors, SENSOR_LEVELS, sensorColor } from './radar.js?v=64a520b9';
+import { BLOOM_GROUPS } from './bloomweights.js?v=64a520b9';
+import { TOWER_LOOK_NAMES, DEFAULT_TOWER_LOOK, buildTowerLook, preloadLook } from './towerlooks.js?v=64a520b9';
+import { makeAudio } from './audio.js?v=64a520b9';
+import { DEATH_KEYS } from './audiomanifest.js?v=64a520b9';
 
 export function initTdTab(root) {
   let active = false;
@@ -643,6 +647,39 @@ export function initTdTab(root) {
   let mineField = makeField(mineTune);
   const mineObjs = new Map();   // id -> { grp, disc, ring, fan }
   const mineProbeOn = new URLSearchParams(location.search).get('mineprobe') === '1';
+
+  // --- THE RESCUE MISSION --------------------------------------------------
+  // `?mission=rescue`. A mission is a VARIANT of this board, not a second
+  // copy of it: same planet, same tank, same gates, same mines. Two things
+  // change — the objective and the supply — and everything else the board
+  // already does is what a rescue needs. `mission` is the seam every later
+  // one hangs on.
+  const rescueTune = { ...RESCUE_TUNE };
+  const missionName = new URLSearchParams(location.search).get('mission') || '';
+  const rescueOn = missionName === 'rescue';
+  {
+    const rq = new URLSearchParams(location.search);
+    const ns = parseInt(rq.get('survivors'), 10);
+    if (Number.isFinite(ns)) rescueTune.survivors = Math.max(1, Math.min(12, ns));
+    if (rq.get('lasers') === '1') rescueTune.lasers = true;
+    // THE BUDGET IS THE MISSION. Set on the tune before makeField reads it,
+    // so the rack starts at the mission's number and not the campaign's.
+    if (rescueOn) { mineTune.start = rescueTune.mines; mineField = makeField(mineTune); }
+  }
+  let rescue = makeRescue(rescueTune);
+  const survObjs = new Map();      // survivor id -> Group
+  let rescueEnded = false;
+  if (rescueOn) {
+    // the key legend is the one line of chrome that TELLS you what game you
+    // are playing; on a mission with no towers and no build mode it must not
+    // still be advertising them
+    const hintEl = root.querySelector('#td-hint');
+    if (hintEl) {
+      hintEl.textContent = `RESCUE · drive to a beacon and STOP to load`
+        + ` · ${rescueTune.seats} seats · deliver at the Stålheart`
+        + ` · SPACE shell · N mine · no resupply`;
+    }
+  }
   const enemies = [];      // { cur, prev, next, prog, pos, dir, obj, alive }
   const projectiles = [];  // { pos, dir, dist, mesh }
   const debris = [];       // scatter effects, tick(dt) -> alive
@@ -3475,6 +3512,11 @@ export function initTdTab(root) {
   // grey -> orange (needs a target) -> red (authorised). Same ritual, real
   // instrument. armBtn keeps its name: it gates syncArmUi in the loop.
   const armBtn = root.querySelector('#td-launch');
+  // NO ORBITAL ASSET ON A RESCUE. Hidden rather than disabled: a dead
+  // readout in the middle of the screen is worse than no readout, and this
+  // one occupies the exact strip the beacons are read across. `display` and
+  // not a class, because syncArmUi owns the class and would put it back.
+  if (rescueOn && armBtn) armBtn.style.display = 'none';
   const safetyEl = root.querySelector('#td-safety');
   const safetyImg = root.querySelector('#td-safety-img');
   const launchBtn = root.querySelector('#td-launch-btn');
@@ -3506,6 +3548,7 @@ export function initTdTab(root) {
   });
 
   function syncArmUi() {
+    if (rescueOn) return;   // there is no console to sync
     if (buyMissileEl) {
       buyMissileEl.classList.toggle('hidden', !missileShop);
       if (missileShop) buyMissileEl.textContent = `+ ${missileCost()}kg`;
@@ -4891,13 +4934,14 @@ export function initTdTab(root) {
       + `<div class="hud-res"><span class="hud-biomass">${eco.biomass}kg`
       + ` ×${eco.multiplier().toFixed(2)}</span>`
       + `<span class="hud-wave">WAVE <b>${wave}</b> · R${round}</span></div>`
-      + `<div class="hud-obj">portals ${spAlive}/${spawnPoints.length}`
-      + ` · ${programmeDone() ? 'WAVES SPENT — CLOSE THE GATES'
-        : `wave ${sectorWave() + 1}/${params.wavesPerSector} of sector ${round}`}`
-      + ` · built ${towers.length}</div>`
-      + isaoLine()
+      + (rescueOn ? rescueLine()
+        : `<div class="hud-obj">portals ${spAlive}/${spawnPoints.length}`
+        + ` · ${programmeDone() ? 'WAVES SPENT — CLOSE THE GATES'
+          : `wave ${sectorWave() + 1}/${params.wavesPerSector} of sector ${round}`}`
+        + ` · built ${towers.length}</div>`)
+      + (rescueOn ? '' : isaoLine())
       + assistantLine()
-      + terraLine()
+      + (rescueOn ? '' : terraLine())
       + (alerts ? `<div class="hud-alert">${alerts}</div>` : '');
     if (dirBtnEl) {
       const eng = !manualActive();
@@ -5041,7 +5085,7 @@ export function initTdTab(root) {
   function updateNextPreview() {
     if (player.won || tutorialActive || !nextEl) { nextEl && nextEl.classList.add('hidden'); return; }
     const n = wave + 1;
-    const plan = computeWavePlan(n, round, params.waveSize);
+    const plan = rescueOn ? rescueWavePlan(n) : computeWavePlan(n, round, params.waveSize);
     const chips = plan.entries.map((e, i) => {
       const tint = '#' + CREATURE_TINTS[e.type].toString(16).padStart(6, '0');
       const mark = i === 0 ? '◈' : '●';
@@ -5305,6 +5349,9 @@ export function initTdTab(root) {
     heartHP = HEART_MAX;
     playerHP = PLAYER_MAX;
     playerDown = false;
+    // the mission strands its people and hands out its budget LAST, so it
+    // overwrites the campaign's supply rather than being overwritten by it
+    startRescue();
     shieldT = 0;
     resetTankRank();
     carryingRegen = false;
@@ -5453,7 +5500,7 @@ export function initTdTab(root) {
     // a new game means a new magazine: leftovers do not survive regenerate
     strike.reserved = 0; strike.ready = 0; strike.gauge = 0;
     strike.armed = false; strike.target = -1; strike.falling = -1;
-    grantStrikes(strike, spawnPoints.filter((sp2) => sp2.alive).length, strikeTune);
+    if (!rescueOn) grantStrikes(strike, spawnPoints.filter((sp2) => sp2.alive).length, strikeTune);
   }
 
   // cheap hop estimate for spreading spawn points (chord distance in cells)
@@ -5651,7 +5698,8 @@ export function initTdTab(root) {
     wave++;
     waveActive = true; waveAge = 0;
     tfMilestone(wave);   // the Terraformer keeps time in waves
-    const plan = computeWavePlan(wave, round, params.waveSize, lab.on ? lab.waveMult : 1);
+    const plan = rescueOn ? rescueWavePlan(wave)
+      : computeWavePlan(wave, round, params.waveSize, lab.on ? lab.waveMult : 1);
     // NEW THREAT reveal the first time a headline type appears
     if (!seenTypes.has(plan.headline)) {
       seenTypes.add(plan.headline);
@@ -5678,6 +5726,25 @@ export function initTdTab(root) {
       releaseSpawns(0);
     }
     updateHud();
+  }
+
+  // THE MISSION'S OWN CURVE: mostly rammable, with a small growing hard
+  // core — the brief's "lots of rammable enemies and just a handful of more
+  // difficult one to manage". The types come off the `rammable` flag rather
+  // than a second hand-written list: the colour already carries that read and
+  // a test already enforces it, so a new enemy joins the right half of the
+  // mission the day it is added.
+  function rescueWavePlan(w) {
+    const kinds = Object.keys(ENEMY_SPEC);
+    const soft = kinds.filter((k) => ENEMY_SPEC[k].rammable);
+    const hard = kinds.filter((k) => !ENEMY_SPEC[k].rammable);
+    const mix = waveMix(w);
+    const pick = (list, i) => (list.length ? list[i % list.length] : kinds[0]);
+    const st = pick(soft, w - 1), ht = pick(hard, Math.floor((w - 1) / 2));
+    const entries = [];
+    if (mix.soft > 0) entries.push({ type: st, count: mix.soft });
+    if (mix.hard > 0) entries.push({ type: ht, count: mix.hard });
+    return { entries, headline: mix.hard > 0 ? ht : st };
   }
 
   function releaseSpawns(dtSeconds) {
@@ -5801,8 +5868,21 @@ export function initTdTab(root) {
         // heart-seeking: drawn HARD toward the heart — only a sliver of
         // wobble left so the streams braid but visibly converge
         const exits = openNeighbors(e.cur);
-        const down = exits.filter((c) => dungeon.distToHeart[c] < dungeon.distToHeart[e.cur]);
-        const pool = (down.length && whim() > 0.05) ? down : exits;
+        // RESCUE: a survivor standing in the lane pulls the horde off it.
+        // A short LOCAL override of the heart-seeking choice, deliberately
+        // not a second BFS field — the stranded stand in the flow the horde
+        // is already walking, which is the whole reason they are placed there.
+        let pool = null;
+        const lk = lockedSurvivor(e.pos);
+        if (lk) {
+          const here = dist3(graph.centers[e.cur], lk.pos);
+          const toward = exits.filter((c) => dist3(graph.centers[c], lk.pos) < here);
+          if (toward.length) pool = toward;
+        }
+        if (!pool) {
+          const down = exits.filter((c) => dungeon.distToHeart[c] < dungeon.distToHeart[e.cur]);
+          pool = (down.length && whim() > 0.05) ? down : exits;
+        }
         e.next = pool.length ? pool[Math.floor(whim() * pool.length)] : e.cur;
       }
       const a = graph.centers[e.cur];
@@ -6231,8 +6311,12 @@ export function initTdTab(root) {
     const guns = playerMesh && playerMesh.userData.laserGuns;
     // auto holds the SAME trigger the player does, so there is one firing
     // path, one heat model and one overheat lockout — not a parallel copy
+    // THE RESCUE HULL IS A TRANSPORT. The beams cost heat, not ammo, so
+    // with them fitted "limited shells" means nothing at all and the mission
+    // is a driving exercise. One clause, one knob (`?lasers=1` refits them).
     const wantFire = (keys.laser || autoLaserWant) && guns
-      && !player.won && !playerDown;
+      && !player.won && !playerDown
+      && (!rescueOn || rescueTune.lasers);
     // heat: build while firing, shed otherwise; overheat locks the trigger
     // until the tubes are fully cold (no feathering the cap)
     if (laserOverheat) {
@@ -6457,6 +6541,223 @@ export function initTdTab(root) {
     updateHud();
   }
 
+
+
+  // --- THE RESCUE MISSION, on the board -------------------------------------
+  // src/rescue.js owns the rules: where they strand, the stop clause, the grab
+  // window, the seats, the mix, the verdict. This owns the figures, the
+  // beacons, the chevrons, the sounds, and the four places the mission
+  // touches the campaign board (supply, nav, the hull's death, the end card).
+  const SURV_ORANGE = 0xffb45e, SURV_ALARM = 0xff4d5e;
+
+  // WHERE THEY STRAND. Open cells in the hop band that are not dead-end nubs
+  // and not something else's ground. "On the lanes" needs no test of its own:
+  // in this dungeon every open cell with a finite heart distance IS on a
+  // lane, which is exactly why the horde walks over them.
+  function survivorCandidates() {
+    const out = [];
+    if (!graph || !dungeon) return out;
+    const taken = new Set([dungeon.heart, dungeon.spawn, serverCi,
+      ...spawnPoints.map((sp) => sp.ci), ...berths.map((b) => b.ci)]);
+    for (let i = 0; i < dungeon.tags.length; i++) {
+      if (dungeon.tags[i] === BLOCKED || taken.has(i)) continue;
+      const d = dungeon.distToHeart[i];
+      if (!(d > 0)) continue;
+      if (openCount(i) < 2) continue;            // a nub is not a lane
+      out.push({ ci: i, d, pos: norm3(graph.centers[i]) });
+    }
+    return out;
+  }
+
+  function clearSurvivors() {
+    for (const [, g] of survObjs) { scene.remove(g); disposeObj(g); }
+    survObjs.clear();
+  }
+
+  function dropSurvivor(id) {
+    const g = survObjs.get(id);
+    if (!g) return;
+    scene.remove(g); disposeObj(g);
+    survObjs.delete(id);
+  }
+
+  function makeSurvivorObj(sv) {
+    const g = makeSurvivor({ body: SURV_ORANGE, hi: 0xfff4d6, alarm: SURV_ALARM });
+    // stood UP on the surface: the figure is built feet-at-origin along +Y,
+    // so the group's own up is the cell normal and nothing else needs saying
+    g.scale.setScalar(cellSide * 0.55);
+    const n = norm3(sv.pos);
+    g.position.set(sv.pos[0], sv.pos[1], sv.pos[2]);
+    tmpObj.position.copy(g.position);
+    tmpObj.up.set(0, 1, 0);
+    tmpObj.lookAt(0, 0, 0);
+    g.quaternion.setFromUnitVectors(Y_AXIS, tmpN.set(n[0], n[1], n[2]));
+    scene.add(g);
+    survObjs.set(sv.id, g);
+    return g;
+  }
+
+  // Called from regenerate, once the dungeon and its heart field exist.
+  function startRescue() {
+    clearSurvivors();
+    rescue = makeRescue(rescueTune);
+    rescueEnded = false;
+    if (!rescueOn) return;
+    const rng = mulberry32((params.seed >>> 0) ^ 0x5e5cae);
+    placeSurvivors(rescue, survivorCandidates(), rng, cellSide, rescueTune);
+    for (const sv of rescue.survivors) makeSurvivorObj(sv);
+    // THE BUDGET. Everything the mission gives you, given once.
+    ammo = rescueTune.shells;
+    playerHP = Math.max(1, Math.round(rescueTune.hulls));
+    console.log(`RESCUE stranded=${rescue.survivors.length}/${rescueTune.survivors}`
+      + `${rescue.short ? ` short=${rescue.short}` : ''} apart=${rescue.apart}c`
+      + ` cells=[${rescue.survivors.map((sv) => sv.ci).join(',')}]`
+      + ` shells=${ammo} mines=${mineField.count} hulls=${playerHP}`
+      + ` lasers=${rescueTune.lasers ? 'on' : 'OFF'}`);
+    // a board that cannot hold the party is a fact the player should be told,
+    // not one the verdict quietly scores around
+    if (rescue.short > 0) {
+      showToast(`<div class="wave-num">RESCUE &#9656; ${rescue.survivors.length} BEACONS</div>`
+        + `<div class="wave-role">the board could only hold ${rescue.survivors.length}`
+        + ` of ${rescueTune.survivors}</div>`, 3000);
+    }
+    updateHud();
+  }
+
+  // Is anything in contact with this survivor RIGHT NOW. The whole grab model
+  // is that question asked every frame — which is why killing the grabber
+  // frees them with no bookkeeping at all.
+  function survivorHeld(sv) {
+    for (const e of enemies) {
+      if (!e.alive) continue;
+      if (e.spec.cloaked && !e.decloaked) continue;
+      if (dist3(e.pos, sv.pos) < cellSide * 0.6) return true;
+    }
+    return false;
+  }
+
+  // The nearest standing survivor this enemy should peel off the lane for.
+  // A short LOCAL override, not a second BFS field.
+  function lockedSurvivor(pos) {
+    if (!rescueOn || rescue.over) return null;
+    let best = null, bd = Infinity;
+    for (const sv of rescue.survivors) {
+      if (!lockOn(sv, pos, cellSide, rescueTune)) continue;
+      const d = dist3(sv.pos, pos);
+      if (d < bd) { bd = d; best = sv; }
+    }
+    return best;
+  }
+
+  let survPingT = 0;
+  function stepRescue(dt, tNow) {
+    if (!rescueOn || rescueEnded || !graph || !player.pos) return;
+    // the stop clause, read off the CONTROL rather than off the motion: the
+    // player's hand on the lever is the thing they can feel, and a tank
+    // coasting to a halt with the throttle open has not stopped, it is about
+    // to move again.
+    const slow = Math.abs(throttle) <= rescueTune.boardThrottle && !cruise
+      && !keys.fast && !keys.slow;
+    survPingT -= dt;
+    const ping = survPingT <= 0;
+    if (ping) survPingT = 0.55;
+    for (let i = 0; i < rescue.survivors.length; i++) {
+      const sv = rescue.survivors[i];
+      if (sv.state !== 'standing') { dropSurvivor(sv.id); continue; }
+      const g = survObjs.get(sv.id);
+      if (g) g.userData.tick(tNow);
+      const gr = stepGrab(rescue, i, survivorHeld(sv), dt, rescueTune);
+      if (g) g.userData.setGrabbed(sv.grabT > 0);
+      if (gr === 'grabbed') {
+        sfx.play('tower_slow');
+        showCallout(`BEACON ${sv.id} &#9656; GRABBED`, 'co-heart');
+      }
+      if (gr === 'lost') {
+        const nrm = norm3(sv.pos);
+        const burst = makeDotBurst(SURV_ALARM, nrm, 40);
+        burst.scale.setScalar(cellSide * 0.7);
+        burst.position.set(sv.pos[0], sv.pos[1], sv.pos[2]);
+        scene.add(burst); debris.push(burst);
+        warnRing(sv.ci, SURV_ALARM, 0.6, cellSide * 1.4);
+        sfx.play('danger_alert');
+        showToast(`<div class="td-down">BEACON ${sv.id} LOST</div>`
+          + `<div class="td-down-sub">${standingSurv(rescue)} still down there</div>`, 2600);
+        dropSurvivor(sv.id);
+        updateHud();
+        continue;
+      }
+      // the red ring counts the window down ON THE GROUND, where the player
+      // is looking, rather than only in the HUD
+      if (sv.grabT > 0 && ping) {
+        warnRing(sv.ci, SURV_ALARM, 0.4, cellSide * (1.4 - 0.9 * grabProgress(sv, rescueTune)));
+      }
+      const near = !playerDown
+        && dist3(player.pos, sv.pos) < cellSide * rescueTune.boardCells;
+      const br = stepBoard(rescue, i, { near, slow }, dt, rescueTune);
+      if (br === 'boarding' && ping) warnRing(sv.ci, SURV_ORANGE, 0.4, cellSide * 0.9);
+      if (br === 'aboard') {
+        sfx.play('tank_pickup');
+        const nrm = norm3(sv.pos);
+        const burst = makeDotBurst(SURV_ORANGE, nrm, 30);
+        burst.scale.setScalar(cellSide * 0.6);
+        burst.position.set(sv.pos[0], sv.pos[1], sv.pos[2]);
+        scene.add(burst); debris.push(burst);
+        showCallout(`BEACON ${sv.id} &#9656; ABOARD`, 'co-milestone');
+        dropSurvivor(sv.id);
+        updateHud();
+      }
+    }
+    // HOME. The Stalheart's pad is the airlock — the same radius the board
+    // already calls "on the pedestal", so there is one answer to "am I there".
+    if (aboardSurv(rescue) > 0 && !playerDown
+        && dist3(player.pos, graph.centers[dungeon.heart]) < pedestalRadius() + cellSide * 0.7) {
+      const n = disembark(rescue);
+      if (n > 0) {
+        sfx.play('tank_spool_up');
+        showToast(`<div class="wave-num">${n} SAFE &#9656; ${rescue.saved}/${rescue.survivors.length}</div>`
+          + `<div class="wave-role">${standingSurv(rescue)} still down there</div>`, 2600);
+        updateHud();
+      }
+    }
+    if (missionOver(rescue)) endRescue('the field is clear');
+  }
+
+  // The card. A rescue ends with a NUMBER, always — "four of six, and the
+  // fifth was in the hatch" is the story the mode exists to produce, so a
+  // lost hull ends it with a score rather than with a game-over.
+  function endRescue(why) {
+    if (rescueEnded) return;
+    rescueEnded = true;
+    rescue.over = true;
+    clearSurvivors();
+    const v = rescueVerdict(rescue);
+    const head = v.clean ? 'EVERYONE CAME HOME'
+      : v.none ? 'NOBODY CAME HOME' : `${v.saved} OF ${v.total} CAME HOME`;
+    showToast(`<div class="wave-num">${head}</div>`
+      + `<div class="wave-role">${why} &middot; lost ${v.lost}`
+      + `${v.lostIds.length ? ` (beacon ${v.lostIds.join(', ')})` : ''}`
+      + ` &middot; ${ammo} shell${ammo === 1 ? '' : 's'} and ${mineField.count} mine${mineField.count === 1 ? '' : 's'} left`
+      + ` &middot; ${playerHP} hull${playerHP === 1 ? '' : 's'}</div>`, 9000);
+    console.log(`RESCUE END ${why}: saved=${v.saved}/${v.total} lost=${v.lost}`
+      + ` lostIds=[${v.lostIds.join(',')}] clean=${v.clean}`
+      + ` shells=${ammo} mines=${mineField.count} hulls=${playerHP}`);
+    updateHud();
+  }
+
+  // The objectives row, in place of the campaign's. Everything the campaign
+  // measures — portals, sectors, towers built — is not what this mission is,
+  // and a HUD that reads out the wrong objective is worse than a blank one.
+  function rescueLine() {
+    if (!rescueOn) return '';
+    const total = rescue.survivors.length;
+    const held = rescue.survivors.filter((s) => s.state === 'standing' && s.grabT > 0).length;
+    return `<div class="hud-obj">SAVED <b>${rescue.saved}/${total}</b>`
+      + ` &middot; aboard ${aboardSurv(rescue)}/${rescueTune.seats}`
+      + ` &middot; standing ${standingSurv(rescue)}`
+      + (held ? ` &middot; <b class="hp-heart">${held} GRABBED</b>` : '')
+      + (rescue.lost ? ` &middot; lost ${rescue.lost}` : '')
+      + `</div>`;
+  }
 
   // --- THE MINES ------------------------------------------------------------
   // src/mines.js owns every rule and every refusal; this owns the discs, the
@@ -6869,6 +7170,9 @@ export function initTdTab(root) {
 
   function spawnRewards() {
     clearRewards();
+    // ...and on a rescue, nothing regrows either: the shell rack is the
+    // mission's currency and a triad lying in a corridor refunds it.
+    if (rescueOn) return;
     regrowQueue.length = 0; // a new board owes nothing to the old one's picks
     const far = farCells();
     for (let k = 0; k < params.rewards && far.length > 0; k++) {
@@ -7032,6 +7336,10 @@ export function initTdTab(root) {
     if (director && director.sc.immune !== false) return;   // a scripted run cannot be lost
 
     if (player.won) return;
+    // A RESCUE ALWAYS ENDS WITH A NUMBER. "Four of six, and the fifth was in
+    // the hatch" is the story the mode exists to produce, so the last hull
+    // going is an ENDING with a score rather than a game over with none.
+    if (rescueOn) endRescue(reason);
     player.won = true; // stops motion; same flag, sadder modal
     destroyPlayer();
     ramCombo = 0; ramComboT = 0; syncCombo(); // no brag over a lost heart
@@ -7122,6 +7430,16 @@ export function initTdTab(root) {
     //
     // What still dies with the wreck is the RAM COMBO, because that one is
     // genuinely the machine's momentum and nothing carries it out.
+    // THE BET, COLLECTED. Anyone in the hatch is lost with the hull — the
+    // only way a survivor who was already safe dies, and the reason carrying
+    // a pair is a bet rather than an optimisation.
+    if (rescueOn) {
+      const gone = loseCarried(rescue);
+      if (gone > 0) {
+        showToast(`<div class="td-down">${gone} LOST WITH THE HULL</div>`
+          + `<div class="td-down-sub">they were aboard</div>`, 3000);
+      }
+    }
     const carried = tankRank > 0 ? rankLabel(tankRank) : '';
     destroyPlayer();
     ramCombo = 0; ramComboT = 0; syncCombo(); // the combo died with it
@@ -8632,6 +8950,9 @@ export function initTdTab(root) {
     if (bestT) orderUpgrade(bestT);
   }
   function tfMilestone(w) {
+    // A RESCUE HAS NO SUPPLY LINE. No hull, no store, no mine case: the
+    // budget is what you were given, which is the whole tactical statement.
+    if (rescueOn) return;
     if (w > 0 && w % TF.hullEvery === 0) tfStart('hull');
     else if (w > 0 && w % TF.containerEvery === 0) tfStart('container');
     // THE MINE CASE RIDES ITS OWN CLOCK, deliberately outside the else-if
@@ -8993,6 +9314,10 @@ export function initTdTab(root) {
   // R follows HK's sizing (max(66, min(104, 0.3·viewport-min))); the
   // anchor clamps so the ring never leaves the screen.
   function openShop(ci, sx, sy) {
+    // NOTHING IS BUILT ON A RESCUE. The budget is the shells and the mines
+    // you were given; a tower would answer the mission's only question for
+    // you and it would answer it by waiting.
+    if (rescueOn) return;
     root.classList.add('shopping');
     // The strike owns the board while it is armed, flying, or just landed.
     // The tap DISPATCH already tries to route around the shop, but a modal
@@ -9546,7 +9871,7 @@ export function initTdTab(root) {
     seedPortals(2); // fresh neutral gates in the new band
     // the new sector's budget arrives with its gates; unspent strikes carry —
     // hoarding one for the next sector is a legitimate play
-    grantStrikes(strike, spawnPoints.filter((sp2) => sp2.alive).length, strikeTune);
+    if (!rescueOn) grantStrikes(strike, spawnPoints.filter((sp2) => sp2.alive).length, strikeTune);
     recomputePortalDist();
     waveActive = false; interClock = 0;
     player.won = false;
@@ -10079,6 +10404,7 @@ export function initTdTab(root) {
     // own mine going off is correct. A shot or the tutorial's hold still
     // stops it — those are the game speaking.
     if (!driveFrozen) stepMines(dt, t);   // arm, trip, chain — after the bodies moved
+    if (!frozen) stepRescue(dt, t);       // board, grab, deliver
     // THE GATES' OWN MOTION: the ring's rotors turn, and a struck gate rides
     // out its recoil. The recoil is a SHOVE along its own normal that eases
     // back — the weight of a shell landing lives in that motion, not in a
@@ -10358,6 +10684,29 @@ export function initTdTab(root) {
           ctx.beginPath(); ctx.arc(cx, cy, rr, mid - half, mid + half); ctx.stroke();
         }
       }
+      ctx.globalAlpha = 1;
+    }
+
+    // THE STRANDED: orange, always lit. A survivor is not a contact you have
+    // to sweep for — the phosphor decay that makes an enemy blip breathe
+    // would make a person flicker, and a flickering person reads as noise.
+    // Grabbed turns it red and fills it, which is the countdown at a glance.
+    for (const sv of rescue.survivors) {
+      if (sv.state !== 'standing') continue;
+      const q = radarProject(sv.pos, cpos, basis, range);
+      const bx = cx + q.x * R, by = cy + q.y * R;
+      const held = sv.grabT > 0;
+      ctx.globalAlpha = q.clamped ? 0.6 : 1;
+      ctx.strokeStyle = held ? '#ff4d5e' : '#ffb45e';
+      ctx.fillStyle = held ? '#ff4d5e' : '#ffb45e';
+      ctx.lineWidth = 1.6;
+      ctx.beginPath();
+      ctx.moveTo(bx, by - 6);
+      ctx.lineTo(bx + 5, by + 4);
+      ctx.lineTo(bx, by + 1.5);
+      ctx.lineTo(bx - 5, by + 4);
+      ctx.closePath();
+      if (held) ctx.fill(); else ctx.stroke();
       ctx.globalAlpha = 1;
     }
 
@@ -13165,6 +13514,61 @@ export function initTdTab(root) {
   }
 
   // ?pedprobe=1 — push the tank straight at the heart through the cushion and
+  // ?rescueprobe=1 — the mission's own log line. Drives the board's stepRescue
+  // rather than the module, so the stop clause, the seats, the delivery and
+  // the end card are exercised through the code the player touches.
+  if (urlParams.get('rescueprobe') === '1') {
+    setTimeout(() => {
+      if (!rescueOn) { console.log('RESCUEPROBE needs ?mission=rescue'); return; }
+      const sv = rescue.survivors[0], sv2 = rescue.survivors[1];
+      if (!sv) { console.log('RESCUEPROBE nobody stranded'); return; }
+      const keepPos = player.pos.slice(), keepThr = throttle;
+      let tt = 200;
+      const run = (n) => { for (let k = 0; k < n; k++) { tt += 0.05; stepRescue(0.05, tt); } };
+
+      // 1. THE STOP CLAUSE. Standing right on top of a beacon at full
+      // throttle must do nothing at all — that is the whole clause.
+      throttle = 1; cruise = false;
+      player.pos = sv.pos.slice();
+      run(40);
+      console.log(`RESCUEPROBE past  throttle=1 aboard=${aboardSurv(rescue)}`
+        + ` boardT=${sv.boardT.toFixed(2)}`
+        + ` ${aboardSurv(rescue) === 0 && sv.boardT === 0 ? 'NOTHING HAPPENS — correct' : '<-- boarded while driving'}`);
+
+      // 2. stop on it
+      throttle = 0;
+      run(40);
+      console.log(`RESCUEPROBE load  stopped aboard=${aboardSurv(rescue)} state=${sv.state}`
+        + ` ${sv.state === 'aboard' ? 'ABOARD' : '<-- did not board'}`);
+
+      // 3. the second seat, then a third refused
+      if (sv2) { player.pos = sv2.pos.slice(); run(40); }
+      const third = rescue.survivors[2];
+      if (third) { player.pos = third.pos.slice(); run(40); }
+      console.log(`RESCUEPROBE seats aboard=${aboardSurv(rescue)}/${rescueTune.seats}`
+        + ` third=${third ? third.state : '-'}`
+        + ` ${aboardSurv(rescue) === rescueTune.seats ? 'THE HATCH IS FULL' : '<-- seats wrong'}`);
+
+      // 4. home
+      player.pos = graph.centers[dungeon.heart].slice();
+      run(10);
+      console.log(`RESCUEPROBE home  saved=${rescue.saved} aboard=${aboardSurv(rescue)}`
+        + ` standing=${standingSurv(rescue)}`
+        + ` ${rescue.saved === rescueTune.seats ? 'DELIVERED' : '<-- not delivered'}`);
+
+      // 5. the end card: everyone still down there is written off, and the
+      // mission must notice on its own
+      player.pos = keepPos.slice();
+      for (const x of rescue.survivors) {
+        if (x.state === 'standing') { x.state = 'lost'; rescue.lost++; dropSurvivor(x.id); }
+      }
+      run(2);
+      console.log(`RESCUEPROBE end   ended=${rescueEnded} saved=${rescue.saved}`
+        + ` lost=${rescue.lost} ${rescueEnded ? 'THE CARD FIRED' : '<-- mission did not end'}`);
+      throttle = keepThr;
+    }, 2000);
+  }
+
   // ?minelay=N — lay a row of N ahead of the tank and leave them there. The
   // probe above blows everything it lays, so there is no frame in it where a
   // field is standing to be LOOKED at; this is that frame.

@@ -16,14 +16,14 @@
 
 import * as THREE from '../vendor/three.module.js';
 import { EMOTION_IDS, emotion, phosphorFor } from './emotions.js';
-import { printPhase, printOffset, printOn } from './printpath.js?v=71cddf4e';
+import { printPhase, printOffset, printOn } from './printpath.js?v=64a520b9';
 import { loadGlb, mergeByMaterial, fitModel, tintModel, makeShellRack,
-  addEdgeOutlines, makeHeatSleeve } from './glbmodels.js?v=71cddf4e';
-import { CREATURES, waveJelly, swimWave, spherePts, bulletPts, missilePts, heartPts, torusPts, towerHeadPts, enemyDotPts, portalPts } from './creatures.js?v=71cddf4e';
-import { TOWER_FEEL, TOWER_HEADS, headKindFor } from './towerfeel.js?v=71cddf4e';
+  addEdgeOutlines, makeHeatSleeve } from './glbmodels.js?v=64a520b9';
+import { CREATURES, waveJelly, swimWave, spherePts, bulletPts, missilePts, heartPts, torusPts, towerHeadPts, enemyDotPts, portalPts, personPts } from './creatures.js?v=64a520b9';
+import { TOWER_FEEL, TOWER_HEADS, headKindFor } from './towerfeel.js?v=64a520b9';
 import { STARGATE_PTS, STARGATE_STROKE,
-  HORIZON_N, stargateHorizon } from './stargate.js?v=71cddf4e';
-import { ENEMY_SPEC } from './enemyspec.js?v=71cddf4e';
+  HORIZON_N, stargateHorizon } from './stargate.js?v=64a520b9';
+import { ENEMY_SPEC } from './enemyspec.js?v=64a520b9';
 
 function normalizeToUnit(group) {
   group.updateMatrixWorld(true);
@@ -721,6 +721,79 @@ const HARD_CORE = {
 // densify the game's own creature (cine/cloud.js) instead of carrying a copy.
 export function dotShapePts(type, dens = 1) {
   return (DOT_SHAPES[type] || ((d = 1) => spherePts(Math.round(140 * d))))(dens);
+}
+
+// makeSurvivor — a stranded astronaut and the beacon that makes them
+// findable. The FIGURE is the silhouette (personPts: suited, one arm up);
+// the BEACON is the motion, a column of dots climbing out of the helmet and
+// fading, which is the part that survives being twenty pixels on an orbital
+// view. A static figure at that size is a smudge; a smudge with something
+// rising out of it is a person.
+//
+// Two states and no more: standing (survivor orange) and GRABBED (red, and
+// the beacon stops climbing — the thing that says "look here" going out is
+// exactly the alarm). Saving and dying are the board's business; it removes
+// the object.
+export function makeSurvivor(cols = {}) {
+  const body = new THREE.Color(cols.body ?? 0xffb45e);
+  const hi = new THREE.Color(cols.hi ?? 0xfff4d6);
+  const alarm = new THREE.Color(cols.alarm ?? 0xff4d5e);
+  const base = personPts();
+  const pos = new Float32Array(base.length * 3);
+  const col = new Float32Array(base.length * 3);
+  for (let i = 0; i < base.length; i++) {
+    pos[i * 3] = base[i][0]; pos[i * 3 + 1] = base[i][1]; pos[i * 3 + 2] = base[i][2];
+    const c = base[i][3] === 1 ? hi : body;
+    col[i * 3] = c.r; col[i * 3 + 1] = c.g; col[i * 3 + 2] = c.b;
+  }
+  const geo = new THREE.BufferGeometry();
+  geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+  geo.setAttribute('color', new THREE.BufferAttribute(col, 3));
+  const fig = new THREE.Points(geo, new THREE.PointsMaterial({
+    size: 2.4, sizeAttenuation: false, vertexColors: true, transparent: true, opacity: 1 }));
+
+  // the beacon: BEAM dots climbing from the helmet, respawned at the bottom
+  const BEAM = 26, BEAM_TOP = 3.4;
+  const bpos = new Float32Array(BEAM * 3);
+  const bcol = new Float32Array(BEAM * 3);
+  const phase = new Float32Array(BEAM);
+  for (let i = 0; i < BEAM; i++) phase[i] = i / BEAM;
+  const bgeo = new THREE.BufferGeometry();
+  bgeo.setAttribute('position', new THREE.BufferAttribute(bpos, 3));
+  bgeo.setAttribute('color', new THREE.BufferAttribute(bcol, 3));
+  const beam = new THREE.Points(bgeo, new THREE.PointsMaterial({
+    size: 2.0, sizeAttenuation: false, vertexColors: true, transparent: true, opacity: 0.9 }));
+
+  const grp = new THREE.Group();
+  grp.add(fig); grp.add(beam);
+  let grabbed = false;
+  grp.userData.setGrabbed = (v) => {
+    if (grabbed === v) return;
+    grabbed = v;
+    const c = v ? alarm : body;
+    for (let i = 0; i < base.length; i++) {
+      const cc = base[i][3] === 1 ? (v ? alarm : hi) : c;
+      col[i * 3] = cc.r; col[i * 3 + 1] = cc.g; col[i * 3 + 2] = cc.b;
+    }
+    geo.getAttribute('color').needsUpdate = true;
+  };
+  grp.userData.tick = (t) => {
+    // held, the column stops climbing and just glows: the thing that says
+    // "over here" going still is the alarm
+    for (let i = 0; i < BEAM; i++) {
+      const u = grabbed ? phase[i] * 0.35 : (phase[i] + t * 0.42) % 1;
+      const y = 0.95 + u * BEAM_TOP;
+      const wob = 0.045 * Math.sin(u * 9 + i);
+      bpos[i * 3] = wob; bpos[i * 3 + 1] = y; bpos[i * 3 + 2] = wob * 0.6;
+      const f = (1 - u) * (grabbed ? 0.9 : 1);
+      const c = grabbed ? alarm : hi;
+      bcol[i * 3] = c.r * f; bcol[i * 3 + 1] = c.g * f; bcol[i * 3 + 2] = c.b * f;
+    }
+    bgeo.getAttribute('position').needsUpdate = true;
+    bgeo.getAttribute('color').needsUpdate = true;
+  };
+  grp.userData.tick(0);
+  return grp;
 }
 
 export function makeDotEnemy(type, cols, dens = 1) {

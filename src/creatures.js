@@ -1,4 +1,4 @@
-import { BRAILLE_SHAPES, BRAILLE_SHAPE_KINDS } from './braillelab.js?v=71cddf4e';
+import { BRAILLE_SHAPES, BRAILLE_SHAPE_KINDS } from './braillelab.js?v=64a520b9';
 // creatures.js — organic dot-cloud units, ported from ~/Dev/Braille
 // fun-shapes (half-dotted > organic): amoeba, bacteriophage, jellyfish.
 // Each generator returns unit-radius points [x,y,z,(hi)] where hi===1 marks a
@@ -613,6 +613,66 @@ export function heartPts(n = 620) {
     pts.push(i % 14 === 0
       ? [d[0] * r, d[1] * r, d[2] * r, 1]
       : [d[0] * r, d[1] * r, d[2] * r]);
+  }
+  return fitUnit(pts);
+}
+
+// personPts — A STRANDED ASTRONAUT, in dot clouds, at twenty pixels.
+//
+// NOT the GLB. assets/models/astronaut.glb is 3.7 MB of skinned mesh with 25
+// bones; six of them animating on a board where a person is a third of a cell
+// wide is a phone-tier disaster for something that occupies twenty pixels.
+// The GLB stays the study and cinematic asset. What a survivor needs on the
+// board is a SILHOUETTE and one gesture, and both survive at any distance:
+// a suited figure with ONE ARM UP. The wave is the whole read — it is the
+// only pose that says "over here" from orbit — so it is built into the
+// geometry rather than animated, and the beacon does the moving.
+//
+// Body runs up +Y, facing +Z, like every other unit here. hi === 1 marks the
+// visor, which is the one part that should catch the eye.
+export function personPts() {
+  const pts = [];
+  // the helmet: a full sphere, dense enough to read as a head
+  for (let i = 0; i < 90; i++) {
+    const d = fibDir(i, 90);
+    pts.push([d[0] * 0.20, 0.78 + d[1] * 0.20, d[2] * 0.20]);
+  }
+  // the visor: a forward patch of the helmet, highlighted
+  for (let i = 0; i < 34; i++) {
+    const d = fibDir(i, 34);
+    if (d[2] < 0.35) continue;                    // front face only
+    pts.push([d[0] * 0.205, 0.78 + d[1] * 0.205, d[2] * 0.205, 1]);
+  }
+  // the torso: a squat capsule, wider than a person because a suit is
+  const seg = (x0, y0, z0, x1, y1, z1, r, n, hi) => {
+    for (let i = 0; i < n; i++) {
+      const u = i / (n - 1);
+      // the direction index is STRIDED away from the position index: taken
+      // in step, fibDir's spiral correlates with u and the limb comes out a
+      // barber's pole instead of a tube
+      const d = fibDir((i * 13 + 5) % n, n);
+      pts.push([x0 + (x1 - x0) * u + d[0] * r,
+        y0 + (y1 - y0) * u + d[1] * r * 0.5,
+        z0 + (z1 - z0) * u + d[2] * r, ...(hi ? [1] : [])]);
+    }
+  };
+  seg(0, 0.30, 0, 0, 0.62, 0, 0.20, 90);
+  // the legs
+  seg(-0.11, -0.02, 0, -0.09, 0.32, 0, 0.075, 34);
+  seg(0.11, -0.02, 0, 0.09, 0.32, 0, 0.075, 34);
+  // the arms: one down at the side, one UP. The wave is the read.
+  seg(-0.20, 0.30, 0, -0.24, 0.58, 0, 0.065, 30);
+  seg(0.24, 0.58, 0, 0.34, 1.00, 0, 0.065, 34);
+  // the glove on the raised hand, highlighted with the visor: at distance
+  // those two dots ARE the gesture
+  for (let i = 0; i < 16; i++) {
+    const d = fibDir(i, 16);
+    pts.push([0.34 + d[0] * 0.075, 1.02 + d[1] * 0.075, d[2] * 0.075, 1]);
+  }
+  // the life-support pack, so the back reads different from the front
+  for (let i = 0; i < 26; i++) {
+    const d = fibDir(i, 26);
+    pts.push([d[0] * 0.13, 0.50 + d[1] * 0.16, -0.20 + d[2] * 0.07]);
   }
   return fitUnit(pts);
 }
