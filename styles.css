@@ -5,22 +5,22 @@
    back to a system face until the subset is rebuilt. */
 @font-face {
   font-family: 'VT323';
-  src: url('assets/fonts/VT323.woff2?v=cf6adf11') format('woff2');
+  src: url('assets/fonts/VT323.woff2?v=eb604d79') format('woff2');
   font-weight: 400; font-style: normal; font-display: swap;
 }
 @font-face {
   font-family: 'Press Start 2P';
-  src: url('assets/fonts/PressStart2P.woff2?v=cf6adf11') format('woff2');
+  src: url('assets/fonts/PressStart2P.woff2?v=eb604d79') format('woff2');
   font-weight: 400; font-style: normal; font-display: swap;
 }
 @font-face {
   font-family: 'Share Tech Mono';
-  src: url('assets/fonts/ShareTechMono.woff2?v=cf6adf11') format('woff2');
+  src: url('assets/fonts/ShareTechMono.woff2?v=eb604d79') format('woff2');
   font-weight: 400; font-style: normal; font-display: swap;
 }
 @font-face {
   font-family: 'DotGothic16';
-  src: url('assets/fonts/DotGothic16.woff2?v=cf6adf11') format('woff2');
+  src: url('assets/fonts/DotGothic16.woff2?v=eb604d79') format('woff2');
   font-weight: 400; font-style: normal; font-display: swap;
 }
 
@@ -4035,4 +4035,57 @@ body.dir-hud-radar [id^="td-pad-"], body.dir-hud-radar #td-stick, body.dir-hud-r
   #metal-copy { top: calc(env(safe-area-inset-top, 0px) + 112px); right: 64px; left: auto; bottom: auto; }
   #metal-hud { top: calc(env(safe-area-inset-top, 0px) + 168px); }
   #metal-src { top: calc(env(safe-area-inset-top, 0px) + 168px); font-size: 13px; }
+}
+
+/* THE TAB BAR IN GROUPS (operator, 2026-09-04: "we have some game modes,
+   some tweaks, some cine, tech stack, research projects… we need to
+   organize"). A group is a labelled run of buttons: inline on the desktop
+   with a dim name and a hairline before it, a titled section in the
+   phone's drawer. activate() still finds buttons by data-tab. */
+#tabbar .tabgroup { display: flex; gap: 6px; align-items: center; padding-left: 10px; margin-left: 4px; border-left: 1px solid #2a3350; }
+/* collapsed (the burger closed): home and the active tab only, as before —
+   the group names and their hairlines go with the hidden buttons */
+body:not(.chrome-open) #tabbar .tabgroup { padding-left: 0; margin-left: 0; border-left: 0; }
+body:not(.chrome-open) #tabbar .tabgroup-name { display: none; }
+body:not(.chrome-open) #tabbar .tabgroup:not(:has(button.active)) { display: none; }
+#tabbar .tabgroup-name { color: #4f5b7a; font: 10px ui-monospace, Menlo, monospace; letter-spacing: .12em; text-transform: uppercase; margin-right: 2px; }
+@media (pointer: coarse), (max-width: 700px) {
+  #tabbar .tabgroup { flex-direction: column; align-items: stretch; gap: 4px; padding: 6px 0 4px; margin: 4px 0 0; border-left: 0; border-top: 1px solid #2a3350; }
+  #tabbar .tabgroup-name { padding: 2px 18px 4px; color: #6a789c; }
+}
+
+/* THE ASTRONAUT STUDY (astro-tab.js): the metal lab's chrome */
+#astro-app { position: absolute; inset: 0; }
+#astro-app canvas { display: block; width: 100%; height: 100%; }
+#astro-copy {
+  /* LEFT, not right: the lil-gui panel owns the right edge and swallowed it
+     there — the button existed and could not be clicked. */
+  position: absolute; left: 12px; bottom: 40px; z-index: 7;
+  width: 40px; height: 40px; padding: 0;
+  font: 600 18px ui-monospace, Menlo, monospace; line-height: 1;
+  color: #9fdcff; background: rgba(12, 26, 38, 0.85);
+  border: 1px solid #2b6b96; border-radius: 8px; cursor: pointer;
+}
+#astro-copy:hover { background: rgba(22, 50, 74, 0.95); color: #dff4ff; }
+#astro-copy:active { transform: translateY(1px); }
+#astro-hud.flash { color: #66ff88; text-shadow: 0 0 10px rgba(102, 255, 136, 0.6); }
+#astro-hud {
+  position: absolute; left: 12px; bottom: 12px; z-index: 6;
+  font: 600 12px ui-monospace, Menlo, monospace; letter-spacing: 0.08em;
+  color: #9fdcff; text-shadow: 0 0 8px rgba(0, 180, 255, 0.5);
+  pointer-events: none;
+  /* the drop-off readout is three lines: where the beam ends, what it
+     burned, and what it never reached. Without this they run off the edge
+     as one line and the last two are simply not there. */
+  white-space: pre-line; max-width: 60vw; line-height: 1.5;
+}
+#astro-gear { position: absolute; right: 12px; top: 12px; z-index: 8; width: 44px; height: 44px; border-radius: 10px;
+  border: 1px solid rgba(120, 200, 255, 0.35); background: rgba(10, 22, 34, 0.85); color: #9fdcff; font-size: 20px; display: none; }
+#tab-astro.panel-hidden .lil-gui.root { display: none !important; }
+@media (pointer: coarse), (max-width: 700px) {
+  #astro-gear { display: block; top: calc(env(safe-area-inset-top, 0px) + 112px); right: 12px; }
+  #astro-hud { bottom: auto; top: calc(env(safe-area-inset-top, 0px) + 168px); left: 12px; right: 12px; font-size: 11px; }
+  #tab-astro .lil-gui.root { display: block !important; position: fixed !important; left: 0 !important; right: 0 !important; bottom: 0 !important; top: auto !important;
+    width: 100% !important; max-height: 46vh; overflow-y: auto; --widget-height: 36px; --font-size: 15px; --input-font-size: 15px; --name-width: 44%;
+    border-radius: 12px 12px 0 0; }
 }

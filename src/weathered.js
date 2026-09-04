@@ -124,6 +124,17 @@ export const WEATHER_PRESETS = {
     patinaEdge: [0.60, 0.80], patinaBias: -0.12,
     scratch: 1.2, pit: 0.8, normalStrength: 1.0,
   },
+  // THE BOARD's preset: a detail overlay, not a paint. The board keeps its
+  // grey ladder as the colour (materials.js keepColor), so the albedo here
+  // sits near white and the mottle, the pits and a lighter oxide MODULATE
+  // the rung instead of dimming it under the board's 0.55/0.25 light. Less
+  // metal than the cinematic's: the board has no environment to reflect.
+  board: {
+    baseHex: 0xd8dce0, patinaHex: 0x4a625e,
+    metalness: [0.45, 0.85], roughness: [0.35, 0.80],   // the dressed casts get the sky as their environment
+    patinaEdge: [0.60, 0.80], patinaBias: 0.04,
+    scratch: 1.0, pit: 1.3, normalStrength: 1.3,
+  },
   // seals and boots: almost no metal, almost no oxide, uniformly rough
   rubber: {
     baseHex: 0x1f2225, patinaHex: 0x121a19,

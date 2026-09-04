@@ -13,7 +13,7 @@
 // material's colour is once a map is bound. Five bakes for five rungs would
 // be five seconds and sixty megabytes for a distinction a multiplier makes.
 import * as THREE from '../../vendor/three.module.js';
-import { bakeWeatheredMetal } from '../weathered.js?v=cf6adf11';
+import { bakeWeatheredMetal } from '../weathered.js?v=eb604d79';
 
 // Which preset each named surface wears, and how bright a rung it is. The
 // tints are the RING_REPAINT ladder's ratios (armour 0xc2c8ce down to
@@ -93,6 +93,15 @@ export function makeWeatheredTextures({ seed = 4414, size = 1024, preset = 'gunm
  */
 export function applyWeatheredMaterial(root, {
   seed = 4414, size = 1024, repeat = 1, normalScale = 1.0, byName = WEATHER_BY_NAME, keepEmissive = false,
+  // keepColor: the board's grey ladder stays as the colour and the maps
+  // modulate it — the board is lit at hemi 0.55 / sun 0.25, and the
+  // ladder's rungs (colour + emissive) are the only reason the machines
+  // read there. A cinematic sets both false and lights its metal.
+  keepColor = false,
+  // envMap: an environment for the dressed materials ONLY (the board's own
+  // sky bake through PMREM) — a metal shows what it reflects, and a board
+  // with no environment shows a flat ladder whatever the maps say
+  envMap = null, envMapIntensity = 0.8,
 } = {}) {
   // A MAP ON A MESH WITH NO UVs SAMPLES ONE TEXEL. The attribute is missing,
   // WebGL feeds the shader (0,0,0,1), and the whole surface wears whatever
@@ -121,13 +130,14 @@ export function applyWeatheredMaterial(root, {
       done.add(m);
       // a material with no roughness has no PBR slots to bind (MeshBasic, Points)
       if (m.roughness === undefined) continue;
-      // the dark base first, maps or not
+      // the dark base first, maps or not — unless the caller keeps the ladder
       const base = CINE_BASE[m.name];
-      if (base) { m.color.setHex(base[0]); m.roughness = base[1]; m.metalness = base[2]; }
+      if (base && !keepColor) { m.color.setHex(base[0]); m.roughness = base[1]; m.metalness = base[2]; }
       if (!keepEmissive && m.emissive) { m.emissive.setHex(0x000000); m.emissiveIntensity = 0; }
       m.needsUpdate = true;
       if (!hasUv.get(m)) { skipped.push(m.name); continue; }
-      const { preset = 'gunmetal', tint = 1, ...knobs } = typeof spec === 'string' ? { preset: spec } : spec;
+      let { preset = 'gunmetal', tint = 1, ...knobs } = typeof spec === 'string' ? { preset: spec } : spec;
+      if (keepColor) { preset = 'board'; knobs = {}; }   // the board's detail overlay, whatever the rung
       const tx = makeWeatheredTextures({ seed, size, preset, repeat, ...knobs });
       m.map = tx.map;
       m.aoMap = tx.ormMap; m.aoMapIntensity = 1;
@@ -135,8 +145,15 @@ export function applyWeatheredMaterial(root, {
       m.metalnessMap = tx.ormMap;
       m.normalMap = tx.normalMap;
       if (m.normalScale) m.normalScale.set(normalScale, normalScale);
-      m.color.setScalar(tint);
-      m.roughness = 1; m.metalness = 1;
+      if (!keepColor) { m.color.setScalar(tint); m.roughness = 1; m.metalness = 1; }
+      else {
+        m.roughness = 1; m.metalness = 1;   // the maps carry both; the rung keeps its colour and emissive
+        // ...and the emissive takes the albedo as ITS map too: under the
+        // board's dim light the rung's emissive is most of what you see,
+        // and a map that modulates only the diffuse term does not show
+        if (m.emissive) m.emissiveMap = tx.map;
+      }
+      if (envMap) { m.envMap = envMap; m.envMapIntensity = envMapIntensity; }
       if (!keepEmissive && m.emissive) { m.emissive.setHex(0x000000); m.emissiveIntensity = 0; }
       m.needsUpdate = true;
       count++;

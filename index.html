@@ -5,43 +5,54 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
   <title>spherical stålberg grid</title>
   <meta name="theme-color" content="#10131a">
-  <link rel="manifest" href="./manifest.webmanifest?v=cf6adf11">
-  <link rel="apple-touch-icon" href="./icons/apple-touch-icon.png?v=cf6adf11">
+  <link rel="manifest" href="./manifest.webmanifest?v=eb604d79">
+  <link rel="apple-touch-icon" href="./icons/apple-touch-icon.png?v=eb604d79">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="SphereGrid">
-  <link rel="stylesheet" href="./styles.css?v=cf6adf11">
+  <link rel="stylesheet" href="./styles.css?v=eb604d79">
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
-  <link rel="icon" href="favicon.svg?v=cf6adf11" type="image/svg+xml">
-  <meta name="cb" content="cf6adf11">
-  <link rel="icon" type="image/svg+xml" href="./cb-shapes/15.svg?v=cf6adf11">
+  <link rel="icon" href="favicon.svg?v=eb604d79" type="image/svg+xml">
+  <meta name="cb" content="eb604d79">
+  <link rel="icon" type="image/svg+xml" href="./cb-shapes/43.svg?v=eb604d79">
   <!-- cb-badge retired from the game view (operator ruling): the build
        token lives in the DEV LOG tab, which reads meta[name="cb"] itself -->
 </head>
 <body>
   <nav id="tabbar">
     <button data-tab="home" class="nav-home">▸ home</button>
-    <button data-tab="grid" class="active">grid</button>
-    <button data-tab="maze">maze</button>
-    <button data-tab="organic">organic</button>
-    <button data-tab="battle">battle</button>
-    <button data-tab="heart">heart</button>
-    <button data-tab="td">TD</button>
-    <button data-tab="tank">tank</button>
-    <button data-tab="tank2">tank2</button>
-    <button data-tab="tank3">tank3</button>
-    <button data-tab="units">units</button>
-    <button data-tab="beam">beam</button>
-    <button data-tab="metal">metal</button>
-    <button data-tab="portal">portal</button>
-    <button data-tab="cine">cine</button>
-    <button data-tab="how">how it works</button>
-    <button data-tab="stack">tech stack</button>
-    <button data-tab="sim">sim</button>
-    <button data-tab="record">record</button>
-    <button data-tab="log">dev log</button>
+    <div class="tabgroup" data-group="play"><span class="tabgroup-name">play</span>
+      <button data-tab="td">TD</button>
+      <button data-tab="battle">battle</button>
+      <button data-tab="heart">heart</button>
+      <button data-tab="tank">tank</button>
+      <button data-tab="tank2">tank2</button>
+      <button data-tab="tank3">tank3</button>
+      <button data-tab="record">record</button>
+    </div>
+    <div class="tabgroup" data-group="studies"><span class="tabgroup-name">studies</span>
+      <button data-tab="units">units</button>
+      <button data-tab="beam">beam</button>
+      <button data-tab="metal">metal</button>
+      <button data-tab="astro">astronaut</button>
+      <button data-tab="portal">portal</button>
+    </div>
+    <div class="tabgroup" data-group="cine"><span class="tabgroup-name">cine</span>
+      <button data-tab="cine">cine</button>
+    </div>
+    <div class="tabgroup" data-group="research"><span class="tabgroup-name">research</span>
+      <button data-tab="grid" class="active">grid</button>
+      <button data-tab="maze">maze</button>
+      <button data-tab="organic">organic</button>
+      <button data-tab="sim">sim</button>
+    </div>
+    <div class="tabgroup" data-group="tech"><span class="tabgroup-name">tech</span>
+      <button data-tab="how">how it works</button>
+      <button data-tab="stack">tech stack</button>
+      <button data-tab="log">dev log</button>
+    </div>
   </nav>
 
   <div id="tab-home" class="tab tab-hidden">
@@ -239,7 +250,7 @@
     <div id="td-launch" class="caution-frame" aria-label="launch control">
       <button id="td-safety" class="safety" type="button" aria-pressed="false" aria-label="safety">
         <span class="lbl-on">ON</span>
-        <img id="td-safety-img" class="switch-img" src="assets/ui/switch-off.png?v=cf6adf11" alt="" width="120" height="200">
+        <img id="td-safety-img" class="switch-img" src="assets/ui/switch-off.png?v=eb604d79" alt="" width="120" height="200">
         <span class="lbl-off">OFF</span>
       </button>
       <div id="td-launch-readout">
@@ -325,6 +336,11 @@
     <div id="tank3-hint" class="combat-hint">PLANET COMBAT &middot; battle skin &middot; arrows drive &middot; double-tap &and; cruise &middot; SPACE fire &middot; C camera</div>
   </div>
 
+  <div id="tab-astro" class="tab tab-hidden">
+    <div id="astro-app"></div>
+    <div id="astro-hud"></div>
+    <button id="astro-gear" type="button" title="show / hide the sliders">⚙</button>
+  </div>
   <div id="tab-metal" class="tab tab-hidden">
     <div id="metal-app"></div>
     <div id="metal-hud"></div>
@@ -560,6 +576,6 @@
     </div>
   </div>
 
-  <script type="module" src="./src/main.js?v=cf6adf11"></script>
+  <script type="module" src="./src/main.js?v=eb604d79"></script>
 </body>
 </html>
