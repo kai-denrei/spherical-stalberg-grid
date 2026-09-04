@@ -17,11 +17,15 @@
 //   radar    { zoom, over }                                        the scope scaled up in place, over N s
 //   hud      { show: 'full'|'radar'|'none' }
 //   biomass  { n }
+//   warp     { to: 'open'|ci }                                     set the tank down on a cell, stopped
+//
+// A script may also say waves:false (the board's own wave clock held) and
+// immune:false (the run can be lost; default: it cannot).
 //
 // Pure: no three.js, no DOM. Node-tested (test/scripts.mjs): cues in
 // range and sorted, every verb known, every rail key well-formed.
 
-export const VERBS = ['spawn', 'tower', 'goto', 'throttle', 'steer', 'fire', 'laser', 'engine', 'view', 'strike', 'radar', 'hud', 'biomass'];
+export const VERBS = ['spawn', 'tower', 'goto', 'throttle', 'steer', 'fire', 'laser', 'engine', 'view', 'strike', 'radar', 'hud', 'biomass', 'warp'];
 
 // Rail keys: pos/look in CELLS, in the tank's frame at t=0 — x right, y up
 // (off the surface), z forward (the tank's heading). The board maps them
@@ -73,18 +77,19 @@ export const SCRIPTS = {
   // THE TANK v2: engine off, on and off for the hydraulics, on for good,
   // move, a main, the secondaries under the zoom.
   tank: {
-    len: 24, seed: 4414, hud: 'none',
+    len: 24, seed: 4414, hud: 'none', waves: false,
     rail: [
-      { t: 0, pos: [-1.6, 0.35, 1.4], look: [0, 0.35, 0], fov: 36 },     // low, three-quarter front
-      { t: 4, pos: [-1.3, 0.5, 1.1], look: [0, 0.4, 0] },
-      { t: 8, pos: [1.4, 0.6, -0.9], look: [0, 0.4, 0.4] },              // the other side, as it spools
+      { t: 0, pos: [-1.6, 0.5, 1.4], look: [0, 0.3, 0], fov: 36 },      // low, three-quarter front
+      { t: 4, pos: [-1.3, 0.6, 1.1], look: [0, 0.35, 0] },
+      { t: 8, pos: [1.4, 0.7, -0.9], look: [0, 0.35, 0.4] },             // the other side, as it spools
       { t: 12, pos: [1.2, 0.9, -1.8], look: [0, 0.4, 1.5] },             // behind the shoulder, rolling
       { t: 16, pos: [-1.8, 1.2, 1.6], look: [0, 0.5, 1.5] },             // front-left, the main
-      { t: 20, pos: [1.9, 0.7, 2.3], look: [0, 0.5, 0.5] },              // the zoom around, secondaries
+      { t: 20, pos: [1.9, 0.8, 2.3], look: [0, 0.5, 0.5] },              // the zoom around, secondaries
       { t: 24, pos: [-2.2, 1.4, -2.0], look: [0, 0.4, 0.5] },
     ],
     cues: [
       { t: 0.0, do: 'hud', show: 'none' },
+      { t: 0.0, do: 'warp', to: 'open' },                                 // out of the berth cluster: room
       { t: 0.0, do: 'engine', on: false },
       { t: 2.0, do: 'engine', on: true },
       { t: 4.5, do: 'engine', on: false },
