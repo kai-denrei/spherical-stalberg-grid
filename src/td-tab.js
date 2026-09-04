@@ -19,61 +19,61 @@
 
 import * as THREE from '../vendor/three.module.js';
 import GUI from '../vendor/lil-gui.esm.js';
-import { generateSphereMesh, relax } from './grid.js?v=8e167b84';
-import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=8e167b84';
-import { compileRail } from './cine/rail.js?v=8e167b84';
-import { SCRIPTS } from './cine/scripts.js?v=8e167b84';
-import { cuesBetween } from './cine/sound.js?v=8e167b84';
-import { installCine } from './cine/kit.js?v=8e167b84';
-import { mulberry32, randomSeed } from './rng.js?v=8e167b84';
-import { computeBerths, berthIndexFor } from './berths.js?v=8e167b84';
-import { wantsSecondary, shellsForAll } from './autofire.js?v=8e167b84';
-import { printPhase, printOffset, printOn, patternSecsFor } from './printpath.js?v=8e167b84';
-import { createBeamRig, PLASMA_DEFAULTS, BOARD_PRESET, BEAM_PEAK } from './beamdraw.js?v=8e167b84';
-import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3, segKey, tangentDir, tangentBasis } from './vec3.js?v=8e167b84';
-import { CREATURES, waveJelly } from './creatures.js?v=8e167b84';
-import { brief, dwellFor } from './isaobriefs.js?v=8e167b84';
-import { drawEmotion } from './emotions.js?v=8e167b84';
+import { generateSphereMesh, relax } from './grid.js?v=1974eb11';
+import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=1974eb11';
+import { compileRail } from './cine/rail.js?v=1974eb11';
+import { SCRIPTS } from './cine/scripts.js?v=1974eb11';
+import { cuesBetween } from './cine/sound.js?v=1974eb11';
+import { installCine } from './cine/kit.js?v=1974eb11';
+import { mulberry32, randomSeed } from './rng.js?v=1974eb11';
+import { computeBerths, berthIndexFor } from './berths.js?v=1974eb11';
+import { wantsSecondary, shellsForAll } from './autofire.js?v=1974eb11';
+import { printPhase, printOffset, printOn, patternSecsFor } from './printpath.js?v=1974eb11';
+import { createBeamRig, PLASMA_DEFAULTS, BOARD_PRESET, BEAM_PEAK } from './beamdraw.js?v=1974eb11';
+import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3, segKey, tangentDir, tangentBasis } from './vec3.js?v=1974eb11';
+import { CREATURES, waveJelly } from './creatures.js?v=1974eb11';
+import { brief, dwellFor } from './isaobriefs.js?v=1974eb11';
+import { drawEmotion } from './emotions.js?v=1974eb11';
 import { ACHIEVEMENTS, ACHV_GROUPS, achievement, blankRun, earned, freshlyEarned,
   sanitiseRecord }
-  from './achievements.js?v=8e167b84';
+  from './achievements.js?v=1974eb11';
 import { applyFontPack, currentFontPack, FONT_NAMES,
-  loadTypeFeel } from './fonts.js?v=8e167b84';
-import { SECONDARY_TOE, applySecondaryToe } from './units.js?v=8e167b84';
-import { UNITS, UNIT_NAMES, buildUnit, buildCreature, preloadMkcx, preloadServer, makeServerFixture, makeShieldShell, preloadContainer, makeContainerFixture, preloadFabricator, makeIsaoDrone, makeBulletCloud, makeRewardSolid, makeShellSolid, makeDebris, makeDotBurst, makePortalCloud, preloadPortalRing, makePortalRing, makeHeartCloud, makeDotEnemy, preloadTerraformer, makeTerraformerFixture } from './units.js?v=8e167b84';
-import { LOOKS, LOOK_NAMES } from './looks.js?v=8e167b84';
-import { makeCellIndex } from './cellindex.js?v=8e167b84';
-import { CREATURE_TINTS, ENEMY_SPEC, INTROS, computeWavePlan, accentFor } from './enemyspec.js?v=8e167b84';
-import { PICKUPS } from './pickups.js?v=8e167b84';
-import { rankFor, rankLabel, badgeSVG, killReq, eliteReq } from './ranks.js?v=8e167b84';
-import { beamStep, isBeamStep, PEN_SOFT_FRAC, PEN_HARD_FRAC } from './beamranks.js?v=8e167b84';
-import { burn, sweepAdvance, wallBite as wallBiteFor } from './beamburn.js?v=8e167b84';
-import { arcPoint, projectToArc, toeForCrossing, crossingForToe } from './arc.js?v=8e167b84';
+  loadTypeFeel } from './fonts.js?v=1974eb11';
+import { SECONDARY_TOE, applySecondaryToe } from './units.js?v=1974eb11';
+import { UNITS, UNIT_NAMES, buildUnit, buildCreature, preloadMkcx, preloadServer, makeServerFixture, makeShieldShell, preloadContainer, makeContainerFixture, preloadFabricator, makeIsaoDrone, makeBulletCloud, makeRewardSolid, makeShellSolid, makeDebris, makeDotBurst, makePortalCloud, preloadPortalRing, makePortalRing, makeHeartCloud, makeDotEnemy, preloadTerraformer, makeTerraformerFixture } from './units.js?v=1974eb11';
+import { LOOKS, LOOK_NAMES } from './looks.js?v=1974eb11';
+import { makeCellIndex } from './cellindex.js?v=1974eb11';
+import { CREATURE_TINTS, ENEMY_SPEC, INTROS, computeWavePlan, accentFor } from './enemyspec.js?v=1974eb11';
+import { PICKUPS } from './pickups.js?v=1974eb11';
+import { rankFor, rankLabel, badgeSVG, killReq, eliteReq } from './ranks.js?v=1974eb11';
+import { beamStep, isBeamStep, PEN_SOFT_FRAC, PEN_HARD_FRAC } from './beamranks.js?v=1974eb11';
+import { burn, sweepAdvance, wallBite as wallBiteFor } from './beamburn.js?v=1974eb11';
+import { arcPoint, projectToArc, toeForCrossing, crossingForToe } from './arc.js?v=1974eb11';
 import { WORMHOLE_PRESET, WORMHOLE_UNIFORM_DEFAULTS, RING_SPIN, TRAVEL,
-  travelRate, advancePhase } from './portalfx.js?v=8e167b84';
-import { WORMHOLE_FRAG } from './fx/wormhole.frag.js?v=8e167b84';
-import { CORONA_FRAG } from './fx/corona.frag.js?v=8e167b84';
-import { labLine, parseLabQuery } from './lab.js?v=8e167b84';
-import { bakeGalaxyCube } from './galaxybake.js?v=8e167b84';
-import { SKY_PRESET } from './galaxyseed.js?v=8e167b84';
-import { makeScore } from './score.js?v=8e167b84';
-import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER } from './towers.js?v=8e167b84';
-import { makeEconomy, sellRefund } from './economy.js?v=8e167b84';
-import { pickTier } from './perftier.js?v=8e167b84';
-import { STICK, stickVector, knobOffset } from './stick.js?v=8e167b84';
-import { registerServiceWorker } from './pwa.js?v=8e167b84';
-import { makeBloom } from './postfx.js?v=8e167b84';
-import { TANK_FEEL, TANK_FEEL_KNOBS, makeTankFeel, stepTankFeel, landTankFeel, fireTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js?v=8e167b84';
-import { FEEL, loadFeel, saveFeel } from './feelstore.js?v=8e167b84';
+  travelRate, advancePhase } from './portalfx.js?v=1974eb11';
+import { WORMHOLE_FRAG } from './fx/wormhole.frag.js?v=1974eb11';
+import { CORONA_FRAG } from './fx/corona.frag.js?v=1974eb11';
+import { labLine, parseLabQuery } from './lab.js?v=1974eb11';
+import { bakeGalaxyCube } from './galaxybake.js?v=1974eb11';
+import { SKY_PRESET } from './galaxyseed.js?v=1974eb11';
+import { makeScore } from './score.js?v=1974eb11';
+import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER } from './towers.js?v=1974eb11';
+import { makeEconomy, sellRefund } from './economy.js?v=1974eb11';
+import { pickTier } from './perftier.js?v=1974eb11';
+import { STICK, stickVector, knobOffset } from './stick.js?v=1974eb11';
+import { registerServiceWorker } from './pwa.js?v=1974eb11';
+import { makeBloom } from './postfx.js?v=1974eb11';
+import { TANK_FEEL, TANK_FEEL_KNOBS, makeTankFeel, stepTankFeel, landTankFeel, fireTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js?v=1974eb11';
+import { FEEL, loadFeel, saveFeel } from './feelstore.js?v=1974eb11';
 import { STRIKE_KNOBS, makeStrike, makeStrikeParams, grantStrikes, stepStrike,
   toggleArm, paintTarget, launchStrike, stepFall, skipFall, fallProgress,
-  strikeDamage, retargetStrike, orbitProgress } from './strike.js?v=8e167b84';
+  strikeDamage, retargetStrike, orbitProgress } from './strike.js?v=1974eb11';
 import { radarBasis, radarProject, radarBearing, sweepAngle, radarPhosphor,
-  proximitySectors, SENSOR_LEVELS, sensorColor } from './radar.js?v=8e167b84';
-import { BLOOM_GROUPS } from './bloomweights.js?v=8e167b84';
-import { TOWER_LOOK_NAMES, DEFAULT_TOWER_LOOK, buildTowerLook, preloadLook } from './towerlooks.js?v=8e167b84';
-import { makeAudio } from './audio.js?v=8e167b84';
-import { DEATH_KEYS } from './audiomanifest.js?v=8e167b84';
+  proximitySectors, SENSOR_LEVELS, sensorColor } from './radar.js?v=1974eb11';
+import { BLOOM_GROUPS } from './bloomweights.js?v=1974eb11';
+import { TOWER_LOOK_NAMES, DEFAULT_TOWER_LOOK, buildTowerLook, preloadLook } from './towerlooks.js?v=1974eb11';
+import { makeAudio } from './audio.js?v=1974eb11';
+import { DEATH_KEYS } from './audiomanifest.js?v=1974eb11';
 
 export function initTdTab(root) {
   let active = false;
@@ -12159,6 +12159,17 @@ export function initTdTab(root) {
       } else if (name === 'target' && director.target >= 0) {
         o = graph.centers[director.target];
         toward = player.pos;
+      } else if (name === 'orbit') {
+        // the planet's frame: origin at its centre; z out through the
+        // HEART, so a key at [0, 0, 40] hangs 40 cells above the sector
+        // (world axes put the sector on the limb — the first orbit still);
+        // y is world-up projected off that axis, x completes it
+        const hc = norm3(graph.centers[dungeon.heart]);
+        dFwd.set(hc[0], hc[1], hc[2]);
+        dUp.set(0, 1, 0).addScaledVector(dFwd, -dFwd.y).normalize();
+        if (dUp.lengthSq() < 1e-6) dUp.set(1, 0, 0);
+        dRight.crossVectors(dUp, dFwd).normalize();
+        return [0, 0, 0];
       }
       const n = norm3(o);
       dUp.set(n[0], n[1], n[2]);
@@ -12351,8 +12362,43 @@ export function initTdTab(root) {
       msgEl.classList.add('hidden');
       paused = false;
     }
+    // THE GLOBE: the board draws only the carved sector, so an orbit shot
+    // sees a lit fragment on nothing. A script with globe:true draws every
+    // quad edge of the board's OWN sphere mesh, faint, under the sector —
+    // the planet the wire sector is cut into. The game's pipeline, not a
+    // second one (cine/planet.js does the same for the cine tab).
+    let globe = null;
+    function buildGlobe() {
+      if (globe || !mesh) return;
+      const seen = new Set(); const pos = [];
+      const { vertices, quads } = mesh;
+      for (const qd of quads) for (let i = 0; i < 4; i++) {
+        const a = qd[i], b = qd[(i + 1) % 4];
+        const key = a < b ? a * 65536 + b : b * 65536 + a;
+        if (seen.has(key)) continue; seen.add(key);
+        const p1 = vertices[a], p2 = vertices[b];
+        pos.push(p1[0], p1[1], p1[2], p2[0], p2[1], p2[2]);
+      }
+      const geo = new THREE.BufferGeometry();
+      geo.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+      const gop = parseFloat(urlParams.get('globeop')) || 0.22;   // ?globeop=1 — a bisect knob
+      globe = new THREE.LineSegments(geo, new THREE.LineBasicMaterial({
+        color: look().edges.color, transparent: gop < 1, opacity: gop, blending: gop < 1 ? THREE.AdditiveBlending : THREE.NormalBlending, depthWrite: false }));
+      // ABOVE THE WALL TOPS: the uncarved cells are drawn as dark rock with
+      // walls, so anything at the planet's radius is under their tops. The
+      // first globe, at 0.995 and then 1.004, drew nothing at any opacity;
+      // at 1.6 it filled the frame. ?glober=N is the bisect knob that found it.
+      globe.scale.setScalar(parseFloat(urlParams.get('glober')) || (1 + params.wallHeight * 1.15));
+      scene.add(globe);
+      console.log(`DIRECTOR globe: ${pos.length / 6} edges, r=${len3(vertices[0]).toFixed(3)}`);
+    }
     function directorStart() {
       directorUnpause(); endShot(); clearBriefs();
+      if (sc.globe) buildGlobe();
+      // the board's camera clips at a few units: right for a tank on the
+      // ground, wrong for an orbit at 3 radii — the first planet capture saw
+      // only the near cap of the sector and nothing of the globe
+      if (camera.far < 60) { camera.far = 60; camera.updateProjectionMatrix(); }
       tutorialActive = false;
       throttle = 0; keys.laser = false;
       director.t0 = t; director.dirT = 0;
@@ -12387,7 +12433,10 @@ export function initTdTab(root) {
       if (urlParams.get('dirlog') === '1' && Math.floor(director.dirT / 2) !== Math.floor(prev / 2)) {
         console.log(`DIRLOG t=${director.dirT.toFixed(1)} cur=${player.cur} next=${player.next} goto=${gotoCi} auto=${autoMode} thr=${throttle.toFixed(2)}`
           + ` cruise=${cruise} deploy=${!!deploy} pending=${!!director.pendingGoto} enemies=${enemies.filter((e) => e.alive).length} queued=${spawnQueue.length}`
-          + ` waveActive=${waveActive} shot=${shot ? shot.id : '-'} paused=${paused} frozen=${tutorial.frozen} won=${player.won} down=${!!playerDown}`);
+          + ` waveActive=${waveActive} shot=${shot ? shot.id : '-'} paused=${paused} frozen=${tutorial.frozen} won=${player.won} down=${!!playerDown}`
+        );
+        console.log(`DIRGLOBE ${globe ? `${globe.parent === scene ? 'in-scene' : 'ORPHAN'} vis=${globe.visible} op=${globe.material.opacity} r=${globe.geometry.boundingSphere ? globe.geometry.boundingSphere.radius.toFixed(2) : '?'}` : 'none'}`
+          + ` cam=${camera.position.length().toFixed(2)}u far=${camera.far} near=${camera.near} layers=${camera.layers.mask} sceneKids=${scene.children.length} camAt=${camera.position.x.toFixed(2)},${camera.position.y.toFixed(2)},${camera.position.z.toFixed(2)}`);
       }
       if (director.strikeShotResume && strike.falling < 0 && !shot) { director.strikeShotResume = false; beginDirectorShot(); }
       else if (!shot && !director.strikeShotResume && director.dirT < sc.len) beginDirectorShot();   // whatever ended it, the rail comes back
