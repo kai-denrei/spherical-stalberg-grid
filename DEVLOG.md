@@ -6,6 +6,99 @@ Demo links assume `npm run serve` (port 8144) or the
 
 ---
 
+## `6670894` / `1c57ec6` — the SNIPER, and the arc it rehearses
+
+### One integrator, used for everything
+
+The round that flies, the drop the HUD prints, the hold the reticle marks
+and the angle the zero solves for all come out of one `step` in
+`src/ballistics.js`. The project's standing rule — values that must agree
+are *derived* from one source, never computed twice — matters more here
+than anywhere it has come up: **a sniper mechanic is a promise that the
+number on the glass is the number the bullet obeys.** Two implementations
+of "where does it land" is a scope that lies, and a scope that lies is not
+difficult, it is broken.
+
+So the zero is found by **bisection on the integrator** rather than by a
+closed form that would agree with it only while the drag is nought:
+
+```js
+export function zeroAngle(range, tune) {
+  let lo = 0, hi = 0.15;
+  for (let i = 0; i < 40; i++) {
+    const mid = (lo + hi) / 2;
+    const r = flyTo(range, mid, 0, tune, 0);
+    if (!r.reached || r.drop < 0) lo = mid; else hi = mid;
+  }
+  return (lo + hi) / 2;
+}
+```
+
+`?sniperprobe=1` is what keeps the promise honest — the same 806 m target,
+fired twice:
+
+```
+SNIPERPROBE target 806 m · solution 8.81 up -11.45 right · 1.70 s
+SNIPERPROBE no hold:  miss — SHORT — struck the ground at 542 m
+SNIPERPROBE solution: HIT — 1 cm off centre
+```
+
+### Where the tests bite
+
+Most of the physics can only be checked for *shape*, so the suite leans
+hard on the few places an independent answer exists — and on the places
+where the usual fudge would pass a shape test:
+
+- a drag-free level shot falls **exactly ½gt²**, which is the only check
+  the integrator itself can be held to;
+- a rifle zeroed at 400 m is **on** the sight line at 400 and shoots
+  **high** inside it (the mid-range rise) — the property that defines a
+  zero, rather than a number that looks plausible;
+- **wind acts through drag on the round's velocity relative to the air.**
+  So a head wind barely deflects, and a drag-free round ignores the wind
+  *entirely*. The common shortcut — wind as a flat lateral push — passes
+  "a crosswind pushes it" and fails both of those.
+
+### The breath, corrected by its own test
+
+Holding shrinks the sway, never stops it, and runs out. The first cut let
+it **refill while the button was still held**, which quietly made "hold it
+down the whole time" the correct play — the cost of holding became a
+stutter in the reticle instead of a decision about when to take the shot.
+Recovery needs a release now.
+
+### The assist ladder is the automation arc in miniature
+
+Rangefinder → wind readout → firing solution → auto-dial. Four chips, all
+**off**, each switchable. That is both the difficulty knob the brief asked
+for and a rehearsal of `docs/AUTOMATION-ARC.md`, recorded the same day:
+*"we land on the planet bare-bone, little by little Isao automates
+processes."* Six of that arc's seven rungs are already code with both
+halves written; the arc is mostly a matter of gating what is currently on
+by default. The note also names the risk — **a chip should buy attention,
+not performance** — or the game's arc becomes "it plays itself better than
+you do".
+
+The last rung is deliberately the one that stops the player doing the
+interesting part, so it exists to be switched off again.
+
+### The glass
+
+The rifle is the workshop's Lancer under the same name contract the sentry
+range uses, and the scope rides the **PITCH** node — so recoil kicks the
+view and the sway moves the *shot*, not merely the crosshair. The reticle
+is an SVG overlay drawn in CSS pixels **from milliradians**, because a mil
+that scales with the scene is a mil you cannot range with; milling the
+target by hand (1.9 m tall) is exactly what the rangefinder chip replaces.
+
+Two things the first still forced: targets stand on posts with a plate,
+because at 800 m a dot cloud is a handful of pixels with sky behind it and
+nothing to mil from; and the ground grid went to 100 m squares at 0.07
+opacity, since a fine grid at 10× piles into a solid band across the
+horizon and hides the one thing a scope is for.
+
+---
+
 ## `65e59d5` — the SENTRY RANGE, and TD's deep link
 
 The small one first: **TD has the 🔗 button**, beside the variables gear
