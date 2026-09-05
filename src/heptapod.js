@@ -123,8 +123,13 @@ export function makeA6(berth, tier = 0, tune = A6_TUNE) {
 // `emit(target)` is the caller's trigger — it fires one rocket and is
 // called exactly once per round, never for a round the cassette does not
 // have. Returns the A6, mutated.
+// `ready` is the caller's SAFETY. When it is present and returns false the
+// A6 holds at the firing point without spending a rocket — which is what a
+// lock-on weapon does: it is on target, it is not allowed to shoot yet. The
+// state says `lockon` while that lasts, so a HUD can say why a machine that
+// is clearly aimed at something is clearly not firing.
 export function stepA6(a6, dt, ctx) {
-  const { range, cellSide, sense, emit, rand = () => 0.5, tune = A6_TUNE } = ctx;
+  const { range, cellSide, sense, emit, ready, rand = () => 0.5, tune = A6_TUNE } = ctx;
   const walk = tune.walkCells * cellSide * dt;
   const run = tune.runCells * cellSide * dt;
   const leash = tune.leash * cellSide;
@@ -194,6 +199,13 @@ export function stepA6(a6, dt, ctx) {
     return a6;
   }
 
+  if (ready && !ready(seen)) {
+    // holding: aimed, in range, and waiting on the seeker. The salvo clock
+    // does NOT run down here — a lock that takes two seconds must not also
+    // hand you two seconds of free reload.
+    a6.state = 'lockon';
+    return a6;
+  }
   a6.state = 'fire';
   a6.gap -= dt;
   if (a6.gap <= 0 && a6.ammo > 0) {
@@ -209,6 +221,7 @@ export function stepA6(a6, dt, ctx) {
 // What the HUD says about it, in one line — kept here so the tab does not
 // invent its own vocabulary for a state machine it does not own.
 export const a6Line = (a6) => {
+  if (a6.state === 'lockon') return `LOCKING · ${a6.ammo}/${a6.mag}`;
   if (a6.state === 'refill') return `RELOADING ${Math.max(0, A6_TUNE.refillSecs - a6.t).toFixed(0)}s`;
   if (a6.state === 'home') return 'RETURNING · dry';
   return `${a6.state.toUpperCase()} · ${a6.ammo}/${a6.mag}`;

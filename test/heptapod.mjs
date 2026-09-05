@@ -99,6 +99,31 @@ console.log('going home is unconditional:');
   check('and full a second long', b.ammo === b.mag && b.trips === 1);
 }
 
+console.log('the safety:');
+{
+  // A LOCK-ON WEAPON IS AIMED AND NOT ALLOWED TO SHOOT. The gate must cost
+  // rockets, not merely delay them — an A6 that spends the cassette while
+  // refusing to fire is worse than one with no lock at all.
+  const a6 = makeA6(BERTH, 0);
+  const shots = [];
+  soak(a6, 6, at(2), shots, { ready: () => false });
+  check('held: nothing fired', shots.length === 0 && a6.fired === 0);
+  check('...and nothing spent', a6.ammo === a6.mag);
+  check('...and it says why', a6.state === 'lockon');
+  // ...and the salvo clock did not run down while it waited, or the first
+  // shot after a lock would arrive with a free reload behind it
+  soak(a6, 0.6, at(2), shots, { ready: () => true });
+  check('released: it fires', shots.length >= 1);
+
+  // the gate is only asked at the firing point — a walking A6 is not
+  // "holding fire", it is walking
+  const b = makeA6(BERTH, 0);
+  soak(b, 0.4, at(4), [], { ready: () => false });
+  check('a closing A6 is engaging, not holding', b.state === 'engage');
+
+  check('no gate at all still fires', soak(makeA6(BERTH, 0), 6, at(2), []).fired > 0);
+}
+
 console.log('the leash:');
 {
   // a target far outside the leash: it must not be chased

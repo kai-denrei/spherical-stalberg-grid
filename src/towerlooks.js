@@ -19,10 +19,10 @@
 // without reshaping this interface. A look with no preload is ready
 // immediately; a look whose preload has not resolved falls back.
 import * as THREE from '../vendor/three.module.js';
-import { loadGlb, loadGlbWithClips, mergeByMaterial, fitModel, tintModel } from './glbmodels.js?v=c8bc198b';
-import { TOWERS } from './towers.js?v=c8bc198b';
-import { makeTowerMast, makeTowerUnit } from './units.js?v=c8bc198b';
-import { TOWER, HEADS, loadTower } from './feelstore.js?v=c8bc198b';
+import { loadGlb, loadGlbWithClips, mergeByMaterial, fitModel, tintModel } from './glbmodels.js?v=433336a9';
+import { TOWERS } from './towers.js?v=433336a9';
+import { makeTowerMast, makeTowerUnit } from './units.js?v=433336a9';
+import { TOWER, HEADS, loadTower } from './feelstore.js?v=433336a9';
 
 // def.shape -> a solid primitive, so the SOLID look keeps each tower's
 // silhouette identity from towers.js rather than inventing its own.
@@ -217,6 +217,14 @@ function loadSentryModel(def, tier = 1) {
       for (const c of clips) {
         for (const tr of c.tracks) pivots.add(String(tr.name).split('.')[0]);
       }
+      // ...AND THE PARTS A GAUGE NEEDS TO ADDRESS. The A6's ammunition is
+      // shown on the hull — a spent cell loses its readiness ring — which is
+      // only possible if the rings still exist as nodes. Merged by material
+      // they collapse into the hull and the counter has nothing to hide.
+      // Six more draw calls for the only diegetic ammo counter on the board.
+      scene.traverse((o) => {
+        if (o.isMesh && /readiness ring/i.test(o.name || '')) pivots.add(o.name);
+      });
       // fitModel wraps the result in a group and scales the WRAPPER's child —
       // never the animated nodes themselves — so the clip's own transforms
       // survive the fit untouched. That is the whole reason this can be a

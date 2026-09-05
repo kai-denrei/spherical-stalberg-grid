@@ -19,75 +19,75 @@
 
 import * as THREE from '../vendor/three.module.js';
 import GUI from '../vendor/lil-gui.esm.js';
-import { generateSphereMesh, relax } from './grid.js?v=c8bc198b';
-import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=c8bc198b';
-import { compileRail } from './cine/rail.js?v=c8bc198b';
-import { SCRIPTS } from './cine/scripts.js?v=c8bc198b';
-import { cuesBetween } from './cine/sound.js?v=c8bc198b';
-import { installCine } from './cine/kit.js?v=c8bc198b';
-import { mulberry32, randomSeed } from './rng.js?v=c8bc198b';
-import { computeBerths, berthIndexFor } from './berths.js?v=c8bc198b';
-import { wantsSecondary, shellsForAll } from './autofire.js?v=c8bc198b';
-import { printPhase, printOffset, printOn, patternSecsFor } from './printpath.js?v=c8bc198b';
+import { generateSphereMesh, relax } from './grid.js?v=433336a9';
+import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=433336a9';
+import { compileRail } from './cine/rail.js?v=433336a9';
+import { SCRIPTS } from './cine/scripts.js?v=433336a9';
+import { cuesBetween } from './cine/sound.js?v=433336a9';
+import { installCine } from './cine/kit.js?v=433336a9';
+import { mulberry32, randomSeed } from './rng.js?v=433336a9';
+import { computeBerths, berthIndexFor } from './berths.js?v=433336a9';
+import { wantsSecondary, shellsForAll } from './autofire.js?v=433336a9';
+import { printPhase, printOffset, printOn, patternSecsFor } from './printpath.js?v=433336a9';
 import { createBeam } from './beamfx.js';
-import { createBeamRig, PLASMA_DEFAULTS, BOARD_PRESET, BEAM_PEAK } from './beamdraw.js?v=c8bc198b';
-import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3, segKey, tangentDir, tangentBasis } from './vec3.js?v=c8bc198b';
-import { CREATURES, waveJelly } from './creatures.js?v=c8bc198b';
-import { brief, dwellFor } from './isaobriefs.js?v=c8bc198b';
-import { drawEmotion } from './emotions.js?v=c8bc198b';
+import { createBeamRig, PLASMA_DEFAULTS, BOARD_PRESET, BEAM_PEAK } from './beamdraw.js?v=433336a9';
+import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3, segKey, tangentDir, tangentBasis } from './vec3.js?v=433336a9';
+import { CREATURES, waveJelly } from './creatures.js?v=433336a9';
+import { brief, dwellFor } from './isaobriefs.js?v=433336a9';
+import { drawEmotion } from './emotions.js?v=433336a9';
 import { ACHIEVEMENTS, ACHV_GROUPS, achievement, blankRun, earned, freshlyEarned,
   sanitiseRecord }
-  from './achievements.js?v=c8bc198b';
+  from './achievements.js?v=433336a9';
 import { applyFontPack, currentFontPack, FONT_NAMES,
-  loadTypeFeel } from './fonts.js?v=c8bc198b';
-import { SECONDARY_TOE, applySecondaryToe } from './units.js?v=c8bc198b';
-import { UNITS, UNIT_NAMES, buildUnit, buildCreature, preloadMkcx, preloadServer, makeServerFixture, makeShieldShell, preloadContainer, makeContainerFixture, preloadFabricator, makeIsaoDrone, makeBulletCloud, makeRewardSolid, makeShellSolid, makeDebris, makeDotBurst, makePortalCloud, preloadPortalRing, makePortalRing, makeHeartCloud, makeDotEnemy, makeSurvivor, preloadAstronaut, makeAstronaut, preloadTerraformer, makeTerraformerFixture } from './units.js?v=c8bc198b';
-import { LOOKS, LOOK_NAMES } from './looks.js?v=c8bc198b';
-import { makeCellIndex } from './cellindex.js?v=c8bc198b';
-import { CREATURE_TINTS, ENEMY_SPEC, INTROS, computeWavePlan, accentFor } from './enemyspec.js?v=c8bc198b';
-import { PICKUPS } from './pickups.js?v=c8bc198b';
-import { rankFor, rankLabel, badgeSVG, killReq, eliteReq } from './ranks.js?v=c8bc198b';
-import { beamStep, isBeamStep, PEN_SOFT_FRAC, PEN_HARD_FRAC } from './beamranks.js?v=c8bc198b';
-import { burn, sweepAdvance, wallBite as wallBiteFor } from './beamburn.js?v=c8bc198b';
-import { arcPoint, projectToArc, toeForCrossing, crossingForToe } from './arc.js?v=c8bc198b';
+  loadTypeFeel } from './fonts.js?v=433336a9';
+import { SECONDARY_TOE, applySecondaryToe } from './units.js?v=433336a9';
+import { UNITS, UNIT_NAMES, buildUnit, buildCreature, preloadMkcx, preloadServer, makeServerFixture, makeShieldShell, preloadContainer, makeContainerFixture, preloadFabricator, makeIsaoDrone, makeBulletCloud, makeRewardSolid, makeShellSolid, makeDebris, makeDotBurst, makePortalCloud, preloadPortalRing, makePortalRing, makeHeartCloud, makeDotEnemy, makeSurvivor, preloadAstronaut, makeAstronaut, preloadTerraformer, makeTerraformerFixture } from './units.js?v=433336a9';
+import { LOOKS, LOOK_NAMES } from './looks.js?v=433336a9';
+import { makeCellIndex } from './cellindex.js?v=433336a9';
+import { CREATURE_TINTS, ENEMY_SPEC, INTROS, computeWavePlan, accentFor } from './enemyspec.js?v=433336a9';
+import { PICKUPS } from './pickups.js?v=433336a9';
+import { rankFor, rankLabel, badgeSVG, killReq, eliteReq } from './ranks.js?v=433336a9';
+import { beamStep, isBeamStep, PEN_SOFT_FRAC, PEN_HARD_FRAC } from './beamranks.js?v=433336a9';
+import { burn, sweepAdvance, wallBite as wallBiteFor } from './beamburn.js?v=433336a9';
+import { arcPoint, projectToArc, toeForCrossing, crossingForToe } from './arc.js?v=433336a9';
 import { MINE_TUNE, makeField, layMine, armMines, restock, mineAt,
-  inFan, trip, chain, nextChained, minePolar } from './mines.js?v=c8bc198b';
+  inFan, trip, chain, nextChained, minePolar } from './mines.js?v=433336a9';
 import { deepLink, wireDeepLink } from './deeplink.js';
 import { RESCUE_TUNE, makeRescue, placeSurvivors, stepBoard, stepGrab,
   disembark, loseCarried, lockOn, waveMix, standing as standingSurv,
   aboard as aboardSurv, missionOver, verdict as rescueVerdict,
   grabProgress, remaining as remainingSurv, exposed as exposedSurv,
   RESCUE2_TUNE, makeCamps, stepCall, stepEmerge, walkStep, runOver,
-  awake as campAwake } from './rescue.js?v=c8bc198b';
+  awake as campAwake } from './rescue.js?v=433336a9';
 import { WORMHOLE_PRESET, WORMHOLE_UNIFORM_DEFAULTS, RING_SPIN, TRAVEL,
-  travelRate, advancePhase } from './portalfx.js?v=c8bc198b';
-import { WORMHOLE_FRAG } from './fx/wormhole.frag.js?v=c8bc198b';
-import { CORONA_FRAG } from './fx/corona.frag.js?v=c8bc198b';
-import { labLine, parseLabQuery } from './lab.js?v=c8bc198b';
-import { bakeGalaxyCube } from './galaxybake.js?v=c8bc198b';
-import { SKY_PRESET } from './galaxyseed.js?v=c8bc198b';
-import { makeScore } from './score.js?v=c8bc198b';
-import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER, HACK_GATED, starterTower, towerSound, ROSTER } from './towers.js?v=c8bc198b';
-import { makeEconomy, sellRefund } from './economy.js?v=c8bc198b';
-import { pickTier } from './perftier.js?v=c8bc198b';
-import { applyWeatheredMaterial } from './cine/materials.js?v=c8bc198b';
-import { STICK, stickVector, knobOffset } from './stick.js?v=c8bc198b';
-import { registerServiceWorker } from './pwa.js?v=c8bc198b';
-import { makeBloom } from './postfx.js?v=c8bc198b';
-import { TANK_FEEL, TANK_FEEL_KNOBS, makeTankFeel, stepTankFeel, landTankFeel, fireTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js?v=c8bc198b';
-import { FEEL, loadFeel, saveFeel } from './feelstore.js?v=c8bc198b';
+  travelRate, advancePhase } from './portalfx.js?v=433336a9';
+import { WORMHOLE_FRAG } from './fx/wormhole.frag.js?v=433336a9';
+import { CORONA_FRAG } from './fx/corona.frag.js?v=433336a9';
+import { labLine, parseLabQuery } from './lab.js?v=433336a9';
+import { bakeGalaxyCube } from './galaxybake.js?v=433336a9';
+import { SKY_PRESET } from './galaxyseed.js?v=433336a9';
+import { makeScore } from './score.js?v=433336a9';
+import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER, HACK_GATED, starterTower, towerSound, ROSTER } from './towers.js?v=433336a9';
+import { makeEconomy, sellRefund } from './economy.js?v=433336a9';
+import { pickTier } from './perftier.js?v=433336a9';
+import { applyWeatheredMaterial } from './cine/materials.js?v=433336a9';
+import { STICK, stickVector, knobOffset } from './stick.js?v=433336a9';
+import { registerServiceWorker } from './pwa.js?v=433336a9';
+import { makeBloom } from './postfx.js?v=433336a9';
+import { TANK_FEEL, TANK_FEEL_KNOBS, makeTankFeel, stepTankFeel, landTankFeel, fireTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js?v=433336a9';
+import { FEEL, loadFeel, saveFeel } from './feelstore.js?v=433336a9';
 import { STRIKE_KNOBS, makeStrike, makeStrikeParams, grantStrikes, stepStrike,
   toggleArm, paintTarget, launchStrike, stepFall, skipFall, fallProgress,
-  strikeDamage, retargetStrike, orbitProgress } from './strike.js?v=c8bc198b';
+  strikeDamage, retargetStrike, orbitProgress } from './strike.js?v=433336a9';
 import { radarBasis, radarProject, radarBearing, sweepAngle, radarPhosphor,
-  proximitySectors, SENSOR_LEVELS, sensorColor } from './radar.js?v=c8bc198b';
-import { BLOOM_GROUPS } from './bloomweights.js?v=c8bc198b';
+  proximitySectors, SENSOR_LEVELS, sensorColor } from './radar.js?v=433336a9';
+import { BLOOM_GROUPS } from './bloomweights.js?v=433336a9';
 import { A6_TUNE, magFor, makeA6, stepA6, arc as a6Arc, a6Line } from './heptapod.js';
 import { SENTRY_TUNE } from './sentry.js';
 import { MISSILE_TUNE, scaleMissile, makeLock, stepLock, launchMissile, stepMissile } from './lockon.js';
-import { TOWER_LOOK_NAMES, DEFAULT_TOWER_LOOK, buildTowerLook, preloadLook, lookReady, setSentryTier } from './towerlooks.js?v=c8bc198b';
-import { makeAudio } from './audio.js?v=c8bc198b';
-import { DEATH_KEYS } from './audiomanifest.js?v=c8bc198b';
+import { TOWER_LOOK_NAMES, DEFAULT_TOWER_LOOK, buildTowerLook, preloadLook, lookReady, setSentryTier } from './towerlooks.js?v=433336a9';
+import { makeAudio } from './audio.js?v=433336a9';
+import { DEATH_KEYS } from './audiomanifest.js?v=433336a9';
 
 export function initTdTab(root) {
   let active = false;
@@ -9733,14 +9733,31 @@ export function initTdTab(root) {
     }
     stepA6(tw.a6, dt, {
       range, cellSide, tune: A6_TUNE, rand: a6Rng,
+      // HARD TARGETS ONLY (operator). The A6 carries eight rockets and takes
+      // seven seconds to reload; spending one on something the tank could
+      // have run over is the worst trade on the board. `rammable` is the
+      // board's own word for the soft tier — the same read the colour
+      // already carries — so this is the existing distinction, not a new one.
       sense: (from) => {
         let best = null, bd = Infinity;
         for (const e of enemies) {
-          if (!e.alive) continue;
+          if (!e.alive || e.spec.rammable) continue;
           const d = a6Arc(from, e.pos);
           if (d < bd) { bd = d; best = e; }
         }
         return best ? { id: best.id, pos: best.pos, dist: bd, e: best } : null;
+      },
+      // ...AND IT LOCKS FIRST. The A6 has no turret to aim — its cells fire
+      // straight up — so what it locks with is TIME ON TARGET: how long it
+      // has held the same hard unit inside its envelope. Same lockon.js the
+      // sniper fills by hand and the Quiver fills with its drive.
+      ready: (seen) => {
+        if (!tw.lock) tw.lock = makeLock();
+        stepLock(tw.lock, dt, { id: seen.id, off: 0, range: 1 }, {
+          gateMrad: 1, lockTime: SENTRY_TUNE.lockTime, drain: 1.6,
+          breakMrad: 2, minRange: 0, maxRange: Infinity,
+        });
+        return tw.lock.locked;
       },
       emit: (seen) => {
         const target = seen.e;
@@ -9748,16 +9765,48 @@ export function initTdTab(root) {
         const p = tw.a6.pos;
         const n = norm3(p);
         const muzzle = add3(scale3(p, 1 + params.wallHeight), scale3(n, cellSide * 0.5));
-        const raw = sub3(target.pos, p);
-        const flat = norm3(sub3(raw, scale3(n, dot3(raw, n))));
-        // HOMING, always: they are rockets out of a vertical cassette, and
-        // a rocket that flew straight would miss everything the A6 walked
-        // away from between launch and impact.
-        spawnTowerShot(muzzle, flat, tw, eff, target);
+        // A JAVELIN OUT OF A VERTICAL CELL (operator): up, forward, down.
+        // The board's homing shot flies a flat curve at the target, which is
+        // a guided bullet — this is the sentry lab's own seeker, the same
+        // lockon.js the sniper aims by hand, and its top-attack arc IS the
+        // weapon. Fire-and-forget: the lock drops with the cell.
+        launchTowerSeeker(tw, muzzle, target, tNow);
+        tw.lock = makeLock();
         sfx.play(towerSound(tw.def), { dist: camDist(p) });
       },
     });
     tw.a6.steps = (tw.a6.steps || 0) + 1;
+    // THE CASSETTE IS THE GAUGE (operator: "diegetic view of missiles
+    // remaining"). The Workshop drew six readiness rings and six silo caps
+    // on this hull; a spent cell loses its ring. No HUD number, no bar —
+    // you read the machine, which is the only ammo counter on the board that
+    // is part of the thing it counts.
+    // ONE PIP PER CELL, ON THE CELL. The Workshop draws readiness rings on
+    // this hull, but they do not survive mergeByMaterial — the model is
+    // merged for draw calls and the descriptive meshes weld into the body.
+    // The MUZZLE empties DO survive (they are the articulation contract), so
+    // the gauge is built on them: a lamp at each launch cell, extinguished
+    // as that cell is spent. It is on the machine, one per rocket, and it
+    // reads at board scale — which is what a diegetic counter has to do.
+    if (tw.rings === undefined) {
+      tw.rings = [];
+      const mz = tw.obj.userData.muzzles || [];
+      for (let i = 0; i < mz.length; i++) {
+        const pip = new THREE.Mesh(
+          new THREE.SphereGeometry(0.09, 6, 5),
+          new THREE.MeshBasicMaterial({ color: tw.def.color }));
+        pip.position.set(0, 0.16, 0);   // just proud of the cell mouth
+        mz[i].add(pip);
+        tw.rings.push(pip);
+      }
+    }
+    if (tw.rings.length && tw.ringsShown !== tw.a6.ammo) {
+      tw.ringsShown = tw.a6.ammo;
+      // the cassette holds more than there are cells at tier 2 and 3, so the
+      // lamps show the FRACTION rather than pretending to be a tally
+      const live = Math.ceil((tw.a6.ammo / Math.max(1, tw.a6.mag)) * tw.rings.length);
+      tw.rings.forEach((r, i) => { r.visible = i < live; });
+    }
     // THE HEADING AND THE CADENCE, BOTH MEASURED FROM THE MOVE IT ACTUALLY
     // MADE rather than from where it would like to be. A leg cycle that runs
     // at a fixed rate while the body's speed changes is the thing that reads
@@ -15134,6 +15183,28 @@ export function initTdTab(root) {
       }
       if (!tw || !tw.a6) { console.log('A6PROBE could not place one'); return; }
       const berth = tw.a6.pos.slice();
+      // A HARD UNIT TO SHOOT AT. The A6 only engages the not-rammable tier,
+      // which is the right behaviour and makes it look broken in wave 1 —
+      // the early waves are all fodder. So the probe puts one on the board
+      // rather than waiting eight waves to find out whether it works.
+      const hardType = Object.keys(ENEMY_SPEC).find((k) => !ENEMY_SPEC[k].rammable);
+      const near = openNeighbors(tw.ci)[0] ?? tw.ci;
+      {
+        const spec = ENEMY_SPEC[hardType];
+        const obj = makeDotEnemy(hardType, { walker: CREATURE_TINTS[hardType], walkerHi: accentFor(hardType) });
+        const s0 = cellSide * spec.size * 0.7;
+        obj.scale.setScalar(s0); obj.userData.s0 = s0;
+        scene.add(obj);
+        enemies.push({
+          type: hardType, spec, scale0: s0, size: spec.size,
+          cur: near, prev: -1, next: near, prog: 0,
+          pos: graph.centers[near].slice(), dir: [0, 1, 0],
+          obj, alive: true, phase: 0, paceJitter: 1,
+          hp: 40, behMult: 1, behUntil: -1, touchCd: -1,
+          slowFactor: 1, slowUntil: -1,
+        });
+        console.log(`A6PROBE planted a hard ${hardType} (rammable=${spec.rammable}) at cell ${near}`);
+      }
       let n = 0;
       const tick = setInterval(() => {
         n++;
@@ -15168,7 +15239,10 @@ export function initTdTab(root) {
           + ` · ${(a6Arc(berth, a.pos) / cellSide).toFixed(2)} cells from berth`
           + ` · fired ${a.fired} · trips ${a.trips}`
           + ` · target ${a.target ?? '-'} · enemies ${enemies.filter((e) => e.alive).length}`
-          + ` · steps ${a.steps || 0} paused=${paused} wave=${wave}`);
+          + ` · lock ${a.state === 'lockon' || (tw.lock && tw.lock.locked) ? (tw.lock && tw.lock.locked ? 'LOCKED' : ((tw.lock && tw.lock.meter) || 0).toFixed(2)) : '-'}`
+          + ` · seekers ${towerSeekers.filter((m) => m.by === tw).length}`
+          + ` · rings ${(tw.rings || []).filter((r) => r.visible).length}/${(tw.rings || []).length}`
+          + ` · hard ${enemies.filter((e) => e.alive && !e.spec.rammable).length}`);
         if (n >= 30) clearInterval(tick);
       }, 1000);
     }, 2500);

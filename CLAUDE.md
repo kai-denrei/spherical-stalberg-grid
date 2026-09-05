@@ -233,6 +233,15 @@ token — the corner badge was retired from the game view).
   first — the board starts `paused` and a probe that does not will measure a
   frozen game and report a frozen unit). A tower's sample is `towerSound(def)`,
   NOT `tower_${key}` — the second roster's keys have no samples of their own.
+- The A6 targets ONLY the not-rammable tier (a rocket spent on something the
+  tank could have run over is the board's worst trade), LOCKS before it fires
+  (`ctx.ready` in heptapod.js — a gate that costs time, never rockets; the
+  state says `lockon` so a HUD can explain an aimed machine that is not
+  shooting), and throws lockon.js SEEKERS rather than the board's homing shot
+  — the top-attack arc IS the weapon. Its ammo is diegetic: a lamp at each
+  MUZZLE cell, extinguished as the cell is spent. Not the Workshop's own
+  readiness rings — those do not survive `mergeByMaterial`, the muzzle
+  empties do (they are the articulation contract).
 - The A6 (`src/heptapod.js`, roster 2 slot 8) is the only tower that is not a
   position: patrol a leash around its berth → engage → empty a 6/8/10-rocket
   cassette → walk home → reload. Going home is unconditional, or the magazine
