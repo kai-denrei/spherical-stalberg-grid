@@ -56,6 +56,7 @@ export const POC_GROUPS = [
     entries: [
       { id: 'units', title: 'units', line: 'Every unit and tower, alone and up close. Turn one over, hear what it sounds like.' },
       { id: 'sentry', title: 'sentry range', line: 'Six modular turret families on a live range: units pop up, the sentry finds one, slews to it on its own yaw and elevation stops, and shoots it. Every angle and limit is a knob.' },
+      { id: 'sniper', title: 'sniper', line: 'First person down a Lancer\u2019s optic at things 800 m away. Bullet drop, time of flight, a gusting alien crosswind, a reticle that will not hold still, a zero you set — and an assist ladder that is the automation arc in miniature.' },
       { id: 'how', title: 'how it works', line: 'The building blocks, by concept: the grid, the dungeon, motion, sound, bloom, models.' },
       { id: 'stack', title: 'tech stack', line: 'What this is built on, and what would or would not fit alongside it.' },
     ],

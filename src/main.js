@@ -1,29 +1,30 @@
 // main.js — tab shell. Each tab lazily initializes its own renderer/scene the
 // first time it's shown and pauses (skips its loop body) while hidden.
 
-import { wireDevlogBadge } from './devlog.js?v=69f7efef';
-import { initHomeTab } from './home-tab.js?v=69f7efef';
-import { initGridTab } from './grid-tab.js?v=69f7efef';
-import { initMazeTab } from './maze-tab.js?v=69f7efef';
-import { initOrganicTab } from './organic-tab.js?v=69f7efef';
-import { initBattleTab } from './battle-tab.js?v=69f7efef';
-import { initHeartTab } from './heart-tab.js?v=69f7efef';
-import { initTdTab } from './td-tab.js?v=69f7efef';
-import { initTankTab } from './tank-tab.js?v=69f7efef';
-import { initTank2Tab } from './tank2-tab.js?v=69f7efef';
-import { initTank3Tab } from './tank3-tab.js?v=69f7efef';
-import { initUnitsTab } from './units-tab.js?v=69f7efef';
-import { initBeamTab } from './beam-tab.js?v=69f7efef';
-import { initAstroTab } from './astro-tab.js?v=69f7efef';
-import { initMetalTab } from './metal-tab.js?v=69f7efef';
+import { wireDevlogBadge } from './devlog.js?v=2cd00e0f';
+import { initHomeTab } from './home-tab.js?v=2cd00e0f';
+import { initGridTab } from './grid-tab.js?v=2cd00e0f';
+import { initMazeTab } from './maze-tab.js?v=2cd00e0f';
+import { initOrganicTab } from './organic-tab.js?v=2cd00e0f';
+import { initBattleTab } from './battle-tab.js?v=2cd00e0f';
+import { initHeartTab } from './heart-tab.js?v=2cd00e0f';
+import { initTdTab } from './td-tab.js?v=2cd00e0f';
+import { initTankTab } from './tank-tab.js?v=2cd00e0f';
+import { initTank2Tab } from './tank2-tab.js?v=2cd00e0f';
+import { initTank3Tab } from './tank3-tab.js?v=2cd00e0f';
+import { initUnitsTab } from './units-tab.js?v=2cd00e0f';
+import { initBeamTab } from './beam-tab.js?v=2cd00e0f';
+import { initAstroTab } from './astro-tab.js?v=2cd00e0f';
+import { initMetalTab } from './metal-tab.js?v=2cd00e0f';
 import { initSentryTab } from './sentry-tab.js';
-import { initPortalTab } from './portal-tab.js?v=69f7efef';
-import { initCineTab } from './cine-tab.js?v=69f7efef';
-import { initHowTab, initStackTab, initLogTab } from './how-tab.js?v=69f7efef';
-import { initSimTab } from './sim-tab.js?v=69f7efef';
-import { initRecordTab } from './recordtab.js?v=69f7efef';
+import { initSniperTab } from './sniper-tab.js';
+import { initPortalTab } from './portal-tab.js?v=2cd00e0f';
+import { initCineTab } from './cine-tab.js?v=2cd00e0f';
+import { initHowTab, initStackTab, initLogTab } from './how-tab.js?v=2cd00e0f';
+import { initSimTab } from './sim-tab.js?v=2cd00e0f';
+import { initRecordTab } from './recordtab.js?v=2cd00e0f';
 import { applyFontPack, DEFAULT_FONT, DEFAULT_SHOUT_FONT,
-  loadTypeFeel } from './fonts.js?v=69f7efef';
+  loadTypeFeel } from './fonts.js?v=2cd00e0f';
 import { paramLink } from './deeplink.js';
 
 
@@ -87,6 +88,7 @@ const tabs = {
   beam: { root: document.getElementById('tab-beam'), init: initBeamTab, api: null },
   metal: { root: document.getElementById('tab-metal'), init: initMetalTab, api: null },
   sentry: { root: document.getElementById('tab-sentry'), init: initSentryTab, api: null },
+  sniper: { root: document.getElementById('tab-sniper'), init: initSniperTab, api: null },
   astro: { root: document.getElementById('tab-astro'), init: initAstroTab, api: null },
   portal: { root: document.getElementById('tab-portal'), init: initPortalTab, api: null },
   cine: { root: document.getElementById('tab-cine'), init: initCineTab, api: null },

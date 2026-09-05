@@ -5,22 +5,22 @@
    back to a system face until the subset is rebuilt. */
 @font-face {
   font-family: 'VT323';
-  src: url('assets/fonts/VT323.woff2?v=69f7efef') format('woff2');
+  src: url('assets/fonts/VT323.woff2?v=2cd00e0f') format('woff2');
   font-weight: 400; font-style: normal; font-display: swap;
 }
 @font-face {
   font-family: 'Press Start 2P';
-  src: url('assets/fonts/PressStart2P.woff2?v=69f7efef') format('woff2');
+  src: url('assets/fonts/PressStart2P.woff2?v=2cd00e0f') format('woff2');
   font-weight: 400; font-style: normal; font-display: swap;
 }
 @font-face {
   font-family: 'Share Tech Mono';
-  src: url('assets/fonts/ShareTechMono.woff2?v=69f7efef') format('woff2');
+  src: url('assets/fonts/ShareTechMono.woff2?v=2cd00e0f') format('woff2');
   font-weight: 400; font-style: normal; font-display: swap;
 }
 @font-face {
   font-family: 'DotGothic16';
-  src: url('assets/fonts/DotGothic16.woff2?v=69f7efef') format('woff2');
+  src: url('assets/fonts/DotGothic16.woff2?v=2cd00e0f') format('woff2');
   font-weight: 400; font-style: normal; font-display: swap;
 }
 
@@ -4165,6 +4165,44 @@ body:not(.chrome-open) #tabbar .tabgroup:not(:has(button.active)) { display: non
 .lab-center:active { transform: translateY(1px); }
 @media (pointer: coarse), (max-width: 700px) {
   .lab-center { left: auto; right: 12px; bottom: auto; top: calc(env(safe-area-inset-top, 0px) + 164px); height: 44px; font-size: 13px; }
+}
+
+/* THE SNIPER. The reticle is an SVG overlay rather than geometry: it must be
+   drawn in CSS pixels from milliradians so a mil dot is a mil dot at every
+   magnification, and a reticle that scales with the scene cannot be ranged
+   with. It never takes a pointer — the drag under it is the aim. */
+#sniper-app { position: absolute; inset: 0; touch-action: none; }
+#sniper-reticle { position: absolute; inset: 0; z-index: 5; pointer-events: none; }
+#sniper-hud {
+  position: absolute; left: 12px; bottom: 12px; z-index: 6;
+  font: 12px/1.55 ui-monospace, Menlo, monospace; color: #cfe8ff;
+  text-shadow: 0 0 8px rgba(0, 0, 0, 0.95); white-space: pre-line;
+  max-width: min(74vw, calc(100vw - 24px)); overflow-wrap: anywhere; pointer-events: none;
+}
+#sniper-fire, #sniper-breath {
+  /* clear of the lil-gui panel, which owns the right edge on a desktop; the
+     coarse block below puts them back on the thumb's edge, where the panel
+     is a bottom drawer instead */
+  position: absolute; z-index: 7; right: 268px;
+  height: 52px; padding: 0 16px;
+  font: 700 13px ui-monospace, Menlo, monospace; letter-spacing: 0.1em;
+  color: #cfe8ff; background: rgba(12, 26, 38, 0.85);
+  border: 1px solid #2b6b96; border-radius: 10px; cursor: pointer;
+  touch-action: manipulation;
+}
+#sniper-fire { bottom: 14px; }
+#sniper-breath { bottom: 78px; }
+#sniper-fire:active, #sniper-breath:active { background: rgba(90, 200, 180, 0.5); color: #fff; }
+#sniper-gear { position: absolute; right: 12px; top: 12px; z-index: 8; width: 44px; height: 44px; border-radius: 10px;
+  border: 1px solid rgba(120, 200, 255, 0.35); background: rgba(10, 22, 34, 0.85); color: #9fdcff; font-size: 20px; display: none; }
+#tab-sniper.panel-hidden .lil-gui.root { display: none !important; }
+@media (pointer: coarse), (max-width: 700px) {
+  #sniper-gear { display: block; top: calc(env(safe-area-inset-top, 0px) + 112px); right: 12px; }
+  #sniper-fire, #sniper-breath { right: 14px; }
+  #sniper-hud { font-size: 11px; max-width: calc(100vw - 130px); }
+  #tab-sniper .lil-gui.root { display: block !important; position: fixed !important; left: 0 !important; right: 0 !important; bottom: 0 !important; top: auto !important;
+    width: 100% !important; max-height: 46vh; overflow-y: auto; --widget-height: 36px; --font-size: 15px; --input-font-size: 15px; --name-width: 44%;
+    border-radius: 12px 12px 0 0; }
 }
 
 /* the SENTRY RANGE, on the astronaut study's furniture — same stage, same

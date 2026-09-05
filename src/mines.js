@@ -26,8 +26,8 @@
 // because the obvious wrong implementation (an unsigned distance along the
 // axis) fires the claymore backwards and still passes every forward test.
 
-import { makeParams, clampParams, formatKnobs, knobProblems } from './knobs.js?v=69f7efef';
-import { sub3, scale3, dot3, cross3, norm3, len3 } from './vec3.js?v=69f7efef';
+import { makeParams, clampParams, formatKnobs, knobProblems } from './knobs.js?v=2cd00e0f';
+import { sub3, scale3, dot3, cross3, norm3, len3 } from './vec3.js?v=2cd00e0f';
 
 export const MINE_TUNE = {
   start: 10,        // mines in the rack at the top of a run

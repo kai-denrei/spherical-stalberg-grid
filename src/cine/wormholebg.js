@@ -6,8 +6,8 @@
 // money, spent gladly). Same fragment, same uniform names, same integrated
 // phases (portalfx.js), so a preset copied off the bench is the truth here.
 import * as THREE from '../../vendor/three.module.js';
-import { WORMHOLE_FRAG } from '../fx/wormhole.frag.js?v=69f7efef';
-import { WORMHOLE_PRESET, WORMHOLE_UNIFORM_DEFAULTS, RING_SPIN, TRAVEL } from '../portalfx.js?v=69f7efef';
+import { WORMHOLE_FRAG } from '../fx/wormhole.frag.js?v=2cd00e0f';
+import { WORMHOLE_PRESET, WORMHOLE_UNIFORM_DEFAULTS, RING_SPIN, TRAVEL } from '../portalfx.js?v=2cd00e0f';
 
 export { RING_SPIN, TRAVEL };
 

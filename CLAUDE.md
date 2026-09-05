@@ -104,6 +104,14 @@ token — the corner badge was retired from the game view).
   nor `env(safe-area-inset-*)`, so a desktop replica can only ever return
   `ok` or a pose fault — which is precisely why the phone reports outlived
   the replica).
+  the SNIPER (`#sniper`): every `BALLISTICS_TUNE` knob by name (`?zero=`,
+  `?wind=`, `?muzzleVel=`, `?gravity=`, `?drag=`, `?swayFast=` …), `?mag=`,
+  `?range=`, and the ASSIST LADDER — `?rangefinder=1`, `?windRead=1`,
+  `?firingSolution=1`, `?autoHold=1`, each one a chip Isao has not printed
+  yet (docs/AUTOMATION-ARC.md). `?sniperprobe=1` fires the same target twice,
+  with no hold and with the HUD's own solution, and reports where each landed
+  — the whole promise of the mode is that those two numbers come out of ONE
+  integrator, so the probe is the thing that keeps them honest.
   the SENTRY RANGE (`#sentry`): `?family=needle|rotor|kiln|quiver|lancer|relay`,
   `?tier=1|2|3`, `?count=N` (a battery, on a ring), `?mount=N` (on a wall —
   and mind the DEAD ZONE it buys: the range's `elevMin` is -35, not the
