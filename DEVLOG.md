@@ -1,6 +1,83 @@
 # Dev Log
 
 Newest first. Each entry: what landed, then how it works, for programmers.
+
+## 130bb1b — the Javelin: a lock is the mini-game, the missile flies itself
+
+A fifth sniper weapon whose verb is different from the other four. The
+ballistic weapons ask *where will it be*; this one asks *can you hold it
+still*, and then stops caring.
+
+`src/lockon.js` is DOM-free and Node-tested. **The lock** is a state
+machine over one number: it fills inside a 12 mrad gate, drains slower
+than it fills when it is not (so a wobble costs but does not reset — that
+ratio is the difficulty), and once full it HOLDS out to a 34 mrad break
+angle. The meter only fills for the target it has been filling for, so
+sweeping across three enemies is not a lock on the third.
+
+**The guidance** is proportional navigation, `a = N · ω × v`, clamped to
+what the fins can pull. Its one property worth asserting directly: a
+collision course commands nothing. Two bugs the tests caught, both fatal
+and both about that virtue:
+
+- PN says nothing on a level shot, so with no **gravity bias** the missile
+  fell out of the sky at 640 m. Gravity is now added back outside the law.
+- the first **top-attack** profile switched its lift off at a fixed
+  fraction of the way in — a 200 m step in the aim point. It climbed to
+  90 m, sailed over the target and buried itself 300 m past. The lift is
+  now scaled by the range STILL TO RUN and retires itself.
+
+Then the tune: at 314 m/s with 140 m/s² of fin, the turn radius is 704 m
+and no top attack is geometrically possible. Subsonic and manoeuvrable
+beats fast and straight for a weapon whose job is to come down on things.
+Nine engagements, 200–1600 m, stationary / crossing / closing / opening /
+up on a wall, all within a metre, all launched straight down the sight
+line rather than led.
+
+The seeker reticle replaces the mil-dot one rather than overlaying it (a
+homing round has no holdover, which is also what `solution()` returns for
+it). Four brackets walk inward as the meter fills and snap to the ring
+with TARGET LOCKED; once locked the assembly rides the target, so a
+drifting barrel shows as the sight leaving the middle of the screen.
+
+`?javprobe=1` proves the wiring: unlocked fire is refused, the meter fills
+from the frame loop, a missile launched down the barrel hits a target it
+was never aimed at, and going past the break angle lets go.
+
+## f078a84 — four sniper weapons, and one integrator they all obey
+
+Scroll-wheel magnification, a REAL spawn on the board's enemy spec, and
+laser / mortar / rail gun beside the Lancer — each stressing a different
+part of the physics rather than being a velocity slider with a new name.
+
+Adding them broke the sniper's one promise — dial what the HUD prints and
+the round arrives — in four places, every one found by the probe:
+
+- the **lofted hold was solved at t0=0 and memoised there**, then fired a
+  second into a gust that had moved on: ten metres of drop over a 25 s
+  arc. `refineAngle` re-solves for the launch time.
+- correcting 172 mrad of drift while keeping the **straight-ahead
+  elevation** put the round seventy metres short — swinging the barrel ten
+  degrees lengthens the path. Elevation and azimuth are now solved
+  together, iterating.
+- the round flew at the **frame's dt** while the solver integrated at the
+  weapon's fixed step: fifteen metres of disagreement, and a landing point
+  that depended on the browser's frame rate. The flight carries a
+  remainder and steps at the weapon's own `h`.
+- a **lob was aimed along the sight line**. For a flat weapon the hold
+  sits on top of where the optic points; for a mortar the hold IS the
+  launch angle.
+
+Plus a beam given a bullet's zero, and a rail gun whose charge could never
+release under the probe (`fire()` re-armed it) — so the probe was fixed
+first: it clears the cooldown between runs, because it measures physics
+and not rate of fire.
+
+`test/ballistics.mjs` now flies every weapon's own printed solution, at
+three moments in the gust, and asserts it arrives. A lofted round that
+falls short never crosses the plate's plane, so it reports the **fall of
+shot** in metres instead — add/drop and left/right, how a mortar crew
+corrects.
 Demo links assume `npm run serve` (port 8144) or the
 [Pages deploy](https://kai-denrei.github.io/spherical-stalberg-grid/).
 
