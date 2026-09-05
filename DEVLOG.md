@@ -6,6 +6,99 @@ Demo links assume `npm run serve` (port 8144) or the
 
 ---
 
+## `65fe9d1` — the sniper gets a voice, a target, two phases, and a HUD
+
+Four asks in one message, and the last of them found a bug the first three
+had been hiding.
+
+### The gun
+
+`tank_main` at full presence — this **is** the board's cannon with a scope
+on it — and the board's own recoil shape: a hard kick eased out, not a
+constant offset. The kick is expressed in **milliradians of glass** rather
+than world angle, so it reads the same at 4× and at 25×. A recoil in world
+angle is invisible zoomed out and unusable zoomed in.
+
+### Phase 1 is a calibration
+
+*"It is unclear what we are shooting at"* — so a black-and-white bullseye,
+dead ahead, at a known distance, with a fixed string of shots.
+
+**Every shot is recorded, hit or miss.** A calibration is about the *group*,
+and a string that only remembers its hits cannot tell you that all five went
+two mils low together. The card reports two different things on purpose:
+
+- the **correction** — the mean point of impact, negated, which is what you
+  dial;
+- the **group** — the extreme spread, which you *cannot* dial away and which
+  is therefore the honest score.
+
+Phase 2 puts the same targets on posts and crosses them, which is what the
+time of flight was for all along.
+
+### The HUD, from the onkochishin study
+
+Built on `~/Dev/onkochishin/atelier/hud-targeting` on the operator's steer,
+rebuilt in our own CSS rather than vendored. The craft worth stealing is
+small and specific: **corner readouts carry only two borders each**, so they
+read as brackets instead of boxes.
+
+```css
+#sniper-fcs .r-tl { left: 18px; top: 56px; border-left: 1px solid; border-top: 1px solid; }
+```
+
+Plus the two-tier label/value field, the bearing tape and the palette. The
+assist ladder became the **ACQUISITION** panel's chips, which is what it
+always was: four status lights for four things Isao has or has not printed.
+
+### And the bug the HUD found
+
+With the panels up it was suddenly obvious that the scope was looking at
+nothing. The calibration target logged as **present, in frame and 84 px
+across** — and could not be seen.
+
+A three.js camera looks down its own **−Z**. The ballistics module, the
+workshop's models and every target here are built on **+Z**. That is a rule
+written in this project's own `CLAUDE.md` — *"three.js lookAt: plain
+Object3D faces +Z, cameras −Z"* — and I walked straight past it. The scope
+was aimed at the empty half of the range.
+
+Half a turn fixes it with no other sign change anywhere, because with
+`rotation.y = PI + yaw` the forward vector is `(sin yaw, 0, cos yaw)` —
+exactly the module's own convention.
+
+Two smaller ones fell out of the same look: the reticle's target test
+measured elevation from the **ground** rather than from the optic, which put
+a 500 m target 12.7 mrad off the cross it was sitting on; and the rifle is
+hidden by default, because you do not see your own rifle down your own scope
+and leaving it drawn fills the frame with grey metal.
+
+### What the probe measures now
+
+`?sniperprobe=1` fires the whole string with the sway off and the clock
+advancing, so what is left in the group is the **gust and nothing else**:
+
+```
+with the alien wind:  5 shots · group 389 cm · correction -0.01 up 2.82 right
+with the wind off:    5 shots · group 0 cm   · correction -0.01 up 0.00 right
+```
+
+That is the part of the spread no amount of dialling removes — and it is a
+tuning number, not just a check. A 3.9 m group against a 5.5 m target may be
+more weather than the mode wants.
+
+### The chip ruling
+
+Recorded in `docs/AUTOMATION-ARC.md`: **permanent per planet, bought with
+biomass on the debrief.** Two consequences written down before anything is
+built — the debrief's `SINK` table is already the ladder's UI, and
+permanent-per-planet means a planet's *last* sector is the one where
+everything is automated and its *first* is where nothing is. The arc's curve
+therefore runs opposite to the wave curve, which is either the best thing
+about it or the thing that needs a counterweight.
+
+---
+
 ## `6670894` / `1c57ec6` — the SNIPER, and the arc it rehearses
 
 ### One integrator, used for everything
