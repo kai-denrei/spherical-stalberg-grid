@@ -2,6 +2,42 @@
 
 Newest first. Each entry: what landed, then how it works, for programmers.
 
+## d0fcbd3 — the Javelin on the Quiver, and a voice for every sentry family
+
+`missile: true` in `SENTRY_FAMILIES` makes the Quiver a launcher rather
+than a gun with more muzzles: it must LOCK before it fires, and what leaves
+the tube homes. Same weapon the sniper lab aims by hand, with the aiming
+automated — the two ends of the same ladder.
+
+The physics are not copied. `scaleMissile(tune, k, tau)` moves the metre
+tune into model units **by dimension** — length `k`, time `tau`, velocity
+`k/tau`, acceleration `k/tau²`, drag `1/k` — so the range flies the same
+trajectory drawn smaller and faster, and a retune of the Javelin follows
+for free. Asserted directly: a flight at `k=1/70`, divided by `k`, is the
+metre flight.
+
+A sentry locks with its **drive**, so the gate is in degrees of aim error —
+the quantity `tolerance` is already written in — and `stepLock` is fed that.
+`lockGate` / `lockTime` / `lockBreak` are knobs.
+
+**Fire-and-forget** was not the first cut. Holding the lock after launch put
+six rounds into one walker while the rest of the wave went past; dropping it
+the instant a cell is away makes the launcher slow to its first shot and
+quick after. The probe now reads 5 fired / 5 hit.
+
+**Voices.** Every family names its own sound in the table; the tab knows only
+that there is a `fire` key and maybe a `ready` one. The Rotor gets the
+operator's two minigun samples, built through `scripts/audio-build.sh` —
+which needed a **start-offset column**, because the roar has a tenth of a
+second of nothing and a spin-up in front of the body worth slicing (and a
+slice that does not start at zero also needs a fade IN, or the cut clicks on
+every retrigger). The spin-up is the **downtime** voice, keyed to the moment
+the gun decides rather than to the round: once per engagement, re-armed only
+after the barrels wind down. The roar is per round and quiet — gain 0.22.
+
+`?voiceprobe=1` logs every sound call with its count, which is the only way
+a headless run can check any of this.
+
 ## 130bb1b — the Javelin: a lock is the mini-game, the missile flies itself
 
 A fifth sniper weapon whose verb is different from the other four. The
