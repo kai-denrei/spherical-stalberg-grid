@@ -2,6 +2,40 @@
 
 Newest first. Each entry: what landed, then how it works, for programmers.
 
+## TD2 — a green laser, and the Quiver fires the lab's missiles
+
+**The lance is a laser, not a thrower.** Same shader, opposite settings:
+`LANCE_LOOK` is a fifth of the thrower's width, zero jitter, and most of the
+noise and flicker taken out — a plasma thrower is wide and unstable because
+it is a spray of matter, a laser is a thin steady line because it is light.
+
+Green via a new `def.beamColor`, kept separate from `def.color` on purpose:
+the identity colour still drives the range ring, the shop icon and the model
+tint, so a laser can have a colour of its own without repainting the machine
+that throws it.
+
+**The Quiver now fires the sentry lab's seekers** — `attack: 'seeker'`,
+`lock: true`. Not a second implementation: the same `lockon.js` the sniper
+aims by hand and the range aims by drive, put through the same
+`scaleMissile` by dimension. The board's world is the unit sphere, so a
+3.5-cell reach is 0.157 radians — four thousand times smaller than the
+sniper's 700 m — and a tune in metres and seconds is simply wrong here.
+
+It locks with its DRIVE (the gate is how far the barrel still is from where
+it wants to be, in degrees — the quantity the range's tolerance is written
+in), and the lock is stepped in `aimTower` rather than in the firing path,
+because a lock fills whether or not the weapon is off cooldown and that IS
+the mechanic. Fire-and-forget on launch, which is the lesson the range
+taught: a Quiver that holds its lock empties itself into one walker while
+the wave goes past.
+
+One real bug on the way: **a seeker's ground cull has to sit below the
+surface.** A top-attack round comes down on something standing ON the
+ground, so the last part of its dive is under the radius the ground sits at.
+Culling at exactly 1.0 killed three seekers in four — each still closing,
+none more than a cell out. The floor is now a third of a cell down, under
+the terrain and past any body on it. Four launched, four hit, none lost.
+
 ## TD2 — the towers aim like the sentries do, and the Lancer pierces
 
 Operator: "the new towers should use the results from the Sentry Lab;

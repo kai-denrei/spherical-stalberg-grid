@@ -19,74 +19,75 @@
 
 import * as THREE from '../vendor/three.module.js';
 import GUI from '../vendor/lil-gui.esm.js';
-import { generateSphereMesh, relax } from './grid.js?v=07e5c43c';
-import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=07e5c43c';
-import { compileRail } from './cine/rail.js?v=07e5c43c';
-import { SCRIPTS } from './cine/scripts.js?v=07e5c43c';
-import { cuesBetween } from './cine/sound.js?v=07e5c43c';
-import { installCine } from './cine/kit.js?v=07e5c43c';
-import { mulberry32, randomSeed } from './rng.js?v=07e5c43c';
-import { computeBerths, berthIndexFor } from './berths.js?v=07e5c43c';
-import { wantsSecondary, shellsForAll } from './autofire.js?v=07e5c43c';
-import { printPhase, printOffset, printOn, patternSecsFor } from './printpath.js?v=07e5c43c';
+import { generateSphereMesh, relax } from './grid.js?v=3c4d4574';
+import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=3c4d4574';
+import { compileRail } from './cine/rail.js?v=3c4d4574';
+import { SCRIPTS } from './cine/scripts.js?v=3c4d4574';
+import { cuesBetween } from './cine/sound.js?v=3c4d4574';
+import { installCine } from './cine/kit.js?v=3c4d4574';
+import { mulberry32, randomSeed } from './rng.js?v=3c4d4574';
+import { computeBerths, berthIndexFor } from './berths.js?v=3c4d4574';
+import { wantsSecondary, shellsForAll } from './autofire.js?v=3c4d4574';
+import { printPhase, printOffset, printOn, patternSecsFor } from './printpath.js?v=3c4d4574';
 import { createBeam } from './beamfx.js';
-import { createBeamRig, PLASMA_DEFAULTS, BOARD_PRESET, BEAM_PEAK } from './beamdraw.js?v=07e5c43c';
-import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3, segKey, tangentDir, tangentBasis } from './vec3.js?v=07e5c43c';
-import { CREATURES, waveJelly } from './creatures.js?v=07e5c43c';
-import { brief, dwellFor } from './isaobriefs.js?v=07e5c43c';
-import { drawEmotion } from './emotions.js?v=07e5c43c';
+import { createBeamRig, PLASMA_DEFAULTS, BOARD_PRESET, BEAM_PEAK } from './beamdraw.js?v=3c4d4574';
+import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3, segKey, tangentDir, tangentBasis } from './vec3.js?v=3c4d4574';
+import { CREATURES, waveJelly } from './creatures.js?v=3c4d4574';
+import { brief, dwellFor } from './isaobriefs.js?v=3c4d4574';
+import { drawEmotion } from './emotions.js?v=3c4d4574';
 import { ACHIEVEMENTS, ACHV_GROUPS, achievement, blankRun, earned, freshlyEarned,
   sanitiseRecord }
-  from './achievements.js?v=07e5c43c';
+  from './achievements.js?v=3c4d4574';
 import { applyFontPack, currentFontPack, FONT_NAMES,
-  loadTypeFeel } from './fonts.js?v=07e5c43c';
-import { SECONDARY_TOE, applySecondaryToe } from './units.js?v=07e5c43c';
-import { UNITS, UNIT_NAMES, buildUnit, buildCreature, preloadMkcx, preloadServer, makeServerFixture, makeShieldShell, preloadContainer, makeContainerFixture, preloadFabricator, makeIsaoDrone, makeBulletCloud, makeRewardSolid, makeShellSolid, makeDebris, makeDotBurst, makePortalCloud, preloadPortalRing, makePortalRing, makeHeartCloud, makeDotEnemy, makeSurvivor, preloadAstronaut, makeAstronaut, preloadTerraformer, makeTerraformerFixture } from './units.js?v=07e5c43c';
-import { LOOKS, LOOK_NAMES } from './looks.js?v=07e5c43c';
-import { makeCellIndex } from './cellindex.js?v=07e5c43c';
-import { CREATURE_TINTS, ENEMY_SPEC, INTROS, computeWavePlan, accentFor } from './enemyspec.js?v=07e5c43c';
-import { PICKUPS } from './pickups.js?v=07e5c43c';
-import { rankFor, rankLabel, badgeSVG, killReq, eliteReq } from './ranks.js?v=07e5c43c';
-import { beamStep, isBeamStep, PEN_SOFT_FRAC, PEN_HARD_FRAC } from './beamranks.js?v=07e5c43c';
-import { burn, sweepAdvance, wallBite as wallBiteFor } from './beamburn.js?v=07e5c43c';
-import { arcPoint, projectToArc, toeForCrossing, crossingForToe } from './arc.js?v=07e5c43c';
+  loadTypeFeel } from './fonts.js?v=3c4d4574';
+import { SECONDARY_TOE, applySecondaryToe } from './units.js?v=3c4d4574';
+import { UNITS, UNIT_NAMES, buildUnit, buildCreature, preloadMkcx, preloadServer, makeServerFixture, makeShieldShell, preloadContainer, makeContainerFixture, preloadFabricator, makeIsaoDrone, makeBulletCloud, makeRewardSolid, makeShellSolid, makeDebris, makeDotBurst, makePortalCloud, preloadPortalRing, makePortalRing, makeHeartCloud, makeDotEnemy, makeSurvivor, preloadAstronaut, makeAstronaut, preloadTerraformer, makeTerraformerFixture } from './units.js?v=3c4d4574';
+import { LOOKS, LOOK_NAMES } from './looks.js?v=3c4d4574';
+import { makeCellIndex } from './cellindex.js?v=3c4d4574';
+import { CREATURE_TINTS, ENEMY_SPEC, INTROS, computeWavePlan, accentFor } from './enemyspec.js?v=3c4d4574';
+import { PICKUPS } from './pickups.js?v=3c4d4574';
+import { rankFor, rankLabel, badgeSVG, killReq, eliteReq } from './ranks.js?v=3c4d4574';
+import { beamStep, isBeamStep, PEN_SOFT_FRAC, PEN_HARD_FRAC } from './beamranks.js?v=3c4d4574';
+import { burn, sweepAdvance, wallBite as wallBiteFor } from './beamburn.js?v=3c4d4574';
+import { arcPoint, projectToArc, toeForCrossing, crossingForToe } from './arc.js?v=3c4d4574';
 import { MINE_TUNE, makeField, layMine, armMines, restock, mineAt,
-  inFan, trip, chain, nextChained, minePolar } from './mines.js?v=07e5c43c';
+  inFan, trip, chain, nextChained, minePolar } from './mines.js?v=3c4d4574';
 import { deepLink, wireDeepLink } from './deeplink.js';
 import { RESCUE_TUNE, makeRescue, placeSurvivors, stepBoard, stepGrab,
   disembark, loseCarried, lockOn, waveMix, standing as standingSurv,
   aboard as aboardSurv, missionOver, verdict as rescueVerdict,
   grabProgress, remaining as remainingSurv, exposed as exposedSurv,
   RESCUE2_TUNE, makeCamps, stepCall, stepEmerge, walkStep, runOver,
-  awake as campAwake } from './rescue.js?v=07e5c43c';
+  awake as campAwake } from './rescue.js?v=3c4d4574';
 import { WORMHOLE_PRESET, WORMHOLE_UNIFORM_DEFAULTS, RING_SPIN, TRAVEL,
-  travelRate, advancePhase } from './portalfx.js?v=07e5c43c';
-import { WORMHOLE_FRAG } from './fx/wormhole.frag.js?v=07e5c43c';
-import { CORONA_FRAG } from './fx/corona.frag.js?v=07e5c43c';
-import { labLine, parseLabQuery } from './lab.js?v=07e5c43c';
-import { bakeGalaxyCube } from './galaxybake.js?v=07e5c43c';
-import { SKY_PRESET } from './galaxyseed.js?v=07e5c43c';
-import { makeScore } from './score.js?v=07e5c43c';
-import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER, HACK_GATED, starterTower, towerSound, ROSTER } from './towers.js?v=07e5c43c';
-import { makeEconomy, sellRefund } from './economy.js?v=07e5c43c';
-import { pickTier } from './perftier.js?v=07e5c43c';
-import { applyWeatheredMaterial } from './cine/materials.js?v=07e5c43c';
-import { STICK, stickVector, knobOffset } from './stick.js?v=07e5c43c';
-import { registerServiceWorker } from './pwa.js?v=07e5c43c';
-import { makeBloom } from './postfx.js?v=07e5c43c';
-import { TANK_FEEL, TANK_FEEL_KNOBS, makeTankFeel, stepTankFeel, landTankFeel, fireTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js?v=07e5c43c';
-import { FEEL, loadFeel, saveFeel } from './feelstore.js?v=07e5c43c';
+  travelRate, advancePhase } from './portalfx.js?v=3c4d4574';
+import { WORMHOLE_FRAG } from './fx/wormhole.frag.js?v=3c4d4574';
+import { CORONA_FRAG } from './fx/corona.frag.js?v=3c4d4574';
+import { labLine, parseLabQuery } from './lab.js?v=3c4d4574';
+import { bakeGalaxyCube } from './galaxybake.js?v=3c4d4574';
+import { SKY_PRESET } from './galaxyseed.js?v=3c4d4574';
+import { makeScore } from './score.js?v=3c4d4574';
+import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER, HACK_GATED, starterTower, towerSound, ROSTER } from './towers.js?v=3c4d4574';
+import { makeEconomy, sellRefund } from './economy.js?v=3c4d4574';
+import { pickTier } from './perftier.js?v=3c4d4574';
+import { applyWeatheredMaterial } from './cine/materials.js?v=3c4d4574';
+import { STICK, stickVector, knobOffset } from './stick.js?v=3c4d4574';
+import { registerServiceWorker } from './pwa.js?v=3c4d4574';
+import { makeBloom } from './postfx.js?v=3c4d4574';
+import { TANK_FEEL, TANK_FEEL_KNOBS, makeTankFeel, stepTankFeel, landTankFeel, fireTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js?v=3c4d4574';
+import { FEEL, loadFeel, saveFeel } from './feelstore.js?v=3c4d4574';
 import { STRIKE_KNOBS, makeStrike, makeStrikeParams, grantStrikes, stepStrike,
   toggleArm, paintTarget, launchStrike, stepFall, skipFall, fallProgress,
-  strikeDamage, retargetStrike, orbitProgress } from './strike.js?v=07e5c43c';
+  strikeDamage, retargetStrike, orbitProgress } from './strike.js?v=3c4d4574';
 import { radarBasis, radarProject, radarBearing, sweepAngle, radarPhosphor,
-  proximitySectors, SENSOR_LEVELS, sensorColor } from './radar.js?v=07e5c43c';
-import { BLOOM_GROUPS } from './bloomweights.js?v=07e5c43c';
+  proximitySectors, SENSOR_LEVELS, sensorColor } from './radar.js?v=3c4d4574';
+import { BLOOM_GROUPS } from './bloomweights.js?v=3c4d4574';
 import { A6_TUNE, magFor, makeA6, stepA6, arc as a6Arc, a6Line } from './heptapod.js';
 import { SENTRY_TUNE } from './sentry.js';
-import { TOWER_LOOK_NAMES, DEFAULT_TOWER_LOOK, buildTowerLook, preloadLook, lookReady } from './towerlooks.js?v=07e5c43c';
-import { makeAudio } from './audio.js?v=07e5c43c';
-import { DEATH_KEYS } from './audiomanifest.js?v=07e5c43c';
+import { MISSILE_TUNE, scaleMissile, makeLock, stepLock, launchMissile, stepMissile } from './lockon.js';
+import { TOWER_LOOK_NAMES, DEFAULT_TOWER_LOOK, buildTowerLook, preloadLook, lookReady } from './towerlooks.js?v=3c4d4574';
+import { makeAudio } from './audio.js?v=3c4d4574';
+import { DEATH_KEYS } from './audiomanifest.js?v=3c4d4574';
 
 export function initTdTab(root) {
   let active = false;
@@ -9115,6 +9116,22 @@ export function initTdTab(root) {
       tw.recoil = Math.max(0, (tw.recoil ?? 0) - dt / SENTRY_TUNE.recoilBack);
       ud.recoilNode.position.z = -tw.recoil * SENTRY_TUNE.recoilKick;
     }
+    // A LAUNCHER MUST LOCK FIRST, and it locks with its DRIVE — the gate is
+    // how far the barrel still is from where it wants to be, in degrees,
+    // which is the same quantity the sentry range's tolerance is written in.
+    // Stepped here rather than in the firing path because a lock fills
+    // whether or not the weapon is off cooldown; that IS the mechanic.
+    if (tw.def.lock) {
+      if (!tw.lock) tw.lock = makeLock();
+      const err = Math.hypot(d, (tw.elev ?? 0) + (ud.pitchNode ? ud.pitchNode.rotation.x : 0))
+        * 180 / Math.PI;
+      const has = tw.aim !== undefined && enemies.some((e) => e.alive
+        && chord(graph.centers[tw.ci], e.pos) <= effectiveStats(tw.def, tw.tier).range * cellSide);
+      stepLock(tw.lock, dt, has ? { id: tw.ci, off: err, range: 1 } : null, {
+        gateMrad: SENTRY_TUNE.lockGate, lockTime: SENTRY_TUNE.lockTime, drain: 1.6,
+        breakMrad: SENTRY_TUNE.lockBreak, minRange: 0, maxRange: Infinity,
+      });
+    }
   }
 
   // WHERE THE SHOT LEAVES FROM. A muzzle empty if the model has one — so
@@ -9133,6 +9150,97 @@ export function initTdTab(root) {
   // reproducible with the rest of the run (no Math.random anywhere in game
   // logic) without pulling on any stream something else is counting on.
   const a6Rng = mulberry32((params.seed >>> 0) ^ 0x0a600a6);
+
+  // --- the QUIVER's seekers ------------------------------------------------
+  // THE SENTRY LAB'S LAUNCHER, ON THE BOARD. Not a second implementation:
+  // the same lockon.js the sniper aims by hand and the range aims by drive,
+  // put through the same dimensional scaler. The board's world is the UNIT
+  // SPHERE, so a 3.5-cell reach is 0.157 radians — four thousand times
+  // smaller than the sniper's seven hundred metres — and a tune written in
+  // metres and seconds is simply wrong here. `scaleMissile` makes it right
+  // by dimension rather than by a second table of hand-picked numbers.
+  //
+  // tau is chosen so a full-reach flight takes about a second: long enough
+  // to see the arc, short enough that the launcher is not shooting at where
+  // something used to be.
+  const MSL_K = (3.5 * cellSide) / 700;
+  const TOWER_MSL = scaleMissile(MISSILE_TUNE, MSL_K, 1 / 5.5);
+  const towerSeekers = [];
+  let seekerHits = 0, seekerLost = 0;
+
+  function launchTowerSeeker(tw, from, target, tNow) {
+    const n = norm3(from);
+    const raw = sub3(target.pos, from);
+    const dir = norm3(sub3(raw, scale3(n, dot3(raw, n) * 0.35)));   // mostly flat, nose up
+    const m = launchMissile(from, dir, TOWER_MSL.launchSpeed, 0);
+    m.tid = target.id;
+    m.by = tw;
+    m.carry = 0;
+    m.launchRange = len3(raw);
+    const mesh = makeBulletCloud({ body: tw.def.color, hi: 0xffffff });
+    mesh.scale.setScalar(cellSide * 0.5);
+    mesh.position.set(from[0], from[1], from[2]);
+    scene.add(mesh);
+    m.mesh = mesh;
+    towerSeekers.push(m);
+  }
+
+  function stepTowerSeekers(dt, tNow) {
+    for (let i = towerSeekers.length - 1; i >= 0; i--) {
+      const m = towerSeekers[i];
+      const t = enemies.find((e) => e.id === m.tid && e.alive);
+      // the target died: the missile goes stupid and flies on, which is
+      // more honest than deleting it mid-air
+      const tp = t ? t.pos : [m.p[0] + m.v[0], m.p[1] + m.v[1], m.p[2] + m.v[2]];
+      const tv = t && t.vel ? t.vel : [0, 0, 0];
+      const h = TOWER_MSL.step;
+      m.carry += dt;
+      for (let k = 0; k < 400 && !m.spent && m.carry >= h - 1e-9; k++) {
+        m.carry -= h;
+        stepMissile(m, h, tp, tv, m.launchRange, TOWER_MSL);
+        if (t && m.t > TOWER_MSL.arm) {
+          const miss = Math.hypot(tp[0] - m.p[0], tp[1] - m.p[1], tp[2] - m.p[2]);
+          // the BOARD's own hit radius, not the warhead's: a missile that
+          // kills at a different distance from every other shot on the
+          // board is a board that cannot be reasoned about
+          if (miss <= cellSide * 0.7) {
+            const eff2 = effectiveStats(m.by.def, m.by.tier);
+            damageEnemy(t, tNow, eff2.dmg, true);
+            m.spent = true;
+            seekerHits++;
+          }
+        }
+      }
+      m.mesh.position.set(m.p[0], m.p[1], m.p[2]);
+      // IT IS ALLOWED UNDER THE SURFACE. A top-attack round comes DOWN on
+      // something standing on the ground, so the last part of its dive is
+      // below the radius the ground sits at — and culling at exactly 1.0
+      // killed three seekers in four, each of them still closing and none
+      // of them further than a cell away. The floor is a third of a cell
+      // down, which is under the terrain and past any body on it.
+      const alt = len3(m.p);
+      const floor = 1 - cellSide * 0.35;
+      if (!(m.spent || alt < floor || m.t > TOWER_MSL.maxTime)) continue;
+      if (!m.spent) {
+        seekerLost++;
+        if (urlParams.get('plasmaprobe') === '1') {
+          const tgt = enemies.find((e) => e.id === m.tid && e.alive);
+          console.log(`SEEKERLOST t=${m.t.toFixed(2)} alt=${alt.toFixed(4)}`
+            + ` maxT=${TOWER_MSL.maxTime.toFixed(2)}`
+            + ` why=${alt < floor ? 'GROUND' : m.t > TOWER_MSL.maxTime ? 'TIMEOUT' : '?'}`
+            + ` target=${tgt ? 'alive' : 'gone'}`
+            + ` miss=${tgt ? (Math.hypot(tgt.pos[0] - m.p[0], tgt.pos[1] - m.p[1], tgt.pos[2] - m.p[2]) / cellSide).toFixed(2) + ' cells' : '-'}`
+            + ` speed=${(len3(m.v) / cellSide).toFixed(2)} cells/s`);
+        }
+      }
+      const burst = makeDotBurst(m.spent ? 0xffd27f : 0x6f8ea0, norm3(m.p), m.spent ? 22 : 10);
+      burst.scale.setScalar(cellSide * (m.spent ? 2.4 : 1.2));
+      burst.position.set(m.p[0], m.p[1], m.p[2]);
+      scene.add(burst); debris.push(burst);
+      scene.remove(m.mesh); disposeObj(m.mesh);
+      towerSeekers.splice(i, 1);
+    }
+  }
 
   // --- the PLASMA THROWER's beam ------------------------------------------
   // The tank's secondary, emplaced. It uses the SAME shader the pilot's
@@ -9160,17 +9268,34 @@ export function initTdTab(root) {
   // ONE CONSTRUCTOR for both beams: a thrower is wide and jittery, a lance
   // is thin and steady, and the difference is two numbers rather than two
   // copies of the rig.
-  function makePlasmaLinks(tw, widthMul = 1, jitterMul = 1) {
+  // A LANCE IS NOT A THROWER (operator: "much thinner and straighter, no
+  // jitter"). Same shader, opposite settings: a plasma thrower is wide, hot
+  // and unstable because it is a spray of matter; a laser is a thin steady
+  // line because it is light. The jitter goes to nothing, the noise and
+  // flicker come most of the way down, and the width is a fifth of the
+  // thrower's — which is what makes the two read as different weapons
+  // rather than as the same beam at two colours.
+  const LANCE_LOOK = {
+    width: 0.2, jitter: 0,
+    noiseAmount: 0.08, flicker: 0.06, scrollSpeed: -1.2,
+  };
+  const THROW_LOOK = { width: 1, jitter: 1 };
+
+  function makePlasmaLinks(tw, look = THROW_LOOK) {
     const links = [];
     for (let i = 0; i < PLASMA_LINKS; i++) {
       const bm = createBeam(new THREE.Vector3(), new THREE.Vector3(), {
         ...BOARD_PRESET,
-        // the tower's own colour in the glow, so a Plasma Thrower reads as
-        // one of ITS family and not as a second tank
-        glowColor: `#${tw.def.color.toString(16).padStart(6, '0')}`,
-        coreWidth: PLASMA_W.coreWidth * cellSide * widthMul,
-        glowWidth: PLASMA_W.glowWidth * cellSide * widthMul,
-        jitterAmount: PLASMA_W.jitterAmount * cellSide * jitterMul,
+        ...(look.noiseAmount !== undefined ? { noiseAmount: look.noiseAmount } : {}),
+        ...(look.flicker !== undefined ? { flicker: look.flicker } : {}),
+        ...(look.scrollSpeed !== undefined ? { scrollSpeed: look.scrollSpeed } : {}),
+        // the BEAM's colour if the def names one, else the tower's own — so
+        // a Plasma Thrower reads as one of ITS family and not as a second
+        // tank, and a green laser does not have to be a green tower
+        glowColor: `#${(tw.def.beamColor ?? tw.def.color).toString(16).padStart(6, '0')}`,
+        coreWidth: PLASMA_W.coreWidth * cellSide * look.width,
+        glowWidth: PLASMA_W.glowWidth * cellSide * look.width,
+        jitterAmount: PLASMA_W.jitterAmount * cellSide * look.jitter,
       });
       bm.mesh.visible = false;
       bm.mesh.renderOrder = 10;
@@ -9225,7 +9350,7 @@ export function initTdTab(root) {
   function lanceBeam(tw, from, dir, len, tNow, struck) {
     let ent = plasmaBeams.get(tw);
     if (!ent) {
-      ent = { links: makePlasmaLinks(tw, 0.55, 1.35), until: 0 };
+      ent = { links: makePlasmaLinks(tw, LANCE_LOOK), until: 0 };
       plasmaBeams.set(tw, ent);
     }
     ent.until = tNow + (tw.def.burst ?? 0.6);
@@ -9337,6 +9462,7 @@ export function initTdTab(root) {
 
   function stepTowers(dt, tNow) {
     stepPlasmaBeams(tNow);
+    stepTowerSeekers(dt, tNow);
     for (const tw of towers) {
       // idle first, aim second: the idle sets rotation.y unconditionally, and
       // a tracking head must have the last word on where it looks
@@ -9365,6 +9491,9 @@ export function initTdTab(root) {
         }
       }
       if (!target) continue;
+      // ...and a LAUNCHER waits for its lock. Everything else fires the
+      // moment it has something in range.
+      if (tw.def.lock && !(tw.lock && tw.lock.locked)) continue;
       tw.cooldown = shotInterval(eff.rate);
       // one line, every tower: the key IS the def key, unless the def says
       // otherwise — which the second roster's do, since there is no
@@ -9396,6 +9525,14 @@ export function initTdTab(root) {
         const hitP = add3(target.pos, scale3(norm3(target.pos), cellSide * 0.3));
         spawnSlug(muzzle, hitP, tw.def.color, cellIndex(target.pos));
         warnRing(tw.ci, tw.def.color, 0.35, cellSide * 0.9); // muzzle pulse
+      } else if (atk === 'seeker') {
+        // FIRE AND FORGET. The missile carries the target it was launched
+        // at, so the launcher has no reason to keep looking at it — and
+        // every reason not to, which is the lesson the sentry range taught:
+        // a Quiver that holds its lock empties itself into one walker while
+        // the rest of the wave goes past.
+        launchTowerSeeker(tw, muzzle, target, tNow);
+        if (tw.lock) tw.lock = makeLock();
       } else if (atk === 'lance') {
         // THE LANCE. Not a shot at a body — a LINE, out to the full reach,
         // and everything standing on it pays. The target only chooses the
@@ -14763,7 +14900,7 @@ export function initTdTab(root) {
       // twenty-four cells from the lane with nothing in its seven-cell reach
       // and reported "never fired", which says nothing about the weapon and
       // everything about where the probe put it.
-      const wants = ['plasma', 'plasma', 'lancer', 'rotor'];
+      const wants = ['plasma', 'plasma', 'lancer', 'quiver', 'quiver'];
       const sites = [];
       for (let i = 0; i < dungeon.tags.length; i++) {
         if (!placeError(i) && !towerByCell.get(i)) sites.push(i);
@@ -14823,6 +14960,18 @@ export function initTdTab(root) {
             + ` · cool ${tw.cooldown.toFixed(2)} · target ${tgt ? 'yes' : 'NO'}`
             + ` · nearest ${nearest === undefined ? '-' : nearest.toFixed(1)} cells (reach ${eff2.range})`
             + ` · lit ${!!(plasmaBeams.get(tw) && plasmaBeams.get(tw).links[0].mesh.visible)}`);
+        }
+        // THE QUIVER: is it locking, and are missiles in the air. Both are
+        // invisible to a still — an unlocked launcher and a broken one look
+        // exactly the same, which is a turret pointing at something and not
+        // shooting.
+        for (const tw of towers) {
+          if (!tw.def.lock) continue;
+          console.log(`PLASMAPROBE   quiver ${tw.ci}`
+            + ` ${tw.lock && tw.lock.locked ? 'LOCKED' : `seeking ${((tw.lock && tw.lock.meter) || 0).toFixed(2)}`}`
+            + ` · ${towerSeekers.filter((m) => m.by === tw).length} in the air`
+            + ` · cool ${tw.cooldown.toFixed(2)}`
+            + ` · seekers hit ${seekerHits} lost ${seekerLost}`);
         }
         if (n >= 20) clearInterval(tick);
       }, 1000);

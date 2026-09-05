@@ -115,8 +115,13 @@ const ROSTER_V2 = [
   { key: 'plasma', label: 'Plasma Thrower', color: 0x2fe6d0, cost: 80,
     dmg: 4 / 90, range: 2.6, rate: 6, attack: 'beam', plasma: true,
     model: 'plasma', sound: 'tower_laser', shape: 'ripple', spin: 0.8 },
+  // QUIVER — the sentry lab's launcher, on the board (operator). Not the
+  // old `homing` tower shot: it must LOCK before it will fire, and what
+  // leaves the cell then flies its own top-attack intercept out of
+  // src/lockon.js. Same weapon the sniper aims by hand and the range aims
+  // by drive, which is the whole shape of the automation arc.
   { key: 'quiver', label: 'Quiver', color: 0x5a9bff, cost: 90,
-    dmg: 9 / 90, range: 3.5, rate: 1.2, attack: 'homing',
+    dmg: 13 / 90, range: 3.5, rate: 1.2, attack: 'seeker', lock: true,
     model: 'quiver', sound: 'tower_homing',
     shape: 'gripper', spin: 0.9, projPx: 5, trail: 6, projSpeed: 13 },
   { key: 'relay', label: 'Relay', color: 0xc4e6ff, cost: 100,
@@ -137,6 +142,11 @@ const ROSTER_V2 = [
   { key: 'lancer', label: 'Lancer', color: 0xffffff, cost: 130,
     dmg: 30 / 90, range: 7.0, rate: 0.45, attack: 'lance', pierce: true,
     burst: 0.8,          // seconds the beam stays lit — ONE long burst
+    // THE BEAM IS GREEN, and the tower is not (operator). Separate keys on
+    // purpose: `color` is the tower's identity — the range ring, the shop
+    // icon, the model's own tint — and the beam is what it throws. A laser
+    // is allowed a colour of its own without repainting the machine.
+    beamColor: 0x4dff86,
     model: 'lancer', sound: 'tower_sniper',
     shape: 'guyed', projPx: 7, trail: 11, projSpeed: 42 },
   // HOWITZER — the slot Laser used to hold, and a howitzer is not a beam.

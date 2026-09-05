@@ -245,8 +245,18 @@ token — the corner badge was retired from the game view).
   tank's wall-march killed it half a cell out on its own wall), it measures
   `off` on the UNIT sphere (or an enemy pays for its altitude out of a 0.04
   hit radius), and it takes its bearing FROM THE MUZZLE, not the cell centre.
+  The lance is GREEN, thin and jitter-free (`def.beamColor`, separate from
+  `def.color` so a laser can have a colour without repainting the machine;
+  `LANCE_LOOK` vs `THROW_LOOK` — a thrower is a spray of matter, a laser is
+  light). The QUIVER fires the sentry lab's own seekers (`attack: 'seeker'`,
+  `lock: true`) — lockon.js through `scaleMissile` into unit-sphere radians,
+  locked with the DRIVE's error in degrees, fire-and-forget. A seeker's
+  ground cull sits a third of a cell BELOW the surface: a top-attack round
+  dives onto something standing on the ground, and culling at exactly 1.0
+  killed three in four while they were still closing.
   `?plasmaprobe=1` reports beams lit, whether the throw descends, every rig's
-  yaw/elev/recoil, and how many bodies a lance went through.
+  yaw/elev/recoil, how many bodies a lance went through, and each Quiver's
+  lock plus the seekers hit/lost tally.
 - maze/organic/battle/heart tabs are ~900-line siblings (cp+sed lineage).
   When batch-patching them: anchor on CODE lines (comments drift first),
   assert per file, treat a mid-script abort as the designed outcome.
