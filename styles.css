@@ -5,22 +5,22 @@
    back to a system face until the subset is rebuilt. */
 @font-face {
   font-family: 'VT323';
-  src: url('assets/fonts/VT323.woff2?v=706626c5') format('woff2');
+  src: url('assets/fonts/VT323.woff2?v=5ca3bd26') format('woff2');
   font-weight: 400; font-style: normal; font-display: swap;
 }
 @font-face {
   font-family: 'Press Start 2P';
-  src: url('assets/fonts/PressStart2P.woff2?v=706626c5') format('woff2');
+  src: url('assets/fonts/PressStart2P.woff2?v=5ca3bd26') format('woff2');
   font-weight: 400; font-style: normal; font-display: swap;
 }
 @font-face {
   font-family: 'Share Tech Mono';
-  src: url('assets/fonts/ShareTechMono.woff2?v=706626c5') format('woff2');
+  src: url('assets/fonts/ShareTechMono.woff2?v=5ca3bd26') format('woff2');
   font-weight: 400; font-style: normal; font-display: swap;
 }
 @font-face {
   font-family: 'DotGothic16';
-  src: url('assets/fonts/DotGothic16.woff2?v=706626c5') format('woff2');
+  src: url('assets/fonts/DotGothic16.woff2?v=5ca3bd26') format('woff2');
   font-weight: 400; font-style: normal; font-display: swap;
 }
 
@@ -4189,8 +4189,12 @@ body:not(.chrome-open) #tabbar .tabgroup:not(:has(button.active)) { display: non
   font-variant-numeric: tabular-nums;
 }
 #sniper-fcs .fcs-strip {
-  position: absolute; left: 0; right: 0; top: 8px; display: flex; justify-content: space-between;
-  padding: 0 18px; font-size: 9px; letter-spacing: .26em; text-transform: uppercase; color: var(--dim);
+  /* the ☰ owns the top-left corner and the tab pill owns the middle of the
+     top edge, so there is no room here for a third label: the weapon's name
+     and nature live in the SCOPE box, which is where a shooter reads them.
+     What is left of the strip is right-aligned and stays out of both. */
+  position: absolute; left: 0; right: 0; top: 8px; display: flex; justify-content: flex-end;
+  gap: 24px; padding: 0 268px 0 18px; font-size: 9px; letter-spacing: .26em; text-transform: uppercase; color: var(--dim);
 }
 #sniper-fcs .fcs-mid { color: var(--cyan); }
 #sniper-fcs .fcs-right { color: var(--lock); }
@@ -4212,8 +4216,12 @@ body:not(.chrome-open) #tabbar .tabgroup:not(:has(button.active)) { display: non
    desktop; the coarse block below puts them back, where the panel is a
    bottom drawer instead */
 #sniper-fcs .r-tr { right: 268px; top: 56px; border-right: 1px solid; border-top: 1px solid; }
-#sniper-fcs .r-bl { left: 18px; bottom: 56px; border-left: 1px solid; border-bottom: 1px solid; }
-#sniper-fcs .r-br { right: 268px; bottom: 56px; border-right: 1px solid; border-bottom: 1px solid; }
+/* THE BOTTOM CORNERS BELONG TO THE CONTROLS. The deep-link button sits in
+   one and the four-high button stack in the other, so both readouts start
+   above them — a readout drawn under a button is a readout that is not
+   there. The stack tops out at 206 + 52; the link button is 52 tall. */
+#sniper-fcs .r-bl { left: 18px; bottom: 124px; border-left: 1px solid; border-bottom: 1px solid; }
+#sniper-fcs .r-br { right: 268px; bottom: 268px; border-right: 1px solid; border-bottom: 1px solid; }
 #sniper-fcs .r-head {
   margin-bottom: 7px; font-size: 10px; font-weight: 700; letter-spacing: .28em;
   text-transform: uppercase; color: var(--cyan);
@@ -4264,7 +4272,9 @@ body:not(.chrome-open) #tabbar .tabgroup:not(:has(button.active)) { display: non
 @media (pointer: coarse), (max-width: 700px) {
   #sniper-fcs .ro { width: 34vw; min-width: 0; padding: 7px 8px; font-size: 10px; }
   #sniper-fcs .r-tl, #sniper-fcs .r-tr { top: 46px; }
-  #sniper-fcs .r-bl, #sniper-fcs .r-br { bottom: 46px; }
+  #sniper-fcs .fcs-strip { padding-right: 18px; }
+  #sniper-fcs .r-bl { bottom: 116px; }
+  #sniper-fcs .r-br { bottom: 260px; }
   #sniper-fcs .r-tr, #sniper-fcs .r-br { right: 18px; }
   #sniper-fcs .field .v { font-size: 10px; }
   #sniper-fcs .field .k { font-size: 8px; letter-spacing: .12em; }
@@ -4273,7 +4283,7 @@ body:not(.chrome-open) #tabbar .tabgroup:not(:has(button.active)) { display: non
   #sniper-fcs .fcs-radar canvas { width: 100px; height: 100px; }
   #sniper-fcs .fcs-note { font-size: 10px; bottom: 10px; }
 }
-#sniper-fire, #sniper-breath, #sniper-spawn {
+#sniper-fire, #sniper-breath, #sniper-spawn, #sniper-real {
   /* clear of the lil-gui panel, which owns the right edge on a desktop; the
      coarse block below puts them back on the thumb's edge, where the panel
      is a bottom drawer instead */
@@ -4288,14 +4298,15 @@ body:not(.chrome-open) #tabbar .tabgroup:not(:has(button.active)) { display: non
 #sniper-breath { bottom: 78px; }
 /* the spawn button takes the lock colour: it is the one control here that
    makes the range more dangerous rather than less */
+#sniper-real { bottom: 206px; color: #ff8a5c; border-color: rgba(255,138,92,.55); }
 #sniper-spawn { bottom: 142px; color: #ffb43d; border-color: rgba(255, 180, 61, .55); }
-#sniper-fire:active, #sniper-breath:active, #sniper-spawn:active { background: rgba(90, 200, 180, 0.5); color: #fff; }
+#sniper-fire:active, #sniper-breath:active, #sniper-spawn:active, #sniper-real:active { background: rgba(90, 200, 180, 0.5); color: #fff; }
 #sniper-gear { position: absolute; right: 12px; top: 12px; z-index: 8; width: 44px; height: 44px; border-radius: 10px;
   border: 1px solid rgba(120, 200, 255, 0.35); background: rgba(10, 22, 34, 0.85); color: #9fdcff; font-size: 20px; display: none; }
 #tab-sniper.panel-hidden .lil-gui.root { display: none !important; }
 @media (pointer: coarse), (max-width: 700px) {
   #sniper-gear { display: block; top: calc(env(safe-area-inset-top, 0px) + 112px); right: 12px; }
-  #sniper-fire, #sniper-breath, #sniper-spawn { right: 14px; }
+  #sniper-fire, #sniper-breath, #sniper-spawn, #sniper-real { right: 14px; }
   #sniper-hud { font-size: 11px; max-width: calc(100vw - 130px); }
   #tab-sniper .lil-gui.root { display: block !important; position: fixed !important; left: 0 !important; right: 0 !important; bottom: 0 !important; top: auto !important;
     width: 100% !important; max-height: 46vh; overflow-y: auto; --widget-height: 36px; --font-size: 15px; --input-font-size: 15px; --name-width: 44%;

@@ -7,6 +7,8 @@ import {
   BALLISTICS_TUNE, toMrad, fromMrad, windAt, launch, step, flyTo,
   zeroAngle, solution, makeShooter, stepBreath, sway, rangeFromMrad, hitsAt,
   ballisticsKnobProblems, MRAD, nextPlate,
+  WEAPONS, WEAPON_IDS, applyWeapon, solveAngles, launchAngleFor, splashHits,
+  refineAngle,
 } from '../src/ballistics.js';
 
 let failures = 0;
@@ -113,6 +115,60 @@ console.log('wind:');
     Math.abs(windAt(3, { ...T, gust: 0 })[0] - windAt(9, { ...T, gust: 0 })[0]) < 1e-9);
 }
 
+console.log('the weapons:');
+{
+  check('four of them', WEAPON_IDS.length === 4 && WEAPONS.lancer && WEAPONS.laser
+    && WEAPONS.mortar && WEAPONS.railgun);
+  const tuneFor = (id) => { const t = { ...noWind }; applyWeapon(t, id); return t; };
+  // applyWeapon takes the ROUND and leaves the range alone: the wind, the
+  // sway, the zero and the plate are the range's, not the weapon's
+  const t2 = { ...T, wind: 33, zero: 912, swayFast: 4 };
+  applyWeapon(t2, 'mortar');
+  check('a weapon changes the round, not the range',
+    t2.wind === 33 && t2.zero === 912 && t2.swayFast === 4 && t2.muzzleVel === 150);
+
+  // A LASER HAS NOTHING TO SOLVE. Saying so beats printing a drop the round
+  // will not take.
+  const laser = solution(900, tuneFor('laser'), 0, WEAPONS.laser);
+  check('a laser has no drop, no drift and no flight',
+    laser.holdUp === 0 && laser.drift === 0 && laser.time === 0 && laser.reached);
+
+  // THE RAIL GUN IS FLAT. Same range, an order of magnitude less to dial.
+  const lan = solution(700, tuneFor('lancer'), 0, WEAPONS.lancer);
+  const rail = solution(700, tuneFor('railgun'), 0, WEAPONS.railgun);
+  check('the rail gun barely drops', Math.abs(rail.holdUp) < Math.abs(lan.holdUp) / 10,
+    `${rail.holdUp.toFixed(2)} vs ${lan.holdUp.toFixed(2)}`);
+  check('...and gets there far sooner', rail.time < lan.time / 3);
+
+  // THE MORTAR LOBS. Two answers exist at that range and it takes the HIGH
+  // one — a solver that assumed a single branch could not express it at all.
+  const mt = tuneFor('mortar');
+  const arcs = solveAngles(700, mt);
+  check('a lobbed round has two answers', arcs.length === 2, arcs.map((a) => (a * 180 / Math.PI).toFixed(1)).join());
+  check('...a flat one and a high one', arcs[0] < 0.4 && arcs[1] > 1.0);
+  check('it takes the high one',
+    Math.abs(launchAngleFor(700, mt, true) - arcs[1]) < 1e-9);
+  check('...and the flat one when asked',
+    Math.abs(launchAngleFor(700, mt, false) - arcs[0]) < 1e-9);
+  // AND THE HIGH ONE ACTUALLY LANDS THERE — the property that makes it a
+  // solution rather than a steep angle
+  check('the high arc lands on the target',
+    Math.abs(flyTo(700, arcs[1], 0, mt).drop) < 1.0,
+    flyTo(700, arcs[1], 0, mt).drop.toFixed(3));
+  check('...and takes much longer to arrive', flyTo(700, arcs[1], 0, mt).time > 5 * lan.time);
+  const mort = solution(700, mt, 0, WEAPONS.mortar);
+  check('the mortar reports its whole launch angle as the hold', mort.holdUp > 1000);
+
+  // SPLASH is the mortar's answer to a wind it cannot dial away
+  check('a near miss still counts with splash', splashHits(9, 0.55, 14));
+  check('...and does not without', !splashHits(9, 0.55, 0));
+  check('a far miss counts for nobody', !splashHits(40, 0.55, 14));
+
+  // the memo is a memo, not a new answer
+  const a1 = launchAngleFor(650, mt, true), a2 = launchAngleFor(650, mt, true);
+  check('the cached answer is the same answer', a1 === a2 && Number.isFinite(a1));
+}
+
 console.log('the pop-up plate:');
 {
   const rng = (() => { let a = 4414; return () => {
@@ -200,6 +256,44 @@ console.log('hits:');
   check('dead centre hits', hitsAt(0, 0.4));
   check('the edge hits', hitsAt(0.4, 0.4));
   check('past it misses', !hitsAt(0.41, 0.4));
+}
+
+console.log('every weapon obeys its own solution:');
+{
+  // THE ONE PROMISE. Dial what the HUD prints and the round arrives — for
+  // each weapon, at a moment that is NOT t=0. Every one of these caught a
+  // real bug: a hold solved at t0=0 and fired a second into the gust (the
+  // mortar landed ten metres low), an elevation solved straight ahead then
+  // swung ten degrees into the wind (seventy metres short), a beam given a
+  // bullet's zero, and a lob aimed along the sight line instead of on its
+  // own arc.
+  for (const id of WEAPON_IDS) {
+    const w = WEAPONS[id];
+    const t = { ...BALLISTICS_TUNE };
+    applyWeapon(t, id);
+    for (const t0 of [0, 1.4, 3.9]) {
+      const range = 700;
+      const s2 = solution(range, t, t0, w);
+      if (w.hitscan) {
+        check(`${id} @${t0}s: a beam has no hold`, s2.holdUp === 0 && s2.holdSide === 0);
+        continue;
+      }
+      // a flat weapon's hold sits ON TOP of its zero — the barrel already
+      // points that much above the sight line — where a lob's hold IS the
+      // whole launch angle. Firing one as if it were the other is exactly
+      // the mistake the game made.
+      const zed = w.loft ? 0 : zeroAngle(t.zero, t);
+      const r = flyTo(range, zed + s2.holdUp / MRAD, s2.holdSide / MRAD, t, t0);
+      const miss = Math.hypot(r.drop, r.drift);
+      check(`${id} @${t0}s: its own solution arrives (${miss.toFixed(2)} m)`,
+        r.reached && miss <= (w.splash ? 3 : 0.35));
+    }
+  }
+  // and the lofted solve is the HIGH branch, not the flat one dressed up
+  const m = { ...BALLISTICS_TUNE }; applyWeapon(m, 'mortar');
+  check('a lob is solved past forty-five degrees', refineAngle(700, m, 0) > Math.PI / 4);
+  check('the same question twice is the same answer',
+    refineAngle(700, m, 1.4) === refineAngle(700, m, 1.4));
 }
 
 console.log(failures ? `\n${failures} FAILURES` : '\nall ballistics invariants hold');

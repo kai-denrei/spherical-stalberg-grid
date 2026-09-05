@@ -5,18 +5,18 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
   <title>spherical stålberg grid</title>
   <meta name="theme-color" content="#10131a">
-  <link rel="manifest" href="./manifest.webmanifest?v=706626c5">
-  <link rel="apple-touch-icon" href="./icons/apple-touch-icon.png?v=706626c5">
+  <link rel="manifest" href="./manifest.webmanifest?v=5ca3bd26">
+  <link rel="apple-touch-icon" href="./icons/apple-touch-icon.png?v=5ca3bd26">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="SphereGrid">
-  <link rel="stylesheet" href="./styles.css?v=706626c5">
+  <link rel="stylesheet" href="./styles.css?v=5ca3bd26">
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
-  <link rel="icon" href="favicon.svg?v=706626c5" type="image/svg+xml">
-  <meta name="cb" content="706626c5">
-  <link rel="icon" type="image/svg+xml" href="./cb-shapes/48.svg?v=706626c5">
+  <link rel="icon" href="favicon.svg?v=5ca3bd26" type="image/svg+xml">
+  <meta name="cb" content="5ca3bd26">
+  <link rel="icon" type="image/svg+xml" href="./cb-shapes/28.svg?v=5ca3bd26">
   <!-- cb-badge retired from the game view (operator ruling): the build
        token lives in the DEV LOG tab, which reads meta[name="cb"] itself -->
 </head>
@@ -256,7 +256,7 @@
     <div id="td-launch" class="caution-frame" aria-label="launch control">
       <button id="td-safety" class="safety" type="button" aria-pressed="false" aria-label="safety">
         <span class="lbl-on">ON</span>
-        <img id="td-safety-img" class="switch-img" src="assets/ui/switch-off.png?v=706626c5" alt="" width="120" height="200">
+        <img id="td-safety-img" class="switch-img" src="assets/ui/switch-off.png?v=5ca3bd26" alt="" width="120" height="200">
         <span class="lbl-off">OFF</span>
       </button>
       <div id="td-launch-readout">
@@ -358,7 +358,6 @@
          ~/Dev/onkochishin/atelier/hud-targeting, on the operator's steer. -->
     <div id="sniper-fcs" aria-hidden="true">
       <div class="fcs-strip">
-        <span class="fcs-left">LANCER · DIRECT FIRE</span>
         <span class="fcs-mid">&#9670; FCS // OPTIC</span>
         <span class="fcs-right" id="fcs-phase">PHASE 1</span>
       </div>
@@ -367,6 +366,7 @@
         <div class="r-head">Scope</div>
         <div class="field"><span class="k">Zero</span><b class="v" id="f-zero">—</b></div>
         <div class="field"><span class="k">Mag</span><b class="v" id="f-mag">—</b></div>
+        <div class="field"><span class="k">Weapon</span><b class="v" id="f-weapon">—</b></div>
         <div class="field"><span class="k">Hold up</span><b class="v" id="f-holdup">—</b></div>
         <div class="field"><span class="k">Hold side</span><b class="v" id="f-holdside">—</b></div>
         <div class="field"><span class="k">Breath</span><b class="v" id="f-breath">—</b></div>
@@ -399,7 +399,8 @@
       <div class="fcs-note" id="f-note">take a shot</div>
     </div>
     <button id="sniper-breath" type="button" title="hold your breath (Shift)">&#9679; BREATH</button>
-    <button id="sniper-spawn" type="button" title="spawn an enemy that walks at you (E)">&#9888; SPAWN</button>
+    <button id="sniper-real" type="button" title="spawn a REAL enemy, on the board's own spec (T)">&#9888; REAL</button>
+    <button id="sniper-spawn" type="button" title="spawn a plain mover (E)">&#9888; SPAWN</button>
     <button id="sniper-fire" type="button" title="fire (Space)">FIRE</button>
     <button id="sniper-link" class="lab-link" type="button" title="deep link: copy this lab's current settings as a URL">&#128279;</button>
     <button id="sniper-gear" type="button" title="show / hide the sliders">&#9881;</button>
@@ -650,6 +651,6 @@
     </div>
   </div>
 
-  <script type="module" src="./src/main.js?v=706626c5"></script>
+  <script type="module" src="./src/main.js?v=5ca3bd26"></script>
 </body>
 </html>

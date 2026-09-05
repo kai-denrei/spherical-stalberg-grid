@@ -14,7 +14,7 @@
 // Coordinates: the shooter is at the origin looking down +Z, +Y is up, +X is
 // right. Metres and seconds throughout.
 
-import { makeParams, clampParams, formatKnobs, knobProblems } from './knobs.js?v=706626c5';
+import { makeParams, clampParams, formatKnobs, knobProblems } from './knobs.js?v=5ca3bd26';
 
 export const BALLISTICS_TUNE = {
   muzzleVel: 700,     // m/s
@@ -154,7 +154,10 @@ export function flyTo(range, elev, az = 0, tune = BALLISTICS_TUNE, t0 = 0) {
 // `range`. Bisection on the same integrator the bullet uses — so the rifle is
 // zeroed against its own physics rather than against a formula that agrees
 // with them only while the drag is nought.
-export function zeroAngle(range, tune = BALLISTICS_TUNE) {
+export function zeroAngle(range, tune = BALLISTICS_TUNE, loft = false) {
+  // a lobbed weapon has no meaningful "zero" in the flat sense — its sight
+  // line is the high arc, so it is solved on that branch
+  if (loft) { const a = launchAngleFor(range, tune, true); return Number.isFinite(a) ? a : 0; }
   let lo = 0, hi = 0.15;   // radians; 0.15 is ~8.6°, far past any sane zero
   for (let i = 0; i < 40; i++) {
     const mid = (lo + hi) / 2;
@@ -167,7 +170,36 @@ export function zeroAngle(range, tune = BALLISTICS_TUNE) {
 // THE FIRING SOLUTION, for a rifle zeroed at `tune.zero`: how far ABOVE the
 // target the reticle must sit, and how far INTO the wind, both in
 // milliradians. This is what a chip prints, and what a good shot works out.
-export function solution(range, tune = BALLISTICS_TUNE, t0 = 0) {
+export function solution(range, tune = BALLISTICS_TUNE, t0 = 0, w = null) {
+  // A HITSCAN WEAPON HAS NO SOLUTION TO PRINT. It arrives where it is
+  // pointed, so the hold is zero and the flight is nothing — and saying so is
+  // better than printing a drop the round will not take.
+  if (w && w.hitscan) return { drop: 0, drift: 0, time: 0, holdUp: 0, holdSide: 0, reached: true };
+  if (w && w.loft) {
+    // a mortar is aimed on its own arc, not held over a flat zero: the
+    // "hold" is the whole launch angle, in mrad — and it must be the angle
+    // for the gust the round will ACTUALLY fly through. The memoised solve
+    // is done at t0=0; a 25-second flight launched a second later lands ten
+    // metres low, so the coarse answer is only a bracket to refine inside.
+    let a = refineAngle(range, tune, t0);
+    if (!Number.isFinite(a)) return { drop: NaN, drift: NaN, holdUp: NaN, holdSide: NaN, time: NaN, reached: false };
+    // A HUNDRED AND SEVENTY MILLIRADIANS IS NOT A SMALL ANGLE, and the two
+    // corrections are not independent: swinging the barrel ten degrees off
+    // axis lengthens the path to the target's plane, so an elevation solved
+    // straight ahead then falls seventy metres short. Solve them TOGETHER —
+    // correct the drift, re-solve the arc for that bearing, repeat — rather
+    // than correcting one and hoping the other still holds.
+    let az = 0, r3 = flyTo(range, a, 0, tune, t0);
+    for (let i = 0; i < 2 && r3.reached; i++) {
+      az += -r3.drift / range;
+      a = refineAngle(range, tune, t0, az);
+      if (!Number.isFinite(a)) break;
+      r3 = flyTo(range, a, az, tune, t0);
+    }
+    if (!Number.isFinite(a)) return { drop: NaN, drift: NaN, holdUp: NaN, holdSide: NaN, time: NaN, reached: false };
+    return { drop: r3.drop, drift: r3.drift, time: r3.time, reached: r3.reached,
+      holdUp: a * MRAD, holdSide: az * MRAD };
+  }
   const z = zeroAngle(tune.zero, tune);
   const r = flyTo(range, z, 0, tune, t0);
   if (!r.reached) return { drop: NaN, drift: NaN, holdUp: NaN, holdSide: NaN, time: NaN, reached: false };
@@ -179,6 +211,134 @@ export function solution(range, tune = BALLISTICS_TUNE, t0 = 0) {
     holdSide: toMrad(-r.drift, range),
   };
 }
+
+// --- the weapons ----------------------------------------------------------
+// Four ways to put a round downrange, and each one stresses a different part
+// of the physics — which is the reason to have four rather than one with a
+// velocity slider:
+//
+//   LANCER   the baseline. Drop and wind both matter; the whole exercise.
+//   LASER    hitscan. No drop, no wind, no lead — so ONLY the sway is left,
+//            and it is the weapon that says what your hands are doing.
+//   MORTAR   slow and lobbed. The high arc, a flight you wait out, and a
+//            splash radius that forgives the lateral error the wind adds.
+//   RAILGUN  very fast and very flat, and it has to be CHARGED — the cost is
+//            not the drop, it is the second and a half you stand still.
+export const WEAPONS = {
+  // `maxTime` and `step` are the INTEGRATOR's allowance, per weapon, and the
+  // mortar is why they are here: a lobbed round at 79 degrees is in the air
+  // for half a minute, so a six-second allowance never reaches the target and
+  // the high branch simply does not exist as far as the solver is concerned.
+  // A slow round also does not need a 4 ms tick to be accurate.
+  lancer: { id: 'lancer', label: 'Lancer', muzzleVel: 700, gravity: 9.81, drag: 0.0009,
+    cooldown: 0.0, splash: 0, charge: 0, hitscan: false, loft: false, sound: 'tank_main',
+    maxTime: 6, step: 0.004 },
+  laser: { id: 'laser', label: 'Laser', muzzleVel: 700, gravity: 9.81, drag: 0.0009,
+    cooldown: 0.35, splash: 0, charge: 0, hitscan: true, loft: false, sound: 'tank_beam',
+    maxTime: 6, step: 0.004 },
+  mortar: { id: 'mortar', label: 'Mortar', muzzleVel: 150, gravity: 9.81, drag: 0.0004,
+    cooldown: 2.2, splash: 14, charge: 0, hitscan: false, loft: true, sound: 'tower_aoe',
+    maxTime: 60, step: 0.02 },
+  railgun: { id: 'railgun', label: 'Rail gun', muzzleVel: 2400, gravity: 9.81, drag: 0.0002,
+    cooldown: 1.2, splash: 0, charge: 1.6, hitscan: false, loft: false, sound: 'tank_secondary',
+    maxTime: 6, step: 0.002 },
+};
+export const WEAPON_IDS = Object.keys(WEAPONS);
+
+// Fold a weapon's numbers onto a tune. The tune keeps everything the weapon
+// does not own — the wind, the sway, the zero, the plate — so switching
+// weapons changes the ROUND and nothing else about the range.
+export function applyWeapon(tune, id) {
+  const w = WEAPONS[id] || WEAPONS.lancer;
+  for (const k of ['muzzleVel', 'gravity', 'drag', 'maxTime', 'step']) tune[k] = w[k];
+  return w;
+}
+
+// EVERY launch angle that puts a round on the sight line at `range`. Scanned
+// for sign changes and then bisected, rather than bisected blind: a lobbed
+// weapon has TWO answers — the flat one and the high one — and a solver that
+// assumes one branch cannot express a mortar at all.
+export function solveAngles(range, tune = BALLISTICS_TUNE, hiRad = 1.45, steps = 90) {
+  const out = [];
+  let prevA = 0, prevD = flyTo(range, 0, 0, tune, 0);
+  for (let i = 1; i <= steps; i++) {
+    const a = (i / steps) * hiRad;
+    const d = flyTo(range, a, 0, tune, 0);
+    const pv = prevD.reached ? prevD.drop : -1e9;
+    const cv = d.reached ? d.drop : -1e9;
+    if (prevD.reached && d.reached && ((pv <= 0 && cv >= 0) || (pv >= 0 && cv <= 0))) {
+      let lo = prevA, hi = a;
+      for (let k = 0; k < 32; k++) {
+        const mid = (lo + hi) / 2;
+        const r = flyTo(range, mid, 0, tune, 0);
+        const v = r.reached ? r.drop : -1e9;
+        if ((pv <= 0) === (v <= 0)) lo = mid; else hi = mid;
+      }
+      out.push((lo + hi) / 2);
+    }
+    prevA = a; prevD = d;
+  }
+  return out;
+}
+
+// The one this weapon would use: the flat answer, or the high one if it lobs.
+// MEMOISED, because the HUD asks for it several times a second and a lofted
+// solve is ninety flights of a round that stays up for half a minute. The
+// function is deterministic in its inputs, so a cache keyed on them is the
+// same function with the work done once — and the key rounds the range to two
+// metres, which is far finer than any hold a shooter can dial.
+const angleMemo = new Map();
+export function launchAngleFor(range, tune = BALLISTICS_TUNE, loft = false) {
+  const key = `${loft ? 1 : 0}|${tune.muzzleVel}|${tune.gravity}|${tune.drag}|${Math.round(range / 2)}`;
+  if (angleMemo.has(key)) return angleMemo.get(key);
+  const all = solveAngles(range, tune);
+  const a = all.length ? (loft ? all[all.length - 1] : all[0]) : NaN;
+  if (angleMemo.size > 800) angleMemo.clear();
+  angleMemo.set(key, a);
+  return a;
+}
+
+// THE LOFTED ANGLE FOR *THIS* MOMENT. `launchAngleFor` is solved at t0=0 and
+// memoised on the weapon's physics alone — which is right for a flat round
+// that is downrange in a second and a half, and wrong for a mortar whose
+// half-minute arc rides a gust that has moved on by the time it lands. Here
+// the coarse answer is only a bracket: one bisection on the same integrator,
+// with the flight's own launch time, so the hold the HUD prints is the hold
+// that zeroes the drop. Cached on a quarter-second of launch time, which is
+// finer than the gust changes and keeps the per-frame cost at nothing.
+const refineMemo = new Map();
+export function refineAngle(range, tune = BALLISTICS_TUNE, t0 = 0, az = 0) {
+  const a0 = launchAngleFor(range, tune, true);
+  if (!Number.isFinite(a0)) return a0;
+  const key = `${tune.muzzleVel}|${tune.gravity}|${tune.drag}|${tune.wind}|${tune.gust}`
+    + `|${Math.round(range / 2)}|${Math.round(t0 * 4)}|${Math.round(az * 500)}`;
+  if (refineMemo.has(key)) return refineMemo.get(key);
+  const dropAt = (a) => { const r = flyTo(range, a, az, tune, t0); return r.reached ? r.drop : NaN; };
+  // on the HIGH branch the round falls further short as the barrel goes up,
+  // so drop decreases with angle: bracket outward until the sign flips
+  let lo = a0, hi = a0, out = a0;
+  for (let w2 = 0.02; w2 <= 0.64; w2 *= 2) {
+    lo = a0 - w2; hi = a0 + w2;
+    const dl = dropAt(lo), dh = dropAt(hi);
+    if (Number.isFinite(dl) && Number.isFinite(dh) && dl >= 0 && dh <= 0) {
+      for (let i = 0; i < 26; i++) {
+        const mid = (lo + hi) / 2;
+        const d = dropAt(mid);
+        if (!Number.isFinite(d)) break;
+        if (d >= 0) lo = mid; else hi = mid;
+      }
+      out = (lo + hi) / 2;
+      break;
+    }
+  }
+  if (refineMemo.size > 800) refineMemo.clear();
+  refineMemo.set(key, out);
+  return out;
+}
+
+// A round landing within `splash` of a target counts, however wide it was.
+// The mortar's whole answer to a crosswind it cannot dial out.
+export const splashHits = (miss, radius, splash = 0) => miss <= radius + splash;
 
 // --- the pop-up plate -----------------------------------------------------
 
