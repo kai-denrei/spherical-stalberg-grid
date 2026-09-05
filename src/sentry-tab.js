@@ -37,6 +37,7 @@ import {
   SENTRY_TUNE, SENTRY_FAMILIES, SENTRY_TIERS, familyById, sentryUrl,
   makeSentry, makeRange, stepRange, pickTarget, track, slew, stepGun,
   canFire, fire, hitTarget, landedOn, aimAt, inEnvelope, aimError,
+  placeBattery, relTo, stepWaves, stepWalkers, deadZone, leadPoint,
 } from './sentry.js';
 
 // the pop-up units, from the game's own roster — this is a range for OUR
@@ -76,6 +77,7 @@ export function initSentryTab(root) {
   // the RANGE RING: the ground marks where targets can pop, so a miss and an
   // out-of-envelope refusal can be told apart by eye
   const ringMat = new THREE.LineBasicMaterial({ color: 0x2b6b96, transparent: true, opacity: 0.5 });
+  const deadMat = new THREE.LineBasicMaterial({ color: 0xff5a4a, transparent: true, opacity: 0.55 });
   const rings = new THREE.Group(); scene.add(rings);
   const postfx = makeBloom(renderer, scene, camera, { scale: 1, strength: 0.35, radius: 0.5, threshold: 0.35 });
 
@@ -83,6 +85,9 @@ export function initSentryTab(root) {
     family: 'needle', tier: 1,
     live: true,            // the range runs; off freezes it for a look
     autoFire: true,
+    mode: 'waves',         // waves | pop — what the range presents
+    walls: true,           // draw the plinth a mounted sentry stands on
+    lead: true,            // aim where it WILL be — see leadPoint
     manual: false,         // drive the turret by hand instead of tracking
     yaw: 0, elev: 0,       // ...with these
     seed: 4414,
@@ -102,16 +107,20 @@ export function initSentryTab(root) {
   }
 
   // --- state ---------------------------------------------------------------
-  let model = null, yawNode = null, pitchNode = null, recoilNode = null, rotorNode = null;
-  let muzzles = [];            // the MUZZLE_nn empties, in order
+  // THE BATTERY. One entry per sentry: its state (from the pure module), its
+  // own clone of the model, and its own pivots and muzzles — because two
+  // turrets three units apart do not agree about a single bearing, and each
+  // one tracks, cools and recoils on its own clock.
+  let proto = null;            // the loaded GLB, cloned per sentry
+  const battery = [];          // { st, obj, yaw, pitch, recoil, rotor, muzzles, spin, spinRate, wall }
   let modelSerial = 0;
-  let st = makeSentry(P.family, P.tier);
+  const st = makeSentry(P.family, P.tier);   // kept for the HUD's headline
   let range = makeRange();
   let rng = mulberry32(P.seed >>> 0);
   const targetObjs = new Map();   // target id -> mesh
   const tracers = [];             // { mesh, pos, dir, left, id }
   const fx = [];                  // { obj, tick }
-  let spin = 0, spinRate = 0;     // the Rotor's barrel cluster
+
   const tmpV = new THREE.Vector3(), tmpQ = new THREE.Quaternion(), tmpM = new THREE.Vector3();
 
   function disposeObj(o) {
@@ -136,13 +145,18 @@ export function initSentryTab(root) {
       const c = rings.children.pop();
       c.geometry.dispose(); rings.remove(c);
     }
-    for (const rr of [P.ringMin, P.ringMax]) {
+    const dz = deadZone(P, gunHeight());
+    for (const rr of [P.ringMin, P.ringMax, dz > 0 && Number.isFinite(dz) ? dz : 0]) {
+      if (!(rr > 0)) continue;
       const pts = [];
       for (let i = 0; i <= 96; i++) {
         const a = (i / 96) * Math.PI * 2;
         pts.push(new THREE.Vector3(Math.sin(a) * rr, 0.01, Math.cos(a) * rr));
       }
-      rings.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts), ringMat));
+      // the dead ring is drawn in the alarm colour: everything inside it
+      // walks under the barrels
+      rings.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts),
+        rr === dz ? deadMat : ringMat));
     }
     frameHome();
   }
@@ -171,26 +185,86 @@ export function initSentryTab(root) {
 
   // --- the model -----------------------------------------------------------
   const loader = new GLTFLoader();
+  const wallMat = new THREE.MeshStandardMaterial({ color: 0x2a3138, roughness: 0.85, metalness: 0.15 });
+
+  function clearBattery() {
+    while (battery.length) {
+      const b = battery.pop();
+      scene.remove(b.obj); disposeObj(b.obj);
+      if (b.wall) { scene.remove(b.wall); b.wall.geometry.dispose(); }
+    }
+  }
+
+  // One entry, from a clone of the prototype. Static meshes, so a plain
+  // clone shares the geometry and the materials — N sentries cost one upload
+  // — and the named pivots survive it, which is the whole reason the
+  // workshop's contract is worth having.
+  function addSentry(pos, i) {
+    if (!proto) return null;
+    const obj = proto.clone(true);
+    const b = {
+      st: makeSentry(P.family, P.tier, pos),
+      obj,
+      yaw: obj.getObjectByName('YAW'),
+      pitch: obj.getObjectByName('PITCH'),
+      recoil: obj.getObjectByName('RECOIL'),
+      rotor: obj.getObjectByName('ROTOR'),
+      muzzles: [],
+      spin: 0, spinRate: 0,
+      wall: null,
+    };
+    obj.traverse((o) => { if (/^MUZZLE_\d+$/.test(o.name || '')) b.muzzles.push(o); });
+    b.muzzles.sort((a, c) => a.name.localeCompare(c.name));
+    obj.position.set(pos[0], pos[1], pos[2]);
+    // ...and a wall under a mounted one, so the gun is standing ON something
+    // rather than floating. Drawn from the mount height, so it is always
+    // exactly as tall as the knob says.
+    if (pos[1] > 0.01 && P.walls) {
+      const w = new THREE.Mesh(new THREE.BoxGeometry(1.7, pos[1], 1.7), wallMat);
+      w.position.set(pos[0], pos[1] / 2, pos[2]);
+      scene.add(w);
+      b.wall = w;
+    }
+    scene.add(obj);
+    battery.push(b);
+    return b;
+  }
+
+  // the trunnion's height above its own feet, measured off the model — the
+  // number that makes even a floor-mounted sentry have a dead zone
+  let trunnionY = 1.4;
+  function gunHeight() { return P.mount + trunnionY; }
+
+  function rebuildBattery() {
+    clearBattery();
+    if (!proto) return;
+    const spots = placeBattery(P);
+    spots.forEach((p, i) => addSentry(p, i));
+    if (battery[0] && battery[0].pitch) {
+      battery[0].obj.updateMatrixWorld(true);
+      const w = new THREE.Vector3();
+      battery[0].pitch.getWorldPosition(w);
+      trunnionY = Math.max(0, w.y - battery[0].st.pos[1]);
+    }
+    layGround();
+    console.log(`SENTRY battery ${battery.length}x ${P.family} t${P.tier}`
+      + ` muzzles=${battery[0] ? battery[0].muzzles.length : 0} mount=${P.mount}`
+      + ` spread=${P.spread} at [${spots.map((p) => p.map((v) => v.toFixed(1)).join('/')).join(' ')}]`);
+    hudLine();
+  }
+
   function loadSentry() {
     const ticket = ++modelSerial;
     const url = sentryUrl(P.family, P.tier);
     loader.load(url, (gltf) => {
       if (ticket !== modelSerial) { disposeObj(gltf.scene); return; }
-      if (model) { scene.remove(model); disposeObj(model); }
-      model = gltf.scene;
-      yawNode = model.getObjectByName('YAW');
-      pitchNode = model.getObjectByName('PITCH');
-      recoilNode = model.getObjectByName('RECOIL');
-      rotorNode = model.getObjectByName('ROTOR');
-      // THE MUZZLES, IN ORDER. Sorted by name rather than by traversal, so
-      // MUZZLE_00 is the first barrel on every family and the round-robin is
-      // the same walk the model's own numbering describes.
-      muzzles = [];
-      model.traverse((o) => { if (/^MUZZLE_\d+$/.test(o.name || '')) muzzles.push(o); });
-      muzzles.sort((a, b) => a.name.localeCompare(b.name));
+      clearBattery();
+      if (proto) disposeObj(proto);
+      proto = gltf.scene;
       // the SIGNAL and IDENTIFICATION rungs are the model's own lights; under
-      // a sky and one sun they read as flat paint unless they emit
-      model.traverse((o) => {
+      // a sky and one sun they read as flat paint unless they emit. Done on
+      // the PROTOTYPE, so every clone shares the one material.
+      proto.traverse((o) => {
         if (!o.isMesh) return;
         for (const m of Array.isArray(o.material) ? o.material : [o.material]) {
           if (!m || m.userData.sentryLit) continue;
@@ -202,12 +276,11 @@ export function initSentryTab(root) {
           }
         }
       });
-      scene.add(model);
-      st = makeSentry(P.family, P.tier);
-      console.log(`SENTRY ${P.family} t${P.tier}: ${muzzles.length} muzzle(s)`
-        + ` yaw=${!!yawNode} pitch=${!!pitchNode} recoil=${!!recoilNode} rotor=${!!rotorNode}`
+      rebuildBattery();
+      console.log(`SENTRY ${P.family} t${P.tier}: ${battery[0] ? battery[0].muzzles.length : 0} muzzle(s)`
+        + ` yaw=${!!(battery[0] && battery[0].yaw)} pitch=${!!(battery[0] && battery[0].pitch)}`
+        + ` recoil=${!!(battery[0] && battery[0].recoil)} rotor=${!!(battery[0] && battery[0].rotor)}`
         + ` fixed=${!!familyById(P.family).fixed}`);
-      hudLine();
     }, undefined, (e) => {
       hud.textContent = `${P.family} t${P.tier}: failed to load (${e && e.message})`;
     });
@@ -222,6 +295,7 @@ export function initSentryTab(root) {
     range = makeRange();
     rng = mulberry32(P.seed >>> 0);
     st.rounds = 0; st.hits = 0; st.kills = 0;
+    for (const b of battery) { b.st.rounds = 0; b.st.hits = 0; b.st.kills = 0; b.st.target = -1; }
   }
 
   function targetMesh(t) {
@@ -261,32 +335,48 @@ export function initSentryTab(root) {
   // the drive is three degrees off, the boresight is three degrees off and
   // every cell misses together, which is what the tolerance knob is for.
   const boreDir = new THREE.Vector3(), borePt = new THREE.Vector3();
-  function boresight(range3) {
-    if (pitchNode) {
-      pitchNode.getWorldPosition(pivotW);
-      pitchNode.getWorldQuaternion(tmpQ);
+  const pivotW = new THREE.Vector3();
+
+  // The gun's own frame: where the trunnion IS and where it POINTS, both off
+  // the render transform. Filled before anything reads them — the first cut
+  // measured the range to the target from a `pivotW` the boresight had not
+  // set yet, which is a stale reading from whichever sentry fired last.
+  function gunFrame(b) {
+    if (b.pitch) {
+      b.pitch.getWorldPosition(pivotW);
+      b.pitch.getWorldQuaternion(tmpQ);
       boreDir.set(0, 0, 1).applyQuaternion(tmpQ).normalize();
     } else {
-      pivotW.set(0, 1.4, 0);
+      pivotW.set(b.st.pos[0], b.st.pos[1] + 1.4, b.st.pos[2]);
       boreDir.set(0, 0, 1);
     }
-    return borePt.copy(pivotW).addScaledVector(boreDir, range3);
   }
 
-  function shoot(mi, target) {
-    const mz = muzzles[Math.min(mi, muzzles.length - 1)];
+  function shoot(b, mi, target, aimPt) {
+    const mz = b.muzzles[Math.min(mi, b.muzzles.length - 1)];
     const from = new THREE.Vector3();
     if (mz) mz.getWorldPosition(from);      // the ORIGIN is the real muzzle
-    else from.set(0, 1.4, 0);
-    // ...and the DIRECTION is the boresight, at the target's range. Derived
-    // from the render either way — the barrel's own world transform — never
-    // from the yaw and elevation the sim asked for, which differ from it
-    // during every slew.
-    const rng3 = target
-      ? Math.hypot(target.pos[0] - pivotW.x, target.pos[1] - pivotW.y, target.pos[2] - pivotW.z)
+    else from.set(b.st.pos[0], b.st.pos[1] + 1.4, b.st.pos[2]);
+    gunFrame(b);
+    // ...and the DIRECTION is the BORESIGHT: the point this gun's own axis is
+    // pointing at, out at the target's range. Every muzzle converges on it.
+    //
+    // Firing each cell straight along its own axis is what a diagram says a
+    // launcher does, and it is wrong: the Quiver's eighteen cells sit across
+    // two pods, so parallel fire put every round a metre beside a target the
+    // gun was dead on. Converging on the AXIS (rather than on the target)
+    // keeps the aim honest — three degrees off the drive is three degrees off
+    // the boresight, and every cell misses together.
+    // the range of the AIM POINT, not of the target. With lead they are not
+    // the same place, and a round that stops at the target's PRESENT range
+    // falls short of the spot the barrel is pointing at by exactly the lead —
+    // so leading the target made every shot miss by the amount of the lead.
+    const at = aimPt || (target ? target.pos : null);
+    const rng3 = at
+      ? Math.hypot(at[0] - pivotW.x, at[1] - pivotW.y, at[2] - pivotW.z)
       : P.ringMax;
-    const aimPt = boresight(rng3).clone();
-    const dir = aimPt.sub(from);
+    borePt.copy(pivotW).addScaledVector(boreDir, rng3);
+    const dir = borePt.clone().sub(from);
     if (dir.lengthSq() < 1e-9) dir.set(0, 0, 1);
     dir.normalize();
     const mesh = makeBulletCloud({ body: look.walkerHi, hi: 0xffffff });
@@ -297,7 +387,7 @@ export function initSentryTab(root) {
     // out at the target's range and beside it, which is what a miss looks
     // like and what landedOn then measures
     const dist = borePt.distanceTo(from) || P.ringMax;
-    tracers.push({ mesh, pos: from.clone(), dir, left: dist, id: target ? target.id : -1 });
+    tracers.push({ mesh, pos: from.clone(), dir, left: dist, id: target ? target.id : -1, by: b });
     // the muzzle flash, in the game's own dots
     const f = makeDotBurst(0xffe6a8, [dir.x, dir.y, dir.z], 16);
     f.scale.setScalar(0.22);
@@ -319,8 +409,12 @@ export function initSentryTab(root) {
       // arrives somewhere else, and says so. Without this the tolerance knob
       // would be decoration and every shot would hit.
       const aimed = tr.id >= 0 ? range.targets.find((x) => x.id === tr.id) : null;
+      // credited to the SENTRY THAT FIRED IT. Crediting the headline state
+      // silently lost every hit: aimFrame rebuilds that from the battery's
+      // own totals each frame, so a kill written there was overwritten
+      // before anything read it.
       const res = landedOn([tr.pos.x, tr.pos.y, tr.pos.z], aimed, P)
-        ? hitTarget(st, range, tr.id) : null;
+        ? hitTarget(tr.by ? tr.by.st : st, range, tr.id) : null;
       const b = makeDotBurst(res ? 0xffd27f : 0x6f8ea0, [0, 1, 0], res ? 26 : 12);
       b.scale.setScalar(res ? 0.4 : 0.2);
       b.position.copy(tr.pos);
@@ -334,7 +428,16 @@ export function initSentryTab(root) {
 
   // --- the frame -----------------------------------------------------------
   function stepRangeFrame(dt) {
-    for (const id of stepRange(range, dt, rng, P)) dropTarget(id, false);
+    if (P.mode === 'waves') {
+      // enemies that walk in and can die. Anything that reaches the guns has
+      // GOT THROUGH — it comes off the field and is counted, because a range
+      // an enemy walks over and keeps going measures nothing.
+      const sent = stepWaves(range, dt, rng, P);
+      if (sent) console.log(`SENTRY wave ${range.wave} — ${sent} inbound`);
+      for (const id of stepWalkers(range, dt, P)) dropTarget(id, false);
+    } else {
+      for (const id of stepRange(range, dt, rng, P)) dropTarget(id, false);
+    }
     for (const t of range.targets) {
       const o = targetObjs.get(t.id) || targetMesh(t);
       // POP UP: they rise out of the ground over a third of a second, which
@@ -343,79 +446,101 @@ export function initSentryTab(root) {
       o.userData.popT = Math.min(1, (o.userData.popT ?? 0) + dt * 3);
       const e = o.userData.popT * o.userData.popT * (3 - 2 * o.userData.popT);
       o.position.set(t.pos[0], t.pos[1] * e + (e - 1) * 0.8, t.pos[2]);
+      // a walker faces where it is going, which on this range is inward
+      if (t.walker) o.lookAt(0, o.position.y, 0);
       if (o.userData.tick) o.userData.tick(range.t + t.id);
     }
   }
 
+  // EVERY SENTRY AIMS FOR ITSELF. Each one asks pickTarget in ITS OWN frame
+  // (relTo), so a battery covers each other's blind bearings instead of all
+  // three swinging onto the same enemy — and a gun on a wall refuses what it
+  // cannot depress to while the one on the ground takes it.
   function aimFrame(dt) {
-    if (!model) return;
     const fixed = !!familyById(P.family).fixed;
-    let inside = false, tgt = null;
-    if (pitchNode) pitchNode.getWorldPosition(pivotW);
-    if (P.manual || fixed) {
-      st.wantYaw = fixed ? 0 : P.yaw;
-      st.wantElev = fixed ? 0 : P.elev;
-      inside = !fixed;
-    } else {
-      // it keeps the one it has while that one is still engageable — see
-      // pickTarget. `st.target` is the target's ID, not its index: the
-      // range's array is rebuilt every step.
-      const i = pickTarget(range, P, st.target);
-      tgt = i >= 0 ? range.targets[i] : null;
-      st.target = tgt ? tgt.id : -1;
-      if (tgt) {
-        const o = targetObjs.get(tgt.id);
-        // aim at where the model IS on screen (mid-pop it is below its
-        // resting height), not at where the sim says it will end up...
-        const p = o ? [o.position.x, o.position.y, o.position.z] : tgt.pos;
-        // ...and FROM THE TRUNNION, not from the model's origin. The pivot
-        // sits over a metre above the foundation on every one of these
-        // families, and aiming from the floor put a dead-on barrel's rounds
-        // that far past the target — err 0.00 and nothing ever hit. The
-        // elevation a turret needs is the angle from ITS OWN axis.
-        const rel = aimOrigin(p);
-        inside = inEnvelope(aimAt(rel), P);
-        track(st, rel, P);
+    let engaged = 0;
+    for (const b of battery) {
+      const s2 = b.st;
+      let inside = false, tgt = null, aimPt = null;
+      if (P.manual || fixed) {
+        s2.wantYaw = fixed ? 0 : P.yaw;
+        s2.wantElev = fixed ? 0 : P.elev;
+        inside = !fixed;
+      } else {
+        const i = pickTarget(range, P, s2.target, s2);
+        tgt = i >= 0 ? range.targets[i] : null;
+        s2.target = tgt ? tgt.id : -1;
+        if (tgt) {
+          const o = targetObjs.get(tgt.id);
+          const p = o ? [o.position.x, o.position.y, o.position.z] : tgt.pos;
+          // ...and FROM THE TRUNNION, not from the model's origin. The pivot
+          // sits over a metre above the base on every one of these families;
+          // aiming from the base put a dead-on barrel's rounds that far past
+          // the target. relTo carries the sentry's own stand, the trunnion
+          // carries the rest.
+          // LEAD: aim where it WILL be when the round arrives. Without it a
+          // sentry hits every stationary mark and misses every walker — at
+          // the default velocity a target nine units out has moved 0.56 of a
+          // unit by the time the round gets there, and the hit radius is
+          // 0.55. It tracks beautifully and kills nothing.
+          gunFrame(b);
+          const gun = [pivotW.x, pivotW.y, pivotW.z];
+          aimPt = (P.lead && tgt.vel) ? leadPoint(p, tgt.vel, gun, P.muzzleVel) : p;
+          const rel = [aimPt[0] - gun[0], aimPt[1] - gun[1], aimPt[2] - gun[2]];
+          inside = inEnvelope(aimAt(rel), P);
+          track(s2, rel, P);
+          if (inside) engaged++;
+        }
+      }
+      slew(s2, dt, P);
+      stepGun(s2, dt, P);
+      if (b.yaw && !fixed) b.yaw.rotation.y = (s2.yaw * Math.PI) / 180;
+      // THE ONE NEGATION. The module speaks elevation-positive-up; the PITCH
+      // node lifts its nose on a NEGATIVE rotation about +X. Here, once.
+      if (b.pitch && !fixed) b.pitch.rotation.x = -(s2.elev * Math.PI) / 180;
+      if (b.recoil) b.recoil.position.z = -s2.recoil;
+      if (b.rotor) {
+        b.spinRate += ((s2.cool > 0 ? 16 : 0) - b.spinRate) * Math.min(1, dt * 2.2);
+        b.spin += b.spinRate * dt;
+        b.rotor.rotation.z = b.spin;
+      }
+      if (P.autoFire && !fixed && P.live && canFire(s2, inside, P)) {
+        shoot(b, fire(s2, b.muzzles.length, P), tgt, aimPt);
       }
     }
-    slew(st, dt, P);
-    stepGun(st, dt, P);
-    if (yawNode && !fixed) yawNode.rotation.y = (st.yaw * Math.PI) / 180;
-    // THE ONE NEGATION. The module speaks elevation-positive-up; the PITCH
-    // node lifts its nose on a NEGATIVE rotation about +X. Here, once.
-    if (pitchNode && !fixed) pitchNode.rotation.x = -(st.elev * Math.PI) / 180;
-    if (recoilNode) recoilNode.position.z = -st.recoil;
-    if (rotorNode) {
-      // the barrel cluster spins UP while the gun is hot and coasts down
-      // after — one rate that eases, rather than two states that snap
-      spinRate += ((st.cool > 0 ? 16 : 0) - spinRate) * Math.min(1, dt * 2.2);
-      spin += spinRate * dt;
-      rotorNode.rotation.z = spin;
+    // the headline state, for the HUD: the first gun's, plus the battery's
+    // totals, so one line reads for one turret and for six
+    if (battery.length) {
+      const f = battery[0].st;
+      st.yaw = f.yaw; st.elev = f.elev; st.wantYaw = f.wantYaw; st.wantElev = f.wantElev;
+      st.target = f.target;
+      st.rounds = battery.reduce((n, b) => n + b.st.rounds, 0);
+      st.hits = battery.reduce((n, b) => n + b.st.hits, 0);
+      st.kills = battery.reduce((n, b) => n + b.st.kills, 0);
     }
-    if (P.autoFire && !fixed && P.live && canFire(st, inside, P)) {
-      shoot(fire(st, muzzles.length, P), tgt);
-    }
-  }
-
-  // The target, in the turret's own frame: measured from the PITCH pivot,
-  // which is where the barrel actually swings from.
-  const pivotW = new THREE.Vector3();
-  function aimOrigin(p) {
-    if (pitchNode) pitchNode.getWorldPosition(pivotW);
-    else pivotW.set(0, 0, 0);
-    return [p[0] - pivotW.x, p[1] - pivotW.y, p[2] - pivotW.z];
+    st.engaged = engaged;
   }
 
   function hudLine() {
     const f = familyById(P.family);
     const t = st.target >= 0 ? range.targets.find((x) => x.id === st.target) : null;
-    hud.textContent = `${f.label} · tier ${P.tier} · ${muzzles.length} muzzle`
-      + `${muzzles.length === 1 ? '' : 's'} · ${f.fixed ? 'FIXED — no articulation' : `yaw ${st.yaw.toFixed(1)}° → ${st.wantYaw.toFixed(1)}°`
+    const n = battery.length;
+    const mz = battery[0] ? battery[0].muzzles.length : 0;
+    hud.textContent = `${n > 1 ? `${n}× ` : ''}${f.label} · tier ${P.tier} · ${mz} muzzle`
+      + `${mz === 1 ? '' : 's'}${P.mount > 0 ? ` · on a ${P.mount}-unit wall` : ''}`
+      + ` · ${f.fixed ? 'FIXED — no articulation' : `yaw ${st.yaw.toFixed(1)}° → ${st.wantYaw.toFixed(1)}°`
         + ` · elev ${st.elev.toFixed(1)}° → ${st.wantElev.toFixed(1)}°`
         + ` · err ${aimError(st).toFixed(1)}°${aimError(st) <= P.tolerance ? ' ON TARGET' : ''}`}`
-      + `\n${range.targets.length} up · ${t ? `engaging #${t.id} at ${Math.hypot(...t.pos).toFixed(1)}` : 'no target in envelope'}`
+      + `\n${P.mode === 'waves' ? `wave ${range.wave} · ` : ''}${range.targets.length} up`
+      + ` · ${st.engaged || 0}/${n} engaging`
       + ` · ${st.rounds} fired · ${st.hits} hit · ${st.kills} killed`
-      + `${st.rounds ? ` · ${Math.round((st.hits / st.rounds) * 100)}% on` : ''}`;
+      + `${st.rounds ? ` · ${Math.round((st.hits / st.rounds) * 100)}% on` : ''}`
+      + `${P.mode === 'waves' ? ` · ${range.leaked} through` : ''}`
+      // WHAT THE WALL COSTS, in the one number that explains a silent gun:
+      // inside this radius the depression stop refuses everything on the
+      // ground, and a wave simply walks under the barrels.
+      + `${P.mount > 0 ? `\nwall ${P.mount} · depression ${P.elevMin}° · BLIND inside ${deadZone(P, gunHeight()).toFixed(1)} units`
+        + `${deadZone(P, gunHeight()) >= P.ringMax ? ' — that is the whole range: give it more depression' : ''}` : ''}`;
     hud.style.color = f.fixed ? '#ffb45e' : '#9fdcff';
   }
 
@@ -423,6 +548,7 @@ export function initSentryTab(root) {
   const gui = new GUI({ title: 'SENTRY RANGE', container: root });
   gui.add(P, 'family', SENTRY_FAMILIES.map((f) => f.id)).onChange(() => loadSentry());
   gui.add(P, 'tier', SENTRY_TIERS).onChange(() => loadSentry());
+  gui.add(P, 'mode', ['waves', 'pop']).name('range mode').onChange(() => resetRange());
   gui.add(P, 'live').name('range live');
   gui.add(P, 'autoFire').name('weapons free');
   const gm = gui.addFolder('manual aim');
@@ -430,17 +556,31 @@ export function initSentryTab(root) {
   gm.add(P, 'yaw', -180, 180, 1);
   gm.add(P, 'elev', -10, 65, 1).name('elevation');
   gm.close();
+  const gb = gui.addFolder('battery');
+  gb.add(P, 'count', 1, 6, 1).name('sentries').onChange(() => rebuildBattery());
+  gb.add(P, 'spread', 0, 12, 0.5).name('apart').onChange(() => rebuildBattery());
+  gb.add(P, 'mount', 0, 8, 0.25).name('wall height').onChange(() => { rebuildBattery(); layGround(); });
+  gb.add(P, 'walls').name('draw the wall').onChange(() => rebuildBattery());
+
   const gd = gui.addFolder('drive');
   gd.add(P, 'yawRate', 10, 720, 5).name('yaw deg/s');
   gd.add(P, 'pitchRate', 5, 360, 5).name('elev deg/s');
   gd.add(P, 'tolerance', 0.2, 15, 0.1).name('on target (deg)');
+  gd.add(P, 'elevMin', -80, 0, 1).name('depression stop').onChange(() => layGround());
+  gd.add(P, 'elevMax', 5, 89, 1).name('elevation stop');
   const gg = gui.addFolder('gun');
   gg.add(P, 'cooldown', 0.05, 3, 0.05).name('rate of fire (s)');
   gg.add(P, 'recoilKick', 0, 0.6, 0.01).name('recoil');
   gg.add(P, 'recoilBack', 0.05, 2, 0.05).name('recovery');
   gg.add(P, 'muzzleVel', 4, 120, 1).name('muzzle velocity');
+  gg.add(P, 'lead').name('lead moving targets');
   const gr = gui.addFolder('range');
-  gr.add(P, 'targets', 1, 12, 1).name('targets up');
+  gr.add(P, 'waveSize', 1, 30, 1).name('first wave');
+  gr.add(P, 'waveGrow', 0, 10, 1).name('grow by');
+  gr.add(P, 'waveGap', 0, 15, 0.5).name('between waves');
+  gr.add(P, 'walkSpeed', 0.1, 10, 0.1).name('walk units/s');
+  gr.add(P, 'reachRadius', 0.2, 6, 0.1).name('through at');
+  gr.add(P, 'targets', 1, 12, 1).name('targets up (pop)');
   gr.add(P, 'hp', 1, 10, 1).name('rounds to kill');
   gr.add(P, 'popMin', 0.2, 8, 0.1).name('up for min');
   gr.add(P, 'popMax', 0.3, 12, 0.1).name('up for max');
@@ -515,7 +655,12 @@ export function initSentryTab(root) {
     let n = 0;
     const tick = setInterval(() => {
       if (++n > 8) { clearInterval(tick); return; }
-      console.log(`SENTRYPROBE t+${n}s ${P.family} t${P.tier} muzzles=${muzzles.length}`
+      console.log(`SENTRYPROBE t+${n}s ${battery.length}x${P.family} t${P.tier}`
+        + ` muzzles=${battery[0] ? battery[0].muzzles.length : 0} mount=${P.mount} mode=${P.mode}`
+        + ` wave=${range.wave} through=${range.leaked} cleared=${range.cleared}`
+        + ` blind=${deadZone(P, gunHeight()).toFixed(1)}`
+        + ` unreachable=${battery.length && range.targets.length
+          ? range.targets.filter((t2) => t2.up && !inEnvelope(aimAt(relTo(battery[0].st, t2.pos)), P)).length : 0}`
         + ` yaw=${st.yaw.toFixed(1)}/${st.wantYaw.toFixed(1)}`
         + ` elev=${st.elev.toFixed(1)}/${st.wantElev.toFixed(1)}`
         + ` err=${aimError(st).toFixed(2)} target=${st.target}`

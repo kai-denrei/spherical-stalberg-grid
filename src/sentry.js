@@ -20,7 +20,7 @@
 // one negation at the point of application. Two places deciding what "up"
 // means is how a turret ends up shooting at the floor.
 
-import { makeParams, clampParams, formatKnobs, knobProblems } from './knobs.js?v=0834ac22';
+import { makeParams, clampParams, formatKnobs, knobProblems } from './knobs.js?v=f8a0ce21';
 
 // The workshop's six families. `fixed` is its own ruling — the Relay is a
 // structure, not a gun, and a range that pretends otherwise is a range that
@@ -38,8 +38,14 @@ export const familyById = (id) => SENTRY_FAMILIES.find((f) => f.id === id) || SE
 export const sentryUrl = (id, tier) => `assets/models/sentries/${id}_t${tier}.glb`;
 
 export const SENTRY_TUNE = {
-  // the workshop's own slider limits, which are the model's real envelope
-  elevMin: -10, elevMax: 65,
+  // ELEVATION STOPS. The workshop's viewer offers -10 to +65, and +65 is
+  // kept — but -10 is a SLIDER range for looking at a model on a turntable,
+  // not a mount's depression limit, and it is unusable on a range. The
+  // trunnion on these families sits about 1.4 units above its own feet, so
+  // at -10 a sentry standing on the FLOOR is blind out to 7.9 units — most
+  // of the ring — and a wall makes it worse. -35 lets a gun cover its own
+  // ground; the knob puts the workshop's number back.
+  elevMin: -35, elevMax: 65,
   yawRate: 110,       // degrees per second
   pitchRate: 70,
   tolerance: 2.5,     // degrees of total error that counts as ON TARGET
@@ -54,6 +60,22 @@ export const SENTRY_TUNE = {
   targetHi: 3.2,                          // ...and how high one may pop
   hp: 2,
   hitRadius: 0.55,    // how near a round must LAND — see fireLine
+  // --- the battery -------------------------------------------------------
+  count: 1,           // how many sentries stand on the range
+  spread: 3.0,        // ...and how far apart, when there is more than one
+  // MOUNTED ON A WALL. The gun's whole envelope is measured from ITS OWN
+  // height, so raising it does not just move the model: everything on the
+  // ground drops below the horizon, and the model's own -10 degree floor
+  // becomes the thing that decides what it can still reach. A wall sentry
+  // covers the far ground and is blind at its feet, which is the point of
+  // putting one on a wall and the reason this is a knob and not a prop.
+  mount: 0,           // units the base stands above the floor
+  // --- waves -------------------------------------------------------------
+  waveSize: 6,        // enemies in the first wave
+  waveGrow: 2,        // ...and this many more each time
+  waveGap: 2.5,       // seconds between one cleared and the next
+  walkSpeed: 1.6,     // units per second, inward
+  reachRadius: 1.2,   // this close to the battery and it has got through
 };
 
 export const SENTRY_KNOBS = [
@@ -76,6 +98,14 @@ export const SENTRY_KNOBS = [
   { key: 'targetHi', label: 'highest pop (units)', group: 'range', min: 0, max: 12, step: 0.1 },
   { key: 'hp', label: 'rounds to kill', group: 'range', min: 1, max: 10, step: 1 },
   { key: 'hitRadius', label: 'hit radius (units)', group: 'gun', min: 0.05, max: 3, step: 0.05 },
+  { key: 'count', label: 'sentries', group: 'battery', min: 1, max: 6, step: 1 },
+  { key: 'spread', label: 'apart (units)', group: 'battery', min: 0, max: 12, step: 0.5 },
+  { key: 'mount', label: 'wall height (units)', group: 'battery', min: 0, max: 8, step: 0.25 },
+  { key: 'waveSize', label: 'first wave', group: 'waves', min: 1, max: 30, step: 1 },
+  { key: 'waveGrow', label: 'grow by', group: 'waves', min: 0, max: 10, step: 1 },
+  { key: 'waveGap', label: 'between waves (s)', group: 'waves', min: 0, max: 15, step: 0.5 },
+  { key: 'walkSpeed', label: 'walk (units/s)', group: 'waves', min: 0.1, max: 10, step: 0.1 },
+  { key: 'reachRadius', label: 'through at (units)', group: 'waves', min: 0.2, max: 6, step: 0.1 },
 ];
 
 export const makeSentryParams = (src = SENTRY_TUNE) => makeParams(SENTRY_KNOBS, src);
@@ -117,11 +147,33 @@ export function aimAt(p) {
 export const inEnvelope = (aim, tune = SENTRY_TUNE) =>
   aim.elev >= tune.elevMin && aim.elev <= tune.elevMax;
 
+// THE DEAD ZONE a wall buys you. A gun `mount` units up with a depression
+// stop of `elevMin` cannot point at the ground nearer than this — inside it,
+// everything walks through untouched. At the workshop's own -10 degrees a
+// two-unit wall blinds the sentry out to 11.3 units, which is the whole
+// range and then some, and that is not a bug in the lab: it is what a
+// ten-degree depression stop means. Reported, so the range explains itself
+// instead of looking broken.
+// `gunHeight` is the trunnion's real height above the ground — the wall PLUS
+// the model's own base, which is about 1.4 units on these families and is
+// why even a floor-mounted sentry has a dead zone. Passing it in rather than
+// reading `mount` is the difference between a number that explains a silent
+// gun and one that says zero while the gun sits silent.
+export function deadZone(tune = SENTRY_TUNE, gunHeight = tune.mount) {
+  const dep = -Math.min(0, tune.elevMin);
+  if (gunHeight <= 0) return 0;
+  if (dep <= 0) return Infinity;
+  return gunHeight / Math.tan((dep * Math.PI) / 180);
+}
+
 // --- the turret -----------------------------------------------------------
 
-export function makeSentry(family = 'needle', tier = 1) {
+export function makeSentry(family = 'needle', tier = 1, pos = [0, 0, 0]) {
   return {
     family, tier,
+    // WHERE IT STANDS, and the whole reason a wall changes anything: every
+    // angle this turret computes is measured from here, not from the origin.
+    pos: pos.slice(),
     yaw: 0, elev: 0,          // where it IS, degrees
     wantYaw: 0, wantElev: 0,  // where it wants to be
     recoil: 0,                // 0..kick, the RECOIL pivot's travel
@@ -187,6 +239,27 @@ export function fire(st, muzzles = 1, tune = SENTRY_TUNE) {
   return m;
 }
 
+// LEAD. A round is not instant, and a walker does not wait for it: at the
+// default muzzle velocity a target nine units out is hit 0.35 s after the
+// trigger, by which time it has moved 0.56 units — which is just past the
+// hit radius, so a sentry that aims where the target IS misses every single
+// moving target and hits every stationary one. That is the exact shape of
+// "it tracks beautifully and never kills anything".
+//
+// Solved by iteration rather than by the quadratic: two passes are already
+// accurate to well under the hit radius at these speeds, and the closed form
+// has a branch for "no solution" that a lab does not want and a barrel
+// cannot express anyway.
+export function leadPoint(p, vel, from, speed, iters = 2) {
+  if (!vel || !(speed > 0)) return p.slice();
+  let t = 0;
+  for (let i = 0; i < iters; i++) {
+    const x = p[0] + vel[0] * t, y = p[1] + vel[1] * t, z = p[2] + vel[2] * t;
+    t = Math.hypot(x - from[0], y - from[1], z - from[2]) / speed;
+  }
+  return [p[0] + vel[0] * t, p[1] + vel[1] * t, p[2] + vel[2] * t];
+}
+
 // --- the range ------------------------------------------------------------
 // Targets POP UP, stand for a while, and drop. A popper rather than a walker,
 // because what this lab is testing is the TRACKING: a target that arrives at
@@ -194,7 +267,71 @@ export function fire(st, muzzles = 1, tune = SENTRY_TUNE) {
 // wrap far harder than one crossing the field in a straight line.
 
 export function makeRange() {
-  return { targets: [], next: 1, t: 0 };
+  return { targets: [], next: 1, t: 0, wave: 0, gap: 0, leaked: 0, cleared: 0 };
+}
+
+// --- WAVES ----------------------------------------------------------------
+// Enemies that walk in and CAN DIE, as against the popper's fixed marks.
+// A moving target is a far harder test of the drive: the turret has to keep
+// the lock while the bearing changes under it, and it is the only way the
+// yaw RATE means anything at all.
+
+export function spawnWave(range, rng, tune = SENTRY_TUNE) {
+  range.wave++;
+  const n = Math.max(1, Math.round(tune.waveSize + tune.waveGrow * (range.wave - 1)));
+  for (let i = 0; i < n; i++) {
+    const a = rng() * Math.PI * 2;
+    // a ring's worth of bearing, and a little scatter in range so a wave
+    // arrives as a crowd rather than as a perfect circle closing in
+    const r = tune.ringMax * (0.92 + rng() * 0.16);
+    range.targets.push({
+      id: range.next++,
+      pos: [Math.sin(a) * r, 0, Math.cos(a) * r],
+      up: true, hp: Math.round(tune.hp), walker: true,
+      speed: tune.walkSpeed * (0.85 + rng() * 0.3),
+      vel: [0, 0, 0],   // filled by stepWalkers — the lead reads it
+    });
+  }
+  return n;
+}
+
+// Walk them in. Anything reaching `reachRadius` of the battery's centre has
+// GOT THROUGH — it is removed and counted, because a range where the enemy
+// walks over the guns and keeps going is a range that measures nothing.
+export function stepWalkers(range, dt, tune = SENTRY_TUNE) {
+  const through = [];
+  for (const t of range.targets) {
+    if (!t.up || !t.walker) continue;
+    let d = Math.hypot(t.pos[0], t.pos[2]);
+    // MOVE FIRST, THEN TEST. Testing before the step counts an arrival one
+    // frame late, which at a walk is invisible and at speed is a whole
+    // enemy standing on the guns for a tick before anyone notices.
+    const step = Math.min(Math.max(0, d - tune.reachRadius), t.speed * dt);
+    // the velocity is published, not inferred: a fire-control system that
+    // has to differentiate a position to find a speed is one that lags by a
+    // frame, and this one knows exactly where the thing is going
+    t.vel = d > 1e-9 ? [-(t.pos[0] / d) * t.speed, 0, -(t.pos[2] / d) * t.speed] : [0, 0, 0];
+    if (d > 1e-9 && step > 0) {
+      t.pos[0] -= (t.pos[0] / d) * step;
+      t.pos[2] -= (t.pos[2] / d) * step;
+      d -= step;
+    }
+    if (d <= tune.reachRadius + 1e-9) { t.up = false; range.leaked++; through.push(t.id); }
+  }
+  range.targets = range.targets.filter((t) => t.up);
+  return through;
+}
+
+// The wave clock: when the field is clear, wait the gap and send the next,
+// bigger one. Returns the size sent, or 0.
+export function stepWaves(range, dt, rng, tune = SENTRY_TUNE) {
+  range.t += dt;
+  if (range.targets.some((t) => t.up)) return 0;
+  if (range.wave > 0 && range.gap <= 0) { range.gap = tune.waveGap; range.cleared++; }
+  range.gap -= dt;
+  if (range.gap > 0) return 0;
+  range.gap = 0;
+  return spawnWave(range, rng, tune);
 }
 
 // One target, somewhere on the ring. `rng` is a seeded stream: a replayed
@@ -230,6 +367,26 @@ export function stepRange(range, dt, rng, tune = SENTRY_TUNE) {
   return dropped;
 }
 
+// A point in this sentry's own frame. One line, but it is the line that
+// makes a battery possible and a wall mean something: two turrets standing
+// three units apart do not agree about a single bearing on the range, and a
+// turret on a wall does not agree with itself on the ground.
+export const relTo = (st, p) => [p[0] - st.pos[0], p[1] - st.pos[1], p[2] - st.pos[2]];
+
+// WHERE THE BATTERY STANDS. One at the origin; more than one on a ring, so
+// they cover each other's blind bearings rather than queueing behind one
+// another. `mount` lifts every one of them onto its wall.
+export function placeBattery(tune = SENTRY_TUNE) {
+  const n = Math.max(1, Math.round(tune.count));
+  const out = [];
+  for (let i = 0; i < n; i++) {
+    if (n === 1) { out.push([0, tune.mount, 0]); continue; }
+    const a = (i / n) * Math.PI * 2;
+    out.push([Math.sin(a) * tune.spread, tune.mount, Math.cos(a) * tune.spread]);
+  }
+  return out;
+}
+
 // The one the turret should be pointed at: the nearest it can actually
 // REACH. A sentry that locks onto something outside its elevation envelope
 // and then never fires reads as broken, and is the first thing a range like
@@ -240,8 +397,9 @@ export function stepRange(range, dt, rng, tune = SENTRY_TUNE) {
 // something nearer pops. Re-picking the nearest every frame made the barrel
 // whip between two targets and settle on neither — which looks like a broken
 // drive and is really a broken decision. A sentry commits.
-export function pickTarget(range, tune = SENTRY_TUNE, keepId = -1) {
-  const engageable = (t) => t && t.up && t.hp > 0 && inEnvelope(aimAt(t.pos), tune);
+export function pickTarget(range, tune = SENTRY_TUNE, keepId = -1, st = null) {
+  const rel = (t) => (st ? relTo(st, t.pos) : t.pos);
+  const engageable = (t) => t && t.up && t.hp > 0 && inEnvelope(aimAt(rel(t)), tune);
   if (keepId >= 0) {
     const i = range.targets.findIndex((t) => t.id === keepId);
     if (i !== -1 && engageable(range.targets[i])) return i;
@@ -250,7 +408,8 @@ export function pickTarget(range, tune = SENTRY_TUNE, keepId = -1) {
   for (let i = 0; i < range.targets.length; i++) {
     const t = range.targets[i];
     if (!engageable(t)) continue;
-    const d = Math.hypot(t.pos[0], t.pos[1], t.pos[2]);
+    const r = rel(t);
+    const d = Math.hypot(r[0], r[1], r[2]);
     if (d < bd) { bd = d; best = i; }
   }
   return best;

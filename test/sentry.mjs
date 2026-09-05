@@ -9,6 +9,7 @@ import {
   wrapDeg, deltaDeg, aimAt, inEnvelope,
   makeSentry, slew, track, onTarget, aimError, stepGun, canFire, fire,
   makeRange, popTarget, stepRange, pickTarget, hitTarget, landedOn, sentryKnobProblems,
+  placeBattery, relTo, spawnWave, stepWalkers, stepWaves, deadZone, leadPoint,
 } from '../src/sentry.js';
 
 let failures = 0;
@@ -198,6 +199,150 @@ console.log('the range:');
   check('...and it is down', !h.targets[0].up);
   check('a dead target cannot be hit again', hitTarget(st, h, 7) === null && st.hits === 2);
   check('a miss on nothing is null', hitTarget(st, h, 999) === null);
+}
+
+console.log('the battery:');
+{
+  check('one stands at the origin', placeBattery({ ...SENTRY_TUNE, count: 1 })[0].join() === '0,0,0');
+  const three = placeBattery({ ...SENTRY_TUNE, count: 3, spread: 3, mount: 2 });
+  check('three stand on a ring', three.length === 3
+    && three.every((p) => Math.abs(Math.hypot(p[0], p[2]) - 3) < 1e-9));
+  check('...spread apart, not stacked', Math.hypot(three[0][0] - three[1][0], three[0][2] - three[1][2]) > 3);
+  // THE WALL. Raising the mount raises every gun.
+  check('a wall lifts them all', three.every((p) => p[1] === 2));
+  check('one on a wall is lifted too', placeBattery({ ...SENTRY_TUNE, count: 1, mount: 4 })[0][1] === 4);
+}
+
+console.log('a wall changes what it can reach:');
+{
+  const ground = makeSentry('needle', 1, [0, 0, 0]);
+  const wall = makeSentry('needle', 1, [0, 4, 0]);
+  const t = { id: 1, pos: [0, 0, 6], up: true, hp: 2 };
+  check('from the ground it is level', Math.abs(aimAt(relTo(ground, t.pos)).elev) < 1e-9);
+  // ...and from four units up the SAME target is well below the horizon
+  const down = aimAt(relTo(wall, t.pos)).elev;
+  check('from a wall it is below the horizon', down < -30, String(down));
+  // WHICH A TIGHT DEPRESSION STOP THEN REFUSES. A wall sentry covers the far
+  // ground and is blind at its feet — that is what putting one on a wall
+  // buys and costs, and the envelope is where it shows. Pinned against the
+  // WORKSHOP's own -10, explicitly, rather than against whatever the range's
+  // default happens to be: this test is about the stop, not about the
+  // default, and it should not move when the default is retuned.
+  const tight = { ...SENTRY_TUNE, elevMin: -10 };
+  check('...and past a -10 depression stop', !inEnvelope(aimAt(relTo(wall, t.pos)), tight));
+  const far = { id: 2, pos: [0, 0, 30], up: true, hp: 2 };
+  check('the far ground is still reachable from the wall',
+    inEnvelope(aimAt(relTo(wall, far.pos)), tight));
+  // ...and the range's own, wider stop takes the near one, which is exactly
+  // why the range does not ship the workshop's number
+  check('the range’s own stop reaches it', inEnvelope(aimAt(relTo(wall, t.pos)), SENTRY_TUNE));
+
+  // pickTarget respects whose frame it is asked in
+  const r = makeRange();
+  r.targets = [t, far];
+  check('a tight stop skips what it cannot depress to',
+    r.targets[pickTarget(r, tight, -1, wall)].id === 2);
+  check('...and the ground gun takes the near one',
+    r.targets[pickTarget(r, tight, -1, ground)].id === 1);
+  // a battery member off to one side has its own bearing
+  const east = makeSentry('needle', 1, [5, 0, 0]);
+  check('two sentries do not agree about a bearing',
+    Math.abs(aimAt(relTo(ground, t.pos)).yaw - aimAt(relTo(east, t.pos)).yaw) > 20);
+}
+
+console.log('lead:');
+{
+  const from = [0, 0, 0];
+  // a target crossing at right angles: the lead must be AHEAD of it
+  const p = [0, 0, 9], v = [2, 0, 0];
+  const lp = leadPoint(p, v, from, 26);
+  check('the aim point moves along the target’s travel', lp[0] > 0 && lp[2] === 9);
+  // ...and the amount is the time of flight
+  const tof = Math.hypot(lp[0], lp[2]) / 26;
+  check('...by one time-of-flight', Math.abs(lp[0] - v[0] * tof) < 0.02, `${lp[0].toFixed(3)}`);
+  check('a stationary target needs no lead', leadPoint(p, [0, 0, 0], from, 26).join() === p.join());
+  check('no velocity at all is no lead', leadPoint(p, null, from, 26).join() === p.join());
+  check('an instant round needs almost none', leadPoint(p, v, from, 1e6)[0] < 1e-3);
+  check('a slow round needs a lot', leadPoint(p, v, from, 4)[0] > leadPoint(p, v, from, 26)[0]);
+
+  // THE MISS IT EXISTS TO STOP. A walker inbound at the default speed, a
+  // round at the default velocity: aiming where it IS lands outside the hit
+  // radius, and aiming where it WILL BE lands inside.
+  const w = { id: 1, pos: [0, 0, 9], vel: [0, 0, -SENTRY_TUNE.walkSpeed] };
+  const flight = 9 / SENTRY_TUNE.muzzleVel;
+  const willBe = [0, 0, 9 - SENTRY_TUNE.walkSpeed * flight];
+  check('aiming where it is, misses', !landedOn(w.pos, { pos: willBe }));
+  const led = leadPoint(w.pos, w.vel, from, SENTRY_TUNE.muzzleVel);
+  check('aiming where it will be, lands', landedOn(led, { pos: willBe }),
+    `${led[2].toFixed(3)} vs ${willBe[2].toFixed(3)}`);
+}
+
+console.log('the dead zone a wall buys:');
+{
+  check('a gun at ground level has none', deadZone({ ...SENTRY_TUNE, mount: 0 }, 0) === 0);
+  // EVEN ON THE FLOOR a sentry has one, because its trunnion is 1.4 units up
+  const floor = deadZone({ ...SENTRY_TUNE, elevMin: -10 }, 1.4);
+  check('a floor sentry at -10 is still blind to 7.9', Math.abs(floor - 7.939) < 0.01, floor.toFixed(3));
+  check('...which is why the range does not use -10', SENTRY_TUNE.elevMin < -10);
+  check('at the range’s own stop it can cover its ring',
+    deadZone(SENTRY_TUNE, 1.4) < SENTRY_TUNE.ringMin, deadZone(SENTRY_TUNE, 1.4).toFixed(2));
+  // at the workshop's own -10 stop, a two-unit wall is blind out to 11.3
+  const d = deadZone({ ...SENTRY_TUNE, mount: 2, elevMin: -10 }, 2);
+  check('a 2-unit wall at -10 is blind to 11.3 units', Math.abs(d - 11.343) < 0.01, d.toFixed(3));
+  check('...which is the WHOLE range', d > SENTRY_TUNE.ringMax);
+  check('more depression shrinks it',
+    deadZone({ ...SENTRY_TUNE, elevMin: -45 }, 2) < deadZone({ ...SENTRY_TUNE, elevMin: -20 }, 2));
+  check('45 degrees of depression sees its own wall height',
+    Math.abs(deadZone({ ...SENTRY_TUNE, elevMin: -45 }, 3) - 3) < 1e-9);
+  check('no depression at all is blind everywhere',
+    deadZone({ ...SENTRY_TUNE, elevMin: 0 }, 2) === Infinity);
+  // and it agrees with the envelope test, which is the thing that acts on it
+  const wall = makeSentry('needle', 1, [0, 2, 0]);
+  const tune = { ...SENTRY_TUNE, mount: 2, elevMin: -10 };
+  const inside = { pos: [0, 0, d - 1] }, outside = { pos: [0, 0, d + 1] };
+  check('inside the zone the envelope refuses', !inEnvelope(aimAt(relTo(wall, inside.pos)), tune));
+  check('outside it the envelope allows', inEnvelope(aimAt(relTo(wall, outside.pos)), tune));
+}
+
+console.log('waves:');
+{
+  const rng = mulberry32(4414);
+  const r = makeRange();
+  const n = spawnWave(r, rng, SENTRY_TUNE);
+  check('the first wave is the first size', n === SENTRY_TUNE.waveSize && r.wave === 1);
+  check('they start out on the ring', r.targets.every((t) =>
+    Math.hypot(t.pos[0], t.pos[2]) > SENTRY_TUNE.ringMax * 0.9));
+  check('they can die', r.targets.every((t) => t.hp === SENTRY_TUNE.hp && t.up));
+  check('...and they walk', r.targets.every((t) => t.walker && t.speed > 0));
+
+  // THEY CLOSE IN
+  const before = r.targets.map((t) => Math.hypot(t.pos[0], t.pos[2]));
+  stepWalkers(r, 0.5, SENTRY_TUNE);
+  const after = r.targets.map((t) => Math.hypot(t.pos[0], t.pos[2]));
+  check('a step brings them nearer', after.every((d, i) => d < before[i]));
+  check('...and does not move them off their bearing', r.targets.every((t, i) => {
+    const a0 = Math.atan2(t.pos[0], t.pos[2]);
+    return Number.isFinite(a0) && after[i] > 0;
+  }));
+
+  // ...and GET THROUGH
+  const one = makeRange();
+  one.targets = [{ id: 9, pos: [0, 0, 8], up: true, hp: 2, walker: true, speed: 100 }];
+  const through = stepWalkers(one, 1, SENTRY_TUNE);
+  check('one that reaches the guns is through', through.join() === '9' && one.leaked === 1);
+  check('...and is off the field', one.targets.length === 0);
+
+  // the wave clock
+  const w = makeRange();
+  const r2 = mulberry32(7);
+  check('the first wave comes at once', stepWaves(w, 0.016, r2, SENTRY_TUNE) === SENTRY_TUNE.waveSize);
+  check('nothing more while the field is busy', stepWaves(w, 1, r2, SENTRY_TUNE) === 0);
+  w.targets.length = 0;
+  check('a cleared field waits the gap', stepWaves(w, 0.1, r2, SENTRY_TUNE) === 0 && w.cleared === 1);
+  const sent = stepWaves(w, SENTRY_TUNE.waveGap, r2, SENTRY_TUNE);
+  check('...then sends a BIGGER one',
+    sent === SENTRY_TUNE.waveSize + SENTRY_TUNE.waveGrow, String(sent));
+  check('the wave counter advances', w.wave === 2);
 }
 
 console.log(failures ? `\n${failures} FAILURES` : '\nall sentry invariants hold');

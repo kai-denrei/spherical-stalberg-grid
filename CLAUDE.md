@@ -94,7 +94,11 @@ token — the corner badge was retired from the game view).
   `ok` or a pose fault — which is precisely why the phone reports outlived
   the replica).
   the SENTRY RANGE (`#sentry`): `?family=needle|rotor|kiln|quiver|lancer|relay`,
-  `?tier=1|2|3`, plus every knob in `SENTRY_TUNE` by name (`?tolerance=25`
+  `?tier=1|2|3`, `?count=N` (a battery, on a ring), `?mount=N` (on a wall —
+  and mind the DEAD ZONE it buys: the range's `elevMin` is -35, not the
+  workshop viewer's -10, because the trunnion sits ~1.4 units up and at -10
+  even a floor-mounted gun is blind out to 7.9 units. The HUD prints the
+  blind radius and the ground draws it in red), `?mode=waves|pop`, plus every knob in `SENTRY_TUNE` by name (`?tolerance=25`
   makes it miss, which is the point of the knob), and `?sentryprobe=1` — the
   error falling, the rounds leaving and the targets going down, once a second.
   Models are the Sentry Workshop's, vendored to `assets/models/sentries/`
