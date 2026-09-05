@@ -19,72 +19,72 @@
 
 import * as THREE from '../vendor/three.module.js';
 import GUI from '../vendor/lil-gui.esm.js';
-import { generateSphereMesh, relax } from './grid.js?v=f7abc0ce';
-import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=f7abc0ce';
-import { compileRail } from './cine/rail.js?v=f7abc0ce';
-import { SCRIPTS } from './cine/scripts.js?v=f7abc0ce';
-import { cuesBetween } from './cine/sound.js?v=f7abc0ce';
-import { installCine } from './cine/kit.js?v=f7abc0ce';
-import { mulberry32, randomSeed } from './rng.js?v=f7abc0ce';
-import { computeBerths, berthIndexFor } from './berths.js?v=f7abc0ce';
-import { wantsSecondary, shellsForAll } from './autofire.js?v=f7abc0ce';
-import { printPhase, printOffset, printOn, patternSecsFor } from './printpath.js?v=f7abc0ce';
-import { createBeamRig, PLASMA_DEFAULTS, BOARD_PRESET, BEAM_PEAK } from './beamdraw.js?v=f7abc0ce';
-import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3, segKey, tangentDir, tangentBasis } from './vec3.js?v=f7abc0ce';
-import { CREATURES, waveJelly } from './creatures.js?v=f7abc0ce';
-import { brief, dwellFor } from './isaobriefs.js?v=f7abc0ce';
-import { drawEmotion } from './emotions.js?v=f7abc0ce';
+import { generateSphereMesh, relax } from './grid.js?v=afc8078c';
+import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=afc8078c';
+import { compileRail } from './cine/rail.js?v=afc8078c';
+import { SCRIPTS } from './cine/scripts.js?v=afc8078c';
+import { cuesBetween } from './cine/sound.js?v=afc8078c';
+import { installCine } from './cine/kit.js?v=afc8078c';
+import { mulberry32, randomSeed } from './rng.js?v=afc8078c';
+import { computeBerths, berthIndexFor } from './berths.js?v=afc8078c';
+import { wantsSecondary, shellsForAll } from './autofire.js?v=afc8078c';
+import { printPhase, printOffset, printOn, patternSecsFor } from './printpath.js?v=afc8078c';
+import { createBeamRig, PLASMA_DEFAULTS, BOARD_PRESET, BEAM_PEAK } from './beamdraw.js?v=afc8078c';
+import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3, segKey, tangentDir, tangentBasis } from './vec3.js?v=afc8078c';
+import { CREATURES, waveJelly } from './creatures.js?v=afc8078c';
+import { brief, dwellFor } from './isaobriefs.js?v=afc8078c';
+import { drawEmotion } from './emotions.js?v=afc8078c';
 import { ACHIEVEMENTS, ACHV_GROUPS, achievement, blankRun, earned, freshlyEarned,
   sanitiseRecord }
-  from './achievements.js?v=f7abc0ce';
+  from './achievements.js?v=afc8078c';
 import { applyFontPack, currentFontPack, FONT_NAMES,
-  loadTypeFeel } from './fonts.js?v=f7abc0ce';
-import { SECONDARY_TOE, applySecondaryToe } from './units.js?v=f7abc0ce';
-import { UNITS, UNIT_NAMES, buildUnit, buildCreature, preloadMkcx, preloadServer, makeServerFixture, makeShieldShell, preloadContainer, makeContainerFixture, preloadFabricator, makeIsaoDrone, makeBulletCloud, makeRewardSolid, makeShellSolid, makeDebris, makeDotBurst, makePortalCloud, preloadPortalRing, makePortalRing, makeHeartCloud, makeDotEnemy, makeSurvivor, preloadAstronaut, makeAstronaut, preloadTerraformer, makeTerraformerFixture } from './units.js?v=f7abc0ce';
-import { LOOKS, LOOK_NAMES } from './looks.js?v=f7abc0ce';
-import { makeCellIndex } from './cellindex.js?v=f7abc0ce';
-import { CREATURE_TINTS, ENEMY_SPEC, INTROS, computeWavePlan, accentFor } from './enemyspec.js?v=f7abc0ce';
-import { PICKUPS } from './pickups.js?v=f7abc0ce';
-import { rankFor, rankLabel, badgeSVG, killReq, eliteReq } from './ranks.js?v=f7abc0ce';
-import { beamStep, isBeamStep, PEN_SOFT_FRAC, PEN_HARD_FRAC } from './beamranks.js?v=f7abc0ce';
-import { burn, sweepAdvance, wallBite as wallBiteFor } from './beamburn.js?v=f7abc0ce';
-import { arcPoint, projectToArc, toeForCrossing, crossingForToe } from './arc.js?v=f7abc0ce';
+  loadTypeFeel } from './fonts.js?v=afc8078c';
+import { SECONDARY_TOE, applySecondaryToe } from './units.js?v=afc8078c';
+import { UNITS, UNIT_NAMES, buildUnit, buildCreature, preloadMkcx, preloadServer, makeServerFixture, makeShieldShell, preloadContainer, makeContainerFixture, preloadFabricator, makeIsaoDrone, makeBulletCloud, makeRewardSolid, makeShellSolid, makeDebris, makeDotBurst, makePortalCloud, preloadPortalRing, makePortalRing, makeHeartCloud, makeDotEnemy, makeSurvivor, preloadAstronaut, makeAstronaut, preloadTerraformer, makeTerraformerFixture } from './units.js?v=afc8078c';
+import { LOOKS, LOOK_NAMES } from './looks.js?v=afc8078c';
+import { makeCellIndex } from './cellindex.js?v=afc8078c';
+import { CREATURE_TINTS, ENEMY_SPEC, INTROS, computeWavePlan, accentFor } from './enemyspec.js?v=afc8078c';
+import { PICKUPS } from './pickups.js?v=afc8078c';
+import { rankFor, rankLabel, badgeSVG, killReq, eliteReq } from './ranks.js?v=afc8078c';
+import { beamStep, isBeamStep, PEN_SOFT_FRAC, PEN_HARD_FRAC } from './beamranks.js?v=afc8078c';
+import { burn, sweepAdvance, wallBite as wallBiteFor } from './beamburn.js?v=afc8078c';
+import { arcPoint, projectToArc, toeForCrossing, crossingForToe } from './arc.js?v=afc8078c';
 import { MINE_TUNE, makeField, layMine, armMines, restock, mineAt,
-  inFan, trip, chain, nextChained, minePolar } from './mines.js?v=f7abc0ce';
+  inFan, trip, chain, nextChained, minePolar } from './mines.js?v=afc8078c';
 import { deepLink, wireDeepLink } from './deeplink.js';
 import { RESCUE_TUNE, makeRescue, placeSurvivors, stepBoard, stepGrab,
   disembark, loseCarried, lockOn, waveMix, standing as standingSurv,
   aboard as aboardSurv, missionOver, verdict as rescueVerdict,
   grabProgress, remaining as remainingSurv, exposed as exposedSurv,
   RESCUE2_TUNE, makeCamps, stepCall, stepEmerge, walkStep, runOver,
-  awake as campAwake } from './rescue.js?v=f7abc0ce';
+  awake as campAwake } from './rescue.js?v=afc8078c';
 import { WORMHOLE_PRESET, WORMHOLE_UNIFORM_DEFAULTS, RING_SPIN, TRAVEL,
-  travelRate, advancePhase } from './portalfx.js?v=f7abc0ce';
-import { WORMHOLE_FRAG } from './fx/wormhole.frag.js?v=f7abc0ce';
-import { CORONA_FRAG } from './fx/corona.frag.js?v=f7abc0ce';
-import { labLine, parseLabQuery } from './lab.js?v=f7abc0ce';
-import { bakeGalaxyCube } from './galaxybake.js?v=f7abc0ce';
-import { SKY_PRESET } from './galaxyseed.js?v=f7abc0ce';
-import { makeScore } from './score.js?v=f7abc0ce';
-import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER, HACK_GATED, starterTower, towerSound, ROSTER } from './towers.js?v=f7abc0ce';
-import { makeEconomy, sellRefund } from './economy.js?v=f7abc0ce';
-import { pickTier } from './perftier.js?v=f7abc0ce';
-import { applyWeatheredMaterial } from './cine/materials.js?v=f7abc0ce';
-import { STICK, stickVector, knobOffset } from './stick.js?v=f7abc0ce';
-import { registerServiceWorker } from './pwa.js?v=f7abc0ce';
-import { makeBloom } from './postfx.js?v=f7abc0ce';
-import { TANK_FEEL, TANK_FEEL_KNOBS, makeTankFeel, stepTankFeel, landTankFeel, fireTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js?v=f7abc0ce';
-import { FEEL, loadFeel, saveFeel } from './feelstore.js?v=f7abc0ce';
+  travelRate, advancePhase } from './portalfx.js?v=afc8078c';
+import { WORMHOLE_FRAG } from './fx/wormhole.frag.js?v=afc8078c';
+import { CORONA_FRAG } from './fx/corona.frag.js?v=afc8078c';
+import { labLine, parseLabQuery } from './lab.js?v=afc8078c';
+import { bakeGalaxyCube } from './galaxybake.js?v=afc8078c';
+import { SKY_PRESET } from './galaxyseed.js?v=afc8078c';
+import { makeScore } from './score.js?v=afc8078c';
+import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER, HACK_GATED, starterTower, towerSound, ROSTER } from './towers.js?v=afc8078c';
+import { makeEconomy, sellRefund } from './economy.js?v=afc8078c';
+import { pickTier } from './perftier.js?v=afc8078c';
+import { applyWeatheredMaterial } from './cine/materials.js?v=afc8078c';
+import { STICK, stickVector, knobOffset } from './stick.js?v=afc8078c';
+import { registerServiceWorker } from './pwa.js?v=afc8078c';
+import { makeBloom } from './postfx.js?v=afc8078c';
+import { TANK_FEEL, TANK_FEEL_KNOBS, makeTankFeel, stepTankFeel, landTankFeel, fireTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js?v=afc8078c';
+import { FEEL, loadFeel, saveFeel } from './feelstore.js?v=afc8078c';
 import { STRIKE_KNOBS, makeStrike, makeStrikeParams, grantStrikes, stepStrike,
   toggleArm, paintTarget, launchStrike, stepFall, skipFall, fallProgress,
-  strikeDamage, retargetStrike, orbitProgress } from './strike.js?v=f7abc0ce';
+  strikeDamage, retargetStrike, orbitProgress } from './strike.js?v=afc8078c';
 import { radarBasis, radarProject, radarBearing, sweepAngle, radarPhosphor,
-  proximitySectors, SENSOR_LEVELS, sensorColor } from './radar.js?v=f7abc0ce';
-import { BLOOM_GROUPS } from './bloomweights.js?v=f7abc0ce';
+  proximitySectors, SENSOR_LEVELS, sensorColor } from './radar.js?v=afc8078c';
+import { BLOOM_GROUPS } from './bloomweights.js?v=afc8078c';
 import { A6_TUNE, magFor, makeA6, stepA6, arc as a6Arc, a6Line } from './heptapod.js';
-import { TOWER_LOOK_NAMES, DEFAULT_TOWER_LOOK, buildTowerLook, preloadLook, lookReady } from './towerlooks.js?v=f7abc0ce';
-import { makeAudio } from './audio.js?v=f7abc0ce';
-import { DEATH_KEYS } from './audiomanifest.js?v=f7abc0ce';
+import { TOWER_LOOK_NAMES, DEFAULT_TOWER_LOOK, buildTowerLook, preloadLook, lookReady } from './towerlooks.js?v=afc8078c';
+import { makeAudio } from './audio.js?v=afc8078c';
+import { DEATH_KEYS } from './audiomanifest.js?v=afc8078c';
 
 export function initTdTab(root) {
   let active = false;
@@ -8298,13 +8298,15 @@ export function initTdTab(root) {
     if (tower.a6) {
       const top = 1 + params.wallHeight;
       const p = tower.a6.pos;
-      // a gait, since the merged model has no skeleton left to animate:
-      // a bob and a lean while it is actually moving. See the DEVLOG — the
-      // Walk clip needs an unmerged instance and a mixer, which is a
-      // draw-call decision and not a five-minute one.
+      // THE LEGS MOVE WHEN IT IS GOING SOMEWHERE. The Walk clip is the
+      // model's own, driven by the look's mixer; this only says whether it
+      // should be running. A bob is kept UNDER it — a small vertical ride
+      // that the clip does not carry, because the clip animates the legs
+      // relative to a hull that in the file never leaves the ground plane.
       const going = tower.a6.state === 'patrol' || tower.a6.state === 'engage'
         || tower.a6.state === 'home';
-      const bob = going ? Math.sin(t * 7.5) * 0.035 : 0;
+      if (obj.userData.setGait) obj.userData.setGait(going);
+      const bob = going ? Math.sin(t * 7.5) * (obj.userData.setGait ? 0.012 : 0.035) : 0;
       obj.position.set(p[0] * (top + bob), p[1] * (top + bob), p[2] * (top + bob));
       tmpN.set(p[0], p[1], p[2]);
       obj.quaternion.setFromUnitVectors(Y_AXIS, tmpN);
@@ -12547,6 +12549,13 @@ export function initTdTab(root) {
     })();
   }
 
+  // PRELOAD THE LOOK AT BOOT. applyTowerLook() was reachable only from the
+  // panel and from ?towerlook=, so a board whose DEFAULT look has async
+  // assets never started the load at all: every tower built came up as the
+  // braille fallback and nothing ever rebuilt it. Harmless while the default
+  // was braille; the whole of the second board while it is the models.
+  applyTowerLook();
+
   // AFTER ?tower= on purpose: this then exercises the live applyTowerLook()
   // swap over existing towers, not just build-time selection.
   const towerLookOv = urlParams.get('towerlook');
@@ -14326,8 +14335,14 @@ export function initTdTab(root) {
       // THE BOARD STARTS PAUSED behind the landing brief, and a probe that
       // does not clear it measures a frozen game and reports a frozen unit.
       // This is the same two lines the debrief probe uses.
-      const msgEl = root.querySelector('#td-msg');
-      if (msgEl) msgEl.classList.add('hidden');
+      // BOTH CURTAINS. The board starts behind the landing brief AND the
+      // field manual, and hiding one leaves the other over the picture — a
+      // probe that is meant to produce a photograph has to clear what is in
+      // front of the camera, not just what is pausing the clock.
+      for (const id of ['#td-msg', '#td-intro']) {
+        const el = root.querySelector(id);
+        if (el) el.classList.add('hidden');
+      }
       paused = false;
       eco.addBiomass(4000);
       let tw = null;
@@ -14340,7 +14355,23 @@ export function initTdTab(root) {
       const tick = setInterval(() => {
         n++;
         const a = tw.a6;
+        // THE LEGS. A screenshot of a walking machine and a screenshot of a
+        // sliding one are the same picture, so the probe reads a named joint
+        // out of the live hierarchy and reports whether its rotation is
+        // actually CHANGING. That is the only thing that separates "the clip
+        // is playing" from "the clip loaded".
+        // LEG_00_KNEE is a node the Walk clip actually addresses — read off
+        // the file's own channel list, not guessed. The first cut watched
+        // LEG_00_MOUNT, which the clip never touches, and reported a
+        // stationary joint on a machine whose legs were fine.
+        const leg = tw.obj.getObjectByName('LEG_00_KNEE');
+        const rot = leg ? leg.rotation.toArray().slice(0, 3).map((v) => v.toFixed(3)).join(',') : '-';
+        const moved = leg && tw.a6.lastRot && rot !== tw.a6.lastRot;
+        if (leg) tw.a6.lastRot = rot;
         console.log(`A6PROBE t+${n}s ${a6Line(a)} · ${a.state}`
+          + ` · legs ${leg ? (moved ? 'MOVING' : 'still') : 'NO JOINT FOUND'}`
+          + ` (${leg ? leg.name : '-'} ${rot})`
+          + ` · mixer ${tw.obj.userData.mixer ? 'yes' : 'NO'}`
           + ` · ${(a6Arc(berth, a.pos) / cellSide).toFixed(2)} cells from berth`
           + ` · fired ${a.fired} · trips ${a.trips}`
           + ` · target ${a.target ?? '-'} · enemies ${enemies.filter((e) => e.alive).length}`
@@ -14348,6 +14379,50 @@ export function initTdTab(root) {
         if (n >= 30) clearInterval(tick);
       }, 1000);
     }, 2500);
+  }
+
+  // ?alltowers=1 — ONE OF EVERY TOWER ON THE BOARD, so the models can be
+  // looked at rather than described. It also answers the question the
+  // rosterprobe cannot: whether the board's OWN boot path preloads the look,
+  // which it did not until this — applyTowerLook was reachable only from the
+  // panel, so every tower came up as the braille fallback and stayed there.
+  if (urlParams.get('alltowers') === '1') {
+    setTimeout(() => {
+      // BOTH CURTAINS. The board starts behind the landing brief AND the
+      // field manual, and hiding one leaves the other over the picture — a
+      // probe that is meant to produce a photograph has to clear what is in
+      // front of the camera, not just what is pausing the clock.
+      for (const id of ['#td-msg', '#td-intro']) {
+        const el = root.querySelector(id);
+        if (el) el.classList.add('hidden');
+      }
+      paused = false;
+      eco.addBiomass(9000);
+      let n = 0;
+      for (let i = 0; i < dungeon.tags.length && n < TOWERS.length; i++) {
+        if (placeError(i) || towerByCell.get(i)) continue;
+        if (commitTower(TOWERS[n].key, i, 0)) n++;
+        i += 2;   // spread them out so they can be told apart
+      }
+      let points = 0, meshes = 0;
+      for (const tw of towers) {
+        tw.obj.traverse((o) => { if (o.isPoints) points++; if (o.isMesh) meshes++; });
+      }
+      console.log(`ALLTOWERS placed ${towers.length}/${TOWERS.length} · look=${params.towerLook}`
+        // ...and only call it a fault on a board that ASKED for models. The
+        // campaign's towers are dot clouds on purpose, and a probe that
+        // shouts about it is a probe that gets ignored on the day it is right.
+        + ` ready=${lookReady(params.towerLook)} · ${meshes} mesh ${points} points`
+        + (params.towerLook === 'sentry'
+          ? (points > 0 ? ' — SOME FELL BACK TO BRAILLE' : ' — all models')
+          : ' — braille board, as intended'));
+      for (const tw of towers) {
+        let m = 0, pt = 0;
+        tw.obj.traverse((o) => { if (o.isMesh) m++; if (o.isPoints) pt++; });
+        console.log(`ALLTOWERS ${String(tw.key).padEnd(9)} ${m} mesh ${pt} points`
+          + `${tw.a6 ? ` · walker, mixer=${!!tw.obj.userData.mixer}` : ''}`);
+      }
+    }, 2600);
   }
 
   // ?drones=1 — buy the assistant, put three orders on the book, drive both

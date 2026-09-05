@@ -201,9 +201,16 @@ token — the corner badge was retired from the game view).
   position: patrol a leash around its berth → engage → empty a 6/8/10-rocket
   cassette → walk home → reload. Going home is unconditional, or the magazine
   is decoration. Arc length in radians throughout, so `cells * cellSide`
-  compares directly. Its walk is a bob, not the model's `Walk` clip: the
-  sentry look MERGES by material (6 draw calls instead of 109) and merging
-  discards the skeleton — the clip needs an unmerged instance and a mixer. Never address a
+  compares directly. Its `Walk` clip runs for real: the sentry look merges
+  everything the CLIP DOES NOT TOUCH (pivot names read off the animation's own
+  tracks, never guessed from names), so the 24 leg joints stay articulated and
+  the hull collapses — 70 draw calls against 89 fully unmerged and 4-5 for a
+  static tower. Legs run while patrolling / engaging / returning, stop while
+  firing and reloading (`userData.setGait`). `applyTowerLook()` runs AT BOOT:
+  it used to be reachable only from the panel and `?towerlook=`, so a board
+  whose default look has async assets never started the load and every tower
+  stayed a braille fallback forever. `?alltowers=1` places one of each and
+  says whether any fell back. Never address a
   tower by a literal key (`'single'`) — use `starterTower()` or find it by
   `attack`; a literal is a call site that silently does nothing on one board.
 - A `?v=` token is part of the module URL, so `./x.js` and `./x.js?v=ab` are

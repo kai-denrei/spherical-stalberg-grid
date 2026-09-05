@@ -19,10 +19,10 @@
 // without reshaping this interface. A look with no preload is ready
 // immediately; a look whose preload has not resolved falls back.
 import * as THREE from '../vendor/three.module.js';
-import { loadGlb, mergeByMaterial, fitModel, tintModel } from './glbmodels.js?v=f7abc0ce';
-import { TOWERS } from './towers.js?v=f7abc0ce';
-import { makeTowerMast, makeTowerUnit } from './units.js?v=f7abc0ce';
-import { TOWER, HEADS, loadTower } from './feelstore.js?v=f7abc0ce';
+import { loadGlb, loadGlbWithClips, mergeByMaterial, fitModel, tintModel } from './glbmodels.js?v=afc8078c';
+import { TOWERS } from './towers.js?v=afc8078c';
+import { makeTowerMast, makeTowerUnit } from './units.js?v=afc8078c';
+import { TOWER, HEADS, loadTower } from './feelstore.js?v=afc8078c';
 
 // def.shape -> a solid primitive, so the SOLID look keeps each tower's
 // silhouette identity from towers.js rather than inventing its own.
@@ -104,23 +104,53 @@ function makeGlbLook({ label, url, height, maxSpan, drop = [] }) {
 // board are one download and one upload, and a tower whose bytes have not
 // landed still gets a braille mast rather than nothing.
 const sentryProtos = new Map();
+const sentryClips = new Map();
 const sentryPending = new Map();
 
 function sentryUrlFor(def, tier = 1) {
   return `assets/models/sentries/${def.model}_t${tier}.glb`;
 }
 
+// A WALKER KEEPS ITS SKELETON. Everything else on the board has dug in and
+// holds still, so it is merged by material — six draw calls instead of a
+// hundred and nine, and the named pivots are the sentry LAB's business.
+// The A6 is the exception and has to be: merging flattens the hierarchy the
+// Walk clip's twenty-four rotation and translation channels address by
+// NAME, so a merged A6 can only ever glide. It costs what it costs, and it
+// is one unit at 260 biomass rather than a board full of them.
+const animated = (def) => def.attack === 'walker';
+
 function loadSentryModel(def) {
   const url = sentryUrlFor(def);
   if (sentryProtos.has(url)) return Promise.resolve(true);
   if (sentryPending.has(url)) return sentryPending.get(url);
-  const p = loadGlb(url).then((scene) => {
+  // the walker needs its clips, so it takes the loader that keeps them —
+  // separate cache, separate shape, both already in glbmodels.js
+  const p = (animated(def) ? loadGlbWithClips(url) : loadGlb(url)).then((res) => {
+    const scene = res && res.scene ? res.scene : res;
     if (!scene) return false;
-    // MERGED, NOT ARTICULATED. A tower that has dug in holds still — the
-    // named pivots are the sentry LAB's business, where a turret tracks;
-    // here the model is scenery with a gun on it and six draw calls beat
-    // a hundred and nine.
-    sentryProtos.set(url, fitModel(mergeByMaterial(scene, []), { height: 1.35, maxSpan: 2.2 }));
+    if (animated(def)) {
+      const clips = (res && res.clips) || [];
+      // MERGE EVERYTHING THE CLIP DOES NOT TOUCH. `mergeByMaterial` already
+      // takes the nodes that must keep moving, and the honest source for
+      // that list is the CLIP: every node a track addresses, read off the
+      // animation rather than guessed from names. Unmerged the A6 was 89
+      // draw calls against 4-5 for a static tower; this keeps the twenty-four
+      // animated joints articulated and collapses the rest of the hull.
+      const pivots = new Set();
+      for (const c of clips) {
+        for (const tr of c.tracks) pivots.add(String(tr.name).split('.')[0]);
+      }
+      // fitModel wraps the result in a group and scales the WRAPPER's child —
+      // never the animated nodes themselves — so the clip's own transforms
+      // survive the fit untouched. That is the whole reason this can be a
+      // plain clone rather than a re-export.
+      sentryProtos.set(url,
+        fitModel(mergeByMaterial(scene, [...pivots]), { height: 1.35, maxSpan: 2.2 }));
+      sentryClips.set(url, clips);
+    } else {
+      sentryProtos.set(url, fitModel(mergeByMaterial(scene, []), { height: 1.35, maxSpan: 2.2 }));
+    }
     return true;
   }).catch(() => false);
   sentryPending.set(url, p);
@@ -139,13 +169,47 @@ const sentryLook = {
     return sentryLook._p;
   },
   build(def) {
-    const proto = def.model ? sentryProtos.get(sentryUrlFor(def)) : null;
+    const url = def.model ? sentryUrlFor(def) : null;
+    const proto = url ? sentryProtos.get(url) : null;
     if (!proto) return makeTowerUnit(def);   // bytes not in yet — never nothing
     const g = proto.clone(true);
     tintModel(g, def.color);
     g.userData.baseScale = 1 / 1.55;
     g.userData.lift = 0.02;
     g.userData.kind = 'mesh';
+
+    // THE GAIT. The clip is driven from the look's own `tick`, which the
+    // board already calls once per tower per frame with an absolute time —
+    // so the mixer is given the DIFFERENCE, and the first call is thrown
+    // away rather than advancing the animation by however long the page has
+    // been open. `setGait` is the seam the walker's state machine pulls: the
+    // legs move when it is going somewhere and stop when it is not, which is
+    // the difference between a machine and a screensaver.
+    const clips = url ? (sentryClips.get(url) || []) : [];
+    const walk = clips.find((c) => c.name === 'Walk');
+    if (walk) {
+      const mixer = new THREE.AnimationMixer(g);
+      const action = mixer.clipAction(walk);
+      action.setLoop(THREE.LoopRepeat, Infinity);
+      action.play();
+      let last = null, going = true;
+      g.userData.mixer = mixer;
+      g.userData.setGait = (on) => {
+        if (on === going) return;
+        going = on;
+        // eased rather than switched: a leg that stops mid-stride reads as
+        // a dropped frame, and one that starts mid-stride reads as a glitch
+        action.paused = false;
+        action.fadeIn(0);
+        action.setEffectiveTimeScale(on ? 1 : 0);
+      };
+      g.userData.tick = (t) => {
+        if (last === null) { last = t; return; }
+        const dt = Math.min(0.1, Math.max(0, t - last));
+        last = t;
+        mixer.update(dt);
+      };
+    }
     return g;
   },
 };
