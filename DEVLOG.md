@@ -2,6 +2,51 @@
 
 Newest first. Each entry: what landed, then how it works, for programmers.
 
+## TD2 — the towers aim like the sentries do, and the Lancer pierces
+
+Operator: "the new towers should use the results from the Sentry Lab;
+tracking the targets, shooting towards the acquired targets... the laser
+could use a similar engine as the plasma, but more straight, and one long
+burst... it shoots through targets, so it is meaningful to put it at an
+angle that goes down a line".
+
+**The rig survives the merge.** `mergeByMaterial(scene, ['YAW','PITCH',
+'RECOIL'])` — the same mechanism the A6's legs use, pointed at the Workshop's
+articulation contract. Merging those away is what made these towers scenery
+with a gun painted on: they could not track, elevate or recoil.
+
+**`aimTower` now drives the lab's answers.** Yaw and elevation are separate
+drives at `SENTRY_TUNE`'s own degrees-per-second (not a lerp factor — a
+proportional ease is fastest when it is most wrong, which is the opposite of
+a motor), clamped to the elevation envelope, with elevation measured **from
+the trunnion** (the range learned that the hard way: from the base, a level
+gun aims nose-down at everything) and the one negation written once. Shots
+leave a real `MUZZLE_nn`, cycling barrels, and kick RECOIL.
+
+What is deliberately NOT imported is the lab's state machine. A tower already
+has `pickTarget`, a cooldown and a range; a second opinion about what it is
+shooting at would be two authorities on one question. **The lab owns how a
+turret moves; towers.js owns what it moves toward.**
+
+**The Lancer is a line, not a shot.** `attack: 'lance'`, one long burst every
+2.2 s, out to its full seven cells, damaging everything standing on it. Three
+things had to be got right and each was wrong first:
+
+- **Terrain does not stop it.** Keeping the tank's wall-march killed the lance
+  half a cell out every time — the tower stands ON the high ground, so its own
+  wall is the first BLOCKED cell it finds. A Lancer shoots over the terrain.
+- **`off` is measured on the unit sphere.** `projectToArc` returns a 3D
+  distance to a point on the sphere, so an enemy sitting a wall-height above
+  it was paying for its altitude out of a hit radius only 0.04 wide.
+- **The bearing comes from the muzzle**, not the cell centre. The barrel is a
+  fraction of a cell off the centre, and that parallax was enough to miss the
+  very target it aimed at.
+
+It shares the plasma's engine so the board has one plasma look, tuned the
+other way: thin, straight, held, and along the ground arc rather than down
+onto a body. The glow brightens with the body count, because the one thing a
+piercing weapon should say out loud is how many it caught.
+
 ## TD2 — the walk reads as a walk, and the towers stop being pale blobs
 
 Operator: "the A6 jumps instead of walking" and "every tower comes off as

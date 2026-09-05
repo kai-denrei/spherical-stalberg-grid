@@ -229,6 +229,24 @@ token — the corner badge was retired from the game view).
   how the second roster first came up as the campaign. `bust.sh` only UPDATES
   tokens, never adds them, so an untokened import stays untokened forever.
   `check-tokens.sh` now fails on a split import of any module exporting `let`.
+- TD2's towers use the SENTRY LAB's answers. The look keeps the Workshop's
+  pivots through the merge (`mergeByMaterial(scene, ['YAW','PITCH','RECOIL'])`)
+  and exposes `head`/`pitchNode`/`recoilNode`/`muzzles`; `aimTower` drives yaw
+  and elevation at `SENTRY_TUNE`'s own rates (degrees/second, not a lerp — a
+  proportional ease is fastest when it is most wrong), clamps to the envelope,
+  measures elevation FROM THE TRUNNION, and carries the one negation
+  (`pitch.rotation.x = -elev`). Shots leave a real `MUZZLE_nn` and kick RECOIL.
+  The lab owns how a turret MOVES; towers.js still owns what it moves toward.
+- PLASMA and LANCE share one beam engine (beamfx `createBeam`, board preset) —
+  the thrower is wide, jittery, and thrown DOWN onto a body six times a
+  second; the lance is thin, straight, and held for one long burst along the
+  ground arc, piercing everything on the line. A lance is NOT stopped by
+  terrain (it stands on the high ground and shoots over it — keeping the
+  tank's wall-march killed it half a cell out on its own wall), it measures
+  `off` on the UNIT sphere (or an enemy pays for its altitude out of a 0.04
+  hit radius), and it takes its bearing FROM THE MUZZLE, not the cell centre.
+  `?plasmaprobe=1` reports beams lit, whether the throw descends, every rig's
+  yaw/elev/recoil, and how many bodies a lance went through.
 - maze/organic/battle/heart tabs are ~900-line siblings (cp+sed lineage).
   When batch-patching them: anchor on CODE lines (comments drift first),
   assert per file, treat a mid-script abort as the designed outcome.

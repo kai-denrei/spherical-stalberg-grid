@@ -127,8 +127,16 @@ const ROSTER_V2 = [
     dmg: 12 / 90, range: 3.5, rate: 0.9, attack: 'mortar', splash: 1.5,
     model: 'mortar', sound: 'tower_aoe',
     shape: 'mortar', spin: 0.7, projPx: 12, trail: 6, arc: true, projSpeed: 3.5 },
+  // LANCER — the laser, and the one weapon on the board that is aimed at a
+  // LINE rather than at a target (operator). It shoots THROUGH things: one
+  // long burst, dead straight, out to its full seven cells, and everything
+  // standing on that line pays. That makes where you put it a real decision
+  // — a Lancer covering a corridor is worth three covering a corner — and it
+  // is the reason its rate is so low. You get one lance every two seconds
+  // and it matters which way it points.
   { key: 'lancer', label: 'Lancer', color: 0xffffff, cost: 130,
-    dmg: 62 / 90, range: 7.0, rate: 0.7, attack: 'single', hitscan: true,
+    dmg: 30 / 90, range: 7.0, rate: 0.45, attack: 'lance', pierce: true,
+    burst: 0.8,          // seconds the beam stays lit — ONE long burst
     model: 'lancer', sound: 'tower_sniper',
     shape: 'guyed', projPx: 7, trail: 11, projSpeed: 42 },
   // HOWITZER — the slot Laser used to hold, and a howitzer is not a beam.

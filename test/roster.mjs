@@ -93,6 +93,17 @@ console.log('the second board is what the operator asked for:');
     && TOWER_BY_KEY.howitzer.splash > TOWER_BY_KEY.mortar.splash
     && TOWER_BY_KEY.howitzer.rate < TOWER_BY_KEY.mortar.rate);
   check('the Lancer reaches furthest', TOWERS.every((d) => d.range <= TOWER_BY_KEY.lancer.range));
+  // THE LANCE IS AIMED AT A LINE, NOT A BODY. It pierces, so its value is
+  // in how many things happen to be standing on the line — which only pays
+  // if it is slow enough that pointing it is a decision, and long enough
+  // that a line is a meaningful thing to point it down.
+  check('the Lancer pierces and is aimed down a line',
+    TOWER_BY_KEY.lancer.attack === 'lance' && TOWER_BY_KEY.lancer.pierce === true);
+  check('...in ONE long burst, not a stream',
+    TOWER_BY_KEY.lancer.burst >= 0.5
+    && TOWER_BY_KEY.lancer.burst < 1 / TOWER_BY_KEY.lancer.rate);
+  check('...and it is the slowest thing on the board',
+    TOWERS.every((d) => d.rate >= TOWER_BY_KEY.lancer.rate));
   // the models are the point of this board
   check('every tower names a model', TOWERS.every((d) => typeof d.model === 'string' && d.model));
   check('and the campaign board names none',

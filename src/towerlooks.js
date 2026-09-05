@@ -19,10 +19,10 @@
 // without reshaping this interface. A look with no preload is ready
 // immediately; a look whose preload has not resolved falls back.
 import * as THREE from '../vendor/three.module.js';
-import { loadGlb, loadGlbWithClips, mergeByMaterial, fitModel, tintModel } from './glbmodels.js?v=c09f6923';
-import { TOWERS } from './towers.js?v=c09f6923';
-import { makeTowerMast, makeTowerUnit } from './units.js?v=c09f6923';
-import { TOWER, HEADS, loadTower } from './feelstore.js?v=c09f6923';
+import { loadGlb, loadGlbWithClips, mergeByMaterial, fitModel, tintModel } from './glbmodels.js?v=07e5c43c';
+import { TOWERS } from './towers.js?v=07e5c43c';
+import { makeTowerMast, makeTowerUnit } from './units.js?v=07e5c43c';
+import { TOWER, HEADS, loadTower } from './feelstore.js?v=07e5c43c';
 
 // def.shape -> a solid primitive, so the SOLID look keeps each tower's
 // silhouette identity from towers.js rather than inventing its own.
@@ -176,7 +176,15 @@ function loadSentryModel(def) {
         fitModel(mergeByMaterial(scene, [...pivots]), { height: 1.35, maxSpan: 2.2 }));
       sentryClips.set(url, clips);
     } else {
-      sentryProtos.set(url, fitModel(mergeByMaterial(scene, []), { height: 1.35, maxSpan: 2.2 }));
+      // THE TURRET KEEPS ITS PIVOTS. `mergeByMaterial` takes the nodes that
+      // must keep moving, and for a sentry that is the Workshop's own
+      // contract — ROOT→BASE→YAW→PITCH→RECOIL. Merging them away is what
+      // made these towers scenery with a gun painted on: they could not
+      // track, could not elevate, and could not recoil. The MUZZLEs are
+      // empties and survive the merge on their own.
+      sentryProtos.set(url,
+        fitModel(mergeByMaterial(scene, ['YAW', 'PITCH', 'RECOIL']),
+          { height: 1.35, maxSpan: 2.2 }));
     }
     return true;
   }).catch(() => false);
@@ -212,6 +220,26 @@ const sentryLook = {
     // been open. `setGait` is the seam the walker's state machine pulls: the
     // legs move when it is going somewhere and stop when it is not, which is
     // the difference between a machine and a screensaver.
+    // THE RIG, under the names the Sentry Workshop guarantees. The board
+    // drives exactly what the sentry LAB drives — yaw, elevation, recoil,
+    // and the muzzles a flash leaves from — so a tower on a wall and a
+    // turret on the range are the same machine aimed by different code.
+    const yaw = g.getObjectByName('YAW');
+    const pitch = g.getObjectByName('PITCH');
+    const recoil = g.getObjectByName('RECOIL');
+    const muzzles = [];
+    g.traverse((o) => { if (/^MUZZLE_\d+$/.test(o.name || '')) muzzles.push(o); });
+    muzzles.sort((a, b) => a.name.localeCompare(b.name));
+    if (yaw) {
+      // the same seam the braille look offers, so aimTower needs no new
+      // code path: a head to turn and the facing it is turned relative to
+      g.userData.head = yaw;
+      g.userData.headFacing = 0;
+    }
+    g.userData.pitchNode = pitch || null;
+    g.userData.recoilNode = recoil || null;
+    g.userData.muzzles = muzzles;
+
     const clips = url ? (sentryClips.get(url) || []) : [];
     const walk = clips.find((c) => c.name === 'Walk');
     if (walk) {
