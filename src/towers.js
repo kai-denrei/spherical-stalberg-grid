@@ -169,6 +169,12 @@ const ROSTER_V2 = [
   // limiter, and they are the reason this is not simply the best tower.
   { key: 'heptapod', label: 'Heptapod A6', color: 0xffb45e, cost: 260,
     dmg: 16 / 90, range: 3.4, rate: 1.8, attack: 'walker',
+    // IT CAN BE KILLED. Everything else the player builds is furniture the
+    // enemy walks past; the A6 leaves its wall and goes to meet them, so it
+    // takes what a tank takes. `hullHp` is the number of contacts from the
+    // dangerous tier it survives — the fodder it ignores cannot hurt it
+    // either, which is the same asymmetry the tank lives under.
+    hullHp: 9,
     model: 'heptapod_a6', sound: 'tower_homing',
     shape: 'gripper', projPx: 6, trail: 7, projSpeed: 12 },
 ];

@@ -10,7 +10,7 @@
 //
 // Static DOM, built once. No renderer, no loop.
 
-import { POC_GROUPS } from './poccatalog.js?v=433336a9';
+import { POC_GROUPS } from './poccatalog.js?v=9f3127ff';
 import { paramLink } from './deeplink.js';
 
 export function initHomeTab(root) {

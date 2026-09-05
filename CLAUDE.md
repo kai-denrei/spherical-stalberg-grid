@@ -233,6 +233,15 @@ token — the corner badge was retired from the game view).
   first — the board starts `paused` and a probe that does not will measure a
   frozen game and report a frozen unit). A tower's sample is `towerSound(def)`,
   NOT `tower_${key}` — the second roster's keys have no samples of their own.
+- The A6 takes ORDERS and can DIE. `postWalker(ci)` moves its berth — the
+  "post A6 here" item on any empty buildable cell's radial, free, not a build
+  (nothing printed, nothing queued: the machine simply walks) — with a marker
+  left on the cell, because an order you cannot see is one you give twice.
+  `hullHp` contacts from the not-rammable tier kill it (`killWalker`: wreck,
+  burst, removed from towers/towerByCell/scene, no refund, no run-ending
+  consequence). Probes: `?a6post=N`, `?a6kill=1`, and `?a6ram=1` — which
+  walks the MACHINE onto the enemy, because an enemy's position is recomputed
+  from its cell path every frame and planting one on the A6 lasts one tick.
 - The A6 targets ONLY the not-rammable tier (a rocket spent on something the
   tank could have run over is the board's worst trade), LOCKS before it fires
   (`ctx.ready` in heptapod.js — a gate that costs time, never rockets; the

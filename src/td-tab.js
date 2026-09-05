@@ -19,75 +19,75 @@
 
 import * as THREE from '../vendor/three.module.js';
 import GUI from '../vendor/lil-gui.esm.js';
-import { generateSphereMesh, relax } from './grid.js?v=433336a9';
-import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=433336a9';
-import { compileRail } from './cine/rail.js?v=433336a9';
-import { SCRIPTS } from './cine/scripts.js?v=433336a9';
-import { cuesBetween } from './cine/sound.js?v=433336a9';
-import { installCine } from './cine/kit.js?v=433336a9';
-import { mulberry32, randomSeed } from './rng.js?v=433336a9';
-import { computeBerths, berthIndexFor } from './berths.js?v=433336a9';
-import { wantsSecondary, shellsForAll } from './autofire.js?v=433336a9';
-import { printPhase, printOffset, printOn, patternSecsFor } from './printpath.js?v=433336a9';
+import { generateSphereMesh, relax } from './grid.js?v=9f3127ff';
+import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=9f3127ff';
+import { compileRail } from './cine/rail.js?v=9f3127ff';
+import { SCRIPTS } from './cine/scripts.js?v=9f3127ff';
+import { cuesBetween } from './cine/sound.js?v=9f3127ff';
+import { installCine } from './cine/kit.js?v=9f3127ff';
+import { mulberry32, randomSeed } from './rng.js?v=9f3127ff';
+import { computeBerths, berthIndexFor } from './berths.js?v=9f3127ff';
+import { wantsSecondary, shellsForAll } from './autofire.js?v=9f3127ff';
+import { printPhase, printOffset, printOn, patternSecsFor } from './printpath.js?v=9f3127ff';
 import { createBeam } from './beamfx.js';
-import { createBeamRig, PLASMA_DEFAULTS, BOARD_PRESET, BEAM_PEAK } from './beamdraw.js?v=433336a9';
-import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3, segKey, tangentDir, tangentBasis } from './vec3.js?v=433336a9';
-import { CREATURES, waveJelly } from './creatures.js?v=433336a9';
-import { brief, dwellFor } from './isaobriefs.js?v=433336a9';
-import { drawEmotion } from './emotions.js?v=433336a9';
+import { createBeamRig, PLASMA_DEFAULTS, BOARD_PRESET, BEAM_PEAK } from './beamdraw.js?v=9f3127ff';
+import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3, segKey, tangentDir, tangentBasis } from './vec3.js?v=9f3127ff';
+import { CREATURES, waveJelly } from './creatures.js?v=9f3127ff';
+import { brief, dwellFor } from './isaobriefs.js?v=9f3127ff';
+import { drawEmotion } from './emotions.js?v=9f3127ff';
 import { ACHIEVEMENTS, ACHV_GROUPS, achievement, blankRun, earned, freshlyEarned,
   sanitiseRecord }
-  from './achievements.js?v=433336a9';
+  from './achievements.js?v=9f3127ff';
 import { applyFontPack, currentFontPack, FONT_NAMES,
-  loadTypeFeel } from './fonts.js?v=433336a9';
-import { SECONDARY_TOE, applySecondaryToe } from './units.js?v=433336a9';
-import { UNITS, UNIT_NAMES, buildUnit, buildCreature, preloadMkcx, preloadServer, makeServerFixture, makeShieldShell, preloadContainer, makeContainerFixture, preloadFabricator, makeIsaoDrone, makeBulletCloud, makeRewardSolid, makeShellSolid, makeDebris, makeDotBurst, makePortalCloud, preloadPortalRing, makePortalRing, makeHeartCloud, makeDotEnemy, makeSurvivor, preloadAstronaut, makeAstronaut, preloadTerraformer, makeTerraformerFixture } from './units.js?v=433336a9';
-import { LOOKS, LOOK_NAMES } from './looks.js?v=433336a9';
-import { makeCellIndex } from './cellindex.js?v=433336a9';
-import { CREATURE_TINTS, ENEMY_SPEC, INTROS, computeWavePlan, accentFor } from './enemyspec.js?v=433336a9';
-import { PICKUPS } from './pickups.js?v=433336a9';
-import { rankFor, rankLabel, badgeSVG, killReq, eliteReq } from './ranks.js?v=433336a9';
-import { beamStep, isBeamStep, PEN_SOFT_FRAC, PEN_HARD_FRAC } from './beamranks.js?v=433336a9';
-import { burn, sweepAdvance, wallBite as wallBiteFor } from './beamburn.js?v=433336a9';
-import { arcPoint, projectToArc, toeForCrossing, crossingForToe } from './arc.js?v=433336a9';
+  loadTypeFeel } from './fonts.js?v=9f3127ff';
+import { SECONDARY_TOE, applySecondaryToe } from './units.js?v=9f3127ff';
+import { UNITS, UNIT_NAMES, buildUnit, buildCreature, preloadMkcx, preloadServer, makeServerFixture, makeShieldShell, preloadContainer, makeContainerFixture, preloadFabricator, makeIsaoDrone, makeBulletCloud, makeRewardSolid, makeShellSolid, makeDebris, makeDotBurst, makePortalCloud, preloadPortalRing, makePortalRing, makeHeartCloud, makeDotEnemy, makeSurvivor, preloadAstronaut, makeAstronaut, preloadTerraformer, makeTerraformerFixture } from './units.js?v=9f3127ff';
+import { LOOKS, LOOK_NAMES } from './looks.js?v=9f3127ff';
+import { makeCellIndex } from './cellindex.js?v=9f3127ff';
+import { CREATURE_TINTS, ENEMY_SPEC, INTROS, computeWavePlan, accentFor } from './enemyspec.js?v=9f3127ff';
+import { PICKUPS } from './pickups.js?v=9f3127ff';
+import { rankFor, rankLabel, badgeSVG, killReq, eliteReq } from './ranks.js?v=9f3127ff';
+import { beamStep, isBeamStep, PEN_SOFT_FRAC, PEN_HARD_FRAC } from './beamranks.js?v=9f3127ff';
+import { burn, sweepAdvance, wallBite as wallBiteFor } from './beamburn.js?v=9f3127ff';
+import { arcPoint, projectToArc, toeForCrossing, crossingForToe } from './arc.js?v=9f3127ff';
 import { MINE_TUNE, makeField, layMine, armMines, restock, mineAt,
-  inFan, trip, chain, nextChained, minePolar } from './mines.js?v=433336a9';
+  inFan, trip, chain, nextChained, minePolar } from './mines.js?v=9f3127ff';
 import { deepLink, wireDeepLink } from './deeplink.js';
 import { RESCUE_TUNE, makeRescue, placeSurvivors, stepBoard, stepGrab,
   disembark, loseCarried, lockOn, waveMix, standing as standingSurv,
   aboard as aboardSurv, missionOver, verdict as rescueVerdict,
   grabProgress, remaining as remainingSurv, exposed as exposedSurv,
   RESCUE2_TUNE, makeCamps, stepCall, stepEmerge, walkStep, runOver,
-  awake as campAwake } from './rescue.js?v=433336a9';
+  awake as campAwake } from './rescue.js?v=9f3127ff';
 import { WORMHOLE_PRESET, WORMHOLE_UNIFORM_DEFAULTS, RING_SPIN, TRAVEL,
-  travelRate, advancePhase } from './portalfx.js?v=433336a9';
-import { WORMHOLE_FRAG } from './fx/wormhole.frag.js?v=433336a9';
-import { CORONA_FRAG } from './fx/corona.frag.js?v=433336a9';
-import { labLine, parseLabQuery } from './lab.js?v=433336a9';
-import { bakeGalaxyCube } from './galaxybake.js?v=433336a9';
-import { SKY_PRESET } from './galaxyseed.js?v=433336a9';
-import { makeScore } from './score.js?v=433336a9';
-import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER, HACK_GATED, starterTower, towerSound, ROSTER } from './towers.js?v=433336a9';
-import { makeEconomy, sellRefund } from './economy.js?v=433336a9';
-import { pickTier } from './perftier.js?v=433336a9';
-import { applyWeatheredMaterial } from './cine/materials.js?v=433336a9';
-import { STICK, stickVector, knobOffset } from './stick.js?v=433336a9';
-import { registerServiceWorker } from './pwa.js?v=433336a9';
-import { makeBloom } from './postfx.js?v=433336a9';
-import { TANK_FEEL, TANK_FEEL_KNOBS, makeTankFeel, stepTankFeel, landTankFeel, fireTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js?v=433336a9';
-import { FEEL, loadFeel, saveFeel } from './feelstore.js?v=433336a9';
+  travelRate, advancePhase } from './portalfx.js?v=9f3127ff';
+import { WORMHOLE_FRAG } from './fx/wormhole.frag.js?v=9f3127ff';
+import { CORONA_FRAG } from './fx/corona.frag.js?v=9f3127ff';
+import { labLine, parseLabQuery } from './lab.js?v=9f3127ff';
+import { bakeGalaxyCube } from './galaxybake.js?v=9f3127ff';
+import { SKY_PRESET } from './galaxyseed.js?v=9f3127ff';
+import { makeScore } from './score.js?v=9f3127ff';
+import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER, HACK_GATED, starterTower, towerSound, ROSTER } from './towers.js?v=9f3127ff';
+import { makeEconomy, sellRefund } from './economy.js?v=9f3127ff';
+import { pickTier } from './perftier.js?v=9f3127ff';
+import { applyWeatheredMaterial } from './cine/materials.js?v=9f3127ff';
+import { STICK, stickVector, knobOffset } from './stick.js?v=9f3127ff';
+import { registerServiceWorker } from './pwa.js?v=9f3127ff';
+import { makeBloom } from './postfx.js?v=9f3127ff';
+import { TANK_FEEL, TANK_FEEL_KNOBS, makeTankFeel, stepTankFeel, landTankFeel, fireTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js?v=9f3127ff';
+import { FEEL, loadFeel, saveFeel } from './feelstore.js?v=9f3127ff';
 import { STRIKE_KNOBS, makeStrike, makeStrikeParams, grantStrikes, stepStrike,
   toggleArm, paintTarget, launchStrike, stepFall, skipFall, fallProgress,
-  strikeDamage, retargetStrike, orbitProgress } from './strike.js?v=433336a9';
+  strikeDamage, retargetStrike, orbitProgress } from './strike.js?v=9f3127ff';
 import { radarBasis, radarProject, radarBearing, sweepAngle, radarPhosphor,
-  proximitySectors, SENSOR_LEVELS, sensorColor } from './radar.js?v=433336a9';
-import { BLOOM_GROUPS } from './bloomweights.js?v=433336a9';
+  proximitySectors, SENSOR_LEVELS, sensorColor } from './radar.js?v=9f3127ff';
+import { BLOOM_GROUPS } from './bloomweights.js?v=9f3127ff';
 import { A6_TUNE, magFor, makeA6, stepA6, arc as a6Arc, a6Line } from './heptapod.js';
 import { SENTRY_TUNE } from './sentry.js';
 import { MISSILE_TUNE, scaleMissile, makeLock, stepLock, launchMissile, stepMissile } from './lockon.js';
-import { TOWER_LOOK_NAMES, DEFAULT_TOWER_LOOK, buildTowerLook, preloadLook, lookReady, setSentryTier } from './towerlooks.js?v=433336a9';
-import { makeAudio } from './audio.js?v=433336a9';
-import { DEATH_KEYS } from './audiomanifest.js?v=433336a9';
+import { TOWER_LOOK_NAMES, DEFAULT_TOWER_LOOK, buildTowerLook, preloadLook, lookReady, setSentryTier } from './towerlooks.js?v=9f3127ff';
+import { makeAudio } from './audio.js?v=9f3127ff';
+import { DEATH_KEYS } from './audiomanifest.js?v=9f3127ff';
 
 export function initTdTab(root) {
   let active = false;
@@ -6362,6 +6362,25 @@ export function initTdTab(root) {
         dangerWarnedWave = wave;
         dangerFlash();
       }
+      // A WALKER IS IN THE FIGHT, so the fight can reach it. Only the
+      // dangerous tier does anything — the fodder the A6 refuses to shoot at
+      // cannot hurt it either, which is the same asymmetry the tank lives
+      // under and the reason the A6's own targeting rule is not a free pass.
+      if (!spec.rammable) {
+        for (const tw of towers) {
+          if (!tw.a6 || tw.hp <= 0) continue;
+          if (dist3(e.pos, tw.a6.pos) > touchR + cellSide * 0.3) continue;
+          if (tNow <= (e.a6Cd ?? -1)) continue;
+          e.a6Cd = tNow + 1.2;
+          tw.hp -= 1;
+          const bn = norm3(tw.a6.pos);
+          const spark = makeDotBurst(0xff7744, bn, 14);
+          spark.scale.setScalar(cellSide * 0.5);
+          spark.position.set(tw.a6.pos[0], tw.a6.pos[1], tw.a6.pos[2]);
+          scene.add(spark); debris.push(spark);
+          if (tw.hp <= 0) killWalker(tw);
+        }
+      }
       if (!playerDown && dist3(e.pos, player.pos) < touchR) {
         if (spec.rammable) {
           // run over: tinted splat under the treads + the weight bump
@@ -8637,6 +8656,8 @@ export function initTdTab(root) {
     // the rest of the board has to know about.
     if (def.attack === 'walker') {
       tower.a6 = makeA6(norm3(graph.centers[ci]), 0);
+      tower.hp = def.hullHp ?? 9;
+      tower.hp0 = tower.hp;
     }
     placeTowerObj(tower);
     scene.add(obj);
@@ -9143,6 +9164,55 @@ export function initTdTab(root) {
     towerByCell.delete(tower.ci);
     towerCells.delete(tower.ci);
     if (watchTower === tower) watchTower = null;
+  }
+
+  // THE SAME DEATH THE TANK GETS: the wreck, the burst, the sound, and then
+  // it is off the board. No refund — it was destroyed, not sold — and no
+  // run-ending consequence: the player builds another, which is the whole
+  // difference between losing a machine and losing the tank.
+  function killWalker(tw) {
+    const n = norm3(tw.a6.pos);
+    sfx.play('tank_destroyed', { dist: camDist(tw.a6.pos) });
+    const wreck = makeDebris(tw.obj, n);
+    scene.add(wreck); debris.push(wreck);
+    const burst = makeDotBurst(tw.def.color, n, 48);
+    burst.scale.setScalar(cellSide * 0.8);
+    burst.position.set(tw.a6.pos[0], tw.a6.pos[1], tw.a6.pos[2]);
+    scene.add(burst); debris.push(burst);
+    showCallout('A6 DOWN', 'co-heart');
+    scene.remove(tw.obj);
+    disposeObj(tw.obj);
+    towers.splice(towers.indexOf(tw), 1);
+    towerByCell.delete(tw.ci);
+    towerCells.delete(tw.ci);
+    if (watchTower === tw) watchTower = null;
+    updateHud();
+  }
+
+  // SEND THE A6 SOMEWHERE. The berth moves; the machine walks to it under
+  // its own rules — it is not teleported, and it does not stop fighting on
+  // the way. A marker stays on the cell so the order is visible after the
+  // menu closes: an order you cannot see is an order you will give twice.
+  let a6Post = null;
+  function postWalker(ci) {
+    const tw = towers.find((w) => w.a6);
+    if (!tw) return false;
+    tw.a6.berth = norm3(graph.centers[ci]).slice();
+    tw.a6.postCi = ci;
+    // ...and it goes NOW rather than after the current patrol leg: the
+    // waypoint it was walking to is a place it no longer has any business
+    tw.a6.want = tw.a6.berth.slice();
+    tw.a6.dwell = 0;
+    if (a6Post) { scene.remove(a6Post); disposeObj(a6Post); }
+    a6Post = makeDotBurst(tw.def.color, graph.normals[ci], 24);
+    a6Post.userData.tick = null;         // it stays; it is a marker, not an effect
+    a6Post.scale.setScalar(cellSide * 0.7);
+    const c = graph.centers[ci];
+    const top = 1 + params.wallHeight * 0.35;
+    a6Post.position.set(c[0] * top, c[1] * top, c[2] * top);
+    scene.add(a6Post);
+    showCallout('A6 POSTED', 'co-streak');
+    return true;
   }
 
   function sellTower(tower) {
@@ -10910,6 +10980,21 @@ export function initTdTab(root) {
           bc: '#' + def.color.toString(16).padStart(6, '0'),
         };
       });
+      // POST THE A6 FORWARD (operator: "the player Orders placement of the
+      // Heptapod... player says once: you move there, and it allows a
+      // forward position to be built"). Its berth is where it patrols and
+      // where it walks home to reload, and until the player says otherwise
+      // that is the cell it was printed on — so it wanders near the wall it
+      // came from. This is the one order it takes: a cell to hold instead.
+      //
+      // It costs nothing and it is not a build: nothing is printed, nothing
+      // is queued, the machine simply walks. That is why it sits on an
+      // EMPTY cell's menu rather than in the tower list, and why it appears
+      // only when there is an A6 to send.
+      const walker = towers.find((tw) => tw.a6);
+      if (walker && !err) {
+        items.unshift({ cls: 'shop-move', txt: 'post A6<br>here' });
+      }
       items.push({ cls: 'shop-close', txt: '×' });
     }
     const n = items.length;
@@ -10940,6 +11025,9 @@ export function initTdTab(root) {
       if (orderTower(el.dataset.key, shopCi)) closeShop();
     } else if (el.classList.contains('shop-up') && tower) {
       if (orderUpgrade(tower)) openShop(shopCi); // refresh
+    } else if (el.classList.contains('shop-move') && shopCi !== -1) {
+      postWalker(shopCi);
+      closeShop();
     } else if (el.classList.contains('shop-sell') && tower) {
       sellTower(tower);
       closeShop();
@@ -15191,6 +15279,11 @@ export function initTdTab(root) {
       const near = openNeighbors(tw.ci)[0] ?? tw.ci;
       {
         const spec = ENEMY_SPEC[hardType];
+        // ?a6ram=1 walks the MACHINE onto the enemy rather than the other
+        // way round: an enemy's position is recomputed from its cell path
+        // every frame, so planting one on top of the A6 lasts exactly one
+        // tick. The A6 keeps a standoff from what it shoots, so incidental
+        // contact is rare and this path would otherwise go unexercised.
         const obj = makeDotEnemy(hardType, { walker: CREATURE_TINTS[hardType], walkerHi: accentFor(hardType) });
         const s0 = cellSide * spec.size * 0.7;
         obj.scale.setScalar(s0); obj.userData.s0 = s0;
@@ -15204,6 +15297,38 @@ export function initTdTab(root) {
           slowFactor: 1, slowUntil: -1,
         });
         console.log(`A6PROBE planted a hard ${hardType} (rammable=${spec.rammable}) at cell ${near}`);
+      }
+      // ?a6=1&a6post=N — SEND IT SOMEWHERE and watch it go. The order is a
+      // menu item on a cell, which a headless run cannot tap, so the probe
+      // calls the same function the button does.
+      const postWant = parseInt(urlParams.get('a6post') || '-1', 10);
+      if (postWant >= 0) {
+        setTimeout(() => {
+          const ci2 = openNeighbors(openNeighbors(tw.ci)[0] ?? tw.ci)[0] ?? tw.ci;
+          console.log(`A6PROBE posting to cell ${ci2} (was berthed at ${tw.ci})`);
+          console.log(`A6PROBE post accepted=${postWalker(ci2)}`);
+        }, 3000);
+      }
+      // ?a6kill=1 — hit it until it dies, through the same path an enemy
+      // uses, so the wreck and the removal are exercised rather than assumed
+      if (urlParams.get('a6kill') === '1') {
+        setTimeout(() => {
+          console.log(`A6PROBE killing: hp ${tw.hp}/${tw.hp0} towers=${towers.length}`);
+          for (let k = 0; k < (tw.hp0 ?? 9) + 2 && tw.hp > 0; k++) {
+            tw.hp -= 1;
+            if (tw.hp <= 0) killWalker(tw);
+          }
+          console.log(`A6PROBE killed: towers=${towers.length}`
+            + ` stillListed=${towers.includes(tw)} byCell=${!!towerByCell.get(tw.ci)}`
+            + ` inScene=${tw.obj.parent === scene}`);
+        }, 6000);
+      }
+      if (urlParams.get('a6ram') === '1') {
+        const shove = setInterval(() => {
+          const hard = enemies.find((e) => e.alive && !e.spec.rammable);
+          if (!hard || !towers.includes(tw)) { clearInterval(shove); return; }
+          tw.a6.pos = hard.pos.slice();
+        }, 100);
       }
       let n = 0;
       const tick = setInterval(() => {
@@ -15242,7 +15367,12 @@ export function initTdTab(root) {
           + ` · lock ${a.state === 'lockon' || (tw.lock && tw.lock.locked) ? (tw.lock && tw.lock.locked ? 'LOCKED' : ((tw.lock && tw.lock.meter) || 0).toFixed(2)) : '-'}`
           + ` · seekers ${towerSeekers.filter((m) => m.by === tw).length}`
           + ` · rings ${(tw.rings || []).filter((r) => r.visible).length}/${(tw.rings || []).length}`
-          + ` · hard ${enemies.filter((e) => e.alive && !e.spec.rammable).length}`);
+          + ` · hard ${enemies.filter((e) => e.alive && !e.spec.rammable).length}`
+          + ` · hp ${tw.hp}/${tw.hp0} · post ${a.postCi ?? '-'}`
+          + ` · toPost ${a.postCi === undefined ? '-' : (a6Arc(a.pos, a.berth) / cellSide).toFixed(2) + 'c'}`);
+        // a dead A6 is off the board; the probe holds the last reference and
+        // would otherwise go on narrating a machine that no longer exists
+        if (!towers.includes(tw)) { console.log('A6PROBE gone'); clearInterval(tick); return; }
         if (n >= 30) clearInterval(tick);
       }, 1000);
     }, 2500);
