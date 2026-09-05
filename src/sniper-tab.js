@@ -32,6 +32,10 @@ import {
   makeShooter, stepBreath, sway, rangeFromMrad, hitsAt, STEP, MAX_T, nextPlate,
   WEAPONS, WEAPON_IDS, applyWeapon, splashHits, launchAngleFor,
 } from './ballistics.js';
+import {
+  LOCK_TUNE, MISSILE_TUNE, makeLock, stepLock, offsetMrad,
+  launchMissile, stepMissile, warheadHits,
+} from './lockon.js';
 
 const TARGET_TYPES = ['phage', 'ghost', 'corona', 'barbed'];
 const TARGET_H = 1.9;      // metres — what the rangefinder mil-relation uses
@@ -130,6 +134,12 @@ export function initSniperTab(root) {
   let W = WEAPONS[WEAPONS[P.weapon] ? P.weapon : 'lancer'];
   applyWeapon(P, W.id);
   let cool = 0, charging = 0;
+  // THE SEEKER. One lock per shooter, and a list of missiles in the air —
+  // they are not `rounds`, because nothing about them is ballistic: they
+  // carry their own target and their own guidance and they ignore the hold.
+  const lock = makeLock();
+  const missiles = [];
+  let lockNote = 0;
   function setWeapon(id) {
     W = WEAPONS[id] || WEAPONS.lancer;
     applyWeapon(P, W.id);
@@ -486,7 +496,7 @@ export function initSniperTab(root) {
 
   // The target under the reticle, and how far away it is — the rangefinder's
   // job, done the same way whether a chip prints it or the player mils it.
-  function underReticle() {
+  function underReticle(maxOff = 12) {
     let best = null, bd = Infinity;
     for (const t of targets) {
       if (!t.alive) continue;
@@ -498,7 +508,7 @@ export function initSniperTab(root) {
       const bearing = Math.atan2(dx, dz);
       const elev = Math.atan2(t.pos[1] - camera.position.y, Math.hypot(dx, dz));
       const off = Math.hypot(bearing - aimYaw, elev - aimPitch) * MRAD;
-      if (off < 12 && off < bd) { bd = off; best = t; }
+      if (off < maxOff && off < bd) { bd = off; best = t; }
     }
     return best ? { t: best, off: bd, range: Math.hypot(best.pos[0], best.pos[2]) } : null;
   }
@@ -546,6 +556,11 @@ export function initSniperTab(root) {
     // along the barrel, and drawn as a beam that fades — so the laser tests
     // only the sway, which is the point of having it.
     if (W.hitscan) { hitscan(yaw, pitch); return; }
+    // A MISSILE NEEDS PERMISSION. Not ammunition, not a hold — a lock, held
+    // by the player's own hands for the better part of two seconds. Firing
+    // without one does nothing except say so, because a Javelin that flew
+    // straight when unlocked would just be a slow, bad shell.
+    if (W.homing) { launchSeeker(yaw, pitch); return; }
     const mesh = new THREE.Mesh(new THREE.SphereGeometry(W.loft ? 0.35 : 0.09, 6, 5),
       new THREE.MeshBasicMaterial({ color: W.id === 'railgun' ? 0xa8e8ff : 0xfff0c0 }));
     mesh.visible = P.tracer;
@@ -584,6 +599,104 @@ export function initSniperTab(root) {
     muzzleNode.getWorldPosition(tmpV);
     return tmpV.y;
   };
+
+  // --- the seeker ----------------------------------------------------------
+  // THE MISSILE IS FIRED DOWN THE BARREL AND THEN STOPS CARING. It leaves
+  // slowly, along the aim, and from the second step onward it is flying its
+  // own intercept on the target the lock named — which is why the reward for
+  // holding the reticle still is that you no longer have to aim.
+  function launchSeeker(yaw, pitch) {
+    const t = targets.find((x) => x.alive && x.id === lock.id);
+    if (!lock.locked || !t) {
+      hudNote = lock.meter > 0 ? `SEEKING — ${(lock.meter * 100).toFixed(0)}%` : 'NO LOCK';
+      if (P.sound) sfx.play('laser_click');
+      return;
+    }
+    const from = [0, muzzleHeight(), 0];
+    const dir = [Math.sin(yaw) * Math.cos(pitch), Math.sin(pitch), Math.cos(yaw) * Math.cos(pitch)];
+    const m = launchMissile(from, dir, 40, clock);
+    m.tid = t.id;
+    m.launchRange = Math.hypot(t.pos[0] - from[0], t.pos[1] - from[1], t.pos[2] - from[2]);
+    m.carry = 0;
+    const mesh = new THREE.Mesh(new THREE.ConeGeometry(0.28, 1.5, 7),
+      new THREE.MeshBasicMaterial({ color: 0xffd08a }));
+    mesh.visible = P.tracer;
+    scene.add(mesh);
+    m.mesh = mesh;
+    missiles.push(m);
+    if (P.sound) sfx.play('tower_homing');
+    cool = W.cooldown;
+    recoil = RECOIL_KICK * 0.45;
+    shooter.shots++;
+    hudNote = 'AWAY';
+    const f = makeDotBurst(0xffe6a8, [0, 0, 1], 20);
+    f.scale.setScalar(0.7);
+    f.position.set(0, muzzleHeight(), 1.2);
+    scene.add(f);
+    fx.push({ obj: f, tick: f.userData.tick });
+  }
+
+  function stepMissiles(dt) {
+    for (let i = missiles.length - 1; i >= 0; i--) {
+      const m = missiles[i];
+      const t = targets.find((x) => x.id === m.tid && x.alive);
+      // the target died or was taken by something else: the missile goes
+      // stupid and flies on, which is more honest than deleting it
+      const tp = t ? t.pos : [m.p[0] + m.v[0], m.p[1] + m.v[1], m.p[2] + m.v[2]];
+      const tv = t && t.vel ? t.vel : [0, 0, 0];
+      const h = MISSILE_TUNE.step;
+      m.carry += dt;
+      for (let k = 0; k < 400 && !m.spent && m.carry >= h - 1e-9; k++) {
+        m.carry -= h;
+        stepMissile(m, h, tp, tv, m.launchRange, MISSILE_TUNE);
+        if (t && m.t > MISSILE_TUNE.arm) {
+          const miss = Math.hypot(tp[0] - m.p[0], tp[1] - m.p[1], tp[2] - m.p[2]);
+          if (warheadHits(miss, MISSILE_TUNE)) {
+            resolveHit(t, 0, new THREE.Vector3(tp[0], tp[1], tp[2]));
+            m.spent = true;
+          }
+        }
+      }
+      m.mesh.position.set(m.p[0], m.p[1], m.p[2]);
+      m.mesh.visible = P.tracer;
+      // point it where it is going — a cone models +Y, so the nose is
+      // rotated onto the velocity rather than the velocity onto the cone
+      if (!m.spent) {
+        const v = new THREE.Vector3(m.v[0], m.v[1], m.v[2]).normalize();
+        m.mesh.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), v);
+      }
+      const done = m.spent || m.p[1] < 0 || m.t > MISSILE_TUNE.maxTime;
+      if (!done) continue;
+      if (!m.spent) {
+        const b = makeDotBurst(0xffc07a, [0, 1, 0], 34);
+        b.scale.setScalar(2.2);
+        b.position.set(m.p[0], 0.05, m.p[2]);
+        scene.add(b); fx.push({ obj: b, tick: b.userData.tick });
+        if (!hudNote.startsWith('HIT')) hudNote = 'MISSILE LOST';
+      }
+      scene.remove(m.mesh); disposeObj(m.mesh);
+      missiles.splice(i, 1);
+    }
+  }
+
+  // ONE STEP OF THE LOCK. The candidate is whatever is nearest the cross out
+  // to the BREAK angle, not the gate — a locked seeker has to keep seeing
+  // the thing it is holding even after the player's hands have taken it out
+  // of the gate, which is the whole difference between a lock and a hitbox.
+  function stepSeeker(dt) {
+    if (!W.lock) { lock.locked = false; lock.meter = 0; lock.id = null; return; }
+    const u = underReticle(LOCK_TUNE.breakMrad + 4);
+    const was = lock.locked;
+    stepLock(lock, dt, u ? { id: u.t.id, off: u.off, range: u.range } : null, LOCK_TUNE);
+    if (lock.locked && !was) {
+      if (P.sound) sfx.play('laser_click');
+      hudNote = 'TARGET LOCKED';
+      lockNote = clock;
+    } else if (was && !lock.locked) {
+      if (P.sound) sfx.play('tank_spool_down');
+      hudNote = 'LOCK BROKEN';
+    }
+  }
 
   // THE LASER. Nothing to integrate: it lands where the barrel points, at the
   // range of whatever is under it, this frame. The beam is drawn for a
@@ -821,6 +934,14 @@ export function initSniperTab(root) {
   function paintReticle() {
     if (!reticleEl) return;
     const h = container.clientHeight || 1;
+    // a seeker gets its own glass, and it REPLACES the ruler rather than
+    // being drawn over it: the mil dots are a holdover instrument and a
+    // homing round has no holdover
+    if (W.lock) {
+      reticleEl.innerHTML = `<svg width="100%" height="100%">`
+        + `${paintSeeker(container.clientWidth || 1, h).join('')}</svg>`;
+      return;
+    }
     const pxPerMrad = h / ((camera.fov * Math.PI / 180) * MRAD);
     const sw = sway(clock, shooter, P);
     const cx = (container.clientWidth || 1) / 2 - sw[0] * pxPerMrad;
@@ -856,6 +977,100 @@ export function initSniperTab(root) {
     reticleEl.innerHTML = `<svg width="100%" height="100%">${parts.join('')}</svg>`;
   }
 
+  // THE SEEKER'S OWN GLASS. A different weapon deserves a different sight:
+  // where the rifle reticle is a ruler — mil dots you read a holdover off —
+  // this one is an INSTRUMENT that tells you one thing, how close you are to
+  // being allowed to shoot. Nothing here is measured in milliradians for the
+  // player to use; the numbers are the machine's.
+  //
+  // The four brackets are the lock meter. They start wide and walk inward as
+  // it fills, and on acquisition they snap to the ring and everything turns
+  // amber — which means the player learns the state from the shape of the
+  // thing without reading a word of it. Once locked the whole assembly rides
+  // the TARGET rather than the cross, so the barrel drifting off is visible
+  // as the reticle leaving the middle of the screen.
+  function paintSeeker(w2, h) {
+    const sw = sway(clock, shooter, P);
+    const pxPerMrad = h / ((camera.fov * Math.PI / 180) * MRAD);
+    let cx = w2 / 2 - sw[0] * pxPerMrad;
+    let cy = h / 2 + sw[1] * pxPerMrad;
+    const held = lock.locked ? targets.find((t) => t.alive && t.id === lock.id) : null;
+    if (held) {
+      const v = new THREE.Vector3(held.pos[0], held.pos[1], held.pos[2]).project(camera);
+      if (v.z < 1) { cx = (v.x * 0.5 + 0.5) * w2; cy = (-v.y * 0.5 + 0.5) * h; }
+    }
+    const on = lock.locked;
+    const col = on ? '#ffb43d' : '#dfe9ec';
+    const R = Math.max(46, Math.min(96, h * 0.11));
+    const P2 = [];
+    const ln = (x1, y1, x2, y2, o = 0.8, c = col, w3 = 1) =>
+      P2.push(`<line x1="${x1.toFixed(1)}" y1="${y1.toFixed(1)}" x2="${x2.toFixed(1)}" y2="${y2.toFixed(1)}" stroke="${c}" stroke-width="${w3}" opacity="${o}"/>`);
+    const circ = (r, o, w3 = 1) =>
+      P2.push(`<circle cx="${cx.toFixed(1)}" cy="${cy.toFixed(1)}" r="${r.toFixed(1)}" fill="none" stroke="${col}" stroke-width="${w3}" opacity="${o}"/>`);
+
+    // the two rings, and the frame the whole sight sits in
+    circ(R, 0.85, 1.2); circ(R * 1.09, 0.5);
+    const FW = R * 2.6, FH = R * 1.9;
+    P2.push(`<rect x="${(cx - FW).toFixed(1)}" y="${(cy - FH).toFixed(1)}" width="${(FW * 2).toFixed(1)}" height="${(FH * 2).toFixed(1)}" fill="none" stroke="${col}" stroke-width="1" opacity="0.28"/>`);
+    // the X, drawn from beyond the frame so it reads as a huge fixed cross
+    const D = R * 2.9;
+    ln(cx - D, cy - D, cx + D, cy + D, 0.32);
+    ln(cx + D, cy - D, cx - D, cy + D, 0.32);
+    // the horizontal bars above and below the middle, with their dot pairs
+    for (const sgn of [-1, 1]) {
+      const y = cy + sgn * R * 0.52;
+      ln(cx - R * 0.62, y, cx + R * 0.62, y, 0.55);
+      ln(cx - R * 0.62, y, cx - R * 0.62, y + sgn * R * 0.16, 0.55);
+      ln(cx + R * 0.62, y, cx + R * 0.62, y + sgn * R * 0.16, 0.55);
+      for (const sx of [-1, 1]) for (const dy of [-2.5, 2.5]) {
+        P2.push(`<circle cx="${(cx + sx * R * 0.48).toFixed(1)}" cy="${(y - sgn * 8 + dy).toFixed(1)}" r="0.9" fill="${col}" opacity="0.7"/>`);
+      }
+    }
+    // the inner half-brackets either side of the middle
+    for (const sx of [-1, 1]) {
+      const x = cx + sx * R * 0.30;
+      ln(x, cy - R * 0.20, x + sx * R * 0.14, cy - R * 0.20, 0.75);
+      ln(x, cy + R * 0.20, x + sx * R * 0.14, cy + R * 0.20, 0.75);
+      ln(x + sx * R * 0.14, cy - R * 0.20, x + sx * R * 0.14, cy - R * 0.08, 0.75);
+      ln(x + sx * R * 0.14, cy + R * 0.20, x + sx * R * 0.14, cy + R * 0.08, 0.75);
+      // the side plates, outside the ring
+      const px = cx + sx * R * 1.16;
+      ln(px, cy - R * 0.18, px, cy + R * 0.18, 0.6);
+      for (const dy of [-3, 3]) for (const dx of [-2.5, 2.5]) {
+        P2.push(`<circle cx="${(cx + sx * R * 1.30 + dx).toFixed(1)}" cy="${(cy + dy).toFixed(1)}" r="0.9" fill="${col}" opacity="0.7"/>`);
+      }
+    }
+    // the centre pip: a small triangle, the one mark you actually put on it
+    const tr = R * 0.09;
+    P2.push(`<path d="M ${(cx - tr).toFixed(1)} ${(cy - tr * 0.7).toFixed(1)}`
+      + ` L ${(cx + tr).toFixed(1)} ${(cy - tr * 0.7).toFixed(1)}`
+      + ` L ${cx.toFixed(1)} ${(cy + tr).toFixed(1)} Z" fill="none" stroke="${col}" stroke-width="1.2" opacity="0.95"/>`);
+
+    // THE METER, AS FOUR BRACKETS. Wide open at nothing, closed onto the
+    // ring at a lock — the state of the mini-game, told as a shape.
+    const f = on ? 1 : lock.meter;
+    const br = R * (2.5 - 1.24 * f);
+    const bl = R * 0.34;
+    for (const sx of [-1, 1]) for (const sy of [-1, 1]) {
+      const x = cx + sx * br, y = cy + sy * br;
+      ln(x, y, x - sx * bl, y, on ? 0.95 : 0.35 + 0.5 * f, col, on ? 2 : 1.4);
+      ln(x, y, x, y - sy * bl, on ? 0.95 : 0.35 + 0.5 * f, col, on ? 2 : 1.4);
+    }
+    if (!on && lock.meter > 0.02) {
+      P2.push(`<text x="${cx.toFixed(1)}" y="${(cy + R * 1.62).toFixed(1)}" fill="${col}"`
+        + ` font-family="ui-monospace,Menlo,monospace" font-size="11" letter-spacing="2"`
+        + ` text-anchor="middle" opacity="0.85">SEEKING ${(lock.meter * 100).toFixed(0)}%</text>`);
+    }
+    if (on) {
+      const bw = 150, bh = 15;
+      P2.push(`<rect x="${(cx - bw / 2).toFixed(1)}" y="${(cy + R * 0.72).toFixed(1)}" width="${bw}" height="${bh}" fill="#ffb43d" opacity="0.92"/>`);
+      P2.push(`<text x="${cx.toFixed(1)}" y="${(cy + R * 0.72 + 11).toFixed(1)}" fill="#12202a"`
+        + ` font-family="ui-monospace,Menlo,monospace" font-size="10" font-weight="700" letter-spacing="3"`
+        + ` text-anchor="middle">TARGET LOCKED</text>`);
+    }
+    return P2;
+  }
+
   // THE FIRE-CONTROL READOUT. The panels are written FIELD BY FIELD rather
   // than rebuilt: this runs several times a second and an innerHTML churn is
   // how a HUD becomes the most expensive thing on the frame.
@@ -873,7 +1088,7 @@ export function initSniperTab(root) {
   // which is the one label on screen that cannot be allowed to disagree with
   // what is about to leave the barrel.
   const weaponName = () => `${W.label.toUpperCase()} · `
-    + (W.hitscan ? 'BEAM' : W.loft ? 'INDIRECT' : 'DIRECT');
+    + (W.hitscan ? 'BEAM' : W.homing ? 'GUIDED' : W.loft ? 'INDIRECT' : 'DIRECT');
   function nameWeapon() { /* the SCOPE box reads it every frame; nothing to push */ }
 
   nameWeapon();
@@ -895,8 +1110,17 @@ export function initSniperTab(root) {
     put('f-weapon', weaponName()
       + (charging > 0 ? ` · CHARGING ${charging.toFixed(1)}s` : cool > 0 ? ` · ${cool.toFixed(1)}s` : ''),
       charging > 0 || cool > 0);
-    put('f-holdup', `${holdUp >= 0 ? '+' : ''}${holdUp.toFixed(2)} mrad`, Math.abs(holdUp) > 0.001);
-    put('f-holdside', `${holdSide >= 0 ? '+' : ''}${holdSide.toFixed(2)} mrad`, Math.abs(holdSide) > 0.001);
+    // the seeker's state where the hold would be — a homing round has no
+    // hold, so the field that would print one prints the lock instead
+    if (W.lock) {
+      put('f-holdup', lock.locked ? 'LOCKED'
+        : lock.meter > 0 ? `SEEKING ${(lock.meter * 100).toFixed(0)}%` : 'NO LOCK',
+        lock.locked || lock.meter > 0);
+      put('f-holdside', lock.id != null ? `TGT ${lock.id}` : '—', lock.locked);
+    } else {
+      put('f-holdup', `${holdUp >= 0 ? '+' : ''}${holdUp.toFixed(2)} mrad`, Math.abs(holdUp) > 0.001);
+      put('f-holdside', `${holdSide >= 0 ? '+' : ''}${holdSide.toFixed(2)} mrad`, Math.abs(holdSide) > 0.001);
+    }
     put('f-breath', shooter.holding ? 'HELD' : `${Math.round(shooter.breath * 100)}%`, shooter.holding);
     const bar = f('f-breathbar');
     if (bar) {
@@ -1211,7 +1435,9 @@ export function initSniperTab(root) {
       camera.position.set(Math.sin(t2) * 3.4, muzzleHeight() + 1.15, Math.cos(t2) * 3.4 - 0.4);
       camera.lookAt(0, muzzleHeight() * 0.7, 0.3);
     }
+    stepSeeker(dt);
     stepRounds(dt);
+    stepMissiles(dt);
     stepPlates(dt);
     for (let i = fx.length - 1; i >= 0; i--) {
       if (!fx[i].tick(dt)) { scene.remove(fx[i].obj); disposeObj(fx[i].obj); fx.splice(i, 1); }
@@ -1284,6 +1510,55 @@ export function initSniperTab(root) {
   // ?sniperprobe=1 — the shot, in numbers. A sniper mechanic is a claim that
   // the HUD's solution and the bullet agree; this fires with the solution
   // dialled and reports where the round actually landed.
+  // ?javprobe=1 — THE LOCK AND THE MISSILE, in the tab rather than in Node.
+  // The pure module proves the rules; this proves they are WIRED — that the
+  // thing under the cross becomes a candidate, that the meter fills from the
+  // frame loop, that firing without a lock is refused, and that a missile
+  // launched down the barrel finds a target it was never aimed at.
+  if (q.get('javprobe') === '1') {
+    setTimeout(() => {
+      setWeapon('javelin');
+      const t = targets[0];
+      if (!t) { console.log('JAVPROBE no targets'); return; }
+      const range = Math.hypot(t.pos[0], t.pos[2]);
+      aimYaw = Math.atan2(t.pos[0], t.pos[2]);
+      aimPitch = Math.atan2(t.pos[1] - muzzleHeight(), range);
+      const keep = [P.swayFast, P.swaySlow];
+      P.swayFast = 0; P.swaySlow = 0;
+      probing = true;
+
+      // firing with nothing held must do NOTHING but say so
+      cool = 0;
+      const before = missiles.length;
+      fire();
+      console.log(`JAVPROBE unlocked: fired=${missiles.length > before} note="${hudNote}"`);
+
+      for (let i = 0; i < Math.round((LOCK_TUNE.lockTime + 0.3) * 60); i++) stepSeeker(1 / 60);
+      console.log(`JAVPROBE lock: ${lock.locked ? 'LOCKED' : 'no'} on ${lock.id}`
+        + ` · meter ${lock.meter.toFixed(2)} · target ${range.toFixed(0)} m`);
+
+      cool = 0;
+      fire();
+      console.log(`JAVPROBE launch: ${missiles.length} away`);
+      let flew = 0;
+      const hits0 = shooter.hits;
+      for (let k = 0; k < 4000 && missiles.length; k++) { stepMissiles(0.01); flew += 0.01; }
+      console.log(`JAVPROBE flight: ${shooter.hits > hits0 ? 'HIT' : 'miss'}`
+        + ` after ${flew.toFixed(2)} s — ${hudNote}`);
+
+      // ...and the lock must let go when the barrel is taken far enough off
+      t.alive = true;
+      for (let i = 0; i < 120; i++) stepSeeker(1 / 60);
+      const wasLocked = lock.locked;
+      aimYaw += (LOCK_TUNE.breakMrad + 10) / MRAD;
+      for (let i = 0; i < 30; i++) stepSeeker(1 / 60);
+      console.log(`JAVPROBE break: was=${wasLocked} now=${lock.locked}`
+        + ` ${wasLocked && !lock.locked ? 'LET GO AS IT SHOULD' : 'WRONG'}`);
+      P.swayFast = keep[0]; P.swaySlow = keep[1];
+      probing = false;
+    }, 900);
+  }
+
   if (q.get('sniperprobe') === '1') {
     setTimeout(() => {
       const t = targets[0];

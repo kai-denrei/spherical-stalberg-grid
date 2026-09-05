@@ -117,8 +117,11 @@ console.log('wind:');
 
 console.log('the weapons:');
 {
-  check('four of them', WEAPON_IDS.length === 4 && WEAPONS.lancer && WEAPONS.laser
-    && WEAPONS.mortar && WEAPONS.railgun);
+  check('five of them', WEAPON_IDS.length === 5 && WEAPONS.lancer && WEAPONS.laser
+    && WEAPONS.mortar && WEAPONS.railgun && WEAPONS.javelin);
+  // the Javelin's PHYSICS live in lockon.js; what it owes this table is a
+  // name, a cadence and an honest "there is nothing to hold"
+  check('the seeker is declared as one', WEAPONS.javelin.homing && WEAPONS.javelin.lock);
   const tuneFor = (id) => { const t = { ...noWind }; applyWeapon(t, id); return t; };
   // applyWeapon takes the ROUND and leaves the range alone: the wind, the
   // sway, the zero and the plate are the range's, not the weapon's
@@ -274,8 +277,11 @@ console.log('every weapon obeys its own solution:');
     for (const t0 of [0, 1.4, 3.9]) {
       const range = 700;
       const s2 = solution(range, t, t0, w);
-      if (w.hitscan) {
-        check(`${id} @${t0}s: a beam has no hold`, s2.holdUp === 0 && s2.holdSide === 0);
+      // a beam and a seeker both go where they are pointed — neither has a
+      // hold to print, and saying so is the assertion
+      if (w.hitscan || w.homing) {
+        check(`${id} @${t0}s: ${w.homing ? 'a seeker' : 'a beam'} has no hold`,
+          s2.holdUp === 0 && s2.holdSide === 0);
         continue;
       }
       // a flat weapon's hold sits ON TOP of its zero — the barrel already

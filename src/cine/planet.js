@@ -12,7 +12,7 @@
 // come from generateSphereMesh + relax, the same calls td-tab.js makes, and
 // the edge look is the board's own from looks.js, passed in by the scene.
 import * as THREE from '../../vendor/three.module.js';
-import { generateSphereMesh, relax } from '../grid.js?v=5ca3bd26';
+import { generateSphereMesh, relax } from '../grid.js?v=911d9d5f';
 
 /**
  * @param seed       the sphere's seed — a board seed names a planet

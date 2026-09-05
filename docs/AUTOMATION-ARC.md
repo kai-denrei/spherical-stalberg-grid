@@ -89,3 +89,51 @@ Two consequences worth writing down before anything is built:
 - Can a chip be turned OFF? A player who wants the manual version back is
   a player who has understood the game, and refusing them is odd.
 - Does the sniper belong in the campaign at all, or is it a mission type?
+
+## The build-up, end to end (operator, 2026-09-05)
+
+Notes, not a plan. Each element is still being developed on its own; this
+is the shape they are meant to fit into once they exist.
+
+You land with **Isao and some material**, nothing else. Isao builds the
+first protection tower, then starts **alternating**: work on the main
+Stålheart, and smaller items between — another tower, a second drone to
+help. The narrative is that build-up, and the player's part of it is
+learning to shoot while the machine builds.
+
+The teaching order is the chip ladder read as a story rather than a shop:
+
+1. The player aims the first tower **by hand**, and feels how hard it is.
+2. **Aim assists** arrive — the rangefinder, the wind readout, the printed
+   solution — one at a time.
+3. **Full auto**: the tower fights on its own and the player stops looking
+   at it. Next tower, same three steps, new weapon.
+
+Meanwhile Isao and the assistant keep building the Stålheart, which
+**attracts attention**: the waves get stronger as the structure grows, so
+the thing that wins the game is the thing that raises the difficulty. The
+finished Stålheart unlocks the tank and the rest of the tech.
+
+Missions hang off that spine:
+
+- **Rescue** — save the scientist, get new tech. (Two are built.)
+- **Exploration** — find an old server, hack it, get new tech. (The
+  hacking minigames are vendored and deep-linkable.)
+
+And a **skip mode** that bypasses the whole build-up and starts at the
+full game, for anyone who has done it once.
+
+The reason to write this down now: it says what each lab is FOR. The
+sniper lab is step 1 for a tower the player has not been given yet, and
+the sentry lab is step 3 for the same tower. They are the two ends of one
+ladder, not two demos.
+
+## The Javelin: lock-on as its own mini-game (operator, 2026-09-05)
+
+A tower with the **Quiver** look that launches homing missiles which must
+**lock on first** — a different verb from every other weapon here. The
+ballistic weapons ask you to solve for where the target WILL be; the
+missile asks you to hold it steady long enough and then stops caring.
+That makes it the natural reward at the end of a ladder, and it gives the
+HUD something to do other than print numbers: the lock is a meter the
+player is filling with their own hands.

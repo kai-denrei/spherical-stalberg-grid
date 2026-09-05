@@ -14,7 +14,7 @@
 // Coordinates: the shooter is at the origin looking down +Z, +Y is up, +X is
 // right. Metres and seconds throughout.
 
-import { makeParams, clampParams, formatKnobs, knobProblems } from './knobs.js?v=5ca3bd26';
+import { makeParams, clampParams, formatKnobs, knobProblems } from './knobs.js?v=911d9d5f';
 
 export const BALLISTICS_TUNE = {
   muzzleVel: 700,     // m/s
@@ -174,7 +174,12 @@ export function solution(range, tune = BALLISTICS_TUNE, t0 = 0, w = null) {
   // A HITSCAN WEAPON HAS NO SOLUTION TO PRINT. It arrives where it is
   // pointed, so the hold is zero and the flight is nothing — and saying so is
   // better than printing a drop the round will not take.
-  if (w && w.hitscan) return { drop: 0, drift: 0, time: 0, holdUp: 0, holdSide: 0, reached: true };
+  // ...and NEITHER HAS A HOMING ROUND. It goes where the seeker takes it,
+  // not where the barrel pointed, so a printed hold would be a lie about a
+  // weapon whose whole promise is that there is nothing to hold.
+  if (w && (w.hitscan || w.homing)) {
+    return { drop: 0, drift: 0, time: 0, holdUp: 0, holdSide: 0, reached: true };
+  }
   if (w && w.loft) {
     // a mortar is aimed on its own arc, not held over a flat zero: the
     // "hold" is the whole launch angle, in mrad — and it must be the angle
@@ -243,6 +248,19 @@ export const WEAPONS = {
     cooldown: 1.2, splash: 0, charge: 1.6, hitscan: false, loft: false, sound: 'tank_secondary',
     maxTime: 6, step: 0.002 },
 };
+// THE JAVELIN. Its physics are not here — a homing round is `lockon.js`,
+// with its own integrator and its own guidance — but it lives in this table
+// because it is a weapon the picker has to offer and the HUD has to name.
+// The ballistic fields are what the panel shows and what the shell falls
+// back to if the flight ever asks this module a question; the flight does
+// not, and `solution()` says so rather than printing a hold for a round
+// that ignores it.
+WEAPONS.javelin = {
+  id: 'javelin', label: 'Javelin', muzzleVel: 40, gravity: 9.81, drag: 0.0016,
+  cooldown: 3.2, splash: 6, charge: 0, hitscan: false, loft: false,
+  homing: true, lock: true, sound: 'tank_secondary', maxTime: 30, step: 0.008,
+};
+
 export const WEAPON_IDS = Object.keys(WEAPONS);
 
 // Fold a weapon's numbers onto a tune. The tune keeps everything the weapon
