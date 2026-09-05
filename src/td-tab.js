@@ -19,71 +19,71 @@
 
 import * as THREE from '../vendor/three.module.js';
 import GUI from '../vendor/lil-gui.esm.js';
-import { generateSphereMesh, relax } from './grid.js?v=84667024';
-import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=84667024';
-import { compileRail } from './cine/rail.js?v=84667024';
-import { SCRIPTS } from './cine/scripts.js?v=84667024';
-import { cuesBetween } from './cine/sound.js?v=84667024';
-import { installCine } from './cine/kit.js?v=84667024';
-import { mulberry32, randomSeed } from './rng.js?v=84667024';
-import { computeBerths, berthIndexFor } from './berths.js?v=84667024';
-import { wantsSecondary, shellsForAll } from './autofire.js?v=84667024';
-import { printPhase, printOffset, printOn, patternSecsFor } from './printpath.js?v=84667024';
-import { createBeamRig, PLASMA_DEFAULTS, BOARD_PRESET, BEAM_PEAK } from './beamdraw.js?v=84667024';
-import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3, segKey, tangentDir, tangentBasis } from './vec3.js?v=84667024';
-import { CREATURES, waveJelly } from './creatures.js?v=84667024';
-import { brief, dwellFor } from './isaobriefs.js?v=84667024';
-import { drawEmotion } from './emotions.js?v=84667024';
+import { generateSphereMesh, relax } from './grid.js?v=0834ac22';
+import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=0834ac22';
+import { compileRail } from './cine/rail.js?v=0834ac22';
+import { SCRIPTS } from './cine/scripts.js?v=0834ac22';
+import { cuesBetween } from './cine/sound.js?v=0834ac22';
+import { installCine } from './cine/kit.js?v=0834ac22';
+import { mulberry32, randomSeed } from './rng.js?v=0834ac22';
+import { computeBerths, berthIndexFor } from './berths.js?v=0834ac22';
+import { wantsSecondary, shellsForAll } from './autofire.js?v=0834ac22';
+import { printPhase, printOffset, printOn, patternSecsFor } from './printpath.js?v=0834ac22';
+import { createBeamRig, PLASMA_DEFAULTS, BOARD_PRESET, BEAM_PEAK } from './beamdraw.js?v=0834ac22';
+import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3, segKey, tangentDir, tangentBasis } from './vec3.js?v=0834ac22';
+import { CREATURES, waveJelly } from './creatures.js?v=0834ac22';
+import { brief, dwellFor } from './isaobriefs.js?v=0834ac22';
+import { drawEmotion } from './emotions.js?v=0834ac22';
 import { ACHIEVEMENTS, ACHV_GROUPS, achievement, blankRun, earned, freshlyEarned,
   sanitiseRecord }
-  from './achievements.js?v=84667024';
+  from './achievements.js?v=0834ac22';
 import { applyFontPack, currentFontPack, FONT_NAMES,
-  loadTypeFeel } from './fonts.js?v=84667024';
-import { SECONDARY_TOE, applySecondaryToe } from './units.js?v=84667024';
-import { UNITS, UNIT_NAMES, buildUnit, buildCreature, preloadMkcx, preloadServer, makeServerFixture, makeShieldShell, preloadContainer, makeContainerFixture, preloadFabricator, makeIsaoDrone, makeBulletCloud, makeRewardSolid, makeShellSolid, makeDebris, makeDotBurst, makePortalCloud, preloadPortalRing, makePortalRing, makeHeartCloud, makeDotEnemy, makeSurvivor, preloadAstronaut, makeAstronaut, preloadTerraformer, makeTerraformerFixture } from './units.js?v=84667024';
-import { LOOKS, LOOK_NAMES } from './looks.js?v=84667024';
-import { makeCellIndex } from './cellindex.js?v=84667024';
-import { CREATURE_TINTS, ENEMY_SPEC, INTROS, computeWavePlan, accentFor } from './enemyspec.js?v=84667024';
-import { PICKUPS } from './pickups.js?v=84667024';
-import { rankFor, rankLabel, badgeSVG, killReq, eliteReq } from './ranks.js?v=84667024';
-import { beamStep, isBeamStep, PEN_SOFT_FRAC, PEN_HARD_FRAC } from './beamranks.js?v=84667024';
-import { burn, sweepAdvance, wallBite as wallBiteFor } from './beamburn.js?v=84667024';
-import { arcPoint, projectToArc, toeForCrossing, crossingForToe } from './arc.js?v=84667024';
+  loadTypeFeel } from './fonts.js?v=0834ac22';
+import { SECONDARY_TOE, applySecondaryToe } from './units.js?v=0834ac22';
+import { UNITS, UNIT_NAMES, buildUnit, buildCreature, preloadMkcx, preloadServer, makeServerFixture, makeShieldShell, preloadContainer, makeContainerFixture, preloadFabricator, makeIsaoDrone, makeBulletCloud, makeRewardSolid, makeShellSolid, makeDebris, makeDotBurst, makePortalCloud, preloadPortalRing, makePortalRing, makeHeartCloud, makeDotEnemy, makeSurvivor, preloadAstronaut, makeAstronaut, preloadTerraformer, makeTerraformerFixture } from './units.js?v=0834ac22';
+import { LOOKS, LOOK_NAMES } from './looks.js?v=0834ac22';
+import { makeCellIndex } from './cellindex.js?v=0834ac22';
+import { CREATURE_TINTS, ENEMY_SPEC, INTROS, computeWavePlan, accentFor } from './enemyspec.js?v=0834ac22';
+import { PICKUPS } from './pickups.js?v=0834ac22';
+import { rankFor, rankLabel, badgeSVG, killReq, eliteReq } from './ranks.js?v=0834ac22';
+import { beamStep, isBeamStep, PEN_SOFT_FRAC, PEN_HARD_FRAC } from './beamranks.js?v=0834ac22';
+import { burn, sweepAdvance, wallBite as wallBiteFor } from './beamburn.js?v=0834ac22';
+import { arcPoint, projectToArc, toeForCrossing, crossingForToe } from './arc.js?v=0834ac22';
 import { MINE_TUNE, makeField, layMine, armMines, restock, mineAt,
-  inFan, trip, chain, nextChained, minePolar } from './mines.js?v=84667024';
+  inFan, trip, chain, nextChained, minePolar } from './mines.js?v=0834ac22';
 import { deepLink, wireDeepLink } from './deeplink.js';
 import { RESCUE_TUNE, makeRescue, placeSurvivors, stepBoard, stepGrab,
   disembark, loseCarried, lockOn, waveMix, standing as standingSurv,
   aboard as aboardSurv, missionOver, verdict as rescueVerdict,
   grabProgress, remaining as remainingSurv, exposed as exposedSurv,
   RESCUE2_TUNE, makeCamps, stepCall, stepEmerge, walkStep, runOver,
-  awake as campAwake } from './rescue.js?v=84667024';
+  awake as campAwake } from './rescue.js?v=0834ac22';
 import { WORMHOLE_PRESET, WORMHOLE_UNIFORM_DEFAULTS, RING_SPIN, TRAVEL,
-  travelRate, advancePhase } from './portalfx.js?v=84667024';
-import { WORMHOLE_FRAG } from './fx/wormhole.frag.js?v=84667024';
-import { CORONA_FRAG } from './fx/corona.frag.js?v=84667024';
-import { labLine, parseLabQuery } from './lab.js?v=84667024';
-import { bakeGalaxyCube } from './galaxybake.js?v=84667024';
-import { SKY_PRESET } from './galaxyseed.js?v=84667024';
-import { makeScore } from './score.js?v=84667024';
-import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER } from './towers.js?v=84667024';
-import { makeEconomy, sellRefund } from './economy.js?v=84667024';
-import { pickTier } from './perftier.js?v=84667024';
-import { applyWeatheredMaterial } from './cine/materials.js?v=84667024';
-import { STICK, stickVector, knobOffset } from './stick.js?v=84667024';
-import { registerServiceWorker } from './pwa.js?v=84667024';
-import { makeBloom } from './postfx.js?v=84667024';
-import { TANK_FEEL, TANK_FEEL_KNOBS, makeTankFeel, stepTankFeel, landTankFeel, fireTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js?v=84667024';
-import { FEEL, loadFeel, saveFeel } from './feelstore.js?v=84667024';
+  travelRate, advancePhase } from './portalfx.js?v=0834ac22';
+import { WORMHOLE_FRAG } from './fx/wormhole.frag.js?v=0834ac22';
+import { CORONA_FRAG } from './fx/corona.frag.js?v=0834ac22';
+import { labLine, parseLabQuery } from './lab.js?v=0834ac22';
+import { bakeGalaxyCube } from './galaxybake.js?v=0834ac22';
+import { SKY_PRESET } from './galaxyseed.js?v=0834ac22';
+import { makeScore } from './score.js?v=0834ac22';
+import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER } from './towers.js?v=0834ac22';
+import { makeEconomy, sellRefund } from './economy.js?v=0834ac22';
+import { pickTier } from './perftier.js?v=0834ac22';
+import { applyWeatheredMaterial } from './cine/materials.js?v=0834ac22';
+import { STICK, stickVector, knobOffset } from './stick.js?v=0834ac22';
+import { registerServiceWorker } from './pwa.js?v=0834ac22';
+import { makeBloom } from './postfx.js?v=0834ac22';
+import { TANK_FEEL, TANK_FEEL_KNOBS, makeTankFeel, stepTankFeel, landTankFeel, fireTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js?v=0834ac22';
+import { FEEL, loadFeel, saveFeel } from './feelstore.js?v=0834ac22';
 import { STRIKE_KNOBS, makeStrike, makeStrikeParams, grantStrikes, stepStrike,
   toggleArm, paintTarget, launchStrike, stepFall, skipFall, fallProgress,
-  strikeDamage, retargetStrike, orbitProgress } from './strike.js?v=84667024';
+  strikeDamage, retargetStrike, orbitProgress } from './strike.js?v=0834ac22';
 import { radarBasis, radarProject, radarBearing, sweepAngle, radarPhosphor,
-  proximitySectors, SENSOR_LEVELS, sensorColor } from './radar.js?v=84667024';
-import { BLOOM_GROUPS } from './bloomweights.js?v=84667024';
-import { TOWER_LOOK_NAMES, DEFAULT_TOWER_LOOK, buildTowerLook, preloadLook } from './towerlooks.js?v=84667024';
-import { makeAudio } from './audio.js?v=84667024';
-import { DEATH_KEYS } from './audiomanifest.js?v=84667024';
+  proximitySectors, SENSOR_LEVELS, sensorColor } from './radar.js?v=0834ac22';
+import { BLOOM_GROUPS } from './bloomweights.js?v=0834ac22';
+import { TOWER_LOOK_NAMES, DEFAULT_TOWER_LOOK, buildTowerLook, preloadLook } from './towerlooks.js?v=0834ac22';
+import { makeAudio } from './audio.js?v=0834ac22';
+import { DEATH_KEYS } from './audiomanifest.js?v=0834ac22';
 
 export function initTdTab(root) {
   let active = false;
@@ -1552,6 +1552,71 @@ export function initTdTab(root) {
   }, true);
   let ctlSwallowBarked = false;
   const vwFrustum = new THREE.Frustum(), vwMat = new THREE.Matrix4(), vwPt = new THREE.Vector3();
+  // CAN A PERSON SEE THE TANK — which is NOT "is it in the frustum", the
+  // question the watchdog used to ask and the question four camera fixes
+  // answered while the reports kept coming. A point can be inside the
+  // frustum and still invisible three ways, and only one of them is a pose
+  // problem, so only one of them is worth re-seating the camera over.
+  //
+  //   'behind' / 'off-canvas'  a POSE problem — the watchdog re-seats
+  //   'chrome'   on the canvas but below the VISUAL viewport: iOS makes the
+  //              layout viewport taller than the glass, so the bottom band
+  //              lives under the URL bar and the toolbar. Re-seating does
+  //              nothing; the framing has to come up.
+  //   'covered'  drawn, on glass, with a HUD element on top of it
+  //   'tiny'     drawn, on glass, uncovered, and too small to find
+  //
+  // Headless can model neither the visual viewport nor env(safe-area-inset),
+  // so on a desktop replica this can only ever return 'ok' or a pose fault —
+  // which is exactly why the reports outlived the replica.
+  const tsV = new THREE.Vector3(), tsW = new THREE.Vector3();
+  function tankSight() {
+    if (!playerMesh || !player.pos) return { why: 'no tank', px: 0, frac: 0, x: 0, y: 0 };
+    const cv = renderer.domElement;
+    const r = cv.getBoundingClientRect();
+    camera.updateMatrixWorld();
+    tsV.set(player.pos[0], player.pos[1], player.pos[2]).project(camera);
+    const x = r.left + (tsV.x * 0.5 + 0.5) * r.width;
+    const y = r.top + (-tsV.y * 0.5 + 0.5) * r.height;
+    const short = Math.max(1, Math.min(r.width, r.height));
+    let px = 0;
+    {
+      const g = playerMesh.geometry;
+      let rad;
+      if (g) {
+        if (!g.boundingSphere) g.computeBoundingSphere();
+        rad = (g.boundingSphere ? g.boundingSphere.radius : 1) * playerMesh.scale.x;
+      } else {
+        rad = new THREE.Box3().setFromObject(playerMesh).getSize(tsW).length() * 0.5;
+      }
+      const d = camera.position.distanceTo(tsW.set(player.pos[0], player.pos[1], player.pos[2]));
+      const halfH = Math.tan((camera.fov * Math.PI) / 360) * d;
+      px = halfH > 0 ? (rad / halfH) * (r.height / 2) : 0;
+    }
+    const out = { px, frac: px / short, x, y, ndc: [tsV.x, tsV.y, tsV.z] };
+    if (tsV.z > 1) return { ...out, why: 'behind' };
+    if (x < r.left || x > r.right || y < r.top || y > r.bottom) return { ...out, why: 'off-canvas' };
+    const vv = window.visualViewport;
+    const top = vv ? vv.offsetTop : 0, left = vv ? vv.offsetLeft : 0;
+    const bottom = vv ? top + vv.height : innerHeight, right = vv ? left + vv.width : innerWidth;
+    if (y < top || y > bottom || x < left || x > right) return { ...out, why: 'chrome' };
+    if (typeof document.elementsFromPoint === 'function') {
+      const stack = document.elementsFromPoint(Math.round(x), Math.round(y));
+      // the diagnostics panel is not game chrome — reporting that the thing
+      // you opened to find the tank is the thing hiding it is just noise
+      const on = stack.find((e) => e !== cv && e.id !== 'td-app' && e.id !== 'tab-td'
+        && e.id !== 'td-diag' && e.tagName !== 'BODY' && e.tagName !== 'HTML');
+      if (on) {
+        return { ...out, why: 'covered',
+          by: `${on.tagName.toLowerCase()}${on.id ? '#' + on.id : ''}` };
+      }
+    }
+    if (out.frac < 0.03) return { ...out, why: 'tiny' };
+    return { ...out, why: 'ok' };
+  }
+  const sightLine = (s2) => `${s2.why}${s2.by ? ' by ' + s2.by : ''}`
+    + ` ${s2.x.toFixed(0)},${s2.y.toFixed(0)} r${s2.px.toFixed(0)}px ${(s2.frac * 100).toFixed(1)}%`;
+
   function tankInFrustum() {
     camera.updateMatrixWorld();
     vwFrustum.setFromProjectionMatrix(vwMat.multiplyMatrices(camera.projectionMatrix, camera.matrixWorldInverse));
@@ -1571,15 +1636,21 @@ export function initTdTab(root) {
     if (vwCool > 0) { vwCool -= dt; return; }
     const driving = params.view === 'third' && !buildMode && !shot && !deploy && !paused;
     if (!driving) { vwOut = 0; return; }
-    if (tankInFrustum()) { vwOut = 0; return; }
+    const sight = tankSight();
+    if (sight.why === 'ok') { vwOut = 0; return; }
     vwOut += dt;
     if (vwOut < 1.5) return;
     vwOut = 0; vwCool = 5; vwFires++;
-    const before = `view=${params.view} build=${buildMode} shot=${shot ? shot.id : '-'} deploy=${!!deploy} camToTank=${(camera.position.distanceTo(vwPt) / cellSide).toFixed(1)}c cur=${player.cur} next=${player.next}`;
-    endShot();
-    setView('third');
-    snapCamera();
-    console.warn(`VIEWWATCH #${vwFires} recentred: ${before}`);
+    const before = `${sightLine(sight)} view=${params.view} build=${buildMode} shot=${shot ? shot.id : '-'} deploy=${!!deploy} camToTank=${(camera.position.distanceTo(vwPt) / cellSide).toFixed(1)}c cur=${player.cur} next=${player.next}`;
+    // ONLY A POSE FAULT IS WORTH RE-SEATING. Snapping the camera at a tank
+    // that is covered by a caption, or under the URL bar, moves nothing and
+    // hides the evidence — the report is the whole value in those cases.
+    if (sight.why === 'behind' || sight.why === 'off-canvas') {
+      endShot();
+      setView('third');
+      snapCamera();
+    }
+    console.warn(`VIEWWATCH #${vwFires} ${sight.why === 'behind' || sight.why === 'off-canvas' ? 'recentred' : 'REPORTED (re-seating would not help)'}: ${before}`);
     if (toastEl) {
       toastEl.innerHTML = `<div class="wave-role" style="font-size:9px;text-align:left;white-space:pre-wrap">VIEWWATCH #${vwFires} ${before}</div>`;
       toastEl.classList.remove('hidden');
@@ -1603,7 +1674,12 @@ export function initTdTab(root) {
     diagNdc.set(pp[0], pp[1], pp[2]).project(camera);
     const vv = window.visualViewport;
     const pm = playerMesh;
+    const sight = tankSight();
     return [
+      // THE ANSWER FIRST. Everything under this line is why; this line is
+      // what. A screenshot that shows only the top of the panel still says
+      // whether the tank is visible and, if not, which of the four reasons.
+      `SEEN: ${sightLine(sight)}`,
       `t=${t.toFixed(1)} build=${(document.querySelector('script[src*="main.js"]')?.src.match(/v=([0-9a-f]{8})/) || [, '?'])[1]} shell=${mobileShell}`,
       `view=${params.view} buildMode=${buildMode} shot=${shot ? shot.id + '@' + (1 - shot.left / shot.dur).toFixed(2) : '-'} deploy=${deploy ? `#${deploy.n}@${deployProgress().toFixed(2)}` : '-'}`,
       `paused=${paused} frozen=${tutorial.frozen} tutorial=${tutorialActive}/${tutorial.phase} down=${!!playerDown} won=${player.won} intro=${!!(introEl && !introEl.classList.contains('hidden'))} msg=${!!(msgEl && !msgEl.classList.contains('hidden'))}`,
@@ -13843,6 +13919,40 @@ export function initTdTab(root) {
     for (let k = 0; k <= 70; k++) setTimeout(() => line(k), k * 2000);
   }
 
+  // ?tankseen=1 — CAN A PERSON SEE THE TANK. Not "is it in the frustum",
+  // which is what the watchdog asks and what four camera fixes answered
+  // while the operator kept reporting the same thing. A point can be in the
+  // frustum and still invisible, three ways, and this reports all three:
+  //
+  //   OFF-CANVAS   projected outside the drawing area at all
+  //   UNDER CHROME inside the canvas but below the VISUAL viewport — iOS
+  //                sizes the layout viewport taller than the glass, so the
+  //                bottom band lives under the URL bar and the toolbar
+  //   COVERED      drawn, on glass, and with a HUD element on top of it —
+  //                elementsFromPoint names the thing that is in the way
+  //
+  // Reported once a second, with the projection in CSS pixels, so a phone
+  // screenshot of the console (or the diag ring) says which of the three it
+  // is. This is the measurement the earlier work was missing.
+  // ?tankseen=1 — the same answer the DIAG panel's top line carries, once a
+  // second on the console, for a run that is being watched rather than
+  // screenshotted. tankSight() is the one implementation; this only prints.
+  if (urlParams.get('tankseen') === '1') {
+    let n = 0;
+    const tick = setInterval(() => {
+      if (++n > 12) { clearInterval(tick); return; }
+      const g = tankSight();
+      const vv = window.visualViewport;
+      const r = renderer.domElement.getBoundingClientRect();
+      console.log(`TANKSEEN t+${n}s ${sightLine(g)}`
+        + ` | canvas ${Math.round(r.width)}x${Math.round(r.height)} inner ${innerWidth}x${innerHeight}`
+        + ` visual ${vv ? `${Math.round(vv.width)}x${Math.round(vv.height)}@${Math.round(vv.offsetLeft)},${Math.round(vv.offsetTop)}` : '-'}`
+        + ` | view=${params.view} build=${buildMode} shot=${shot ? shot.id : '-'} deploy=${!!deploy}`
+        + ` frustum=${tankInFrustum()} meshVis=${playerMesh && playerMesh.visible}`);
+    }, 1000);
+  }
+
+  // ?whatsat=x,y — after 3s, name every element under that screen point,
   // ?whatsat=x,y — after 3s, name every element under that screen point,
   // top first. For the thing in a screenshot that nobody can identify.
   if (urlParams.get('whatsat')) {

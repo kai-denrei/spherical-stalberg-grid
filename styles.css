@@ -5,22 +5,22 @@
    back to a system face until the subset is rebuilt. */
 @font-face {
   font-family: 'VT323';
-  src: url('assets/fonts/VT323.woff2?v=84667024') format('woff2');
+  src: url('assets/fonts/VT323.woff2?v=0834ac22') format('woff2');
   font-weight: 400; font-style: normal; font-display: swap;
 }
 @font-face {
   font-family: 'Press Start 2P';
-  src: url('assets/fonts/PressStart2P.woff2?v=84667024') format('woff2');
+  src: url('assets/fonts/PressStart2P.woff2?v=0834ac22') format('woff2');
   font-weight: 400; font-style: normal; font-display: swap;
 }
 @font-face {
   font-family: 'Share Tech Mono';
-  src: url('assets/fonts/ShareTechMono.woff2?v=84667024') format('woff2');
+  src: url('assets/fonts/ShareTechMono.woff2?v=0834ac22') format('woff2');
   font-weight: 400; font-style: normal; font-display: swap;
 }
 @font-face {
   font-family: 'DotGothic16';
-  src: url('assets/fonts/DotGothic16.woff2?v=84667024') format('woff2');
+  src: url('assets/fonts/DotGothic16.woff2?v=0834ac22') format('woff2');
   font-weight: 400; font-style: normal; font-display: swap;
 }
 
@@ -4149,6 +4149,24 @@ body:not(.chrome-open) #tabbar .tabgroup:not(:has(button.active)) { display: non
      as one line and the last two are simply not there. */
   white-space: pre-line; max-width: 60vw; line-height: 1.5;
 }
+/* RE-CENTRE. Orbit controls on a phone are one finger to turn and two to
+   zoom, and a few seconds of that puts the range somewhere behind you with
+   no way back — the same problem the board solved with its two CTR buttons,
+   so this borrows their name. Left edge on desktop above the deep link;
+   under the gear on a phone, because the panel drawer owns the bottom. */
+.lab-center {
+  position: absolute; left: 12px; bottom: 136px; z-index: 7;
+  height: 40px; padding: 0 10px;
+  font: 700 12px ui-monospace, Menlo, monospace; letter-spacing: 0.08em; line-height: 1;
+  color: #9fdcff; background: rgba(12, 26, 38, 0.85);
+  border: 1px solid #2b6b96; border-radius: 8px; cursor: pointer;
+}
+.lab-center:hover { background: rgba(22, 50, 74, 0.95); color: #dff4ff; }
+.lab-center:active { transform: translateY(1px); }
+@media (pointer: coarse), (max-width: 700px) {
+  .lab-center { left: auto; right: 12px; bottom: auto; top: calc(env(safe-area-inset-top, 0px) + 164px); height: 44px; font-size: 13px; }
+}
+
 /* the SENTRY RANGE, on the astronaut study's furniture — same stage, same
    gear button, same two-line HUD. A lab that looks like the other labs is a
    lab nobody has to learn. */

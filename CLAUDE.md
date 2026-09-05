@@ -84,6 +84,15 @@ token — the corner badge was retired from the game view).
   one tick, so this is the only way to photograph an open container with
   people walking out of it; it fires at t+5 s, AFTER the berth deploy, which
   drives the hull and would undo it),
+  `?tankseen=1` (TD: CAN A PERSON SEE THE TANK, once a second — not "is it in
+  the frustum", which is what the view watchdog used to ask and what four
+  camera fixes answered while the reports kept coming. It separates
+  behind / off-canvas / under the browser chrome / covered-by-<element> /
+  too small, and the same verdict is now the DIAG panel's FIRST line, so one
+  phone screenshot says which. Headless can model neither `visualViewport`
+  nor `env(safe-area-inset-*)`, so a desktop replica can only ever return
+  `ok` or a pose fault — which is precisely why the phone reports outlived
+  the replica).
   the SENTRY RANGE (`#sentry`): `?family=needle|rotor|kiln|quiver|lancer|relay`,
   `?tier=1|2|3`, plus every knob in `SENTRY_TUNE` by name (`?tolerance=25`
   makes it miss, which is the point of the knob), and `?sentryprobe=1` — the

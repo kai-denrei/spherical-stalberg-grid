@@ -144,8 +144,28 @@ export function initSentryTab(root) {
       }
       rings.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts), ringMat));
     }
-    camera.position.set(P.ringMax * 0.75, P.ringMax * 0.55, P.ringMax * 1.05);
-    controls.target.set(0, 1.1, 0);
+    frameHome();
+  }
+
+  // THE OPENING FRAME IS TOP-DOWN, the board's own build eye (operator: "start
+  // with a top down view similar to the main game"). Looking down at about
+  // sixty degrees shows the whole ring and where every target pops, which is
+  // what this lab is for; the old three-quarter view showed the turret's
+  // silhouette and half the range.
+  //
+  // It is also the RE-CENTRE, because a phone's orbit controls are one finger
+  // to turn and two to zoom, and a few seconds of that leaves the range
+  // somewhere behind you with no way back.
+  function frameHome() {
+    // SOLVED, not guessed: back off far enough that the outer ring fits the
+    // frame's HEIGHT (the narrow axis on every phone in landscape), then sit
+    // at 58 degrees. A hand-picked distance framed the ring at 9 units and
+    // cut it off at 6.
+    const r = Math.max(4, P.ringMax) * 1.25;
+    const d = r / Math.tan((camera.fov * Math.PI) / 360);
+    const el = (58 * Math.PI) / 180;
+    camera.position.set(0, d * Math.sin(el), d * Math.cos(el));
+    controls.target.set(0, 0.6, 0);
     controls.update();
   }
 
@@ -432,6 +452,7 @@ export function initSentryTab(root) {
   const gv = gui.addFolder('view');
   gv.add(P, 'wire').name('floor wire').onChange((v) => { if (grid) grid.visible = v; });
   gv.add(P, 'tracers').name('tracers');
+  gv.add({ recentre: () => frameHome() }, 'recentre').name('re-centre the view');
   gv.close();
 
   wireDeepLink(root.querySelector('#sentry-link'), () => deepLink({
@@ -439,6 +460,18 @@ export function initSentryTab(root) {
     params: P, defaults: P0, carry: location.search,
   }), { label: 'SENTRY', flash: (m) => { hud.textContent = m; flashUntil = performance.now() + 2200; } });
   let flashUntil = 0;
+
+  // ON A PHONE THE PANEL STARTS SHUT. The lil-gui drawer takes the bottom
+  // 46vh, and the frame centres on the whole canvas — so the turret, which is
+  // the thing you came to look at, sat underneath it. The gear opens it. This
+  // is the same failure the board's own diagnostics now name as "covered":
+  // drawn, on glass, with a piece of chrome on top of it.
+  if (matchMedia('(pointer: coarse)').matches
+    || new URLSearchParams(location.search).get('mobile') === '1'
+    || innerWidth <= 700) root.classList.add('panel-hidden');
+
+  const ctr = root.querySelector('#sentry-center');
+  if (ctr) ctr.addEventListener('click', () => frameHome());
 
   const gear = root.querySelector('#sentry-gear');
   if (gear) gear.addEventListener('click', () => root.classList.toggle('panel-hidden'));
