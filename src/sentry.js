@@ -20,7 +20,7 @@
 // one negation at the point of application. Two places deciding what "up"
 // means is how a turret ends up shooting at the floor.
 
-import { makeParams, clampParams, formatKnobs, knobProblems } from './knobs.js?v=0a144327';
+import { makeParams, clampParams, formatKnobs, knobProblems } from './knobs.js?v=f7abc0ce';
 
 // The workshop's six families. `fixed` is its own ruling — the Relay is a
 // structure, not a gun, and a range that pretends otherwise is a range that

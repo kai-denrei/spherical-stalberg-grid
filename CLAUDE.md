@@ -192,7 +192,18 @@ token — the corner badge was retired from the game view).
   must be main.js's FIRST import so it runs before td-tab's module body.
   `?roster=2` selects it; the TD2 tab button is a navigation, like a mission.
   `?rosterprobe=1` waits for the look's preload and then reports every tower
-  with its model and whether it fell back to a braille mast. Never address a
+  with its model and whether it fell back to a braille mast. `?a6=1` places a
+  HEPTAPOD A6 and logs its loop once a second (it clears the landing brief
+  first — the board starts `paused` and a probe that does not will measure a
+  frozen game and report a frozen unit). A tower's sample is `towerSound(def)`,
+  NOT `tower_${key}` — the second roster's keys have no samples of their own.
+- The A6 (`src/heptapod.js`, roster 2 slot 8) is the only tower that is not a
+  position: patrol a leash around its berth → engage → empty a 6/8/10-rocket
+  cassette → walk home → reload. Going home is unconditional, or the magazine
+  is decoration. Arc length in radians throughout, so `cells * cellSide`
+  compares directly. Its walk is a bob, not the model's `Walk` clip: the
+  sentry look MERGES by material (6 draw calls instead of 109) and merging
+  discards the skeleton — the clip needs an unmerged instance and a mixer. Never address a
   tower by a literal key (`'single'`) — use `starterTower()` or find it by
   `attack`; a literal is a call site that silently does nothing on one board.
 - A `?v=` token is part of the module URL, so `./x.js` and `./x.js?v=ab` are

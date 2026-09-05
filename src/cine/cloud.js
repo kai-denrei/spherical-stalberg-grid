@@ -13,8 +13,8 @@
 // the foot tips that pop, the tail sheath — all of it is exactly the game's
 // phage, only fuller. Plan §2.9(a), ruled in for the swarm.
 import * as THREE from '../../vendor/three.module.js';
-import { dotShapePts } from '../units.js?v=0a144327';
-import { mulberry32 } from '../rng.js?v=0a144327';
+import { dotShapePts } from '../units.js?v=f7abc0ce';
+import { mulberry32 } from '../rng.js?v=f7abc0ce';
 
 let softTex = null;
 // a radial-falloff sprite: a point is a SQUARE unless told otherwise

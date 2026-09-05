@@ -19,71 +19,72 @@
 
 import * as THREE from '../vendor/three.module.js';
 import GUI from '../vendor/lil-gui.esm.js';
-import { generateSphereMesh, relax } from './grid.js?v=0a144327';
-import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=0a144327';
-import { compileRail } from './cine/rail.js?v=0a144327';
-import { SCRIPTS } from './cine/scripts.js?v=0a144327';
-import { cuesBetween } from './cine/sound.js?v=0a144327';
-import { installCine } from './cine/kit.js?v=0a144327';
-import { mulberry32, randomSeed } from './rng.js?v=0a144327';
-import { computeBerths, berthIndexFor } from './berths.js?v=0a144327';
-import { wantsSecondary, shellsForAll } from './autofire.js?v=0a144327';
-import { printPhase, printOffset, printOn, patternSecsFor } from './printpath.js?v=0a144327';
-import { createBeamRig, PLASMA_DEFAULTS, BOARD_PRESET, BEAM_PEAK } from './beamdraw.js?v=0a144327';
-import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3, segKey, tangentDir, tangentBasis } from './vec3.js?v=0a144327';
-import { CREATURES, waveJelly } from './creatures.js?v=0a144327';
-import { brief, dwellFor } from './isaobriefs.js?v=0a144327';
-import { drawEmotion } from './emotions.js?v=0a144327';
+import { generateSphereMesh, relax } from './grid.js?v=f7abc0ce';
+import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=f7abc0ce';
+import { compileRail } from './cine/rail.js?v=f7abc0ce';
+import { SCRIPTS } from './cine/scripts.js?v=f7abc0ce';
+import { cuesBetween } from './cine/sound.js?v=f7abc0ce';
+import { installCine } from './cine/kit.js?v=f7abc0ce';
+import { mulberry32, randomSeed } from './rng.js?v=f7abc0ce';
+import { computeBerths, berthIndexFor } from './berths.js?v=f7abc0ce';
+import { wantsSecondary, shellsForAll } from './autofire.js?v=f7abc0ce';
+import { printPhase, printOffset, printOn, patternSecsFor } from './printpath.js?v=f7abc0ce';
+import { createBeamRig, PLASMA_DEFAULTS, BOARD_PRESET, BEAM_PEAK } from './beamdraw.js?v=f7abc0ce';
+import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3, segKey, tangentDir, tangentBasis } from './vec3.js?v=f7abc0ce';
+import { CREATURES, waveJelly } from './creatures.js?v=f7abc0ce';
+import { brief, dwellFor } from './isaobriefs.js?v=f7abc0ce';
+import { drawEmotion } from './emotions.js?v=f7abc0ce';
 import { ACHIEVEMENTS, ACHV_GROUPS, achievement, blankRun, earned, freshlyEarned,
   sanitiseRecord }
-  from './achievements.js?v=0a144327';
+  from './achievements.js?v=f7abc0ce';
 import { applyFontPack, currentFontPack, FONT_NAMES,
-  loadTypeFeel } from './fonts.js?v=0a144327';
-import { SECONDARY_TOE, applySecondaryToe } from './units.js?v=0a144327';
-import { UNITS, UNIT_NAMES, buildUnit, buildCreature, preloadMkcx, preloadServer, makeServerFixture, makeShieldShell, preloadContainer, makeContainerFixture, preloadFabricator, makeIsaoDrone, makeBulletCloud, makeRewardSolid, makeShellSolid, makeDebris, makeDotBurst, makePortalCloud, preloadPortalRing, makePortalRing, makeHeartCloud, makeDotEnemy, makeSurvivor, preloadAstronaut, makeAstronaut, preloadTerraformer, makeTerraformerFixture } from './units.js?v=0a144327';
-import { LOOKS, LOOK_NAMES } from './looks.js?v=0a144327';
-import { makeCellIndex } from './cellindex.js?v=0a144327';
-import { CREATURE_TINTS, ENEMY_SPEC, INTROS, computeWavePlan, accentFor } from './enemyspec.js?v=0a144327';
-import { PICKUPS } from './pickups.js?v=0a144327';
-import { rankFor, rankLabel, badgeSVG, killReq, eliteReq } from './ranks.js?v=0a144327';
-import { beamStep, isBeamStep, PEN_SOFT_FRAC, PEN_HARD_FRAC } from './beamranks.js?v=0a144327';
-import { burn, sweepAdvance, wallBite as wallBiteFor } from './beamburn.js?v=0a144327';
-import { arcPoint, projectToArc, toeForCrossing, crossingForToe } from './arc.js?v=0a144327';
+  loadTypeFeel } from './fonts.js?v=f7abc0ce';
+import { SECONDARY_TOE, applySecondaryToe } from './units.js?v=f7abc0ce';
+import { UNITS, UNIT_NAMES, buildUnit, buildCreature, preloadMkcx, preloadServer, makeServerFixture, makeShieldShell, preloadContainer, makeContainerFixture, preloadFabricator, makeIsaoDrone, makeBulletCloud, makeRewardSolid, makeShellSolid, makeDebris, makeDotBurst, makePortalCloud, preloadPortalRing, makePortalRing, makeHeartCloud, makeDotEnemy, makeSurvivor, preloadAstronaut, makeAstronaut, preloadTerraformer, makeTerraformerFixture } from './units.js?v=f7abc0ce';
+import { LOOKS, LOOK_NAMES } from './looks.js?v=f7abc0ce';
+import { makeCellIndex } from './cellindex.js?v=f7abc0ce';
+import { CREATURE_TINTS, ENEMY_SPEC, INTROS, computeWavePlan, accentFor } from './enemyspec.js?v=f7abc0ce';
+import { PICKUPS } from './pickups.js?v=f7abc0ce';
+import { rankFor, rankLabel, badgeSVG, killReq, eliteReq } from './ranks.js?v=f7abc0ce';
+import { beamStep, isBeamStep, PEN_SOFT_FRAC, PEN_HARD_FRAC } from './beamranks.js?v=f7abc0ce';
+import { burn, sweepAdvance, wallBite as wallBiteFor } from './beamburn.js?v=f7abc0ce';
+import { arcPoint, projectToArc, toeForCrossing, crossingForToe } from './arc.js?v=f7abc0ce';
 import { MINE_TUNE, makeField, layMine, armMines, restock, mineAt,
-  inFan, trip, chain, nextChained, minePolar } from './mines.js?v=0a144327';
+  inFan, trip, chain, nextChained, minePolar } from './mines.js?v=f7abc0ce';
 import { deepLink, wireDeepLink } from './deeplink.js';
 import { RESCUE_TUNE, makeRescue, placeSurvivors, stepBoard, stepGrab,
   disembark, loseCarried, lockOn, waveMix, standing as standingSurv,
   aboard as aboardSurv, missionOver, verdict as rescueVerdict,
   grabProgress, remaining as remainingSurv, exposed as exposedSurv,
   RESCUE2_TUNE, makeCamps, stepCall, stepEmerge, walkStep, runOver,
-  awake as campAwake } from './rescue.js?v=0a144327';
+  awake as campAwake } from './rescue.js?v=f7abc0ce';
 import { WORMHOLE_PRESET, WORMHOLE_UNIFORM_DEFAULTS, RING_SPIN, TRAVEL,
-  travelRate, advancePhase } from './portalfx.js?v=0a144327';
-import { WORMHOLE_FRAG } from './fx/wormhole.frag.js?v=0a144327';
-import { CORONA_FRAG } from './fx/corona.frag.js?v=0a144327';
-import { labLine, parseLabQuery } from './lab.js?v=0a144327';
-import { bakeGalaxyCube } from './galaxybake.js?v=0a144327';
-import { SKY_PRESET } from './galaxyseed.js?v=0a144327';
-import { makeScore } from './score.js?v=0a144327';
-import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER, HACK_GATED, starterTower, ROSTER } from './towers.js?v=0a144327';
-import { makeEconomy, sellRefund } from './economy.js?v=0a144327';
-import { pickTier } from './perftier.js?v=0a144327';
-import { applyWeatheredMaterial } from './cine/materials.js?v=0a144327';
-import { STICK, stickVector, knobOffset } from './stick.js?v=0a144327';
-import { registerServiceWorker } from './pwa.js?v=0a144327';
-import { makeBloom } from './postfx.js?v=0a144327';
-import { TANK_FEEL, TANK_FEEL_KNOBS, makeTankFeel, stepTankFeel, landTankFeel, fireTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js?v=0a144327';
-import { FEEL, loadFeel, saveFeel } from './feelstore.js?v=0a144327';
+  travelRate, advancePhase } from './portalfx.js?v=f7abc0ce';
+import { WORMHOLE_FRAG } from './fx/wormhole.frag.js?v=f7abc0ce';
+import { CORONA_FRAG } from './fx/corona.frag.js?v=f7abc0ce';
+import { labLine, parseLabQuery } from './lab.js?v=f7abc0ce';
+import { bakeGalaxyCube } from './galaxybake.js?v=f7abc0ce';
+import { SKY_PRESET } from './galaxyseed.js?v=f7abc0ce';
+import { makeScore } from './score.js?v=f7abc0ce';
+import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER, HACK_GATED, starterTower, towerSound, ROSTER } from './towers.js?v=f7abc0ce';
+import { makeEconomy, sellRefund } from './economy.js?v=f7abc0ce';
+import { pickTier } from './perftier.js?v=f7abc0ce';
+import { applyWeatheredMaterial } from './cine/materials.js?v=f7abc0ce';
+import { STICK, stickVector, knobOffset } from './stick.js?v=f7abc0ce';
+import { registerServiceWorker } from './pwa.js?v=f7abc0ce';
+import { makeBloom } from './postfx.js?v=f7abc0ce';
+import { TANK_FEEL, TANK_FEEL_KNOBS, makeTankFeel, stepTankFeel, landTankFeel, fireTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js?v=f7abc0ce';
+import { FEEL, loadFeel, saveFeel } from './feelstore.js?v=f7abc0ce';
 import { STRIKE_KNOBS, makeStrike, makeStrikeParams, grantStrikes, stepStrike,
   toggleArm, paintTarget, launchStrike, stepFall, skipFall, fallProgress,
-  strikeDamage, retargetStrike, orbitProgress } from './strike.js?v=0a144327';
+  strikeDamage, retargetStrike, orbitProgress } from './strike.js?v=f7abc0ce';
 import { radarBasis, radarProject, radarBearing, sweepAngle, radarPhosphor,
-  proximitySectors, SENSOR_LEVELS, sensorColor } from './radar.js?v=0a144327';
-import { BLOOM_GROUPS } from './bloomweights.js?v=0a144327';
-import { TOWER_LOOK_NAMES, DEFAULT_TOWER_LOOK, buildTowerLook, preloadLook, lookReady } from './towerlooks.js?v=0a144327';
-import { makeAudio } from './audio.js?v=0a144327';
-import { DEATH_KEYS } from './audiomanifest.js?v=0a144327';
+  proximitySectors, SENSOR_LEVELS, sensorColor } from './radar.js?v=f7abc0ce';
+import { BLOOM_GROUPS } from './bloomweights.js?v=f7abc0ce';
+import { A6_TUNE, magFor, makeA6, stepA6, arc as a6Arc, a6Line } from './heptapod.js';
+import { TOWER_LOOK_NAMES, DEFAULT_TOWER_LOOK, buildTowerLook, preloadLook, lookReady } from './towerlooks.js?v=f7abc0ce';
+import { makeAudio } from './audio.js?v=f7abc0ce';
+import { DEATH_KEYS } from './audiomanifest.js?v=f7abc0ce';
 
 export function initTdTab(root) {
   let active = false;
@@ -8291,6 +8292,24 @@ export function initTdTab(root) {
     const s = (obj.userData.baseScale ?? 1) * cellSide * 0.62
       * Math.pow(TIER_BULK, tower.tier);
     obj.scale.setScalar(s);
+    // ...and a WALKER is wherever it has walked to. Its own position is a
+    // unit direction, so it is its own normal — no cell lookup, because it
+    // is very often not standing on one.
+    if (tower.a6) {
+      const top = 1 + params.wallHeight;
+      const p = tower.a6.pos;
+      // a gait, since the merged model has no skeleton left to animate:
+      // a bob and a lean while it is actually moving. See the DEVLOG — the
+      // Walk clip needs an unmerged instance and a mixer, which is a
+      // draw-call decision and not a five-minute one.
+      const going = tower.a6.state === 'patrol' || tower.a6.state === 'engage'
+        || tower.a6.state === 'home';
+      const bob = going ? Math.sin(t * 7.5) * 0.035 : 0;
+      obj.position.set(p[0] * (top + bob), p[1] * (top + bob), p[2] * (top + bob));
+      tmpN.set(p[0], p[1], p[2]);
+      obj.quaternion.setFromUnitVectors(Y_AXIS, tmpN);
+      return;
+    }
     const c = graph.centers[tower.ci];
     const nrm = graph.normals[tower.ci];
     const top = 1 + params.wallHeight; // mounted on the wall's roof
@@ -8405,6 +8424,14 @@ export function initTdTab(root) {
     const def = TOWER_BY_KEY[key];
     const obj = buildTowerLook(params.towerLook, def);
     const tower = { key, def, tier: 0, ci, obj, cooldown: 0, spent };
+    // A WALKER IS BORN AT ITS BERTH AND THEN STOPS BEING THERE. The cell it
+    // was placed on is its home, not its position — everything else about a
+    // tower (the purse, the queue, the upgrade, the sell) is unchanged, and
+    // that is deliberate: it is a tower with a life, not a new kind of thing
+    // the rest of the board has to know about.
+    if (def.attack === 'walker') {
+      tower.a6 = makeA6(norm3(graph.centers[ci]), 0);
+    }
     placeTowerObj(tower);
     scene.add(obj);
     towers.push(tower);
@@ -9026,11 +9053,66 @@ export function initTdTab(root) {
     head.rotation.y += d * Math.min(1, TRACK_RATE * dt);
   }
 
+  // ITS OWN STREAM, off the board's seed — the A6's patrol must be
+  // reproducible with the rest of the run (no Math.random anywhere in game
+  // logic) without pulling on any stream something else is counting on.
+  const a6Rng = mulberry32((params.seed >>> 0) ^ 0x0a600a6);
+
+  // ONE A6, ONE FRAME. The module owns the decisions; this owns the world.
+  // `sense` is the board's own enemy list rather than a second index — the
+  // A6 sees what a tower on its cell would see, from wherever it is
+  // standing, which is the whole point of it moving.
+  function stepWalker(tw, dt, tNow) {
+    const eff = effectiveStats(tw.def, tw.tier);
+    const range = eff.range * cellSide;
+    // an upgrade is a bigger cassette, applied the moment it lands rather
+    // than at the next reload — you paid for it now
+    const want = magFor(tw.tier);
+    if (tw.a6.mag !== want) {
+      tw.a6.ammo += want - tw.a6.mag;
+      tw.a6.mag = want;
+      tw.a6.ammo = Math.max(0, Math.min(want, tw.a6.ammo));
+    }
+    stepA6(tw.a6, dt, {
+      range, cellSide, tune: A6_TUNE, rand: a6Rng,
+      sense: (from) => {
+        let best = null, bd = Infinity;
+        for (const e of enemies) {
+          if (!e.alive) continue;
+          const d = a6Arc(from, e.pos);
+          if (d < bd) { bd = d; best = e; }
+        }
+        return best ? { id: best.id, pos: best.pos, dist: bd, e: best } : null;
+      },
+      emit: (seen) => {
+        const target = seen.e;
+        if (!target || !target.alive) return;
+        const p = tw.a6.pos;
+        const n = norm3(p);
+        const muzzle = add3(scale3(p, 1 + params.wallHeight), scale3(n, cellSide * 0.5));
+        const raw = sub3(target.pos, p);
+        const flat = norm3(sub3(raw, scale3(n, dot3(raw, n))));
+        // HOMING, always: they are rockets out of a vertical cassette, and
+        // a rocket that flew straight would miss everything the A6 walked
+        // away from between launch and impact.
+        spawnTowerShot(muzzle, flat, tw, eff, target);
+        sfx.play(towerSound(tw.def), { dist: camDist(p) });
+      },
+    });
+    tw.a6.steps = (tw.a6.steps || 0) + 1;
+    placeTowerObj(tw);
+  }
+
   function stepTowers(dt, tNow) {
     for (const tw of towers) {
       // idle first, aim second: the idle sets rotation.y unconditionally, and
       // a tracking head must have the last word on where it looks
       if (tw.obj.userData.tick) tw.obj.userData.tick(tNow + tw.ci);
+      // A WALKER RUNS ITS OWN LOOP and never touches the static path below:
+      // it has no cooldown the tab owns, no fixed cell to shoot from, and no
+      // head to aim. Everything it decides is heptapod.js's; everything it
+      // DOES — the rocket, the sound, the model — is the board's.
+      if (tw.a6) { stepWalker(tw, dt, tNow); continue; }
       aimTower(tw, dt);
       tw.cooldown -= dt;
       if (tw.cooldown > 0) continue;
@@ -9051,8 +9133,10 @@ export function initTdTab(root) {
       }
       if (!target) continue;
       tw.cooldown = shotInterval(eff.rate);
-      // one line, eight towers: the key IS the def key
-      sfx.play(`tower_${tw.def.key}`, { dist: camDist(tp) });
+      // one line, every tower: the key IS the def key, unless the def says
+      // otherwise — which the second roster's do, since there is no
+      // `tower_rotor` and a missing sample is silence nobody notices
+      sfx.play(towerSound(tw.def), { dist: camDist(tp) });
       const n = graph.normals[tw.ci];
       const muzzle = add3(tp, scale3(n, cellSide * 0.55));
       const raw = sub3(target.pos, tp);
@@ -14230,6 +14314,40 @@ export function initTdTab(root) {
       }
       console.log(`ROSTERPROBE ladder ${TOWER_ORDER.join(' ')} · gated ${HACK_GATED.join(' ') || '-'}`);
     });
+  }
+
+  // ?a6=1 — PUT ONE ON THE BOARD AND WATCH IT LIVE. The pure module proves
+  // the loop; this proves it is wired to a board that moves — that it sees
+  // the board's own enemies from wherever it is standing, that its rockets
+  // are the board's rockets, that it leaves its berth and comes back to it,
+  // and that the cassette actually empties against things that are dying.
+  if (urlParams.get('a6') === '1') {
+    setTimeout(() => {
+      // THE BOARD STARTS PAUSED behind the landing brief, and a probe that
+      // does not clear it measures a frozen game and reports a frozen unit.
+      // This is the same two lines the debrief probe uses.
+      const msgEl = root.querySelector('#td-msg');
+      if (msgEl) msgEl.classList.add('hidden');
+      paused = false;
+      eco.addBiomass(4000);
+      let tw = null;
+      for (let i = 0; i < dungeon.tags.length && !tw; i++) {
+        if (!placeError(i)) tw = commitTower('heptapod', i, 0);
+      }
+      if (!tw || !tw.a6) { console.log('A6PROBE could not place one'); return; }
+      const berth = tw.a6.pos.slice();
+      let n = 0;
+      const tick = setInterval(() => {
+        n++;
+        const a = tw.a6;
+        console.log(`A6PROBE t+${n}s ${a6Line(a)} · ${a.state}`
+          + ` · ${(a6Arc(berth, a.pos) / cellSide).toFixed(2)} cells from berth`
+          + ` · fired ${a.fired} · trips ${a.trips}`
+          + ` · target ${a.target ?? '-'} · enemies ${enemies.filter((e) => e.alive).length}`
+          + ` · steps ${a.steps || 0} paused=${paused} wave=${wave}`);
+        if (n >= 30) clearInterval(tick);
+      }, 1000);
+    }, 2500);
   }
 
   // ?drones=1 — buy the assistant, put three orders on the book, drive both

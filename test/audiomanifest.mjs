@@ -4,7 +4,7 @@
 
 import { existsSync } from 'node:fs';
 import { SOUNDS, BUSES, DEATH_KEYS, GLOBAL_VOICE_CAP, DISTANCE_K } from '../src/audiomanifest.js';
-import { TOWERS } from '../src/towers.js';
+import { ROSTERS, useRoster, TOWERS, towerSound } from '../src/towers.js';
 
 let failures = 0;
 const check = (name, cond, detail = '') => {
@@ -40,9 +40,19 @@ for (const k of keys) {
 }
 
 console.log('tower coverage:');
-for (const t of TOWERS) {
-  check(`tower '${t.key}' has a sound`, Object.hasOwn(SOUNDS, `tower_${t.key}`));
+// EVERY TOWER ON EVERY BOARD. `tower_${key}` used to be the rule, and it
+// held only because the campaign's eight keys and the manifest's eight
+// tower samples were the same eight words. A second roster has none of
+// those keys, so a tower with no sample is silence that nobody notices —
+// which is exactly the failure this check exists for, now asked of both.
+for (const id of Object.keys(ROSTERS)) {
+  useRoster(Number(id));
+  for (const t of TOWERS) {
+    check(`board ${id}: '${t.key}' has a sound (${towerSound(t)})`,
+      Object.hasOwn(SOUNDS, towerSound(t)));
+  }
 }
+useRoster(1);
 check('tower_upgrade exists', Object.hasOwn(SOUNDS, 'tower_upgrade'));
 
 console.log('constants:');

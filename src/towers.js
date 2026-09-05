@@ -97,26 +97,30 @@ const ROSTER_V2 = [
   // rounds. Revert by putting rate back to 1.4 and dmg to 14/90.
   { key: 'rotor', label: 'Rotor', color: 0xeaf2ff, cost: 45,
     dmg: 9 / 90, range: 3.6, rate: 2.2, attack: 'single',
-    model: 'rotor', shape: 'sixaxis', projPx: 4, trail: 2, projSpeed: 24 },
+    model: 'rotor', sound: 'minigun_fire',
+    shape: 'sixaxis', projPx: 4, trail: 2, projSpeed: 24 },
   // PLASMA THROWER — a BEAM, not a spread: the tank's secondary with the
   // reach taken off it. Short range is the whole trade; it out-damages
   // everything at knife distance and covers almost nothing.
   { key: 'plasma', label: 'Plasma Thrower', color: 0x2fe6d0, cost: 80,
     dmg: 15 / 90, range: 2.6, rate: 1.6, attack: 'beam',
-    model: 'plasma', shape: 'ripple', spin: 0.8 },
+    model: 'plasma', sound: 'tower_laser', shape: 'ripple', spin: 0.8 },
   { key: 'quiver', label: 'Quiver', color: 0x5a9bff, cost: 90,
     dmg: 9 / 90, range: 3.5, rate: 1.2, attack: 'homing',
-    model: 'quiver', shape: 'gripper', spin: 0.9, projPx: 5, trail: 6, projSpeed: 13 },
+    model: 'quiver', sound: 'tower_homing',
+    shape: 'gripper', spin: 0.9, projPx: 5, trail: 6, projSpeed: 13 },
   { key: 'relay', label: 'Relay', color: 0xc4e6ff, cost: 100,
     dmg: 0, range: 3.5, rate: 1.0, attack: 'slowfield',
     slowFactor: 0.45, slowDur: 1.6,
-    model: 'relay', shape: 'broadcast', spin: 0.3 },
+    model: 'relay', sound: 'tower_slow', shape: 'broadcast', spin: 0.3 },
   { key: 'mortar', label: 'Mortar', color: 0x9fc4ff, cost: 110,
     dmg: 12 / 90, range: 3.5, rate: 0.9, attack: 'mortar', splash: 1.5,
-    model: 'mortar', shape: 'mortar', spin: 0.7, projPx: 12, trail: 6, arc: true, projSpeed: 3.5 },
+    model: 'mortar', sound: 'tower_aoe',
+    shape: 'mortar', spin: 0.7, projPx: 12, trail: 6, arc: true, projSpeed: 3.5 },
   { key: 'lancer', label: 'Lancer', color: 0xffffff, cost: 130,
     dmg: 62 / 90, range: 7.0, rate: 0.7, attack: 'single', hitscan: true,
-    model: 'lancer', shape: 'guyed', projPx: 7, trail: 11, projSpeed: 42 },
+    model: 'lancer', sound: 'tower_sniper',
+    shape: 'guyed', projPx: 7, trail: 11, projSpeed: 42 },
   // HOWITZER — the slot Laser used to hold, and a howitzer is not a beam.
   // It is the Mortar's big sister: further, heavier, wider, and slow enough
   // that a wave can walk through the gap between shells. That gives the
@@ -124,7 +128,21 @@ const ROSTER_V2 = [
   // renamed twice.
   { key: 'howitzer', label: 'Howitzer', color: 0x9ff5ff, cost: 220,
     dmg: 34 / 90, range: 5.6, rate: 0.45, attack: 'mortar', splash: 2.4,
-    model: 'howitzer', shape: 'mortar', spin: 0.4, projPx: 15, trail: 8, arc: true, projSpeed: 3.0 },
+    // the loudest gun on the board, because it is a siege piece firing
+    // every two seconds — it will not stack on itself
+    model: 'howitzer', sound: 'tank_main',
+    shape: 'mortar', spin: 0.4, projPx: 15, trail: 8, arc: true, projSpeed: 3.0 },
+  // THE HEPTAPOD A6 — the only thing on either board that is not a
+  // position. You place a PATROL: it walks a leash around its berth, empties
+  // a cassette of six / eight / ten rockets by tier, walks home and reloads.
+  // `attack: 'walker'` is the flag the tab reads to give it a life instead
+  // of a cooldown; the rules are src/heptapod.js. `rate` is what it fires at
+  // WHILE it has rockets — the cassette and the walk home are the real
+  // limiter, and they are the reason this is not simply the best tower.
+  { key: 'heptapod', label: 'Heptapod A6', color: 0xffb45e, cost: 260,
+    dmg: 16 / 90, range: 3.4, rate: 1.8, attack: 'walker',
+    model: 'heptapod_a6', sound: 'tower_homing',
+    shape: 'gripper', projPx: 6, trail: 7, projSpeed: 12 },
 ];
 
 // --- the live roster ------------------------------------------------------
@@ -138,7 +156,7 @@ export const ROSTERS = {
        order: ['single', 'rapid', 'spread', 'slow', 'homing', 'aoe', 'sniper', 'laser'],
        hackGated: ['aoe'] },
   2: { id: 2, label: 'sentry board', towers: ROSTER_V2,
-       order: ['rotor', 'plasma', 'quiver', 'relay', 'mortar', 'lancer', 'howitzer'],
+       order: ['rotor', 'plasma', 'quiver', 'relay', 'mortar', 'lancer', 'howitzer', 'heptapod'],
        hackGated: ['mortar'] },
 };
 
@@ -165,6 +183,13 @@ export function useRoster(id) {
 // wanted "the cheapest one" and said `TOWER_BY_KEY.single` — which is a key
 // that does not exist on the second board.
 export const starterTower = () => TOWERS[0];
+
+// WHAT A TOWER SOUNDS LIKE. `tower_${key}` was the whole rule and it worked
+// because the campaign roster's eight keys and the manifest's eight tower
+// samples were the same eight words. A second roster breaks that silently —
+// there is no `tower_rotor` — so a def may name its own sample and the
+// convention is the fallback rather than the law.
+export const towerSound = (def) => def.sound || `tower_${def.key}`;
 
 // upgrade economics, HK-exact: tier1 = 70% of purchase, tier2 = 120%,
 // two tiers max. Returns null when maxed.

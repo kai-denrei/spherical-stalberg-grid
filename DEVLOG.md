@@ -2,6 +2,66 @@
 
 Newest first. Each entry: what landed, then how it works, for programmers.
 
+## TD2 — a second tower roster, and a tower that walks
+
+**A copied tab is not trivial.** `td-tab.js` is 15,193 lines and the repo
+already carries four ~900-line cp+sed siblings as named debt. The roster is
+160 lines of data, so the variant is a **roster**: one board, two tables,
+chosen once at boot. Roster 1 is untouched — that is the history the operator
+asked to keep.
+
+`TOWERS` / `TOWER_BY_KEY` / `TOWER_ORDER` are exported `let` — live bindings —
+switched by `src/roster.js`, which must be main.js's FIRST import so it runs
+before td-tab's module body (ES modules evaluate depth-first in import order).
+
+**The mapping**, Rapid removed and everything after shifted up: Single→Rotor,
+Spread→Plasma Thrower, Homing→Quiver, Slow→Relay, AoE→Mortar, Sniper→Lancer,
+Laser→Howitzer, plus the Heptapod A6 at 8. Three are more than renames and are
+argued at their own line in the table: the **Rotor** takes Rapid's job (its
+slot at a rotary cadence — revert is two numbers); the **Plasma Thrower** is a
+beam and now the shortest-ranged thing on the board; the **Howitzer** is
+artillery, not the beam its slot held, so the board has two lobbed weapons
+that actually differ.
+
+**A ?v= token is part of a module URL.** `./towers.js` and `./towers.js?v=ab`
+are two modules and the browser loads both — ~27 pure modules are already
+split that way (wasted bytes). For towers.js, which now holds mutable state,
+`roster.js` switched the copy nobody read and the board came up as the
+campaign. `bust.sh` only UPDATES tokens and never adds them, so nothing would
+ever have noticed. `check-tokens.sh` now fails on a split import of any module
+exporting `let` — verified by breaking it on purpose.
+
+**Sounds.** `sfx.play('tower_' + key)` held only because the campaign's eight
+keys and the manifest's eight tower samples were the same eight words. A def
+may now name its own sample (`towerSound(def)`), and `test/audiomanifest.mjs`
+asks the coverage question of both boards. The Rotor gets the minigun.
+
+### The Heptapod A6
+
+The only tower on either board that is not a position: you place a **patrol**.
+`src/heptapod.js` — patrol a leash around its berth → engage → empty a
+6/8/10-rocket cassette by tier → walk home → reload → repeat. Going home is
+**unconditional**; an A6 that could be distracted on the way back would fight
+forever on one magazine and the magazine is the design. The consequence worth
+watching on a first play is a **rhythm**: the board's strongest unit is absent
+for a fixed fraction of every cycle, and the player can see when.
+
+Two things the tests found. The leash test has to be on where the A6 would
+STAND, not on where the enemy is, or it refuses shots it could take over the
+fence. And with a constant `rand` it re-picked the same waypoint and parked —
+the test's bug (a stream re-seeded inside a per-frame object literal), but a
+caller mistake worth surviving, so the bearing now turns by the golden angle
+each leg regardless.
+
+Its walk is a bob, not the model's `Walk` clip: the sentry look merges by
+material (6 draw calls instead of 109) and merging discards the skeleton. The
+clip needs an unmerged instance and a mixer — a draw-call decision, so it is
+named debt rather than a five-minute fix.
+
+`?a6=1` places one and logs the loop once a second. It clears the landing
+brief first, because the board starts `paused` and the first cut of the probe
+measured a frozen game for thirty seconds and reported a frozen unit.
+
 ## d0fcbd3 — the Javelin on the Quiver, and a voice for every sentry family
 
 `missile: true` in `SENTRY_FAMILIES` makes the Quiver a launcher rather
