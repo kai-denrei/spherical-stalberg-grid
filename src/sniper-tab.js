@@ -26,6 +26,7 @@ import { mulberry32 } from './rng.js';
 import { makeAudio } from './audio.js';
 import { deepLink, wireDeepLink } from './deeplink.js';
 import { sentryUrl } from './sentry.js';
+import { sweepAngle, radarPhosphor } from './radar.js';
 import {
   BALLISTICS_TUNE, MRAD, toMrad, windAt, launch, step, solution, zeroAngle,
   makeShooter, stepBreath, sway, rangeFromMrad, hitsAt, STEP, MAX_T,
@@ -102,6 +103,8 @@ export function initSniperTab(root) {
     // is inside the receiver, so leaving it drawn fills the frame with grey
     // metal and nothing else. On for a look at the rig; off to shoot.
     showRifle: false,
+    closeup: true,         // the spotting monitor
+    scan: true,            // the PPI
     // THE ASSIST LADDER — every one of these is a chip Isao has not printed
     // yet. Off is the game the operator described; on is the difficulty knob.
     rangefinder: false,    // the HUD prints the range
@@ -120,6 +123,12 @@ export function initSniperTab(root) {
   // --- state ---------------------------------------------------------------
   let rifle = null, yawNode = null, pitchNode = null, muzzleNode = null, recoilNode = null;
   const sfx = makeAudio({ seed: 1 });
+  // ARM IT. A browser will not start an AudioContext without a gesture, and
+  // `makeAudio` only listens for one once it has been asked to — every other
+  // tab with sound calls this and the sniper did not, so the gun was silent
+  // and nothing said why.
+  sfx.arm();
+  let saidAudio = false;
   const shooter = makeShooter();
   // THE STRING: a calibration is a fixed number of shots, and what you learn
   // from it is the GROUP — where the rounds went together, not where any one
@@ -170,6 +179,7 @@ export function initSniperTab(root) {
     });
     rifle.visible = P.showRifle;
     scene.add(rifle);
+    if (P.showRifle) frameRifle();
     console.log(`SNIPER lancer t${P.tier}: yaw=${!!yawNode} pitch=${!!pitchNode}`
       + ` muzzle=${!!muzzleNode} recoil=${!!recoilNode}`);
   }, undefined, (e) => { hud.textContent = `lancer: failed to load (${e && e.message})`; });
@@ -180,31 +190,63 @@ export function initSniperTab(root) {
   // in metres, so the mil-relation works on it exactly as it does on a
   // person: the black centre is `targetR` across and the outer ring is a
   // known width to mil from.
+  // the face is FACE_R radii from the centre; the kill zone is one radius,
+  // which is KILL_F of the face
+  const FACE_R = 3, KILL_F = 1 / 3;
   function makeCalTarget(radius) {
-    const g = new THREE.Group();
-    const RINGS = [
-      // a paper white, not a lamp: at 0xf2f2f2 the rings sat over the bloom
-      // threshold and the target wore a halo the size of itself
-      [radius * 5.0, 0xb9b9b4], [radius * 4.0, 0x0e0e10], [radius * 3.0, 0xb9b9b4],
-      [radius * 2.0, 0x0e0e10], [radius * 1.0, 0xb9b9b4],
-    ];
-    RINGS.forEach(([r, c], i) => {
-      const m = new THREE.Mesh(new THREE.CircleGeometry(r, 48),
-        new THREE.MeshBasicMaterial({ color: c, side: THREE.DoubleSide }));
-      m.position.z = i * 0.004;   // no z-fighting between the rings
-      g.add(m);
-    });
-    // the aiming cross, so the centre is findable at 800 m where the inner
-    // disc is two pixels
-    const cross = new THREE.Group();
-    for (const [w, h] of [[radius * 0.14, radius * 6.4], [radius * 6.4, radius * 0.14]]) {
-      const m = new THREE.Mesh(new THREE.PlaneGeometry(w, h),
-        new THREE.MeshBasicMaterial({ color: 0xff3b30, side: THREE.DoubleSide }));
-      m.position.z = 0.03;
-      cross.add(m);
+    // ONE PLANE WITH A DRAWN TEXTURE, not five coplanar discs. The first cut
+    // stacked circles 4 mm apart and let `lookAt` turn the stack: at 500 m
+    // that offset is far below the depth buffer's resolution, so the rings
+    // z-fought and the target rendered as a shattered star. A canvas has no
+    // depth at all, draws sharper, and costs one quad.
+    const S = 512;
+    const cv = document.createElement('canvas');
+    cv.width = S; cv.height = S;
+    const c = cv.getContext('2d');
+    c.clearRect(0, 0, S, S);
+    const mid = S / 2;
+    // five rings, outermost first — a paper white and a near-black, both off
+    // the extremes so the bloom pass leaves them alone
+    // THE FACE IS NOT THE KILL ZONE. Sizing the whole target off the kill
+    // radius made a 0.55 m radius into a 5.5 m board that had to stand three
+    // metres up to clear its own bottom edge — a billboard, not a range
+    // target. The face is a fixed 6 radii across and the innermost ring IS
+    // the kill zone, so `hitsAt(miss, targetR)` still scores what you see.
+    const RINGS = [[1.0, '#b9b9b4'], [0.78, '#0e0e10'], [0.56, '#b9b9b4'],
+      [KILL_F * 1.6, '#0e0e10'], [KILL_F, '#b9b9b4']];
+    for (const [f, col] of RINGS) {
+      c.fillStyle = col;
+      c.beginPath();
+      c.arc(mid, mid, mid * f * 0.98, 0, Math.PI * 2);
+      c.fill();
     }
-    g.add(cross);
-    g.userData.plate = g;   // billboarded like a target's plate
+    // the aiming cross, so the centre is findable at 800 m where the inner
+    // disc is two pixels across
+    c.strokeStyle = '#ff3b30';
+    c.lineWidth = Math.max(2, S * 0.012);
+    c.beginPath();
+    c.moveTo(mid, mid - S * 0.42); c.lineTo(mid, mid + S * 0.42);
+    c.moveTo(mid - S * 0.42, mid); c.lineTo(mid + S * 0.42, mid);
+    c.stroke();
+    const tex = new THREE.CanvasTexture(cv);
+    tex.anisotropy = renderer.capabilities.getMaxAnisotropy();
+    tex.colorSpace = THREE.SRGBColorSpace;
+    const side = radius * FACE_R * 2;
+    const g = new THREE.Group();
+    const face = new THREE.Mesh(
+      new THREE.PlaneGeometry(side, side),
+      new THREE.MeshBasicMaterial({ map: tex, transparent: true, side: THREE.DoubleSide }));
+    g.add(face);
+    // ...and a stand, so it is a thing standing on the ground rather than a
+    // disc hovering over it — which is also what stops the bottom half being
+    // buried when the centre sits lower than the radius
+    const stand = new THREE.Mesh(
+      new THREE.BoxGeometry(side * 0.06, side * 0.5, side * 0.06),
+      new THREE.MeshStandardMaterial({ color: 0x23262b, roughness: 0.95 }));
+    stand.position.y = -side * 0.5;
+    g.add(stand);
+    g.userData.plate = g;
+    g.userData.face = face;
     return g;
   }
 
@@ -222,9 +264,14 @@ export function initSniperTab(root) {
       // question is whether you can read them.
       const d = P.range;
       const obj = makeCalTarget(P.targetR);
-      obj.position.set(0, TARGET_H, d);
+      // its centre sits one full radius up plus the stand, so the whole face
+      // is above the ground rather than half-buried
+      // chest height on its stand, near the optic's own line, so a
+      // calibration starts with the target ON the cross rather than above it
+      const cy = Math.max(1.6, P.targetR * FACE_R + 0.15);
+      obj.position.set(0, cy, d);
       scene.add(obj);
-      targets.push({ id: 1, obj, pos: [0, TARGET_H, d], alive: true, d, cal: true });
+      targets.push({ id: 1, obj, pos: [0, cy, d], alive: true, d, cal: true });
       hudNote = `CALIBRATION · ${Math.round(P.allotted)} shots at ${d.toFixed(0)} m`;
       return;
     }
@@ -317,6 +364,15 @@ export function initSniperTab(root) {
     // impulse that eases out, not a constant offset, so the glass jumps and
     // settles rather than sitting displaced.
     if (P.sound) sfx.play('tank_main');
+    // ...and say ONCE what the audio context actually did. A browser will not
+    // start one without a gesture, so "no sound" has two very different
+    // causes — not armed, or armed and still suspended because nothing has
+    // been tapped yet — and they are indistinguishable from the outside.
+    if (!saidAudio) {
+      saidAudio = true;
+      console.log(`SNIPER audio: ctx=${sfx.contextState} ready=${sfx.ready}`
+        + `${P.sound ? '' : ' (gun sound is OFF in the panel)'}`);
+    }
     recoil = RECOIL_KICK;
     shooter.shots++;
     lastShot = { yaw, pitch, at: clock };
@@ -583,7 +639,11 @@ export function initSniperTab(root) {
   const gui = new GUI({ title: 'SNIPER', container: root });
   gui.add(P, 'mag', 4, 25, 1).name('magnification').onChange(() => { camera.fov = 60 / P.mag; camera.updateProjectionMatrix(); });
   gui.add(P, 'zero', 50, 1500, 10).name('zero (m)');
-  gui.add(P, 'showRifle').name('draw the rifle').onChange((v) => { if (rifle) rifle.visible = v; });
+  gui.add(P, 'showRifle').name('inspect the rig').onChange((v) => {
+    if (rifle) rifle.visible = v;
+    if (v) frameRifle(); else camera.fov = 60 / P.mag;
+    camera.updateProjectionMatrix();
+  });
   const ga = gui.addFolder('assist — Isao’s chips');
   ga.add(P, 'rangefinder').name('rangefinder');
   ga.add(P, 'windRead').name('wind readout');
@@ -619,6 +679,8 @@ export function initSniperTab(root) {
   gt.add(P, 'seed', 1, 9999, 1).onChange(spawnTargets);
   gt.add({ again: () => { spawnTargets(); shooter.shots = 0; shooter.hits = 0; shooter.best = Infinity; } }, 'again').name('reset the range');
   gui.add(P, 'tracer').name('show the tracer');
+  gui.add(P, 'closeup').name('spotting monitor');
+  gui.add(P, 'scan').name('scan');
 
   wireDeepLink(root.querySelector('#sniper-link'), () => deepLink({
     base: location.origin + location.pathname, hash: 'sniper',
@@ -638,6 +700,15 @@ export function initSniperTab(root) {
     root.classList.add('panel-hidden');
   }
 
+  // INSPECTING THE RIG IS A DIFFERENT CAMERA, not the scope with a mesh in
+  // front of it. The optic sits INSIDE the receiver — that is where an optic
+  // goes — so drawing the rifle from there fills the frame with grey metal
+  // and shows nothing. This backs off and widens out to look at the thing.
+  function frameRifle() {
+    camera.fov = 38;
+    camera.updateProjectionMatrix();
+  }
+
   function resize() {
     const w = container.clientWidth || 1, h = container.clientHeight || 1;
     renderer.setSize(w, h, false);
@@ -649,6 +720,111 @@ export function initSniperTab(root) {
   camera.fov = 60 / P.mag;
   camera.updateProjectionMatrix();
   spawnTargets();
+
+  // --- the spotting monitor -------------------------------------------------
+  // A SECOND RENDER of the same scene through a long lens, scissored into a
+  // corner box. One renderer, one scene — a second WebGL context for a
+  // 250 px inset would cost more than the whole range does.
+  const closeCam = new THREE.PerspectiveCamera(1, 1, 0.5, 4000);
+  const cuBox = root.querySelector('#f-closeup');
+  function renderCloseup() {
+    if (!cuBox) return;
+    const t = (underReticle() || {}).t || targets.find((x) => x.alive);
+    const on = P.closeup && !P.showRifle && !!t;
+    cuBox.style.display = on ? '' : 'none';
+    if (!on) return;
+    const r = cuBox.getBoundingClientRect();
+    const cr = container.getBoundingClientRect();
+    const x = r.left - cr.left, yTop = r.top - cr.top;
+    const W = container.clientWidth || 1, H = container.clientHeight || 1;
+    const d = Math.hypot(t.pos[0] - camera.position.x, t.pos[1] - camera.position.y,
+      t.pos[2] - camera.position.z);
+    // frame the target at about a third of the box, whatever the range —
+    // the point of a spotting scope is that it is the same size every time
+    const span = (t.cal ? P.targetR * FACE_R * 2 : TARGET_H) * 3;
+    closeCam.fov = Math.max(0.08, (2 * Math.atan(span / (2 * d)) * 180) / Math.PI);
+    closeCam.aspect = r.width / r.height;
+    closeCam.position.copy(camera.position);
+    closeCam.lookAt(t.pos[0], t.pos[1], t.pos[2]);
+    closeCam.updateProjectionMatrix();
+    const dpr = renderer.getPixelRatio();
+    renderer.setRenderTarget(null);
+    renderer.autoClear = false;
+    renderer.setScissorTest(true);
+    // the viewport's y is measured from the BOTTOM of the drawing buffer
+    const vy = (H - yTop - r.height) * dpr;
+    renderer.setViewport(x * dpr, vy, r.width * dpr, r.height * dpr);
+    renderer.setScissor(x * dpr, vy, r.width * dpr, r.height * dpr);
+    renderer.clear(true, true, false);
+    renderer.render(scene, closeCam);
+    renderer.setScissorTest(false);
+    renderer.setViewport(0, 0, W * dpr, H * dpr);
+    renderer.autoClear = true;
+  }
+
+  // --- the scan -------------------------------------------------------------
+  // The board's own PPI idiom, on a flat range: a rotating beam, contacts
+  // that flare as it passes and decay behind it. `sweepAngle` and
+  // `radarPhosphor` come from radar.js — the tested half — while the
+  // projection is plain bearing-and-range, because radar.js projects onto a
+  // SPHERE's tangent plane and this range is a field.
+  const scanCv = root.querySelector('#f-radar');
+  const scanCtx = scanCv ? scanCv.getContext('2d') : null;
+  const scanBox = root.querySelector('#f-radarbox');
+  function drawScan() {
+    if (!scanCtx || !scanBox) return;
+    if (!P.scan || P.showRifle) { scanBox.style.display = 'none'; return; }
+    scanBox.style.display = '';
+    const m = scanCv.width, cx = m / 2, cy = m / 2, R = m / 2 - 4;
+    const range = Math.max(200, P.range + P.spread + 200);
+    const ctx = scanCtx;
+    ctx.clearRect(0, 0, m, m);
+    ctx.fillStyle = '#03100a';
+    ctx.beginPath(); ctx.arc(cx, cy, R + 3, 0, Math.PI * 2); ctx.fill();
+    ctx.strokeStyle = 'rgba(95,230,214,0.18)'; ctx.lineWidth = 1;
+    for (const f of [1 / 3, 2 / 3, 1]) { ctx.beginPath(); ctx.arc(cx, cy, R * f, 0, Math.PI * 2); ctx.stroke(); }
+    ctx.beginPath(); ctx.moveTo(cx - R, cy); ctx.lineTo(cx + R, cy);
+    ctx.moveTo(cx, cy - R); ctx.lineTo(cx, cy + R); ctx.stroke();
+    // the optic's own field of view, as a wedge — so the scan says where you
+    // are looking as well as what is out there
+    const half = (camera.fov * Math.PI / 180) * (camera.aspect || 1.6) / 2;
+    ctx.fillStyle = 'rgba(95,230,214,0.10)';
+    ctx.beginPath(); ctx.moveTo(cx, cy);
+    ctx.arc(cx, cy, R, -Math.PI / 2 + aimYaw - half, -Math.PI / 2 + aimYaw + half);
+    ctx.closePath(); ctx.fill();
+    const sweep = sweepAngle(clock);
+    const phi = sweep - Math.PI / 2;
+    const grad = ctx.createConicGradient(phi, cx, cy);
+    grad.addColorStop(0, 'rgba(95,230,214,0)');
+    grad.addColorStop(0.72, 'rgba(95,230,214,0)');
+    grad.addColorStop(1, 'rgba(95,230,214,0.26)');
+    ctx.fillStyle = grad;
+    ctx.beginPath(); ctx.arc(cx, cy, R, 0, Math.PI * 2); ctx.fill();
+    ctx.strokeStyle = 'rgba(150,255,225,0.8)'; ctx.lineWidth = 1.4;
+    ctx.beginPath(); ctx.moveTo(cx, cy);
+    ctx.lineTo(cx + R * Math.sin(sweep), cy - R * Math.cos(sweep)); ctx.stroke();
+    // CONTACTS. The calibration target in blue, as asked; the movers take the
+    // alarm colour, and enemies later will simply join them.
+    for (const t of targets) {
+      if (!t.alive) continue;
+      const d = Math.hypot(t.pos[0], t.pos[2]) / range;
+      const b = Math.atan2(t.pos[0], t.pos[2]);
+      const bx = cx + Math.sin(b) * R * Math.min(1, d);
+      const by = cy - Math.cos(b) * R * Math.min(1, d);
+      ctx.globalAlpha = radarPhosphor(b, sweep);
+      ctx.fillStyle = t.cal ? '#5ab7ff' : '#ff8a5c';
+      const sz = t.cal ? 5 : 4;
+      ctx.fillRect(bx - sz / 2, by - sz / 2, sz, sz);
+      ctx.globalAlpha = 1;
+    }
+    // YOU, at the centre, facing up the scope's own bearing
+    ctx.fillStyle = '#e8f4f2';
+    ctx.beginPath();
+    ctx.moveTo(cx + Math.sin(aimYaw) * 7, cy - Math.cos(aimYaw) * 7);
+    ctx.lineTo(cx + Math.sin(aimYaw + 2.5) * 5, cy - Math.cos(aimYaw + 2.5) * 5);
+    ctx.lineTo(cx + Math.sin(aimYaw - 2.5) * 5, cy - Math.cos(aimYaw - 2.5) * 5);
+    ctx.closePath(); ctx.fill();
+  }
 
   const clockT = new THREE.Clock();
   let hudT = 0;
@@ -671,6 +847,7 @@ export function initSniperTab(root) {
     }
     const sw = sway(clock, shooter, P);
     // the scope rides the rifle: aim + sway + recoil
+    if (reticleEl) reticleEl.style.display = P.showRifle ? 'none' : '';
     camera.position.set(0, muzzleHeight(), 0);
     // the kick is in MILLIRADIANS of glass, so it reads the same at 4x and
     // at 25x — a recoil expressed in world angle is invisible zoomed out and
@@ -692,6 +869,15 @@ export function initSniperTab(root) {
     if (yawNode) yawNode.rotation.y = aimYaw;
     if (pitchNode) pitchNode.rotation.x = -(aimPitch + zeroAngle(P.zero, P));
     if (recoilNode) recoilNode.position.z = -recoil;
+    // INSPECT IS ITS OWN CAMERA — and it runs AFTER the pivots, so the rig
+    // articulates while you look at it. Backing the eye off but keeping the
+    // AIM rotation just looks over the top of the thing; the eye has to be
+    // pointed AT it, which is a lookAt and not an aim.
+    if (P.showRifle) {
+      const t2 = clock * 0.35;
+      camera.position.set(Math.sin(t2) * 3.4, muzzleHeight() + 1.15, Math.cos(t2) * 3.4 - 0.4);
+      camera.lookAt(0, muzzleHeight() * 0.7, 0.3);
+    }
     stepRounds(dt);
     for (let i = fx.length - 1; i >= 0; i--) {
       if (!fx[i].tick(dt)) { scene.remove(fx[i].obj); disposeObj(fx[i].obj); fx.splice(i, 1); }
@@ -712,6 +898,8 @@ export function initSniperTab(root) {
     }
     paintReticle();
     postfx.render();
+    renderCloseup();
+    drawScan();
     hudT += dt; if (hudT > 0.15) { hudT = 0; hudLine(); }
   }
   animate();

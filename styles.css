@@ -5,22 +5,22 @@
    back to a system face until the subset is rebuilt. */
 @font-face {
   font-family: 'VT323';
-  src: url('assets/fonts/VT323.woff2?v=28761936') format('woff2');
+  src: url('assets/fonts/VT323.woff2?v=e570fa7d') format('woff2');
   font-weight: 400; font-style: normal; font-display: swap;
 }
 @font-face {
   font-family: 'Press Start 2P';
-  src: url('assets/fonts/PressStart2P.woff2?v=28761936') format('woff2');
+  src: url('assets/fonts/PressStart2P.woff2?v=e570fa7d') format('woff2');
   font-weight: 400; font-style: normal; font-display: swap;
 }
 @font-face {
   font-family: 'Share Tech Mono';
-  src: url('assets/fonts/ShareTechMono.woff2?v=28761936') format('woff2');
+  src: url('assets/fonts/ShareTechMono.woff2?v=e570fa7d') format('woff2');
   font-weight: 400; font-style: normal; font-display: swap;
 }
 @font-face {
   font-family: 'DotGothic16';
-  src: url('assets/fonts/DotGothic16.woff2?v=28761936') format('woff2');
+  src: url('assets/fonts/DotGothic16.woff2?v=e570fa7d') format('woff2');
   font-weight: 400; font-style: normal; font-display: swap;
 }
 
@@ -4232,6 +4232,27 @@ body:not(.chrome-open) #tabbar .tabgroup:not(:has(button.active)) { display: non
   padding: 2px 5px; border: 1px solid rgba(159, 182, 178, .35); color: var(--dim);
 }
 #sniper-fcs .chip.on { border-color: var(--lock); color: var(--lock); }
+/* THE CLOSE-UP is a second render of the same scene through a long lens,
+   scissored into this box — a spotting monitor beside the optic. The box is
+   a frame only; the pixels come from the renderer. */
+#sniper-fcs .fcs-cu {
+  /* the free column between the left readouts and TRACK — centred, it ran
+     under the track panel's labels */
+  left: 282px; top: 52px;
+  width: 248px; height: 178px; padding: 0;
+  border: 1px solid rgba(95, 230, 214, .28); background: rgba(4, 8, 8, .35);
+}
+#sniper-fcs .fcs-cu .r-head {
+  position: absolute; left: 8px; top: 6px; margin: 0; z-index: 1;
+  text-shadow: 0 0 6px rgba(0, 0, 0, .95);
+}
+#sniper-fcs .fcs-radar {
+  left: 18px; top: 50%; transform: translateY(-50%);
+  width: 172px; height: auto; padding: 8px 10px 10px;
+  border: 1px solid rgba(95, 230, 214, .28);
+}
+#sniper-fcs .fcs-radar canvas { display: block; width: 150px; height: 150px; }
+
 #sniper-fcs .fcs-note {
   position: absolute; left: 50%; bottom: 18px; transform: translateX(-50%);
   font-size: 11px; letter-spacing: .1em; color: var(--phosphor);
@@ -4247,6 +4268,9 @@ body:not(.chrome-open) #tabbar .tabgroup:not(:has(button.active)) { display: non
   #sniper-fcs .r-tr, #sniper-fcs .r-br { right: 18px; }
   #sniper-fcs .field .v { font-size: 10px; }
   #sniper-fcs .field .k { font-size: 8px; letter-spacing: .12em; }
+  #sniper-fcs .fcs-cu { width: 150px; height: 106px; top: 44px; left: auto; right: 18px; }
+  #sniper-fcs .fcs-radar { width: 116px; padding: 6px; top: auto; bottom: 96px; transform: none; }
+  #sniper-fcs .fcs-radar canvas { width: 100px; height: 100px; }
   #sniper-fcs .fcs-note { font-size: 10px; bottom: 10px; }
 }
 #sniper-fire, #sniper-breath {
