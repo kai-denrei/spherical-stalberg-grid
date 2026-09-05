@@ -2,6 +2,50 @@
 
 Newest first. Each entry: what landed, then how it works, for programmers.
 
+## TD2 — the lab's palette on the board, and towers that are machined not moulded
+
+Operator: "the towers feel too big and bulky compared to the tank... smaller
+and more detailed, more like precision engineering, feeling more believable
+that they were created by Isao. The texture and colors look much better in
+sentry lab mode."
+
+**The lab looked better because the lab does nothing.** It loads these models
+and lights them, and what you see is what the Workshop authored: blue-grey
+armour, a lighter edge, copper fittings, an orange signal, a red
+identification stripe — six materials designed to sit together. The board was
+running them through `tintModel`, which re-hues every surface to the tower's
+colour and keeps only lightness. That system is built for the mkcx tank,
+whose four materials are all muddy olive and genuinely need pulling apart;
+applied to a palette that was already good it threw the palette away and
+returned a monochrome machine.
+
+`dressSentry` keeps the authored colours, lifts them ×1.35 because the board
+is a darker room than the lab's three-light studio, adds a faint emissive of
+each material's OWN colour so a dark plate is a dark plate rather than a
+silhouette, and spends the tower's identity colour where it costs nothing —
+the SIGNAL and IDENTIFICATION surfaces, which are indicator panels and are
+meant to be read. Families are still told apart at a glance.
+
+**More detailed was free.** The Workshop draws each family three times —
+Base, Reinforced, Maximum — and the board was only ever loading Base. A tower
+now wears the equipment tier matching its own upgrade tier, so a tower you
+have paid to upgrade twice visibly carries more hardware. Tier 1 loads up
+front and the rest lazily (24 models is about 4 MB, and a board that
+downloads the Maximum variant of a tower nobody upgraded is paying for
+hardware that is not on the table); a tower wears the best tier it has bytes
+for and starts the load for the one it wants. Measured: the Rotor goes
+804 → 1000 → 1380 triangles.
+
+`?alltowers=1` had to start printing TRIANGLES to check that at all — a
+merged model has one mesh per material however much geometry is in it, so
+the mesh count is identical across all three tiers.
+
+**Smaller** is `?towerscale=`, default 0.72 of what it was. It is a knob
+rather than a new constant because "how big should it be" is a look decision
+and the operator should be able to argue with the number rather than have it
+guessed at once. Detail reads better small: a bulky machine looks moulded, a
+small one looks machined.
+
 ## TD2 — a green laser, and the Quiver fires the lab's missiles
 
 **The lance is a laser, not a thrower.** Same shader, opposite settings:

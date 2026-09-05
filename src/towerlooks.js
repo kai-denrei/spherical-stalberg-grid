@@ -19,10 +19,10 @@
 // without reshaping this interface. A look with no preload is ready
 // immediately; a look whose preload has not resolved falls back.
 import * as THREE from '../vendor/three.module.js';
-import { loadGlb, loadGlbWithClips, mergeByMaterial, fitModel, tintModel } from './glbmodels.js?v=3c4d4574';
-import { TOWERS } from './towers.js?v=3c4d4574';
-import { makeTowerMast, makeTowerUnit } from './units.js?v=3c4d4574';
-import { TOWER, HEADS, loadTower } from './feelstore.js?v=3c4d4574';
+import { loadGlb, loadGlbWithClips, mergeByMaterial, fitModel, tintModel } from './glbmodels.js?v=9e5221ba';
+import { TOWERS } from './towers.js?v=9e5221ba';
+import { makeTowerMast, makeTowerUnit } from './units.js?v=9e5221ba';
+import { TOWER, HEADS, loadTower } from './feelstore.js?v=9e5221ba';
 
 // def.shape -> a solid primitive, so the SOLID look keeps each tower's
 // silhouette identity from towers.js rather than inventing its own.
@@ -103,32 +103,58 @@ function makeGlbLook({ label, url, height, maxSpan, drop = [] }) {
 // The models are cached by URL rather than per look, so six Rotors on a
 // board are one download and one upload, and a tower whose bytes have not
 // landed still gets a braille mast rather than nothing.
-// THE WORKSHOP'S SIX MATERIALS, ON A LADDER. Without one, tintModel does a
-// wash and nothing else — the same emissive on every surface — and the model
-// arrives as a single pale mass with no shading to read, which is what the
-// function's own comment warns about and what the second board shipped as.
-// The names are the Sentry Workshop's contract (Armor / Edge / Dark / Copper
-// / Signal / Identification), so this is keyed to something stable rather
-// than to whatever a particular export happened to call things.
+// THE LAB'S LOOK, ON THE BOARD (operator: "the texture and colors look much
+// better in sentry lab mode; let's aim for a similar look in game").
 //
-// Armour bright, structure dark, and a real span between them: it is the
-// LIGHTNESS difference that makes plates, cradles and barrels read as
-// separate surfaces at forty pixels across. Signal and Identification are
-// the indicator surfaces and take the tower's colour at full strength —
-// they are what tells a Rotor from a Quiver on a crowded wall.
-const SENTRY_TINT = {
-  wash: 0.22,
-  sat: 0.5,
-  lightFrom: 0.16,
-  lightTo: 0.78,
-  glow: /signal|identification/i,
-  shades: {
-    armor: 1.0,
-    edge: 0.86,
-    copper: 0.52,
-    dark: 0.14,
-  },
-};
+// The reason the lab looked better is that the lab does NOTHING to these
+// models. It loads them and lights them, and what you see is what the
+// Workshop authored: blue-grey armour, a lighter edge, copper fittings, an
+// orange signal, a red identification stripe. Six materials that were
+// designed to sit together.
+//
+// The board was running them through tintModel, which re-hues every surface
+// to the TOWER's colour and keeps only lightness — a system built for the
+// mkcx tank, whose four materials are all muddy olive and genuinely need
+// pulling apart. Applied to a palette that was already good, it threw the
+// palette away and returned a monochrome machine.
+//
+// So: keep the authored colours, lift them a little because the board is a
+// darker room than the lab's studio, and spend the tower's identity colour
+// where it costs nothing — the SIGNAL and IDENTIFICATION surfaces, which are
+// the indicator panels and are meant to be read. A Rotor and a Quiver are
+// still told apart at a glance, and both still look like the machines the
+// workshop drew.
+const SENTRY_HOT = /signal|identification/i;
+const SENTRY_LIFT = 1.35;    // the board is dimmer than the lab's three lights
+const SENTRY_GLOW = 0.07;    // ...and pure Lambert in near-black reads as black
+
+function dressSentry(root, color) {
+  const c = new THREE.Color(color);
+  root.traverse((obj) => {
+    if (!obj.isMesh || !obj.material) return;
+    const mats = Array.isArray(obj.material) ? obj.material : [obj.material];
+    obj.material = mats.map((m) => {
+      const cl = m.clone();   // prototypes are shared between instances
+      if (SENTRY_HOT.test(m.name || '')) {
+        if (cl.color) cl.color.copy(c);
+        if (cl.emissive) {
+          cl.emissive.copy(c);
+          if ('emissiveIntensity' in cl) cl.emissiveIntensity = 1.5;
+        }
+        return cl;
+      }
+      if (cl.color) cl.color.multiplyScalar(SENTRY_LIFT);
+      // its OWN colour, faintly — so a dark plate is a dark plate rather
+      // than a silhouette, without washing the palette toward the tint
+      if (cl.emissive) {
+        cl.emissive.copy(cl.color).multiplyScalar(SENTRY_GLOW);
+        if ('emissiveIntensity' in cl) cl.emissiveIntensity = 1;
+      }
+      return cl;
+    });
+    if (obj.material.length === 1) obj.material = obj.material[0];
+  });
+}
 
 const sentryProtos = new Map();
 const sentryClips = new Map();
@@ -147,8 +173,31 @@ function sentryUrlFor(def, tier = 1) {
 // is one unit at 260 biomass rather than a board full of them.
 const animated = (def) => def.attack === 'walker';
 
-function loadSentryModel(def) {
-  const url = sentryUrlFor(def);
+// WHICH EQUIPMENT TIER THE BOARD SHOWS. The Workshop draws each family
+// three times — Base, Reinforced, Maximum — and on the board that maps onto
+// the tower's own upgrade tier: a tower you have paid to upgrade twice
+// visibly carries more hardware than one you have just printed. It is the
+// cheapest possible answer to "make them feel more detailed", because the
+// detail already exists and was being thrown away.
+//
+// A pin (?towertier=) overrides it, for looking at one tier everywhere.
+let sentryPin = null;
+export const setSentryTier = (n) => { sentryPin = (n >= 1 && n <= 3) ? n : null; };
+
+// The tier we WANT, and the best one we actually have bytes for. A tower
+// that upgrades starts the next tier's load and keeps wearing the tier it
+// has until that lands — the same never-blank rule the whole registry runs
+// on, one level down.
+function sentryTierFor(def, tier) {
+  const want = sentryPin ?? Math.max(1, Math.min(3, Math.floor(tier) + 1));
+  for (let t = want; t >= 1; t--) {
+    if (sentryProtos.has(sentryUrlFor(def, t))) return { have: t, want };
+  }
+  return { have: 0, want };
+}
+
+function loadSentryModel(def, tier = 1) {
+  const url = sentryUrlFor(def, tier);
   if (sentryProtos.has(url)) return Promise.resolve(true);
   if (sentryPending.has(url)) return sentryPending.get(url);
   // the walker needs its clips, so it takes the loader that keeps them —
@@ -199,16 +248,25 @@ const sentryLook = {
     if (sentryLook._p) return sentryLook._p;
     // every model the LIVE roster names — a roster with no models (the
     // campaign board) resolves immediately and falls back to braille
-    sentryLook._p = Promise.all(TOWERS.filter((d) => d.model).map(loadSentryModel))
+    // TIER 1 UP FRONT, the rest on demand. Three tiers of eight families is
+    // twenty-four models and about four megabytes; a board that downloads
+    // the Maximum variant of a tower nobody has upgraded is paying for
+    // hardware that is not on the table.
+    const first = sentryPin ?? 1;
+    sentryLook._p = Promise.all(TOWERS.filter((d) => d.model).map((d) => loadSentryModel(d, first)))
       .then((all) => { sentryLook.loaded = all.length > 0 && all.some(Boolean); return sentryLook.loaded; });
     return sentryLook._p;
   },
-  build(def) {
-    const url = def.model ? sentryUrlFor(def) : null;
+  build(def, tier = 0) {
+    if (!def.model) return makeTowerUnit(def);
+    const { have, want } = sentryTierFor(def, tier);
+    // start the tier we do not have yet; wear the best one we do
+    if (have !== want) loadSentryModel(def, want);
+    const url = have ? sentryUrlFor(def, have) : null;
     const proto = url ? sentryProtos.get(url) : null;
     if (!proto) return makeTowerUnit(def);   // bytes not in yet — never nothing
     const g = proto.clone(true);
-    tintModel(g, def.color, SENTRY_TINT);
+    dressSentry(g, def.color);
     g.userData.baseScale = 1 / 1.55;
     g.userData.lift = 0.02;
     g.userData.kind = 'mesh';
@@ -298,9 +356,9 @@ export const DEFAULT_TOWER_LOOK = 'braille';
 // Never throws and never returns null: an unknown name (a stale URL hook,
 // a saved preference for a look that has since been removed) falls back to
 // the default rather than leaving a tower invisible on the board.
-export function buildTowerLook(name, def) {
+export function buildTowerLook(name, def, tier = 0) {
   const look = TOWER_LOOKS[name] || TOWER_LOOKS[DEFAULT_TOWER_LOOK];
-  return look.build(def);
+  return look.build(def, tier);
 }
 
 // Kick off a look's async load if it has one. Resolves to true when the

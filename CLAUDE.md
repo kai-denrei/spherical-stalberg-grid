@@ -229,6 +229,23 @@ token — the corner badge was retired from the game view).
   how the second roster first came up as the campaign. `bust.sh` only UPDATES
   tokens, never adds them, so an untokened import stays untokened forever.
   `check-tokens.sh` now fails on a split import of any module exporting `let`.
+- TD2 towers keep the Workshop's AUTHORED palette (`dressSentry` in
+  towerlooks.js) — NOT `tintModel`, which re-hues every surface to the
+  tower's colour and is built for the mkcx tank's four muddy olive materials.
+  Applied to a palette that was already good it returned a monochrome
+  machine, which is why the lab looked better than the game. The identity
+  colour is spent only on the SIGNAL / IDENTIFICATION indicator surfaces.
+  The board is a darker room than the lab's three-light studio, so the
+  authored colours get a x1.35 lift and a faint emissive of their OWN colour.
+- A tower wears the Workshop EQUIPMENT TIER matching its upgrade tier
+  (t1/t2/t3) — the detail already existed and was being thrown away. Tier 1
+  loads up front and the rest lazily (24 models is ~4 MB); a tower wears the
+  best tier it has bytes for and starts the load for the one it wants.
+  `?towertier=1|2|3` pins one, `?towerscale=` sizes them (default 0.72 —
+  detail reads better small; a bulky machine looks moulded, a small one
+  machined). `?alltowers=1` prints TRIANGLES, because a merged model has one
+  mesh per material however much geometry is in it and the mesh count cannot
+  tell a Base tier from a Maximum one.
 - TD2's towers use the SENTRY LAB's answers. The look keeps the Workshop's
   pivots through the merge (`mergeByMaterial(scene, ['YAW','PITCH','RECOIL'])`)
   and exposes `head`/`pitchNode`/`recoilNode`/`muzzles`; `aimTower` drives yaw
