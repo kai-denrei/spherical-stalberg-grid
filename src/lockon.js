@@ -58,9 +58,41 @@ export const MISSILE_TUNE = {
   topAttack: 0.28,    // the arc: lift as a fraction of the range STILL TO RUN,
                       // so it retires itself as the missile closes rather
                       // than being switched off at some fraction of the way
+  launchSpeed: 40,    // how fast it leaves the tube, before the motor
   maxTime: 30,
   step: 0.008,
 };
+
+// THE SAME MISSILE, IN A SMALLER WORLD. The sentry range is nine model
+// units across where the sniper's is sixteen hundred metres, and a tune
+// written in metres and seconds is simply wrong there — a missile with 200
+// m/s² of fin would leave the range before it turned. Rather than keep a
+// second table of hand-picked numbers that will drift from the first, scale
+// the one tune: pick a length ratio `k` and a time ratio `tau`, and every
+// quantity follows from its own dimensions.
+//
+//   length  k        velocity  k/tau      acceleration  k/tau²
+//   time    tau      drag      1/k        (drag is a reciprocal length)
+//
+// The result is the SAME trajectory, drawn smaller and flown faster, which
+// is exactly what a demonstration range wants — and if the metre tune is
+// retuned the model-unit one follows for free.
+export function scaleMissile(tune, k, tau) {
+  const a = k / (tau * tau);
+  return {
+    ...tune,
+    boost: tune.boost * tau,
+    arm: tune.arm * tau,
+    maxTime: tune.maxTime * tau,
+    step: tune.step * tau,
+    boostAccel: tune.boostAccel * a,
+    gravity: tune.gravity * a,
+    accelMax: tune.accelMax * a,
+    launchSpeed: tune.launchSpeed * (k / tau),
+    drag: tune.drag / k,
+    kill: tune.kill * k,
+  };
+}
 
 // --- small vector helpers, kept local so this module imports nothing -----
 const sub = (a, b) => [a[0] - b[0], a[1] - b[1], a[2] - b[2]];
@@ -204,7 +236,7 @@ export const warheadHits = (miss, tune = MISSILE_TUNE) => miss <= tune.kill;
 // A whole engagement, for the tests and for anything that wants to know
 // whether a shot is worth taking: fly it and report the closest approach.
 export function flyMissile(from, dir, tp, tv = [0, 0, 0], tune = MISSILE_TUNE) {
-  const m = launchMissile(from, dir, 40, 0);
+  const m = launchMissile(from, dir, tune.launchSpeed, 0);
   const launchRange = len(sub(tp, from));
   let best = launchRange, target = tp.slice(), at = 0;
   const h = tune.step;
@@ -215,7 +247,7 @@ export function flyMissile(from, dir, tp, tv = [0, 0, 0], tune = MISSILE_TUNE) {
     if (d < best) { best = d; at = m.t; }
     if (m.p[1] < 0) break;
     // it has gone past and is opening again: no point flying it out
-    if (d > best + 30 && m.t > tune.arm) break;
+    if (d > best + 30 * (tune.kill / MISSILE_TUNE.kill) && m.t > tune.arm) break;
   }
   return { miss: best, time: at, hit: warheadHits(best, tune) };
 }

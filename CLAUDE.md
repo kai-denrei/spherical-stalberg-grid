@@ -129,6 +129,16 @@ token — the corner badge was retired from the game view).
   Models are the Sentry Workshop's, vendored to `assets/models/sentries/`
   under their own name contract: `ROOT→BASE→YAW→PITCH→RECOIL`, `MUZZLE_nn`,
   and six material names. `?tabprobe=1` also lists this tab.
+  Each family has a VOICE (`SENTRY_FAMILIES.fire`, plus `ready` for the
+  Rotor's minigun spin-up, which plays on the ENGAGEMENT EDGE and not per
+  round) — `?voiceprobe=1` logs every sound call with its count, since
+  headless cannot hear. The QUIVER is the Javelin: `missile: true` means it
+  LOCKS before it fires (`?lockGate=`, `?lockTime=`, `?lockBreak=`, in
+  degrees of drive error) and what leaves the tube then homes —
+  `src/lockon.js`, the same tune the sniper lab uses, put through
+  `scaleMissile` into model units. Fire-and-forget: the lock drops the
+  instant a cell is away, or one launcher empties itself into one walker
+  while the wave goes past.
   every LAB's deep link: the 🔗 button copies the tab's current panel as a
   URL and writes it into the address bar (astro / metal / beam / portal /
   cine; the units viewer has had its own since before this). Only what

@@ -20,17 +20,31 @@
 // one negation at the point of application. Two places deciding what "up"
 // means is how a turret ends up shooting at the floor.
 
-import { makeParams, clampParams, formatKnobs, knobProblems } from './knobs.js?v=51e02fe7';
+import { makeParams, clampParams, formatKnobs, knobProblems } from './knobs.js?v=5eaf82f3';
 
 // The workshop's six families. `fixed` is its own ruling — the Relay is a
 // structure, not a gun, and a range that pretends otherwise is a range that
 // lies about what it tested.
+// EACH FAMILY HAS A VOICE, and the table is where it is decided — the tab
+// never names a sound. `fire` is per round; `ready` is the spin-up, which
+// only the Rotor has, because only the Rotor has something to spin.
+//
+// The Quiver is the odd one out and deliberately so: `missile: true` means
+// it does not fire a tracer at all. It carries the Javelin — it must LOCK
+// before it will shoot, and what leaves the tube then flies its own
+// intercept (src/lockon.js). It is the same weapon the sniper lab aims by
+// hand, at the other end of the same ladder: manual there, automatic here.
 export const SENTRY_FAMILIES = [
-  { id: 'needle', label: 'Needle', note: 'single accelerator — one muzzle, long and thin' },
-  { id: 'rotor', label: 'Rotor', note: 'rotary barrels — six muzzles, fed from drums' },
-  { id: 'kiln', label: 'Kiln', note: 'twin projectors — recessed throats' },
-  { id: 'quiver', label: 'Quiver', note: 'missile cells — six capped tubes' },
-  { id: 'lancer', label: 'Lancer', note: 'rail and focusing collars — one aperture' },
+  { id: 'needle', label: 'Needle', note: 'single accelerator — one muzzle, long and thin',
+    fire: 'tower_sniper' },
+  { id: 'rotor', label: 'Rotor', note: 'rotary barrels — six muzzles, fed from drums',
+    fire: 'minigun_fire', ready: 'minigun_ready' },
+  { id: 'kiln', label: 'Kiln', note: 'twin projectors — recessed throats',
+    fire: 'tower_aoe' },
+  { id: 'quiver', label: 'Quiver', note: 'missile cells — six capped tubes · locks on, then homes',
+    fire: 'tower_homing', missile: true },
+  { id: 'lancer', label: 'Lancer', note: 'rail and focusing collars — one aperture',
+    fire: 'tower_laser' },
   { id: 'relay', label: 'Relay', note: 'a mast, not a weapon: fixed, no articulation', fixed: true },
 ];
 export const SENTRY_TIERS = [1, 2, 3];
@@ -76,6 +90,14 @@ export const SENTRY_TUNE = {
   waveGap: 2.5,       // seconds between one cleared and the next
   walkSpeed: 1.6,     // units per second, inward
   reachRadius: 1.2,   // this close to the battery and it has got through
+  // --- the Quiver's seeker ------------------------------------------------
+  // A sentry locks with its DRIVE, not with a pair of hands: the gate is in
+  // degrees of aim error, matched to the tolerance the same gun uses to
+  // decide it is on target, and the lock time is what turns a launcher into
+  // a slower, more certain weapon than the guns beside it.
+  lockGate: 6,        // degrees of aim error that counts as tracking
+  lockTime: 1.1,      // seconds of it before the cell will fire
+  lockBreak: 18,      // ...and how far off before an acquired lock lets go
 };
 
 export const SENTRY_KNOBS = [
@@ -106,6 +128,9 @@ export const SENTRY_KNOBS = [
   { key: 'waveGap', label: 'between waves (s)', group: 'waves', min: 0, max: 15, step: 0.5 },
   { key: 'walkSpeed', label: 'walk (units/s)', group: 'waves', min: 0.1, max: 10, step: 0.1 },
   { key: 'reachRadius', label: 'through at (units)', group: 'waves', min: 0.2, max: 6, step: 0.1 },
+  { key: 'lockGate', label: 'lock gate (deg)', group: 'seeker', min: 0.5, max: 30, step: 0.5 },
+  { key: 'lockTime', label: 'time to lock (s)', group: 'seeker', min: 0.1, max: 6, step: 0.1 },
+  { key: 'lockBreak', label: 'lock breaks at (deg)', group: 'seeker', min: 1, max: 90, step: 1 },
 ];
 
 export const makeSentryParams = (src = SENTRY_TUNE) => makeParams(SENTRY_KNOBS, src);

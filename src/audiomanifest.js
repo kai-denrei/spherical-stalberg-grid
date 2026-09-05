@@ -34,6 +34,18 @@ export const SOUNDS = {
   tower_aoe:     { file: `${A}/tower_aoe.mp3`,     bus: 'towers', gain: 0.70, maxVoices: 2, minInterval: 0.14, rateJitter: 0.05 },
   tower_sniper:  { file: `${A}/tower_sniper.mp3`,  bus: 'towers', gain: 0.75, maxVoices: 2, minInterval: 0.16, rateJitter: 0.04 },
 
+  // --- the rotor's minigun (operator's samples) ---------------------------
+  // The spin-up is the DOWNTIME voice: it plays as the barrels come up to
+  // speed and again as they wind down, which is where a rotary gun spends
+  // most of its character. One voice, and a min-interval longer than the
+  // spool itself so a target flickering in and out of the envelope cannot
+  // stack whines on top of each other.
+  minigun_ready: { file: `${A}/minigun_ready.mp3`, bus: 'towers', gain: 0.42, maxVoices: 1, minInterval: 1.7, rateJitter: 0.02 },
+  // ...and the roar is per ROUND, so it is short, quiet, and allowed to
+  // overlap: six barrels firing four times a second is the easiest sound in
+  // this game to make unbearable, and "not too loud" was the brief.
+  minigun_fire:  { file: `${A}/minigun_fire.mp3`,  bus: 'towers', gain: 0.22, maxVoices: 5, minInterval: 0.04, rateJitter: 0.07 },
+
   // --- ui ----------------------------------------------------------------
   tower_upgrade: { file: `${A}/tower_upgrade.mp3`, bus: 'ui', gain: 0.70, maxVoices: 2, minInterval: 0.08, rateJitter: 0 },
 

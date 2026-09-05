@@ -8,6 +8,7 @@
 import {
   LOCK_TUNE, MISSILE_TUNE, makeLock, stepLock, offsetMrad,
   guide, launchMissile, stepMissile, attackPoint, flyMissile, warheadHits,
+  scaleMissile,
 } from '../src/lockon.js';
 
 let failures = 0;
@@ -148,6 +149,32 @@ console.log('it arrives:');
   }
   check('the warhead does not need to touch it', warheadHits(MISSILE_TUNE.kill - 0.01));
   check('...but it is not unlimited', !warheadHits(MISSILE_TUNE.kill + 0.01));
+}
+
+console.log('the same missile in a smaller world:');
+{
+  // THE SCALING IS THE POINT: one tune, two worlds. A trajectory flown at
+  // k=1/70 and tau=1/2.5 must be the SAME SHAPE as the metre one — so its
+  // miss, divided by k, is the metre miss. If this drifts, the sentry range
+  // and the sniper range are quietly two different weapons.
+  const k = 1 / 70, tau = 1 / 2.5;
+  const small = scaleMissile(MISSILE_TUNE, k, tau);
+  const big = flyMissile([0, 2, 0], [0, 1, 700], [0, 3, 700], [8, 0, 0]);
+  const sm = flyMissile([0, 2 * k, 0], [0, 1, 700], [0, 3 * k, 700 * k], [8 * k / tau, 0, 0], small);
+  check(`the shape survives the scaling (${(sm.miss / k).toFixed(2)} vs ${big.miss.toFixed(2)} m)`,
+    Math.abs(sm.miss / k - big.miss) < 0.6);
+  check('and so does the flight time', Math.abs(sm.time / tau - big.time) < 0.15);
+  check('the warhead scales with the world', Math.abs(small.kill - MISSILE_TUNE.kill * k) < 1e-12);
+
+  // ...and it arrives on a range nine units across, which is the actual job
+  for (const [what, tp, tv] of [
+    ['dead ahead at 8 units', [0, 0.6, 8], [0, 0, 0]],
+    ['crossing at 1.6 units/s', [0, 0.6, 8], [1.6, 0, 0]],
+    ['close in at 3.5 units', [2, 0.6, 2.9], [0, 0, 0]],
+  ]) {
+    const r = flyMissile([0, 0.4, 0], [tp[0], tp[1] - 0.4, tp[2]], tp, tv, small);
+    check(`${what} (${r.miss.toFixed(3)} units)`, r.miss <= 0.55);
+  }
 }
 
 console.log('determinism:');

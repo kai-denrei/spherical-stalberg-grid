@@ -46,7 +46,12 @@ apeak () {
     -f null - 2>&1 | awk -F': ' '/Peak level dB/{print $2}'
 }
 
-# key|source wav|output duration (s)|playback rate
+# key|source wav|output duration (s)|playback rate|start offset (s, optional)
+#
+# The start offset exists because not every master begins where the sound
+# does. A minigun roar has a tenth of a second of nothing and then a spin-up
+# in front of the loop-worthy body; trimming from zero would give a slice
+# that is mostly silence and a transient that is not the one wanted.
 TABLE=$(cat <<'EOF'
 tower_single|Tower_Single_shot_muffled.wav|0.45|1.00
 tower_rapid|Tower_Rapid_Ice_casting_55.wav|0.22|1.00
@@ -83,21 +88,32 @@ server_dialup|Server_dialup-handshake.mp3|6.15|1.00
 enemy_die_a|slime-pop.wav|0.50|1.00
 enemy_die_b|slime-organic.wav|0.57|1.00
 enemy_die_c|splat_quick.wav|0.33|1.00
+# THE ROTOR (operator's samples). Two halves of one gun: the spin-up plays
+# on the way INTO an engagement and on the way out of one — the downtime,
+# where a rotary weapon does most of its talking — and the roar is sliced
+# from the steady body of the burst, past its own start transient, so that
+# one round's worth reads as a piece of a continuous sound rather than as a
+# little explosion. Deliberately quiet in the manifest: six barrels at four
+# rounds a second is the easiest thing in this game to make unbearable.
+minigun_ready|Minigun_Ready_244784.mp3|1.60|1.00|0.05
+minigun_fire|Minigun_Firing_freesound_36769.mp3|0.17|1.00|0.12
 EOF
 )
 
 echo "building $OUT/"
 worst=-99
 
-while IFS='|' read -r key src dur rate; do
+while IFS='|' read -r key src dur rate start; do
   # blank lines and comments: the table is worth annotating, and without
   # this a comment row reads as a key with an empty source path
   [[ -z "$key" || "$key" == \#* ]] && continue
   in="$SRC/$src"
   [[ -f "$in" ]] || { echo "missing source: $in" >&2; exit 1; }
+  start="${start:-0}"
 
   # pitch changes duration: trim the source by dur*rate so the OUTPUT is dur
   trim=$(awk -v d="$dur" -v r="$rate" 'BEGIN{printf "%.4f", d*r}')
+  tend=$(awk -v s="$start" -v t="$trim" 'BEGIN{printf "%.4f", s+t}')
 
   if [[ "$rate" == "1.00" ]]; then
     pitch=""
@@ -109,7 +125,13 @@ while IFS='|' read -r key src dur rate; do
   fi
 
   fadest=$(awk -v d="$dur" -v f="$FADE" 'BEGIN{printf "%.4f", (d-f<0?0:d-f)}')
-  chain="atrim=0:${trim},asetpts=N/SR/TB,${pitch}afade=t=out:st=${fadest}:d=${FADE}"
+  # ...and a slice that does not start at zero needs a fade IN too, or the
+  # cut lands mid-waveform and clicks on every retrigger
+  fadein=""
+  if awk -v s="$start" 'BEGIN{exit !(s > 0)}'; then
+    fadein="afade=t=in:st=0:d=${FADE},"
+  fi
+  chain="atrim=${start}:${tend},asetpts=N/SR/TB,${pitch}${fadein}afade=t=out:st=${fadest}:d=${FADE}"
 
   # PEAK-normalize in two passes. Peak, not loudnorm and not a compressor:
   # peak is the only normalization that leaves the transient intact, and
