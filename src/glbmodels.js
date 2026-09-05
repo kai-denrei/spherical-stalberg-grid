@@ -224,6 +224,11 @@ export function fitModel(obj, { height, maxSpan, recentreOn = null }) {
 // parts the artist named "glow" keep full emissive colour and sit above the
 // ladder entirely.
 const GLOW = /glow/i;
+// ...and a caller may name its OWN hot materials. The Sentry Workshop calls
+// its indicator surfaces "Signal" and "Identification", which no regex for
+// the word "glow" will ever match — and those two are exactly the parts that
+// should carry the tower's colour at full strength, because they are what
+// tells one family from another at board scale.
 const DEFAULT_SHADES = { armour: 1.0, turret: 0.72, detail: 0.5, steel: 0.34 };
 
 function rungFor(name, shades) {
@@ -240,6 +245,7 @@ export function tintModel(root, color, opts = {}) {
   const sat = o.sat ?? 0.55;
   const loFrom = o.lightFrom ?? 0.20;
   const loTo = o.lightTo ?? 0.62;
+  const glow = o.glow ?? GLOW;
 
   const c = new THREE.Color(color);
   const dim = c.clone().multiplyScalar(wash);
@@ -258,7 +264,7 @@ export function tintModel(root, color, opts = {}) {
     const mats = Array.isArray(obj.material) ? obj.material : [obj.material];
     obj.material = mats.map((m) => {
       const cl = m.clone(); // clone: prototypes are shared between instances
-      const hot = GLOW.test(m.name || '');
+      const hot = glow.test(m.name || '');
       if (hot) {
         if (cl.emissive) {
           cl.emissive.copy(c);

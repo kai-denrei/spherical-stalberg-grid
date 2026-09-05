@@ -210,7 +210,16 @@ token — the corner badge was retired from the game view).
   it used to be reachable only from the panel and `?towerlook=`, so a board
   whose default look has async assets never started the load and every tower
   stayed a braille fallback forever. `?alltowers=1` places one of each and
-  says whether any fell back. Never address a
+  says whether any fell back, and prints each tower's LIGHTNESS SPAN — a
+  model whose materials all sit at one lightness arrives as a pale mass
+  however good the mesh is. `tintModel` with no `shades` does a wash and
+  nothing else, and `def.color` for these towers is near-white, so a flat
+  0.28 emissive of it drowned a dark model in a dark scene. `SENTRY_TINT`
+  (towerlooks.js) is the ladder, keyed to the Workshop's own six material
+  names, with Signal / Identification as the glow surfaces via `tintModel`'s
+  new `glow` option. The A6 does NOT bob — the clip is the walk — and it
+  FACES its heading (basis `up × forward, up, forward`; the models are +Y up,
+  +Z forward), with the leg cadence scaled by its measured ground speed. Never address a
   tower by a literal key (`'single'`) — use `starterTower()` or find it by
   `attack`; a literal is a call site that silently does nothing on one board.
 - A `?v=` token is part of the module URL, so `./x.js` and `./x.js?v=ab` are

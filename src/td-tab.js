@@ -19,72 +19,72 @@
 
 import * as THREE from '../vendor/three.module.js';
 import GUI from '../vendor/lil-gui.esm.js';
-import { generateSphereMesh, relax } from './grid.js?v=afc8078c';
-import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=afc8078c';
-import { compileRail } from './cine/rail.js?v=afc8078c';
-import { SCRIPTS } from './cine/scripts.js?v=afc8078c';
-import { cuesBetween } from './cine/sound.js?v=afc8078c';
-import { installCine } from './cine/kit.js?v=afc8078c';
-import { mulberry32, randomSeed } from './rng.js?v=afc8078c';
-import { computeBerths, berthIndexFor } from './berths.js?v=afc8078c';
-import { wantsSecondary, shellsForAll } from './autofire.js?v=afc8078c';
-import { printPhase, printOffset, printOn, patternSecsFor } from './printpath.js?v=afc8078c';
-import { createBeamRig, PLASMA_DEFAULTS, BOARD_PRESET, BEAM_PEAK } from './beamdraw.js?v=afc8078c';
-import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3, segKey, tangentDir, tangentBasis } from './vec3.js?v=afc8078c';
-import { CREATURES, waveJelly } from './creatures.js?v=afc8078c';
-import { brief, dwellFor } from './isaobriefs.js?v=afc8078c';
-import { drawEmotion } from './emotions.js?v=afc8078c';
+import { generateSphereMesh, relax } from './grid.js?v=37622bc4';
+import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=37622bc4';
+import { compileRail } from './cine/rail.js?v=37622bc4';
+import { SCRIPTS } from './cine/scripts.js?v=37622bc4';
+import { cuesBetween } from './cine/sound.js?v=37622bc4';
+import { installCine } from './cine/kit.js?v=37622bc4';
+import { mulberry32, randomSeed } from './rng.js?v=37622bc4';
+import { computeBerths, berthIndexFor } from './berths.js?v=37622bc4';
+import { wantsSecondary, shellsForAll } from './autofire.js?v=37622bc4';
+import { printPhase, printOffset, printOn, patternSecsFor } from './printpath.js?v=37622bc4';
+import { createBeamRig, PLASMA_DEFAULTS, BOARD_PRESET, BEAM_PEAK } from './beamdraw.js?v=37622bc4';
+import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3, segKey, tangentDir, tangentBasis } from './vec3.js?v=37622bc4';
+import { CREATURES, waveJelly } from './creatures.js?v=37622bc4';
+import { brief, dwellFor } from './isaobriefs.js?v=37622bc4';
+import { drawEmotion } from './emotions.js?v=37622bc4';
 import { ACHIEVEMENTS, ACHV_GROUPS, achievement, blankRun, earned, freshlyEarned,
   sanitiseRecord }
-  from './achievements.js?v=afc8078c';
+  from './achievements.js?v=37622bc4';
 import { applyFontPack, currentFontPack, FONT_NAMES,
-  loadTypeFeel } from './fonts.js?v=afc8078c';
-import { SECONDARY_TOE, applySecondaryToe } from './units.js?v=afc8078c';
-import { UNITS, UNIT_NAMES, buildUnit, buildCreature, preloadMkcx, preloadServer, makeServerFixture, makeShieldShell, preloadContainer, makeContainerFixture, preloadFabricator, makeIsaoDrone, makeBulletCloud, makeRewardSolid, makeShellSolid, makeDebris, makeDotBurst, makePortalCloud, preloadPortalRing, makePortalRing, makeHeartCloud, makeDotEnemy, makeSurvivor, preloadAstronaut, makeAstronaut, preloadTerraformer, makeTerraformerFixture } from './units.js?v=afc8078c';
-import { LOOKS, LOOK_NAMES } from './looks.js?v=afc8078c';
-import { makeCellIndex } from './cellindex.js?v=afc8078c';
-import { CREATURE_TINTS, ENEMY_SPEC, INTROS, computeWavePlan, accentFor } from './enemyspec.js?v=afc8078c';
-import { PICKUPS } from './pickups.js?v=afc8078c';
-import { rankFor, rankLabel, badgeSVG, killReq, eliteReq } from './ranks.js?v=afc8078c';
-import { beamStep, isBeamStep, PEN_SOFT_FRAC, PEN_HARD_FRAC } from './beamranks.js?v=afc8078c';
-import { burn, sweepAdvance, wallBite as wallBiteFor } from './beamburn.js?v=afc8078c';
-import { arcPoint, projectToArc, toeForCrossing, crossingForToe } from './arc.js?v=afc8078c';
+  loadTypeFeel } from './fonts.js?v=37622bc4';
+import { SECONDARY_TOE, applySecondaryToe } from './units.js?v=37622bc4';
+import { UNITS, UNIT_NAMES, buildUnit, buildCreature, preloadMkcx, preloadServer, makeServerFixture, makeShieldShell, preloadContainer, makeContainerFixture, preloadFabricator, makeIsaoDrone, makeBulletCloud, makeRewardSolid, makeShellSolid, makeDebris, makeDotBurst, makePortalCloud, preloadPortalRing, makePortalRing, makeHeartCloud, makeDotEnemy, makeSurvivor, preloadAstronaut, makeAstronaut, preloadTerraformer, makeTerraformerFixture } from './units.js?v=37622bc4';
+import { LOOKS, LOOK_NAMES } from './looks.js?v=37622bc4';
+import { makeCellIndex } from './cellindex.js?v=37622bc4';
+import { CREATURE_TINTS, ENEMY_SPEC, INTROS, computeWavePlan, accentFor } from './enemyspec.js?v=37622bc4';
+import { PICKUPS } from './pickups.js?v=37622bc4';
+import { rankFor, rankLabel, badgeSVG, killReq, eliteReq } from './ranks.js?v=37622bc4';
+import { beamStep, isBeamStep, PEN_SOFT_FRAC, PEN_HARD_FRAC } from './beamranks.js?v=37622bc4';
+import { burn, sweepAdvance, wallBite as wallBiteFor } from './beamburn.js?v=37622bc4';
+import { arcPoint, projectToArc, toeForCrossing, crossingForToe } from './arc.js?v=37622bc4';
 import { MINE_TUNE, makeField, layMine, armMines, restock, mineAt,
-  inFan, trip, chain, nextChained, minePolar } from './mines.js?v=afc8078c';
+  inFan, trip, chain, nextChained, minePolar } from './mines.js?v=37622bc4';
 import { deepLink, wireDeepLink } from './deeplink.js';
 import { RESCUE_TUNE, makeRescue, placeSurvivors, stepBoard, stepGrab,
   disembark, loseCarried, lockOn, waveMix, standing as standingSurv,
   aboard as aboardSurv, missionOver, verdict as rescueVerdict,
   grabProgress, remaining as remainingSurv, exposed as exposedSurv,
   RESCUE2_TUNE, makeCamps, stepCall, stepEmerge, walkStep, runOver,
-  awake as campAwake } from './rescue.js?v=afc8078c';
+  awake as campAwake } from './rescue.js?v=37622bc4';
 import { WORMHOLE_PRESET, WORMHOLE_UNIFORM_DEFAULTS, RING_SPIN, TRAVEL,
-  travelRate, advancePhase } from './portalfx.js?v=afc8078c';
-import { WORMHOLE_FRAG } from './fx/wormhole.frag.js?v=afc8078c';
-import { CORONA_FRAG } from './fx/corona.frag.js?v=afc8078c';
-import { labLine, parseLabQuery } from './lab.js?v=afc8078c';
-import { bakeGalaxyCube } from './galaxybake.js?v=afc8078c';
-import { SKY_PRESET } from './galaxyseed.js?v=afc8078c';
-import { makeScore } from './score.js?v=afc8078c';
-import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER, HACK_GATED, starterTower, towerSound, ROSTER } from './towers.js?v=afc8078c';
-import { makeEconomy, sellRefund } from './economy.js?v=afc8078c';
-import { pickTier } from './perftier.js?v=afc8078c';
-import { applyWeatheredMaterial } from './cine/materials.js?v=afc8078c';
-import { STICK, stickVector, knobOffset } from './stick.js?v=afc8078c';
-import { registerServiceWorker } from './pwa.js?v=afc8078c';
-import { makeBloom } from './postfx.js?v=afc8078c';
-import { TANK_FEEL, TANK_FEEL_KNOBS, makeTankFeel, stepTankFeel, landTankFeel, fireTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js?v=afc8078c';
-import { FEEL, loadFeel, saveFeel } from './feelstore.js?v=afc8078c';
+  travelRate, advancePhase } from './portalfx.js?v=37622bc4';
+import { WORMHOLE_FRAG } from './fx/wormhole.frag.js?v=37622bc4';
+import { CORONA_FRAG } from './fx/corona.frag.js?v=37622bc4';
+import { labLine, parseLabQuery } from './lab.js?v=37622bc4';
+import { bakeGalaxyCube } from './galaxybake.js?v=37622bc4';
+import { SKY_PRESET } from './galaxyseed.js?v=37622bc4';
+import { makeScore } from './score.js?v=37622bc4';
+import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER, HACK_GATED, starterTower, towerSound, ROSTER } from './towers.js?v=37622bc4';
+import { makeEconomy, sellRefund } from './economy.js?v=37622bc4';
+import { pickTier } from './perftier.js?v=37622bc4';
+import { applyWeatheredMaterial } from './cine/materials.js?v=37622bc4';
+import { STICK, stickVector, knobOffset } from './stick.js?v=37622bc4';
+import { registerServiceWorker } from './pwa.js?v=37622bc4';
+import { makeBloom } from './postfx.js?v=37622bc4';
+import { TANK_FEEL, TANK_FEEL_KNOBS, makeTankFeel, stepTankFeel, landTankFeel, fireTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js?v=37622bc4';
+import { FEEL, loadFeel, saveFeel } from './feelstore.js?v=37622bc4';
 import { STRIKE_KNOBS, makeStrike, makeStrikeParams, grantStrikes, stepStrike,
   toggleArm, paintTarget, launchStrike, stepFall, skipFall, fallProgress,
-  strikeDamage, retargetStrike, orbitProgress } from './strike.js?v=afc8078c';
+  strikeDamage, retargetStrike, orbitProgress } from './strike.js?v=37622bc4';
 import { radarBasis, radarProject, radarBearing, sweepAngle, radarPhosphor,
-  proximitySectors, SENSOR_LEVELS, sensorColor } from './radar.js?v=afc8078c';
-import { BLOOM_GROUPS } from './bloomweights.js?v=afc8078c';
+  proximitySectors, SENSOR_LEVELS, sensorColor } from './radar.js?v=37622bc4';
+import { BLOOM_GROUPS } from './bloomweights.js?v=37622bc4';
 import { A6_TUNE, magFor, makeA6, stepA6, arc as a6Arc, a6Line } from './heptapod.js';
-import { TOWER_LOOK_NAMES, DEFAULT_TOWER_LOOK, buildTowerLook, preloadLook, lookReady } from './towerlooks.js?v=afc8078c';
-import { makeAudio } from './audio.js?v=afc8078c';
-import { DEATH_KEYS } from './audiomanifest.js?v=afc8078c';
+import { TOWER_LOOK_NAMES, DEFAULT_TOWER_LOOK, buildTowerLook, preloadLook, lookReady } from './towerlooks.js?v=37622bc4';
+import { makeAudio } from './audio.js?v=37622bc4';
+import { DEATH_KEYS } from './audiomanifest.js?v=37622bc4';
 
 export function initTdTab(root) {
   let active = false;
@@ -8298,18 +8298,38 @@ export function initTdTab(root) {
     if (tower.a6) {
       const top = 1 + params.wallHeight;
       const p = tower.a6.pos;
-      // THE LEGS MOVE WHEN IT IS GOING SOMEWHERE. The Walk clip is the
-      // model's own, driven by the look's mixer; this only says whether it
-      // should be running. A bob is kept UNDER it — a small vertical ride
-      // that the clip does not carry, because the clip animates the legs
-      // relative to a hull that in the file never leaves the ground plane.
+      // NO BOB. It was a stand-in for a walk cycle the model could not play,
+      // and now that the legs actually move it is just a hop laid over them —
+      // which is what "it jumps instead of walking" was. The clip is the
+      // walk; the hull rides the ground.
       const going = tower.a6.state === 'patrol' || tower.a6.state === 'engage'
         || tower.a6.state === 'home';
       if (obj.userData.setGait) obj.userData.setGait(going);
-      const bob = going ? Math.sin(t * 7.5) * (obj.userData.setGait ? 0.012 : 0.035) : 0;
-      obj.position.set(p[0] * (top + bob), p[1] * (top + bob), p[2] * (top + bob));
+      obj.position.set(p[0] * top, p[1] * top, p[2] * top);
+      // ...AND IT FACES WHERE IT IS WALKING. Setting `up` alone leaves the
+      // heading at whatever the identity quaternion gives, so a machine with
+      // six legs and a clear front was crabbing sideways down its own path
+      // — half of why the gait did not read. The Workshop's models are +Y up
+      // and +Z forward, so the basis is (up × forward, up, forward).
       tmpN.set(p[0], p[1], p[2]);
-      obj.quaternion.setFromUnitVectors(Y_AXIS, tmpN);
+      const h = tower.a6.head;
+      if (h) {
+        const up = tmpN.clone();
+        const fwd = new THREE.Vector3(h[0], h[1], h[2]);
+        // re-orthogonalise against the CURRENT up: the heading was measured
+        // one frame ago, a cell away, where "flat" meant a different plane
+        fwd.addScaledVector(up, -fwd.dot(up));
+        if (fwd.lengthSq() > 1e-12) {
+          fwd.normalize();
+          const right = up.clone().cross(fwd);
+          obj.quaternion.setFromRotationMatrix(
+            new THREE.Matrix4().makeBasis(right, up, fwd));
+        } else {
+          obj.quaternion.setFromUnitVectors(Y_AXIS, tmpN);
+        }
+      } else {
+        obj.quaternion.setFromUnitVectors(Y_AXIS, tmpN);
+      }
       return;
     }
     const c = graph.centers[tower.ci];
@@ -9065,6 +9085,7 @@ export function initTdTab(root) {
   // A6 sees what a tower on its cell would see, from wherever it is
   // standing, which is the whole point of it moving.
   function stepWalker(tw, dt, tNow) {
+    const was = tw.a6.pos.slice();
     const eff = effectiveStats(tw.def, tw.tier);
     const range = eff.range * cellSide;
     // an upgrade is a bigger cassette, applied the moment it lands rather
@@ -9102,6 +9123,28 @@ export function initTdTab(root) {
       },
     });
     tw.a6.steps = (tw.a6.steps || 0) + 1;
+    // THE HEADING AND THE CADENCE, BOTH MEASURED FROM THE MOVE IT ACTUALLY
+    // MADE rather than from where it would like to be. A leg cycle that runs
+    // at a fixed rate while the body's speed changes is the thing that reads
+    // as skating, and a heading taken from the WANT points at a waypoint the
+    // machine may be walking around.
+    const moved = sub3(tw.a6.pos, was);
+    const n2 = norm3(tw.a6.pos);
+    const flatMove = sub3(moved, scale3(n2, dot3(moved, n2)));
+    const sp = Math.hypot(flatMove[0], flatMove[1], flatMove[2]) / Math.max(1e-6, dt);
+    if (sp > cellSide * 0.02) {
+      const want = scale3(flatMove, 1 / (sp * dt));
+      // eased, so a waypoint change is a turn and not a snap
+      tw.a6.head = tw.a6.head
+        ? norm3(add3(scale3(tw.a6.head, 0.86), scale3(want, 0.14)))
+        : want;
+    }
+    if (tw.obj.userData.setGaitRate) {
+      // the clip was authored for one stride a cycle; the reference speed is
+      // the module's own patrol pace, so a walker that is hurrying home
+      // steps faster rather than sliding
+      tw.obj.userData.setGaitRate(sp / (A6_TUNE.walkCells * cellSide));
+    }
     placeTowerObj(tw);
   }
 
@@ -14372,6 +14415,16 @@ export function initTdTab(root) {
           + ` · legs ${leg ? (moved ? 'MOVING' : 'still') : 'NO JOINT FOUND'}`
           + ` (${leg ? leg.name : '-'} ${rot})`
           + ` · mixer ${tw.obj.userData.mixer ? 'yes' : 'NO'}`
+          + ` · heading ${tw.a6.head ? tw.a6.head.map((v) => v.toFixed(2)).join(',') : 'NONE'}`
+          + ` · facing ${(() => {
+            // DOES THE MODEL'S NOSE POINT WHERE IT IS WALKING? The one thing
+            // a screenshot of a six-legged machine cannot answer, and the
+            // difference between walking and crabbing.
+            if (!tw.a6.head) return '-';
+            const f = new THREE.Vector3(0, 0, 1).applyQuaternion(tw.obj.quaternion);
+            const d = f.x * tw.a6.head[0] + f.y * tw.a6.head[1] + f.z * tw.a6.head[2];
+            return `${(Math.acos(Math.max(-1, Math.min(1, d))) * 180 / Math.PI).toFixed(0)}deg off`;
+          })()}`
           + ` · ${(a6Arc(berth, a.pos) / cellSide).toFixed(2)} cells from berth`
           + ` · fired ${a.fired} · trips ${a.trips}`
           + ` · target ${a.target ?? '-'} · enemies ${enemies.filter((e) => e.alive).length}`
@@ -14418,8 +14471,28 @@ export function initTdTab(root) {
           : ' — braille board, as intended'));
       for (const tw of towers) {
         let m = 0, pt = 0;
-        tw.obj.traverse((o) => { if (o.isMesh) m++; if (o.isPoints) pt++; });
+        const shades = [];
+        tw.obj.traverse((o) => {
+          if (o.isPoints) pt++;
+          if (!o.isMesh) return;
+          m++;
+          for (const mat of (Array.isArray(o.material) ? o.material : [o.material])) {
+            if (!mat || !mat.color) continue;
+            const h = {}; mat.color.getHSL(h);
+            shades.push({ n: mat.name || '?', l: h.l });
+          }
+        });
+        // THE SPREAD IS THE READ. A model whose materials all sit at one
+        // lightness arrives as a single pale mass however good the mesh is —
+        // which is what a wash-only tint produced. This is the number that
+        // says whether the ladder is doing anything.
+        const ls = shades.map((x) => x.l);
+        const span = ls.length ? Math.max(...ls) - Math.min(...ls) : 0;
+        const byName = [...new Map(shades.map((x) => [x.n, x.l])).entries()]
+          .map(([n, l]) => `${n}:${l.toFixed(2)}`).join(' ');
         console.log(`ALLTOWERS ${String(tw.key).padEnd(9)} ${m} mesh ${pt} points`
+          + ` · lightness span ${span.toFixed(2)}${span < 0.15 ? ' — FLAT MASS' : ''}`
+          + ` · ${byName}`
           + `${tw.a6 ? ` · walker, mixer=${!!tw.obj.userData.mixer}` : ''}`);
       }
     }, 2600);

@@ -2,6 +2,49 @@
 
 Newest first. Each entry: what landed, then how it works, for programmers.
 
+## TD2 — the walk reads as a walk, and the towers stop being pale blobs
+
+Operator: "the A6 jumps instead of walking" and "every tower comes off as
+monocolor instead of detailed, I suspect some lighting issue".
+
+**The jump was mine.** The bob was a stand-in for a walk cycle the merged
+model could not play; once the legs actually moved it was a hop laid over
+them. Gone. Two things replace it, and both are why the gait did not read:
+
+- **It now faces where it is walking.** Setting `up` alone left the heading
+  at whatever the identity quaternion gives, so a machine with six legs and a
+  clear front was crabbing sideways down its own path. Basis is
+  `(up × forward, up, forward)` — the Workshop's models are +Y up, +Z
+  forward. The heading is measured from the move it ACTUALLY made, not from
+  its waypoint (which it may be walking around), eased so a turn is a turn.
+- **The leg cadence tracks ground speed.** A clip at a fixed rate under a
+  hull whose speed changes is what reads as skating, and the A6 genuinely
+  changes speed — it walks out and runs home.
+
+`?a6=1` now reports `facing Ndeg off`: the angle between the model's nose and
+its heading. A screenshot cannot answer that, which is the whole reason the
+check exists.
+
+**The tint was not a lighting bug.** The authored materials span 0.46 in
+lightness already, so the file was fine. `tintModel` with no `shades` does a
+wash and nothing else — a flat `color × 0.28` emissive on every material —
+and `def.color` for these towers is near-white (`0xeaf2ff`, `0xc4e6ff`,
+`0xffffff`). A uniform near-white emissive at 0.28 over a dark model in a
+dark scene swamps the lit contribution entirely: every surface arrives at the
+same pale value, which is precisely the "single coloured mass" the function's
+own comment warns about.
+
+`SENTRY_TINT` is the ladder, keyed to the Workshop's contract material names
+rather than to whatever an export happened to call things: Armor 1.0, Edge
+0.86, Copper 0.52, Dark 0.14, over a 0.16–0.78 lightness range. Emissive is
+now scaled by the rung (0.10 at the top instead of a flat 0.28). Signal and
+Identification are the indicator surfaces and take the tower's colour at full
+strength — `tintModel` grew an optional `glow` regex for that, since no
+pattern for the word "glow" will ever match them.
+
+Measured rather than squinted at: `?alltowers=1` prints each tower's rendered
+lightness span. 0.53 across Armor 0.78 → Dark 0.25, per tower, on all eight.
+
 ## TD2 — a second tower roster, and a tower that walks
 
 **A copied tab is not trivial.** `td-tab.js` is 15,193 lines and the repo

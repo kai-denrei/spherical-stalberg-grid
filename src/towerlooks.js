@@ -19,10 +19,10 @@
 // without reshaping this interface. A look with no preload is ready
 // immediately; a look whose preload has not resolved falls back.
 import * as THREE from '../vendor/three.module.js';
-import { loadGlb, loadGlbWithClips, mergeByMaterial, fitModel, tintModel } from './glbmodels.js?v=afc8078c';
-import { TOWERS } from './towers.js?v=afc8078c';
-import { makeTowerMast, makeTowerUnit } from './units.js?v=afc8078c';
-import { TOWER, HEADS, loadTower } from './feelstore.js?v=afc8078c';
+import { loadGlb, loadGlbWithClips, mergeByMaterial, fitModel, tintModel } from './glbmodels.js?v=37622bc4';
+import { TOWERS } from './towers.js?v=37622bc4';
+import { makeTowerMast, makeTowerUnit } from './units.js?v=37622bc4';
+import { TOWER, HEADS, loadTower } from './feelstore.js?v=37622bc4';
 
 // def.shape -> a solid primitive, so the SOLID look keeps each tower's
 // silhouette identity from towers.js rather than inventing its own.
@@ -103,6 +103,33 @@ function makeGlbLook({ label, url, height, maxSpan, drop = [] }) {
 // The models are cached by URL rather than per look, so six Rotors on a
 // board are one download and one upload, and a tower whose bytes have not
 // landed still gets a braille mast rather than nothing.
+// THE WORKSHOP'S SIX MATERIALS, ON A LADDER. Without one, tintModel does a
+// wash and nothing else — the same emissive on every surface — and the model
+// arrives as a single pale mass with no shading to read, which is what the
+// function's own comment warns about and what the second board shipped as.
+// The names are the Sentry Workshop's contract (Armor / Edge / Dark / Copper
+// / Signal / Identification), so this is keyed to something stable rather
+// than to whatever a particular export happened to call things.
+//
+// Armour bright, structure dark, and a real span between them: it is the
+// LIGHTNESS difference that makes plates, cradles and barrels read as
+// separate surfaces at forty pixels across. Signal and Identification are
+// the indicator surfaces and take the tower's colour at full strength —
+// they are what tells a Rotor from a Quiver on a crowded wall.
+const SENTRY_TINT = {
+  wash: 0.22,
+  sat: 0.5,
+  lightFrom: 0.16,
+  lightTo: 0.78,
+  glow: /signal|identification/i,
+  shades: {
+    armor: 1.0,
+    edge: 0.86,
+    copper: 0.52,
+    dark: 0.14,
+  },
+};
+
 const sentryProtos = new Map();
 const sentryClips = new Map();
 const sentryPending = new Map();
@@ -173,7 +200,7 @@ const sentryLook = {
     const proto = url ? sentryProtos.get(url) : null;
     if (!proto) return makeTowerUnit(def);   // bytes not in yet — never nothing
     const g = proto.clone(true);
-    tintModel(g, def.color);
+    tintModel(g, def.color, SENTRY_TINT);
     g.userData.baseScale = 1 / 1.55;
     g.userData.lift = 0.02;
     g.userData.kind = 'mesh';
@@ -192,16 +219,22 @@ const sentryLook = {
       const action = mixer.clipAction(walk);
       action.setLoop(THREE.LoopRepeat, Infinity);
       action.play();
-      let last = null, going = true;
+      let last = null, going = true, rate = 1;
       g.userData.mixer = mixer;
       g.userData.setGait = (on) => {
         if (on === going) return;
         going = on;
-        // eased rather than switched: a leg that stops mid-stride reads as
-        // a dropped frame, and one that starts mid-stride reads as a glitch
         action.paused = false;
-        action.fadeIn(0);
-        action.setEffectiveTimeScale(on ? 1 : 0);
+        action.setEffectiveTimeScale(on ? rate : 0);
+      };
+      // THE LEGS KEEP UP WITH THE BODY. A clip running at a fixed rate under
+      // a hull whose speed changes is what reads as skating — and the A6's
+      // speed genuinely changes, because it walks out and RUNS home. Clamped
+      // at both ends: below the floor the cycle stutters, above the ceiling
+      // it blurs, and neither looks like walking.
+      g.userData.setGaitRate = (r) => {
+        rate = Math.max(0.35, Math.min(2.2, r || 0));
+        if (going) action.setEffectiveTimeScale(rate);
       };
       g.userData.tick = (t) => {
         if (last === null) { last = t; return; }
