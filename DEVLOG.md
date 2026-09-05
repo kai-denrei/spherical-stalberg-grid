@@ -6,6 +6,98 @@ Demo links assume `npm run serve` (port 8144) or the
 
 ---
 
+## `65e59d5` — the SENTRY RANGE, and TD's deep link
+
+The small one first: **TD has the 🔗 button**, beside the variables gear
+rather than on the left edge with the labs' — that edge is the throttle, the
+radar and Isao's caption, and a control the thumb can reach while steering is
+a control that gets hit while steering. It writes the **seed** always, because
+a board is only reproducible with it and it moves under you (a regenerate, a
+new planet); the mission is diffed, so a campaign link simply has no mission
+in it.
+
+### The range
+
+`#sentry`. Six modular turret families from the [Sentry
+Workshop](https://jelaludo.github.io/SentryTowers_A6/), vendored to
+`assets/models/sentries/` — eighteen files, 1.8 MB all told. They arrive with
+a name contract, and this tab is a **client** of it rather than a second copy
+of the rig:
+
+```
+ROOT → BASE → YAW → PITCH → RECOIL      the articulation, every family
+MUZZLE_00 … MUZZLE_nn                   where a round actually leaves
+ROTOR                                   the Rotor's barrel cluster
+Armor / Edge / Dark / Copper / Signal / Identification
+```
+
+That is this project's own "a part is only addressable if it was named a
+pivot *before* the merge" rule, honoured by somebody else's exporter. So the
+muzzle count is **read off the model** — 1 for a Needle, 2 for a Kiln, 6 for a
+Rotor, 18 for a Quiver's two pods — and the gun walks them round-robin instead
+of firing every round out of the first one.
+
+### The two invariants that are the whole thing
+
+`src/sentry.js` is pure and `test/sentry.mjs` pins it. Two of those tests
+carry the file.
+
+**The yaw seam.** Slewing from +170° to −170° is twenty degrees, and the
+naive `b - a` is wrong exactly there and nowhere else — so it passes every
+test anybody writes by accident:
+
+```js
+check('the short way across the seam', deltaDeg(170, -170) === 20);
+```
+
+**The elevation sign.** The workshop's own viewer applies
+`-degToRad(elev)`, because a +Z-forward node lifts its nose on a *negative*
+rotation about +X. The module speaks elevation-positive-up and the tab does
+that negation once, at the PITCH node. Two places deciding what "up" means is
+how a turret ends up shooting at the floor.
+
+### Three things only running found
+
+**A sentry commits.** Re-picking the nearest target every frame whipped the
+barrel between two and settled on neither. `pickTarget` keeps the one it has
+while that one is up, alive and reachable — and it keeps it **by id**, because
+the range's array is filtered and refilled every step, so an index means a
+different target from one frame to the next. One bug that looked like a broken
+drive and was a broken decision, twice over.
+
+**Aim from the trunnion.** The pivot sits over a metre above the foundation on
+every family. Aiming from the model's origin put a dead-on barrel's rounds
+that far past the target — `err=0.00` in the log, and nothing ever hit.
+
+**Multi-barrel mounts are boresighted.** Firing each cell along its own axis
+is what a diagram says a launcher does; the Quiver's eighteen cells sit across
+two pods, so parallel fire put every round a metre beside a target the gun was
+dead on. They converge on the **boresight** — the point the trunnion's axis is
+pointing at, at the target's range. Converging on the *axis* rather than on
+the target keeps the aim honest: a drive three degrees off puts the boresight
+three degrees off and every cell misses together.
+
+Which is testable, and tested by hand: the Rotor scores **100% at a 2.5°
+tolerance and 62% at 25°**. The knob measures something.
+
+### Nothing new was drawn
+
+The targets are the game's own dot-cloud units, popping out of the ground on a
+seeded ring. The tracers are `makeBulletCloud`, the flashes and impacts are
+`makeDotBurst`, the recoil is the model's own `RECOIL` pivot and the Rotor's
+cluster spins up while the gun is hot and coasts down after.
+
+```
+SENTRY rotor t3: 6 muzzle(s) yaw=true pitch=true recoil=true rotor=true fixed=false
+SENTRYPROBE t+6s rotor t3 muzzles=6 yaw=-173.2/-173.2 elev=22.2/22.2 err=0.00
+                 target=12 up=5 fired=7 hit=7 killed=3
+```
+
+Every family verified to load, articulate and hit — including the **Relay**,
+which is the workshop's own fixed structure and correctly engages nothing.
+
+---
+
 ## `2aa7364` — the missions, selectable
 
 Both missions were reachable only by typing a query parameter. They are
