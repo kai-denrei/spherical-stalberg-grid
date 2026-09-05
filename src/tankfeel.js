@@ -9,7 +9,7 @@
 // No three.js import: it only writes to `.position` / `.rotation` on objects
 // handed to it, so it is Node-testable against plain stand-ins.
 
-import { makeParams, clampParams, formatKnobs, knobProblems } from './knobs.js?v=f8a0ce21';
+import { makeParams, clampParams, formatKnobs, knobProblems } from './knobs.js?v=69f7efef';
 
 export const TANK_FEEL = {
   rise: 0.095,      // body lifts this far, in MODEL units

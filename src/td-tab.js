@@ -19,71 +19,71 @@
 
 import * as THREE from '../vendor/three.module.js';
 import GUI from '../vendor/lil-gui.esm.js';
-import { generateSphereMesh, relax } from './grid.js?v=f8a0ce21';
-import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=f8a0ce21';
-import { compileRail } from './cine/rail.js?v=f8a0ce21';
-import { SCRIPTS } from './cine/scripts.js?v=f8a0ce21';
-import { cuesBetween } from './cine/sound.js?v=f8a0ce21';
-import { installCine } from './cine/kit.js?v=f8a0ce21';
-import { mulberry32, randomSeed } from './rng.js?v=f8a0ce21';
-import { computeBerths, berthIndexFor } from './berths.js?v=f8a0ce21';
-import { wantsSecondary, shellsForAll } from './autofire.js?v=f8a0ce21';
-import { printPhase, printOffset, printOn, patternSecsFor } from './printpath.js?v=f8a0ce21';
-import { createBeamRig, PLASMA_DEFAULTS, BOARD_PRESET, BEAM_PEAK } from './beamdraw.js?v=f8a0ce21';
-import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3, segKey, tangentDir, tangentBasis } from './vec3.js?v=f8a0ce21';
-import { CREATURES, waveJelly } from './creatures.js?v=f8a0ce21';
-import { brief, dwellFor } from './isaobriefs.js?v=f8a0ce21';
-import { drawEmotion } from './emotions.js?v=f8a0ce21';
+import { generateSphereMesh, relax } from './grid.js?v=69f7efef';
+import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=69f7efef';
+import { compileRail } from './cine/rail.js?v=69f7efef';
+import { SCRIPTS } from './cine/scripts.js?v=69f7efef';
+import { cuesBetween } from './cine/sound.js?v=69f7efef';
+import { installCine } from './cine/kit.js?v=69f7efef';
+import { mulberry32, randomSeed } from './rng.js?v=69f7efef';
+import { computeBerths, berthIndexFor } from './berths.js?v=69f7efef';
+import { wantsSecondary, shellsForAll } from './autofire.js?v=69f7efef';
+import { printPhase, printOffset, printOn, patternSecsFor } from './printpath.js?v=69f7efef';
+import { createBeamRig, PLASMA_DEFAULTS, BOARD_PRESET, BEAM_PEAK } from './beamdraw.js?v=69f7efef';
+import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3, segKey, tangentDir, tangentBasis } from './vec3.js?v=69f7efef';
+import { CREATURES, waveJelly } from './creatures.js?v=69f7efef';
+import { brief, dwellFor } from './isaobriefs.js?v=69f7efef';
+import { drawEmotion } from './emotions.js?v=69f7efef';
 import { ACHIEVEMENTS, ACHV_GROUPS, achievement, blankRun, earned, freshlyEarned,
   sanitiseRecord }
-  from './achievements.js?v=f8a0ce21';
+  from './achievements.js?v=69f7efef';
 import { applyFontPack, currentFontPack, FONT_NAMES,
-  loadTypeFeel } from './fonts.js?v=f8a0ce21';
-import { SECONDARY_TOE, applySecondaryToe } from './units.js?v=f8a0ce21';
-import { UNITS, UNIT_NAMES, buildUnit, buildCreature, preloadMkcx, preloadServer, makeServerFixture, makeShieldShell, preloadContainer, makeContainerFixture, preloadFabricator, makeIsaoDrone, makeBulletCloud, makeRewardSolid, makeShellSolid, makeDebris, makeDotBurst, makePortalCloud, preloadPortalRing, makePortalRing, makeHeartCloud, makeDotEnemy, makeSurvivor, preloadAstronaut, makeAstronaut, preloadTerraformer, makeTerraformerFixture } from './units.js?v=f8a0ce21';
-import { LOOKS, LOOK_NAMES } from './looks.js?v=f8a0ce21';
-import { makeCellIndex } from './cellindex.js?v=f8a0ce21';
-import { CREATURE_TINTS, ENEMY_SPEC, INTROS, computeWavePlan, accentFor } from './enemyspec.js?v=f8a0ce21';
-import { PICKUPS } from './pickups.js?v=f8a0ce21';
-import { rankFor, rankLabel, badgeSVG, killReq, eliteReq } from './ranks.js?v=f8a0ce21';
-import { beamStep, isBeamStep, PEN_SOFT_FRAC, PEN_HARD_FRAC } from './beamranks.js?v=f8a0ce21';
-import { burn, sweepAdvance, wallBite as wallBiteFor } from './beamburn.js?v=f8a0ce21';
-import { arcPoint, projectToArc, toeForCrossing, crossingForToe } from './arc.js?v=f8a0ce21';
+  loadTypeFeel } from './fonts.js?v=69f7efef';
+import { SECONDARY_TOE, applySecondaryToe } from './units.js?v=69f7efef';
+import { UNITS, UNIT_NAMES, buildUnit, buildCreature, preloadMkcx, preloadServer, makeServerFixture, makeShieldShell, preloadContainer, makeContainerFixture, preloadFabricator, makeIsaoDrone, makeBulletCloud, makeRewardSolid, makeShellSolid, makeDebris, makeDotBurst, makePortalCloud, preloadPortalRing, makePortalRing, makeHeartCloud, makeDotEnemy, makeSurvivor, preloadAstronaut, makeAstronaut, preloadTerraformer, makeTerraformerFixture } from './units.js?v=69f7efef';
+import { LOOKS, LOOK_NAMES } from './looks.js?v=69f7efef';
+import { makeCellIndex } from './cellindex.js?v=69f7efef';
+import { CREATURE_TINTS, ENEMY_SPEC, INTROS, computeWavePlan, accentFor } from './enemyspec.js?v=69f7efef';
+import { PICKUPS } from './pickups.js?v=69f7efef';
+import { rankFor, rankLabel, badgeSVG, killReq, eliteReq } from './ranks.js?v=69f7efef';
+import { beamStep, isBeamStep, PEN_SOFT_FRAC, PEN_HARD_FRAC } from './beamranks.js?v=69f7efef';
+import { burn, sweepAdvance, wallBite as wallBiteFor } from './beamburn.js?v=69f7efef';
+import { arcPoint, projectToArc, toeForCrossing, crossingForToe } from './arc.js?v=69f7efef';
 import { MINE_TUNE, makeField, layMine, armMines, restock, mineAt,
-  inFan, trip, chain, nextChained, minePolar } from './mines.js?v=f8a0ce21';
+  inFan, trip, chain, nextChained, minePolar } from './mines.js?v=69f7efef';
 import { deepLink, wireDeepLink } from './deeplink.js';
 import { RESCUE_TUNE, makeRescue, placeSurvivors, stepBoard, stepGrab,
   disembark, loseCarried, lockOn, waveMix, standing as standingSurv,
   aboard as aboardSurv, missionOver, verdict as rescueVerdict,
   grabProgress, remaining as remainingSurv, exposed as exposedSurv,
   RESCUE2_TUNE, makeCamps, stepCall, stepEmerge, walkStep, runOver,
-  awake as campAwake } from './rescue.js?v=f8a0ce21';
+  awake as campAwake } from './rescue.js?v=69f7efef';
 import { WORMHOLE_PRESET, WORMHOLE_UNIFORM_DEFAULTS, RING_SPIN, TRAVEL,
-  travelRate, advancePhase } from './portalfx.js?v=f8a0ce21';
-import { WORMHOLE_FRAG } from './fx/wormhole.frag.js?v=f8a0ce21';
-import { CORONA_FRAG } from './fx/corona.frag.js?v=f8a0ce21';
-import { labLine, parseLabQuery } from './lab.js?v=f8a0ce21';
-import { bakeGalaxyCube } from './galaxybake.js?v=f8a0ce21';
-import { SKY_PRESET } from './galaxyseed.js?v=f8a0ce21';
-import { makeScore } from './score.js?v=f8a0ce21';
-import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER } from './towers.js?v=f8a0ce21';
-import { makeEconomy, sellRefund } from './economy.js?v=f8a0ce21';
-import { pickTier } from './perftier.js?v=f8a0ce21';
-import { applyWeatheredMaterial } from './cine/materials.js?v=f8a0ce21';
-import { STICK, stickVector, knobOffset } from './stick.js?v=f8a0ce21';
-import { registerServiceWorker } from './pwa.js?v=f8a0ce21';
-import { makeBloom } from './postfx.js?v=f8a0ce21';
-import { TANK_FEEL, TANK_FEEL_KNOBS, makeTankFeel, stepTankFeel, landTankFeel, fireTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js?v=f8a0ce21';
-import { FEEL, loadFeel, saveFeel } from './feelstore.js?v=f8a0ce21';
+  travelRate, advancePhase } from './portalfx.js?v=69f7efef';
+import { WORMHOLE_FRAG } from './fx/wormhole.frag.js?v=69f7efef';
+import { CORONA_FRAG } from './fx/corona.frag.js?v=69f7efef';
+import { labLine, parseLabQuery } from './lab.js?v=69f7efef';
+import { bakeGalaxyCube } from './galaxybake.js?v=69f7efef';
+import { SKY_PRESET } from './galaxyseed.js?v=69f7efef';
+import { makeScore } from './score.js?v=69f7efef';
+import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER } from './towers.js?v=69f7efef';
+import { makeEconomy, sellRefund } from './economy.js?v=69f7efef';
+import { pickTier } from './perftier.js?v=69f7efef';
+import { applyWeatheredMaterial } from './cine/materials.js?v=69f7efef';
+import { STICK, stickVector, knobOffset } from './stick.js?v=69f7efef';
+import { registerServiceWorker } from './pwa.js?v=69f7efef';
+import { makeBloom } from './postfx.js?v=69f7efef';
+import { TANK_FEEL, TANK_FEEL_KNOBS, makeTankFeel, stepTankFeel, landTankFeel, fireTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js?v=69f7efef';
+import { FEEL, loadFeel, saveFeel } from './feelstore.js?v=69f7efef';
 import { STRIKE_KNOBS, makeStrike, makeStrikeParams, grantStrikes, stepStrike,
   toggleArm, paintTarget, launchStrike, stepFall, skipFall, fallProgress,
-  strikeDamage, retargetStrike, orbitProgress } from './strike.js?v=f8a0ce21';
+  strikeDamage, retargetStrike, orbitProgress } from './strike.js?v=69f7efef';
 import { radarBasis, radarProject, radarBearing, sweepAngle, radarPhosphor,
-  proximitySectors, SENSOR_LEVELS, sensorColor } from './radar.js?v=f8a0ce21';
-import { BLOOM_GROUPS } from './bloomweights.js?v=f8a0ce21';
-import { TOWER_LOOK_NAMES, DEFAULT_TOWER_LOOK, buildTowerLook, preloadLook } from './towerlooks.js?v=f8a0ce21';
-import { makeAudio } from './audio.js?v=f8a0ce21';
-import { DEATH_KEYS } from './audiomanifest.js?v=f8a0ce21';
+  proximitySectors, SENSOR_LEVELS, sensorColor } from './radar.js?v=69f7efef';
+import { BLOOM_GROUPS } from './bloomweights.js?v=69f7efef';
+import { TOWER_LOOK_NAMES, DEFAULT_TOWER_LOOK, buildTowerLook, preloadLook } from './towerlooks.js?v=69f7efef';
+import { makeAudio } from './audio.js?v=69f7efef';
+import { DEATH_KEYS } from './audiomanifest.js?v=69f7efef';
 
 export function initTdTab(root) {
   let active = false;
@@ -1680,6 +1680,9 @@ export function initTdTab(root) {
       // what. A screenshot that shows only the top of the panel still says
       // whether the tank is visible and, if not, which of the four reasons.
       `SEEN: ${sightLine(sight)}`,
+      `HUNG: ${shotWatchFires ? `${shotWatchFires}x ${shotWatchLast}` : 'none'}`
+        + ` shot=${shot ? `${shot.id} ${shot.age.toFixed(1)}/${shot.dur.toFixed(1)}s` : '-'}`
+        + ` deploy=${deploy ? `${(deploy.age || 0).toFixed(1)}s` : '-'}`,
       `t=${t.toFixed(1)} build=${(document.querySelector('script[src*="main.js"]')?.src.match(/v=([0-9a-f]{8})/) || [, '?'])[1]} shell=${mobileShell}`,
       `view=${params.view} buildMode=${buildMode} shot=${shot ? shot.id + '@' + (1 - shot.left / shot.dur).toFixed(2) : '-'} deploy=${deploy ? `#${deploy.n}@${deployProgress().toFixed(2)}` : '-'}`,
       `paused=${paused} frozen=${tutorial.frozen} tutorial=${tutorialActive}/${tutorial.phase} down=${!!playerDown} won=${player.won} intro=${!!(introEl && !introEl.classList.contains('hidden'))} msg=${!!(msgEl && !msgEl.classList.contains('hidden'))}`,
@@ -2307,7 +2310,7 @@ export function initTdTab(root) {
   function startShot({ id, dur, poseAt, onEnd = null, skippable = true }) {
     endShot();   // one at a time, and the outgoing one always tears down
     shot = { id, dur: Math.max(1e-3, dur), left: Math.max(1e-3, dur),
-      poseAt, onEnd, skippable };
+      poseAt, onEnd, skippable, age: 0 };
     if (skippable) {
       addEventListener('keydown', shotSkipKey, true);
       root.addEventListener('pointerdown', shotSkipTap, true);
@@ -2338,11 +2341,37 @@ export function initTdTab(root) {
     ev.stopImmediatePropagation(); endShot();
   };
 
+  // A SHOT AND A DEPLOY BOTH OWN THE CAMERA, and both have a KNOWN length —
+  // so either one hanging is detectable without knowing why it hung. That is
+  // the whole of the recurring "drive/build" report (operator, 2026-09-05):
+  // "the view is stuck not in 3rd person, nor in top view, something else
+  // unplayable". Neither of those two poses IS third or orbit; both are what
+  // the camera looks like when one of these machines never finishes.
+  //
+  // The existing view watchdog cannot see it, and could not have: it fires
+  // when the tank leaves the FRUSTUM, and a cinematic is a shot OF the tank —
+  // it keeps it beautifully in frame while the game refuses to start. Four
+  // camera-pose fixes went past this for the same reason.
+  //
+  // So: a liveness check on the clock, not on the pose. A shot that has been
+  // running for its own duration plus a wide margin is hung, whatever hung
+  // it, and is ended. The margin is generous because being wrong here costs
+  // a cut cinematic and being absent costs the whole session.
+  const SHOT_GRACE = 4.0;
   function stepShot(dt) {
     if (!shot || shotHold) return;
+    shot.age += dt;
     shot.left -= dt;
-    if (shot.left <= 0) endShot();
+    if (shot.left <= 0) { endShot(); return; }
+    if (shot.age > shot.dur + SHOT_GRACE) {
+      const id = shot.id, age = shot.age, dur = shot.dur;
+      console.warn(`SHOTWATCH "${id}" hung: ${age.toFixed(1)}s into a ${dur.toFixed(1)}s shot — ended`);
+      shotWatchFires++;
+      shotWatchLast = `shot "${id}" ${age.toFixed(1)}s/${dur.toFixed(1)}s`;
+      endShot();
+    }
   }
+  let shotWatchFires = 0, shotWatchLast = '';
 
   const REVEAL_LEN = 3.2;
   let revealDir = null;
@@ -2530,7 +2559,20 @@ export function initTdTab(root) {
   // twenty read-sites — the drag-orbit gestures, the free-cam branch, the
   // follow-cam — mean exactly "is the free camera up", and that meaning is
   // unchanged. It is assigned in ONE place, here.
+  // ?viewlog=1 — EVERY view transition, with who asked. The recurring shell
+  // complaint is "third person is not triggering", and the switch itself
+  // measures clean — so the question is whether something else sets orbit
+  // afterwards and never undoes it, which is exactly the shape of the
+  // tutorial-build-phase bug of 2026-09-04. A sequence answers that; a
+  // snapshot cannot.
+  const viewLog = new URLSearchParams(location.search).get('viewlog') === '1';
   function setView(v) {
+    if (viewLog) {
+      const who = (new Error().stack || '').split('\n')[2] || '';
+      console.log(`VIEWLOG ${params.view} -> ${v} build=${buildMode}`
+        + ` shot=${shot ? shot.id : '-'} deploy=${!!deploy} tut=${tutorialActive}/${tutorial && tutorial.phase}`
+        + ` by${who.replace(/^\s*at\s*/, ' ').replace(/https?:\/\/[^)]*\//, '').slice(0, 60)}`);
+    }
     // THE SHELL HAS TWO VIEWS (ruling 3): DRIVE is third person, BUILD is
     // orbit. First person, the drone ride and the bastion cam are desktop
     // pleasures; on a phone the drone ride was one tap on Isao (he hovers
@@ -8110,11 +8152,34 @@ export function initTdTab(root) {
     return u * u * (3 - 2 * u);
   }
 
+  // ...and the same liveness check on DEPLOY, which owns the camera between
+  // the cinematic's last frame and the player's first. Its length is known:
+  // the berth's own segment at the drive speed. A deploy that has been
+  // running several times that is not deploying — and a stalled one leaves
+  // the hull in its berth with the camera on the berth framing, which is the
+  // other pose that is neither third nor orbit.
+  const DEPLOY_GRACE = 6.0;
   function deployStep(dt) {
     if (!deploy) return;
     const b = berths[deploy.n];
     if (!b) { deploy = null; return; }
     const v = params.speed * speedBonus * cellSide * 1.6;
+    deploy.age = (deploy.age || 0) + dt;
+    const segLen = Math.max(1e-9, dist3(graph.centers[b.ci], graph.centers[b.exit]));
+    // A DEPLOY WITH NO SPEED IS HUNG BY DEFINITION, so its expected duration
+    // is ZERO, not Infinity. The first cut wrote Infinity here — mathematically
+    // honest, and it made the one case this check exists for
+    // (`params.speed` at 0, the hull never leaving the berth) the one case it
+    // could never catch. The ?hangprobe caught that, which is the entire
+    // reason a watchdog gets a test that fires it.
+    const expect = v > 1e-9 ? segLen / v : 0;
+    if (deploy.age > expect * 2 + DEPLOY_GRACE) {
+      console.warn(`SHOTWATCH deploy hung: ${deploy.age.toFixed(1)}s for a ${Number.isFinite(expect) ? expect.toFixed(1) : '∞'}s`
+        + ` run (speed=${params.speed} bonus=${speedBonus}) — handed over`);
+      shotWatchFires++;
+      shotWatchLast = `deploy ${deploy.age.toFixed(1)}s/${Number.isFinite(expect) ? expect.toFixed(1) : '∞'}s`;
+      deploy.travelled = segLen;   // finish it where it was going, then hand over
+    }
     deploy.travelled += v * dt;
     const u = deployProgress();
     const from = graph.centers[b.ci];
@@ -13934,6 +13999,89 @@ export function initTdTab(root) {
   // Reported once a second, with the projection in CSS pixels, so a phone
   // screenshot of the console (or the diag ring) says which of the three it
   // is. This is the measurement the earlier work was missing.
+  // ?hangprobe=shot|deploy — DELIBERATELY STALL ONE OF THE TWO MACHINES THAT
+  // OWN THE CAMERA, and prove the game gets itself back. This is the failing
+  // test for the recurring "stuck in neither view" report: without it the
+  // liveness checks above are a claim, and a watchdog nobody has ever seen
+  // fire is a watchdog that does not work.
+  //
+  //   shot    freeze the cold open's clock — the camera stays on its rail
+  //   deploy  take the drive speed to zero mid-deploy — the hull never
+  //           leaves the berth and the camera never hands over
+  {
+    const hang = urlParams.get('hangprobe');
+    if (hang === 'shot' || hang === 'deploy') {
+      let armed = false, t0 = 0, n = 0;
+      const tick = setInterval(() => {
+        if (!armed) {
+          if (hang === 'shot' && shot) {
+            shot.left = 1e6;               // it will never run out on its own
+            armed = true; t0 = performance.now();
+            console.log(`HANGPROBE stalled the "${shot.id}" shot`);
+          } else if (hang === 'deploy' && deploy) {
+            params.speed = 0;              // it will never travel
+            armed = true; t0 = performance.now();
+            console.log('HANGPROBE stalled the deploy (speed 0)');
+          }
+          return;
+        }
+        const secs = (performance.now() - t0) / 1000;
+        const g = tankSight();
+        console.log(`HANGPROBE t+${secs.toFixed(1)}s fires=${shotWatchFires} "${shotWatchLast}"`
+          + ` shot=${shot ? shot.id : '-'} deploy=${!!deploy} view=${params.view}`
+          + ` seen=${g.why}`);
+        if (++n > 14) {
+          clearInterval(tick);
+          const ok = !shot && !deploy && params.view === 'third' && g.why === 'ok';
+          console.log(`HANGPROBE VERDICT ${ok ? 'RECOVERED — playable' : 'STILL STUCK'}`
+            + ` (fires=${shotWatchFires} shot=${!!shot} deploy=${!!deploy} view=${params.view} seen=${g.why})`);
+        }
+      }, 1000);
+    }
+  }
+
+  // ?modeprobe=1 — THE MODE SWITCH, PRESSED.
+  // ?modeprobe=1 — THE MODE SWITCH, PRESSED. Not setView called directly:
+  // the standing lesson here is that a probe must exercise the CONTROL, and
+  // the whole question is whether tapping DRIVE actually reaches third
+  // person. Reports the view, the build flag, the button's own label and
+  // whether the tank is visible, after each of four taps.
+  if (urlParams.get('modeprobe') === '1') {
+    setTimeout(() => {
+      const btn = root.querySelector('#mob-mode');
+      if (!btn) { console.log('MODEPROBE no switch (desktop?)'); return; }
+      const say = (tag) => console.log(`MODEPROBE ${tag}`
+        + ` view=${params.view} build=${buildMode} label="${btn.textContent.trim()}"`
+        + ` shot=${shot ? shot.id : '-'} deploy=${!!deploy}`
+        + ` seen=${sightLine(tankSight())}`);
+      say('start ');
+      // A FINGER, not .click(). A synthetic click skips the pointer events
+      // entirely, so any capture-phase handler that swallows a pointerdown —
+      // the stick, tap-to-go, the shot skipper — is invisible to a probe that
+      // calls click() and lethal to a thumb. The standing lesson here is that
+      // a probe must exercise the CONTROL; the control is a finger.
+      const finger = (el) => {
+        const r = el.getBoundingClientRect();
+        const x = Math.round(r.left + r.width / 2), y = Math.round(r.top + r.height / 2);
+        const hit = document.elementFromPoint(x, y);
+        const opts = { bubbles: true, cancelable: true, composed: true,
+          pointerId: 11, pointerType: 'touch', isPrimary: true, clientX: x, clientY: y, button: 0 };
+        for (const type of ['pointerdown', 'pointerup']) el.dispatchEvent(new PointerEvent(type, opts));
+        el.dispatchEvent(new MouseEvent('click', opts));
+        return hit;
+      };
+      let n = 0;
+      const step = setInterval(() => {
+        if (++n > 4) { clearInterval(step); return; }
+        const hit = finger(btn);
+        // ...and say WHAT IS ON TOP at the button's own centre: a control
+        // under something else is a control that never gets the tap
+        setTimeout(() => say(`tap ${n} (top=${hit ? `${hit.tagName.toLowerCase()}${hit.id ? '#' + hit.id : ''}` : '-'}) `), 120);
+      }, 1400);
+    }, 5200);   // after the berth deploy, which owns the camera until it ends
+  }
+
+  // ?tankseen=1 — the same answer the DIAG panel's top line carries
   // ?tankseen=1 — the same answer the DIAG panel's top line carries, once a
   // second on the console, for a run that is being watched rather than
   // screenshotted. tankSight() is the one implementation; this only prints.

@@ -84,6 +84,17 @@ token — the corner badge was retired from the game view).
   one tick, so this is the only way to photograph an open container with
   people walking out of it; it fires at t+5 s, AFTER the berth deploy, which
   drives the hull and would undo it),
+  `?hangprobe=shot|deploy` (TD: deliberately stall one of the two machines
+  that OWN the camera — freeze the cold open's clock, or take the drive speed
+  to zero mid-deploy — and report whether the game gets itself back. This is
+  the failing test for the recurring "stuck in neither 3rd person nor top
+  view" report; without it the liveness checks are a claim, and it caught the
+  first cut writing `Infinity` for a zero-speed deploy, which made the one
+  case the check exists for the one case it could never catch),
+  `?modeprobe=1` (TD: press the shell's DRIVE/BUILD switch four times with
+  REAL pointer events — `.click()` skips them, so any capture-phase handler
+  that swallows a pointerdown is invisible to a probe and lethal to a thumb),
+  `?viewlog=1` (TD: every setView transition with its caller),
   `?tankseen=1` (TD: CAN A PERSON SEE THE TANK, once a second — not "is it in
   the frustum", which is what the view watchdog used to ask and what four
   camera fixes answered while the reports kept coming. It separates
