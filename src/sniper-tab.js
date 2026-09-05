@@ -34,6 +34,9 @@ import {
 
 const TARGET_TYPES = ['phage', 'ghost', 'corona', 'barbed'];
 const TARGET_H = 1.9;      // metres — what the rangefinder mil-relation uses
+// the board's own three death voices, so a body dying here sounds like a body
+// dying there
+const DEATHS = ['enemy_die_a', 'enemy_die_b', 'enemy_die_c'];
 
 export function initSniperTab(root) {
   let active = false;
@@ -315,22 +318,50 @@ export function initSniperTab(root) {
   // it. Neither is decoration: the topple is the hit confirmation at a range
   // where the round takes a second and a half to arrive, and the new plate
   // being SOMEWHERE ELSE is the re-calibration the whole exercise is for.
-  const FALL = 0.55, RISE = 0.5;
+  const FALL = 0.55, RISE = 0.5, DIE = 0.9;
   // the probe measures BALLISTICS, and it re-stands its target between runs;
   // letting that fight the plate cycle produced two plates at once and a
   // TRACK panel disagreeing with its own note
   let probing = false;
   function knockDown(t) {
-    if (probing || t.falling) return;
+    if (probing || t.falling !== undefined) return;
     t.falling = 0;
     t.alive = false;             // no more hits on a plate already going down
     plateFalls.push(t);
   }
+
+  // A BODY GOES OVER rather than blinking off: pitched forward about its feet
+  // with a twist in the fall, sinking, then shrinking out over the last third
+  // — the dot-cloud burst on top of it. It shares the plate's list because it
+  // is the same problem: a thing that has been hit and is not gone yet.
+  function killBody(t) {
+    if (t.falling !== undefined) return;
+    t.falling = 0;
+    t.dying = true;
+    t.alive = false;
+    t.spin = (t.pos[0] >= 0 ? 1 : -1) * (0.6 + rng() * 0.5);
+    plateFalls.push(t);
+  }
+
   const plateFalls = [];
   function stepPlates(dt) {
     for (let i = plateFalls.length - 1; i >= 0; i--) {
       const t = plateFalls[i];
       t.falling += dt;
+      if (t.dying) {
+        const ud = Math.min(1, t.falling / DIE);
+        const e = ud * ud * (3 - 2 * ud);
+        t.obj.rotation.x = -e * (Math.PI / 2) * 1.05;
+        t.obj.rotation.z = e * t.spin;
+        t.obj.position.y = -e * TARGET_H * 0.25;
+        t.obj.scale.setScalar(Math.max(0.001, 1 - Math.max(0, (ud - 0.66) / 0.34)));
+        if (ud < 1) continue;
+        scene.remove(t.obj); disposeObj(t.obj);
+        plateFalls.splice(i, 1);
+        const gone = targets.indexOf(t);
+        if (gone >= 0) targets.splice(gone, 1);
+        continue;
+      }
       const u = Math.min(1, t.falling / FALL);
       // about the base, so it hinges rather than sinking
       const half = P.targetR * FACE_R;
@@ -425,12 +456,6 @@ export function initSniperTab(root) {
   // sway — and then it is the integrator's, not the renderer's. Every frame
   // it is stepped by the same function the HUD's solution used.
   function fire() {
-    if (stringDone()) {
-      const g = group();
-      hudNote = `STRING SPENT — ${g.n} shots · dial ${(-g.my).toFixed(2)} up, ${(-g.mx).toFixed(2)} right`
-        + ` · group ${(g.ext * 100).toFixed(0)} cm. [reset] for another, or go to CONTACT.`;
-      return;
-    }
     const sw = sway(clock, shooter, P);
     const yaw = aimYaw + holdSide / MRAD + sw[0] / MRAD;
     const pitch = aimPitch + holdUp / MRAD + sw[1] / MRAD + zeroAngle(P.zero, P);
@@ -506,7 +531,7 @@ export function initSniperTab(root) {
           // that all five went two mils low together.
           if (t.cal || P.phase === 'calibrate') {
             const rng2 = Math.hypot(t.pos[0], t.pos[2]);
-            string.push({ dx: x - t.pos[0], dy: y - t.pos[1], range: rng2,
+            recordShot({ dx: x - t.pos[0], dy: y - t.pos[1], range: rng2,
               mradX: toMrad(x - t.pos[0], rng2), mradY: toMrad(y - t.pos[1], rng2) });
           }
           if (hitsAt(miss, P.targetR)) {
@@ -517,14 +542,20 @@ export function initSniperTab(root) {
             b.scale.setScalar(1.2);
             b.position.set(t.pos[0], t.pos[1], t.pos[2]);
             scene.add(b); fx.push({ obj: b, tick: b.userData.tick });
-            if (P.sound) sfx.play(t.cal ? 'tank_shells' : 'enemy_die_a');
-            scene.remove(t.obj);
             hudNote = `HIT ${t.id} at ${Math.hypot(t.pos[0], t.pos[2]).toFixed(0)} m · ${(miss * 100).toFixed(0)} cm off centre`;
-            // A STRUCK PLATE FALLS, and another comes up somewhere else. The
-            // clang is the range's whole feedback loop — at 700 m the round
-            // takes a second and a half to arrive and there is nothing else
-            // to tell you it did.
-            if (t.cal) { if (P.sound) sfx.play('tank_shells'); knockDown(t); }
+            // A STRUCK PLATE FALLS and another comes up somewhere else; a
+            // struck BODY dies on screen. Neither is removed on the frame it
+            // was hit — at 800 m and a 1.7 s time of flight that reads as
+            // "the target vanished", not "you killed it". The sound is the
+            // range's whole feedback loop either way, because nothing else
+            // tells you the round landed.
+            if (t.cal) {
+              if (P.sound) sfx.play('tank_shells');
+              knockDown(t);
+            } else {
+              if (P.sound) sfx.play(DEATHS[(t.id + shooter.hits) % DEATHS.length]);
+              killBody(t);
+            }
           } else if (miss < P.targetR * 6) {
             hudNote = `MISS by ${(miss * 100).toFixed(0)} cm at ${Math.hypot(t.pos[0], t.pos[2]).toFixed(0)} m`;
           }
@@ -565,11 +596,18 @@ export function initSniperTab(root) {
     return { n, mx, my, ext, range: string[0].range };
   }
 
-  // A string is over when the allotment is spent. It does not advance the
-  // phase by itself — reading your own group is the point, and a range that
-  // moves on while you are looking at it has taken the lesson away.
+  // AMMUNITION IS NOT THE POINT OF THIS SIM (operator: "infinite bullets"),
+  // so the trigger is never refused. The allotment is a WINDOW instead: the
+  // group is measured over the LAST `allotted` shots, which keeps the number
+  // meaningful — a group over every shot you have ever fired only gets worse
+  // and stops saying anything — while letting you shoot as long as you like.
+  // `stringDone` now means "the window is full", not "you are out".
   function stringDone() {
     return P.phase === 'calibrate' && string.length >= Math.round(P.allotted);
+  }
+  function recordShot(rec) {
+    string.push(rec);
+    while (string.length > Math.round(P.allotted)) string.shift();
   }
 
   // --- aiming --------------------------------------------------------------
@@ -710,9 +748,10 @@ export function initSniperTab(root) {
 
     // ACQUISITION
     const spent = stringDone();
-    put('f-acq', cal ? (spent ? 'STRING SPENT' : 'CALIBRATING') : (u ? 'TRACKING' : 'SEARCHING'),
+    put('f-acq', cal ? (spent ? 'GROUP READY' : 'CALIBRATING') : (u ? 'TRACKING' : 'SEARCHING'),
       cal ? spent : !!u);
-    put('f-string', cal ? `${string.length} / ${Math.round(P.allotted)}` : `${shooter.shots} fired · ${shooter.hits} hit`);
+    put('f-string', cal ? `last ${string.length} / ${Math.round(P.allotted)}`
+      : `${shooter.shots} fired · ${shooter.hits} hit`);
     put('f-group', g0 ? `${(g0.ext * 100).toFixed(0)} cm` : '—', !!g0);
     put('f-corr', g0 ? `${(-g0.my).toFixed(2)} up · ${(-g0.mx).toFixed(2)} right` : '—', !!g0);
 
@@ -1091,6 +1130,23 @@ export function initSniperTab(root) {
           + ` · correction ${(-g.my).toFixed(2)} up ${(-g.mx).toFixed(2)} right` : 'NOTHING RECORDED'}`
           + ` · spent=${stringDone()}`);
       }
+      // A BODY MUST DIE ON SCREEN, not vanish. Shoot one and watch: it
+      // should be off the roster only after the fall has played, so the
+      // count is unchanged the instant it is hit and one lower a second
+      // later. A target removed on the frame it was hit passes "it died"
+      // and fails this.
+      const body = targets.find((x) => !x.cal && x.alive);
+      if (body) {
+        const n0 = targets.length;
+        killBody(body);
+        const mid = targets.length;
+        setTimeout(() => {
+          console.log(`SNIPERPROBE death: roster ${n0} -> ${mid} on the hit`
+            + ` -> ${targets.length} after the fall · dying=${plateFalls.length}`
+            + ` ${mid === n0 && targets.length === n0 - 1 ? 'IT WENT OVER, THEN LEFT' : '<-- vanished or stuck'}`);
+        }, 1500);
+      }
+
       // ...and now the RANGE's own cycle, at real speed: one hit, and the
       // plate must go down and a different one come up. The count is the
       // thing that catches a plate that forgot to leave.
