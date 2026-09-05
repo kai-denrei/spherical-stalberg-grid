@@ -16,14 +16,14 @@
 
 import * as THREE from '../vendor/three.module.js';
 import { EMOTION_IDS, emotion, phosphorFor } from './emotions.js';
-import { printPhase, printOffset, printOn } from './printpath.js?v=37622bc4';
+import { printPhase, printOffset, printOn } from './printpath.js?v=c09f6923';
 import { loadGlb, loadGlbWithClips, mergeByMaterial, fitModel, tintModel, makeShellRack,
-  addEdgeOutlines, makeHeatSleeve } from './glbmodels.js?v=37622bc4';
-import { CREATURES, waveJelly, swimWave, spherePts, bulletPts, missilePts, heartPts, torusPts, towerHeadPts, enemyDotPts, portalPts, personPts } from './creatures.js?v=37622bc4';
-import { TOWER_FEEL, TOWER_HEADS, headKindFor } from './towerfeel.js?v=37622bc4';
+  addEdgeOutlines, makeHeatSleeve } from './glbmodels.js?v=c09f6923';
+import { CREATURES, waveJelly, swimWave, spherePts, bulletPts, missilePts, heartPts, torusPts, towerHeadPts, enemyDotPts, portalPts, personPts } from './creatures.js?v=c09f6923';
+import { TOWER_FEEL, TOWER_HEADS, headKindFor } from './towerfeel.js?v=c09f6923';
 import { STARGATE_PTS, STARGATE_STROKE,
-  HORIZON_N, stargateHorizon } from './stargate.js?v=37622bc4';
-import { ENEMY_SPEC } from './enemyspec.js?v=37622bc4';
+  HORIZON_N, stargateHorizon } from './stargate.js?v=c09f6923';
+import { ENEMY_SPEC } from './enemyspec.js?v=c09f6923';
 
 function normalizeToUnit(group) {
   group.updateMatrixWorld(true);

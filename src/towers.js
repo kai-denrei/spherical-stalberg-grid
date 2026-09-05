@@ -102,8 +102,18 @@ const ROSTER_V2 = [
   // PLASMA THROWER — a BEAM, not a spread: the tank's secondary with the
   // reach taken off it. Short range is the whole trade; it out-damages
   // everything at knife distance and covers almost nothing.
+  // PLASMA THROWER — the tank's secondary, bolted to a wall and pointed DOWN
+  // (operator). Not a laser line: the same plasma the pilot sweeps with, and
+  // it is thrown from the wall top onto the ground the enemies walk on, which
+  // is what a short-ranged emplaced version of that weapon IS.
+  //
+  // A SUSTAINED WEAPON HAS TO TICK FAST. At 1.6 shots a second the beam
+  // would light for a sixth of a second and go dark for half of one — a
+  // strobe, not a stream. Six ticks a second at a quarter of the damage is
+  // the same DPS (0.267) drawn as one continuous throw, which is the whole
+  // point of the weapon reading as a beam rather than as a gun.
   { key: 'plasma', label: 'Plasma Thrower', color: 0x2fe6d0, cost: 80,
-    dmg: 15 / 90, range: 2.6, rate: 1.6, attack: 'beam',
+    dmg: 4 / 90, range: 2.6, rate: 6, attack: 'beam', plasma: true,
     model: 'plasma', sound: 'tower_laser', shape: 'ripple', spin: 0.8 },
   { key: 'quiver', label: 'Quiver', color: 0x5a9bff, cost: 90,
     dmg: 9 / 90, range: 3.5, rate: 1.2, attack: 'homing',

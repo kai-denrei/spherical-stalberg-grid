@@ -76,8 +76,17 @@ console.log('the second board is what the operator asked for:');
     TOWER_BY_KEY.plasma.attack === 'beam');
   check('...and it is the shortest-ranged thing on the board',
     TOWERS.every((d) => d.range >= TOWER_BY_KEY.plasma.range));
-  check('the Rotor out-fires everything, which is Rapid\'s job',
-    TOWERS.every((d) => d.rate <= TOWER_BY_KEY.rotor.rate));
+  // ...among the weapons that fire SHOTS. The Plasma Thrower's rate is a
+  // draw rate, not a rate of fire: a sustained beam has to re-light faster
+  // than a sixth of a second or it strobes, and its damage per tick is
+  // divided to match. Comparing the two numbers directly is comparing a
+  // cadence with a refresh.
+  check('the Rotor out-fires every GUN, which is Rapid\'s job',
+    TOWERS.filter((d) => d.attack !== 'beam').every((d) => d.rate <= TOWER_BY_KEY.rotor.rate));
+  check('...and the Plasma Thrower re-lights faster than it strobes',
+    TOWER_BY_KEY.plasma.rate >= 5);
+  check('the sustained weapon\'s DPS is what it always was',
+    Math.abs(TOWER_BY_KEY.plasma.dmg * TOWER_BY_KEY.plasma.rate - (15 / 90) * 1.6) < 0.02);
   check('the Howitzer lobs, and further than the Mortar',
     TOWER_BY_KEY.howitzer.attack === 'mortar'
     && TOWER_BY_KEY.howitzer.range > TOWER_BY_KEY.mortar.range
