@@ -175,6 +175,18 @@ token — the corner badge was retired from the game view).
   headless=new keeps ~87px of its own bar: `--window-size=908,505` gives a
   908×418 viewport (a phone's), `844,477` gives 844×390 — the `?layout`
   line prints the real viewport; rule against THAT, never the window.
+- THE HACK OVERLAY ON A PHONE. `?hack=hdt|bridges|shikaku` opens it and
+  `HACKFIT` logs the fit; `?hackrot=0|1` forces the TURN off/on. The three
+  games differ and the turn is PER GAME (`HACK_LANDSCAPE`): HDT is a wide
+  circuit board and fills a landscape phone at scale 1, so on a portrait
+  phone it is rotated 90° and given the long axis at 1:1. The two pazorukore
+  puzzles are squarish boards with side panels — handed a 2:1 viewport they
+  clip their own grid INTERNALLY, which the iframe cannot detect (the child
+  reports no overflow, it simply lays out wrong) — so they stay upright. The
+  ↻ TURN button overrides either way and resets when the game changes.
+  `body.hacking` hides `#chrome-toggle`: the ☰ is a child of <body> and the
+  overlay a child of the tab, so their z-indexes are in different stacking
+  contexts and never compare.
 - A `@media (pointer: coarse)` rule cannot be exercised by any desktop
   browser, headless included — pair it with a width clause
   (`, (max-width: 560px)`) or the rules inside are unverifiable and can

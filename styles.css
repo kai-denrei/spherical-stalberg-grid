@@ -5,22 +5,22 @@
    back to a system face until the subset is rebuilt. */
 @font-face {
   font-family: 'VT323';
-  src: url('assets/fonts/VT323.woff2?v=9e5221ba') format('woff2');
+  src: url('assets/fonts/VT323.woff2?v=6864d1a5') format('woff2');
   font-weight: 400; font-style: normal; font-display: swap;
 }
 @font-face {
   font-family: 'Press Start 2P';
-  src: url('assets/fonts/PressStart2P.woff2?v=9e5221ba') format('woff2');
+  src: url('assets/fonts/PressStart2P.woff2?v=6864d1a5') format('woff2');
   font-weight: 400; font-style: normal; font-display: swap;
 }
 @font-face {
   font-family: 'Share Tech Mono';
-  src: url('assets/fonts/ShareTechMono.woff2?v=9e5221ba') format('woff2');
+  src: url('assets/fonts/ShareTechMono.woff2?v=6864d1a5') format('woff2');
   font-weight: 400; font-style: normal; font-display: swap;
 }
 @font-face {
   font-family: 'DotGothic16';
-  src: url('assets/fonts/DotGothic16.woff2?v=9e5221ba') format('woff2');
+  src: url('assets/fonts/DotGothic16.woff2?v=6864d1a5') format('woff2');
   font-weight: 400; font-style: normal; font-display: swap;
 }
 
@@ -3111,8 +3111,12 @@ body.playing:not(.chrome-open) #tabbar { display: none !important; }
   display: flex;
   flex-direction: column;
   background: rgba(2, 8, 4, 0.97);
+  /* a TURNED board is laid out wider than the screen and rotated back into
+     it, so the box it occupies before the transform must not scroll */
+  overflow: hidden;
 }
 #td-hackwrap.hidden { display: none; }
+
 .hk-bar {
   display: flex;
   justify-content: space-between;
@@ -3123,6 +3127,15 @@ body.playing:not(.chrome-open) #tabbar { display: none !important; }
   color: #b8ffca;
   border-bottom: 1px solid rgba(110, 255, 140, 0.4);
   text-shadow: 0 0 7px rgba(110, 255, 140, 0.4);
+}
+/* THE TURN BUTTON IS FOR PHONES: on a desktop the overlay is already wider
+   than it is tall and there is nothing to solve. The enabling rule has to
+   come AFTER this one — the first cut declared it above and the base
+   display:none won on source order, so the button never appeared on the one
+   device it exists for. Same trap as #td-tut's base rule. */
+#td-hack-rotate { display: none; }
+@media (pointer: coarse), (max-width: 700px) {
+  #td-hack-rotate { display: inline-block; }
 }
 .hk-bar button {
   font: bold 11px ui-monospace, Menlo, monospace;
@@ -3257,8 +3270,24 @@ body.playing:not(.chrome-open) #tabbar { display: none !important; }
   background: #86ff9e;
   border-color: #86ff9e;
 }
+/* NOTHING OF THE GAME'S OWN CHROME OVER THE BREACH. The hamburger is a
+   child of <body> and the overlay is a child of the tab, so their z-indexes
+   are in different stacking contexts and never compare — it sat on top of
+   the bar whatever number it was given. */
+body.hacking #chrome-toggle { display: none !important; }
+
 @media (max-width: 560px) {
   .hk-title { display: none; } /* the tabs are the title on a phone */
+  /* AND EVERYTHING ELSE HAS TO FIT. At 430px the bar was pushing the active
+     tab out one end and the TURN button out the other, which is the two
+     controls a player on a phone actually needs. Tighter type, tighter
+     padding, and the readout is the thing allowed to shrink. */
+  .hk-bar { padding: 6px 8px; gap: 6px; }
+  .hk-tabs { gap: 4px; flex: 0 0 auto; }
+  .hk-tab { padding: 4px 6px; font-size: 10px; letter-spacing: 0.04em; }
+  .hk-readout { min-width: 0; overflow: hidden; }
+  .hk-bar button { padding: 4px 7px; font-size: 10px; letter-spacing: 0.04em; }
+  #td-hack-rotate, #td-hack-abort { flex: 0 0 auto; }
 }
 
 /* the radial's keyboard hint: the digit that places this tower */

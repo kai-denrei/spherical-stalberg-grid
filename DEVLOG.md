@@ -2,6 +2,46 @@
 
 Newest first. Each entry: what landed, then how it works, for programmers.
 
+## The hack overlay on a phone — full screen, and turned where turning helps
+
+Operator: "on mobile, when reaching the server, the games are hard to play
+because they're not full screen".
+
+The overlay was already `fixed; inset: 0`. What was not full screen was the
+GAME inside it: these are landscape-shaped boards and a phone held upright is
+not, so the fit scaled a 560-wide board down to 77% with a hundred and fifty
+pixels of letterbox above and below. It worked, and everything in it was too
+small to hit.
+
+**HDT is now turned.** On a portrait phone it is handed the phone's LONG axis
+and rotated back into it — `translate(availW,0) rotate(90deg) scale(s)` with
+the origin at the top left maps local (x, y) onto (availW − s·y, s·x), so
+local x runs down the screen and local y back across it, filling both axes
+exactly. Measured at 1:1: 430×861 becomes an 866×430 board with no
+downscaling at all. Pointer events come through a CSS transform correctly, so
+the games needed no idea it happened.
+
+**The turn is per game, because the three genuinely differ.** HDT is a wide
+circuit board — it already filled a 908×418 landscape phone at scale 1. The
+two pazorukore puzzles are squarish boards with fixed side panels: handed a
+2:1 viewport they clip their own grid *internally*, which the iframe cannot
+detect, because the child reports no overflow — it simply lays out wrong. So
+they stay upright, where they now fill the screen properly, and the ↻ TURN
+button is there for either of them if the operator disagrees. It resets when
+the game changes: a turn is an answer about one board.
+
+Two smaller things the phone found:
+
+- **The ☰ sat on top of the breach bar**, over the tab of the game you were
+  playing. It is a child of `<body>` and the overlay a child of the tab, so
+  their z-indexes are in different stacking contexts and never compare
+  whatever numbers they are given. `body.hacking` hides it.
+- **TURN never appeared on the one device it exists for.** Its enabling media
+  query was declared ABOVE the base `display: none` and lost on source order
+  — the same trap `#td-tut` has in this file. The bar also needed tightening
+  at 430px, where it was pushing the active tab out one end and TURN out the
+  other.
+
 ## TD2 — the lab's palette on the board, and towers that are machined not moulded
 
 Operator: "the towers feel too big and bulky compared to the tank... smaller

@@ -19,75 +19,75 @@
 
 import * as THREE from '../vendor/three.module.js';
 import GUI from '../vendor/lil-gui.esm.js';
-import { generateSphereMesh, relax } from './grid.js?v=9e5221ba';
-import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=9e5221ba';
-import { compileRail } from './cine/rail.js?v=9e5221ba';
-import { SCRIPTS } from './cine/scripts.js?v=9e5221ba';
-import { cuesBetween } from './cine/sound.js?v=9e5221ba';
-import { installCine } from './cine/kit.js?v=9e5221ba';
-import { mulberry32, randomSeed } from './rng.js?v=9e5221ba';
-import { computeBerths, berthIndexFor } from './berths.js?v=9e5221ba';
-import { wantsSecondary, shellsForAll } from './autofire.js?v=9e5221ba';
-import { printPhase, printOffset, printOn, patternSecsFor } from './printpath.js?v=9e5221ba';
+import { generateSphereMesh, relax } from './grid.js?v=6864d1a5';
+import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=6864d1a5';
+import { compileRail } from './cine/rail.js?v=6864d1a5';
+import { SCRIPTS } from './cine/scripts.js?v=6864d1a5';
+import { cuesBetween } from './cine/sound.js?v=6864d1a5';
+import { installCine } from './cine/kit.js?v=6864d1a5';
+import { mulberry32, randomSeed } from './rng.js?v=6864d1a5';
+import { computeBerths, berthIndexFor } from './berths.js?v=6864d1a5';
+import { wantsSecondary, shellsForAll } from './autofire.js?v=6864d1a5';
+import { printPhase, printOffset, printOn, patternSecsFor } from './printpath.js?v=6864d1a5';
 import { createBeam } from './beamfx.js';
-import { createBeamRig, PLASMA_DEFAULTS, BOARD_PRESET, BEAM_PEAK } from './beamdraw.js?v=9e5221ba';
-import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3, segKey, tangentDir, tangentBasis } from './vec3.js?v=9e5221ba';
-import { CREATURES, waveJelly } from './creatures.js?v=9e5221ba';
-import { brief, dwellFor } from './isaobriefs.js?v=9e5221ba';
-import { drawEmotion } from './emotions.js?v=9e5221ba';
+import { createBeamRig, PLASMA_DEFAULTS, BOARD_PRESET, BEAM_PEAK } from './beamdraw.js?v=6864d1a5';
+import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3, segKey, tangentDir, tangentBasis } from './vec3.js?v=6864d1a5';
+import { CREATURES, waveJelly } from './creatures.js?v=6864d1a5';
+import { brief, dwellFor } from './isaobriefs.js?v=6864d1a5';
+import { drawEmotion } from './emotions.js?v=6864d1a5';
 import { ACHIEVEMENTS, ACHV_GROUPS, achievement, blankRun, earned, freshlyEarned,
   sanitiseRecord }
-  from './achievements.js?v=9e5221ba';
+  from './achievements.js?v=6864d1a5';
 import { applyFontPack, currentFontPack, FONT_NAMES,
-  loadTypeFeel } from './fonts.js?v=9e5221ba';
-import { SECONDARY_TOE, applySecondaryToe } from './units.js?v=9e5221ba';
-import { UNITS, UNIT_NAMES, buildUnit, buildCreature, preloadMkcx, preloadServer, makeServerFixture, makeShieldShell, preloadContainer, makeContainerFixture, preloadFabricator, makeIsaoDrone, makeBulletCloud, makeRewardSolid, makeShellSolid, makeDebris, makeDotBurst, makePortalCloud, preloadPortalRing, makePortalRing, makeHeartCloud, makeDotEnemy, makeSurvivor, preloadAstronaut, makeAstronaut, preloadTerraformer, makeTerraformerFixture } from './units.js?v=9e5221ba';
-import { LOOKS, LOOK_NAMES } from './looks.js?v=9e5221ba';
-import { makeCellIndex } from './cellindex.js?v=9e5221ba';
-import { CREATURE_TINTS, ENEMY_SPEC, INTROS, computeWavePlan, accentFor } from './enemyspec.js?v=9e5221ba';
-import { PICKUPS } from './pickups.js?v=9e5221ba';
-import { rankFor, rankLabel, badgeSVG, killReq, eliteReq } from './ranks.js?v=9e5221ba';
-import { beamStep, isBeamStep, PEN_SOFT_FRAC, PEN_HARD_FRAC } from './beamranks.js?v=9e5221ba';
-import { burn, sweepAdvance, wallBite as wallBiteFor } from './beamburn.js?v=9e5221ba';
-import { arcPoint, projectToArc, toeForCrossing, crossingForToe } from './arc.js?v=9e5221ba';
+  loadTypeFeel } from './fonts.js?v=6864d1a5';
+import { SECONDARY_TOE, applySecondaryToe } from './units.js?v=6864d1a5';
+import { UNITS, UNIT_NAMES, buildUnit, buildCreature, preloadMkcx, preloadServer, makeServerFixture, makeShieldShell, preloadContainer, makeContainerFixture, preloadFabricator, makeIsaoDrone, makeBulletCloud, makeRewardSolid, makeShellSolid, makeDebris, makeDotBurst, makePortalCloud, preloadPortalRing, makePortalRing, makeHeartCloud, makeDotEnemy, makeSurvivor, preloadAstronaut, makeAstronaut, preloadTerraformer, makeTerraformerFixture } from './units.js?v=6864d1a5';
+import { LOOKS, LOOK_NAMES } from './looks.js?v=6864d1a5';
+import { makeCellIndex } from './cellindex.js?v=6864d1a5';
+import { CREATURE_TINTS, ENEMY_SPEC, INTROS, computeWavePlan, accentFor } from './enemyspec.js?v=6864d1a5';
+import { PICKUPS } from './pickups.js?v=6864d1a5';
+import { rankFor, rankLabel, badgeSVG, killReq, eliteReq } from './ranks.js?v=6864d1a5';
+import { beamStep, isBeamStep, PEN_SOFT_FRAC, PEN_HARD_FRAC } from './beamranks.js?v=6864d1a5';
+import { burn, sweepAdvance, wallBite as wallBiteFor } from './beamburn.js?v=6864d1a5';
+import { arcPoint, projectToArc, toeForCrossing, crossingForToe } from './arc.js?v=6864d1a5';
 import { MINE_TUNE, makeField, layMine, armMines, restock, mineAt,
-  inFan, trip, chain, nextChained, minePolar } from './mines.js?v=9e5221ba';
+  inFan, trip, chain, nextChained, minePolar } from './mines.js?v=6864d1a5';
 import { deepLink, wireDeepLink } from './deeplink.js';
 import { RESCUE_TUNE, makeRescue, placeSurvivors, stepBoard, stepGrab,
   disembark, loseCarried, lockOn, waveMix, standing as standingSurv,
   aboard as aboardSurv, missionOver, verdict as rescueVerdict,
   grabProgress, remaining as remainingSurv, exposed as exposedSurv,
   RESCUE2_TUNE, makeCamps, stepCall, stepEmerge, walkStep, runOver,
-  awake as campAwake } from './rescue.js?v=9e5221ba';
+  awake as campAwake } from './rescue.js?v=6864d1a5';
 import { WORMHOLE_PRESET, WORMHOLE_UNIFORM_DEFAULTS, RING_SPIN, TRAVEL,
-  travelRate, advancePhase } from './portalfx.js?v=9e5221ba';
-import { WORMHOLE_FRAG } from './fx/wormhole.frag.js?v=9e5221ba';
-import { CORONA_FRAG } from './fx/corona.frag.js?v=9e5221ba';
-import { labLine, parseLabQuery } from './lab.js?v=9e5221ba';
-import { bakeGalaxyCube } from './galaxybake.js?v=9e5221ba';
-import { SKY_PRESET } from './galaxyseed.js?v=9e5221ba';
-import { makeScore } from './score.js?v=9e5221ba';
-import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER, HACK_GATED, starterTower, towerSound, ROSTER } from './towers.js?v=9e5221ba';
-import { makeEconomy, sellRefund } from './economy.js?v=9e5221ba';
-import { pickTier } from './perftier.js?v=9e5221ba';
-import { applyWeatheredMaterial } from './cine/materials.js?v=9e5221ba';
-import { STICK, stickVector, knobOffset } from './stick.js?v=9e5221ba';
-import { registerServiceWorker } from './pwa.js?v=9e5221ba';
-import { makeBloom } from './postfx.js?v=9e5221ba';
-import { TANK_FEEL, TANK_FEEL_KNOBS, makeTankFeel, stepTankFeel, landTankFeel, fireTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js?v=9e5221ba';
-import { FEEL, loadFeel, saveFeel } from './feelstore.js?v=9e5221ba';
+  travelRate, advancePhase } from './portalfx.js?v=6864d1a5';
+import { WORMHOLE_FRAG } from './fx/wormhole.frag.js?v=6864d1a5';
+import { CORONA_FRAG } from './fx/corona.frag.js?v=6864d1a5';
+import { labLine, parseLabQuery } from './lab.js?v=6864d1a5';
+import { bakeGalaxyCube } from './galaxybake.js?v=6864d1a5';
+import { SKY_PRESET } from './galaxyseed.js?v=6864d1a5';
+import { makeScore } from './score.js?v=6864d1a5';
+import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER, HACK_GATED, starterTower, towerSound, ROSTER } from './towers.js?v=6864d1a5';
+import { makeEconomy, sellRefund } from './economy.js?v=6864d1a5';
+import { pickTier } from './perftier.js?v=6864d1a5';
+import { applyWeatheredMaterial } from './cine/materials.js?v=6864d1a5';
+import { STICK, stickVector, knobOffset } from './stick.js?v=6864d1a5';
+import { registerServiceWorker } from './pwa.js?v=6864d1a5';
+import { makeBloom } from './postfx.js?v=6864d1a5';
+import { TANK_FEEL, TANK_FEEL_KNOBS, makeTankFeel, stepTankFeel, landTankFeel, fireTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js?v=6864d1a5';
+import { FEEL, loadFeel, saveFeel } from './feelstore.js?v=6864d1a5';
 import { STRIKE_KNOBS, makeStrike, makeStrikeParams, grantStrikes, stepStrike,
   toggleArm, paintTarget, launchStrike, stepFall, skipFall, fallProgress,
-  strikeDamage, retargetStrike, orbitProgress } from './strike.js?v=9e5221ba';
+  strikeDamage, retargetStrike, orbitProgress } from './strike.js?v=6864d1a5';
 import { radarBasis, radarProject, radarBearing, sweepAngle, radarPhosphor,
-  proximitySectors, SENSOR_LEVELS, sensorColor } from './radar.js?v=9e5221ba';
-import { BLOOM_GROUPS } from './bloomweights.js?v=9e5221ba';
+  proximitySectors, SENSOR_LEVELS, sensorColor } from './radar.js?v=6864d1a5';
+import { BLOOM_GROUPS } from './bloomweights.js?v=6864d1a5';
 import { A6_TUNE, magFor, makeA6, stepA6, arc as a6Arc, a6Line } from './heptapod.js';
 import { SENTRY_TUNE } from './sentry.js';
 import { MISSILE_TUNE, scaleMissile, makeLock, stepLock, launchMissile, stepMissile } from './lockon.js';
-import { TOWER_LOOK_NAMES, DEFAULT_TOWER_LOOK, buildTowerLook, preloadLook, lookReady, setSentryTier } from './towerlooks.js?v=9e5221ba';
-import { makeAudio } from './audio.js?v=9e5221ba';
-import { DEATH_KEYS } from './audiomanifest.js?v=9e5221ba';
+import { TOWER_LOOK_NAMES, DEFAULT_TOWER_LOOK, buildTowerLook, preloadLook, lookReady, setSentryTier } from './towerlooks.js?v=6864d1a5';
+import { makeAudio } from './audio.js?v=6864d1a5';
+import { DEATH_KEYS } from './audiomanifest.js?v=6864d1a5';
 
 export function initTdTab(root) {
   let active = false;
@@ -4830,6 +4830,53 @@ export function initTdTab(root) {
   // fight three separate layouts, the frame is given the width the games
   // were designed for and scaled down to whatever the wrapper actually is.
   const HACK_LOGICAL_W = 560;   // the fallback, for a frame not yet readable
+  // TURN THE BOARD SIDEWAYS ON A PORTRAIT PHONE (operator: "on mobile, when
+  // reaching the server, the games are hard to play because they're not full
+  // screen").
+  //
+  // They are not full screen because they are LANDSCAPE games and a phone
+  // held upright is not. Fitted upright, a 560-wide board on a 430-wide
+  // screen runs at 77% with a hundred and fifty pixels of letterbox above
+  // and below — it works, and everything in it is too small to hit.
+  //
+  // Rotated, the same board gets the phone's LONG axis and needs no
+  // downscaling at all: it is handed exactly `availH x availW` and turned
+  // back into the screen, so it fills it at 1:1. Pointer events come through
+  // a CSS transform correctly, so the games need no idea this happened.
+  //
+  // It is a TOGGLE and not a rule, because "turn your phone" is a taste
+  // question and the operator should be able to answer it with a thumb
+  // rather than a reload. Default: on where the screen is portrait enough
+  // that fitting upright would cost more than a quarter of the size.
+  //
+  // AND IT IS PER GAME, because the three genuinely differ. HDT is a wide
+  // circuit board — measured, it fills a 908x418 landscape phone at scale 1
+  // — so turning it is pure gain. The two pazorukore puzzles are squarish
+  // boards with side panels: handed a 2:1 viewport they clip their own grid
+  // internally, which the iframe cannot see (the child reports no overflow;
+  // it simply lays out wrong). Turning those makes them worse, so by
+  // default they stay upright and the button is there if the operator
+  // disagrees.
+  const HACK_LANDSCAPE = { hdt: true, bridges: false, shikaku: false };
+  let hackTurn = null;   // null = decide from the shape; true/false = the player has
+  const hackRotEl = root.querySelector('#td-hack-rotate');
+  function hackTurned(availW, availH, logical) {
+    if (hackTurn !== null) return hackTurn;
+    const forced = urlParams.get('hackrot');
+    if (forced === '0') return false;
+    if (forced === '1') return true;
+    if (!HACK_LANDSCAPE[hackGame]) return false;
+    return availH > availW * 1.15 && availW / logical < 0.78;
+  }
+  if (hackRotEl) {
+    hackRotEl.addEventListener('click', () => {
+      const wrap = hackWrapEl.getBoundingClientRect();
+      const bar = hackWrapEl.querySelector('.hk-bar');
+      const barH = bar ? bar.getBoundingClientRect().height : 0;
+      hackTurn = !hackTurned(wrap.width, Math.max(120, wrap.height - barH), HACK_LOGICAL_W);
+      fitHackFrame();
+    });
+  }
   function fitHackFrame() {
     if (!hackFrameEl || !hackWrapEl || hackWrapEl.classList.contains('hidden')) return;
     const wrap = hackWrapEl.getBoundingClientRect();
@@ -4848,6 +4895,39 @@ export function initTdTab(root) {
         logical = Math.max(logical, d.documentElement.scrollWidth, d.body ? d.body.scrollWidth : 0);
       }
     } catch { /* not readable yet */ }
+    // THE TURNED PATH, and it is simpler than the upright one because there
+    // is nothing to compromise: the frame is given the screen's long axis as
+    // its width and its short axis as its height, then rotated back into it.
+    // With transform-origin at the top left, translate(availW, 0) rotate(90)
+    // maps the frame's local (x, y) onto (availW - y, x) — so local x runs
+    // down the screen and local y runs back across it, exactly filling.
+    if (hackTurned(availW, availH, logical)) {
+      // TURNED IS NOT AUTOMATICALLY 1:1. Handing the child the phone's long
+      // axis is usually enough — HDT and the duel fill it exactly — but
+      // pazorukore's board lays a grid out beside two side panels and can
+      // still want more width than that. So the turned path asks the same
+      // question the upright one does (how wide does the game SAY it is)
+      // and scales the long axis to fit, rather than assuming.
+      //
+      // With transform-origin at the top left, translate(availW,0) rotate(90)
+      // scale(s) maps the frame's local (x, y) onto (availW - s*y, s*x): local
+      // x runs down the screen, local y runs back across it. Both axes fill
+      // exactly when the frame is sized (availH/s) x (availW/s).
+      const LW = Math.max(availH, logical);
+      const ts = Math.min(1, availH / LW);
+      const LH = availW / ts;
+      hackFrameEl.style.width = `${Math.round(LW)}px`;
+      hackFrameEl.style.height = `${Math.round(LH)}px`;
+      hackFrameEl.style.transformOrigin = 'top left';
+      hackFrameEl.style.transform =
+        `translate(${Math.round(availW)}px, 0) rotate(90deg) scale(${ts})`;
+      if (urlParams.get('hack')) {
+        console.log(`HACKFIT TURNED avail=${Math.round(availW)}x${Math.round(availH)}`
+          + ` logical=${logical} frame=${Math.round(LW)}x${Math.round(LH)}`
+          + ` scale=${ts.toFixed(3)}`);
+      }
+      return;
+    }
     const scale = Math.min(1, availW / logical);
     if (scale >= 1) {
       // desktop has the room: leave the frame alone entirely
@@ -4887,6 +4967,7 @@ export function initTdTab(root) {
   }
   addEventListener('resize', fitHackFrame);
 
+
   function readHackPhase() {
     try {
       const w = hackFrameEl.contentWindow;
@@ -4920,12 +5001,20 @@ export function initTdTab(root) {
     hackOpens++;               // moves the seed: a new board every breach
     setHackGame(hackGame);
     hackWrapEl.classList.remove('hidden');
+    // THE GAME'S OWN CHROME GETS OUT OF THE WAY. The hamburger is appended
+    // to <body> and the overlay lives inside the tab, so their z-indexes
+    // never compare — on a phone the ☰ sat squarely on top of the breach
+    // bar, over the tab of the game you were actually playing.
+    document.body.classList.add('hacking');
     fitHackFrame();
     if (hackFrameEl) {
       hackFrameEl.addEventListener('load', () => {
         // twice: once on load, once after the child has laid itself out.
         // Measuring a document that has not painted returns the viewport
-        // width, which is the answer that makes the fit a no-op.
+        // width, which is the answer that makes the fit a no-op — and the
+        // TURNED path depends on this settle just as much, since it is the
+        // second pass that discovers pazorukore wants more than the phone's
+        // long axis and scales it down.
         fitHackFrame();
         setTimeout(fitHackFrame, 250);
         setTimeout(fitHackFrame, 900);
@@ -4960,6 +5049,11 @@ export function initTdTab(root) {
   function setHackGame(g) {
     if (!HACK_GAMES[g]) g = 'hdt';
     hackGame = g;
+    // A TURN IS AN ANSWER ABOUT ONE BOARD. Switching games throws it away
+    // and asks the shape again — holding a player's "turn it" from the
+    // circuit duel over onto a pazorukore grid applies their answer to a
+    // question they were not asked.
+    hackTurn = null;
     const seed = hackSeed();
     if (hackFrameEl) {
       // the pazorukore games take the seed on their own query string; the
@@ -4980,6 +5074,7 @@ export function initTdTab(root) {
     hackEnding = false;
     clearInterval(hackPoll); hackPoll = null;
     if (hackWrapEl) hackWrapEl.classList.add('hidden');
+    document.body.classList.remove('hacking');
     if (hackFrameEl) hackFrameEl.src = 'about:blank';
     paused = false;
     if (won === true) {

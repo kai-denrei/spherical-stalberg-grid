@@ -6,15 +6,15 @@
 // the wormhole target and sky face sizes. scripts/cine-capture.mjs drives
 // __cine.seek(t) for the offline render.
 import * as THREE from '../vendor/three.module.js';
-import { makeBloom } from './postfx.js?v=9e5221ba';
-import { installCine } from './cine/kit.js?v=9e5221ba';
-import { createGate } from './cine/gate.js?v=9e5221ba';
-import { createPlanet } from './cine/planetscene.js?v=9e5221ba';
-import { createFilmPass, makeTitleTexture, titleAlphaAt, FILM_DEFAULTS } from './cine/film.js?v=9e5221ba';
-import { SOUND_RAILS, cuesBetween } from './cine/sound.js?v=9e5221ba';
-import { makeAudio } from './audio.js?v=9e5221ba';
-import { createTank } from './cine/tankscene.js?v=9e5221ba';
-import { rateFromSample, fitSize, marchBudgetMs, createGovernor } from './cine/governor.js?v=9e5221ba';
+import { makeBloom } from './postfx.js?v=6864d1a5';
+import { installCine } from './cine/kit.js?v=6864d1a5';
+import { createGate } from './cine/gate.js?v=6864d1a5';
+import { createPlanet } from './cine/planetscene.js?v=6864d1a5';
+import { createFilmPass, makeTitleTexture, titleAlphaAt, FILM_DEFAULTS } from './cine/film.js?v=6864d1a5';
+import { SOUND_RAILS, cuesBetween } from './cine/sound.js?v=6864d1a5';
+import { makeAudio } from './audio.js?v=6864d1a5';
+import { createTank } from './cine/tankscene.js?v=6864d1a5';
+import { rateFromSample, fitSize, marchBudgetMs, createGovernor } from './cine/governor.js?v=6864d1a5';
 import { deepLink, wireDeepLink } from './deeplink.js';
 
 const SCENES = { gate: createGate, planet: createPlanet, tank: createTank };
