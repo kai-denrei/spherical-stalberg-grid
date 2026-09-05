@@ -5,18 +5,18 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
   <title>spherical stålberg grid</title>
   <meta name="theme-color" content="#10131a">
-  <link rel="manifest" href="./manifest.webmanifest?v=2cd00e0f">
-  <link rel="apple-touch-icon" href="./icons/apple-touch-icon.png?v=2cd00e0f">
+  <link rel="manifest" href="./manifest.webmanifest?v=28761936">
+  <link rel="apple-touch-icon" href="./icons/apple-touch-icon.png?v=28761936">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="SphereGrid">
-  <link rel="stylesheet" href="./styles.css?v=2cd00e0f">
+  <link rel="stylesheet" href="./styles.css?v=28761936">
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
-  <link rel="icon" href="favicon.svg?v=2cd00e0f" type="image/svg+xml">
-  <meta name="cb" content="2cd00e0f">
-  <link rel="icon" type="image/svg+xml" href="./cb-shapes/44.svg?v=2cd00e0f">
+  <link rel="icon" href="favicon.svg?v=28761936" type="image/svg+xml">
+  <meta name="cb" content="28761936">
+  <link rel="icon" type="image/svg+xml" href="./cb-shapes/40.svg?v=28761936">
   <!-- cb-badge retired from the game view (operator ruling): the build
        token lives in the DEV LOG tab, which reads meta[name="cb"] itself -->
 </head>
@@ -256,7 +256,7 @@
     <div id="td-launch" class="caution-frame" aria-label="launch control">
       <button id="td-safety" class="safety" type="button" aria-pressed="false" aria-label="safety">
         <span class="lbl-on">ON</span>
-        <img id="td-safety-img" class="switch-img" src="assets/ui/switch-off.png?v=2cd00e0f" alt="" width="120" height="200">
+        <img id="td-safety-img" class="switch-img" src="assets/ui/switch-off.png?v=28761936" alt="" width="120" height="200">
         <span class="lbl-off">OFF</span>
       </button>
       <div id="td-launch-readout">
@@ -352,7 +352,49 @@
   <div id="tab-sniper" class="tab tab-hidden">
     <div id="sniper-app"></div>
     <div id="sniper-reticle" aria-hidden="true"></div>
-    <div id="sniper-hud"></div>
+    <div id="sniper-vig" aria-hidden="true"></div>
+    <!-- the fire-control HUD. Corner readouts with two borders each, so they
+         read as BRACKETS rather than boxes — the idiom is lifted from
+         ~/Dev/onkochishin/atelier/hud-targeting, on the operator's steer. -->
+    <div id="sniper-fcs" aria-hidden="true">
+      <div class="fcs-strip">
+        <span class="fcs-left">LANCER · DIRECT FIRE</span>
+        <span class="fcs-mid">&#9670; FCS // OPTIC</span>
+        <span class="fcs-right" id="fcs-phase">PHASE 1</span>
+      </div>
+      <div class="fcs-tape"><span id="fcs-bearing">000</span></div>
+      <div class="ro r-tl">
+        <div class="r-head">Scope</div>
+        <div class="field"><span class="k">Zero</span><b class="v" id="f-zero">—</b></div>
+        <div class="field"><span class="k">Mag</span><b class="v" id="f-mag">—</b></div>
+        <div class="field"><span class="k">Hold up</span><b class="v" id="f-holdup">—</b></div>
+        <div class="field"><span class="k">Hold side</span><b class="v" id="f-holdside">—</b></div>
+        <div class="field"><span class="k">Breath</span><b class="v" id="f-breath">—</b></div>
+        <div class="meter"><i id="f-breathbar"></i></div>
+      </div>
+      <div class="ro r-tr">
+        <div class="r-head split"><span>Track</span><b id="f-trackid">—</b></div>
+        <div class="field"><span class="k">Range</span><b class="v" id="f-range">—</b></div>
+        <div class="field"><span class="k">Bearing</span><b class="v" id="f-bearing">—</b></div>
+        <div class="field"><span class="k">Crossing</span><b class="v" id="f-cross">—</b></div>
+        <div class="field"><span class="k">Subtense</span><b class="v" id="f-subtense">—</b></div>
+      </div>
+      <div class="ro r-bl">
+        <div class="r-head">Ballistics</div>
+        <div class="field"><span class="k">Drop</span><b class="v" id="f-drop">—</b></div>
+        <div class="field"><span class="k">Drift</span><b class="v" id="f-drift">—</b></div>
+        <div class="field"><span class="k">Flight</span><b class="v" id="f-flight">—</b></div>
+        <div class="field"><span class="k">Wind</span><b class="v" id="f-wind">—</b></div>
+      </div>
+      <div class="ro r-br">
+        <div class="r-head split"><span>Acquisition</span><b id="f-acq">—</b></div>
+        <div class="field"><span class="k">String</span><b class="v" id="f-string">—</b></div>
+        <div class="field"><span class="k">Group</span><b class="v" id="f-group">—</b></div>
+        <div class="field"><span class="k">Correction</span><b class="v" id="f-corr">—</b></div>
+        <div class="chips" id="f-chips"></div>
+      </div>
+      <div class="fcs-note" id="f-note">take a shot</div>
+    </div>
     <button id="sniper-breath" type="button" title="hold your breath (Shift)">&#9679; BREATH</button>
     <button id="sniper-fire" type="button" title="fire (Space)">FIRE</button>
     <button id="sniper-link" class="lab-link" type="button" title="deep link: copy this lab's current settings as a URL">&#128279;</button>
@@ -604,6 +646,6 @@
     </div>
   </div>
 
-  <script type="module" src="./src/main.js?v=2cd00e0f"></script>
+  <script type="module" src="./src/main.js?v=28761936"></script>
 </body>
 </html>

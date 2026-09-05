@@ -5,22 +5,22 @@
    back to a system face until the subset is rebuilt. */
 @font-face {
   font-family: 'VT323';
-  src: url('assets/fonts/VT323.woff2?v=2cd00e0f') format('woff2');
+  src: url('assets/fonts/VT323.woff2?v=28761936') format('woff2');
   font-weight: 400; font-style: normal; font-display: swap;
 }
 @font-face {
   font-family: 'Press Start 2P';
-  src: url('assets/fonts/PressStart2P.woff2?v=2cd00e0f') format('woff2');
+  src: url('assets/fonts/PressStart2P.woff2?v=28761936') format('woff2');
   font-weight: 400; font-style: normal; font-display: swap;
 }
 @font-face {
   font-family: 'Share Tech Mono';
-  src: url('assets/fonts/ShareTechMono.woff2?v=2cd00e0f') format('woff2');
+  src: url('assets/fonts/ShareTechMono.woff2?v=28761936') format('woff2');
   font-weight: 400; font-style: normal; font-display: swap;
 }
 @font-face {
   font-family: 'DotGothic16';
-  src: url('assets/fonts/DotGothic16.woff2?v=2cd00e0f') format('woff2');
+  src: url('assets/fonts/DotGothic16.woff2?v=28761936') format('woff2');
   font-weight: 400; font-style: normal; font-display: swap;
 }
 
@@ -4173,11 +4173,81 @@ body:not(.chrome-open) #tabbar .tabgroup:not(:has(button.active)) { display: non
    with. It never takes a pointer — the drag under it is the aim. */
 #sniper-app { position: absolute; inset: 0; touch-action: none; }
 #sniper-reticle { position: absolute; inset: 0; z-index: 5; pointer-events: none; }
-#sniper-hud {
-  position: absolute; left: 12px; bottom: 12px; z-index: 6;
-  font: 12px/1.55 ui-monospace, Menlo, monospace; color: #cfe8ff;
-  text-shadow: 0 0 8px rgba(0, 0, 0, 0.95); white-space: pre-line;
-  max-width: min(74vw, calc(100vw - 24px)); overflow-wrap: anywhere; pointer-events: none;
+/* THE FIRE-CONTROL HUD. Corner readouts carry only TWO borders each, so they
+   read as brackets rather than boxes — the idiom, the two-tier label/value
+   field and the palette are taken from ~/Dev/onkochishin/atelier/hud-targeting
+   on the operator's steer, and rebuilt here rather than vendored. */
+#sniper-hud { display: none; }
+#sniper-vig {
+  position: absolute; inset: 0; z-index: 4; pointer-events: none;
+  background: radial-gradient(120% 90% at 50% 45%, transparent 38%, rgba(6, 8, 9, .55) 78%, rgba(6, 8, 9, .92) 100%);
+}
+#sniper-fcs {
+  position: absolute; inset: 0; z-index: 6; pointer-events: none;
+  --phosphor: #e8f4f2; --dim: #9fb6b2; --cyan: #5fe6d6; --lock: #ffb43d; --alarm: #ff4d4d;
+  font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  font-variant-numeric: tabular-nums;
+}
+#sniper-fcs .fcs-strip {
+  position: absolute; left: 0; right: 0; top: 8px; display: flex; justify-content: space-between;
+  padding: 0 18px; font-size: 9px; letter-spacing: .26em; text-transform: uppercase; color: var(--dim);
+}
+#sniper-fcs .fcs-mid { color: var(--cyan); }
+#sniper-fcs .fcs-right { color: var(--lock); }
+#sniper-fcs .fcs-tape {
+  position: absolute; left: 50%; top: 26px; transform: translateX(-50%);
+  font-size: 10px; letter-spacing: .18em; color: var(--lock);
+}
+#sniper-fcs .fcs-tape::after {
+  content: "\25BC"; display: block; text-align: center; font-size: 8px; color: var(--lock); margin-top: -2px;
+}
+#sniper-fcs .ro {
+  position: absolute; width: 27vw; max-width: 236px; min-width: 152px; padding: 10px 12px;
+  border-color: rgba(95, 230, 214, .28);
+  background: linear-gradient(180deg, rgba(8, 16, 15, .66), rgba(8, 16, 15, .30));
+  backdrop-filter: blur(2px); -webkit-backdrop-filter: blur(2px);
+}
+#sniper-fcs .r-tl { left: 18px; top: 56px; border-left: 1px solid; border-top: 1px solid; }
+/* the right-hand pair sits clear of the lil-gui, which owns that edge on a
+   desktop; the coarse block below puts them back, where the panel is a
+   bottom drawer instead */
+#sniper-fcs .r-tr { right: 268px; top: 56px; border-right: 1px solid; border-top: 1px solid; }
+#sniper-fcs .r-bl { left: 18px; bottom: 56px; border-left: 1px solid; border-bottom: 1px solid; }
+#sniper-fcs .r-br { right: 268px; bottom: 56px; border-right: 1px solid; border-bottom: 1px solid; }
+#sniper-fcs .r-head {
+  margin-bottom: 7px; font-size: 10px; font-weight: 700; letter-spacing: .28em;
+  text-transform: uppercase; color: var(--cyan);
+}
+#sniper-fcs .r-head.split { display: flex; justify-content: space-between; align-items: baseline; }
+#sniper-fcs .r-head.split b { color: var(--lock); letter-spacing: .16em; }
+#sniper-fcs .field { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; line-height: 1.65; }
+#sniper-fcs .field .k { font-size: 9px; letter-spacing: .2em; text-transform: uppercase; color: var(--dim); }
+#sniper-fcs .field .v { font-size: 12px; font-weight: 500; color: var(--phosphor); }
+#sniper-fcs .field .v.hot { color: var(--lock); }
+#sniper-fcs .meter { margin-top: 7px; height: 5px; width: 100%; overflow: hidden; background: rgba(95, 230, 214, .14); }
+#sniper-fcs .meter i { display: block; height: 100%; width: 0; background: var(--cyan); transition: width .18s linear; }
+#sniper-fcs .chips { margin-top: 8px; display: flex; flex-wrap: wrap; gap: 5px; }
+#sniper-fcs .chip {
+  font-size: 8px; letter-spacing: .16em; text-transform: uppercase;
+  padding: 2px 5px; border: 1px solid rgba(159, 182, 178, .35); color: var(--dim);
+}
+#sniper-fcs .chip.on { border-color: var(--lock); color: var(--lock); }
+#sniper-fcs .fcs-note {
+  position: absolute; left: 50%; bottom: 18px; transform: translateX(-50%);
+  font-size: 11px; letter-spacing: .1em; color: var(--phosphor);
+  background: rgba(8, 16, 15, .72); border: 1px solid rgba(95, 230, 214, .3);
+  padding: 5px 12px; white-space: nowrap; max-width: 92vw; overflow: hidden; text-overflow: ellipsis;
+}
+#sniper-fcs .fcs-note.hit { border-color: var(--lock); color: var(--lock); }
+#sniper-fcs .fcs-note.miss { border-color: var(--alarm); color: var(--alarm); }
+@media (pointer: coarse), (max-width: 700px) {
+  #sniper-fcs .ro { width: 34vw; min-width: 0; padding: 7px 8px; font-size: 10px; }
+  #sniper-fcs .r-tl, #sniper-fcs .r-tr { top: 46px; }
+  #sniper-fcs .r-bl, #sniper-fcs .r-br { bottom: 46px; }
+  #sniper-fcs .r-tr, #sniper-fcs .r-br { right: 18px; }
+  #sniper-fcs .field .v { font-size: 10px; }
+  #sniper-fcs .field .k { font-size: 8px; letter-spacing: .12em; }
+  #sniper-fcs .fcs-note { font-size: 10px; bottom: 10px; }
 }
 #sniper-fire, #sniper-breath {
   /* clear of the lil-gui panel, which owns the right edge on a desktop; the

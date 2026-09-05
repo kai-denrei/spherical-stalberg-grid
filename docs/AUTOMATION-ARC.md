@@ -60,12 +60,32 @@ ATTENTION, not performance — the sniper's firing solution should be what a
 good shot could have worked out, arriving faster, not a shot they could
 not have taken.
 
+## Rulings (operator, 2026-09-05)
+
+- **A chip is PERMANENT PER PLANET.** Not per run, not forever. It sits
+  with the rank ladder — which survives the hull — rather than with the
+  tower unlocks, which do not survive a run. A new planet is a new landing
+  and you arrive bare-bone again, which is the sentence the whole arc is
+  built on.
+- **Chips cost BIOMASS, on the DEBRIEF.** They join the existing `SINK`
+  table beside the spare hull, the strike and the second drone — so the
+  choice is priced against things whose value the player already knows,
+  and it is made where the run pauses to spend.
+
+Two consequences worth writing down before anything is built:
+
+- The debrief's sink table is the ladder's UI. It already renders a row
+  per purchase and already refuses what cannot be afforded; a chip is one
+  more row, and "the chips you have" is a line on the same card.
+- Permanent-per-planet means the LAST sector of a planet is the one where
+  everything is automated, and the first is the one where nothing is. The
+  difficulty curve of a planet therefore runs the opposite way to the wave
+  curve, which is either the best thing about the arc or the thing that
+  needs a counterweight. It should be looked at on the first play, not
+  designed around now.
+
 ## Open questions for the operator
 
-- Are chips per-RUN or permanent across a planet? (The rank ladder
-  survives the hull; the tower unlocks do not survive a run.)
-- Does a chip cost biomass on the debrief, or a Terraformer wave-clock
-  slot, or both?
 - Can a chip be turned OFF? A player who wants the manual version back is
   a player who has understood the game, and refusing them is odd.
 - Does the sniper belong in the campaign at all, or is it a mission type?

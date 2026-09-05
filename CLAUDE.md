@@ -104,7 +104,11 @@ token — the corner badge was retired from the game view).
   nor `env(safe-area-inset-*)`, so a desktop replica can only ever return
   `ok` or a pose fault — which is precisely why the phone reports outlived
   the replica).
-  the SNIPER (`#sniper`): every `BALLISTICS_TUNE` knob by name (`?zero=`,
+  the SNIPER (`#sniper`): `?phase=calibrate|contact` (phase 1 is a
+  black-and-white target and a fixed string; phase 2 is movers), `?allotted=N`,
+  `?moverSpeed=`, `?showRifle=1` (you do not see your own rifle down your own
+  scope — the camera sits AT the optic, inside the receiver), and
+  every `BALLISTICS_TUNE` knob by name (`?zero=`,
   `?wind=`, `?muzzleVel=`, `?gravity=`, `?drag=`, `?swayFast=` …), `?mag=`,
   `?range=`, and the ASSIST LADDER — `?rangefinder=1`, `?windRead=1`,
   `?firingSolution=1`, `?autoHold=1`, each one a chip Isao has not printed
@@ -185,6 +189,13 @@ token — the corner badge was retired from the game view).
   Porting = copy the generator + its primitives into `src/braillelab.js`
   and add the name to `BRAILLE_SHAPES`. Copy VERBATIM; the lab keeps
   improving and re-porting should stay mechanical.
+- `~/Dev/onkochishin` — a gallery of UI studies (`atelier/<name>/index.html`,
+  each self-contained). `atelier/hud-targeting` is the fire-control HUD the
+  sniper's readout is built on, on the operator's steer: corner readouts
+  carrying only TWO borders each so they read as brackets, a two-tier
+  label/value `field`, and the palette (`--cyan #5fe6d6`, `--lock #ffb43d`,
+  `--alarm #ff4d4d`, `--phosphor #e8f4f2`). Rebuilt in our own CSS rather
+  than vendored — the study is a reference, not a dependency.
 - `~/Dev/blueprint-to-life` — sibling repo. Source of the `cb-badge`
   cache-bust toolkit we share, the blueprint/callout idiom behind the unit
   viewer's `labels`, and a **solved** service-worker + cache-bust pattern
