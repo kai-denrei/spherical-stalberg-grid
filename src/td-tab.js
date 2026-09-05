@@ -19,78 +19,81 @@
 
 import * as THREE from '../vendor/three.module.js';
 import GUI from '../vendor/lil-gui.esm.js';
-import { generateSphereMesh, relax } from './grid.js?v=972313dd';
-import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=972313dd';
-import { compileRail } from './cine/rail.js?v=972313dd';
-import { SCRIPTS } from './cine/scripts.js?v=972313dd';
-import { cuesBetween } from './cine/sound.js?v=972313dd';
-import { installCine } from './cine/kit.js?v=972313dd';
-import { mulberry32, randomSeed } from './rng.js?v=972313dd';
-import { computeBerths, berthIndexFor } from './berths.js?v=972313dd';
-import { wantsSecondary, shellsForAll } from './autofire.js?v=972313dd';
-import { printPhase, printOffset, printOn, patternSecsFor } from './printpath.js?v=972313dd';
-import { createBeamRig, PLASMA_DEFAULTS, BOARD_PRESET, BEAM_PEAK } from './beamdraw.js?v=972313dd';
-import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3, segKey, tangentDir, tangentBasis } from './vec3.js?v=972313dd';
-import { CREATURES, waveJelly } from './creatures.js?v=972313dd';
-import { brief, dwellFor } from './isaobriefs.js?v=972313dd';
-import { drawEmotion } from './emotions.js?v=972313dd';
+import { generateSphereMesh, relax } from './grid.js?v=0a144327';
+import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=0a144327';
+import { compileRail } from './cine/rail.js?v=0a144327';
+import { SCRIPTS } from './cine/scripts.js?v=0a144327';
+import { cuesBetween } from './cine/sound.js?v=0a144327';
+import { installCine } from './cine/kit.js?v=0a144327';
+import { mulberry32, randomSeed } from './rng.js?v=0a144327';
+import { computeBerths, berthIndexFor } from './berths.js?v=0a144327';
+import { wantsSecondary, shellsForAll } from './autofire.js?v=0a144327';
+import { printPhase, printOffset, printOn, patternSecsFor } from './printpath.js?v=0a144327';
+import { createBeamRig, PLASMA_DEFAULTS, BOARD_PRESET, BEAM_PEAK } from './beamdraw.js?v=0a144327';
+import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3, segKey, tangentDir, tangentBasis } from './vec3.js?v=0a144327';
+import { CREATURES, waveJelly } from './creatures.js?v=0a144327';
+import { brief, dwellFor } from './isaobriefs.js?v=0a144327';
+import { drawEmotion } from './emotions.js?v=0a144327';
 import { ACHIEVEMENTS, ACHV_GROUPS, achievement, blankRun, earned, freshlyEarned,
   sanitiseRecord }
-  from './achievements.js?v=972313dd';
+  from './achievements.js?v=0a144327';
 import { applyFontPack, currentFontPack, FONT_NAMES,
-  loadTypeFeel } from './fonts.js?v=972313dd';
-import { SECONDARY_TOE, applySecondaryToe } from './units.js?v=972313dd';
-import { UNITS, UNIT_NAMES, buildUnit, buildCreature, preloadMkcx, preloadServer, makeServerFixture, makeShieldShell, preloadContainer, makeContainerFixture, preloadFabricator, makeIsaoDrone, makeBulletCloud, makeRewardSolid, makeShellSolid, makeDebris, makeDotBurst, makePortalCloud, preloadPortalRing, makePortalRing, makeHeartCloud, makeDotEnemy, makeSurvivor, preloadAstronaut, makeAstronaut, preloadTerraformer, makeTerraformerFixture } from './units.js?v=972313dd';
-import { LOOKS, LOOK_NAMES } from './looks.js?v=972313dd';
-import { makeCellIndex } from './cellindex.js?v=972313dd';
-import { CREATURE_TINTS, ENEMY_SPEC, INTROS, computeWavePlan, accentFor } from './enemyspec.js?v=972313dd';
-import { PICKUPS } from './pickups.js?v=972313dd';
-import { rankFor, rankLabel, badgeSVG, killReq, eliteReq } from './ranks.js?v=972313dd';
-import { beamStep, isBeamStep, PEN_SOFT_FRAC, PEN_HARD_FRAC } from './beamranks.js?v=972313dd';
-import { burn, sweepAdvance, wallBite as wallBiteFor } from './beamburn.js?v=972313dd';
-import { arcPoint, projectToArc, toeForCrossing, crossingForToe } from './arc.js?v=972313dd';
+  loadTypeFeel } from './fonts.js?v=0a144327';
+import { SECONDARY_TOE, applySecondaryToe } from './units.js?v=0a144327';
+import { UNITS, UNIT_NAMES, buildUnit, buildCreature, preloadMkcx, preloadServer, makeServerFixture, makeShieldShell, preloadContainer, makeContainerFixture, preloadFabricator, makeIsaoDrone, makeBulletCloud, makeRewardSolid, makeShellSolid, makeDebris, makeDotBurst, makePortalCloud, preloadPortalRing, makePortalRing, makeHeartCloud, makeDotEnemy, makeSurvivor, preloadAstronaut, makeAstronaut, preloadTerraformer, makeTerraformerFixture } from './units.js?v=0a144327';
+import { LOOKS, LOOK_NAMES } from './looks.js?v=0a144327';
+import { makeCellIndex } from './cellindex.js?v=0a144327';
+import { CREATURE_TINTS, ENEMY_SPEC, INTROS, computeWavePlan, accentFor } from './enemyspec.js?v=0a144327';
+import { PICKUPS } from './pickups.js?v=0a144327';
+import { rankFor, rankLabel, badgeSVG, killReq, eliteReq } from './ranks.js?v=0a144327';
+import { beamStep, isBeamStep, PEN_SOFT_FRAC, PEN_HARD_FRAC } from './beamranks.js?v=0a144327';
+import { burn, sweepAdvance, wallBite as wallBiteFor } from './beamburn.js?v=0a144327';
+import { arcPoint, projectToArc, toeForCrossing, crossingForToe } from './arc.js?v=0a144327';
 import { MINE_TUNE, makeField, layMine, armMines, restock, mineAt,
-  inFan, trip, chain, nextChained, minePolar } from './mines.js?v=972313dd';
+  inFan, trip, chain, nextChained, minePolar } from './mines.js?v=0a144327';
 import { deepLink, wireDeepLink } from './deeplink.js';
 import { RESCUE_TUNE, makeRescue, placeSurvivors, stepBoard, stepGrab,
   disembark, loseCarried, lockOn, waveMix, standing as standingSurv,
   aboard as aboardSurv, missionOver, verdict as rescueVerdict,
   grabProgress, remaining as remainingSurv, exposed as exposedSurv,
   RESCUE2_TUNE, makeCamps, stepCall, stepEmerge, walkStep, runOver,
-  awake as campAwake } from './rescue.js?v=972313dd';
+  awake as campAwake } from './rescue.js?v=0a144327';
 import { WORMHOLE_PRESET, WORMHOLE_UNIFORM_DEFAULTS, RING_SPIN, TRAVEL,
-  travelRate, advancePhase } from './portalfx.js?v=972313dd';
-import { WORMHOLE_FRAG } from './fx/wormhole.frag.js?v=972313dd';
-import { CORONA_FRAG } from './fx/corona.frag.js?v=972313dd';
-import { labLine, parseLabQuery } from './lab.js?v=972313dd';
-import { bakeGalaxyCube } from './galaxybake.js?v=972313dd';
-import { SKY_PRESET } from './galaxyseed.js?v=972313dd';
-import { makeScore } from './score.js?v=972313dd';
-import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER } from './towers.js?v=972313dd';
-import { makeEconomy, sellRefund } from './economy.js?v=972313dd';
-import { pickTier } from './perftier.js?v=972313dd';
-import { applyWeatheredMaterial } from './cine/materials.js?v=972313dd';
-import { STICK, stickVector, knobOffset } from './stick.js?v=972313dd';
-import { registerServiceWorker } from './pwa.js?v=972313dd';
-import { makeBloom } from './postfx.js?v=972313dd';
-import { TANK_FEEL, TANK_FEEL_KNOBS, makeTankFeel, stepTankFeel, landTankFeel, fireTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js?v=972313dd';
-import { FEEL, loadFeel, saveFeel } from './feelstore.js?v=972313dd';
+  travelRate, advancePhase } from './portalfx.js?v=0a144327';
+import { WORMHOLE_FRAG } from './fx/wormhole.frag.js?v=0a144327';
+import { CORONA_FRAG } from './fx/corona.frag.js?v=0a144327';
+import { labLine, parseLabQuery } from './lab.js?v=0a144327';
+import { bakeGalaxyCube } from './galaxybake.js?v=0a144327';
+import { SKY_PRESET } from './galaxyseed.js?v=0a144327';
+import { makeScore } from './score.js?v=0a144327';
+import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER, HACK_GATED, starterTower, ROSTER } from './towers.js?v=0a144327';
+import { makeEconomy, sellRefund } from './economy.js?v=0a144327';
+import { pickTier } from './perftier.js?v=0a144327';
+import { applyWeatheredMaterial } from './cine/materials.js?v=0a144327';
+import { STICK, stickVector, knobOffset } from './stick.js?v=0a144327';
+import { registerServiceWorker } from './pwa.js?v=0a144327';
+import { makeBloom } from './postfx.js?v=0a144327';
+import { TANK_FEEL, TANK_FEEL_KNOBS, makeTankFeel, stepTankFeel, landTankFeel, fireTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js?v=0a144327';
+import { FEEL, loadFeel, saveFeel } from './feelstore.js?v=0a144327';
 import { STRIKE_KNOBS, makeStrike, makeStrikeParams, grantStrikes, stepStrike,
   toggleArm, paintTarget, launchStrike, stepFall, skipFall, fallProgress,
-  strikeDamage, retargetStrike, orbitProgress } from './strike.js?v=972313dd';
+  strikeDamage, retargetStrike, orbitProgress } from './strike.js?v=0a144327';
 import { radarBasis, radarProject, radarBearing, sweepAngle, radarPhosphor,
-  proximitySectors, SENSOR_LEVELS, sensorColor } from './radar.js?v=972313dd';
-import { BLOOM_GROUPS } from './bloomweights.js?v=972313dd';
-import { TOWER_LOOK_NAMES, DEFAULT_TOWER_LOOK, buildTowerLook, preloadLook } from './towerlooks.js?v=972313dd';
-import { makeAudio } from './audio.js?v=972313dd';
-import { DEATH_KEYS } from './audiomanifest.js?v=972313dd';
+  proximitySectors, SENSOR_LEVELS, sensorColor } from './radar.js?v=0a144327';
+import { BLOOM_GROUPS } from './bloomweights.js?v=0a144327';
+import { TOWER_LOOK_NAMES, DEFAULT_TOWER_LOOK, buildTowerLook, preloadLook, lookReady } from './towerlooks.js?v=0a144327';
+import { makeAudio } from './audio.js?v=0a144327';
+import { DEATH_KEYS } from './audiomanifest.js?v=0a144327';
 
 export function initTdTab(root) {
   let active = false;
   let wasPlaying = false; // drives body.playing (mobile hides ALL chrome)
 
   const params = {
-    towerLook: DEFAULT_TOWER_LOOK,
+    // THE SECOND BOARD'S DEFAULT LOOK IS ITS MODELS. A roster whose entries
+    // name a GLB each is a roster that exists to be seen; landing on it with
+    // braille masts would show none of what changed.
+    towerLook: ROSTER.towers.some((d) => d.model) ? 'sentry' : DEFAULT_TOWER_LOOK,
     // app-wide, but it lives in this GUI because this is the tab whose
     // messages the packs were chosen for (src/fonts.js owns the table)
     font: currentFontPack(),
@@ -1060,10 +1063,20 @@ export function initTdTab(root) {
     if (!trunk.length) return;
     const unlockedSet = new Set(unlockedTowerKeys(wave, hackedUnlocks));
     const have = (k) => towers.reduce((a, tw) => a + (tw.def.key === k ? 1 : 0), 0);
+    // ISAO'S POLICY IS A SHAPE, NOT A SHOPPING LIST. It was three literal
+    // keys, which is a policy that silently builds nothing on any board
+    // where those keys do not exist. What the sim batch actually learned
+    // was "two slow fields, two lobbers, and reach everywhere" — so it asks
+    // the roster for the towers with those ATTACKS and takes the first of
+    // each, which is the same policy on either board.
+    const byAttack = (atk) => (TOWERS.find((d) => d.attack === atk) || {}).key;
+    const longest = TOWERS.reduce((a, d) => (!a || d.range > a.range ? d : a), null);
     const wants = [];
-    if (have('slow') < 2) wants.push('slow');
-    if (have('aoe') < 2) wants.push('aoe');
-    wants.push('sniper'); // '...with sniper everywhere'
+    for (const atk of ['slowfield', 'mortar']) {
+      const k = byAttack(atk);
+      if (k && have(k) < 2) wants.push(k);
+    }
+    if (longest) wants.push(longest.key);  // '...with sniper everywhere'
     // the opening: the preferred kit unlocks at waves 4-7, and the very
     // first batch run proved a policy with no early fallback builds
     // NOTHING and loses the heart by wave 2 — so until the kit arrives,
@@ -4655,7 +4668,7 @@ export function initTdTab(root) {
       glossCard('#9fdcff', spriteShot('tank', unitIcon('tank', look().walker)), 'your tank', mobileShell
         ? 'TAP the ground to send it · DRAG on the left to drive · ◉ shell · ∿ plasma · BUILD switch top-right · hold a tower to upgrade'
         : 'W/Q-E drive · A/D steer · SPACE shell · SHIFT lasers · 1/2/3 views · U upgrade · ESC pause') +
-      glossCard('#9fdcff', spriteShot('tower-' + params.towerLook, () => buildTowerLook(params.towerLook, TOWER_BY_KEY.single)), 'towers', 'your army — build them on the HIGH GROUND (walls) in BUILD mode') +
+      glossCard('#9fdcff', spriteShot('tower-' + params.towerLook, () => buildTowerLook(params.towerLook, starterTower())), 'towers', 'your army — build them on the HIGH GROUND (walls) in BUILD mode') +
       glossCard('#ffb000', spriteShot('triad', makeTriadIcon), 'missile triads', 'drive over = +3 shells · shells also blast walls open') +
       glossCard('#66ff88', spriteShot('phage', unitIcon('phage', CREATURE_TINTS.phage)), 'fodder', 'soft creatures — RAM them, it’s free') +
       glossCard('#ff5340', spriteShot('barbed', unitIcon('barbed', CREATURE_TINTS.barbed)), 'spiked reds', 'armored — ramming hurts YOU · shells only') +
@@ -4724,7 +4737,7 @@ export function initTdTab(root) {
     msgEl.innerHTML = `<div class="msg-head">glossary · pickups</div>` +
       `<div class="gcards">` +
       glossCard('#ff6a88', spriteShot('heart', heartIcon), 'the stalheart', `${HEART_MAX} hp · enemy contact drains it · regen charges heal it`) +
-      glossCard('#9fdcff', spriteShot('tower-' + params.towerLook, () => buildTowerLook(params.towerLook, TOWER_BY_KEY.single)), 'towers', 'mount on walls only · tap high ground in BUILD mode · upgrade twice · sell 75%') +
+      glossCard('#9fdcff', spriteShot('tower-' + params.towerLook, () => buildTowerLook(params.towerLook, starterTower())), 'towers', 'mount on walls only · tap high ground in BUILD mode · upgrade twice · sell 75%') +
       glossCard('#ffb000', spriteShot('triad', makeTriadIcon), 'missile triad', '+3 shells on touch (rack caps at 9) — the ONLY ammo pickup') +
       glossCard('#9ff8ff', spriteShot('orb-power', orbIcon('star', 0x9ff8ff)), 'power sphere', 'far-field reward · +8% speed, permanent') +
       glossCard('#3dff6e', spriteShot('orb-health', orbIcon('cell', 0x3dff6e)), 'health sphere', 'far-field reward · +1 your hp') +
@@ -5420,8 +5433,8 @@ export function initTdTab(root) {
     // are placed, so orderTower's own spend nets to zero and every other
     // rule (the queue, the travel, the print clock) applies unchanged.
     queueMicrotask(() => {
-      eco.addBiomass(TOWER_BY_KEY.single.cost * 2);
-      for (const ci of garrisonSites(2)) orderTower('single', ci, { quiet: true });
+      eco.addBiomass(starterTower().cost * 2);
+      for (const ci of garrisonSites(2)) orderTower(starterTower().key, ci, { quiet: true });
       spawnIsao();   // on shift from the first second, order or no order
     });
     hackedUnlocks = 0; hackedRound = false; syncHackBtn();
@@ -12365,9 +12378,9 @@ export function initTdTab(root) {
   if (urlParams.get('printprobe') === '1') {
     (async () => {
       await spawnIsao();
-      eco.addBiomass(TOWER_BY_KEY.single.cost);
+      eco.addBiomass(starterTower().cost);
       for (let ci = 0; ci < dungeon.tags.length; ci++) {
-        if (!placeError(ci) && !orderByCell.has(ci)) { orderTower('single', ci); break; }
+        if (!placeError(ci) && !orderByCell.has(ci)) { orderTower(starterTower().key, ci); break; }
       }
       // tick until he is actually printing, rather than guessing a number
       let guard = 0;
@@ -13557,7 +13570,7 @@ export function initTdTab(root) {
       const roofs = [];
       for (let ci = 0; ci < graph.centers.length; ci++) if (!placeError(ci)) roofs.push(ci);
       roofs.sort((a, b) => dh[a] - dh[b]);
-      for (let i = 0; i < Math.min(T, roofs.length); i++) commitTower('slow', roofs[i]);
+      for (let i = 0; i < Math.min(T, roofs.length); i++) commitTower(TOWERS.find((d) => d.attack === 'slowfield').key, roofs[i]);
       // the crowd: at the gate nearest the Heart, so the towers' ranges cover it
       const gate = spawnPoints.filter((sp) => sp.alive).sort((a, b) => dh[a.ci] - dh[b.ci])[0];
       if (gate) for (let i = 0; i < W; i++) spawnQueue.push({ type: 'phage', sp: gate, at: spawnClock + i * 0.05 });
@@ -14193,6 +14206,32 @@ export function initTdTab(root) {
     }, 1200);
   }
 
+  // ?rosterprobe=1 — WHICH BOARD IS THIS, and did its models arrive. A
+  // screenshot of a tower forty pixels across cannot tell a Rotor from a
+  // Quiver, and a look whose bytes failed silently falls back to a braille
+  // mast — which is exactly the failure that looks like success.
+  if (urlParams.get('rosterprobe') === '1') {
+    // WAIT FOR THE BYTES. A look with async assets is not ready the moment
+    // the tab is: probing before the preload resolves reports the fallback
+    // and calls it a failure, which is a probe lying about the thing it
+    // exists to check.
+    preloadLook(params.towerLook).then((ok) => {
+      console.log(`ROSTERPROBE preload ${params.towerLook} → ${ok}`);
+      console.log(`ROSTERPROBE board ${ROSTER.id} "${ROSTER.label}" look=${params.towerLook}`
+        + ` ready=${lookReady(params.towerLook)}`);
+      for (const d of TOWERS) {
+        const obj = buildTowerLook(params.towerLook, d);
+        let meshes = 0, points = 0;
+        obj.traverse((o) => { if (o.isMesh) meshes++; if (o.isPoints) points++; });
+        console.log(`ROSTERPROBE ${String(d.key).padEnd(9)} "${d.label}" ${d.attack}`
+          + ` cost ${d.cost} range ${d.range} rate ${d.rate} model=${d.model || '-'}`
+          + ` → ${meshes} mesh ${points} points`
+          + `${points > 0 ? ' FELL BACK TO BRAILLE' : ''}`);
+      }
+      console.log(`ROSTERPROBE ladder ${TOWER_ORDER.join(' ')} · gated ${HACK_GATED.join(' ') || '-'}`);
+    });
+  }
+
   // ?drones=1 — buy the assistant, put three orders on the book, drive both
   // workers, and check they split the queue and all three land.
   if (urlParams.get('drones') === '1') {
@@ -14201,7 +14240,7 @@ export function initTdTab(root) {
       let placed = 0;
       for (let i = 0; i < dungeon.tags.length && placed < 3; i++) {
         if (dungeon.tags[i] === BLOCKED && !placeError(i) && graph.adj[i].some((nb) => dungeon.tags[nb] !== BLOCKED)) {
-          if (orderTower('single', i, { quiet: true })) placed++;
+          if (orderTower(starterTower().key, i, { quiet: true })) placed++;
         }
       }
       const seen = new Set();
@@ -15155,7 +15194,7 @@ export function initTdTab(root) {
           const d = dist3(graph.centers[ci], player.pos);
           if (d < bd) { bd = d; best = ci; }
         }
-        if (best >= 0) { eco.addBiomass(500); commitTower('rapid', best); tutorial.tickBuild(); }
+        if (best >= 0) { eco.addBiomass(500); commitTower(starterTower().key, best); tutorial.tickBuild(); }
         setTimeout(step, 120);
         return;
       }

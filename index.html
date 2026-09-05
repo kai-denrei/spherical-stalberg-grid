@@ -5,18 +5,18 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
   <title>spherical stålberg grid</title>
   <meta name="theme-color" content="#10131a">
-  <link rel="manifest" href="./manifest.webmanifest?v=972313dd">
-  <link rel="apple-touch-icon" href="./icons/apple-touch-icon.png?v=972313dd">
+  <link rel="manifest" href="./manifest.webmanifest?v=0a144327">
+  <link rel="apple-touch-icon" href="./icons/apple-touch-icon.png?v=0a144327">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="SphereGrid">
-  <link rel="stylesheet" href="./styles.css?v=972313dd">
+  <link rel="stylesheet" href="./styles.css?v=0a144327">
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
-  <link rel="icon" href="favicon.svg?v=972313dd" type="image/svg+xml">
-  <meta name="cb" content="972313dd">
-  <link rel="icon" type="image/svg+xml" href="./cb-shapes/23.svg?v=972313dd">
+  <link rel="icon" href="favicon.svg?v=0a144327" type="image/svg+xml">
+  <meta name="cb" content="0a144327">
+  <link rel="icon" type="image/svg+xml" href="./cb-shapes/10.svg?v=0a144327">
   <!-- cb-badge retired from the game view (operator ruling): the build
        token lives in the DEV LOG tab, which reads meta[name="cb"] itself -->
 </head>
@@ -24,9 +24,10 @@
   <nav id="tabbar">
     <button data-tab="home" class="nav-home">▸ home</button>
     <div class="tabgroup" data-group="play"><span class="tabgroup-name">play</span>
-      <button data-tab="td" data-mission="">TD</button>
+      <button data-tab="td" data-mission="" data-roster="">TD</button>
       <button data-tab="td" data-mission="rescue" title="RESCUE — six stranded, two seats, no resupply">rescue</button>
       <button data-tab="td" data-mission="rescue2" title="RAID — camps in clearings; stand still or run them over">raid</button>
+      <button data-tab="td" data-roster="2" title="TD2 — the sentry board: Rotor, Plasma, Quiver, Relay, Mortar, Lancer, Howitzer">TD2</button>
       <button data-tab="battle">battle</button>
       <button data-tab="heart">heart</button>
       <button data-tab="tank">tank</button>
@@ -256,7 +257,7 @@
     <div id="td-launch" class="caution-frame" aria-label="launch control">
       <button id="td-safety" class="safety" type="button" aria-pressed="false" aria-label="safety">
         <span class="lbl-on">ON</span>
-        <img id="td-safety-img" class="switch-img" src="assets/ui/switch-off.png?v=972313dd" alt="" width="120" height="200">
+        <img id="td-safety-img" class="switch-img" src="assets/ui/switch-off.png?v=0a144327" alt="" width="120" height="200">
         <span class="lbl-off">OFF</span>
       </button>
       <div id="td-launch-readout">
@@ -651,6 +652,6 @@
     </div>
   </div>
 
-  <script type="module" src="./src/main.js?v=972313dd"></script>
+  <script type="module" src="./src/main.js?v=0a144327"></script>
 </body>
 </html>

@@ -184,6 +184,24 @@ token — the corner badge was retired from the game view).
   over the console while `?layout` said 0 overlaps — measure with `?coarse=1`
   BEFORE trusting a shell layout). Also mind source order: `#td-tut`'s base rule is
   declared after the mobile blocks, so an override up there loses.
+- TWO TOWER ROSTERS, ONE TAB. `towers.js` holds `ROSTERS[1]` (the campaign,
+  untouched) and `ROSTERS[2]` (the sentry board: Rotor / Plasma Thrower /
+  Quiver / Relay / Mortar / Lancer / Howitzer, each naming a GLB in
+  `assets/models/sentries/`). `TOWERS`/`TOWER_BY_KEY`/`TOWER_ORDER` are
+  exported `let` — LIVE bindings — switched once by `src/roster.js`, which
+  must be main.js's FIRST import so it runs before td-tab's module body.
+  `?roster=2` selects it; the TD2 tab button is a navigation, like a mission.
+  `?rosterprobe=1` waits for the look's preload and then reports every tower
+  with its model and whether it fell back to a braille mast. Never address a
+  tower by a literal key (`'single'`) — use `starterTower()` or find it by
+  `attack`; a literal is a call site that silently does nothing on one board.
+- A `?v=` token is part of the module URL, so `./x.js` and `./x.js?v=ab` are
+  TWO modules and the browser loads both. ~27 pure modules are already split
+  that way (wasted bytes, no bug); for a module with mutable state it is a
+  silent correctness bug — the write lands on the copy nobody reads, which is
+  how the second roster first came up as the campaign. `bust.sh` only UPDATES
+  tokens, never adds them, so an untokened import stays untokened forever.
+  `check-tokens.sh` now fails on a split import of any module exporting `let`.
 - maze/organic/battle/heart tabs are ~900-line siblings (cp+sed lineage).
   When batch-patching them: anchor on CODE lines (comments drift first),
   assert per file, treat a mid-script abort as the designed outcome.

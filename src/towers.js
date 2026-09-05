@@ -16,7 +16,7 @@
 // is PER-TOWER in cells/s (HK's board-unit values ×22) — the tempo IS
 // the identity: singles snap, homing glides, the mortar lobs; arc
 // marks the mortar's lofted flight.
-export const TOWERS = [
+const ROSTER_V1 = [
   { key: 'single', label: 'Single Shot', color: 0xeaf2ff, cost: 40,
     dmg: 14 / 90, range: 3.7, rate: 1.4, attack: 'single',
     // a six-axis arm: it points at ONE thing and swings to the next, which
@@ -69,7 +69,102 @@ export const TOWERS = [
     shape: 'obelisk', spin: 0.5 },
 ];
 
-export const TOWER_BY_KEY = Object.fromEntries(TOWERS.map((t) => [t.key, t]));
+// --- ROSTER 2: the sentry-model board ------------------------------------
+// A VARIANT, NOT A REPLACEMENT. Roster 1 above is untouched and still the
+// default, because the development history is worth keeping and because
+// fifteen thousand lines of TD tab should not be forked to change eight
+// numbers and eight names. One board, two rosters, chosen once at boot.
+//
+// The operator's mapping, slot by slot, with Rapid removed and everything
+// after it shifted up:
+//
+//   1 Single  → ROTOR            5 AoE    → MORTAR
+//   2 Rapid   → (out)            6 Sniper → LANCER
+//   3 Spread  → PLASMA THROWER   7 Laser  → HOWITZER
+//   4 Homing  → QUIVER           8 (new)  → HEPTAPOD A6
+//     Slow    → RELAY
+//
+// Three of those are more than a rename and are called out where they sit:
+// the Rotor absorbs Rapid's job, the Plasma Thrower is a beam, and the
+// Howitzer is artillery rather than the beam its slot used to hold.
+//
+// `model` names the GLB in assets/models/sentries/ — the Sentry Workshop's
+// own contract, which the sentry lab already loads.
+const ROSTER_V2 = [
+  // ROTOR — the starter, and RAPID'S JOB IS NOW ITS JOB. Removing Rapid
+  // took the board's cheap high-rate answer to fodder with it, so the Rotor
+  // is Single's slot fired at a rotary cadence: less per round, many more
+  // rounds. Revert by putting rate back to 1.4 and dmg to 14/90.
+  { key: 'rotor', label: 'Rotor', color: 0xeaf2ff, cost: 45,
+    dmg: 9 / 90, range: 3.6, rate: 2.2, attack: 'single',
+    model: 'rotor', shape: 'sixaxis', projPx: 4, trail: 2, projSpeed: 24 },
+  // PLASMA THROWER — a BEAM, not a spread: the tank's secondary with the
+  // reach taken off it. Short range is the whole trade; it out-damages
+  // everything at knife distance and covers almost nothing.
+  { key: 'plasma', label: 'Plasma Thrower', color: 0x2fe6d0, cost: 80,
+    dmg: 15 / 90, range: 2.6, rate: 1.6, attack: 'beam',
+    model: 'plasma', shape: 'ripple', spin: 0.8 },
+  { key: 'quiver', label: 'Quiver', color: 0x5a9bff, cost: 90,
+    dmg: 9 / 90, range: 3.5, rate: 1.2, attack: 'homing',
+    model: 'quiver', shape: 'gripper', spin: 0.9, projPx: 5, trail: 6, projSpeed: 13 },
+  { key: 'relay', label: 'Relay', color: 0xc4e6ff, cost: 100,
+    dmg: 0, range: 3.5, rate: 1.0, attack: 'slowfield',
+    slowFactor: 0.45, slowDur: 1.6,
+    model: 'relay', shape: 'broadcast', spin: 0.3 },
+  { key: 'mortar', label: 'Mortar', color: 0x9fc4ff, cost: 110,
+    dmg: 12 / 90, range: 3.5, rate: 0.9, attack: 'mortar', splash: 1.5,
+    model: 'mortar', shape: 'mortar', spin: 0.7, projPx: 12, trail: 6, arc: true, projSpeed: 3.5 },
+  { key: 'lancer', label: 'Lancer', color: 0xffffff, cost: 130,
+    dmg: 62 / 90, range: 7.0, rate: 0.7, attack: 'single', hitscan: true,
+    model: 'lancer', shape: 'guyed', projPx: 7, trail: 11, projSpeed: 42 },
+  // HOWITZER — the slot Laser used to hold, and a howitzer is not a beam.
+  // It is the Mortar's big sister: further, heavier, wider, and slow enough
+  // that a wave can walk through the gap between shells. That gives the
+  // board TWO lobbed weapons that are actually different rather than one
+  // renamed twice.
+  { key: 'howitzer', label: 'Howitzer', color: 0x9ff5ff, cost: 220,
+    dmg: 34 / 90, range: 5.6, rate: 0.45, attack: 'mortar', splash: 2.4,
+    model: 'howitzer', shape: 'mortar', spin: 0.4, projPx: 15, trail: 8, arc: true, projSpeed: 3.0 },
+];
+
+// --- the live roster ------------------------------------------------------
+// These are LET bindings on purpose: an ES module export is a live binding,
+// so every importer sees the switch without any of them holding a stale
+// copy — which is what lets one 15k-line tab serve both boards. The pick is
+// made ONCE, before the tab is imported (src/roster.js), and never again;
+// nothing here is reactive and nothing should be.
+export const ROSTERS = {
+  1: { id: 1, label: 'campaign', towers: ROSTER_V1,
+       order: ['single', 'rapid', 'spread', 'slow', 'homing', 'aoe', 'sniper', 'laser'],
+       hackGated: ['aoe'] },
+  2: { id: 2, label: 'sentry board', towers: ROSTER_V2,
+       order: ['rotor', 'plasma', 'quiver', 'relay', 'mortar', 'lancer', 'howitzer'],
+       hackGated: ['mortar'] },
+};
+
+export let ROSTER = ROSTERS[1];
+export let TOWERS = ROSTER.towers;
+export let TOWER_BY_KEY = Object.fromEntries(TOWERS.map((t) => [t.key, t]));
+export let TOWER_ORDER = ROSTER.order;
+export let HACK_GATED = ROSTER.hackGated;
+let WAVE_LADDER = TOWER_ORDER.filter((k) => !HACK_GATED.includes(k));
+
+// Never throws: an unknown id is the campaign, because a stale URL should
+// land you on the board that exists rather than on nothing.
+export function useRoster(id) {
+  ROSTER = ROSTERS[id] || ROSTERS[1];
+  TOWERS = ROSTER.towers;
+  TOWER_BY_KEY = Object.fromEntries(TOWERS.map((t) => [t.key, t]));
+  TOWER_ORDER = ROSTER.order;
+  HACK_GATED = ROSTER.hackGated;
+  WAVE_LADDER = TOWER_ORDER.filter((k) => !HACK_GATED.includes(k));
+  return ROSTER;
+}
+
+// THE STARTER TOWER, by position rather than by name. Several call sites
+// wanted "the cheapest one" and said `TOWER_BY_KEY.single` — which is a key
+// that does not exist on the second board.
+export const starterTower = () => TOWERS[0];
 
 // upgrade economics, HK-exact: tier1 = 70% of purchase, tier2 = 120%,
 // two tiers max. Returns null when maxed.
@@ -126,16 +221,14 @@ export const shotInterval = (rate) => 1 / rate;
 // --- progressive unlock ladder -------------------------------------------
 // Towers unlock by WAVE: ONE new tower each wave, cheap → capstone.
 // Cumulative: wave N grants the first N towers (capped at the roster).
-export const TOWER_ORDER = ['single', 'rapid', 'spread', 'slow', 'homing', 'aoe', 'sniper', 'laser'];
-
+// TOWER_ORDER / HACK_GATED / WAVE_LADDER are the live roster's, above.
+//
 // HACK-GATED: never unlocked by the wave clock — the only source is
 // winning a protocol at the Antipode Relay. Sim batch 2026-08-30 showed
 // the mid-game locking solid once the full kit arrives by timetable; the
 // operator's ruling gates the OP half of the slow+aoe combo behind the
-// errand. The wave ladder is TOWER_ORDER minus these, so sniper and
-// laser each arrive one wave earlier than before.
-export const HACK_GATED = ['aoe'];
-const WAVE_LADDER = TOWER_ORDER.filter((k) => !HACK_GATED.includes(k));
+// errand. The wave ladder is TOWER_ORDER minus these, so the capstones
+// each arrive one wave earlier than before.
 
 export function unlockedTowerKeys(wave, hacks = 0) {
   const n = Math.max(1, Math.min(WAVE_LADDER.length, Math.floor(wave) || 1));

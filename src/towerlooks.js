@@ -19,9 +19,10 @@
 // without reshaping this interface. A look with no preload is ready
 // immediately; a look whose preload has not resolved falls back.
 import * as THREE from '../vendor/three.module.js';
-import { loadGlb, mergeByMaterial, fitModel, tintModel } from './glbmodels.js?v=972313dd';
-import { makeTowerMast, makeTowerUnit } from './units.js?v=972313dd';
-import { TOWER, HEADS, loadTower } from './feelstore.js?v=972313dd';
+import { loadGlb, mergeByMaterial, fitModel, tintModel } from './glbmodels.js?v=0a144327';
+import { TOWERS } from './towers.js?v=0a144327';
+import { makeTowerMast, makeTowerUnit } from './units.js?v=0a144327';
+import { TOWER, HEADS, loadTower } from './feelstore.js?v=0a144327';
 
 // def.shape -> a solid primitive, so the SOLID look keeps each tower's
 // silhouette identity from towers.js rather than inventing its own.
@@ -93,6 +94,62 @@ function makeGlbLook({ label, url, height, maxSpan, drop = [] }) {
   return look;
 }
 
+// SENTRY: one GLB PER TOWER, named by the roster's own `model` field. The
+// heptapod look above is one model worn by every tower on the board; this
+// is the opposite, and it is what the second roster is for — eight machines
+// that look like eight different machines, from the Sentry Workshop, under
+// the contract the sentry lab already loads them by.
+//
+// The models are cached by URL rather than per look, so six Rotors on a
+// board are one download and one upload, and a tower whose bytes have not
+// landed still gets a braille mast rather than nothing.
+const sentryProtos = new Map();
+const sentryPending = new Map();
+
+function sentryUrlFor(def, tier = 1) {
+  return `assets/models/sentries/${def.model}_t${tier}.glb`;
+}
+
+function loadSentryModel(def) {
+  const url = sentryUrlFor(def);
+  if (sentryProtos.has(url)) return Promise.resolve(true);
+  if (sentryPending.has(url)) return sentryPending.get(url);
+  const p = loadGlb(url).then((scene) => {
+    if (!scene) return false;
+    // MERGED, NOT ARTICULATED. A tower that has dug in holds still — the
+    // named pivots are the sentry LAB's business, where a turret tracks;
+    // here the model is scenery with a gun on it and six draw calls beat
+    // a hundred and nine.
+    sentryProtos.set(url, fitModel(mergeByMaterial(scene, []), { height: 1.35, maxSpan: 2.2 }));
+    return true;
+  }).catch(() => false);
+  sentryPending.set(url, p);
+  return p;
+}
+
+const sentryLook = {
+  label: 'sentry',
+  loaded: false,
+  preload() {
+    if (sentryLook._p) return sentryLook._p;
+    // every model the LIVE roster names — a roster with no models (the
+    // campaign board) resolves immediately and falls back to braille
+    sentryLook._p = Promise.all(TOWERS.filter((d) => d.model).map(loadSentryModel))
+      .then((all) => { sentryLook.loaded = all.length > 0 && all.some(Boolean); return sentryLook.loaded; });
+    return sentryLook._p;
+  },
+  build(def) {
+    const proto = def.model ? sentryProtos.get(sentryUrlFor(def)) : null;
+    if (!proto) return makeTowerUnit(def);   // bytes not in yet — never nothing
+    const g = proto.clone(true);
+    tintModel(g, def.color);
+    g.userData.baseScale = 1 / 1.55;
+    g.userData.lift = 0.02;
+    g.userData.kind = 'mesh';
+    return g;
+  },
+};
+
 export const TOWER_LOOKS = {
   // built against the LIVE tuning object, so what the viewer's tower panel
   // shows is what the board raises — no apply step, nothing to sync
@@ -107,6 +164,7 @@ export const TOWER_LOOKS = {
     // lays two big triangles over the model with corners poking out
     drop: ['Hull_Collision'],
   }),
+  sentry: sentryLook,
 };
 
 export const TOWER_LOOK_NAMES = Object.keys(TOWER_LOOKS);
