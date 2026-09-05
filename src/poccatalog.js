@@ -55,6 +55,7 @@ export const POC_GROUPS = [
     note: 'for reading rather than playing',
     entries: [
       { id: 'units', title: 'units', line: 'Every unit and tower, alone and up close. Turn one over, hear what it sounds like.' },
+      { id: 'sentry', title: 'sentry range', line: 'Six modular turret families on a live range: units pop up, the sentry finds one, slews to it on its own yaw and elevation stops, and shoots it. Every angle and limit is a knob.' },
       { id: 'how', title: 'how it works', line: 'The building blocks, by concept: the grid, the dungeon, motion, sound, bloom, models.' },
       { id: 'stack', title: 'tech stack', line: 'What this is built on, and what would or would not fit alongside it.' },
     ],

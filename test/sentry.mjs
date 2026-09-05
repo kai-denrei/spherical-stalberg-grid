@@ -1,0 +1,204 @@
+// sentry.mjs — the turret's rules as invariants. Two of these are the
+// difference between a sentry and a thing that waves a barrel around: the
+// yaw WRAP (slewing from +170 to -170 is twenty degrees, and the naive
+// subtraction is wrong there and nowhere else, so it passes every test
+// anybody writes by accident) and the ELEVATION SIGN, which decides whether
+// the gun points at the sky or the floor.
+import {
+  SENTRY_TUNE, SENTRY_FAMILIES, familyById, sentryUrl,
+  wrapDeg, deltaDeg, aimAt, inEnvelope,
+  makeSentry, slew, track, onTarget, aimError, stepGun, canFire, fire,
+  makeRange, popTarget, stepRange, pickTarget, hitTarget, landedOn, sentryKnobProblems,
+} from '../src/sentry.js';
+
+let failures = 0;
+const check = (name, cond, detail = '') => {
+  if (cond) console.log(`  ok   ${name}`);
+  else { console.error(`  FAIL ${name} ${detail}`); failures++; }
+};
+const near = (a, b, e = 1e-9) => Math.abs(a - b) < e;
+const mulberry32 = (a) => () => {
+  a |= 0; a = (a + 0x6D2B79F5) | 0;
+  let t = Math.imul(a ^ (a >>> 15), 1 | a);
+  t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+  return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+};
+
+console.log('schema:');
+check('knob table is sound', sentryKnobProblems().length === 0, sentryKnobProblems().join('; '));
+check('six families', SENTRY_FAMILIES.length === 6);
+check('the Relay is the fixed one', familyById('relay').fixed === true
+  && SENTRY_FAMILIES.filter((f) => f.fixed).length === 1);
+check('the url is the workshop’s own path', sentryUrl('rotor', 3) === 'assets/models/sentries/rotor_t3.glb');
+
+console.log('angles:');
+check('wrap keeps the half-open turn', wrapDeg(180) === 180 && wrapDeg(-180) === 180);
+check('wrap folds past a turn', wrapDeg(190) === -170 && wrapDeg(-190) === 170 && wrapDeg(720) === 0);
+// THE ONE THAT MATTERS
+check('the short way across the seam', deltaDeg(170, -170) === 20, String(deltaDeg(170, -170)));
+check('...and back', deltaDeg(-170, 170) === -20, String(deltaDeg(-170, 170)));
+check('the short way is still the short way inside the range', deltaDeg(10, 40) === 30);
+check('a half turn does not flip-flop', Math.abs(deltaDeg(0, 180)) === 180);
+
+console.log('where to point:');
+// +Z forward, +Y up (the workshop's stated convention)
+check('dead ahead is zero', near(aimAt([0, 0, 5]).yaw, 0) && near(aimAt([0, 0, 5]).elev, 0));
+check('+X is a quarter turn right', near(aimAt([5, 0, 0]).yaw, 90));
+check('-X is a quarter turn left', near(aimAt([-5, 0, 0]).yaw, -90));
+check('behind is a half turn', Math.abs(aimAt([0, 0, -5]).yaw) === 180);
+// ELEVATION IS POSITIVE UP. If this flips, the gun tracks the floor.
+check('above is positive elevation', near(aimAt([0, 5, 5]).elev, 45));
+check('below is negative elevation', near(aimAt([0, -5, 5]).elev, -45));
+check('straight up is ninety', near(aimAt([0, 5, 0]).elev, 90));
+
+console.log('the envelope:');
+check('level is inside', inEnvelope(aimAt([0, 0, 5])));
+check('the model’s ceiling is respected', !inEnvelope(aimAt([0, 20, 5])),
+  String(aimAt([0, 20, 5]).elev));
+check('...and its floor', !inEnvelope(aimAt([0, -5, 5])));
+check('just inside the ceiling is engageable', inEnvelope({ elev: SENTRY_TUNE.elevMax - 0.1 }));
+
+console.log('the drive:');
+{
+  const st = makeSentry();
+  st.wantYaw = 90;
+  slew(st, 0.1);
+  check('it turns at its rate', near(st.yaw, SENTRY_TUNE.yawRate * 0.1));
+  check('...and is not on target yet', !onTarget(st));
+  // ACROSS THE SEAM, in the machine rather than in the helper
+  const st2 = makeSentry();
+  st2.yaw = 170; st2.wantYaw = -170;
+  slew(st2, 0.05);                       // 5.5 degrees at 110 deg/s
+  check('it crosses the seam forwards', st2.yaw > 170 || st2.yaw < -170,
+    `yaw ${st2.yaw.toFixed(2)}`);
+  check('...and gets nearer, not further', Math.abs(deltaDeg(st2.yaw, -170)) < 20);
+  let guard = 0;
+  while (!slew(st2, 0.05) && guard++ < 400);
+  check('and it arrives', onTarget(st2) && guard < 400, `after ${guard} steps`);
+
+  // the envelope clamps the MACHINE too, not only the want
+  const st3 = makeSentry();
+  st3.wantElev = 200;
+  for (let k = 0; k < 200; k++) slew(st3, 0.05);
+  check('it cannot drive past its stops', st3.elev === SENTRY_TUNE.elevMax);
+
+  // ON TARGET IS A TOTAL ERROR: dead-on in yaw and high in elevation is not
+  // aimed at anything, and a per-axis test would call it a hit
+  const st4 = makeSentry();
+  st4.yaw = 0; st4.wantYaw = 0; st4.elev = 0; st4.wantElev = 10;
+  check('an axis that is off is off', !onTarget(st4) && near(aimError(st4), 10));
+}
+
+console.log('tracking:');
+{
+  const st = makeSentry();
+  const aim = track(st, [5, 0, 5]);
+  check('it wants the bearing', near(st.wantYaw, 45) && near(aim.yaw, 45));
+  // A TARGET OUTSIDE THE ENVELOPE IS STILL TRACKED IN YAW, clamped in
+  // elevation — the barrel goes as close as it can, and the CALLER can see
+  // from the returned aim that the shot is not on. Refusing to move at all
+  // would read as a broken turret.
+  const high = track(st, [0, 40, 5]);
+  check('an unreachable target still turns it', near(st.wantYaw, 0));
+  check('...clamped at the stop', st.wantElev === SENTRY_TUNE.elevMax);
+  check('...and the caller can tell', !inEnvelope(high));
+}
+
+console.log('the gun:');
+{
+  const st = makeSentry();
+  st.wantYaw = 0; st.wantElev = 0;
+  check('a cold gun on target may fire', canFire(st, true));
+  check('...but not at an unreachable target', !canFire(st, false));
+  const m0 = fire(st, 6);
+  check('it fires from the first muzzle', m0 === 0);
+  check('...and goes hot', st.cool === SENTRY_TUNE.cooldown && !canFire(st, true));
+  check('...and recoils', st.recoil === SENTRY_TUNE.recoilKick);
+  stepGun(st, SENTRY_TUNE.cooldown);
+  check('it cools', st.cool === 0 && canFire(st, true));
+  // ROUND ROBIN: a six-barrelled Rotor walks its barrels
+  const seen = [m0];
+  for (let k = 0; k < 7; k++) { seen.push(fire(st, 6)); stepGun(st, 9); }
+  check('the barrels walk', seen.slice(0, 6).join() === '0,1,2,3,4,5', seen.join());
+  check('...and wrap', seen[6] === 0 && seen[7] === 1);
+  const one = makeSentry();
+  check('a single-muzzle model always fires from 0',
+    fire(one, 1) === 0 && (stepGun(one, 9), fire(one, 1)) === 0);
+  check('zero muzzles does not divide by zero', fire(makeSentry(), 0) === 0);
+  const rec = makeSentry();
+  fire(rec, 1);
+  stepGun(rec, 10);
+  check('the recoil returns', rec.recoil === 0);
+  check('rounds are counted', st.rounds === 8);
+}
+
+console.log('the range:');
+{
+  const rng = mulberry32(4414);
+  const range = makeRange();
+  stepRange(range, 0.016, rng);
+  check('it fills to the count', range.targets.length === SENTRY_TUNE.targets);
+  check('everything is up', range.targets.every((t) => t.up));
+  check('they stand on the ring', range.targets.every((t) => {
+    const r = Math.hypot(t.pos[0], t.pos[2]);
+    return r >= SENTRY_TUNE.ringMin - 1e-9 && r <= SENTRY_TUNE.ringMax + 1e-9;
+  }));
+  check('nothing pops below the floor', range.targets.every((t) => t.pos[1] >= 0));
+  // DETERMINISTIC: a replayed range must set the same problem, or a tuning
+  // session is guesswork
+  const r2 = makeRange();
+  stepRange(r2, 0.016, mulberry32(4414));
+  check('the same seed sets the same problem',
+    r2.targets.map((t) => t.pos.join()).join('|') === range.targets.map((t) => t.pos.join()).join('|'));
+
+  // they drop when their time is up, are reported, and the count comes back
+  const before = range.targets.map((t) => t.id);
+  const dropped = stepRange(range, 20, rng);
+  check('the old ones drop and say so', dropped.length > 0
+    && dropped.every((id) => before.includes(id)));
+  check('...and the range refills', range.targets.length === SENTRY_TUNE.targets);
+  check('...with new ones', range.targets.every((t) => !before.includes(t.id)));
+
+  // pickTarget: the nearest it can REACH
+  const p = makeRange();
+  p.targets = [
+    { id: 1, pos: [0, 40, 1], up: true, hp: 2 },     // right on top, unreachable
+    { id: 2, pos: [0, 0, 9], up: true, hp: 2 },      // far, level
+    { id: 3, pos: [0, 0, 5], up: true, hp: 2 },      // nearer, level
+    { id: 4, pos: [0, 0, 2], up: false, hp: 2 },     // nearest, but down
+  ];
+  check('it picks the nearest it can point at', p.targets[pickTarget(p)].id === 3);
+  // A SENTRY COMMITS. Re-picking the nearest every frame whips the barrel
+  // between two targets and settles on neither — which looks like a broken
+  // drive and is really a broken decision.
+  check('it keeps the target it has, even when something nearer pops',
+    p.targets[pickTarget(p, SENTRY_TUNE, 2)].id === 2);
+  check('...but not one that went down', (() => {
+    p.targets.find((t) => t.id === 2).up = false;
+    return p.targets[pickTarget(p, SENTRY_TUNE, 2)].id === 3;
+  })());
+  check('...nor one it cannot reach', p.targets[pickTarget(p, SENTRY_TUNE, 1)].id === 3);
+  check('...nor one that is not there', p.targets[pickTarget(p, SENTRY_TUNE, 404)].id === 3);
+  p.targets = [{ id: 9, pos: [0, 40, 1], up: true, hp: 2 }];
+  check('nothing reachable is no target', pickTarget(p) === -1);
+
+  // WHERE THE ROUND LANDED. Without this the tolerance knob is decoration.
+  const tt = { id: 1, pos: [0, 1, 6] };
+  check('a round on the target lands', landedOn([0, 1, 6], tt));
+  check('...and just inside the radius', landedOn([0, 1, 6 - SENTRY_TUNE.hitRadius + 0.01], tt));
+  check('...but not just outside it', !landedOn([0, 1, 6 - SENTRY_TUNE.hitRadius - 0.01], tt));
+  check('a round with nothing to land on misses', !landedOn([0, 1, 6], null));
+
+  // hits
+  const st = makeSentry();
+  const h = makeRange();
+  h.targets = [{ id: 7, pos: [0, 0, 5], up: true, hp: 2 }];
+  check('a hit wounds', hitTarget(st, h, 7) === 'hit' && st.hits === 1);
+  check('the next one kills', hitTarget(st, h, 7) === 'kill' && st.kills === 1);
+  check('...and it is down', !h.targets[0].up);
+  check('a dead target cannot be hit again', hitTarget(st, h, 7) === null && st.hits === 2);
+  check('a miss on nothing is null', hitTarget(st, h, 999) === null);
+}
+
+console.log(failures ? `\n${failures} FAILURES` : '\nall sentry invariants hold');
+process.exit(failures ? 1 : 0);

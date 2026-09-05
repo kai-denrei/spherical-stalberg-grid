@@ -5,22 +5,22 @@
    back to a system face until the subset is rebuilt. */
 @font-face {
   font-family: 'VT323';
-  src: url('assets/fonts/VT323.woff2?v=f6eb8e95') format('woff2');
+  src: url('assets/fonts/VT323.woff2?v=84667024') format('woff2');
   font-weight: 400; font-style: normal; font-display: swap;
 }
 @font-face {
   font-family: 'Press Start 2P';
-  src: url('assets/fonts/PressStart2P.woff2?v=f6eb8e95') format('woff2');
+  src: url('assets/fonts/PressStart2P.woff2?v=84667024') format('woff2');
   font-weight: 400; font-style: normal; font-display: swap;
 }
 @font-face {
   font-family: 'Share Tech Mono';
-  src: url('assets/fonts/ShareTechMono.woff2?v=f6eb8e95') format('woff2');
+  src: url('assets/fonts/ShareTechMono.woff2?v=84667024') format('woff2');
   font-weight: 400; font-style: normal; font-display: swap;
 }
 @font-face {
   font-family: 'DotGothic16';
-  src: url('assets/fonts/DotGothic16.woff2?v=f6eb8e95') format('woff2');
+  src: url('assets/fonts/DotGothic16.woff2?v=84667024') format('woff2');
   font-weight: 400; font-style: normal; font-display: swap;
 }
 
@@ -3673,6 +3673,22 @@ tr.sim-timeout td:nth-child(2), tr.sim-stalled td:nth-child(2) { color: #ffb000;
   cursor: pointer;
 }
 #vars-toggle:hover, body.vars-open #vars-toggle { color: #fff; border-color: #00d0ff; }
+/* THE BOARD'S DEEP LINK. Beside the variables button rather than on the left
+   edge with the labs' — that edge is the throttle, the radar and Isao's
+   caption on this tab, and a control the thumb can hit while steering is a
+   control that gets hit while steering. */
+#td-link {
+  position: fixed;
+  top: max(10px, env(safe-area-inset-top));
+  left: 240px;
+  z-index: 60;
+  width: 40px; height: 36px;
+  font: 700 16px ui-monospace, Menlo, monospace; line-height: 1;
+  color: #9fdcff; background: rgba(27, 33, 48, 0.85);
+  border: 1px solid #2b6b96; border-radius: 8px; cursor: pointer;
+}
+#td-link:hover { color: #fff; border-color: #00d0ff; }
+#td-link:active { transform: translateY(1px); }
 #td-vars .vars-nav {
   display: flex; flex-direction: column; gap: 2px;
   padding: 44px 8px 8px;
@@ -4132,6 +4148,26 @@ body:not(.chrome-open) #tabbar .tabgroup:not(:has(button.active)) { display: non
      burned, and what it never reached. Without this they run off the edge
      as one line and the last two are simply not there. */
   white-space: pre-line; max-width: 60vw; line-height: 1.5;
+}
+/* the SENTRY RANGE, on the astronaut study's furniture — same stage, same
+   gear button, same two-line HUD. A lab that looks like the other labs is a
+   lab nobody has to learn. */
+#sentry-app { position: absolute; inset: 0; }
+#sentry-hud {
+  position: absolute; left: 12px; bottom: 12px; z-index: 6;
+  font: 12px/1.5 ui-monospace, Menlo, monospace; color: #9fdcff;
+  text-shadow: 0 0 8px rgba(0, 0, 0, 0.9); white-space: pre-line;
+  max-width: 62vw; pointer-events: none;
+}
+#sentry-gear { position: absolute; right: 12px; top: 12px; z-index: 8; width: 44px; height: 44px; border-radius: 10px;
+  border: 1px solid rgba(120, 200, 255, 0.35); background: rgba(10, 22, 34, 0.85); color: #9fdcff; font-size: 20px; display: none; }
+#tab-sentry.panel-hidden .lil-gui.root { display: none !important; }
+@media (pointer: coarse), (max-width: 700px) {
+  #sentry-gear { display: block; top: calc(env(safe-area-inset-top, 0px) + 112px); right: 12px; }
+  #sentry-hud { bottom: auto; top: calc(env(safe-area-inset-top, 0px) + 168px); left: 12px; right: 12px; font-size: 11px; max-width: none; }
+  #tab-sentry .lil-gui.root { display: block !important; position: fixed !important; left: 0 !important; right: 0 !important; bottom: 0 !important; top: auto !important;
+    width: 100% !important; max-height: 46vh; overflow-y: auto; --widget-height: 36px; --font-size: 15px; --input-font-size: 15px; --name-width: 44%;
+    border-radius: 12px 12px 0 0; }
 }
 #astro-gear { position: absolute; right: 12px; top: 12px; z-index: 8; width: 44px; height: 44px; border-radius: 10px;
   border: 1px solid rgba(120, 200, 255, 0.35); background: rgba(10, 22, 34, 0.85); color: #9fdcff; font-size: 20px; display: none; }

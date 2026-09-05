@@ -84,6 +84,13 @@ token — the corner badge was retired from the game view).
   one tick, so this is the only way to photograph an open container with
   people walking out of it; it fires at t+5 s, AFTER the berth deploy, which
   drives the hull and would undo it),
+  the SENTRY RANGE (`#sentry`): `?family=needle|rotor|kiln|quiver|lancer|relay`,
+  `?tier=1|2|3`, plus every knob in `SENTRY_TUNE` by name (`?tolerance=25`
+  makes it miss, which is the point of the knob), and `?sentryprobe=1` — the
+  error falling, the rounds leaving and the targets going down, once a second.
+  Models are the Sentry Workshop's, vendored to `assets/models/sentries/`
+  under their own name contract: `ROOT→BASE→YAW→PITCH→RECOIL`, `MUZZLE_nn`,
+  and six material names. `?tabprobe=1` also lists this tab.
   every LAB's deep link: the 🔗 button copies the tab's current panel as a
   URL and writes it into the address bar (astro / metal / beam / portal /
   cine; the units viewer has had its own since before this). Only what

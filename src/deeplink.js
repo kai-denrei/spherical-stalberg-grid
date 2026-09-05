@@ -31,7 +31,7 @@ export const DROP_KEYS = new Set([
   'layout', 'tapprobe', 'pressprobe', 'modalprobe', 'stickprobe', 'stateprobe',
   'govprobe', 'labprobe', 'breachprobe', 'hitprobe', 'pedprobe', 'sitrep',
   'newplanet', 'driveout', 'whatsat', 'tick', 'walk', 'points', 'look',
-  'devlog', 'log', 'dlprobe',
+  'devlog', 'log', 'dlprobe', 'sentryprobe', 'tabprobe', 'fxprobe', 'matprobe',
 ]);
 
 // A value, as a query parameter. Numbers lose float noise, booleans become
