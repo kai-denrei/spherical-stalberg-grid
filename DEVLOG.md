@@ -2,6 +2,50 @@
 
 Newest first. Each entry: what landed, then how it works, for programmers.
 
+## The lance: from the muzzle tip, stopped by terrain, through the enemies
+
+Operator: "fix the green laser's height, where the model is — the laser
+should be aligned with the tip of the muzzle, and then only be stopped by
+either the ground or walls (does not go through walls), perhaps an effect
+that it is being stopped. It DOES go through enemies and damages them."
+
+It was drawn from a point normalised onto the unit sphere and lifted back to
+a nominal wall height, along a surface arc — so it was at the wrong altitude,
+detached from the model, and stopped by nothing. It is now a straight ray in
+the world from the muzzle's real position, marched against terrain.
+
+Four things had to be fixed to get there, and every one of them was a real
+misreading rather than a tuning number:
+
+- **The trunnion height was in the wrong space.** `aimTower` summed the pitch
+  node's local `position.y`, which is in the INNER model's units, against a
+  target converted into the WRAPPER's — `fitModel` puts its scale on the
+  child, so the two are off by that factor. The barrel aimed far below
+  everything it was shooting at. Taken from the render now.
+- **A gun does not shoot its own parapet.** The muzzle sits thousandths above
+  the wall top it is bolted to, so a depressed barrel's first sample was
+  already under its own cell's surface and the lance died a fifth of a cell
+  out, every time. Its own cell cannot stop it.
+- **Terrain needs clearance.** Enemies stand ON the ground, so a beam aimed
+  at one is at ground level when it arrives; stopping the instant the ray
+  touched r = 1 killed it a step SHORT of every target. A quarter-cell.
+- **The muzzle empty's axis is not a contract.** The first cut took the
+  direction from its world +Z — the model's stated forward — and *measured*
+  it against the bearing to the target: 2° apart sometimes, 42° at others.
+  The Workshop guarantees the muzzle's POSITION and the ROOT→BASE→YAW→PITCH→
+  RECOIL chain, not an empty's local orientation. The beam leaves the tip, as
+  asked, and runs toward the target; the on-target gate keeps tube and beam
+  agreeing to within the drive's own tolerance.
+
+Damage is measured to the SEGMENT now (`distToSeg`), not projected onto an
+arc — it is a line through the world. And it sparks where it is stopped, in
+the beam's own colour, because a beam that simply ends in mid-air reads as
+one that is too short, where one splashing on rock reads as one that has hit
+something the player can move the tower away from.
+
+Measured: `struck 2` per burst, stopped by walls at 2.6 and 5.2 cells, once
+running its full 7, beam origin 0.003 cells from the muzzle tip.
+
 ## The recurring third-person bug: the canvas is not what the player sees
 
 Operator: "in TD mode it's still there; in TD2 it started fine but by the end

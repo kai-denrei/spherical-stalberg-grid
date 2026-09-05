@@ -288,6 +288,19 @@ token — the corner badge was retired from the game view).
   tank's wall-march killed it half a cell out on its own wall), it measures
   `off` on the UNIT sphere (or an enemy pays for its altitude out of a 0.04
   hit radius), and it takes its bearing FROM THE MUZZLE, not the cell centre.
+  The LANCE is a straight ray in the WORLD: it leaves the muzzle's real
+  position (`towerMuzzle` records the barrel it used), runs toward the
+  target, and is stopped by terrain via `rayToTerrain` — walls and ground
+  stop it, enemies do not, and it damages every body within a hit radius of
+  the SEGMENT (`distToSeg`, not `projectToArc` — it is a line through the
+  world, not an arc across the surface). Its own cell cannot stop it (a gun
+  does not shoot its own parapet) and terrain needs a quarter-cell of
+  clearance before it counts (enemies stand ON the ground, so a beam aimed at
+  one is at ground level when it arrives). It fires only when the drive is
+  within `SENTRY_TUNE.tolerance`. Do NOT aim it with the muzzle empty's world
+  +Z: measured, that disagrees with the bearing to the target by 2° sometimes
+  and 42° at others — the Workshop's contract covers the muzzle's POSITION
+  and the ROOT→BASE→YAW→PITCH→RECOIL chain, not an empty's local axis.
   The lance is GREEN, thin and jitter-free (`def.beamColor`, separate from
   `def.color` so a laser can have a colour without repainting the machine;
   `LANCE_LOOK` vs `THROW_LOOK` — a thrower is a spray of matter, a laser is
