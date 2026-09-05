@@ -19,75 +19,75 @@
 
 import * as THREE from '../vendor/three.module.js';
 import GUI from '../vendor/lil-gui.esm.js';
-import { generateSphereMesh, relax } from './grid.js?v=a5975ee5';
-import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=a5975ee5';
-import { compileRail } from './cine/rail.js?v=a5975ee5';
-import { SCRIPTS } from './cine/scripts.js?v=a5975ee5';
-import { cuesBetween } from './cine/sound.js?v=a5975ee5';
-import { installCine } from './cine/kit.js?v=a5975ee5';
-import { mulberry32, randomSeed } from './rng.js?v=a5975ee5';
-import { computeBerths, berthIndexFor } from './berths.js?v=a5975ee5';
-import { wantsSecondary, shellsForAll } from './autofire.js?v=a5975ee5';
-import { printPhase, printOffset, printOn, patternSecsFor } from './printpath.js?v=a5975ee5';
+import { generateSphereMesh, relax } from './grid.js?v=c8bc198b';
+import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=c8bc198b';
+import { compileRail } from './cine/rail.js?v=c8bc198b';
+import { SCRIPTS } from './cine/scripts.js?v=c8bc198b';
+import { cuesBetween } from './cine/sound.js?v=c8bc198b';
+import { installCine } from './cine/kit.js?v=c8bc198b';
+import { mulberry32, randomSeed } from './rng.js?v=c8bc198b';
+import { computeBerths, berthIndexFor } from './berths.js?v=c8bc198b';
+import { wantsSecondary, shellsForAll } from './autofire.js?v=c8bc198b';
+import { printPhase, printOffset, printOn, patternSecsFor } from './printpath.js?v=c8bc198b';
 import { createBeam } from './beamfx.js';
-import { createBeamRig, PLASMA_DEFAULTS, BOARD_PRESET, BEAM_PEAK } from './beamdraw.js?v=a5975ee5';
-import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3, segKey, tangentDir, tangentBasis } from './vec3.js?v=a5975ee5';
-import { CREATURES, waveJelly } from './creatures.js?v=a5975ee5';
-import { brief, dwellFor } from './isaobriefs.js?v=a5975ee5';
-import { drawEmotion } from './emotions.js?v=a5975ee5';
+import { createBeamRig, PLASMA_DEFAULTS, BOARD_PRESET, BEAM_PEAK } from './beamdraw.js?v=c8bc198b';
+import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3, segKey, tangentDir, tangentBasis } from './vec3.js?v=c8bc198b';
+import { CREATURES, waveJelly } from './creatures.js?v=c8bc198b';
+import { brief, dwellFor } from './isaobriefs.js?v=c8bc198b';
+import { drawEmotion } from './emotions.js?v=c8bc198b';
 import { ACHIEVEMENTS, ACHV_GROUPS, achievement, blankRun, earned, freshlyEarned,
   sanitiseRecord }
-  from './achievements.js?v=a5975ee5';
+  from './achievements.js?v=c8bc198b';
 import { applyFontPack, currentFontPack, FONT_NAMES,
-  loadTypeFeel } from './fonts.js?v=a5975ee5';
-import { SECONDARY_TOE, applySecondaryToe } from './units.js?v=a5975ee5';
-import { UNITS, UNIT_NAMES, buildUnit, buildCreature, preloadMkcx, preloadServer, makeServerFixture, makeShieldShell, preloadContainer, makeContainerFixture, preloadFabricator, makeIsaoDrone, makeBulletCloud, makeRewardSolid, makeShellSolid, makeDebris, makeDotBurst, makePortalCloud, preloadPortalRing, makePortalRing, makeHeartCloud, makeDotEnemy, makeSurvivor, preloadAstronaut, makeAstronaut, preloadTerraformer, makeTerraformerFixture } from './units.js?v=a5975ee5';
-import { LOOKS, LOOK_NAMES } from './looks.js?v=a5975ee5';
-import { makeCellIndex } from './cellindex.js?v=a5975ee5';
-import { CREATURE_TINTS, ENEMY_SPEC, INTROS, computeWavePlan, accentFor } from './enemyspec.js?v=a5975ee5';
-import { PICKUPS } from './pickups.js?v=a5975ee5';
-import { rankFor, rankLabel, badgeSVG, killReq, eliteReq } from './ranks.js?v=a5975ee5';
-import { beamStep, isBeamStep, PEN_SOFT_FRAC, PEN_HARD_FRAC } from './beamranks.js?v=a5975ee5';
-import { burn, sweepAdvance, wallBite as wallBiteFor } from './beamburn.js?v=a5975ee5';
-import { arcPoint, projectToArc, toeForCrossing, crossingForToe } from './arc.js?v=a5975ee5';
+  loadTypeFeel } from './fonts.js?v=c8bc198b';
+import { SECONDARY_TOE, applySecondaryToe } from './units.js?v=c8bc198b';
+import { UNITS, UNIT_NAMES, buildUnit, buildCreature, preloadMkcx, preloadServer, makeServerFixture, makeShieldShell, preloadContainer, makeContainerFixture, preloadFabricator, makeIsaoDrone, makeBulletCloud, makeRewardSolid, makeShellSolid, makeDebris, makeDotBurst, makePortalCloud, preloadPortalRing, makePortalRing, makeHeartCloud, makeDotEnemy, makeSurvivor, preloadAstronaut, makeAstronaut, preloadTerraformer, makeTerraformerFixture } from './units.js?v=c8bc198b';
+import { LOOKS, LOOK_NAMES } from './looks.js?v=c8bc198b';
+import { makeCellIndex } from './cellindex.js?v=c8bc198b';
+import { CREATURE_TINTS, ENEMY_SPEC, INTROS, computeWavePlan, accentFor } from './enemyspec.js?v=c8bc198b';
+import { PICKUPS } from './pickups.js?v=c8bc198b';
+import { rankFor, rankLabel, badgeSVG, killReq, eliteReq } from './ranks.js?v=c8bc198b';
+import { beamStep, isBeamStep, PEN_SOFT_FRAC, PEN_HARD_FRAC } from './beamranks.js?v=c8bc198b';
+import { burn, sweepAdvance, wallBite as wallBiteFor } from './beamburn.js?v=c8bc198b';
+import { arcPoint, projectToArc, toeForCrossing, crossingForToe } from './arc.js?v=c8bc198b';
 import { MINE_TUNE, makeField, layMine, armMines, restock, mineAt,
-  inFan, trip, chain, nextChained, minePolar } from './mines.js?v=a5975ee5';
+  inFan, trip, chain, nextChained, minePolar } from './mines.js?v=c8bc198b';
 import { deepLink, wireDeepLink } from './deeplink.js';
 import { RESCUE_TUNE, makeRescue, placeSurvivors, stepBoard, stepGrab,
   disembark, loseCarried, lockOn, waveMix, standing as standingSurv,
   aboard as aboardSurv, missionOver, verdict as rescueVerdict,
   grabProgress, remaining as remainingSurv, exposed as exposedSurv,
   RESCUE2_TUNE, makeCamps, stepCall, stepEmerge, walkStep, runOver,
-  awake as campAwake } from './rescue.js?v=a5975ee5';
+  awake as campAwake } from './rescue.js?v=c8bc198b';
 import { WORMHOLE_PRESET, WORMHOLE_UNIFORM_DEFAULTS, RING_SPIN, TRAVEL,
-  travelRate, advancePhase } from './portalfx.js?v=a5975ee5';
-import { WORMHOLE_FRAG } from './fx/wormhole.frag.js?v=a5975ee5';
-import { CORONA_FRAG } from './fx/corona.frag.js?v=a5975ee5';
-import { labLine, parseLabQuery } from './lab.js?v=a5975ee5';
-import { bakeGalaxyCube } from './galaxybake.js?v=a5975ee5';
-import { SKY_PRESET } from './galaxyseed.js?v=a5975ee5';
-import { makeScore } from './score.js?v=a5975ee5';
-import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER, HACK_GATED, starterTower, towerSound, ROSTER } from './towers.js?v=a5975ee5';
-import { makeEconomy, sellRefund } from './economy.js?v=a5975ee5';
-import { pickTier } from './perftier.js?v=a5975ee5';
-import { applyWeatheredMaterial } from './cine/materials.js?v=a5975ee5';
-import { STICK, stickVector, knobOffset } from './stick.js?v=a5975ee5';
-import { registerServiceWorker } from './pwa.js?v=a5975ee5';
-import { makeBloom } from './postfx.js?v=a5975ee5';
-import { TANK_FEEL, TANK_FEEL_KNOBS, makeTankFeel, stepTankFeel, landTankFeel, fireTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js?v=a5975ee5';
-import { FEEL, loadFeel, saveFeel } from './feelstore.js?v=a5975ee5';
+  travelRate, advancePhase } from './portalfx.js?v=c8bc198b';
+import { WORMHOLE_FRAG } from './fx/wormhole.frag.js?v=c8bc198b';
+import { CORONA_FRAG } from './fx/corona.frag.js?v=c8bc198b';
+import { labLine, parseLabQuery } from './lab.js?v=c8bc198b';
+import { bakeGalaxyCube } from './galaxybake.js?v=c8bc198b';
+import { SKY_PRESET } from './galaxyseed.js?v=c8bc198b';
+import { makeScore } from './score.js?v=c8bc198b';
+import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER, HACK_GATED, starterTower, towerSound, ROSTER } from './towers.js?v=c8bc198b';
+import { makeEconomy, sellRefund } from './economy.js?v=c8bc198b';
+import { pickTier } from './perftier.js?v=c8bc198b';
+import { applyWeatheredMaterial } from './cine/materials.js?v=c8bc198b';
+import { STICK, stickVector, knobOffset } from './stick.js?v=c8bc198b';
+import { registerServiceWorker } from './pwa.js?v=c8bc198b';
+import { makeBloom } from './postfx.js?v=c8bc198b';
+import { TANK_FEEL, TANK_FEEL_KNOBS, makeTankFeel, stepTankFeel, landTankFeel, fireTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js?v=c8bc198b';
+import { FEEL, loadFeel, saveFeel } from './feelstore.js?v=c8bc198b';
 import { STRIKE_KNOBS, makeStrike, makeStrikeParams, grantStrikes, stepStrike,
   toggleArm, paintTarget, launchStrike, stepFall, skipFall, fallProgress,
-  strikeDamage, retargetStrike, orbitProgress } from './strike.js?v=a5975ee5';
+  strikeDamage, retargetStrike, orbitProgress } from './strike.js?v=c8bc198b';
 import { radarBasis, radarProject, radarBearing, sweepAngle, radarPhosphor,
-  proximitySectors, SENSOR_LEVELS, sensorColor } from './radar.js?v=a5975ee5';
-import { BLOOM_GROUPS } from './bloomweights.js?v=a5975ee5';
+  proximitySectors, SENSOR_LEVELS, sensorColor } from './radar.js?v=c8bc198b';
+import { BLOOM_GROUPS } from './bloomweights.js?v=c8bc198b';
 import { A6_TUNE, magFor, makeA6, stepA6, arc as a6Arc, a6Line } from './heptapod.js';
 import { SENTRY_TUNE } from './sentry.js';
 import { MISSILE_TUNE, scaleMissile, makeLock, stepLock, launchMissile, stepMissile } from './lockon.js';
-import { TOWER_LOOK_NAMES, DEFAULT_TOWER_LOOK, buildTowerLook, preloadLook, lookReady, setSentryTier } from './towerlooks.js?v=a5975ee5';
-import { makeAudio } from './audio.js?v=a5975ee5';
-import { DEATH_KEYS } from './audiomanifest.js?v=a5975ee5';
+import { TOWER_LOOK_NAMES, DEFAULT_TOWER_LOOK, buildTowerLook, preloadLook, lookReady, setSentryTier } from './towerlooks.js?v=c8bc198b';
+import { makeAudio } from './audio.js?v=c8bc198b';
+import { DEATH_KEYS } from './audiomanifest.js?v=c8bc198b';
 
 export function initTdTab(root) {
   let active = false;
@@ -9282,9 +9282,32 @@ export function initTdTab(root) {
           tw.obj.worldToLocal(gunV);
           const gunY = gunV.y;
           const flat = Math.hypot(aimV.x, aimV.z);
-          const want = Math.atan2(aimV.y - gunY, Math.max(1e-6, flat));
-          tw.elev = Math.max(SENTRY_TUNE.elevMin * RAD,
-            Math.min(SENTRY_TUNE.elevMax * RAD, want));
+          // A MORTAR POINTS UP (operator). A lobbed weapon's barrel is not
+          // aimed at the target — it is aimed along the LAUNCH of the arc
+          // that ends there, and the two are nothing like each other: the
+          // line of sight to a ground target is a few degrees BELOW the
+          // horizontal and the launch is sixty-odd above it. The turrets
+          // were aiming down at things they were lobbing over.
+          //
+          // Derived from the shell's own parabola rather than from a table:
+          // a parabola of height h over a range d leaves at atan(4h/d), and
+          // h is arcH — the same constant spawnTowerShot flies. So the tube
+          // and the shell cannot disagree, and retuning the lob moves both.
+          // (The Sentry Workshop's own viewer agrees: it opens a Mortar at
+          // 68 degrees and will not let it below 45.)
+          let want;
+          if (tw.def.arc) {
+            const d = Math.max(cellSide * 0.5, chord(graph.centers[tw.ci], target.pos));
+            want = Math.atan(4 * (cellSide * 2.3) / d);
+          } else {
+            want = Math.atan2(aimV.y - gunY, Math.max(1e-6, flat));
+          }
+          // the envelope's ceiling is 65 degrees, and a short-range lob wants
+          // more than that — a lobbing mount is a different mount, and the
+          // Workshop draws it with the elevation to prove it
+          const hi = (tw.def.arc ? 85 : SENTRY_TUNE.elevMax) * RAD;
+          const lo = (tw.def.arc ? 20 : SENTRY_TUNE.elevMin) * RAD;
+          tw.elev = Math.max(lo, Math.min(hi, want));
           // ...AND WHETHER THE STOP ATE IT. A mount has a depression limit,
           // and a target close enough and low enough needs more than it: the
           // gun ends at its stop, "on target" by its own reckoning, pointing
@@ -9446,8 +9469,17 @@ export function initTdTab(root) {
     m.by = tw;
     m.carry = 0;
     m.launchRange = len3(raw);
-    const mesh = makeBulletCloud({ body: tw.def.color, hi: 0xffffff });
-    mesh.scale.setScalar(cellSide * 0.5);
+    // A MISSILE, NOT A PUFF OF DOTS (operator). makeBulletCloud is the
+    // board's idiom for a ROUND — a hot head and a couple of ghosts — and it
+    // read as "half-dotted" on a thing that is meant to be a Javelin
+    // climbing into the air. This is the same cone the sentry lab flies, so
+    // the launcher throws the same object in both places.
+    const mesh = new THREE.Mesh(
+      new THREE.ConeGeometry(cellSide * 0.11, cellSide * 0.6, 7),
+      new THREE.MeshLambertMaterial({
+        color: tw.def.color,
+        emissive: new THREE.Color(tw.def.color).multiplyScalar(0.5),
+      }));
     mesh.position.set(from[0], from[1], from[2]);
     scene.add(mesh);
     m.mesh = mesh;
@@ -9481,6 +9513,16 @@ export function initTdTab(root) {
         }
       }
       m.mesh.position.set(m.p[0], m.p[1], m.p[2]);
+      // NOSE ALONG THE FLIGHT. A cone models +Y, so the nose is rotated onto
+      // the velocity rather than the velocity onto the cone — and a Javelin
+      // that climbs and then dives should look like it is doing both.
+      if (!m.spent) {
+        tmpV.set(m.v[0], m.v[1], m.v[2]);
+        if (tmpV.lengthSq() > 1e-12) {
+          tmpV.normalize();
+          m.mesh.quaternion.setFromUnitVectors(Y_AXIS, tmpV);
+        }
+      }
       // IT IS ALLOWED UNDER THE SURFACE. A top-attack round comes DOWN on
       // something standing on the ground, so the last part of its dive is
       // below the radius the ground sits at — and culling at exactly 1.0
@@ -15224,7 +15266,7 @@ export function initTdTab(root) {
       // twenty-four cells from the lane with nothing in its seven-cell reach
       // and reported "never fired", which says nothing about the weapon and
       // everything about where the probe put it.
-      const wants = ['plasma', 'plasma', 'lancer', 'quiver', 'quiver'];
+      const wants = ['plasma', 'lancer', 'quiver', 'mortar', 'howitzer'];
       const sites = [];
       for (let i = 0; i < dungeon.tags.length; i++) {
         if (!placeError(i) && !towerByCell.get(i)) sites.push(i);
@@ -15252,6 +15294,7 @@ export function initTdTab(root) {
           const wantY = tw.aim === undefined ? '-' : (tw.aim * 180 / Math.PI).toFixed(1);
           const wantE = tw.elev === undefined ? '-' : (tw.elev * 180 / Math.PI).toFixed(1);
           console.log(`PLASMAPROBE   rig ${String(tw.key).padEnd(9)}`
+            + `${tw.def.arc ? ' LOB' : '    '}`
             + ` yaw ${y}→${wantY} elev ${e}→${wantE}`
             + ` muzzles ${(ud.muzzles || []).length} recoil ${(tw.recoil ?? 0).toFixed(2)}`);
         }

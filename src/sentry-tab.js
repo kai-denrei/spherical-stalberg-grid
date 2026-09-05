@@ -35,7 +35,7 @@ import { mulberry32 } from './rng.js';
 import { deepLink, wireDeepLink } from './deeplink.js';
 import {
   SENTRY_TUNE, SENTRY_FAMILIES, SENTRY_TIERS, familyById, sentryUrl,
-  makeSentry, makeRange, stepRange, pickTarget, track, slew, stepGun,
+  makeSentry, makeRange, stepRange, pickTarget, track, slew, stepGun, lobAngle,
   canFire, fire, hitTarget, landedOn, aimAt, inEnvelope, aimError,
   placeBattery, relTo, stepWaves, stepWalkers, deadZone, leadPoint,
 } from './sentry.js';
@@ -508,8 +508,38 @@ export function initSentryTab(root) {
     // it flies to the boresight POINT — so an aim that is off puts the round
     // out at the target's range and beside it, which is what a miss looks
     // like and what landedOn then measures
-    const dist = borePt.distanceTo(from) || P.ringMax;
-    tracers.push({ mesh, pos: from.clone(), dir, left: dist, id: target ? target.id : -1, by: b });
+    let dist = borePt.distanceTo(from) || P.ringMax;
+    // A LOBBED ROUND DOES NOT GO WHERE THE TUBE POINTS. The tube points at
+    // the sky — that is what a lob IS — so flying the round along the
+    // boresight sent it straight up and it landed nowhere near anything.
+    // What carries the round is the ground BEARING; the elevation becomes
+    // the arc, and the arc is DRAWN rather than integrated.
+    //
+    // The accuracy coupling survives, which is the part worth keeping: the
+    // bearing is still taken from the BORESIGHT, so a round fired mid-slew
+    // still leaves on the wrong heading and still misses. Only the vertical
+    // is reinterpreted.
+    const famL = familyById(P.family);
+    let lob = null;
+    if (famL.lob) {
+      const flat = boreDir.clone();
+      flat.y = 0;
+      const at2 = aimPt || (target ? target.pos : null);
+      if (flat.lengthSq() > 1e-9 && at2) {
+        flat.normalize();
+        dir.copy(flat);
+        dist = Math.hypot(at2[0] - from.x, at2[2] - from.z) || P.ringMax;
+        borePt.copy(from).addScaledVector(dir, dist);
+        borePt.y = at2[1];
+      }
+      lob = {
+        total: dist,
+        h: famL.arcCells * (P.ringMax / 9),
+        drop: (borePt.y - from.y) / Math.max(1e-6, dist),
+      };
+    }
+    tracers.push({ mesh, pos: from.clone(), startY: from.y, dir, left: dist, gone: 0, lob,
+      id: target ? target.id : -1, by: b });
     // the muzzle flash, in the game's own dots
     voice(familyById(P.family).fire);
     const f = makeDotBurst(0xffe6a8, [dir.x, dir.y, dir.z], 16);
@@ -522,10 +552,30 @@ export function initSentryTab(root) {
   function stepTracers(dt) {
     for (let i = tracers.length - 1; i >= 0; i--) {
       const tr = tracers[i];
-      const step = Math.min(tr.left, P.muzzleVel * dt);
+      // a shell is slower than a bullet, and a lob you cannot see coming is
+      // not a lob — half speed, which is also what makes the arc readable
+      const step = Math.min(tr.left, P.muzzleVel * (tr.lob ? 0.45 : 1) * dt);
       tr.pos.addScaledVector(tr.dir, step);
       tr.left -= step;
+      tr.gone += step;
       tr.mesh.position.copy(tr.pos);
+      if (tr.lob && tr.lob.total > 1e-6) {
+        // 4u(1-u): nought at the tube, nought at the impact, the arc height
+        // at the top. The tracer's POSITION stays the honest straight-line
+        // one — that is what landedOn measures — and only the drawing is
+        // lifted, so the arc cannot make the gun more or less accurate.
+        // TWO DIFFERENT THINGS. The DESCENT belongs to the path — the round
+        // really does end up on the ground at the target's height, and
+        // landedOn measures the path, so leaving it out left every shell
+        // hovering a metre and a half up and missing by exactly that. The
+        // PARABOLA belongs only to the drawing: it is what makes the shot
+        // read as a lob, and putting it in the path would make the arc
+        // change where the round lands, which it must not.
+        const u = Math.min(1, tr.gone / tr.lob.total);
+        tr.pos.y = tr.startY + tr.gone * tr.lob.drop;
+        tr.mesh.position.copy(tr.pos);
+        tr.mesh.position.y += 4 * u * (1 - u) * tr.lob.h;
+      }
       if (tr.left > 1e-4) continue;
       // DID IT LAND ON IT? The tracer left along the BARREL, and the barrel is
       // only as close as the drive had got it — so a round fired mid-slew
@@ -579,8 +629,12 @@ export function initSentryTab(root) {
   // (relTo), so a battery covers each other's blind bearings instead of all
   // three swinging onto the same enemy — and a gun on a wall refuses what it
   // cannot depress to while the one on the ground takes it.
+  // rebuilt per frame is one object a frame; built here it is one object,
+  // and it tracks the live knobs because it is spread from them
+  let lobDrive = null;
   function aimFrame(dt) {
     const fam = familyById(P.family);
+    lobDrive = fam.lob ? { ...P, elevMax: 85 } : null;
     const fixed = !!fam.fixed;
     let engaged = 0;
     for (const b of battery) {
@@ -613,10 +667,28 @@ export function initSentryTab(root) {
           const rel = [aimPt[0] - gun[0], aimPt[1] - gun[1], aimPt[2] - gun[2]];
           inside = inEnvelope(aimAt(rel), P);
           track(s2, rel, P);
+          // A LOBBER POINTS UP, NOT AT (operator: "the mortar needs to shoot
+          // UP in a ballistic trajectory, not directly at the target, true
+          // for all instances in the turret"). track() has just aimed it
+          // down the line of sight, which is right for every gun on the
+          // range and wrong for the two that throw. The launch angle comes
+          // from the shell's own parabola — lobAngle(range, arc) — so the
+          // tube and the round are one number apart and cannot disagree.
+          if (fam.lob) {
+            const rng = Math.hypot(rel[0], rel[1], rel[2]);
+            s2.wantElev = lobAngle(rng, fam.arcCells * (P.ringMax / 9));
+            inside = true;   // a lob has no line-of-sight envelope to fail
+          }
           if (inside) engaged++;
         }
       }
-      slew(s2, dt, P);
+      // A LOBBING MOUNT HAS ITS OWN CEILING. The envelope's 65 degrees is a
+      // direct-fire gun's limit; a mortar wants seventy-five and the clamp
+      // was quietly eating twenty of them, leaving the tube pointed well
+      // below the arc its shell was flying. The Workshop draws these mounts
+      // with the elevation to prove it — its own viewer will not let a
+      // Mortar BELOW 45.
+      slew(s2, dt, fam.lob ? lobDrive : P);
       stepGun(s2, dt, P);
       if (b.yaw && !fixed) b.yaw.rotation.y = (s2.yaw * Math.PI) / 180;
       // THE ONE NEGATION. The module speaks elevation-positive-up; the PITCH

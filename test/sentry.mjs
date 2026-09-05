@@ -4,8 +4,9 @@
 // subtraction is wrong there and nowhere else, so it passes every test
 // anybody writes by accident) and the ELEVATION SIGN, which decides whether
 // the gun points at the sky or the floor.
+import { existsSync } from 'node:fs';
 import {
-  SENTRY_TUNE, SENTRY_FAMILIES, familyById, sentryUrl,
+  SENTRY_TUNE, SENTRY_FAMILIES, lobAngle, familyById, sentryUrl,
   wrapDeg, deltaDeg, aimAt, inEnvelope,
   makeSentry, slew, track, onTarget, aimError, stepGun, canFire, fire,
   makeRange, popTarget, stepRange, pickTarget, hitTarget, landedOn, sentryKnobProblems,
@@ -27,10 +28,36 @@ const mulberry32 = (a) => () => {
 
 console.log('schema:');
 check('knob table is sound', sentryKnobProblems().length === 0, sentryKnobProblems().join('; '));
-check('six families', SENTRY_FAMILIES.length === 6);
-check('the Relay is the fixed one', familyById('relay').fixed === true
-  && SENTRY_FAMILIES.filter((f) => f.fixed).length === 1);
+check('eleven families', SENTRY_FAMILIES.length === 11);
+// FIXED means no articulation to drive. The Relay is a mast; the A6 carries
+// its cells vertically and walks instead of traversing.
+check('the fixed ones are the mast and the walker',
+  familyById('relay').fixed === true && familyById('heptapod_a6').fixed === true
+  && SENTRY_FAMILIES.filter((f) => f.fixed).length === 2);
+check('every family names a model that exists on disk',
+  SENTRY_FAMILIES.every((f) => existsSync(sentryUrl(f.id, 1).replace(/^/, ''))));
+// A LOBBER MUST DECLARE ITS ARC, because the barrel's angle is derived from
+// it — a lob with no height would aim flat and stop being a lob.
+check('the lobbers are the mortar and the howitzer',
+  SENTRY_FAMILIES.filter((f) => f.lob).map((f) => f.id).join(',') === 'howitzer,mortar');
+check('...and each names an arc height',
+  SENTRY_FAMILIES.filter((f) => f.lob).every((f) => f.arcCells > 0));
 check('the url is the workshop’s own path', sentryUrl('rotor', 3) === 'assets/models/sentries/rotor_t3.glb');
+
+console.log('the lob:');
+{
+  // atan(4h/d): a parabola of height h over range d leaves at this angle.
+  // The Workshop opens a Mortar at 68 degrees, which is the check on it.
+  check('a 4.6-cell arc over 3.5 cells leaves near seventy',
+    Math.abs(lobAngle(3.5, 4.6) - 79.2) < 1);
+  check('the same arc over a longer range is shallower',
+    lobAngle(7, 4.6) < lobAngle(3.5, 4.6));
+  check('a higher arc over the same range is steeper',
+    lobAngle(3.5, 6) > lobAngle(3.5, 4.6));
+  check('it is always UP — a lob never points below the horizontal',
+    [0.5, 1, 3, 7, 20].every((d) => lobAngle(d, 3.4) > 0));
+  check('and never past vertical', [0.001, 0.5, 20].every((d) => lobAngle(d, 4.6) < 90));
+}
 
 console.log('angles:');
 check('wrap keeps the half-open turn', wrapDeg(180) === 180 && wrapDeg(-180) === 180);

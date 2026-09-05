@@ -19,10 +19,10 @@
 // without reshaping this interface. A look with no preload is ready
 // immediately; a look whose preload has not resolved falls back.
 import * as THREE from '../vendor/three.module.js';
-import { loadGlb, loadGlbWithClips, mergeByMaterial, fitModel, tintModel } from './glbmodels.js?v=a5975ee5';
-import { TOWERS } from './towers.js?v=a5975ee5';
-import { makeTowerMast, makeTowerUnit } from './units.js?v=a5975ee5';
-import { TOWER, HEADS, loadTower } from './feelstore.js?v=a5975ee5';
+import { loadGlb, loadGlbWithClips, mergeByMaterial, fitModel, tintModel } from './glbmodels.js?v=c8bc198b';
+import { TOWERS } from './towers.js?v=c8bc198b';
+import { makeTowerMast, makeTowerUnit } from './units.js?v=c8bc198b';
+import { TOWER, HEADS, loadTower } from './feelstore.js?v=c8bc198b';
 
 // def.shape -> a solid primitive, so the SOLID look keeps each tower's
 // silhouette identity from towers.js rather than inventing its own.

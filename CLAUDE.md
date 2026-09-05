@@ -140,6 +140,16 @@ token — the corner badge was retired from the game view).
   blind radius and the ground draws it in red), `?mode=waves|pop`, plus every knob in `SENTRY_TUNE` by name (`?tolerance=25`
   makes it miss, which is the point of the knob), and `?sentryprobe=1` — the
   error falling, the rounds leaving and the targets going down, once a second.
+  ELEVEN families now (railgun / howitzer / mortar / plasma / heptapod_a6
+  added). A LOB (`lob: true`, `arcCells`) points UP, not AT: the barrel angle
+  is `lobAngle(range, arc)` = atan(4h/d) from the shell's own parabola, so
+  tube and round are one number apart — and it needs its own ceiling (85°,
+  not the envelope's 65, which was silently eating twenty degrees). The round
+  flies the ground BEARING taken from the boresight (so a shot fired mid-slew
+  still misses), DESCENDS along the path to the impact height (leave that out
+  and every shell hovers at muzzle height and misses by exactly that), and
+  the parabola is added to the DRAWING only — an arc that moved the path
+  would make the picture change the accuracy.
   Models are the Sentry Workshop's, vendored to `assets/models/sentries/`
   under their own name contract: `ROOT→BASE→YAW→PITCH→RECOIL`, `MUZZLE_nn`,
   and six material names. `?tabprobe=1` also lists this tab.
@@ -288,6 +298,13 @@ token — the corner badge was retired from the game view).
   tank's wall-march killed it half a cell out on its own wall), it measures
   `off` on the UNIT sphere (or an enemy pays for its altitude out of a 0.04
   hit radius), and it takes its bearing FROM THE MUZZLE, not the cell centre.
+  A LOBBING TOWER (`def.arc`) elevates to the ballistic launch angle rather
+  than the line of sight — the two differ by seventy degrees, and the mortars
+  were aiming DOWN at things they were lobbing over. Same derivation as the
+  lab's, from the same `arcH` `spawnTowerShot` flies, with its own 20–85°
+  envelope. The QUIVER's seeker is a cone pointed along its velocity, not
+  `makeBulletCloud` (which is the board's idiom for a ROUND and read as
+  "half-dotted" on a Javelin).
   The LANCE is a straight ray in the WORLD: it leaves the muzzle's real
   position (`towerMuzzle` records the barrel it used), runs toward the
   target, and is stopped by terrain via `rayToTerrain` — walls and ground

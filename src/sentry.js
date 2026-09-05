@@ -20,7 +20,7 @@
 // one negation at the point of application. Two places deciding what "up"
 // means is how a turret ends up shooting at the floor.
 
-import { makeParams, clampParams, formatKnobs, knobProblems } from './knobs.js?v=a5975ee5';
+import { makeParams, clampParams, formatKnobs, knobProblems } from './knobs.js?v=c8bc198b';
 
 // The workshop's six families. `fixed` is its own ruling — the Relay is a
 // structure, not a gun, and a range that pretends otherwise is a range that
@@ -46,6 +46,20 @@ export const SENTRY_FAMILIES = [
   { id: 'lancer', label: 'Lancer', note: 'rail and focusing collars — one aperture',
     fire: 'tower_laser' },
   { id: 'relay', label: 'Relay', note: 'a mast, not a weapon: fixed, no articulation', fixed: true },
+  // THE FIVE THE WORKSHOP ADDED. Same contract, same tiers, vendored
+  // alongside the first six. The two LOBBERS are the reason this matters
+  // beyond the roster: a mortar does not point at what it is shooting, and
+  // the range is where that gets looked at.
+  { id: 'railgun', label: 'Railgun', note: 'mass driver — induction track, one aperture',
+    fire: 'tower_sniper' },
+  { id: 'howitzer', label: 'Howitzer', note: 'siege barrel — lobs, and points UP to do it',
+    fire: 'tank_main', lob: true, arcCells: 3.4 },
+  { id: 'mortar', label: 'Mortar', note: 'tube and baseplate — the steepest arc on the range',
+    fire: 'tower_aoe', lob: true, arcCells: 4.6 },
+  { id: 'plasma', label: 'Plasma', note: 'perforated nozzle — a thrower, not a gun',
+    fire: 'tower_laser' },
+  { id: 'heptapod_a6', label: 'Heptapod A6', note: 'six legs, vertical launch cells — walks, fixed turret',
+    fire: 'tower_homing', fixed: true },
 ];
 export const SENTRY_TIERS = [1, 2, 3];
 export const familyById = (id) => SENTRY_FAMILIES.find((f) => f.id === id) || SENTRY_FAMILIES[0];
@@ -169,6 +183,17 @@ export function aimAt(p) {
 // Can this turret physically point there? The envelope is the model's, and a
 // target outside it must be REPORTED rather than shot at with a barrel that
 // is visibly aimed somewhere else.
+// THE LAUNCH ANGLE FOR A LOB. A lobbed round's barrel is not aimed at the
+// target — it is aimed along the LAUNCH of the arc that ends there, and the
+// two are nothing like each other. A parabola of height h over a range d
+// leaves at atan(4h/d), so the tube and the shell are derived from ONE
+// number and cannot drift: raise the arc and the barrel rises with it.
+//
+// The Sentry Workshop's own viewer is the check on this: it opens a Mortar
+// at 68 degrees and refuses to let it below 45.
+export const lobAngle = (range, arcHeight) =>
+  (Math.atan((4 * arcHeight) / Math.max(1e-6, range)) * 180) / Math.PI;
+
 export const inEnvelope = (aim, tune = SENTRY_TUNE) =>
   aim.elev >= tune.elevMin && aim.elev <= tune.elevMax;
 
