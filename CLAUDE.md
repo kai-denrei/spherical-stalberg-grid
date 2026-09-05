@@ -95,6 +95,20 @@ token — the corner badge was retired from the game view).
   REAL pointer events — `.click()` skips them, so any capture-phase handler
   that swallows a pointerdown is invisible to a probe and lethal to a thumb),
   `?viewlog=1` (TD: every setView transition with its caller),
+  `?vpbias=<offsetTop>:<height>` (TD: PRETEND THE BROWSER IS EATING THE
+  SCREEN — a desktop cannot produce a `visualViewport` that differs from the
+  canvas, so the camera correction that matters most on a phone could
+  otherwise only be tested on the device that reports the bug) with
+  `?vpprobe=1` (report the tank's screen y and whether it is inside that
+  band). THE CANVAS IS NOT WHAT THE PLAYER SEES: `innerHeight` includes the
+  strip behind the browser chrome, so a rig that frames the tank a third up
+  the CANVAS can land it below the fold — drawn, in frustum, right size, and
+  invisible. `applyViewportBias` pitches the camera by the angle that moves
+  the target from the canvas centre to the VISIBLE band's centre; it is
+  exactly zero on a desktop and headless, which is why it can ship without a
+  device. `chrome` is now an ACTIONABLE verdict in `viewWatch` for the same
+  reason — before the bias, re-seating put the tank back in the same
+  invisible strip.
   `?tankseen=1` (TD: CAN A PERSON SEE THE TANK, once a second — not "is it in
   the frustum", which is what the view watchdog used to ask and what four
   camera fixes answered while the reports kept coming. It separates

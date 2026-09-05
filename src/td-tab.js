@@ -19,75 +19,75 @@
 
 import * as THREE from '../vendor/three.module.js';
 import GUI from '../vendor/lil-gui.esm.js';
-import { generateSphereMesh, relax } from './grid.js?v=6864d1a5';
-import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=6864d1a5';
-import { compileRail } from './cine/rail.js?v=6864d1a5';
-import { SCRIPTS } from './cine/scripts.js?v=6864d1a5';
-import { cuesBetween } from './cine/sound.js?v=6864d1a5';
-import { installCine } from './cine/kit.js?v=6864d1a5';
-import { mulberry32, randomSeed } from './rng.js?v=6864d1a5';
-import { computeBerths, berthIndexFor } from './berths.js?v=6864d1a5';
-import { wantsSecondary, shellsForAll } from './autofire.js?v=6864d1a5';
-import { printPhase, printOffset, printOn, patternSecsFor } from './printpath.js?v=6864d1a5';
+import { generateSphereMesh, relax } from './grid.js?v=e9bec4a5';
+import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=e9bec4a5';
+import { compileRail } from './cine/rail.js?v=e9bec4a5';
+import { SCRIPTS } from './cine/scripts.js?v=e9bec4a5';
+import { cuesBetween } from './cine/sound.js?v=e9bec4a5';
+import { installCine } from './cine/kit.js?v=e9bec4a5';
+import { mulberry32, randomSeed } from './rng.js?v=e9bec4a5';
+import { computeBerths, berthIndexFor } from './berths.js?v=e9bec4a5';
+import { wantsSecondary, shellsForAll } from './autofire.js?v=e9bec4a5';
+import { printPhase, printOffset, printOn, patternSecsFor } from './printpath.js?v=e9bec4a5';
 import { createBeam } from './beamfx.js';
-import { createBeamRig, PLASMA_DEFAULTS, BOARD_PRESET, BEAM_PEAK } from './beamdraw.js?v=6864d1a5';
-import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3, segKey, tangentDir, tangentBasis } from './vec3.js?v=6864d1a5';
-import { CREATURES, waveJelly } from './creatures.js?v=6864d1a5';
-import { brief, dwellFor } from './isaobriefs.js?v=6864d1a5';
-import { drawEmotion } from './emotions.js?v=6864d1a5';
+import { createBeamRig, PLASMA_DEFAULTS, BOARD_PRESET, BEAM_PEAK } from './beamdraw.js?v=e9bec4a5';
+import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3, segKey, tangentDir, tangentBasis } from './vec3.js?v=e9bec4a5';
+import { CREATURES, waveJelly } from './creatures.js?v=e9bec4a5';
+import { brief, dwellFor } from './isaobriefs.js?v=e9bec4a5';
+import { drawEmotion } from './emotions.js?v=e9bec4a5';
 import { ACHIEVEMENTS, ACHV_GROUPS, achievement, blankRun, earned, freshlyEarned,
   sanitiseRecord }
-  from './achievements.js?v=6864d1a5';
+  from './achievements.js?v=e9bec4a5';
 import { applyFontPack, currentFontPack, FONT_NAMES,
-  loadTypeFeel } from './fonts.js?v=6864d1a5';
-import { SECONDARY_TOE, applySecondaryToe } from './units.js?v=6864d1a5';
-import { UNITS, UNIT_NAMES, buildUnit, buildCreature, preloadMkcx, preloadServer, makeServerFixture, makeShieldShell, preloadContainer, makeContainerFixture, preloadFabricator, makeIsaoDrone, makeBulletCloud, makeRewardSolid, makeShellSolid, makeDebris, makeDotBurst, makePortalCloud, preloadPortalRing, makePortalRing, makeHeartCloud, makeDotEnemy, makeSurvivor, preloadAstronaut, makeAstronaut, preloadTerraformer, makeTerraformerFixture } from './units.js?v=6864d1a5';
-import { LOOKS, LOOK_NAMES } from './looks.js?v=6864d1a5';
-import { makeCellIndex } from './cellindex.js?v=6864d1a5';
-import { CREATURE_TINTS, ENEMY_SPEC, INTROS, computeWavePlan, accentFor } from './enemyspec.js?v=6864d1a5';
-import { PICKUPS } from './pickups.js?v=6864d1a5';
-import { rankFor, rankLabel, badgeSVG, killReq, eliteReq } from './ranks.js?v=6864d1a5';
-import { beamStep, isBeamStep, PEN_SOFT_FRAC, PEN_HARD_FRAC } from './beamranks.js?v=6864d1a5';
-import { burn, sweepAdvance, wallBite as wallBiteFor } from './beamburn.js?v=6864d1a5';
-import { arcPoint, projectToArc, toeForCrossing, crossingForToe } from './arc.js?v=6864d1a5';
+  loadTypeFeel } from './fonts.js?v=e9bec4a5';
+import { SECONDARY_TOE, applySecondaryToe } from './units.js?v=e9bec4a5';
+import { UNITS, UNIT_NAMES, buildUnit, buildCreature, preloadMkcx, preloadServer, makeServerFixture, makeShieldShell, preloadContainer, makeContainerFixture, preloadFabricator, makeIsaoDrone, makeBulletCloud, makeRewardSolid, makeShellSolid, makeDebris, makeDotBurst, makePortalCloud, preloadPortalRing, makePortalRing, makeHeartCloud, makeDotEnemy, makeSurvivor, preloadAstronaut, makeAstronaut, preloadTerraformer, makeTerraformerFixture } from './units.js?v=e9bec4a5';
+import { LOOKS, LOOK_NAMES } from './looks.js?v=e9bec4a5';
+import { makeCellIndex } from './cellindex.js?v=e9bec4a5';
+import { CREATURE_TINTS, ENEMY_SPEC, INTROS, computeWavePlan, accentFor } from './enemyspec.js?v=e9bec4a5';
+import { PICKUPS } from './pickups.js?v=e9bec4a5';
+import { rankFor, rankLabel, badgeSVG, killReq, eliteReq } from './ranks.js?v=e9bec4a5';
+import { beamStep, isBeamStep, PEN_SOFT_FRAC, PEN_HARD_FRAC } from './beamranks.js?v=e9bec4a5';
+import { burn, sweepAdvance, wallBite as wallBiteFor } from './beamburn.js?v=e9bec4a5';
+import { arcPoint, projectToArc, toeForCrossing, crossingForToe } from './arc.js?v=e9bec4a5';
 import { MINE_TUNE, makeField, layMine, armMines, restock, mineAt,
-  inFan, trip, chain, nextChained, minePolar } from './mines.js?v=6864d1a5';
+  inFan, trip, chain, nextChained, minePolar } from './mines.js?v=e9bec4a5';
 import { deepLink, wireDeepLink } from './deeplink.js';
 import { RESCUE_TUNE, makeRescue, placeSurvivors, stepBoard, stepGrab,
   disembark, loseCarried, lockOn, waveMix, standing as standingSurv,
   aboard as aboardSurv, missionOver, verdict as rescueVerdict,
   grabProgress, remaining as remainingSurv, exposed as exposedSurv,
   RESCUE2_TUNE, makeCamps, stepCall, stepEmerge, walkStep, runOver,
-  awake as campAwake } from './rescue.js?v=6864d1a5';
+  awake as campAwake } from './rescue.js?v=e9bec4a5';
 import { WORMHOLE_PRESET, WORMHOLE_UNIFORM_DEFAULTS, RING_SPIN, TRAVEL,
-  travelRate, advancePhase } from './portalfx.js?v=6864d1a5';
-import { WORMHOLE_FRAG } from './fx/wormhole.frag.js?v=6864d1a5';
-import { CORONA_FRAG } from './fx/corona.frag.js?v=6864d1a5';
-import { labLine, parseLabQuery } from './lab.js?v=6864d1a5';
-import { bakeGalaxyCube } from './galaxybake.js?v=6864d1a5';
-import { SKY_PRESET } from './galaxyseed.js?v=6864d1a5';
-import { makeScore } from './score.js?v=6864d1a5';
-import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER, HACK_GATED, starterTower, towerSound, ROSTER } from './towers.js?v=6864d1a5';
-import { makeEconomy, sellRefund } from './economy.js?v=6864d1a5';
-import { pickTier } from './perftier.js?v=6864d1a5';
-import { applyWeatheredMaterial } from './cine/materials.js?v=6864d1a5';
-import { STICK, stickVector, knobOffset } from './stick.js?v=6864d1a5';
-import { registerServiceWorker } from './pwa.js?v=6864d1a5';
-import { makeBloom } from './postfx.js?v=6864d1a5';
-import { TANK_FEEL, TANK_FEEL_KNOBS, makeTankFeel, stepTankFeel, landTankFeel, fireTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js?v=6864d1a5';
-import { FEEL, loadFeel, saveFeel } from './feelstore.js?v=6864d1a5';
+  travelRate, advancePhase } from './portalfx.js?v=e9bec4a5';
+import { WORMHOLE_FRAG } from './fx/wormhole.frag.js?v=e9bec4a5';
+import { CORONA_FRAG } from './fx/corona.frag.js?v=e9bec4a5';
+import { labLine, parseLabQuery } from './lab.js?v=e9bec4a5';
+import { bakeGalaxyCube } from './galaxybake.js?v=e9bec4a5';
+import { SKY_PRESET } from './galaxyseed.js?v=e9bec4a5';
+import { makeScore } from './score.js?v=e9bec4a5';
+import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER, HACK_GATED, starterTower, towerSound, ROSTER } from './towers.js?v=e9bec4a5';
+import { makeEconomy, sellRefund } from './economy.js?v=e9bec4a5';
+import { pickTier } from './perftier.js?v=e9bec4a5';
+import { applyWeatheredMaterial } from './cine/materials.js?v=e9bec4a5';
+import { STICK, stickVector, knobOffset } from './stick.js?v=e9bec4a5';
+import { registerServiceWorker } from './pwa.js?v=e9bec4a5';
+import { makeBloom } from './postfx.js?v=e9bec4a5';
+import { TANK_FEEL, TANK_FEEL_KNOBS, makeTankFeel, stepTankFeel, landTankFeel, fireTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js?v=e9bec4a5';
+import { FEEL, loadFeel, saveFeel } from './feelstore.js?v=e9bec4a5';
 import { STRIKE_KNOBS, makeStrike, makeStrikeParams, grantStrikes, stepStrike,
   toggleArm, paintTarget, launchStrike, stepFall, skipFall, fallProgress,
-  strikeDamage, retargetStrike, orbitProgress } from './strike.js?v=6864d1a5';
+  strikeDamage, retargetStrike, orbitProgress } from './strike.js?v=e9bec4a5';
 import { radarBasis, radarProject, radarBearing, sweepAngle, radarPhosphor,
-  proximitySectors, SENSOR_LEVELS, sensorColor } from './radar.js?v=6864d1a5';
-import { BLOOM_GROUPS } from './bloomweights.js?v=6864d1a5';
+  proximitySectors, SENSOR_LEVELS, sensorColor } from './radar.js?v=e9bec4a5';
+import { BLOOM_GROUPS } from './bloomweights.js?v=e9bec4a5';
 import { A6_TUNE, magFor, makeA6, stepA6, arc as a6Arc, a6Line } from './heptapod.js';
 import { SENTRY_TUNE } from './sentry.js';
 import { MISSILE_TUNE, scaleMissile, makeLock, stepLock, launchMissile, stepMissile } from './lockon.js';
-import { TOWER_LOOK_NAMES, DEFAULT_TOWER_LOOK, buildTowerLook, preloadLook, lookReady, setSentryTier } from './towerlooks.js?v=6864d1a5';
-import { makeAudio } from './audio.js?v=6864d1a5';
-import { DEATH_KEYS } from './audiomanifest.js?v=6864d1a5';
+import { TOWER_LOOK_NAMES, DEFAULT_TOWER_LOOK, buildTowerLook, preloadLook, lookReady, setSentryTier } from './towerlooks.js?v=e9bec4a5';
+import { makeAudio } from './audio.js?v=e9bec4a5';
+import { DEATH_KEYS } from './audiomanifest.js?v=e9bec4a5';
 
 export function initTdTab(root) {
   let active = false;
@@ -1658,16 +1658,40 @@ export function initTdTab(root) {
     vwOut += dt;
     if (vwOut < 1.5) return;
     vwOut = 0; vwCool = 5; vwFires++;
-    const before = `${sightLine(sight)} view=${params.view} build=${buildMode} shot=${shot ? shot.id : '-'} deploy=${!!deploy} camToTank=${(camera.position.distanceTo(vwPt) / cellSide).toFixed(1)}c cur=${player.cur} next=${player.next}`;
+    const vv0 = window.visualViewport;
+    const cv0 = renderer.domElement;
+    const before = `${sightLine(sight)} view=${params.view} build=${buildMode} shot=${shot ? shot.id : '-'} deploy=${!!deploy} camToTank=${(camera.position.distanceTo(vwPt) / cellSide).toFixed(1)}c cur=${player.cur} next=${player.next}`
+      // WHICH EDGE, AND BY HOW MUCH. "chrome 430,516" says the tank is
+      // outside the visible band but not which side of it, and the two have
+      // opposite fixes. The bias is printed too, so the next screenshot says
+      // whether the correction is being applied at all.
+      + ` unit=${unitScale.toFixed(3)} bias=${camBiasNdc.toFixed(3)}`
+      + ` canvas=${cv0.clientWidth}x${cv0.clientHeight}`
+      + ` visual=${vv0 ? `${Math.round(vv0.width)}x${Math.round(vv0.height)}@${Math.round(vv0.offsetLeft)},${Math.round(vv0.offsetTop)}` : '-'}`
+      + ` edge=${(() => {
+        if (!vv0) return '-';
+        const es = [];
+        if (sight.y < vv0.offsetTop) es.push(`above by ${Math.round(vv0.offsetTop - sight.y)}`);
+        if (sight.y > vv0.offsetTop + vv0.height) es.push(`below by ${Math.round(sight.y - vv0.offsetTop - vv0.height)}`);
+        if (sight.x < vv0.offsetLeft) es.push(`left by ${Math.round(vv0.offsetLeft - sight.x)}`);
+        if (sight.x > vv0.offsetLeft + vv0.width) es.push(`right by ${Math.round(sight.x - vv0.offsetLeft - vv0.width)}`);
+        return es.join('+') || 'inside';
+      })()}`;
     // ONLY A POSE FAULT IS WORTH RE-SEATING. Snapping the camera at a tank
     // that is covered by a caption, or under the URL bar, moves nothing and
     // hides the evidence — the report is the whole value in those cases.
-    if (sight.why === 'behind' || sight.why === 'off-canvas') {
+    // CHROME COUNTS NOW. It used to be filed under "re-seating would not
+    // help", which was true while the rig aimed at the middle of the canvas:
+    // snapping put the tank back in the same invisible strip. With the
+    // viewport bias there IS something to do — re-seating re-derives the
+    // pose against the band that is actually on screen.
+    const fixable = sight.why === 'behind' || sight.why === 'off-canvas' || sight.why === 'chrome';
+    if (fixable) {
       endShot();
       setView('third');
       snapCamera();
     }
-    console.warn(`VIEWWATCH #${vwFires} ${sight.why === 'behind' || sight.why === 'off-canvas' ? 'recentred' : 'REPORTED (re-seating would not help)'}: ${before}`);
+    console.warn(`VIEWWATCH #${vwFires} ${fixable ? 'recentred' : 'REPORTED (re-seating would not help)'}: ${before}`);
     if (toastEl) {
       toastEl.innerHTML = `<div class="wave-role" style="font-size:9px;text-align:left;white-space:pre-wrap">VIEWWATCH #${vwFires} ${before}</div>`;
       toastEl.classList.remove('hidden');
@@ -1708,7 +1732,7 @@ export function initTdTab(root) {
       `cam pos=${cp.x.toFixed(3)},${cp.y.toFixed(3)},${cp.z.toFixed(3)} toTank=${(cp.distanceTo(diagNdc.set(pp[0], pp[1], pp[2])) / cellSide).toFixed(2)}c fov=${camera.fov} aspect=${camera.aspect.toFixed(3)} far=${camera.far}`,
       `tankScreen=${(() => { diagNdc.set(pp[0], pp[1], pp[2]).project(camera); return `${diagNdc.x.toFixed(2)},${diagNdc.y.toFixed(2)},${diagNdc.z.toFixed(3)}`; })()} inFrustum=${tankInFrustum()}`,
       `canvas=${renderer.domElement.width}x${renderer.domElement.height} css=${renderer.domElement.clientWidth}x${renderer.domElement.clientHeight} inner=${innerWidth}x${innerHeight} visual=${vv ? `${Math.round(vv.width)}x${Math.round(vv.height)}@${Math.round(vv.offsetLeft)},${Math.round(vv.offsetTop)} s${vv.scale.toFixed(2)}` : '-'} dpr=${devicePixelRatio} cell=${cellSide.toFixed(4)} wall=${params.wallHeight}`,
-      `viewwatch fires=${vwFires} out=${vwOut.toFixed(1)}s`,
+      `viewwatch fires=${vwFires} out=${vwOut.toFixed(1)}s bias=${camBiasNdc.toFixed(3)}`,
     ].join('\n');
   }
   function diagToggle(on) {
@@ -2830,6 +2854,11 @@ export function initTdTab(root) {
       tmpCam.position.copy(camGoal.pos);
       tmpCam.up.copy(up);
       tmpCam.lookAt(0, 0, 0);
+      // BUILD HAS THE SAME PROBLEM. The cell you tapped is centred on the
+      // canvas, and on a phone the canvas is taller than the screen — so the
+      // thing you are placing can sit behind the chrome exactly as the tank
+      // does. Same correction, same desktop no-op.
+      applyViewportBias(tmpCam);
       camGoal.quat.copy(tmpCam.quaternion);
       return;
     }
@@ -2870,7 +2899,51 @@ export function initTdTab(root) {
     tmpCam.position.copy(camGoal.pos);
     tmpCam.up.set(n[0], n[1], n[2]);
     tmpCam.lookAt(look[0], look[1], look[2]);
+    applyViewportBias(tmpCam);
     camGoal.quat.copy(tmpCam.quaternion);
+  }
+
+  // THE CANVAS IS NOT WHAT THE PLAYER SEES. On a phone `innerHeight` — and
+  // therefore the canvas — includes the strip behind the browser's own
+  // chrome, while `visualViewport` is the part that is actually on screen.
+  // The third-person rig frames the tank a third up the CANVAS, and when the
+  // chrome eats the bottom that lands below the fold: the tank is drawn, in
+  // frustum, the right size, and invisible. That is the `chrome` verdict the
+  // watchdog has been reporting and refusing to act on, and it is the shape
+  // of the recurring "not in third person, nor top view" report — the camera
+  // was never stuck, it was aiming at a part of the canvas nobody can see.
+  //
+  // The correction is a pitch: bias the camera by the angle that moves the
+  // target from the centre of the CANVAS to the centre of the VISIBLE band.
+  // On a desktop, and headless, visualViewport reports the full canvas and
+  // this is exactly zero — which is the right no-op, and the reason it can
+  // ship without a device to test it on.
+  let camBiasNdc = 0;
+  // ?vpbias=<offsetTop>:<height> — PRETEND THE BROWSER IS EATING THE SCREEN.
+  // A desktop cannot produce a visualViewport that differs from the canvas,
+  // so the one correction that matters here could otherwise only be tested
+  // on the device that reports the bug. This injects the band, which makes
+  // the arithmetic — and the resulting pitch — checkable in a headless run.
+  const vpFake = (() => {
+    const m = /^(-?\d+):(\d+)$/.exec(new URLSearchParams(location.search).get('vpbias') || '');
+    return m ? { offsetTop: +m[1], height: +m[2], offsetLeft: 0 } : null;
+  })();
+  function viewportBias() {
+    const vv = vpFake || window.visualViewport;
+    const cv = renderer.domElement;
+    if (!vv || !cv.clientHeight) return 0;
+    const half = cv.clientHeight / 2;
+    // + means the visible centre is ABOVE the canvas centre, i.e. the chrome
+    // is eating the bottom and the tank must ride higher
+    const b = (half - (vv.offsetTop + vv.height / 2)) / half;
+    return Math.max(-0.6, Math.min(0.6, b));   // never more than a screen's worth
+  }
+  function applyViewportBias(cam) {
+    camBiasNdc = (mobileShell || vpFake) ? viewportBias() : 0;
+    if (Math.abs(camBiasNdc) < 0.005) return;
+    // NDC to angle, through the camera's own vertical half-angle
+    const ang = Math.atan(camBiasNdc * Math.tan((cam.fov || camera.fov) * Math.PI / 360));
+    cam.rotateX(-ang);
   }
 
   function snapCamera() {
@@ -15098,6 +15171,37 @@ export function initTdTab(root) {
         }
         if (n >= 20) clearInterval(tick);
       }, 1000);
+    }, 2600);
+  }
+
+  // ?vpprobe=1 — DOES THE BIAS PUT THE TANK WHERE THE PLAYER CAN SEE IT.
+  // Pair it with ?vpbias= to name a visible band. It reports the tank's
+  // screen y with the correction applied and whether that y is inside the
+  // band — which is the entire question the `chrome` verdict was asking and
+  // nobody could answer without a phone.
+  if (urlParams.get('vpprobe') === '1') {
+    setTimeout(() => {
+      for (const el of ['#td-msg', '#td-intro']) {
+        const e = root.querySelector(el);
+        if (e) e.classList.add('hidden');
+      }
+      paused = false;
+      setView('third');
+      let n = 0;
+      const tick = setInterval(() => {
+        n++;
+        snapCamera();
+        const s2 = tankSight();
+        const band = vpFake || window.visualViewport;
+        const cv = renderer.domElement;
+        const lo = band ? band.offsetTop : 0;
+        const hi = band ? lo + band.height : cv.clientHeight;
+        console.log(`VPPROBE t+${n}s bias=${camBiasNdc.toFixed(3)}`
+          + ` canvas=${cv.clientWidth}x${cv.clientHeight} band=${lo}..${hi}`
+          + ` tank=${s2.x.toFixed(0)},${s2.y.toFixed(0)} r${s2.px.toFixed(0)}px`
+          + ` inBand=${s2.y >= lo && s2.y <= hi} why=${s2.why}`);
+        if (n >= 4) clearInterval(tick);
+      }, 700);
     }, 2600);
   }
 

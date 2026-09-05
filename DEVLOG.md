@@ -2,6 +2,49 @@
 
 Newest first. Each entry: what landed, then how it works, for programmers.
 
+## The recurring third-person bug: the canvas is not what the player sees
+
+Operator: "in TD mode it's still there; in TD2 it started fine but by the end
+of the first sector it was back". Their screenshot carried the answer:
+
+    VIEWWATCH #22 chrome 430,516 r77px 9.5% view=third build=false
+    shot=-- deploy=false camToTank=15.9c
+
+`view=third`, no shot, no deploy, tank 77 px across and 9.5% of the short
+axis — the camera was never stuck. The verdict is `chrome`, which means the
+tank's screen position is outside `visualViewport`. On a phone `innerHeight`,
+and therefore the canvas, includes the strip behind the browser's own UI. The
+third-person rig frames the tank a third up the CANVAS; when the chrome eats
+the bottom, that lands below the fold. The tank is drawn, in frustum, the
+right size, and invisible.
+
+That is why five previous fixes did not hold. Every one of them asked "is the
+camera pointed at the tank", and every time the answer was yes.
+
+`applyViewportBias` pitches the camera by the angle that moves the target
+from the centre of the canvas to the centre of the VISIBLE band. On a
+desktop, and headless, `visualViewport` reports the full canvas and the bias
+is exactly zero — which is the right no-op and the reason this can ship
+without a device to test it on. Applied to the third-person rig and to build
+mode, which has the same problem with the cell you tapped.
+
+**And the arithmetic is testable after all.** `?vpbias=<offsetTop>:<height>`
+injects a synthetic visible band; `?vpprobe=1` reports where the tank lands
+and whether that is inside it. With a 430×900 canvas and a band ending at
+500, the tank sits at y=572 uncorrected — outside — and at 434 with the bias
+— inside. Measured, not asserted.
+
+`chrome` is now an actionable verdict in the watchdog. It used to be filed
+under "re-seating would not help", which was true while the rig aimed at the
+middle of the canvas: snapping put the tank back in the same invisible strip.
+
+The watchdog line also grew the things the last one lacked: WHICH edge the
+tank crossed and by how many pixels, the canvas and visual viewport
+rectangles, the applied bias, and `unitScale` — because the rig pulls back as
+the tank grows, `camToTank=15.9c` is a large number, and "by the end of the
+first sector" is exactly when the tank is biggest. If growth is a second
+cause, the next screenshot will say so instead of needing another round.
+
 ## The hack overlay on a phone — full screen, and turned where turning helps
 
 Operator: "on mobile, when reaching the server, the games are hard to play
