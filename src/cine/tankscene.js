@@ -15,15 +15,15 @@
 // countdown the game steps by dt; here it is written from the shot times,
 // so a seek lands on the same frame as a play-through.
 import * as THREE from '../../vendor/three.module.js';
-import { buildCreature, preloadMkcx, makeBulletCloud } from '../units.js?v=e570fa7d';
-import { bakeGalaxyCube } from '../galaxybake.js?v=e570fa7d';
-import { SKY_PRESET } from '../galaxyseed.js?v=e570fa7d';
-import { LOOKS } from '../looks.js?v=e570fa7d';
-import { compileRail } from './rail.js?v=e570fa7d';
-import { makeWirePlanet, widenWire } from './planet.js?v=e570fa7d';
-import { applyWeatheredMaterial } from './materials.js?v=e570fa7d';
-import { createBeamRig, PLASMA_DEFAULTS, BOARD_PRESET, BEAM_PEAK } from '../beamdraw.js?v=e570fa7d';
-import { TANK_FEEL, makeTankFeel, applyTankFeel } from '../tankfeel.js?v=e570fa7d';
+import { buildCreature, preloadMkcx, makeBulletCloud } from '../units.js?v=198135c4';
+import { bakeGalaxyCube } from '../galaxybake.js?v=198135c4';
+import { SKY_PRESET } from '../galaxyseed.js?v=198135c4';
+import { LOOKS } from '../looks.js?v=198135c4';
+import { compileRail } from './rail.js?v=198135c4';
+import { makeWirePlanet, widenWire } from './planet.js?v=198135c4';
+import { applyWeatheredMaterial } from './materials.js?v=198135c4';
+import { createBeamRig, PLASMA_DEFAULTS, BOARD_PRESET, BEAM_PEAK } from '../beamdraw.js?v=198135c4';
+import { TANK_FEEL, makeTankFeel, applyTankFeel } from '../tankfeel.js?v=198135c4';
 
 export const TANK_LEN = 12;
 

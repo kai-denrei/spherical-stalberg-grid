@@ -29,7 +29,7 @@ import { sentryUrl } from './sentry.js';
 import { sweepAngle, radarPhosphor } from './radar.js';
 import {
   BALLISTICS_TUNE, MRAD, toMrad, windAt, launch, step, solution, zeroAngle,
-  makeShooter, stepBreath, sway, rangeFromMrad, hitsAt, STEP, MAX_T,
+  makeShooter, stepBreath, sway, rangeFromMrad, hitsAt, STEP, MAX_T, nextPlate,
 } from './ballistics.js';
 
 const TARGET_TYPES = ['phage', 'ghost', 'corona', 'barbed'];
@@ -310,6 +310,97 @@ export function initSniperTab(root) {
     hudNote = `CONTACT · ${targets.length} moving`;
   }
 
+  // A PLATE THAT HAS BEEN HIT topples backwards about its own base over
+  // `fall`, then the next one rises out of the ground where nextPlate put
+  // it. Neither is decoration: the topple is the hit confirmation at a range
+  // where the round takes a second and a half to arrive, and the new plate
+  // being SOMEWHERE ELSE is the re-calibration the whole exercise is for.
+  const FALL = 0.55, RISE = 0.5;
+  // the probe measures BALLISTICS, and it re-stands its target between runs;
+  // letting that fight the plate cycle produced two plates at once and a
+  // TRACK panel disagreeing with its own note
+  let probing = false;
+  function knockDown(t) {
+    if (probing || t.falling) return;
+    t.falling = 0;
+    t.alive = false;             // no more hits on a plate already going down
+    plateFalls.push(t);
+  }
+  const plateFalls = [];
+  function stepPlates(dt) {
+    for (let i = plateFalls.length - 1; i >= 0; i--) {
+      const t = plateFalls[i];
+      t.falling += dt;
+      const u = Math.min(1, t.falling / FALL);
+      // about the base, so it hinges rather than sinking
+      const half = P.targetR * FACE_R;
+      t.obj.rotation.x = -(u * u) * (Math.PI / 2);
+      t.obj.position.y = t.pos[1] - Math.sin((u * u) * (Math.PI / 2)) * half * 0.55;
+      if (u < 1) continue;
+      scene.remove(t.obj); disposeObj(t.obj);
+      plateFalls.splice(i, 1);
+      const at = targets.indexOf(t);
+      if (at >= 0) targets.splice(at, 1);
+      popPlate(t);
+    }
+    // the new one rises
+    for (const t of targets) {
+      if (!t.cal || t.rising === undefined) continue;
+      t.rising = Math.min(1, t.rising + dt / RISE);
+      const e = t.rising * t.rising * (3 - 2 * t.rising);
+      t.obj.position.y = t.pos[1] - (1 - e) * P.targetR * FACE_R * 2.2;
+      if (t.rising >= 1) delete t.rising;
+    }
+  }
+
+  function popPlate(prev) {
+    const p2 = nextPlate(
+      { range: Math.hypot(prev.pos[0], prev.pos[2]), bearing: Math.atan2(prev.pos[0], prev.pos[2]) },
+      rng, P, [Math.max(60, P.range - P.spread), P.range + P.spread]);
+    const cy = Math.max(1.6, P.targetR * FACE_R + 0.15);
+    const obj = makeCalTarget(P.targetR);
+    obj.position.set(Math.sin(p2.bearing) * p2.range, cy, Math.cos(p2.bearing) * p2.range);
+    scene.add(obj);
+    const t = { id: prev.id + 1, obj, pos: [obj.position.x, cy, obj.position.z],
+      alive: true, d: p2.range, cal: true, rising: 0 };
+    targets.push(t);
+    // the string is NOT reset: a calibration is a group across the plates it
+    // was fired at, and the point of moving them is that the hold has to be
+    // re-read for each one
+    hudNote = `PLATE DOWN — next up at ${p2.range.toFixed(0)} m · re-read it`;
+    return t;
+  }
+
+  // --- the enemy ------------------------------------------------------------
+  // SPAWNED ON DEMAND, and it comes for you. A closer target every second is
+  // what makes the rangefinder worth having and the lead worth computing —
+  // and unlike the crossing movers it changes the RANGE, which is the axis
+  // the drop lives on.
+  function spawnEnemy() {
+    const d = P.range + P.spread * 0.9;
+    const bearing = aimYaw + (rng() * 2 - 1) * 0.02;
+    const type = TARGET_TYPES[(targets.length + 1) % TARGET_TYPES.length];
+    const grp = new THREE.Group();
+    const obj = makeDotEnemy(type, { walker: CREATURE_TINTS[type], walkerHi: accentFor(type) });
+    obj.scale.setScalar(TARGET_H * 0.5);
+    obj.position.y = TARGET_H * 0.5;
+    grp.add(obj);
+    const plate = new THREE.Mesh(new THREE.PlaneGeometry(0.9, 0.9),
+      new THREE.MeshBasicMaterial({ color: 0xd8c9a8, side: THREE.DoubleSide }));
+    plate.position.y = TARGET_H * 0.78;
+    grp.add(plate);
+    grp.position.set(Math.sin(bearing) * d, 0, Math.cos(bearing) * d);
+    grp.userData.plate = plate;
+    scene.add(grp);
+    const t = { id: 100 + targets.length, obj: grp,
+      pos: [grp.position.x, TARGET_H * 0.78, grp.position.z],
+      alive: true, d, closing: P.moverSpeed };
+    targets.push(t);
+    hudNote = `CONTACT — inbound at ${d.toFixed(0)} m`;
+    if (P.sound) sfx.play('danger_alert');
+    return t;
+  }
+
   // The target under the reticle, and how far away it is — the rangefinder's
   // job, done the same way whether a chip prints it or the player mils it.
   function underReticle() {
@@ -426,11 +517,14 @@ export function initSniperTab(root) {
             b.scale.setScalar(1.2);
             b.position.set(t.pos[0], t.pos[1], t.pos[2]);
             scene.add(b); fx.push({ obj: b, tick: b.userData.tick });
+            if (P.sound) sfx.play(t.cal ? 'tank_shells' : 'enemy_die_a');
             scene.remove(t.obj);
             hudNote = `HIT ${t.id} at ${Math.hypot(t.pos[0], t.pos[2]).toFixed(0)} m · ${(miss * 100).toFixed(0)} cm off centre`;
-            // the calibration target stands back up: a string is five shots
-            // at ONE target, not five targets
-            if (t.cal) t.alive = true;
+            // A STRUCK PLATE FALLS, and another comes up somewhere else. The
+            // clang is the range's whole feedback loop — at 700 m the round
+            // takes a second and a half to arrive and there is nothing else
+            // to tell you it did.
+            if (t.cal) { if (P.sound) sfx.play('tank_shells'); knockDown(t); }
           } else if (miss < P.targetR * 6) {
             hudNote = `MISS by ${(miss * 100).toFixed(0)} cm at ${Math.hypot(t.pos[0], t.pos[2]).toFixed(0)} m`;
           }
@@ -506,6 +600,7 @@ export function initSniperTab(root) {
     if (k === 'shift') keys.hold = true;
     if (k === ' ' || k === 'spacebar') { fire(); ev.preventDefault(); }
     if (k === 'r') { spawnTargets(); shooter.shots = 0; shooter.hits = 0; }
+    if (k === 'e') spawnEnemy();
     // the hold, dialled by hand — the manual half of the firing solution
     if (k === 'arrowup') holdUp += 0.25;
     if (k === 'arrowdown') holdUp -= 0.25;
@@ -597,7 +692,12 @@ export function initSniperTab(root) {
     put('f-range', u ? (P.rangefinder ? `${u.range.toFixed(0)} m` : 'MIL IT') : '—',
       !!u && P.rangefinder);
     put('f-bearing', u ? `${((Math.atan2(u.t.pos[0], u.t.pos[2]) * 180 / Math.PI + 360) % 360).toFixed(1)}°` : '—');
-    put('f-cross', u && u.t.vx ? `${Math.abs(u.t.vx).toFixed(1)} m/s ${u.t.vx > 0 ? 'R' : 'L'}` : 'static');
+    // a CLOSING target is the interesting case — the range is changing under
+    // the solution, which is the one thing a static plate never does
+    put('f-cross', u
+      ? (u.t.closing ? `${u.t.closing.toFixed(1)} m/s INBOUND`
+        : u.t.vx ? `${Math.abs(u.t.vx).toFixed(1)} m/s ${u.t.vx > 0 ? 'R' : 'L'}` : 'static')
+      : '—', !!(u && u.t.closing));
     put('f-subtense', u ? `${toMrad(TARGET_H, u.range).toFixed(2)} mrad` : '—');
 
     // BALLISTICS — the solution, if the chip is printed
@@ -670,6 +770,7 @@ export function initSniperTab(root) {
   gp.add(P, 'allotted', 3, 20, 1).name('shots in a string');
   gp.add(P, 'moverSpeed', 0, 12, 0.2).name('crossing speed (m/s)');
   gp.add(P, 'sound').name('gun sound');
+  gp.add({ spawn: () => spawnEnemy() }, 'spawn').name('spawn an enemy (E)');
 
   const gt = gui.addFolder('the range');
   gt.add(P, 'range', 100, 1800, 10).name('distance').onChange(spawnTargets);
@@ -691,6 +792,9 @@ export function initSniperTab(root) {
   if (gear) gear.addEventListener('click', () => root.classList.toggle('panel-hidden'));
   const fireBtn = root.querySelector('#sniper-fire');
   if (fireBtn) fireBtn.addEventListener('click', () => fire());
+  const spawnBtn = root.querySelector('#sniper-spawn');
+  if (spawnBtn) spawnBtn.addEventListener('click', () => spawnEnemy());
+
   const breathBtn = root.querySelector('#sniper-breath');
   if (breathBtn) {
     for (const e of ['pointerdown']) breathBtn.addEventListener(e, () => { keys.hold = true; });
@@ -879,6 +983,7 @@ export function initSniperTab(root) {
       camera.lookAt(0, muzzleHeight() * 0.7, 0.3);
     }
     stepRounds(dt);
+    stepPlates(dt);
     for (let i = fx.length - 1; i >= 0; i--) {
       if (!fx[i].tick(dt)) { scene.remove(fx[i].obj); disposeObj(fx[i].obj); fx.splice(i, 1); }
     }
@@ -893,6 +998,27 @@ export function initSniperTab(root) {
         if (Math.abs(t.pos[0]) > lane) { t.pos[0] = Math.sign(t.pos[0]) * lane; t.vx = -t.vx; }
         t.obj.position.x = t.pos[0];
       }
+      // A SPAWNED ENEMY COMES FOR YOU — straight down its own bearing at the
+      // shooter. It is the only thing here that changes the RANGE, which is
+      // the axis the drop lives on, so it is the one that makes a rangefinder
+      // worth having.
+      if (t.closing) {
+        const d = Math.hypot(t.pos[0], t.pos[2]);
+        if (d <= 12) {
+          t.alive = false;
+          scene.remove(t.obj); disposeObj(t.obj);
+          hudNote = 'IT GOT PAST YOU';
+          if (P.sound) sfx.play('danger_alert');
+          continue;
+        }
+        const step2 = Math.min(d - 12, t.closing * dt);
+        t.pos[0] -= (t.pos[0] / d) * step2;
+        t.pos[2] -= (t.pos[2] / d) * step2;
+        t.obj.position.set(t.pos[0], 0, t.pos[2]);
+        // published, so the lead reads it rather than differentiating a
+        // position a frame late
+        t.vel = [-(t.pos[0] / d) * t.closing, 0, -(t.pos[2] / d) * t.closing];
+      }
       if (t.obj.userData.plate) t.obj.userData.plate.lookAt(camera.position);
       if (t.obj.userData.tick) t.obj.userData.tick(clock + t.id);
     }
@@ -903,6 +1029,13 @@ export function initSniperTab(root) {
     hudT += dt; if (hudT > 0.15) { hudT = 0; hudLine(); }
   }
   animate();
+
+  // ?spawn=N — put N inbound enemies on the range at load, for a still or a
+  // look at the closing behaviour without reaching for the button.
+  {
+    const n = parseInt(q.get('spawn') || '0', 10);
+    if (n > 0) setTimeout(() => { for (let i = 0; i < n; i++) spawnEnemy(); }, 1200);
+  }
 
   // ?sniperprobe=1 — the shot, in numbers. A sniper mechanic is a claim that
   // the HUD's solution and the bullet agree; this fires with the solution
@@ -921,6 +1054,7 @@ export function initSniperTab(root) {
       // fire it three ways: no hold, the dialled hold, and the chip's
       const runs = [['no hold', 0, 0], ['solution', sol.holdUp, sol.holdSide]];
       const wasPhase = P.phase;
+      probing = true;
       for (const [tag, hu, hs] of runs) {
         holdUp = hu; holdSide = hs;
         const before = shooter.hits;
@@ -956,6 +1090,23 @@ export function initSniperTab(root) {
         console.log(`SNIPERPROBE string ${g ? `${g.n} shots · group ${(g.ext * 100).toFixed(0)} cm`
           + ` · correction ${(-g.my).toFixed(2)} up ${(-g.mx).toFixed(2)} right` : 'NOTHING RECORDED'}`
           + ` · spent=${stringDone()}`);
+      }
+      // ...and now the RANGE's own cycle, at real speed: one hit, and the
+      // plate must go down and a different one come up. The count is the
+      // thing that catches a plate that forgot to leave.
+      probing = false;
+      string.length = 0;
+      const before = targets.filter((x) => x.cal).map((x) => Math.hypot(x.pos[0], x.pos[2]).toFixed(0));
+      const live = targets.find((x) => x.cal && x.alive);
+      if (live) {
+        knockDown(live);
+        setTimeout(() => {
+          const now = targets.filter((x) => x.cal);
+          console.log(`SNIPERPROBE plate: was [${before.join()}] now`
+            + ` [${now.map((x) => Math.hypot(x.pos[0], x.pos[2]).toFixed(0)).join()}]`
+            + ` count=${now.length} falling=${plateFalls.length}`
+            + ` ${now.length === 1 && now[0] !== live ? 'DOWN AND ANOTHER UP' : '<-- wrong count'}`);
+        }, 1600);
       }
     }, 2500);
   }

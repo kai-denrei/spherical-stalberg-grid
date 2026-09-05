@@ -104,7 +104,9 @@ token — the corner badge was retired from the game view).
   nor `env(safe-area-inset-*)`, so a desktop replica can only ever return
   `ok` or a pose fault — which is precisely why the phone reports outlived
   the replica).
-  the SNIPER (`#sniper`): `?phase=calibrate|contact` (phase 1 is a
+  the SNIPER (`#sniper`): `?spawn=N` (N inbound enemies at load — the SPAWN
+  button / E key does the same), `?closeup=0` and `?scan=0` (the spotting
+  monitor and the PPI), `?phase=calibrate|contact` (phase 1 is a
   black-and-white target and a fixed string; phase 2 is movers), `?allotted=N`,
   `?moverSpeed=`, `?showRifle=1` (you do not see your own rifle down your own
   scope — the camera sits AT the optic, inside the receiver), and

@@ -14,7 +14,7 @@
 // Coordinates: the shooter is at the origin looking down +Z, +Y is up, +X is
 // right. Metres and seconds throughout.
 
-import { makeParams, clampParams, formatKnobs, knobProblems } from './knobs.js?v=e570fa7d';
+import { makeParams, clampParams, formatKnobs, knobProblems } from './knobs.js?v=198135c4';
 
 export const BALLISTICS_TUNE = {
   muzzleVel: 700,     // m/s
@@ -39,6 +39,15 @@ export const BALLISTICS_TUNE = {
   hold: 0.18,         // sway multiplier while the breath is held
   holdSecs: 6.0,      // ...for this long
   holdRecover: 9.0,   // and this long to get it back
+  // --- the pop-up plate ---------------------------------------------------
+  // A hit knocks the plate down and another comes up NEARBY but not in the
+  // same place, which is the whole exercise: the hold you just dialled is
+  // wrong again, by a little, and you have to read the new range rather than
+  // repeat the last answer. Small enough that it is a correction and not a
+  // new problem; large enough that repeating the last answer misses.
+  plateStep: 55,      // m — the most the range may change
+  plateMin: 12,       // ...and the least, so it always MOVES
+  plateSpread: 9,     // mrad — how far it may shift across the field
 };
 
 // The integrator's own settings, NOT player knobs — which is why they are
@@ -63,6 +72,9 @@ export const BALLISTICS_KNOBS = [
   { key: 'hold', label: 'held-breath sway', group: 'sway', min: 0, max: 1, step: 0.02 },
   { key: 'holdSecs', label: 'breath (s)', group: 'sway', min: 1, max: 20, step: 0.5 },
   { key: 'holdRecover', label: 'recover (s)', group: 'sway', min: 1, max: 30, step: 0.5 },
+  { key: 'plateStep', label: 'plate moves up to (m)', group: 'plate', min: 0, max: 400, step: 5 },
+  { key: 'plateMin', label: '...and at least (m)', group: 'plate', min: 0, max: 200, step: 1 },
+  { key: 'plateSpread', label: 'plate shifts (mrad)', group: 'plate', min: 0, max: 40, step: 0.5 },
 ];
 
 export const makeBallisticsParams = (src = BALLISTICS_TUNE) => makeParams(BALLISTICS_KNOBS, src);
@@ -166,6 +178,30 @@ export function solution(range, tune = BALLISTICS_TUNE, t0 = 0) {
     holdUp: toMrad(-r.drop, range),
     holdSide: toMrad(-r.drift, range),
   };
+}
+
+// --- the pop-up plate -----------------------------------------------------
+
+// WHERE THE NEXT PLATE COMES UP. Near the last one, never ON it: the range
+// moves by at least `plateMin` and at most `plateStep`, and the bearing
+// shifts within `plateSpread`. A plate that came back up in the same place
+// would let a shooter dial once and stop reading, which is the opposite of
+// what a calibration string is for.
+//
+// `bounds` keeps it on the range that was set up — a plate that wandered to
+// 2 km because the dice said so is not a re-calibration, it is a new lab.
+export function nextPlate(prev, rng, tune = BALLISTICS_TUNE, bounds = null) {
+  const lo = bounds ? bounds[0] : 100, hi = bounds ? bounds[1] : 1600;
+  const span = Math.max(0, tune.plateStep - tune.plateMin);
+  const mag = tune.plateMin + rng() * span;
+  // a direction that is not zero, and that stays inside the range's bounds:
+  // pushed off the near or far end it simply comes back the other way
+  let dir = rng() < 0.5 ? -1 : 1;
+  let range = prev.range + dir * mag;
+  if (range < lo || range > hi) { dir = -dir; range = prev.range + dir * mag; }
+  range = Math.max(lo, Math.min(hi, range));
+  const bearing = prev.bearing + (rng() * 2 - 1) * (tune.plateSpread / MRAD);
+  return { range, bearing };
 }
 
 // --- the shooter ----------------------------------------------------------

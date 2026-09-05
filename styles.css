@@ -5,22 +5,22 @@
    back to a system face until the subset is rebuilt. */
 @font-face {
   font-family: 'VT323';
-  src: url('assets/fonts/VT323.woff2?v=e570fa7d') format('woff2');
+  src: url('assets/fonts/VT323.woff2?v=198135c4') format('woff2');
   font-weight: 400; font-style: normal; font-display: swap;
 }
 @font-face {
   font-family: 'Press Start 2P';
-  src: url('assets/fonts/PressStart2P.woff2?v=e570fa7d') format('woff2');
+  src: url('assets/fonts/PressStart2P.woff2?v=198135c4') format('woff2');
   font-weight: 400; font-style: normal; font-display: swap;
 }
 @font-face {
   font-family: 'Share Tech Mono';
-  src: url('assets/fonts/ShareTechMono.woff2?v=e570fa7d') format('woff2');
+  src: url('assets/fonts/ShareTechMono.woff2?v=198135c4') format('woff2');
   font-weight: 400; font-style: normal; font-display: swap;
 }
 @font-face {
   font-family: 'DotGothic16';
-  src: url('assets/fonts/DotGothic16.woff2?v=e570fa7d') format('woff2');
+  src: url('assets/fonts/DotGothic16.woff2?v=198135c4') format('woff2');
   font-weight: 400; font-style: normal; font-display: swap;
 }
 
@@ -4273,7 +4273,7 @@ body:not(.chrome-open) #tabbar .tabgroup:not(:has(button.active)) { display: non
   #sniper-fcs .fcs-radar canvas { width: 100px; height: 100px; }
   #sniper-fcs .fcs-note { font-size: 10px; bottom: 10px; }
 }
-#sniper-fire, #sniper-breath {
+#sniper-fire, #sniper-breath, #sniper-spawn {
   /* clear of the lil-gui panel, which owns the right edge on a desktop; the
      coarse block below puts them back on the thumb's edge, where the panel
      is a bottom drawer instead */
@@ -4286,13 +4286,16 @@ body:not(.chrome-open) #tabbar .tabgroup:not(:has(button.active)) { display: non
 }
 #sniper-fire { bottom: 14px; }
 #sniper-breath { bottom: 78px; }
-#sniper-fire:active, #sniper-breath:active { background: rgba(90, 200, 180, 0.5); color: #fff; }
+/* the spawn button takes the lock colour: it is the one control here that
+   makes the range more dangerous rather than less */
+#sniper-spawn { bottom: 142px; color: #ffb43d; border-color: rgba(255, 180, 61, .55); }
+#sniper-fire:active, #sniper-breath:active, #sniper-spawn:active { background: rgba(90, 200, 180, 0.5); color: #fff; }
 #sniper-gear { position: absolute; right: 12px; top: 12px; z-index: 8; width: 44px; height: 44px; border-radius: 10px;
   border: 1px solid rgba(120, 200, 255, 0.35); background: rgba(10, 22, 34, 0.85); color: #9fdcff; font-size: 20px; display: none; }
 #tab-sniper.panel-hidden .lil-gui.root { display: none !important; }
 @media (pointer: coarse), (max-width: 700px) {
   #sniper-gear { display: block; top: calc(env(safe-area-inset-top, 0px) + 112px); right: 12px; }
-  #sniper-fire, #sniper-breath { right: 14px; }
+  #sniper-fire, #sniper-breath, #sniper-spawn { right: 14px; }
   #sniper-hud { font-size: 11px; max-width: calc(100vw - 130px); }
   #tab-sniper .lil-gui.root { display: block !important; position: fixed !important; left: 0 !important; right: 0 !important; bottom: 0 !important; top: auto !important;
     width: 100% !important; max-height: 46vh; overflow-y: auto; --widget-height: 36px; --font-size: 15px; --input-font-size: 15px; --name-width: 44%;

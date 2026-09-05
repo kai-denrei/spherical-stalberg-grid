@@ -6,7 +6,7 @@
 import {
   BALLISTICS_TUNE, toMrad, fromMrad, windAt, launch, step, flyTo,
   zeroAngle, solution, makeShooter, stepBreath, sway, rangeFromMrad, hitsAt,
-  ballisticsKnobProblems, MRAD,
+  ballisticsKnobProblems, MRAD, nextPlate,
 } from '../src/ballistics.js';
 
 let failures = 0;
@@ -111,6 +111,43 @@ console.log('wind:');
   check('...and comes back round', Math.abs(windAt(T.gustPeriod, T)[0] - w0[0]) < 1e-6);
   check('no gust is a steady wind',
     Math.abs(windAt(3, { ...T, gust: 0 })[0] - windAt(9, { ...T, gust: 0 })[0]) < 1e-9);
+}
+
+console.log('the pop-up plate:');
+{
+  const rng = (() => { let a = 4414; return () => {
+    a |= 0; a = (a + 0x6D2B79F5) | 0;
+    let t = Math.imul(a ^ (a >>> 15), 1 | a);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  }; })();
+  const prev = { range: 700, bearing: 0 };
+  const p1 = nextPlate(prev, rng, T, [200, 1200]);
+  // THE ONE THAT MATTERS: it must MOVE, or a shooter dials once and stops
+  // reading, which is the opposite of what a calibration string is for.
+  check('the next plate is somewhere else',
+    Math.abs(p1.range - prev.range) >= T.plateMin - 1e-9, `${p1.range.toFixed(1)}`);
+  check('...but not far', Math.abs(p1.range - prev.range) <= T.plateStep + 1e-9);
+  check('...and it shifts across too', p1.bearing !== prev.bearing);
+  check('the shift is bounded', Math.abs(p1.bearing - prev.bearing) <= T.plateSpread / 1000 + 1e-12);
+
+  // it never leaves the range that was set up
+  let lo = Infinity, hi = -Infinity, moved = 0;
+  let cur = { range: 700, bearing: 0 };
+  for (let i = 0; i < 400; i++) {
+    const n = nextPlate(cur, rng, T, [200, 1200]);
+    if (Math.abs(n.range - cur.range) >= T.plateMin - 1e-9) moved++;
+    lo = Math.min(lo, n.range); hi = Math.max(hi, n.range);
+    cur = n;
+  }
+  check('it stays on the range it was given', lo >= 200 - 1e-9 && hi <= 1200 + 1e-9,
+    `${lo.toFixed(0)}..${hi.toFixed(0)}`);
+  check('every plate moves, four hundred times running', moved === 400, String(moved));
+  // pushed against an end it comes back the other way rather than sticking
+  const atFar = nextPlate({ range: 1200, bearing: 0 }, rng, T, [200, 1200]);
+  check('at the far end it comes back', atFar.range < 1200);
+  const atNear = nextPlate({ range: 200, bearing: 0 }, rng, T, [200, 1200]);
+  check('at the near end it goes out', atNear.range > 200);
 }
 
 console.log('the shooter:');
