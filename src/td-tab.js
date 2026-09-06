@@ -19,81 +19,81 @@
 
 import * as THREE from '../vendor/three.module.js';
 import GUI from '../vendor/lil-gui.esm.js';
-import { generateSphereMesh, relax } from './grid.js?v=961d8d19';
-import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=961d8d19';
-import { compileRail } from './cine/rail.js?v=961d8d19';
-import { SCRIPTS } from './cine/scripts.js?v=961d8d19';
-import { cuesBetween } from './cine/sound.js?v=961d8d19';
-import { installCine } from './cine/kit.js?v=961d8d19';
-import { mulberry32, randomSeed } from './rng.js?v=961d8d19';
-import { computeBerths, berthIndexFor } from './berths.js?v=961d8d19';
-import { wantsSecondary, shellsForAll } from './autofire.js?v=961d8d19';
-import { printPhase, printOffset, printOn, patternSecsFor } from './printpath.js?v=961d8d19';
+import { generateSphereMesh, relax } from './grid.js?v=f5c20573';
+import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=f5c20573';
+import { compileRail } from './cine/rail.js?v=f5c20573';
+import { SCRIPTS } from './cine/scripts.js?v=f5c20573';
+import { cuesBetween } from './cine/sound.js?v=f5c20573';
+import { installCine } from './cine/kit.js?v=f5c20573';
+import { mulberry32, randomSeed } from './rng.js?v=f5c20573';
+import { computeBerths, berthIndexFor } from './berths.js?v=f5c20573';
+import { wantsSecondary, shellsForAll } from './autofire.js?v=f5c20573';
+import { printPhase, printOffset, printOn, patternSecsFor } from './printpath.js?v=f5c20573';
 import { createBeam } from './beamfx.js';
-import { createBeamRig, PLASMA_DEFAULTS, BOARD_PRESET, BEAM_PEAK } from './beamdraw.js?v=961d8d19';
-import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3, segKey, tangentDir, tangentBasis } from './vec3.js?v=961d8d19';
-import { CREATURES, waveJelly } from './creatures.js?v=961d8d19';
-import { brief, dwellFor } from './isaobriefs.js?v=961d8d19';
-import { drawEmotion } from './emotions.js?v=961d8d19';
+import { createBeamRig, PLASMA_DEFAULTS, BOARD_PRESET, BEAM_PEAK } from './beamdraw.js?v=f5c20573';
+import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3, segKey, tangentDir, tangentBasis } from './vec3.js?v=f5c20573';
+import { CREATURES, waveJelly } from './creatures.js?v=f5c20573';
+import { brief, dwellFor } from './isaobriefs.js?v=f5c20573';
+import { drawEmotion } from './emotions.js?v=f5c20573';
 import { ACHIEVEMENTS, ACHV_GROUPS, achievement, blankRun, earned, freshlyEarned,
   sanitiseRecord }
-  from './achievements.js?v=961d8d19';
+  from './achievements.js?v=f5c20573';
 import { applyFontPack, currentFontPack, FONT_NAMES,
-  loadTypeFeel } from './fonts.js?v=961d8d19';
-import { SECONDARY_TOE, applySecondaryToe } from './units.js?v=961d8d19';
-import { UNITS, UNIT_NAMES, buildUnit, buildCreature, preloadMkcx, preloadServer, makeServerFixture, makeShieldShell, preloadContainer, makeContainerFixture, preloadFabricator, makeIsaoDrone, makeBulletCloud, makeRewardSolid, makeShellSolid, makeDebris, makeDotBurst, makePortalCloud, preloadPortalRing, makePortalRing, makeHeartCloud, makeDotEnemy, makeSurvivor, preloadAstronaut, preloadAstronauts, makeAstronaut, preloadTerraformer, makeTerraformerFixture } from './units.js?v=961d8d19';
-import { LOOKS, LOOK_NAMES } from './looks.js?v=961d8d19';
-import { makeCellIndex } from './cellindex.js?v=961d8d19';
-import { CREATURE_TINTS, ENEMY_SPEC, INTROS, computeWavePlan, accentFor } from './enemyspec.js?v=961d8d19';
-import { PICKUPS } from './pickups.js?v=961d8d19';
-import { rankFor, rankLabel, badgeSVG, killReq, eliteReq } from './ranks.js?v=961d8d19';
-import { beamStep, isBeamStep, PEN_SOFT_FRAC, PEN_HARD_FRAC } from './beamranks.js?v=961d8d19';
-import { burn, sweepAdvance, wallBite as wallBiteFor } from './beamburn.js?v=961d8d19';
-import { arcPoint, projectToArc, toeForCrossing, crossingForToe } from './arc.js?v=961d8d19';
+  loadTypeFeel } from './fonts.js?v=f5c20573';
+import { SECONDARY_TOE, applySecondaryToe } from './units.js?v=f5c20573';
+import { UNITS, UNIT_NAMES, buildUnit, buildCreature, preloadMkcx, preloadServer, makeServerFixture, makeShieldShell, preloadContainer, makeContainerFixture, preloadFabricator, makeIsaoDrone, makeBulletCloud, makeRewardSolid, makeShellSolid, makeDebris, makeDotBurst, makePortalCloud, preloadPortalRing, makePortalRing, makeHeartCloud, makeDotEnemy, makeSurvivor, preloadAstronaut, preloadAstronauts, makeAstronaut, preloadTerraformer, makeTerraformerFixture } from './units.js?v=f5c20573';
+import { LOOKS, LOOK_NAMES } from './looks.js?v=f5c20573';
+import { makeCellIndex } from './cellindex.js?v=f5c20573';
+import { CREATURE_TINTS, ENEMY_SPEC, INTROS, computeWavePlan, accentFor } from './enemyspec.js?v=f5c20573';
+import { PICKUPS } from './pickups.js?v=f5c20573';
+import { rankFor, rankLabel, badgeSVG, killReq, eliteReq } from './ranks.js?v=f5c20573';
+import { beamStep, isBeamStep, PEN_SOFT_FRAC, PEN_HARD_FRAC } from './beamranks.js?v=f5c20573';
+import { burn, sweepAdvance, wallBite as wallBiteFor } from './beamburn.js?v=f5c20573';
+import { arcPoint, projectToArc, toeForCrossing, crossingForToe } from './arc.js?v=f5c20573';
 import { MINE_TUNE, makeField, layMine, armMines, restock, mineAt,
-  inFan, trip, chain, nextChained, minePolar } from './mines.js?v=961d8d19';
-import { shotOf, muzzleOf, impactOf, tuneFor } from './sentryfx.js?v=961d8d19';
+  inFan, trip, chain, nextChained, minePolar } from './mines.js?v=f5c20573';
+import { shotOf, muzzleOf, impactOf, tuneFor } from './sentryfx.js?v=f5c20573';
 import { makeTracerMesh, makeLightningMesh, makeSeekerMesh, aimSeeker,
-  LANCE_LOOK as SHOT_LANCE_LOOK, THROW_LOOK as SHOT_THROW_LOOK } from './shotfx.js?v=961d8d19';
+  LANCE_LOOK as SHOT_LANCE_LOOK, THROW_LOOK as SHOT_THROW_LOOK } from './shotfx.js?v=f5c20573';
 import { SHIELD_TUNE, SHIELD_KNOBS, makeShield, charge as chargeShield,
   deploy as deployShield, tickShield, restockShield, tapTower, towerOffline,
-  stationDraw, waveReset as shieldWaveReset, shoveVec, shoveMag } from './shield.js?v=961d8d19';
+  stationDraw, waveReset as shieldWaveReset, shoveVec, shoveMag } from './shield.js?v=f5c20573';
 import { deepLink, wireDeepLink } from './deeplink.js';
 import { RESCUE_TUNE, makeRescue, placeSurvivors, stepBoard, stepGrab,
   disembark, loseCarried, lockOn, waveMix, standing as standingSurv,
   aboard as aboardSurv, missionOver, verdict as rescueVerdict,
   grabProgress, remaining as remainingSurv, exposed as exposedSurv,
   RESCUE2_TUNE, makeCamps, stepCall, stepEmerge, walkStep, runOver,
-  awake as campAwake } from './rescue.js?v=961d8d19';
+  awake as campAwake } from './rescue.js?v=f5c20573';
 import { WORMHOLE_PRESET, WORMHOLE_UNIFORM_DEFAULTS, RING_SPIN, TRAVEL,
-  travelRate, advancePhase } from './portalfx.js?v=961d8d19';
-import { WORMHOLE_FRAG } from './fx/wormhole.frag.js?v=961d8d19';
-import { CORONA_FRAG } from './fx/corona.frag.js?v=961d8d19';
-import { labLine, parseLabQuery } from './lab.js?v=961d8d19';
-import { bakeGalaxyCube } from './galaxybake.js?v=961d8d19';
-import { SKY_PRESET } from './galaxyseed.js?v=961d8d19';
-import { makeScore } from './score.js?v=961d8d19';
-import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER, HACK_GATED, starterTower, towerSound, ROSTER } from './towers.js?v=961d8d19';
-import { makeEconomy, sellRefund } from './economy.js?v=961d8d19';
-import { pickTier } from './perftier.js?v=961d8d19';
-import { applyWeatheredMaterial } from './cine/materials.js?v=961d8d19';
-import { STICK, stickVector, knobOffset } from './stick.js?v=961d8d19';
-import { registerServiceWorker } from './pwa.js?v=961d8d19';
-import { makeBloom } from './postfx.js?v=961d8d19';
-import { TANK_FEEL, TANK_FEEL_KNOBS, makeTankFeel, stepTankFeel, landTankFeel, fireTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js?v=961d8d19';
-import { FEEL, loadFeel, saveFeel } from './feelstore.js?v=961d8d19';
+  travelRate, advancePhase } from './portalfx.js?v=f5c20573';
+import { WORMHOLE_FRAG } from './fx/wormhole.frag.js?v=f5c20573';
+import { CORONA_FRAG } from './fx/corona.frag.js?v=f5c20573';
+import { labLine, parseLabQuery } from './lab.js?v=f5c20573';
+import { bakeGalaxyCube } from './galaxybake.js?v=f5c20573';
+import { SKY_PRESET } from './galaxyseed.js?v=f5c20573';
+import { makeScore } from './score.js?v=f5c20573';
+import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER, HACK_GATED, starterTower, towerSound, ROSTER } from './towers.js?v=f5c20573';
+import { makeEconomy, sellRefund } from './economy.js?v=f5c20573';
+import { pickTier } from './perftier.js?v=f5c20573';
+import { applyWeatheredMaterial } from './cine/materials.js?v=f5c20573';
+import { STICK, stickVector, knobOffset } from './stick.js?v=f5c20573';
+import { registerServiceWorker } from './pwa.js?v=f5c20573';
+import { makeBloom } from './postfx.js?v=f5c20573';
+import { TANK_FEEL, TANK_FEEL_KNOBS, makeTankFeel, stepTankFeel, landTankFeel, fireTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js?v=f5c20573';
+import { FEEL, loadFeel, saveFeel } from './feelstore.js?v=f5c20573';
 import { STRIKE_KNOBS, makeStrike, makeStrikeParams, grantStrikes, stepStrike,
   toggleArm, paintTarget, launchStrike, stepFall, skipFall, fallProgress,
-  strikeDamage, retargetStrike, orbitProgress } from './strike.js?v=961d8d19';
+  strikeDamage, retargetStrike, orbitProgress } from './strike.js?v=f5c20573';
 import { radarBasis, radarProject, radarBearing, sweepAngle, radarPhosphor,
-  proximitySectors, SENSOR_LEVELS, sensorColor } from './radar.js?v=961d8d19';
-import { BLOOM_GROUPS } from './bloomweights.js?v=961d8d19';
+  proximitySectors, SENSOR_LEVELS, sensorColor } from './radar.js?v=f5c20573';
+import { BLOOM_GROUPS } from './bloomweights.js?v=f5c20573';
 import { A6_TUNE, magFor, makeA6, stepA6, arc as a6Arc, a6Line } from './heptapod.js';
 import { SENTRY_TUNE } from './sentry.js';
 import { MISSILE_TUNE, scaleMissile, makeLock, stepLock, launchMissile, stepMissile } from './lockon.js';
-import { TOWER_LOOK_NAMES, DEFAULT_TOWER_LOOK, buildTowerLook, preloadLook, lookReady, setSentryTier } from './towerlooks.js?v=961d8d19';
-import { makeAudio } from './audio.js?v=961d8d19';
-import { DEATH_KEYS } from './audiomanifest.js?v=961d8d19';
+import { TOWER_LOOK_NAMES, DEFAULT_TOWER_LOOK, buildTowerLook, preloadLook, lookReady, setSentryTier } from './towerlooks.js?v=f5c20573';
+import { makeAudio } from './audio.js?v=f5c20573';
+import { DEATH_KEYS } from './audiomanifest.js?v=f5c20573';
 
 export function initTdTab(root) {
   let active = false;
@@ -3381,16 +3381,26 @@ export function initTdTab(root) {
     }
     if (down && (k === ' ' || k === 'spacebar')) { fire(); ev.preventDefault(); return; }
     if (down && k === 'n') { layMineNow(); ev.preventDefault(); return; }
-    if (down && k === 's') { deployShieldNow(); ev.preventDefault(); return; }
+    // T FOR TATE (盾), not S. S is REVERSE — it is in CTL_DRIVE_KEYS with w/a/d
+    // — so binding the shield to it meant every time the player backed up they
+    // also spent a charge. My earlier check grepped for `k === 's'` and found
+    // nothing, which is exactly the wrong question: the drive keys are read
+    // through a MAP, not a literal, so the conflict was invisible to the search
+    // and would have shown up as a rack that emptied itself.
+    if (down && k === 't') { deployShieldNow(); ev.preventDefault(); return; }
     if (down && k === 'h') pulseHint();
     if (down && k === 'v') toggleView();
     if (down && k === 'x' && serverFound && !hackedRound) openHack();
     // views land on number keys and on the letters that say them: 1/M/O all
-    // read as "map" and go to orbit, 2 is first person, 3/T third person.
-    // The radar's heart/player toggle lives on the MAP button alone now.
+    // read as "map" and go to orbit, 2 is first person, 3 third person (T is
+    // the SHIELD now, and V still cycles). The radar's heart/player toggle
+    // lives on the MAP button alone.
     if (down && (k === '1' || k === 'm' || k === 'o')) setView('orbit');
     if (down && k === '2') setView('pov');
-    if (down && (k === '3' || k === 't')) setView('third');
+    // THIRD PERSON LOSES ITS LETTER to the shield. It keeps `3`, and `v`
+    // still cycles views, so no way in is actually gone — where the shield had
+    // no key at all that did not already mean something else.
+    if (down && k === '3') setView('third');
     // C for Cheat (moved off M, which is a VIEW now)
     if (down && k === 'c') {
       strike.ready = Math.min(9, strike.ready + 1);
@@ -4722,7 +4732,7 @@ export function initTdTab(root) {
         keys.innerHTML = '<span>W A S D / arrows</span><span>drive</span>'
           + `<span>SPACE</span><span>shell &mdash; you have ${rescue2Tune.shells}</span>`
           + '<span>N</span><span>lay a MINE one cell ahead</span>'
-          + '<span>S</span><span>deploy a SHIELD (10s) &mdash; hard cores bounce off</span>'
+          + '<span>T</span><span>deploy a SHIELD (10s) &mdash; hard cores bounce off</span>'
           + '<span>Q / E</span><span>cruise up / down</span>'
           + '<span>1 / 2 / 3</span><span>orbit &middot; 1st &middot; 3rd</span>'
           + '<span>M / V</span><span>map / cycle view</span>'
@@ -4740,7 +4750,7 @@ export function initTdTab(root) {
           + '<span>SPACE</span><span>shell &mdash; you have ' + rescueTune.shells + '</span>'
           + (rescueTune.lasers ? '<span>SHIFT</span><span>lasers</span>' : '')
           + '<span>N</span><span>lay a MINE one cell ahead</span>'
-          + '<span>S</span><span>deploy a SHIELD (10s) &mdash; hard cores bounce off</span>'
+          + '<span>T</span><span>deploy a SHIELD (10s) &mdash; hard cores bounce off</span>'
           + '<span>Q / E</span><span>cruise up / down</span>'
           + '<span>1 / 2 / 3</span><span>orbit &middot; 1st &middot; 3rd</span>'
           + '<span>M / V</span><span>map / cycle view</span>'
@@ -5407,7 +5417,7 @@ export function initTdTab(root) {
         + `◈ SHIELD ${Math.ceil(shield.t)}s</b> ${shieldPips}`
       : (simTime < shield.coolUntil
         ? `<span class="sh-cool">◈ SHIELD COOLING ${(shield.coolUntil - simTime).toFixed(1)}s</span> ${shieldPips}`
-        : `<span class="sh-idle">◈ SHIELD</span> <b class="sh-ready">S</b> ${shieldPips}`);
+        : `<span class="sh-idle">◈ SHIELD</span> <b class="sh-ready">T</b> ${shieldPips}`);
     const alerts = [shieldBar,
       carryingRegen ? '⬤ REGEN CARRIED' : '',
       cannonHeat > 0 ? 'CANNON HOT' : '',
@@ -16381,6 +16391,53 @@ export function initTdTab(root) {
             : 'WRONG — the debrief never arrived'}`);
       }, (VICTORY_PULL + 1.6) * 1000);
     }, 2500);
+  }
+
+  // ?keyprobe=1 — WHICH KEY DOES WHAT, with REAL events. The shield was bound
+  // to S, which is REVERSE: `s` sits in CTL_DRIVE_KEYS beside w/a/d, so every
+  // time the player backed up they also spent a charge. A grep for `k === 's'`
+  // found nothing and said the key was free — the drive keys are read through
+  // a map, not a literal, so the search asked the wrong question entirely.
+  //
+  // This dispatches actual KeyboardEvents and reports what moved, which is the
+  // only check that could have caught it: a binding conflict is invisible to
+  // source search and obvious to a keypress.
+  if (urlParams.get('keyprobe') === '1') {
+    setTimeout(() => {
+      for (const id of ['#td-msg', '#td-intro']) {
+        const el = root.querySelector(id);
+        if (el) el.classList.add('hidden');
+      }
+      paused = false;
+      tutorial.frozen = false;
+      shot = null;
+      const press = (key) => {
+        dispatchEvent(new KeyboardEvent('keydown', { key, bubbles: true }));
+        dispatchEvent(new KeyboardEvent('keyup', { key, bubbles: true }));
+      };
+      // the deploy sequence still owns the hull at this point and
+      // deployShieldNow refuses while it does — which the first run of this
+      // probe reported as a failed BINDING. A refusal and an unbound key look
+      // identical from the outside, so the probe has to say which.
+      // CLEAR WHAT FREEZES IT, the way the shove probe does. deployShieldNow
+      // refuses while the berth deploy owns the hull, and a refusal looks
+      // exactly like an unbound key from outside — the first two runs of this
+      // probe reported a working binding as broken for that reason.
+      deploy = null;
+      const why = deployShieldNow();
+      console.log(`KEYPROBE control call = ${why} (must be 'ok' before the keys mean anything)`);
+      shield.rack = 2; shield.t = 0; shield.coolUntil = -Infinity;
+      const rack0 = shield.rack;
+      press('s');
+      const afterS = shield.rack;
+      shield.t = 0; shield.coolUntil = -Infinity;
+      press('t');
+      const afterT = shield.rack;
+      console.log(`KEYPROBE rack ${rack0} -> S:${afterS} -> T:${afterT}`
+        + ` s-spent=${rack0 - afterS} t-spent=${afterS - afterT} direct=${why}`
+        + ` ${afterS === rack0 && afterT === rack0 - 1 ? 'OK — S drives, T shields'
+          : 'WRONG — S still spends a charge, or T does not'}`);
+    }, 6000);
   }
 
   // ?hoverprobe=1 — THE HOVERING TOWER. Operator: "it is possible to have a

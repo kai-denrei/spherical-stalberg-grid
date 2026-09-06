@@ -81,6 +81,13 @@ token — the corner badge was retired from the game view).
   `?charge=0..1` (TD: park the wave clock inside the warning window —
   `?tick` drives motion, NOT the wave scheduler, so winding it forward
   leaves the countdown where it was),
+  THE SHIELD IS ON **T** (Tate, 盾), not S. S is REVERSE — it lives in
+  `CTL_DRIVE_KEYS` beside w/a/d — so the shield spent a charge every time the
+  player backed up. A grep for `k === 's'` finds nothing and says the key is
+  free: the drive keys are read through a MAP, not a literal, so a binding
+  conflict is invisible to source search. `?keyprobe=1` dispatches REAL
+  KeyboardEvents and reports what each key actually moved, which is the only
+  way to ask. Third person kept `3` and `v`; it lost its `t`.
   the SHIELD: `?shield=N` (ignite the bubble for N seconds), `?shieldrack=N`,
   every `SHIELD_TUNE` knob by name (`?coolSecs=`, `?tapOutage=`, `?shoveCells=`
   …), `?shieldprobe=1` (the ladder as log lines: the cap, one S chain with the
