@@ -206,9 +206,16 @@ export function makeJelly(cols = {}, tune = JELLY_TUNE, seed = 3) {
     side: THREE.DoubleSide,
   });
   const mesh = new THREE.Mesh(jellyGeometry(tune, seed), mat);
-  let t = 0;
-  mesh.userData.tick = (dt = 0.016) => {
-    t += dt;
+  // ABSOLUTE TIME, not dt. The board calls `userData.tick(tNow + e.phase)` and
+  // every other unit's tick is written `(t) => …` against that. This one took
+  // dt and ACCUMULATED it, so it was adding the whole elapsed time on every
+  // frame — t grew quadratically, the sine wobble aliased past the frame rate,
+  // and the mass juddered. It looked like a bad animation; it was a unit
+  // disagreeing with its host about what the argument means.
+  let lastT = null;
+  mesh.userData.tick = (t = 0) => {
+    const dt = lastT === null ? 0.016 : Math.max(0, Math.min(0.1, t - lastT));
+    lastT = t;
     mat.uniforms.uTime.value = t;
     // the hit swell decays; it is a spike, not a state
     const h = mat.uniforms.uHit;

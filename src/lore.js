@@ -281,6 +281,107 @@ export const LORE = {
       + 'in a high arc, target ring projected on the ground below, night '
       + 'battle, tracer arc long exposure, realistic military hardware, 8k',
   },
+  // --- THE SENTRY BOARD (roster 2, the default) ----------------------------
+  // Eight towers that arrived as Workshop models with no codex behind them.
+  // The board became the default on 2026-09-06 and the gap became visible the
+  // same day — a default board whose every tower opens a blank panel.
+  rotor: {
+    name: 'ROTOR',
+    tag: 'rotary — six barrels, fed from drums',
+    body: 'Six barrels on a common axis, spun up before the first round '
+      + 'leaves and wound down long after the last. The spin-up is the '
+      + 'weapon: by the time it is turning, whatever it is turning toward '
+      + 'has already been decided. Accurate is the wrong word for it. It '
+      + 'fills a lane and lets arithmetic finish the argument.',
+    visual: 'six-barrel rotary sentry gun on an armoured mount, barrels '
+      + 'blurred mid-spin, brass streaming from the drums, muzzle flash '
+      + 'strobing across asteroid tiles, gritty industrial sci-fi, 8k',
+  },
+  plasma: {
+    name: 'PLASMA THROWER',
+    tag: 'a thrower, not a gun',
+    body: 'A perforated nozzle that does not fire so much as POUR. What '
+      + 'leaves it is matter, not light, and it arrives as a widening spray '
+      + 'that clings to what it lands on and goes on working after contact. '
+      + 'Its reach is contemptible. Inside that reach nothing survives the '
+      + 'second it takes to walk through.',
+    visual: 'squat perforated plasma projector on a heavy mount, thick '
+      + 'jittering cyan stream pouring downward onto the ground, molten '
+      + 'residue clinging and dripping, short range close-quarters weapon, '
+      + 'hard sci-fi, 8k',
+  },
+  quiver: {
+    name: 'QUIVER',
+    tag: 'missile cells — locks, then forgets',
+    body: 'Six capped tubes that will not fire at anything they have not '
+      + 'first HELD. The lock costs time and never costs rounds, which is '
+      + 'the trade the whole cell was designed around. What leaves the tube '
+      + 'climbs, turns over at the top, and comes down through the roof of '
+      + 'the thing it was pointed at. It does not watch it land.',
+    visual: 'six capped vertical missile cells on a rotating sentry mount, '
+      + 'one round leaving in a climbing arc with a bright exhaust, top '
+      + 'attack trajectory, asteroid battlefield below, hard sci-fi, 8k',
+  },
+  relay: {
+    name: 'RELAY',
+    tag: 'a mast, not a weapon',
+    body: 'It is fixed, it does not articulate, and it has never destroyed '
+      + 'anything. It throws a field instead, and inside that field the '
+      + 'horde walks as though the ground has thickened. Crews rate it last '
+      + 'and place it first. Nothing on the board changes an engagement more '
+      + 'and nothing on the board is less satisfying to watch.',
+    visual: 'tall fixed lattice broadcast mast with emitter rings, arcs of '
+      + 'pale electricity reaching outward to nearby ground, no barrel and '
+      + 'no turret, cold blue field light on asteroid tiles, hard sci-fi, 8k',
+  },
+  mortar: {
+    name: 'MORTAR',
+    tag: 'tube and baseplate — the steepest arc on the board',
+    body: 'A tube on a plate that points at the SKY and hits what is behind '
+      + 'the wall. It has no line of sight to anything it kills and needs '
+      + 'none. The shell goes up, the shell comes down, and the interval '
+      + 'between those is the only warning the ground gets.',
+    visual: 'steep-angled mortar tube on a heavy baseplate pointing upward, '
+      + 'shell leaving the muzzle on a high arc, dust ring at the base, '
+      + 'asteroid emplacement, gritty hard sci-fi, 8k',
+  },
+  lancer: {
+    name: 'LANCER',
+    tag: 'rail and focusing collars — one aperture',
+    body: 'One aperture, one long green burst, and everything standing on '
+      + 'that line pays at once. It is aimed at a LINE rather than at a '
+      + 'target, which makes where it is put worth more than what it is '
+      + 'pointed at: a Lancer covering a corridor is worth three covering a '
+      + 'corner. It fires every two seconds and it matters which way.',
+    visual: 'long rail weapon with stacked focusing collars on a sentry '
+      + 'mount, single thin green beam held straight across the whole frame '
+      + 'piercing several bodies, hard sci-fi, high contrast, 8k',
+  },
+  howitzer: {
+    name: 'HOWITZER',
+    tag: 'siege barrel — the loudest thing on the board',
+    body: 'The Mortar grown up: further, heavier, wider, and slow enough '
+      + 'that a wave can walk through the gap between shells. It is a siege '
+      + 'piece doing sentry work and it has never pretended otherwise. Two '
+      + 'seconds between rounds is a long time to be right about where the '
+      + 'horde will be.',
+    visual: 'enormous siege howitzer on a braced sentry emplacement, huge '
+      + 'barrel elevated, massive muzzle blast and dust displacement, shell '
+      + 'arcing away over asteroid terrain, hard sci-fi, 8k',
+  },
+  heptapod: {
+    name: 'HEPTAPOD A6',
+    tag: 'six legs — the only tower that is not a position',
+    body: 'Everything else you build is furniture the enemy walks past. The '
+      + 'A6 leaves its berth and goes to meet them: a leash around its post, '
+      + 'a cassette of rockets emptied into whatever is worth a rocket, and '
+      + 'a walk home to reload that it takes whether or not the walk is '
+      + 'wise. It can be killed. That is the price of it being the only '
+      + 'thing you own that arrives.',
+    visual: 'six-legged walking weapons platform striding across asteroid '
+      + 'tiles, vertical launch cells on its back firing a rocket upward, '
+      + 'articulated legs mid-gait, amber running lights, hard sci-fi, 8k',
+  },
   sniper: {
     name: 'GUYED MAST',
     tag: 'railgun overwatch',

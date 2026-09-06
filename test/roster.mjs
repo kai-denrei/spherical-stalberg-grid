@@ -5,7 +5,7 @@
 // call sites, and nothing addresses a tower by a key that only one of them
 // has.
 import {
-  ROSTERS, ROSTER, TOWERS, TOWER_BY_KEY, TOWER_ORDER, HACK_GATED,
+  ROSTERS, ROSTER, TOWERS, TOWER_BY_KEY, TOWER_ORDER, HACK_GATED, DEFAULT_ROSTER_ID,
   useRoster, starterTower, unlockedTowerKeys, towerUnlockWave,
   effectiveStats, upgradeCost, MAX_TIER,
 } from '../src/towers.js';
@@ -30,7 +30,12 @@ console.log('the boards:');
   useRoster(2); useRoster(1);
   check('and switching away and back does not touch it',
     JSON.stringify(ROSTERS[1].towers) === before);
-  check('an unknown board is the campaign, not nothing', useRoster(99).id === 1);
+  // the rule is "a stale URL lands on a board that EXISTS", not "on board 1" —
+  // it was written when the campaign was the default and quietly encoded that
+  // rather than the intent, so flipping the default made a correct fallback
+  // look broken
+  check('an unknown board is the DEFAULT board, not nothing',
+    useRoster(99).id === DEFAULT_ROSTER_ID);
 }
 
 console.log('every board is complete:');

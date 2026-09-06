@@ -28,6 +28,16 @@ token — the corner badge was retired from the game view).
   committed); run `./scripts/check-tokens.sh` by hand anytime.
 - `npm test` = Node invariant suites (grid topology, dungeon, creatures,
   units). Keep green; they don't cover the render layer.
+- THE SENTRY BOARD IS THE DEFAULT (roster 2). `DEFAULT_ROSTER_ID` lives in
+  towers.js and roster.js applies the URL override — ONE default, stated once,
+  because roster.js is DOM-aware and Node cannot import it: a default that
+  lived only there would have the test suite running roster 1 while the game
+  shipped roster 2. `?roster=1` still reaches the campaign (the "classic"
+  button). Roster 1 is KEPT deliberately: ROSTERS exists to prove this tab is
+  roster-agnostic, and with one table left that property is unexercised and
+  rots. Flipping the default broke three suites, and each was a test naming no
+  roster while asserting about one — tdcore and knobs now call `useRoster(1)`
+  explicitly, and roster.mjs's "unknown board" rule says DEFAULT rather than 1.
 - NO EMOJI, anywhere, ever (operator, 2026-09-06: the deep link's chain
   "stands out in a bad way"). The interface is built out of MONOCHROME
   dingbats — ⬢ ⬤ ✦ ⧉ ⇄ ♥ ⌖ ◉ ◈ ▮ ↗ ⊙ ↻ — and those stay; what is banned is
@@ -59,10 +69,17 @@ token — the corner badge was retired from the game view).
   silently ignored — the tab opened on its default and looked broken. That cost
   three debugging sessions (astro crew, shooting lab, units viewer) before it
   was fixed rather than explained. `test/url.mjs` pins the merge.
-- `?enemy=<type>[:N]` PUTS ONE ON THE BOARD NOW, beside the hull, alive, on the
+- `?enemy=<type>[:N][@D]` PUTS ONE ON THE BOARD NOW, beside the hull, alive, on the
   real path, camera in third person — for looking at a unit next to the tank at
   the game's own scale rather than on the viewer's turntable or after playing
-  to its wave. `?enemy=jelly:3` is the boss. A unit that needs a special tint
+  to its wave. `@D` is how many cells AWAY it starts (default 6) — it used to
+  land on a neighbouring cell, which is a boss nobody has seen walk.
+  `?enemy=jelly:1` is the boss.
+  A UNIT'S `tick` TAKES ABSOLUTE TIME, not dt: the board calls
+  `userData.tick(tNow + e.phase)`. The jelly took dt and accumulated it, so it
+  added the whole elapsed time every frame — ~2 SECONDS of sine phase per
+  frame — and the mass juddered. It looked like a bad animation; it was a unit
+  disagreeing with its host about what the argument means. A unit that needs a special tint
   path declares `userData.setTint(hex|null)`; the board prefers it over writing
   `material.color`, which a ShaderMaterial does not have.
 - Headless verification: Chrome with `--use-angle=swiftshader

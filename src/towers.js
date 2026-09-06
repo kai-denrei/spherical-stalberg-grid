@@ -192,17 +192,23 @@ export const ROSTERS = {
        hackGated: ['mortar'] },
 };
 
-export let ROSTER = ROSTERS[1];
+// ONE DEFAULT, STATED ONCE, HERE. roster.js applies the URL override, but it
+// is DOM-aware and Node cannot import it — so if the default lived only there
+// the test suite would run against roster 1 while the game shipped roster 2,
+// and every assertion would be about a board nobody plays. The tests and the
+// browser have to agree about what "no parameter" means.
+export const DEFAULT_ROSTER_ID = 2;
+export let ROSTER = ROSTERS[DEFAULT_ROSTER_ID];
 export let TOWERS = ROSTER.towers;
 export let TOWER_BY_KEY = Object.fromEntries(TOWERS.map((t) => [t.key, t]));
 export let TOWER_ORDER = ROSTER.order;
 export let HACK_GATED = ROSTER.hackGated;
 let WAVE_LADDER = TOWER_ORDER.filter((k) => !HACK_GATED.includes(k));
 
-// Never throws: an unknown id is the campaign, because a stale URL should
-// land you on the board that exists rather than on nothing.
+// Never throws: an unknown id is the DEFAULT board, because a stale URL should
+// land you on a board that exists rather than on nothing.
 export function useRoster(id) {
-  ROSTER = ROSTERS[id] || ROSTERS[1];
+  ROSTER = ROSTERS[id] || ROSTERS[DEFAULT_ROSTER_ID];
   TOWERS = ROSTER.towers;
   TOWER_BY_KEY = Object.fromEntries(TOWERS.map((t) => [t.key, t]));
   TOWER_ORDER = ROSTER.order;

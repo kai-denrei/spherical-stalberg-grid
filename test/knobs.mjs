@@ -7,7 +7,7 @@ import { TANK_FEEL, TANK_FEEL_KNOBS, tankKnobProblems, formatFeelCode, makeFeelP
 import { TOWER_FEEL, TOWER_FEEL_KNOBS, towerKnobProblems, formatTowerFeel,
   makeTowerParams, headKindFor, cleanHeads, formatTowerHeads,
   HEAD_CHOICES, HEAD_AS_SHIPPED } from '../src/towerfeel.js';
-import { TOWERS } from '../src/towers.js';
+import { useRoster, TOWERS } from '../src/towers.js';
 import { TOWER_HEAD_KINDS, towerHeadPts } from '../src/creatures.js';
 
 let failures = 0;
@@ -134,6 +134,12 @@ console.log('tower heads:');
   check('an unknown shape is refused', headKindFor(def, { aoe: 'nonesuch' }) === 'gear');
   check('a shapeless tower falls back to sphere', headKindFor({ key: 'x' }, {}) === 'sphere');
 
+  // NAMES THE BOARD IT IS ABOUT. This block addresses towers by literal key
+  // — 'single', 'aoe', 'slow' — which is the thing CLAUDE.md warns against in
+  // as many words: "a literal is a call site that silently does nothing on one
+  // board." It did exactly that when the default moved to the sentry board,
+  // where none of those keys exist, and threw on `.shape` of undefined.
+  useRoster(1);
   // derived, not hardcoded: this assertion is about the RULE, and writing a
   // literal shape here made it fail the moment a tower was reassigned
   const asShipped = TOWERS.find((t) => t.key === 'single').shape;

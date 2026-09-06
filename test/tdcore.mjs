@@ -5,7 +5,7 @@
 import { ENEMY_SPEC, INTROS, typesByWave, computeWavePlan, CREATURE_TINTS,
   SAFE_HUES, ALARM_HUES, isSafeHue, isAlarmHue, accentFor, hueLuma, DARK_LUMA, ACCENT_ALARM }
   from '../src/enemyspec.js';
-import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER, HACK_GATED } from '../src/towers.js';
+import { useRoster, TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER, HACK_GATED } from '../src/towers.js';
 import { shotOf } from '../src/sentryfx.js';
 import { makeEconomy, sellRefund, waveClearBonus, earlyCallBonus, START_BIOMASS, RAM_PREMIUM, STREAK_CAP } from '../src/economy.js';
 
@@ -33,6 +33,13 @@ check('hp and speed sane',
   Object.values(ENEMY_SPEC).every((s) => s.hp >= 1 && s.speed > 0 && s.size > 0));
 
 // --- towers --------------------------------------------------------------
+// THIS BLOCK IS ABOUT THE CAMPAIGN'S ECONOMY — the 40/70/80/90/100/110/130/220
+// ladder, its unlock order and its hack gate — so it names the roster instead
+// of inheriting whichever one happens to be the default. It used to inherit,
+// and the day the default moved to the sentry board it stopped testing
+// anything and started throwing on `TOWER_BY_KEY.sniper`. A test that depends
+// on an implicit default is a test that silently changes subject.
+useRoster(1);
 console.log('towers:');
 check('8 towers', TOWERS.length === 8);
 check('keys unique + lookup', new Set(TOWERS.map((t) => t.key)).size === 8
