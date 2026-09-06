@@ -16,14 +16,14 @@
 
 import * as THREE from '../vendor/three.module.js';
 import { EMOTION_IDS, emotion, phosphorFor } from './emotions.js';
-import { printPhase, printOffset, printOn } from './printpath.js?v=6cad194f';
+import { printPhase, printOffset, printOn } from './printpath.js?v=fdbf69bb';
 import { loadGlb, loadGlbWithClips, mergeByMaterial, fitModel, tintModel, makeShellRack,
-  addEdgeOutlines, makeHeatSleeve } from './glbmodels.js?v=6cad194f';
-import { CREATURES, waveJelly, swimWave, spherePts, bulletPts, missilePts, heartPts, torusPts, towerHeadPts, enemyDotPts, portalPts, personPts } from './creatures.js?v=6cad194f';
-import { TOWER_FEEL, TOWER_HEADS, headKindFor } from './towerfeel.js?v=6cad194f';
+  addEdgeOutlines, makeHeatSleeve } from './glbmodels.js?v=fdbf69bb';
+import { CREATURES, waveJelly, swimWave, spherePts, bulletPts, missilePts, heartPts, torusPts, towerHeadPts, enemyDotPts, portalPts, personPts } from './creatures.js?v=fdbf69bb';
+import { TOWER_FEEL, TOWER_HEADS, headKindFor } from './towerfeel.js?v=fdbf69bb';
 import { STARGATE_PTS, STARGATE_STROKE,
-  HORIZON_N, stargateHorizon } from './stargate.js?v=6cad194f';
-import { ENEMY_SPEC } from './enemyspec.js?v=6cad194f';
+  HORIZON_N, stargateHorizon } from './stargate.js?v=fdbf69bb';
+import { ENEMY_SPEC } from './enemyspec.js?v=fdbf69bb';
 
 function normalizeToUnit(group) {
   group.updateMatrixWorld(true);
@@ -1010,33 +1010,92 @@ export function makePortalCloud(cols, phase = 0) {
 // draw call — rather than a translucent mesh: the bloom chain turns the
 // bright dots into the energy read for free. tick(t, frac) shimmers it and
 // blinks it URGENT when frac (time remaining, 0..1) runs low.
-export function makeShieldShell(colorHex = 0x7fe0ff, n = 280) {
-  const pos = new Float32Array(n * 3);
-  const GA = Math.PI * (3 - Math.sqrt(5));
-  for (let i = 0; i < n; i++) {
-    const y = 1 - (2 * i + 1) / n;
-    const r = Math.sqrt(Math.max(0, 1 - y * y));
-    const a = i * GA;
-    // ellipsoid: the hull is longer than it is tall
-    pos[i * 3] = Math.cos(a) * r * 1.05;
-    pos[i * 3 + 1] = y * 0.8;
-    pos[i * 3 + 2] = Math.sin(a) * r * 1.3;
-  }
-  const geo = new THREE.BufferGeometry();
-  geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
-  const pts = new THREE.Points(geo, new THREE.PointsMaterial({
-    size: 4.5, sizeAttenuation: false, color: colorHex,
-    transparent: true, opacity: 0.75,
-    blending: THREE.AdditiveBlending, depthWrite: false,
-  }));
-  pts.userData.tick = (t, frac = 1) => {
-    pts.rotation.y = t * 0.7;
-    const urgent = frac < 0.25;
-    const blink = urgent ? (Math.sin(t * 14) > 0 ? 1 : 0.25) : 1;
-    pts.material.opacity = (0.6 + 0.25 * Math.sin(t * 3.1)) * blink;
+// The shield bubble. It was 280 additive dots — the board's speckle idiom,
+// which on a protective FIELD read as debris hanging around the hull rather
+// than a surface. It is now a hologram: fresnel-bright at the rim and nearly
+// absent through the middle, which is the property that matters most in
+// play — you have to be able to see the board you are driving through it.
+//
+// The impact is a RIPPLE FROM THE CONTACT POINT, not a global flash. The
+// caller knows where it was hit; spending that on a surface event is the
+// difference between "something happened" and "something hit you there".
+export function makeShieldShell(colorHex = 0x7fe0ff) {
+  // the hull is longer than it is tall — the same ellipsoid the cloud described
+  const geo = new THREE.SphereGeometry(1, 48, 32);
+  geo.scale(1.05, 0.8, 1.3);
+  const mat = new THREE.ShaderMaterial({
+    transparent: true,
+    depthWrite: false,
+    side: THREE.DoubleSide,
+    blending: THREE.AdditiveBlending,
+    uniforms: {
+      uTime: { value: 0 },
+      uFrac: { value: 1 },
+      uHitDir: { value: new THREE.Vector3(0, 1, 0) },
+      uHitAge: { value: 99 },
+      uColor: { value: new THREE.Color(colorHex) },
+      uOpacity: { value: 1 },
+    },
+    vertexShader: `
+      varying vec3 vN;
+      varying vec3 vV;
+      varying vec3 vL;
+      void main() {
+        vL = normalize(position);
+        vN = normalize(normalMatrix * normal);
+        vec4 mv = modelViewMatrix * vec4(position, 1.0);
+        vV = normalize(-mv.xyz);
+        gl_Position = projectionMatrix * mv;
+      }
+    `,
+    fragmentShader: `
+      uniform float uTime;
+      uniform float uFrac;
+      uniform float uHitAge;
+      uniform float uOpacity;
+      uniform vec3 uHitDir;
+      uniform vec3 uColor;
+      varying vec3 vN;
+      varying vec3 vV;
+      varying vec3 vL;
+      void main() {
+        // the rim is the read: bright where the surface turns away, all but
+        // gone where you are looking straight through it
+        float fres = pow(1.0 - abs(dot(normalize(vN), normalize(vV))), 2.5);
+        // lattice — latitude and longitude, thin and dim
+        float lat = abs(fract(vL.y * 6.0) - 0.5);
+        float lon = abs(fract(atan(vL.z, vL.x) * 2.2) - 0.5);
+        float grid = smoothstep(0.46, 0.5, max(1.0 - lat * 2.0, 1.0 - lon * 2.0)) * 0.28;
+        // one sweep band travelling up the shell
+        float sweep = smoothstep(0.10, 0.0, abs(vL.y - (fract(uTime * 0.22) * 2.4 - 1.2))) * 0.35;
+        // the strike: a ring expanding away from where it was hit
+        float ang = acos(clamp(dot(normalize(vL), normalize(uHitDir)), -1.0, 1.0));
+        float ring = smoothstep(0.30, 0.0, abs(ang - uHitAge * 4.5))
+                   * smoothstep(0.35, 0.0, uHitAge);
+        float a = (fres * 0.85 + grid + sweep + ring * 1.6) * uOpacity;
+        // the blink under 25% is a PROMISE pickups.js prints to the player
+        if (uFrac < 0.25) a *= (sin(uTime * 14.0) > 0.0) ? 1.0 : 0.25;
+        gl_FragColor = vec4(uColor * (1.0 + ring * 2.0), clamp(a, 0.0, 1.0));
+      }
+    `,
+  });
+  const mesh = new THREE.Mesh(geo, mat);
+  mesh.userData.tick = (t, frac = 1) => {
+    mat.uniforms.uTime.value = t;
+    mat.uniforms.uFrac.value = frac;
+    // age the strike here rather than from the caller's clock: the viewer
+    // ticks this object with no game around it
+    mat.uniforms.uHitAge.value = Math.min(99, mat.uniforms.uHitAge.value + 0.016);
+    mesh.rotation.y = t * 0.25;
   };
-  pts.userData.kind = 'fx';
-  return pts;
+  // localDir: a unit vector in the shell's own space, from the caller's
+  // worldToLocal. Defaulted far in the past so an unhit shell is quiet.
+  mesh.userData.hit = (localDir) => {
+    mat.uniforms.uHitDir.value.set(localDir[0], localDir[1], localDir[2]);
+    mat.uniforms.uHitAge.value = 0;
+  };
+  mesh.userData.kind = 'fx';
+  return mesh;
 }
 
 // dot burst — the cloud-unit counterpart of makeDebris: a puff of tinted
