@@ -2,6 +2,48 @@
 
 Newest first. Each entry: what landed, then how it works, for programmers.
 
+## df1364a — jelly: shelved, and the shelf is a flag
+
+The mass is out of the wave programme and still in the units roster. The
+interesting part is how, because there were two ways to do it and the obvious
+one destroys a test.
+
+The obvious way is to delete `{ wave: 16, type: 'jelly' }` from `INTROS`. That
+also breaks `tdcore`'s "every spec type has an intro" — a real invariant, and
+the failure is correct: `ENEMY_SPEC.jelly` now exists with nothing introducing
+it, which is indistinguishable from a unit somebody forgot to wire up. Relaxing
+the check to make the failure go away would have thrown away the only thing
+that catches a forgotten unit.
+
+So shelving is DATA: `shelved: true` on the spec. The invariant now reads from
+both ends — an unshelved spec must appear in `INTROS`, and a shelved one must
+NOT. A shelved unit cannot decay into a forgotten one, because the flag is
+asserted in both directions.
+
+The flag then has to be honoured wherever the roster is DERIVED rather than
+listed. Three sites build their enemy list from `Object.keys(ENEMY_SPEC)`
+filtered on `rammable`:
+
+- `rescueWavePlan` (the rescue mission's waves)
+- `spawnGarrison` (the raid's camp defenders)
+- `REAL_TYPES` (the sniper range's movers)
+
+All three are written that way on purpose, so a new enemy joins them the day
+it is added. That property is symmetric and nobody had needed the other half
+before: an unfiltered shelf would have left the jelly absent from the campaign
+and present in both missions and the range — "not in the game" in the one place
+it is easiest to check and nowhere else. This is the general hazard with a
+derived roster: adding is automatic, and so is failing to remove.
+
+`wavesPerSector` returns to 15. It only moved to 16 to give the sector a boss
+ending, and `typesByWave` caps at the intro count, so a sixteenth wave now
+introduces nothing and repeats the fifteenth.
+
+Restoring the boss is two lines: uncomment the intro, set `wavesPerSector`
+back to 16. `?enemy=jelly:1` still spawns it at the portal in the meantime,
+and `#units?unitgroup=hostile&unit=jelly` still shows it.
+
+
 ## impact — what a hit looks like
 
 The board has had exactly ONE impact effect since it was built: `makeDotBurst`,
