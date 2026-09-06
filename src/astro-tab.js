@@ -109,7 +109,13 @@ export function initAstroTab(root) {
 
   const P = {
     clip: '', play: true, speed: 1.0, loop: true, stride: 1.3,   // stride: metres per second of travel
-    path: 'perimeter',      // perimeter | straight | spot | crew
+    // CREW IS THE DEFAULT. This tab opened on the solo `perimeter` study, which
+    // answered the RATIO question — and that question is settled: 0.180, and
+    // the game ships it. The live question is behaviour, so the tab should open
+    // on the thing it is now for. It was also actively misleading: the panel
+    // showed a "crew wander" folder reading `astronauts: 2` while the mode was
+    // off, so the URL promised two people and drew none.
+    path: 'crew',           // crew | perimeter | straight | spot
     crew: 2,                // astronauts in the crew wander
     cast: 'mixed',          // mixed | classic | compact — which bodies walk
     runMul: 2.3,            // a run is this many times the walk's stride
@@ -276,12 +282,19 @@ export function initAstroTab(root) {
     const sz = b.getSize(new THREE.Vector3());
     tankR = 0.5 * Math.hypot(sz.x, sz.z);
     // the floor and the frame have to hold the whole SHIFT, not just the hull
+    // THE FLOOR HOLDS THE DISH; THE CAMERA FRAMES THE PEOPLE. Sizing the shot
+    // to contain a 70 m antenna pushed the camera so far back that the
+    // astronauts — the subject of this tab — became the smallest thing on
+    // screen. A dish does not need to be fully in frame to read as enormous;
+    // being cropped is most of how "enormous" is conveyed.
+    const ring = crewRing() + Math.max(2, P.personH * 2);
     const reach = P.path === 'crew'
-      ? Math.max(crewRing() + Math.max(2, P.personH * 2),
-        P.dish ? crewRing() * 2.6 : 0)     // the dish stands well behind the ring
+      ? ring
       : tankR + Math.max(0, P.clear) + Math.max(2, metres * 0.25);
-    layFloor(reach);
-    frame(P.path === 'crew' ? reach * 1.5 : metres);
+    // the floor still has to reach the dish, or it stands on nothing
+    const floorReach = P.path === 'crew' && P.dish ? Math.max(ring, crewRing() * 2.6) : reach;
+    layFloor(floorReach);
+    frame(P.path === 'crew' ? reach * 1.15 : metres);
     placeProps();   // the stations are derived from tankR, so they move with it
   }
 
@@ -543,7 +556,7 @@ export function initAstroTab(root) {
   gui.add(P, 'play').onChange((v) => { if (action) action.paused = !v; });
   gui.add(P, 'speed', 0, 3, 0.05).onChange((v) => { if (mixer) mixer.timeScale = v; });
   gui.add(P, 'loop').onChange(() => playClip(P.clip));
-  gui.add(P, 'path', ['perimeter', 'straight', 'spot', 'crew'])
+  gui.add(P, 'path', ['crew', 'perimeter', 'straight', 'spot'])
     .name('walk path').onChange(() => { syncMode(); });
   const gCrew = gui.addFolder('crew wander');
   gCrew.add(P, 'crew', 0, 4, 1).name('astronauts').onChange(() => buildCrew());
