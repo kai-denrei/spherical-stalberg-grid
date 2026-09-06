@@ -20,6 +20,8 @@
 // caller owns the lifetime, which is the one thing the two really do differ
 // about.
 import * as THREE from '../vendor/three.module.js';
+import { createBeam } from './beamfx.js';
+import { BOARD_PRESET, BEAM_PEAK } from './beamdraw.js';
 
 // --- the looks the board already settled on -------------------------------
 // Repeated from nowhere: these WERE td-tab's private constants, and moving
@@ -150,3 +152,75 @@ export function aimSeeker(mesh, dir) {
 // the fraction of the way along, `h` the peak height, and it is added to the
 // straight path rather than replacing it.
 export const arcLift = (u, h) => 4 * u * (1 - u) * h;
+
+// --- the held beam: a lance or a plasma throw -----------------------------
+// The board draws both with beamfx's shader and the board preset, split into
+// links so the ribbon can taper at the muzzle, open down the throw, and cap
+// only at its two real ends. That construction lived in td-tab's closure, so
+// the sentry range wrote its own — a doubled THREE.Line for the lance and a
+// spray of Points for the throw — after concluding that createBeam "renders
+// nothing in this scene". It does render there; what did not was a beam built
+// at the BOARD's widths.
+//
+// Which is the reason `glowWidth` is an explicit argument in WORLD units and
+// not a cell count. The board views a 0.08 cell from about six cells away and
+// the range views its whole yard from roughly fifty, so a width that reads as
+// a lance on the board is a sub-pixel thread here — geometry, uniforms and
+// draw calls all perfectly valid, and nothing on the screen. What has to be
+// shared between the two is the weapon's IDENTITY: thin and steady versus
+// wide and unstable, the noise, the flicker, the cap taper, the colour. The
+// size belongs to the scene, same rule as every other builder in this file.
+//
+// Builds and returns; the caller adds it, fades it and disposes it.
+export function makeBeamShot(from, to, colorHex, kind = 'lance', opts = {}) {
+  const look = kind === 'lance' ? LANCE_LOOK : THROW_LOOK;
+  const links = Math.max(1, Math.round(opts.links ?? 5));
+  // one number sizes the whole beam; the rest keep the board's proportions
+  const gw = opts.glowWidth ?? 0.1;
+  const cw = gw * (BOARD_PRESET.coreWidth * 1.6) / (BOARD_PRESET.glowWidth * 0.55);
+  const jit = gw * (BOARD_PRESET.jitterAmount * 0.55) / (BOARD_PRESET.glowWidth * 0.55);
+  const hex = `#${(colorHex >>> 0).toString(16).padStart(6, '0')}`;
+  const grp = new THREE.Group();
+  const beams = [];
+  const a = new THREE.Vector3(), b = new THREE.Vector3();
+  // narrow at the muzzle, opening along the beam — the board's own curve,
+  // normalised so `glowWidth` means the beam's WIDEST point rather than a
+  // number the taper then quietly scales
+  const taper = (k) => 0.35 + 0.65 * Math.pow((k + 0.5) / links, 0.7);
+  const wMax = taper(links - 1);
+  for (let k = 0; k < links; k++) {
+    const w = taper(k) / wMax;
+    const bm = createBeam(new THREE.Vector3(), new THREE.Vector3(), {
+      ...BOARD_PRESET,
+      ...(look.noiseAmount !== undefined ? { noiseAmount: look.noiseAmount } : {}),
+      ...(look.flicker !== undefined ? { flicker: look.flicker } : {}),
+      ...(look.scrollSpeed !== undefined ? { scrollSpeed: look.scrollSpeed } : {}),
+      glowColor: hex,
+      coreWidth: cw * look.width * w,
+      glowWidth: gw * look.width * w,
+      jitterAmount: jit * look.jitter * w,
+      // only the two real ends taper; an interior cap would pinch the beam
+      // into a string of beads
+      capStart: k === 0 ? BOARD_PRESET.capStart : 0,
+      capEnd: k === links - 1 ? BOARD_PRESET.capEnd : 0,
+      glowIntensity: BEAM_PEAK * 0.55 * w,
+    });
+    const f0 = k / links, f1 = (k + 1) / links;
+    a.lerpVectors(from, to, f0); b.lerpVectors(from, to, f1);
+    bm.setEndpoints(a, b);
+    bm.mesh.renderOrder = 10;
+    grp.add(bm.mesh);
+    beams.push(bm);
+  }
+  // The fade is a UNIFORM, not `material.opacity`. A ShaderMaterial has an
+  // `opacity` property and writing it does exactly nothing, which is how a
+  // beam survives its own fade-out and vanishes only when it is removed.
+  // and it is re-applied AFTER update(), because beamfx's own update writes
+  // uAlpha from its burst envelope — a fade set before it is overwritten by it
+  let fade = 1;
+  grp.userData.setFade = (u) => { fade = u; for (const bm of beams) bm.setAlpha(u); };
+  grp.userData.update = (t) => {
+    for (const bm of beams) { bm.update(t); bm.setAlpha(fade); }
+  };
+  return grp;
+}

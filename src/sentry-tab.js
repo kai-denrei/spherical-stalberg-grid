@@ -26,6 +26,7 @@ import { OrbitControls } from '../vendor/OrbitControls.js';
 import { GLTFLoader } from '../vendor/GLTFLoader.js';
 import GUI from '../vendor/lil-gui.esm.js';
 import { makeBloom } from './postfx.js';
+import { makeBeamShot } from './shotfx.js';
 import { bakeGalaxyCube } from './galaxybake.js';
 import { SKY_PRESET } from './galaxyseed.js';
 import { LOOKS } from './looks.js';
@@ -152,75 +153,27 @@ export function initSentryTab(root) {
   const targetObjs = new Map();   // target id -> mesh
   const tracers = [];             // { mesh, pos, dir, left, id }
 
-  // BEAM WEAPONS ON THE RANGE. The board already answers what a lance and a
-  // throw look like (td-tab's LANCE_LOOK / THROW_LOOK), and those numbers are
-  // repeated here rather than imported because they live inside td-tab's
-  // closure — noted as debt, not invented afresh: a lance that looks different
-  // on the range than on the board is a range that teaches the wrong weapon.
+  // BEAM WEAPONS ON THE RANGE — the BOARD'S beam, not a lookalike.
   //
-  // A lance is THIN, straight and held. A throw is WIDE and jittery, and it
-  // is matter rather than light — which is why the two need different numbers
-  // and not one beam with a colour swapped.
-  // A lance is LIGHT and a throw is MATTER. That distinction is the whole
-  // reason the range branches at all: both used to fire bullet tracers.
+  // This used to be a doubled THREE.Line for the lance and a spray of Points
+  // for the throw, because beamfx's createBeam was tried first and "rendered
+  // nothing in this scene". It renders here perfectly well. What did not
+  // render was a beam built at the BOARD's widths: the board's lance is about
+  // a twentieth of a cell across and is watched from six cells away, while
+  // this yard is watched from roughly fifty — so the ribbon came out under a
+  // pixel wide. Valid geometry, valid uniforms, a draw call every frame, and
+  // nothing on the screen, which is exactly what was reported and exactly
+  // what a screenshot cannot tell apart from a shader that fails.
+  //
+  // So the LOOK is shared (shotfx's makeBeamShot, the board preset, the same
+  // LANCE_LOOK / THROW_LOOK) and the SIZE is local — one width in world units,
+  // which is the rule every other builder in shotfx already follows.
   const beams = [];               // { obj, left, dur }
+  // a lance is a line and a throw is a spray; the ratio between them lives in
+  // the shared looks, so this is the one number the range owns
+  const RANGE_BEAM_W = 0.6;
   function spawnRangeBeam(from, to, kind, colorHex, target, b) {
-    // WHY NOT beamfx's createBeam, which is what the BOARD uses: it was tried
-    // first and renders nothing in this scene. Verified rather than assumed —
-    // a plain THREE.Line on the identical endpoints draws fine, and the beam's
-    // own uniforms read back correct at the moment of creation (coreW 0.9,
-    // glowW 2.5, coreI 6, glowI 9, alpha 1, 386 verts, aU present, distinct
-    // start and end). Valid geometry, valid uniforms, nothing on screen, and
-    // no shader error. Unresolved, and noted in .deban rather than guessed at.
-    //
-    // So this draws with the idiom the range already renders: a line for the
-    // LANCE and a spray of dots for the THROW. That is not a downgrade in
-    // meaning, which is the part the operator actually reported — a lance is
-    // light and travels in a straight line, a throw is MATTER and arrives as
-    // a spray, and neither of them is a bullet, which is what both were
-    // firing before.
-    const grp = new THREE.Group();
-    const c = new THREE.Color(colorHex);
-    if (kind === 'lance') {
-      // thin, straight, held — and doubled, a hot core inside a wider halo,
-      // because one line at one width reads as a debug ray
-      for (const [w, op] of [[3, 0.35], [1, 1]]) {
-        const g = new THREE.BufferGeometry().setFromPoints([from.clone(), to.clone()]);
-        const m = new THREE.LineBasicMaterial({
-          color: c, transparent: true, opacity: op,
-          blending: THREE.AdditiveBlending, depthWrite: false, linewidth: w });
-        grp.add(new THREE.Line(g, m));
-      }
-    } else {
-      // a THROW is matter: dots along the line, scattered off it, dense at the
-      // muzzle and spreading toward the far end the way a spray widens
-      const N = 34;
-      const pos = new Float32Array(N * 3);
-      const col = new Float32Array(N * 3);
-      const dir = to.clone().sub(from);
-      const side = new THREE.Vector3(-dir.z, 0, dir.x).normalize();
-      const up = new THREE.Vector3().crossVectors(dir, side).normalize();
-      for (let i = 0; i < N; i++) {
-        const u = (i + 1) / N;
-        const spread = 0.05 + u * 0.22;
-        const h = Math.sin(i * 12.9898) * 43758.5453;
-        const h2 = Math.sin(i * 78.233) * 43758.5453;
-        const a1 = (h - Math.floor(h) - 0.5) * spread;
-        const a2 = (h2 - Math.floor(h2) - 0.5) * spread;
-        const pnt = from.clone().addScaledVector(dir, u)
-          .addScaledVector(side, a1).addScaledVector(up, a2);
-        pos[i * 3] = pnt.x; pos[i * 3 + 1] = pnt.y; pos[i * 3 + 2] = pnt.z;
-        const bness = 1 - u * 0.55;
-        col[i * 3] = c.r * bness; col[i * 3 + 1] = c.g * bness; col[i * 3 + 2] = c.b * bness;
-      }
-      const g = new THREE.BufferGeometry();
-      g.setAttribute('position', new THREE.BufferAttribute(pos, 3));
-      g.setAttribute('color', new THREE.BufferAttribute(col, 3));
-      grp.add(new THREE.Points(g, new THREE.PointsMaterial({
-        size: 7, sizeAttenuation: false, vertexColors: true,
-        transparent: true, opacity: 1,
-        blending: THREE.AdditiveBlending, depthWrite: false })));
-    }
+    const grp = makeBeamShot(from, to, colorHex, kind, { glowWidth: RANGE_BEAM_W });
     scene.add(grp);
     const life = kind === 'lance' ? 0.55 : 0.16;
     beams.push({ obj: grp, left: life, dur: life });
@@ -248,9 +201,11 @@ export function initSentryTab(root) {
       const e = beams[i];
       e.left -= dt;
       const u = Math.max(0, e.left / e.dur);
-      e.obj.traverse((o) => {
-        if (o.material) o.material.opacity = (o.isPoints ? 1 : (o.userData.op ?? 1)) * u;
-      });
+      // setFade, not material.opacity: these are ShaderMaterials and writing
+      // `opacity` on one does nothing at all
+      if (e.obj.userData.update) e.obj.userData.update(clock.getElapsedTime());
+      if (e.obj.userData.setFade) e.obj.userData.setFade(u);
+      else e.obj.traverse((o) => { if (o.material) o.material.opacity = u; });
       if (e.left <= 0) {
         scene.remove(e.obj);
         e.obj.traverse((o) => {
@@ -1031,6 +986,44 @@ export function initSentryTab(root) {
         + ` locked=${battery.filter((b) => b.lock.locked).length} seekers=${seekers.length}`
         + ` beams=${beams.length}`
         + ` tracers=${tracers.length}`);
+    }, 1000);
+  }
+
+  // ?beamprobe=1 — IS THE BEAM ACTUALLY DRAWN. This is the instrument that
+  // settled "createBeam renders nothing in this scene", and it stays because
+  // the failure it diagnoses is invisible to a screenshot in both directions:
+  // a beam one pixel wide and a beam that never reaches the GPU look the same.
+  //
+  // onBeforeRender fires once per mesh per render pass, so `draws` splits the
+  // two halves of the question. Zero means three never submitted it — culled,
+  // hidden, or not in the graph. Non-zero means it was submitted and the
+  // pixels are the problem, which is what it was: a ribbon built at the
+  // board's cell widths is under a pixel across in a yard viewed from fifty
+  // cells out. `px` is the answer in the only unit that matters — the beam's
+  // width projected onto the canvas.
+  if (q.get('beamprobe') === '1') {
+    const a = new THREE.Vector3(0, 1.2, 0);
+    const b = new THREE.Vector3(6, 1.2, 0);
+    const ref = makeBeamShot(a, b, 0x4dff86, 'lance', { glowWidth: RANGE_BEAM_W });
+    let draws = 0;
+    ref.traverse((o) => { if (o.isMesh) o.onBeforeRender = () => { draws++; }; });
+    scene.add(ref);
+    let n = 0;
+    const iv = setInterval(() => {
+      ref.userData.update(clock.getElapsedTime());
+      const m = ref.children[0];
+      const gw = m.material.uniforms.uGlowWidth.value;
+      // world width -> canvas pixels, at the reference beam's own distance
+      const dist = camera.position.distanceTo(a.clone().lerp(b, 0.5));
+      const px = (gw * 2 / (2 * dist * Math.tan(camera.fov * Math.PI / 360)))
+        * renderer.getSize(new THREE.Vector2()).y;
+      console.log(`BEAMPROBE t+${++n}s draws=${draws} live=${beams.length}`
+        + ` links=${ref.children.length} visible=${m.visible} inScene=${!!ref.parent}`
+        + ` glowW=${gw.toFixed(4)} px=${px.toFixed(1)}`
+        + ` alpha=${m.material.uniforms.uAlpha.value.toFixed(2)}`
+        + ` gl=${renderer.getContext().getError()}`);
+      draws = 0;
+      if (n >= 6) { clearInterval(iv); scene.remove(ref); disposeObj(ref); }
     }, 1000);
   }
 
