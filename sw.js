@@ -20,7 +20,7 @@
  * `waiting` until every client is gone; reloading a WebGL game out from under
  * someone mid-wave is exactly what makes PWAs feel broken.
  */
-const CB_TOKEN = '4645d8d3';
+const CB_TOKEN = 'a155b4f0';
 const CACHE = `stalberg-${CB_TOKEN}`;
 
 self.addEventListener('install', () => {

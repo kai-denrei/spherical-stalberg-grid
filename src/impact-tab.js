@@ -359,10 +359,17 @@ export function initImpactTab(root) {
   // dead emitter are the same photograph one frame after the flash.
   if (probeOn) {
     setTimeout(() => {
+      // AUTO-FIRE OFF FIRST. The 6-second beat asserts that every burst
+      // returned false and was reaped, and it cannot tell a leak from a shot
+      // fired one second ago — with the clock running it reports WRONG on
+      // working code, which is the same trap the shove probe fell into.
+      const wasAuto = P.auto, wasRecipe = P.recipe;
+      P.auto = false;
       for (const name of [...Object.keys(IMPACT_RECIPES), 'custom']) {
         P.recipe = name;
         fire();
       }
+      P.recipe = wasRecipe;   // a probe that leaves the panel changed is a probe that lies twice
       setTimeout(() => {
         console.log(`IMPACTPROBE after 1s: live=${live.length} standing=${standing.length}`
           + ` ${live.length > 0 ? 'OK — effects are still running' : 'WRONG — everything died instantly'}`);
@@ -371,6 +378,7 @@ export function initImpactTab(root) {
         console.log(`IMPACTPROBE after 6s: live=${live.length} standing=${standing.length}`
           + ` ${live.length === 0 ? 'OK — every burst finished and was reaped'
             : 'WRONG — something never returned false and is leaking'}`);
+        P.auto = wasAuto;
       }, 6000);
     }, 1200);
   }
