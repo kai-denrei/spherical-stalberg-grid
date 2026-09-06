@@ -4,32 +4,32 @@
 // FIRST, AND ON PURPOSE. This picks the tower roster, and it has to have
 // run before td-tab's module body does — ES modules evaluate depth-first in
 // import order, so being the first import is the guarantee.
-import './roster.js?v=eba72eff';
-import { wireDevlogBadge } from './devlog.js?v=eba72eff';
-import { initHomeTab } from './home-tab.js?v=eba72eff';
-import { initGridTab } from './grid-tab.js?v=eba72eff';
-import { initMazeTab } from './maze-tab.js?v=eba72eff';
-import { initOrganicTab } from './organic-tab.js?v=eba72eff';
-import { initBattleTab } from './battle-tab.js?v=eba72eff';
-import { initHeartTab } from './heart-tab.js?v=eba72eff';
-import { initTdTab } from './td-tab.js?v=eba72eff';
-import { initTankTab } from './tank-tab.js?v=eba72eff';
-import { initTank2Tab } from './tank2-tab.js?v=eba72eff';
-import { initTank3Tab } from './tank3-tab.js?v=eba72eff';
-import { initUnitsTab } from './units-tab.js?v=eba72eff';
-import { initBeamTab } from './beam-tab.js?v=eba72eff';
-import { initImpactTab } from './impact-tab.js?v=eba72eff';
-import { initAstroTab } from './astro-tab.js?v=eba72eff';
-import { initMetalTab } from './metal-tab.js?v=eba72eff';
+import './roster.js?v=812772aa';
+import { wireDevlogBadge } from './devlog.js?v=812772aa';
+import { initHomeTab } from './home-tab.js?v=812772aa';
+import { initGridTab } from './grid-tab.js?v=812772aa';
+import { initMazeTab } from './maze-tab.js?v=812772aa';
+import { initOrganicTab } from './organic-tab.js?v=812772aa';
+import { initBattleTab } from './battle-tab.js?v=812772aa';
+import { initHeartTab } from './heart-tab.js?v=812772aa';
+import { initTdTab } from './td-tab.js?v=812772aa';
+import { initTankTab } from './tank-tab.js?v=812772aa';
+import { initTank2Tab } from './tank2-tab.js?v=812772aa';
+import { initTank3Tab } from './tank3-tab.js?v=812772aa';
+import { initUnitsTab } from './units-tab.js?v=812772aa';
+import { initBeamTab } from './beam-tab.js?v=812772aa';
+import { initImpactTab } from './impact-tab.js?v=812772aa';
+import { initAstroTab } from './astro-tab.js?v=812772aa';
+import { initMetalTab } from './metal-tab.js?v=812772aa';
 import { initSentryTab } from './sentry-tab.js';
 import { initSniperTab } from './sniper-tab.js';
-import { initPortalTab } from './portal-tab.js?v=eba72eff';
-import { initCineTab } from './cine-tab.js?v=eba72eff';
-import { initHowTab, initStackTab, initLogTab } from './how-tab.js?v=eba72eff';
-import { initSimTab } from './sim-tab.js?v=eba72eff';
-import { initRecordTab } from './recordtab.js?v=eba72eff';
+import { initPortalTab } from './portal-tab.js?v=812772aa';
+import { initCineTab } from './cine-tab.js?v=812772aa';
+import { initHowTab, initStackTab, initLogTab } from './how-tab.js?v=812772aa';
+import { initSimTab } from './sim-tab.js?v=812772aa';
+import { initRecordTab } from './recordtab.js?v=812772aa';
 import { applyFontPack, DEFAULT_FONT, DEFAULT_SHOUT_FONT,
-  loadTypeFeel } from './fonts.js?v=eba72eff';
+  loadTypeFeel } from './fonts.js?v=812772aa';
 import { paramLink } from './deeplink.js';
 
 

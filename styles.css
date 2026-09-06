@@ -5,22 +5,22 @@
    back to a system face until the subset is rebuilt. */
 @font-face {
   font-family: 'VT323';
-  src: url('assets/fonts/VT323.woff2?v=eba72eff') format('woff2');
+  src: url('assets/fonts/VT323.woff2?v=812772aa') format('woff2');
   font-weight: 400; font-style: normal; font-display: swap;
 }
 @font-face {
   font-family: 'Press Start 2P';
-  src: url('assets/fonts/PressStart2P.woff2?v=eba72eff') format('woff2');
+  src: url('assets/fonts/PressStart2P.woff2?v=812772aa') format('woff2');
   font-weight: 400; font-style: normal; font-display: swap;
 }
 @font-face {
   font-family: 'Share Tech Mono';
-  src: url('assets/fonts/ShareTechMono.woff2?v=eba72eff') format('woff2');
+  src: url('assets/fonts/ShareTechMono.woff2?v=812772aa') format('woff2');
   font-weight: 400; font-style: normal; font-display: swap;
 }
 @font-face {
   font-family: 'DotGothic16';
-  src: url('assets/fonts/DotGothic16.woff2?v=eba72eff') format('woff2');
+  src: url('assets/fonts/DotGothic16.woff2?v=812772aa') format('woff2');
   font-weight: 400; font-style: normal; font-display: swap;
 }
 
@@ -1575,6 +1575,31 @@ html, body {
      burned, and what it never reached. Without this they run off the edge
      as one line and the last two are simply not there. */
   white-space: pre-line; max-width: 60vw; line-height: 1.5;
+}
+
+/* THE SHOOTING LAB'S TWO PANELS. lil-gui pins itself to the top-right by
+   default, which is where forty controls became one unreadable column. The
+   STAGE goes left and the WEAPON stays right, and both get a max height with
+   their own scroll so neither can run off the bottom of the screen again —
+   that was the actual complaint, and a split alone would not have fixed it on
+   a short window. */
+/* SPECIFICITY, twice over. These have to out-rank `.tab .lil-gui.root`
+   (0,3,0) up at line 1170, which pins every lab panel to top:0 right:0 —
+   a `.lil-gui.lab-gui-left` rule (0,2,0) lost to it silently, and the symptom
+   was the panel moving LEFT while its top stayed at 0, still under the ☰.
+   Losing half a rule is a good deal harder to read than losing all of it. */
+.tab .lil-gui.root.lab-gui-left,
+.tab .lil-gui.root.lab-gui-right {
+  position: absolute; overflow-y: auto;
+}
+/* the LEFT one starts BELOW the top strip: the hamburger and the home/tab
+   buttons live there and sat straight on the first control, which is how the
+   sentry selector ended up unreadable behind a ☰ */
+.tab .lil-gui.root.lab-gui-left {
+  left: 8px; right: auto; top: 62px; max-height: calc(100vh - 100px);
+}
+.tab .lil-gui.root.lab-gui-right {
+  right: 0; left: auto; top: 0; max-height: 100vh;
 }
 
 /* THE IMPACT LAB. Same furniture as the beam lab — the copy button on the

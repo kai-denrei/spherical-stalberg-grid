@@ -47,22 +47,22 @@
 import * as THREE from '../vendor/three.module.js';
 import { OrbitControls } from '../vendor/OrbitControls.js';
 import GUI from '../vendor/lil-gui.esm.js';
-import { makeBloom } from './postfx.js?v=eba72eff';
-import { bakeGalaxyCube } from './galaxybake.js?v=eba72eff';
-import { SKY_PRESET } from './galaxyseed.js?v=eba72eff';
+import { makeBloom } from './postfx.js?v=812772aa';
+import { bakeGalaxyCube } from './galaxybake.js?v=812772aa';
+import { SKY_PRESET } from './galaxyseed.js?v=812772aa';
 import {
   IMPACT_TUNE, IMPACT_KNOBS, IMPACT_FAMILIES, IMPACT_RECIPES,
   makeImpactParams, clampImpactParams, formatImpactTune,
   makeImpactBurst, orientImpact,
-} from './impactfx.js?v=eba72eff';
-import { buildCreature, preloadMkcx } from './units.js?v=eba72eff';
-import { sentryUrl, SENTRY_FAMILIES } from './sentry.js?v=eba72eff';
-import { loadGlb } from './glbmodels.js?v=eba72eff';
-import { TOWERS, TOWER_BY_KEY } from './towers.js?v=eba72eff';
+} from './impactfx.js?v=812772aa';
+import { buildCreature, preloadMkcx } from './units.js?v=812772aa';
+import { sentryUrl, SENTRY_FAMILIES } from './sentry.js?v=812772aa';
+import { loadGlb } from './glbmodels.js?v=812772aa';
+import { TOWERS, TOWER_BY_KEY } from './towers.js?v=812772aa';
 import {
   SENTRY_FX, fxFor, tuneFor, formatSentryFx, formatAllSentryFx,
-} from './sentryfx.js?v=eba72eff';
-import { deepLink, wireDeepLink } from './deeplink.js?v=eba72eff';
+} from './sentryfx.js?v=812772aa';
+import { deepLink, wireDeepLink } from './deeplink.js?v=812772aa';
 
 // The surfaces a hit can land on. Each is a real answer to "what did I just
 // shoot", and the SPARK COLOUR is the biggest part of that answer — a chip
@@ -625,93 +625,109 @@ export function initImpactTab(root) {
   const probeOn = q.get('impactprobe') === '1';
 
   // --- GUI ------------------------------------------------------------------
-  const gui = new GUI({ title: 'SHOOTING LAB', container: root });
-  // 1. PICK A SENTRY. Everything below edits that family's profile.
-  gui.add({ sentry: subject }, 'sentry', FX_KEYS).name('sentry').onChange((v) => {
+  // --- TWO PANELS ------------------------------------------------------------
+  //
+  // Operator: "the UI with everything on the right makes it hard to navigate...
+  // perhaps half the settings on the left, environment, etc. and specifics of
+  // impact on the right."
+  //
+  // It was one column of forty controls that ran off the bottom of a 1300px
+  // screen, so tuning a spark meant scrolling past the wall's incidence to
+  // find it and scrolling back to see what it did. Split by the QUESTION each
+  // control answers:
+  //
+  //   LEFT   THE STAGE — which sentry, what it is shooting at, how the ground
+  //          curves, how fast time runs. Set once, then left alone.
+  //   RIGHT  THE WEAPON — the recipe and the numbers behind it, plus the
+  //          export. Touched constantly, and the thing being looked at.
+  //
+  // And the knob folders now follow the RECIPE. Showing all seven families
+  // while five are in use is most of the length, and every one of them is a
+  // set of sliders that do nothing to the picture on screen.
+  const guiL = new GUI({ title: 'STAGE', container: root });
+  const guiR = new GUI({ title: 'WEAPON FX', container: root });
+  guiL.domElement.classList.add('lab-gui-left');
+  guiR.domElement.classList.add('lab-gui-right');
+  const refresh = () => {
+    guiL.controllersRecursive().forEach((c) => c.updateDisplay());
+    guiR.controllersRecursive().forEach((c) => c.updateDisplay());
+  };
+  // one name the rest of the file can keep using for "update everything"
+  const gui = { controllersRecursive: () => [
+    ...guiL.controllersRecursive(), ...guiR.controllersRecursive()] };
+
+  // ---- LEFT: the stage -------------------------------------------------
+  guiL.add({ sentry: subject }, 'sentry', FX_KEYS).name('sentry').onChange((v) => {
     subject = v;
     P.recipe = 'profile';
     pullFromProfile();
     loadSentryModel();
+    syncKnobFolders();
   });
-  gui.add(P, 'slot', ['impact', 'muzzle']).name('tuning').onChange(() => {
-    P.recipe = 'profile';
-    pullFromProfile();
-  });
-  gui.add(P, 'recipe', ['profile', 'shell', 'laser', 'plasma', 'light', 'custom']).name('recipe');
-  gui.add(P, 'showMuzzle').name('show muzzle');
-  gui.add(P, 'showShot').name('show the shot');
-  gui.add(P, 'surface', Object.keys(SURFACES)).name('surface').onChange(paintWall);
-  gui.add({ shoot: () => fire() }, 'shoot').name('FIRE (F)');
-  gui.add(P, 'auto').name('auto-fire');
-  gui.add(P, 'every', 0.2, 4, 0.1).name('every (s)');
-  gui.add(P, 'slow', 0.1, 1, 0.05).name('time scale');
-  gui.add(P, 'size', 0.1, 4, 0.05).name('hit size');
-  gui.add(P, 'trail').name('keep scorches');
-
-  const gWall = gui.addFolder('wall');
+  guiL.add(P, 'surface', Object.keys(SURFACES)).name('surface').onChange(paintWall);
+  guiL.add({ shoot: () => fire() }, 'shoot').name('FIRE (F)');
+  guiL.add(P, 'auto').name('auto-fire');
+  guiL.add(P, 'every', 0.2, 4, 0.1).name('every (s)');
+  guiL.add(P, 'slow', 0.1, 1, 0.05).name('time scale');
+  guiL.add(P, 'showMuzzle').name('show muzzle');
+  guiL.add(P, 'showShot').name('show the shot');
+  guiL.add(P, 'trail').name('keep scorches');
+  const gWall = guiL.addFolder('the wall');
   gWall.add(P, 'wall').name('wall on').onChange(placeWall);
   gWall.add(P, 'wallAngle', -80, 80, 1).name('incidence (deg)').onChange(placeWall);
   gWall.add(P, 'wallSize', 1, 10, 0.5).name('size').onChange(() => { buildWall(); });
-  gWall.add(P, 'curveR', 0, 40, 0.5).name('ground curve (0=flat)')
-    .onChange(() => { layGround(); });
-  gWall.add({ board: () => { P.curveR = 12.5; layGround();
-    gui.controllersRecursive().forEach((c2) => c2.updateDisplay()); } }, 'board')
-    .name("the board's own curve (12.5)");
+  const gGround = guiL.addFolder('the ground');
+  gGround.add(P, 'curveR', 0, 40, 0.5).name('curve (0=flat)').onChange(() => { layGround(); });
+  gGround.add({ board: () => { P.curveR = 12.5; layGround(); refresh(); } }, 'board')
+    .name("the board's own (12.5)");
 
-  // TICKING A BOX MEANS IT. These edit the CUSTOM recipe, and the panel was
-  // happily letting the operator turn every family off while `recipe` sat on
-  // `profile` — so the checkboxes said "nothing" and the wall kept sparking.
-  // A control that is visible, enabled, and ignored is worse than one that is
-  // missing. Touching any of them now selects `custom`, which is the only
-  // thing the person doing it can have meant.
-  const gCustom = gui.addFolder('custom recipe');
+  // ---- RIGHT: the weapon ------------------------------------------------
+  guiR.add(P, 'slot', ['impact', 'muzzle']).name('tuning').onChange(() => {
+    P.recipe = 'profile';
+    pullFromProfile();
+    syncKnobFolders();
+  });
+  guiR.add(P, 'recipe', ['profile', 'shell', 'laser', 'plasma', 'light', 'custom'])
+    .name('recipe').onChange(() => { pullFromProfile(); syncKnobFolders(); });
+  guiR.add(P, 'size', 0.1, 4, 0.05).name('hit size');
+
+  const gCustom = guiR.addFolder('families');
   for (const f of IMPACT_FAMILIES) {
     gCustom.add(P, `use_${f}`).name(f).onChange(() => {
-      if (P.recipe !== 'custom') {
-        P.recipe = 'custom';
-        gui.controllersRecursive().forEach((c2) => c2.updateDisplay());
-      }
+      if (P.recipe !== 'custom') { P.recipe = 'custom'; refresh(); }
       pushToProfile();
+      syncKnobFolders();
     });
   }
 
-  // one folder per family, so tuning a spark never means scrolling past a
-  // scorch — the knob table's own `group` decides this, not a second list
-  const byGroup = {};
-  for (const k of IMPACT_KNOBS) (byGroup[k.group] ||= []).push(k);
-  for (const [g, knobs] of Object.entries(byGroup)) {
-    const f = gui.addFolder(g);
-    for (const k of knobs) f.add(P, k.key, k.min, k.max, k.step).name(k.label);
-    f.close();
+  // one folder per family, from the knob table's own `group` — and only the
+  // ones this recipe actually uses. The rest are hidden rather than removed,
+  // so a family coming back does not rebuild the panel underneath the mouse.
+  const knobFolders = {};
+  {
+    const byGroup = {};
+    for (const k of IMPACT_KNOBS) (byGroup[k.group] ||= []).push(k);
+    for (const [g, knobs] of Object.entries(byGroup)) {
+      const f = guiR.addFolder(g);
+      for (const k of knobs) f.add(P, k.key, k.min, k.max, k.step).name(k.label);
+      f.close();
+      knobFolders[g] = f;
+    }
+  }
+  function syncKnobFolders() {
+    const inUse = new Set(currentRecipe());
+    for (const [g, f] of Object.entries(knobFolders)) {
+      f.domElement.style.display = inUse.has(g) ? '' : 'none';
+    }
   }
 
-  // 3. EXPORT — the reason the panel edits a profile rather than a loose
-  // tune. What comes out is the exact source of the entry in sentryfx.js, so
-  // making a tuning the default is a paste and not a transcription. A tuning
-  // that lives in one browser is a tuning that never ships, which is what
-  // makes this the load-bearing button on the panel rather than a nicety.
-  function exportOne() {
-    pushToProfile();
-    return formatSentryFx(subject, prof());
-  }
-  function exportAll() {
-    pushToProfile();
-    return formatAllSentryFx.call(null) && Object.entries(work)
-      .map(([k, p]) => formatSentryFx(k, p)).join('\n');
-  }
-  function copyOut(src, what) {
-    const say = () => { flash(`${what} copied — paste over its entry in src/sentryfx.js`); };
-    console.log(`SENTRYFX ${what}:\n${src}`);
-    if (navigator.clipboard) navigator.clipboard.writeText(src).then(say, () => {});
-    else say();
-  }
   const copyBtn = root.querySelector('#impact-copy');
   if (copyBtn) copyBtn.addEventListener('click', () => copyOut(exportOne(), subject));
-  gui.add({ exp: () => copyOut(exportOne(), subject) }, 'exp')
+  guiR.add({ exp: () => copyOut(exportOne(), subject) }, 'exp')
     .name('EXPORT this sentry');
-  gui.add({ expAll: () => copyOut(exportAll(), 'the whole table') }, 'expAll')
+  guiR.add({ expAll: () => copyOut(exportAll(), 'the whole table') }, 'expAll')
     .name('export ALL families');
-  gui.add({ revert: () => {
+  guiR.add({ revert: () => {
     const p0 = SENTRY_FX[subject];
     work[subject] = {
       shot: { ...p0.shot },
@@ -733,6 +749,7 @@ export function initImpactTab(root) {
   // first thing the lab shows is a weapon nobody ships
   if (!q.get('recipe')) P.recipe = 'profile';
   pullFromProfile();
+  syncKnobFolders();
 
   addEventListener('keydown', (e) => {
     if (!active) return;
