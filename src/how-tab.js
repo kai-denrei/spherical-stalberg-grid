@@ -5,7 +5,7 @@
 // factory rather than three near-identical files. No renderer, no loop.
 // Shares the markdown converter and .mdview styles with the devlog overlay.
 
-import { mdToHtml } from './devlog.js?v=fdbf69bb';
+import { mdToHtml } from './devlog.js?v=2b9095d2';
 
 function makeDocTab(root, selector, file) {
   const el = root.querySelector(selector);
@@ -96,7 +96,7 @@ export function initLogTab(root) {
     const meta = document.querySelector('meta[name="cb"]');
     const raw = (meta && meta.getAttribute('content')) || '';
     const token = raw.split('#')[0].trim();
-    // a small ⧉ copies the TOKEN, a small 🔗 copies a deep link to this
+    // a small ⧉ copies the TOKEN, a small ↗ copies a deep link to this
     // dev log — two icons, not a clickable label (operator ruling: the
     // whole-section click was the wrong affordance)
     build.textContent = '';
@@ -121,7 +121,7 @@ export function initLogTab(root) {
         return b;
       };
       build.appendChild(mkBtn('⧉', 'copy build token', token));
-      build.appendChild(mkBtn('🔗', 'copy deep link to the dev log',
+      build.appendChild(mkBtn('↗', 'copy deep link to the dev log',
         `${location.origin}${location.pathname}?devlog=1`));
     }
   }

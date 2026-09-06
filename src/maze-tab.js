@@ -6,13 +6,13 @@
 
 import * as THREE from '../vendor/three.module.js';
 import GUI from '../vendor/lil-gui.esm.js';
-import { generateSphereMesh, relax } from './grid.js?v=fdbf69bb';
-import { generateDungeon, BLOCKED, PATH, ROOM } from './dungeon.js?v=fdbf69bb';
-import { mulberry32, randomSeed } from './rng.js?v=fdbf69bb';
-import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3 } from './vec3.js?v=fdbf69bb';
-import { LOOKS, LOOK_NAMES } from './looks.js?v=fdbf69bb';
-import { makeCellIndex } from './cellindex.js?v=fdbf69bb';
-import { UNIT_NAMES, buildUnit, buildCreature, makeHeartCloud } from './units.js?v=fdbf69bb';
+import { generateSphereMesh, relax } from './grid.js?v=2b9095d2';
+import { generateDungeon, BLOCKED, PATH, ROOM } from './dungeon.js?v=2b9095d2';
+import { mulberry32, randomSeed } from './rng.js?v=2b9095d2';
+import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3 } from './vec3.js?v=2b9095d2';
+import { LOOKS, LOOK_NAMES } from './looks.js?v=2b9095d2';
+import { makeCellIndex } from './cellindex.js?v=2b9095d2';
+import { UNIT_NAMES, buildUnit, buildCreature, makeHeartCloud } from './units.js?v=2b9095d2';
 
 export function initMazeTab(root) {
   let active = false;
@@ -484,7 +484,7 @@ export function initMazeTab(root) {
     if (cell === dungeon.heart && !player.won) {
       player.won = true;
       msgEl.innerHTML = `<div class="msg-head">transmission · sector log</div>` +
-        `💗 the wanderer found the heart<br>${player.moves} moves · ` +
+        `♥ the wanderer found the heart<br>${player.moves} moves · ` +
         `${dungeon.distToHeart[dungeon.spawn]} was the shortest<br>` +
         `<button class="msg-regen">⟲ regenerate</button>`;
       msgEl.classList.remove('hidden');
@@ -851,7 +851,7 @@ export function initMazeTab(root) {
   gui.add(params, 'extraCorridors', 0, 5, 1).name('extra corridors').onFinishChange(regenerate);
   gui.add(params, 'wallHeight', 0.02, 0.15, 0.005).name('wall height').onFinishChange(regenerate);
   gui.add(params, 'relaxIters', 0, 200, 10).name('relax iters').onFinishChange(regenerate);
-  gui.add(params, 'randomize').name('🎲 random seed');
+  gui.add(params, 'randomize').name('↻ random seed');
   gui.add(params, 'regenerate').name('↻ regenerate');
 
   // phones: start with the panel folded so the maze isn't buried

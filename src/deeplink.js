@@ -110,7 +110,7 @@ export function wireDeepLink(btn, build, { flash = null, label = 'LINK' } = {}) 
     if (flash) flash(msg);
     btn.textContent = ok ? '✓' : '!';
     clearTimeout(resetT);
-    resetT = setTimeout(() => { btn.textContent = '🔗'; }, 1600);
+    resetT = setTimeout(() => { btn.textContent = '↗'; }, 1600);
   };
   // ?dlprobe=1 — press the button. A deep link is only worth having if the
   // address it writes is one the lab READS BACK, and the whole failure mode

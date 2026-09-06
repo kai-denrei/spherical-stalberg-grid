@@ -28,6 +28,15 @@ token — the corner badge was retired from the game view).
   committed); run `./scripts/check-tokens.sh` by hand anytime.
 - `npm test` = Node invariant suites (grid topology, dungeon, creatures,
   units). Keep green; they don't cover the render layer.
+- NO EMOJI, anywhere, ever (operator, 2026-09-06: the deep link's chain
+  "stands out in a bad way"). The interface is built out of MONOCHROME
+  dingbats — ⬢ ⬤ ✦ ⧉ ⇄ ♥ ⌖ ◉ ◈ ▮ ↗ ⊙ ↻ — and those stay; what is banned is
+  anything a platform renders as a COLOUR pictograph, because one of those in
+  a terminal-green HUD is louder than every deliberate thing on the screen.
+  U+FE0F (the emoji-presentation selector) is banned with them: it is
+  invisible in a diff and it is exactly how a dingbat silently becomes an
+  emoji. `scripts/check-emoji.sh` enforces it, wired into `.githooks/pre-push`
+  beside the token check.
 - Headless verification: Chrome with `--use-angle=swiftshader
   --enable-unsafe-swiftshader` (NOT `--disable-gpu`, it kills WebGL).
   Headless WITHOUT those flags uses the real M4 through ANGLE Metal
@@ -163,7 +172,7 @@ token — the corner badge was retired from the game view).
   `scaleMissile` into model units. Fire-and-forget: the lock drops the
   instant a cell is away, or one launcher empties itself into one walker
   while the wave goes past.
-  every LAB's deep link: the 🔗 button copies the tab's current panel as a
+  every LAB's deep link: the ↗ button copies the tab's current panel as a
   URL and writes it into the address bar (astro / metal / beam / portal /
   cine; the units viewer has had its own since before this). Only what
   DIFFERS from the defaults is written, colours lose their `#` (one in a

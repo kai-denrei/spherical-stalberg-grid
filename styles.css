@@ -5,22 +5,22 @@
    back to a system face until the subset is rebuilt. */
 @font-face {
   font-family: 'VT323';
-  src: url('assets/fonts/VT323.woff2?v=fdbf69bb') format('woff2');
+  src: url('assets/fonts/VT323.woff2?v=2b9095d2') format('woff2');
   font-weight: 400; font-style: normal; font-display: swap;
 }
 @font-face {
   font-family: 'Press Start 2P';
-  src: url('assets/fonts/PressStart2P.woff2?v=fdbf69bb') format('woff2');
+  src: url('assets/fonts/PressStart2P.woff2?v=2b9095d2') format('woff2');
   font-weight: 400; font-style: normal; font-display: swap;
 }
 @font-face {
   font-family: 'Share Tech Mono';
-  src: url('assets/fonts/ShareTechMono.woff2?v=fdbf69bb') format('woff2');
+  src: url('assets/fonts/ShareTechMono.woff2?v=2b9095d2') format('woff2');
   font-weight: 400; font-style: normal; font-display: swap;
 }
 @font-face {
   font-family: 'DotGothic16';
-  src: url('assets/fonts/DotGothic16.woff2?v=fdbf69bb') format('woff2');
+  src: url('assets/fonts/DotGothic16.woff2?v=2b9095d2') format('woff2');
   font-weight: 400; font-style: normal; font-display: swap;
 }
 
@@ -3007,6 +3007,18 @@ body.playing:not(.chrome-open) #tabbar { display: none !important; }
 .hud-vitals { font-size: 14px; letter-spacing: 0.04em; }
 .hud-lbl { font-size: 10px; color: #4fae63; letter-spacing: 0.14em; }
 .hp-heart { color: #ff6a88; text-shadow: 0 0 8px rgba(255, 106, 136, 0.5); }
+
+/* THE SHIELD, on the alert line. Three states, and the one that has to read
+   fastest is the SEAM — two seconds of cooldown between charges, which is
+   what a chained shield is timed against. Up is cyan and carries a draining
+   underline; cooling and idle are grey, and the rack pips sit beside all
+   three so the player never has to open a menu to know what they can spend. */
+.sh-bar { position: relative; padding: 0 .25em; color: #59c8ff; }
+.sh-bar::after { content: ''; position: absolute; left: 0; bottom: -2px; height: 2px;
+  width: calc(var(--sh) * 100%); background: #59c8ff; }
+.sh-cool { color: #6d7f8c; }
+.sh-idle { color: #6d7f8c; }
+.sh-pip { font-style: normal; color: #59c8ff; letter-spacing: -1px; opacity: .8; }
 .hp-dim { color: rgba(255, 106, 136, 0.22); }
 .hp-you { color: #9fdcff; margin-left: 8px; text-shadow: 0 0 7px rgba(159, 220, 255, 0.4); }
 .hp-ammo { color: #eef4ff; margin-left: 8px; }

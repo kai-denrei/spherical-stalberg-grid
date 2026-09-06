@@ -8,15 +8,15 @@
 
 import * as THREE from '../vendor/three.module.js';
 import GUI from '../vendor/lil-gui.esm.js';
-import { generateSphereMesh, relax } from './grid.js?v=fdbf69bb';
-import { generateDungeon, BLOCKED, PATH, ROOM } from './dungeon.js?v=fdbf69bb';
-import { mulberry32, randomSeed } from './rng.js?v=fdbf69bb';
-import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3 } from './vec3.js?v=fdbf69bb';
-import { CREATURES, waveJelly } from './creatures.js?v=fdbf69bb';
-import { UNITS, UNIT_NAMES, buildUnit, buildCreature, onMkcxReady, makeOrbCloud, makeBulletCloud, makeDebris, ORB_FX, makeHeartCloud } from './units.js?v=fdbf69bb';
-import { LOOKS, LOOK_NAMES } from './looks.js?v=fdbf69bb';
-import { makeCellIndex } from './cellindex.js?v=fdbf69bb';
-import { makeBloom } from './postfx.js?v=fdbf69bb';
+import { generateSphereMesh, relax } from './grid.js?v=2b9095d2';
+import { generateDungeon, BLOCKED, PATH, ROOM } from './dungeon.js?v=2b9095d2';
+import { mulberry32, randomSeed } from './rng.js?v=2b9095d2';
+import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3 } from './vec3.js?v=2b9095d2';
+import { CREATURES, waveJelly } from './creatures.js?v=2b9095d2';
+import { UNITS, UNIT_NAMES, buildUnit, buildCreature, onMkcxReady, makeOrbCloud, makeBulletCloud, makeDebris, ORB_FX, makeHeartCloud } from './units.js?v=2b9095d2';
+import { LOOKS, LOOK_NAMES } from './looks.js?v=2b9095d2';
+import { makeCellIndex } from './cellindex.js?v=2b9095d2';
+import { makeBloom } from './postfx.js?v=2b9095d2';
 
 export function initBattleTab(root) {
   let active = false;
@@ -646,7 +646,7 @@ export function initBattleTab(root) {
     if (cell === dungeon.heart && !player.won) {
       player.won = true;
       msgEl.innerHTML = `<div class="msg-head">transmission · sector log</div>` +
-        `💗 the creature found the heart<br>` +
+        `♥ the creature found the heart<br>` +
         `${player.moves} moves · ${absorbed} orbs absorbed · ` +
         `size ×${(unitScale / baseUnitScale).toFixed(2)}<br>` +
         `<button class="msg-regen">⟲ regenerate</button>`;
@@ -1152,7 +1152,7 @@ export function initBattleTab(root) {
   gui.add(params, 'extraCorridors', 0, 5, 1).name('extra corridors').onFinishChange(regenerate);
   gui.add(params, 'wallHeight', 0.02, 0.15, 0.005).name('wall height').onFinishChange(regenerate);
   gui.add(params, 'relaxIters', 0, 200, 10).name('relax iters').onFinishChange(regenerate);
-  gui.add(params, 'randomize').name('🎲 random seed');
+  gui.add(params, 'randomize').name('↻ random seed');
   gui.add(params, 'regenerate').name('↻ regenerate');
   const bloomF = gui.addFolder('bloom');
   bloomF.add(postfx.params, 'enabled').name('enabled').onChange((v) => postfx.setEnabled(v));

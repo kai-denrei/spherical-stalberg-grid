@@ -62,14 +62,14 @@ TD's tempo (the operator's "downtime to be worked out"):
 
 ## 3. Modes and cameras (the switch must be trivial)
 
-- **B / 🔨 pad button:** BUILD ↔ ACTION camera toggle, always
+- **B / ◧ pad button:** BUILD ↔ ACTION camera toggle, always
   available, eased transition (~0.6 s), no cut.
 - BUILD camera: top-down orbit centered on the Heart pole, whole
   active hemisphere in frame; drag orbits, wheel/pinch zooms. (HK has
   5 camera presets; we ship 2 — build + the existing pov/third pair —
   and revisit presets later.)
 - ACTION camera: the heart rig, untouched (V still toggles pov/third).
-- **M / 🗺 pad button:** minimap swap — player-centric sphere map
+- **M / ◫ pad button:** minimap swap — player-centric sphere map
   (as today) ↔ Heart-top-down threat view: fixed pole framing showing
   portals, enemy dots, tower range rings. Works in both modes; in
   BUILD the main view already IS the threat view, so the minimap
@@ -199,4 +199,4 @@ thumb steers left + drive rocker (▲ hold forward / double-tap cruise,
 ⚡ laser); modals are height-capped and scrollable (iPhone briefing
 was clipped); HUD compacted (shells row deleted — the turret rack is
 the counter, ✦n kept for PoV). TD's build-mode button joins the
-utility cluster (B / 🔨).
+utility cluster (B / ◧).

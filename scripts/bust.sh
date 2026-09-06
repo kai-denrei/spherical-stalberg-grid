@@ -94,7 +94,7 @@ done < <(walk_source_files)
 
 if [[ -z "$QUIET" ]]; then
   echo ""
-  echo "🧛  cache bust complete — token ${TOKEN}"
+  echo "✓  cache bust complete — token ${TOKEN}"
 fi
 
 # ---------- 4. (project-local) Bump ?v= tokens inside ES-module imports ----------

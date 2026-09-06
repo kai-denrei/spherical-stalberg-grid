@@ -660,7 +660,7 @@ horizon and hides the one thing a scope is for.
 
 ## `65e59d5` — the SENTRY RANGE, and TD's deep link
 
-The small one first: **TD has the 🔗 button**, beside the variables gear
+The small one first: **TD has the ↗ button**, beside the variables gear
 rather than on the left edge with the labs' — that edge is the throttle, the
 radar and Isao's caption, and a control the thumb can reach while steering is
 a control that gets hit while steering. It writes the **seed** always, because
@@ -821,7 +821,7 @@ is a set of numbers. Until this, the only way to carry one out of the tab
 was to read the sliders off a screenshot — so a look that took twenty
 minutes to find could not be handed to anyone, or to yourself tomorrow.
 
-The 🔗 button copies the whole panel as a URL **and** writes it into the
+The ↗ button copies the whole panel as a URL **and** writes it into the
 address bar. Both, deliberately: on a phone the clipboard refuses often
 enough that a button which only copies is one that sometimes does nothing
 at all (the metal lab already learned that — *"I cannot copy paste the
@@ -2013,7 +2013,7 @@ ROADMAP already names.
 
 **The page.** wave × (1–20), ⚡ spawn a wave now, hold waves, freeze
 enemies, immortal heart, immortal tank, background (none / galaxy), galaxy
-seed + 🎲, sky intensity, portal effect (wormhole / corona), portal target
+seed + ↻, sky intensity, portal effect (wormhole / corona), portal target
 px, portal update Hz, march steps, turbulence octaves, bloom. Each is a
 knob in `src/lab.js`'s table (validated by `knobProblems` like the feel
 knobs), and each is reachable from the URL as `lab<Knob>=` — `labwave=8`,
@@ -3881,7 +3881,7 @@ nav, rewards, and portal placement out of it. The `?server=1` probe now
 prints `chamber=13/13 clear ground=OPEN` — the "confirm before seating"
 step, made permanent.
 
-Also: the dev-log copy affordance became a small ⧉ icon (token) plus 🔗
+Also: the dev-log copy affordance became a small ⧉ icon (token) plus ↗
 (deep link to `?devlog=1`) — the whole-label click was the wrong
 affordance.
 
@@ -7060,7 +7060,7 @@ Controls rebuilt around how a phone is actually held — two thumbs at
 the corners. Left thumb: a big steer-left button at the corner with
 the drive rocker above it (hold ▲ forward, double-tap ▲ cruise,
 ▼ reverse and cruise-kill). Right thumb: steer-right plus the two
-tinted triggers, ⚡ laser above ✦ shell. Utilities (⇄ 👁) shrink to a
+tinted triggers, ⚡ laser above ✦ shell. Utilities (⇄ ⊙) shrink to a
 centered pair. The reflow is pure HTML/CSS — every button keeps its
 id, so the game code didn't change a line: the wiring layer earning
 its keep. The HUD collapsed with it: the nine-dot shells row is gone
@@ -7650,7 +7650,7 @@ delay), 44pt+ hit targets on coarse pointers, PWA manifest + iOS meta tags
 absent). The **service worker is deliberately deferred**: a SW sits between
 the browser and the `?v=` cache-busting layer, and a stale SW silently
 serves stale modules — if added later it must key cache names off the cb
-token. Third person arrived here as a V-key/👁 toggle: eye at
+token. Third person arrived here as a V-key/⊙ toggle: eye at
 `wallHeight×2.6 + cellSide×1.1` above and 1.8 cells behind, sharing the
 same goal-quaternion path as PoV so the lookAt fix covers both.
 

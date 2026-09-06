@@ -19,75 +19,78 @@
 
 import * as THREE from '../vendor/three.module.js';
 import GUI from '../vendor/lil-gui.esm.js';
-import { generateSphereMesh, relax } from './grid.js?v=fdbf69bb';
-import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=fdbf69bb';
-import { compileRail } from './cine/rail.js?v=fdbf69bb';
-import { SCRIPTS } from './cine/scripts.js?v=fdbf69bb';
-import { cuesBetween } from './cine/sound.js?v=fdbf69bb';
-import { installCine } from './cine/kit.js?v=fdbf69bb';
-import { mulberry32, randomSeed } from './rng.js?v=fdbf69bb';
-import { computeBerths, berthIndexFor } from './berths.js?v=fdbf69bb';
-import { wantsSecondary, shellsForAll } from './autofire.js?v=fdbf69bb';
-import { printPhase, printOffset, printOn, patternSecsFor } from './printpath.js?v=fdbf69bb';
+import { generateSphereMesh, relax } from './grid.js?v=2b9095d2';
+import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=2b9095d2';
+import { compileRail } from './cine/rail.js?v=2b9095d2';
+import { SCRIPTS } from './cine/scripts.js?v=2b9095d2';
+import { cuesBetween } from './cine/sound.js?v=2b9095d2';
+import { installCine } from './cine/kit.js?v=2b9095d2';
+import { mulberry32, randomSeed } from './rng.js?v=2b9095d2';
+import { computeBerths, berthIndexFor } from './berths.js?v=2b9095d2';
+import { wantsSecondary, shellsForAll } from './autofire.js?v=2b9095d2';
+import { printPhase, printOffset, printOn, patternSecsFor } from './printpath.js?v=2b9095d2';
 import { createBeam } from './beamfx.js';
-import { createBeamRig, PLASMA_DEFAULTS, BOARD_PRESET, BEAM_PEAK } from './beamdraw.js?v=fdbf69bb';
-import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3, segKey, tangentDir, tangentBasis } from './vec3.js?v=fdbf69bb';
-import { CREATURES, waveJelly } from './creatures.js?v=fdbf69bb';
-import { brief, dwellFor } from './isaobriefs.js?v=fdbf69bb';
-import { drawEmotion } from './emotions.js?v=fdbf69bb';
+import { createBeamRig, PLASMA_DEFAULTS, BOARD_PRESET, BEAM_PEAK } from './beamdraw.js?v=2b9095d2';
+import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3, segKey, tangentDir, tangentBasis } from './vec3.js?v=2b9095d2';
+import { CREATURES, waveJelly } from './creatures.js?v=2b9095d2';
+import { brief, dwellFor } from './isaobriefs.js?v=2b9095d2';
+import { drawEmotion } from './emotions.js?v=2b9095d2';
 import { ACHIEVEMENTS, ACHV_GROUPS, achievement, blankRun, earned, freshlyEarned,
   sanitiseRecord }
-  from './achievements.js?v=fdbf69bb';
+  from './achievements.js?v=2b9095d2';
 import { applyFontPack, currentFontPack, FONT_NAMES,
-  loadTypeFeel } from './fonts.js?v=fdbf69bb';
-import { SECONDARY_TOE, applySecondaryToe } from './units.js?v=fdbf69bb';
-import { UNITS, UNIT_NAMES, buildUnit, buildCreature, preloadMkcx, preloadServer, makeServerFixture, makeShieldShell, preloadContainer, makeContainerFixture, preloadFabricator, makeIsaoDrone, makeBulletCloud, makeRewardSolid, makeShellSolid, makeDebris, makeDotBurst, makePortalCloud, preloadPortalRing, makePortalRing, makeHeartCloud, makeDotEnemy, makeSurvivor, preloadAstronaut, makeAstronaut, preloadTerraformer, makeTerraformerFixture } from './units.js?v=fdbf69bb';
-import { LOOKS, LOOK_NAMES } from './looks.js?v=fdbf69bb';
-import { makeCellIndex } from './cellindex.js?v=fdbf69bb';
-import { CREATURE_TINTS, ENEMY_SPEC, INTROS, computeWavePlan, accentFor } from './enemyspec.js?v=fdbf69bb';
-import { PICKUPS } from './pickups.js?v=fdbf69bb';
-import { rankFor, rankLabel, badgeSVG, killReq, eliteReq } from './ranks.js?v=fdbf69bb';
-import { beamStep, isBeamStep, PEN_SOFT_FRAC, PEN_HARD_FRAC } from './beamranks.js?v=fdbf69bb';
-import { burn, sweepAdvance, wallBite as wallBiteFor } from './beamburn.js?v=fdbf69bb';
-import { arcPoint, projectToArc, toeForCrossing, crossingForToe } from './arc.js?v=fdbf69bb';
+  loadTypeFeel } from './fonts.js?v=2b9095d2';
+import { SECONDARY_TOE, applySecondaryToe } from './units.js?v=2b9095d2';
+import { UNITS, UNIT_NAMES, buildUnit, buildCreature, preloadMkcx, preloadServer, makeServerFixture, makeShieldShell, preloadContainer, makeContainerFixture, preloadFabricator, makeIsaoDrone, makeBulletCloud, makeRewardSolid, makeShellSolid, makeDebris, makeDotBurst, makePortalCloud, preloadPortalRing, makePortalRing, makeHeartCloud, makeDotEnemy, makeSurvivor, preloadAstronaut, makeAstronaut, preloadTerraformer, makeTerraformerFixture } from './units.js?v=2b9095d2';
+import { LOOKS, LOOK_NAMES } from './looks.js?v=2b9095d2';
+import { makeCellIndex } from './cellindex.js?v=2b9095d2';
+import { CREATURE_TINTS, ENEMY_SPEC, INTROS, computeWavePlan, accentFor } from './enemyspec.js?v=2b9095d2';
+import { PICKUPS } from './pickups.js?v=2b9095d2';
+import { rankFor, rankLabel, badgeSVG, killReq, eliteReq } from './ranks.js?v=2b9095d2';
+import { beamStep, isBeamStep, PEN_SOFT_FRAC, PEN_HARD_FRAC } from './beamranks.js?v=2b9095d2';
+import { burn, sweepAdvance, wallBite as wallBiteFor } from './beamburn.js?v=2b9095d2';
+import { arcPoint, projectToArc, toeForCrossing, crossingForToe } from './arc.js?v=2b9095d2';
 import { MINE_TUNE, makeField, layMine, armMines, restock, mineAt,
-  inFan, trip, chain, nextChained, minePolar } from './mines.js?v=fdbf69bb';
+  inFan, trip, chain, nextChained, minePolar } from './mines.js?v=2b9095d2';
+import { SHIELD_TUNE, SHIELD_KNOBS, makeShield, charge as chargeShield,
+  deploy as deployShield, tickShield, restockShield, tapTower, towerOffline,
+  stationDraw, waveReset as shieldWaveReset, shoveVec, shoveMag } from './shield.js?v=2b9095d2';
 import { deepLink, wireDeepLink } from './deeplink.js';
 import { RESCUE_TUNE, makeRescue, placeSurvivors, stepBoard, stepGrab,
   disembark, loseCarried, lockOn, waveMix, standing as standingSurv,
   aboard as aboardSurv, missionOver, verdict as rescueVerdict,
   grabProgress, remaining as remainingSurv, exposed as exposedSurv,
   RESCUE2_TUNE, makeCamps, stepCall, stepEmerge, walkStep, runOver,
-  awake as campAwake } from './rescue.js?v=fdbf69bb';
+  awake as campAwake } from './rescue.js?v=2b9095d2';
 import { WORMHOLE_PRESET, WORMHOLE_UNIFORM_DEFAULTS, RING_SPIN, TRAVEL,
-  travelRate, advancePhase } from './portalfx.js?v=fdbf69bb';
-import { WORMHOLE_FRAG } from './fx/wormhole.frag.js?v=fdbf69bb';
-import { CORONA_FRAG } from './fx/corona.frag.js?v=fdbf69bb';
-import { labLine, parseLabQuery } from './lab.js?v=fdbf69bb';
-import { bakeGalaxyCube } from './galaxybake.js?v=fdbf69bb';
-import { SKY_PRESET } from './galaxyseed.js?v=fdbf69bb';
-import { makeScore } from './score.js?v=fdbf69bb';
-import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER, HACK_GATED, starterTower, towerSound, ROSTER } from './towers.js?v=fdbf69bb';
-import { makeEconomy, sellRefund } from './economy.js?v=fdbf69bb';
-import { pickTier } from './perftier.js?v=fdbf69bb';
-import { applyWeatheredMaterial } from './cine/materials.js?v=fdbf69bb';
-import { STICK, stickVector, knobOffset } from './stick.js?v=fdbf69bb';
-import { registerServiceWorker } from './pwa.js?v=fdbf69bb';
-import { makeBloom } from './postfx.js?v=fdbf69bb';
-import { TANK_FEEL, TANK_FEEL_KNOBS, makeTankFeel, stepTankFeel, landTankFeel, fireTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js?v=fdbf69bb';
-import { FEEL, loadFeel, saveFeel } from './feelstore.js?v=fdbf69bb';
+  travelRate, advancePhase } from './portalfx.js?v=2b9095d2';
+import { WORMHOLE_FRAG } from './fx/wormhole.frag.js?v=2b9095d2';
+import { CORONA_FRAG } from './fx/corona.frag.js?v=2b9095d2';
+import { labLine, parseLabQuery } from './lab.js?v=2b9095d2';
+import { bakeGalaxyCube } from './galaxybake.js?v=2b9095d2';
+import { SKY_PRESET } from './galaxyseed.js?v=2b9095d2';
+import { makeScore } from './score.js?v=2b9095d2';
+import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER, HACK_GATED, starterTower, towerSound, ROSTER } from './towers.js?v=2b9095d2';
+import { makeEconomy, sellRefund } from './economy.js?v=2b9095d2';
+import { pickTier } from './perftier.js?v=2b9095d2';
+import { applyWeatheredMaterial } from './cine/materials.js?v=2b9095d2';
+import { STICK, stickVector, knobOffset } from './stick.js?v=2b9095d2';
+import { registerServiceWorker } from './pwa.js?v=2b9095d2';
+import { makeBloom } from './postfx.js?v=2b9095d2';
+import { TANK_FEEL, TANK_FEEL_KNOBS, makeTankFeel, stepTankFeel, landTankFeel, fireTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js?v=2b9095d2';
+import { FEEL, loadFeel, saveFeel } from './feelstore.js?v=2b9095d2';
 import { STRIKE_KNOBS, makeStrike, makeStrikeParams, grantStrikes, stepStrike,
   toggleArm, paintTarget, launchStrike, stepFall, skipFall, fallProgress,
-  strikeDamage, retargetStrike, orbitProgress } from './strike.js?v=fdbf69bb';
+  strikeDamage, retargetStrike, orbitProgress } from './strike.js?v=2b9095d2';
 import { radarBasis, radarProject, radarBearing, sweepAngle, radarPhosphor,
-  proximitySectors, SENSOR_LEVELS, sensorColor } from './radar.js?v=fdbf69bb';
-import { BLOOM_GROUPS } from './bloomweights.js?v=fdbf69bb';
+  proximitySectors, SENSOR_LEVELS, sensorColor } from './radar.js?v=2b9095d2';
+import { BLOOM_GROUPS } from './bloomweights.js?v=2b9095d2';
 import { A6_TUNE, magFor, makeA6, stepA6, arc as a6Arc, a6Line } from './heptapod.js';
 import { SENTRY_TUNE } from './sentry.js';
 import { MISSILE_TUNE, scaleMissile, makeLock, stepLock, launchMissile, stepMissile } from './lockon.js';
-import { TOWER_LOOK_NAMES, DEFAULT_TOWER_LOOK, buildTowerLook, preloadLook, lookReady, setSentryTier } from './towerlooks.js?v=fdbf69bb';
-import { makeAudio } from './audio.js?v=fdbf69bb';
-import { DEATH_KEYS } from './audiomanifest.js?v=fdbf69bb';
+import { TOWER_LOOK_NAMES, DEFAULT_TOWER_LOOK, buildTowerLook, preloadLook, lookReady, setSentryTier } from './towerlooks.js?v=2b9095d2';
+import { makeAudio } from './audio.js?v=2b9095d2';
+import { DEATH_KEYS } from './audiomanifest.js?v=2b9095d2';
 
 export function initTdTab(root) {
   let active = false;
@@ -991,8 +994,13 @@ export function initTdTab(root) {
   // the energy shield: a timed bubble over the hull — touch damage
   // bounces off while it holds. shieldObj is lazy-built, scene-level
   // (positioned each frame like the marker, so parent scale can't warp it)
-  const SHIELD_TIME = 12;
-  let shieldT = 0;
+  // a plain spread, exactly as `mineTune` below — there is no tuner panel for
+  // either, and inventing one for the shield alone would be a second idiom for
+  // the same job. The knobs are reachable BY NAME from the URL, which is how
+  // SENTRY_TUNE and BALLISTICS_TUNE are already moved.
+  const shieldTune = { ...SHIELD_TUNE };
+  const shield = makeShield(shieldTune);
+  const shieldUp = () => shield.t > 0;
   let shieldObj = null;
   // The tank's field promotion. Only hands-on kills climb it — towers and
   // orbital strikes pay biomass, not respect — and the ladder belongs to
@@ -2279,7 +2287,7 @@ export function initTdTab(root) {
     playerMesh.scale.setScalar(unitScale * (playerMesh.userData.baseScale ?? 1));
     // the energy shield rides the hull: positioned every frame, ticking
     // its shimmer, gone the moment its clock runs out
-    if (shieldT > 0) {
+    if (shieldUp()) {
       if (!shieldObj) {
         shieldObj = makeShieldShell();
         scene.add(shieldObj);
@@ -2291,7 +2299,7 @@ export function initTdTab(root) {
       // sized off the CELL, not unitScale — measured on screen, unitScale
       // put the bubble five cells wide (the mkcx normalization rides it)
       shieldObj.scale.setScalar(cellSide * 0.85);
-      shieldObj.userData.tick(simTime, shieldT / SHIELD_TIME);
+      shieldObj.userData.tick(simTime, shield.t / shieldTune.cap);
     } else if (shieldObj) shieldObj.visible = false;
     // marker floats above the wall tops so nothing on the map occludes it
     const mp = scale3(player.pos, 1 + params.wallHeight * 1.6);
@@ -5339,7 +5347,19 @@ export function initTdTab(root) {
     if (eco && eco.biomass > run.peakBiomass) { run.peakBiomass = eco.biomass; checkAchievements(); }
     if (lifeContainers.length) syncLifeContainers();
     const spAlive = spawnPoints.filter((s) => s.alive).length;
-    const alerts = [shieldT > 0 ? `⛨ SHIELD ${Math.ceil(shieldT)}s` : '',
+    // THE SHIELD IS ALWAYS ON THE PANEL NOW, in one of three states — up and
+    // draining, cooling through the seam, or idle with a rack. The seam is the
+    // feature and it is two seconds long; a player who cannot see it counted
+    // down cannot plan the chain that the whole rack exists for.
+    const shieldPips = `<i class="sh-pip">${'▮'.repeat(shield.rack)}`
+      + `${'▯'.repeat(Math.max(0, shieldTune.rackCap - shield.rack))}</i>`;
+    const shieldBar = shieldUp()
+      ? `◈ <b class="sh-bar" style="--sh:${Math.max(0, Math.min(1, shield.t / shieldTune.cap))}">`
+        + `${Math.ceil(shield.t)}s</b> ${shieldPips}`
+      : (simTime < shield.coolUntil
+        ? `<span class="sh-cool">◈ ${(shield.coolUntil - simTime).toFixed(1)}s</span> ${shieldPips}`
+        : `<span class="sh-idle">◈</span> ${shieldPips}`);
+    const alerts = [shieldBar,
       carryingRegen ? '⬤ REGEN CARRIED' : '',
       cannonHeat > 0 ? 'CANNON HOT' : '',
       laserOverheat ? 'LASER COOLING' : ''].filter(Boolean).join(' · ');
@@ -5776,7 +5796,7 @@ export function initTdTab(root) {
     // overwrites the campaign's supply rather than being overwritten by it
     startRescue();
     startRescue2();
-    shieldT = 0;
+    shield.t = 0; shield.coolUntil = -Infinity;
     resetTankRank();
     carryingRegen = false;
     speedBonus = 1;
@@ -6124,6 +6144,7 @@ export function initTdTab(root) {
     waveCharge = 0;
     warnBeat = 0;
     wave++;
+    shieldWaveReset(shield, shieldTune);   // the heart pad refills each wave
     waveActive = true; waveAge = 0;
     tfMilestone(wave);   // the Terraformer keeps time in waves
     const plan = rescueOn ? rescueWavePlan(wave)
@@ -7980,10 +8001,10 @@ export function initTdTab(root) {
       else if (r.type === 'health') playerHP = Math.min(PLAYER_MAX, playerHP + 1);
       else if (r.type === 'regen') carryingRegen = true;
       else if (r.type === 'shield') {
-        shieldT = SHIELD_TIME;
+        chargeShield(shield, shieldTune.pickup, shieldTune);
         sfx.play('tank_spool_up'); // the bubble igniting
         showToast(`<div class="wave-num">SHIELD UP</div>`
-          + `<div class="wave-role">${SHIELD_TIME}s — touch damage bounces off</div>`, 2200);
+          + `<div class="wave-role">${shieldTune.pickup}s — touch damage bounces off</div>`, 2200);
       }
       if (r.type === 'health' || r.type === 'regen' || r.type === 'shield') {
         regrowQueue.push({ type: r.type, t: simTime + REGROW_TIME });
@@ -8165,13 +8186,23 @@ export function initTdTab(root) {
     setTimeout(() => msgEl.classList.remove('hidden'), DEATH_HOLD * 1000);
   }
 
-  function playerHit(killerType = null) {
+  function playerHit(killerType = null, fromPos = null) {
     // the lab's tank is a timer with no body to lose: the shove stays, so
     // being hit still reads, and the hull counter never moves
     if (lab.on && lab.immortalTank) { bumpLeft = Math.max(bumpLeft, BUMP_LEN * 0.5); return; }
-    // the shield takes it: a hard flash on the bubble, nothing on the hull
-    if (shieldT > 0) {
-      if (shieldObj) shieldObj.material.opacity = 1;
+    // the shield takes it: a ripple on the bubble AT THE POINT OF CONTACT,
+    // nothing on the hull
+    if (shieldUp()) {
+      if (shieldObj && shieldObj.userData.hit) {
+        // the shell is scene-level and carries the hull's rotation, so the
+        // contact direction has to come back through its own transform.
+        // Re-deriving it with a fresh sign convention is exactly the bug the
+        // house rule about render-coupled values exists to prevent.
+        const src = fromPos || player.pos;
+        const w = new THREE.Vector3(src[0], src[1], src[2]);
+        const l = shieldObj.worldToLocal(w).normalize();
+        if (Number.isFinite(l.x)) shieldObj.userData.hit([l.x, l.y, l.z]);
+      }
       bumpLeft = Math.max(bumpLeft, BUMP_LEN * 0.5); // the impact still SHOVES
       return;
     }
@@ -11542,9 +11573,9 @@ export function initTdTab(root) {
   gui.add(params, 'extraCorridors', 0, 5, 1).name('extra corridors').onFinishChange(regenerate);
   gui.add(params, 'wallHeight', 0.02, 0.15, 0.005).name('wall height').onFinishChange(regenerate);
   gui.add(params, 'relaxIters', 0, 200, 10).name('relax iters').onFinishChange(regenerate);
-  gui.add(params, 'randomize').name('🎲 random seed');
+  gui.add(params, 'randomize').name('↻ random seed');
   gui.add(params, 'regenerate').name('↻ regenerate');
-  gui.add(params, 'previewDestruction').name('💥 destroy tank (preview)');
+  gui.add(params, 'previewDestruction').name('✳ destroy tank (preview)');
 
   const towerLookCtrl = gui.add(params, 'towerLook', TOWER_LOOK_NAMES)
     .name('tower look').onChange(applyTowerLook);
@@ -12053,7 +12084,15 @@ export function initTdTab(root) {
     if (strikeGrace > 0) strikeGrace -= dt;
     if (shopMute > 0) shopMute -= dt;
     if (heartCalloutCd > 0) heartCalloutCd -= dt;
-    if (shieldT > 0) { shieldT -= dt; if (shieldT <= 0) updateHud(); }
+    if (shield.t > 0 && tickShield(shield, dt, simTime, shieldTune)) {
+      // THE DROP IS AN EVENT. The bubble quietly ceasing to exist was the one
+      // moment the player most needed to notice, and it had no sound and no
+      // toast — and now the 2s seam starts here, so it is also the moment the
+      // chain has to be timed from.
+      showToast(`<div class="wave-num">SHIELD DOWN</div>`
+        + `<div class="wave-role">${shieldTune.coolSecs}s before another charge will take</div>`, 1400);
+      updateHud();
+    }
     if (rs) {
       rs.binClock += dt;
       if (rs.binClock >= 5) { rs.binClock = 0; rs.scoreBins.push(score.points); }
@@ -13869,7 +13908,7 @@ export function initTdTab(root) {
     f.add(lab, 'immortalTank').name('immortal tank');
     f.add(lab, 'bg', ['none', 'galaxy']).name('background').onChange(applyLabSky);
     f.add(lab, 'galaxySeed', 0, 99999, 1).name('galaxy seed').onFinishChange(applyLabSky);
-    f.add({ roll: () => { lab.galaxySeed = Math.floor(Math.random() * 100000); applyLabSky(); f.controllersRecursive().forEach((c) => c.updateDisplay()); } }, 'roll').name('🎲 new galaxy');
+    f.add({ roll: () => { lab.galaxySeed = Math.floor(Math.random() * 100000); applyLabSky(); f.controllersRecursive().forEach((c) => c.updateDisplay()); } }, 'roll').name('↻ new galaxy');
     f.add(lab, 'galaxyScale', 0.25, 4, 0.05).name('galaxy size').onFinishChange(applyLabSky);
     f.add(lab, 'galaxies', 1, 8, 1).name('galaxies').onFinishChange(applyLabSky);
     f.add(lab, 'galaxyCore', 0.25, 3, 0.05).name('core size ×').onFinishChange(applyLabSky);
@@ -16003,9 +16042,27 @@ export function initTdTab(root) {
     showSitrep();
   }
 
+  // EVERY SHIELD_TUNE KNOB BY NAME — ?tapOutage=8, ?coolSecs=3, ?shoveCells=1.4.
+  // The same door SENTRY_TUNE and BALLISTICS_TUNE already use, rather than a
+  // tuner panel invented for this one feature. The knob table carries the
+  // range and the value is CLAMPED to it: a URL is untrusted input like any
+  // other, including our own from a stale bookmark.
+  for (const k of SHIELD_KNOBS) {
+    const raw = urlParams.get(k.key);
+    if (raw === null) continue;
+    const v = parseFloat(raw);
+    if (!Number.isFinite(v)) continue;
+    shieldTune[k.key] = Math.min(k.max, Math.max(k.min, v));
+  }
+  // the rack and the pad budget were sized from the tune at construction, so
+  // they have to be re-read after an override — and this must run BEFORE
+  // ?shieldrack=N, or an explicit rack size is overwritten by the default.
+  shield.rack = Math.min(shieldTune.rackCap, shieldTune.rackStart);
+  shield.stationLeft = shieldTune.stationBudget;
+
   // ?shield=N — ignite the bubble for N seconds (visual check / playtest)
   const shieldN = parseFloat(urlParams.get('shield') || '0');
-  if (shieldN > 0) { shieldT = shieldN; updateHud(); }
+  if (shieldN > 0) { chargeShield(shield, shieldN, shieldTune); updateHud(); }
 
   // ?rank=N — jump the ladder for layout checks: grants exactly rank N's
   // requirements (kills AND elites), then renders through the normal path
