@@ -22,22 +22,22 @@
 import * as THREE from '../vendor/three.module.js';
 import { OrbitControls } from '../vendor/OrbitControls.js';
 import GUI from '../vendor/lil-gui.esm.js';
-import { makeBloom } from './postfx.js?v=b9640e2c';
-import { bakeGalaxyCube } from './galaxybake.js?v=b9640e2c';
-import { SKY_PRESET } from './galaxyseed.js?v=b9640e2c';
+import { makeBloom } from './postfx.js?v=9edeb91f';
+import { bakeGalaxyCube } from './galaxybake.js?v=9edeb91f';
+import { SKY_PRESET } from './galaxyseed.js?v=9edeb91f';
 import {
   IMPACT_TUNE, IMPACT_KNOBS, IMPACT_FAMILIES, IMPACT_RECIPES,
   makeImpactParams, clampImpactParams, formatImpactTune,
   makeImpactBurst, orientImpact,
-} from './impactfx.js?v=b9640e2c';
-import { buildCreature, preloadMkcx } from './units.js?v=b9640e2c';
-import { sentryUrl, SENTRY_FAMILIES } from './sentry.js?v=b9640e2c';
-import { loadGlb } from './glbmodels.js?v=b9640e2c';
-import { TOWERS, TOWER_BY_KEY } from './towers.js?v=b9640e2c';
+} from './impactfx.js?v=9edeb91f';
+import { buildCreature, preloadMkcx } from './units.js?v=9edeb91f';
+import { sentryUrl, SENTRY_FAMILIES } from './sentry.js?v=9edeb91f';
+import { loadGlb } from './glbmodels.js?v=9edeb91f';
+import { TOWERS, TOWER_BY_KEY } from './towers.js?v=9edeb91f';
 import {
   SENTRY_FX, fxFor, tuneFor, formatSentryFx, formatAllSentryFx,
-} from './sentryfx.js?v=b9640e2c';
-import { deepLink, wireDeepLink } from './deeplink.js?v=b9640e2c';
+} from './sentryfx.js?v=9edeb91f';
+import { deepLink, wireDeepLink } from './deeplink.js?v=9edeb91f';
 
 // The surfaces a hit can land on. Each is a real answer to "what did I just
 // shoot", and the SPARK COLOUR is the biggest part of that answer — a chip

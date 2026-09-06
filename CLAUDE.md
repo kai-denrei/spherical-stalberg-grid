@@ -243,7 +243,17 @@ token — the corner badge was retired from the game view).
   ring of three stations — the tank's flank, a turret, an open container —
   walking and running between them and DISAPPEARING inside the container.
   `?crew=N`, `?runMul=`, `?dwell=`, `?crewSeed=` (NOT `seed`, which is the board’s), `?turret=0`, `?cargo=0`, and
-  `?crewprobe=1`, which logs every leg with its gait. The sequence is the
+  `?crewprobe=1`, which logs every leg with its gait AND its route verdict.
+  THE STAGE IS SOLID: the tank, turret, container and dish are discs on the
+  ground derived from their own bounding boxes, and the walkers route around
+  them (`?showSolids=1` draws them). The dish is bounded by its PEDESTAL, not
+  its reflector — an antenna is overhead, and bounding it by the dish would
+  wall off a third of the yard. BOTH ENDPOINTS of a leg are exempt: the props
+  stand at their stations, so a walker leaving the turret is inside the
+  turret's own disc by construction and the planner spends the leg escaping a
+  building it is already in. The probe SAMPLES each route against every disc
+  rather than counting waypoints — a path can have seven waypoints and still
+  clip a hull, and that is what caught the missing origin exemption. The sequence is the
   feature and a screenshot cannot show it: measured over 100 s the mix is
   ~10 walks to 9 runs, alternating with streaks of two to four. ONE CLIP,
   TWO GAITS — the file carries a 1.03 s walk and nothing else, so a run is

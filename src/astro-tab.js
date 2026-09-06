@@ -125,6 +125,7 @@ export function initAstroTab(root) {
     crewSeed: 7,            // the wander's stream — same seed, same shift
     turret: true, cargo: true,   // the things they walk BETWEEN
     dish: true, dishH: 22,       // NASA's 70 m DSN antenna, and its height in metres
+    showSolids: false,      // draw the discs the walkers route around
     personH: PERSON_M,      // metres, tall
     tankLen: TANK_LEN_M,    // metres, longest dimension
     clear: 1.0,             // metres of daylight between the hull and the walk
@@ -402,6 +403,155 @@ export function initAstroTab(root) {
     });
   }
 
+  // --- THE STAGE IS SOLID ------------------------------------------------
+  //
+  // Operator: the tank, turret, container and dish are solid objects their
+  // paths must avoid. They used to lerp station to station and walk straight
+  // through the hull, which is the single thing that most gives away that
+  // these are markers following a line rather than people crossing a yard.
+  //
+  // Obstacles are DISCS on the ground, derived from each prop's own bounding
+  // box so they survive both size sliders — the same rule the stations live
+  // under. A disc rather than a box because a person rounding a corner takes
+  // a curve, and because a box needs an orientation that the dish and the
+  // container disagree about.
+  //
+  // THE DISH IS THE EXCEPTION, and it is a real one: an antenna is mostly
+  // OVERHEAD. Its bounding box is 22 m across, but what a walker can collide
+  // with is the pedestal between its feet — bounding it by the reflector
+  // would wall off a third of the yard for a structure you can stand under.
+  const solids = [];      // { id, x, z, r }
+  function footprint(obj, id, factor = 1) {
+    if (!obj) return null;
+    obj.updateMatrixWorld(true);
+    const b = new THREE.Box3().setFromObject(obj);
+    const sz = b.getSize(new THREE.Vector3());
+    const c = b.getCenter(new THREE.Vector3());
+    return { id, x: c.x, z: c.z, r: 0.5 * Math.hypot(sz.x, sz.z) * factor };
+  }
+  function rebuildSolids() {
+    solids.length = 0;
+    const add = (o) => { if (o && o.r > 0.01) solids.push(o); };
+    add(footprint(tank, 'tank'));
+    if (P.turret) add(footprint(turret, STATION.turret));
+    if (P.cargo) add(footprint(cargo, STATION.cargo));
+    // the pedestal, not the reflector — you walk UNDER a dish
+    if (P.dish && dish) {
+      const f = footprint(dish, 'dish', 0.16);
+      if (f) { f.x = dish.position.x; f.z = dish.position.z; add(f); }
+    }
+    drawSolids();
+  }
+
+  // The discs, drawn on the ground. Without this an avoided obstacle and a
+  // path that happened to miss look identical, and the one number that
+  // matters — how wide the walker thinks the tank is — is invisible.
+  let solidRings = null;
+  function drawSolids() {
+    if (solidRings) { scene.remove(solidRings); solidRings = null; }
+    if (!P.showSolids) return;
+    solidRings = new THREE.Group();
+    for (const o of solids) {
+      const g = new THREE.BufferGeometry();
+      const pos = [];
+      const SEG = 48;
+      for (let i = 0; i <= SEG; i++) {
+        const a = (i / SEG) * Math.PI * 2;
+        pos.push(o.x + Math.cos(a) * o.r, 0.02, o.z + Math.sin(a) * o.r);
+      }
+      g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+      solidRings.add(new THREE.Line(g, new THREE.LineBasicMaterial({
+        color: 0xff6a5e, transparent: true, opacity: 0.55 })));
+    }
+    scene.add(solidRings);
+  }
+
+  // ROUTE AROUND THEM. For each obstacle the straight line penetrates, step
+  // the crossing point out to the disc's edge and go through THAT instead,
+  // then re-plan both halves. Recursive with a depth cap: three obstacles in
+  // a row is a yard nobody can cross, and a lab should draw a bad path rather
+  // than hang looking for a good one.
+  //
+  // `skip` is a SET holding BOTH endpoints' props. The destination is obvious
+  // — a walker heading into the container must be allowed to reach it. The
+  // ORIGIN is the one that was missed: the props stand AT their stations, so a
+  // walker leaving the turret is standing inside the turret's own disc by
+  // construction, and the planner spent the whole leg trying to escape a
+  // building it was already in. It reported a route that clipped the turret
+  // by 2.9 m, which is how it was found.
+  const CLEAR = 0.45;     // metres of daylight between a shoulder and a hull
+  function planPath(a, b, skip, depth = 0) {
+    if (depth > 3) return [b];
+    let worst = null, worstPen = 0;
+    for (const o of solids) {
+      if (skip.has(o.id)) continue;
+      const r = o.r + CLEAR;
+      // closest approach of the segment to the disc centre
+      const abx = b.x - a.x, abz = b.z - a.z;
+      const len2 = abx * abx + abz * abz;
+      if (len2 < 1e-9) continue;
+      let t = ((o.x - a.x) * abx + (o.z - a.z) * abz) / len2;
+      t = Math.max(0, Math.min(1, t));
+      const cx = a.x + abx * t, cz = a.z + abz * t;
+      const d = Math.hypot(o.x - cx, o.z - cz);
+      if (d >= r) continue;
+      const pen = r - d;
+      if (pen > worstPen) { worstPen = pen; worst = { o, r, cx, cz, d }; }
+    }
+    if (!worst) return [b];
+    // push the closest point out to the rim, along the line from the centre.
+    // If the segment runs dead through the middle the direction is degenerate,
+    // so fall back to the segment's own perpendicular — a coin toss between
+    // two equally good ways round, decided by geometry rather than left alone
+    // to produce a NaN.
+    let nx = worst.cx - worst.o.x, nz = worst.cz - worst.o.z;
+    let nl = Math.hypot(nx, nz);
+    if (nl < 1e-6) {
+      nx = -(b.z - a.z); nz = b.x - a.x;
+      nl = Math.hypot(nx, nz) || 1;
+    }
+    // PAST the rim, not onto it. Placing the waypoint at exactly the
+    // clearance radius left it penetrating by a float's width, so the next
+    // recursion found the same obstacle and split again all the way to the
+    // depth cap — 15 waypoints for one tank, drawn as a zigzag.
+    const push = worst.r + 0.05;
+    const via = new THREE.Vector3(
+      worst.o.x + (nx / nl) * push, 0, worst.o.z + (nz / nl) * push);
+    return [...planPath(a, via, skip, depth + 1), ...planPath(via, b, skip, depth + 1)];
+  }
+
+  // Is the straight segment clear of everything but `skip`?
+  function segClear(a, b, skip) {
+    for (const o of solids) {
+      if (skip.has(o.id)) continue;
+      const r = o.r + CLEAR;
+      const abx = b.x - a.x, abz = b.z - a.z;
+      const len2 = abx * abx + abz * abz;
+      if (len2 < 1e-9) continue;
+      let t = ((o.x - a.x) * abx + (o.z - a.z) * abz) / len2;
+      t = Math.max(0, Math.min(1, t));
+      const d = Math.hypot(o.x - (a.x + abx * t), o.z - (a.z + abz * t));
+      if (d < r) return false;
+    }
+    return true;
+  }
+
+  // STRING-PULLING. The planner is a splitter, so it emits every waypoint it
+  // needed to reason with rather than the few a walker needs to follow. Drop
+  // any point whose neighbours can see each other: a person going round a
+  // tank makes one turn, not eight, and the extra vertices read as hesitation.
+  function simplify(route, skip) {
+    const out = [route[0]];
+    let i = 0;
+    while (i < route.length - 1) {
+      let j = route.length - 1;
+      while (j > i + 1 && !segClear(route[i], route[j], skip)) j--;
+      out.push(route[j]);
+      i = j;
+    }
+    return out;
+  }
+
   function placeProps() {
     if (turret) {
       const t = stationPos(STATION.turret);
@@ -422,6 +572,10 @@ export function initAstroTab(root) {
       dish.position.set(-R * 1.1, 0, -R * 2.2);
       dish.rotation.y = Math.atan2(R * 1.1, R * 2.2);
     }
+    // the discs are derived from where the props ARE, so they are rebuilt
+    // whenever anything moves — a stale obstacle is worse than none, because
+    // the walkers avoid a place nothing is standing
+    rebuildSolids();
   }
 
   function buildCrew() {
@@ -457,17 +611,28 @@ export function initAstroTab(root) {
     m.to = others[Math.floor(m.rng() * others.length) % others.length];
     m.p0 = m.obj.position.clone(); m.p0.y = 0;
     m.p1 = stationPos(m.to);
+    // A ROUTE, not a line. The destination's own prop is exempt or the
+    // planner refuses every errand it is given.
+    rebuildSolids();
+    const skip = new Set([m.at, m.to]);   // where it stands and where it is going
+    m.skip = skip;
+    m.route = simplify([m.p0.clone(), ...planPath(m.p0, m.p1, skip)], skip);
+    m.leg = 0;
     // ALTERNATING, not random: a coin flip gives runs of four and reads as
     // indecision. Biased against whatever the last leg was, so the two gaits
     // trade off while still being unpredictable leg to leg.
     m.gait = m.rng() < (m.gait === 'run' ? 0.25 : 0.65) ? 'run' : 'walk';
-    const speed = P.stride * P.speed * (m.gait === 'run' ? P.runMul : 1);
-    m.legT = Math.max(0.35, m.p0.distanceTo(m.p1) / Math.max(0.1, speed));
+    m.speed = P.stride * P.speed * (m.gait === 'run' ? P.runMul : 1);
+    // time is per LEG now, and the pace is what is constant across them — a
+    // route timed as a whole would sprint the detour to make up the distance
+    m.legT = Math.max(0.15, m.route[1].distanceTo(m.route[0]) / Math.max(0.1, m.speed));
     m.u = 0;
     m.phase = 'travel';
     if (crewProbe) {
       console.log(`CREWPROBE ${m.id} ${m.at} -> ${m.to} ${m.gait}`
-        + ` ${m.p0.distanceTo(m.p1).toFixed(1)}m in ${m.legT.toFixed(1)}s`);
+        + ` ${m.p0.distanceTo(m.p1).toFixed(1)}m direct`
+        + `${m.route.length > 2 ? `, routed via ${m.route.length - 2} waypoint(s)` : ', clear'}`
+        + ` · ${routeVerdict(m)}`);
     }
     if (m.obj.userData.setWalking) m.obj.userData.setWalking(true);
     // cadence rides WITH the stride, or the feet skate. The exponent is the
@@ -499,16 +664,52 @@ export function initAstroTab(root) {
     sizeTank(P.tankLen);   // re-lays the floor and re-frames for the mode
   }
 
+  // THE ONLY QUESTION THAT MATTERS about a route is whether it stays out of
+  // the solids, and a waypoint count does not answer it — a path can have
+  // seven waypoints and still clip a hull. So the route is SAMPLED along its
+  // whole length and every sample checked against every disc. Reported per
+  // leg, because a planner that is right nine times out of ten is a planner
+  // that walks through the tank once a minute, which is what a viewer sees.
+  function routeVerdict(m) {
+    const skip = m.skip || new Set([m.at, m.to]);
+    let worst = 0, worstId = '';
+    for (let i = 0; i < m.route.length - 1; i++) {
+      const a = m.route[i], b = m.route[i + 1];
+      const steps = Math.max(2, Math.ceil(a.distanceTo(b) / 0.25));
+      for (let k = 0; k <= steps; k++) {
+        const t = k / steps;
+        const x = a.x + (b.x - a.x) * t, z = a.z + (b.z - a.z) * t;
+        for (const o of solids) {
+          if (skip.has(o.id)) continue;        // neither endpoint is a wall
+          const pen = o.r - Math.hypot(o.x - x, o.z - z);
+          if (pen > worst) { worst = pen; worstId = o.id; }
+        }
+      }
+    }
+    return worst > 0.01
+      ? `CLIPS ${worstId} by ${worst.toFixed(2)}m — WRONG`
+      : 'clear of every solid — OK';
+  }
+
   function stepCrew(dt) {
     for (const m of crew) {
       if (m.phase === 'travel') {
         m.u += dt / m.legT;
-        const u = Math.min(1, m.u);
-        m.obj.position.lerpVectors(m.p0, m.p1, u);
-        const d = m.p1.clone().sub(m.p0);
+        let u = Math.min(1, m.u);
+        const from = m.route[m.leg], to = m.route[m.leg + 1];
+        m.obj.position.lerpVectors(from, to, u);
+        const d = to.clone().sub(from);
         // the cast walks down +Z, so the heading is the leg's own bearing —
         // read off the path, never a second sign convention
         if (d.lengthSq() > 1e-8) m.obj.rotation.y = Math.atan2(d.x, d.z);
+        // ...and a route is legs: finishing one starts the next at the same
+        // pace, so a detour costs TIME rather than being run at double speed
+        while (u >= 1 && m.leg < m.route.length - 2) {
+          m.leg++;
+          m.u = 0; u = 0;
+          m.legT = Math.max(0.15,
+            m.route[m.leg + 1].distanceTo(m.route[m.leg]) / Math.max(0.1, m.speed));
+        }
         if (u >= 1) {
           m.at = m.to;
           if (m.at === STATION.cargo && cargo) {
@@ -568,6 +769,7 @@ export function initAstroTab(root) {
   gCrew.add(P, 'cargo').name('container').onChange(() => { buildProps(); syncMode(); });
   gCrew.add(P, 'dish').name('70 m dish').onChange(() => { buildDish(); syncMode(); });
   gCrew.add(P, 'dishH', 5, 80, 1).name('dish height (m)').onChange(() => placeProps());
+  gCrew.add(P, 'showSolids').name('show solid discs').onChange(() => { rebuildSolids(); });
   gui.add(P, 'stride', 0.2, 4, 0.05).name('metres / s');
   gui.add(P, 'personH', 0.4, 4, 0.05).name('person height (m)').onChange((v) => sizeAstro(v));
   gui.add(P, 'tankLen', 2, 20, 0.1).name('tank length (m)').onChange((v) => sizeTank(v));

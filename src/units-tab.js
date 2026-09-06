@@ -10,29 +10,29 @@
 // WebGL context each and browsers cap those in the teens; a carousel costs
 // one context no matter how long the roster grows.
 import * as THREE from '../vendor/three.module.js';
-import { shotOf } from './sentryfx.js?v=b9640e2c';
+import { shotOf } from './sentryfx.js?v=9edeb91f';
 import { OrbitControls } from '../vendor/OrbitControls.js';
 import { GLTFExporter } from '../vendor/GLTFExporter.js';
 import { buildUnit, preloadMkcx, makeDebris, makeDotBurst, makeBulletCloud,
   makeDotEnemy, makeRewardSolid, makeShellSolid, makePortalCloud,
   preloadServer, makeServerFixture, preloadContainer, makeContainerFixture,
-  preloadFabricator, makeFabricatorDrone, makeIsaoDrone } from './units.js?v=b9640e2c';
+  preloadFabricator, makeFabricatorDrone, makeIsaoDrone } from './units.js?v=9edeb91f';
 import { TANK_FEEL, TANK_FEEL_KNOBS, formatFeelCode, makeTankFeel, stepTankFeel,
-  landTankFeel, fireTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js?v=b9640e2c';
+  landTankFeel, fireTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js?v=9edeb91f';
 import { FEEL, loadFeel, saveFeel, resetFeel,
-  TOWER, HEADS, loadTower, saveTower, resetTower } from './feelstore.js?v=b9640e2c';
+  TOWER, HEADS, loadTower, saveTower, resetTower } from './feelstore.js?v=9edeb91f';
 import { TOWER_FEEL_KNOBS, formatTowerFeel, clampTowerParams,
-  formatTowerHeads, HEAD_CHOICES, HEAD_AS_SHIPPED } from './towerfeel.js?v=b9640e2c';
-import { CREATURE_TINTS, accentFor } from './enemyspec.js?v=b9640e2c';
+  formatTowerHeads, HEAD_CHOICES, HEAD_AS_SHIPPED } from './towerfeel.js?v=9edeb91f';
+import { CREATURE_TINTS, accentFor } from './enemyspec.js?v=9edeb91f';
 import { buildTowerLook, TOWER_LOOK_NAMES, DEFAULT_TOWER_LOOK, preloadLook } from './towerlooks.js';
-import { TOWER_BY_KEY, TOWERS } from './towers.js?v=b9640e2c';
+import { TOWER_BY_KEY, TOWERS } from './towers.js?v=9edeb91f';
 import { LOOKS } from './looks.js';
 import { makeBloom } from './postfx.js';
-import { makeAudio } from './audio.js?v=b9640e2c';
+import { makeAudio } from './audio.js?v=9edeb91f';
 import { GROUPS, GROUP_LABELS, GROUP_EMPTY, entriesIn } from './unitcatalog.js';
 import { FONT_NAMES, TYPE_KNOBS, TYPE_FEEL, makeTypeParams, loadTypeFeel, saveTypeFeel,
-  formatTypeCode, applyFontPack, currentFontPack, currentShoutPack } from './fonts.js?v=b9640e2c';
-import { LORE, LORE_WORLD, loreText, loreAll } from './lore.js?v=b9640e2c';
+  formatTypeCode, applyFontPack, currentFontPack, currentShoutPack } from './fonts.js?v=9edeb91f';
+import { LORE, LORE_WORLD, loreText, loreAll } from './lore.js?v=9edeb91f';
 
 let roundTex = null;
 function roundDotTex() {
