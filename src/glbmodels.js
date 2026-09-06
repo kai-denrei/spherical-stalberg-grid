@@ -201,11 +201,44 @@ export function mergeByMaterial(root, pivotNames = [], exclude = []) {
 // bounding box. That matters: a tank's bounding box is skewed forward by
 // its gun barrel, so centring on the box would make it pivot around a point
 // out in front of itself. Centre on the hull.
+// IDEMPOTENT BY CONSTRUCTION, and that is a bug fix rather than tidiness.
+//
+// This measures an object and then scales THAT SAME OBJECT. loadGlb caches by
+// URL, so every caller asking for a model gets one shared scene — and two
+// callers fitting it in turn is a compounding disaster: the first measures a
+// 170-unit model and sets scale 0.005; the second measures the RESULT, 0.85
+// units, computes k = 1.0, and the model is suddenly 170 units across.
+//
+// That is the "sometimes the tank and containers load enormous" report
+// exactly: intermittent because it needs two fits to race, browser-specific
+// because the ordering differs, and CURED BY A RESET because a fresh load
+// starts from a raw model again. Chasing it by reproduction was never going
+// to work; it is a shape of code, not a moment in time.
+//
+// So the measurement is always taken at scale 1: reset, measure, scale. Fit
+// the same object twice and you get the same answer twice.
 export function fitModel(obj, { height, maxSpan, recentreOn = null }) {
+  obj.scale.setScalar(1);
+  obj.position.set(0, 0, 0);
   obj.updateMatrixWorld(true);
   const box = new THREE.Box3().setFromObject(obj);
   const size = new THREE.Vector3(); box.getSize(size);
   const centre = new THREE.Vector3(); box.getCenter(centre);
+  // AND REFUSE THE ABSURD. An empty Box3 (a model whose geometry has not
+  // landed) measures -Infinity, and a nearly-flat one divides `height` by
+  // almost nothing — both produce a model hundreds of times too big rather
+  // than an error. A piece at the wrong scale should say so, once, and stand
+  // at 1:1 where it can be seen and reported.
+  if (!Number.isFinite(size.x) || !Number.isFinite(size.y) || !Number.isFinite(size.z)
+      || Math.max(size.x, size.y, size.z) < 1e-4) {
+    console.warn('[glbmodels] fitModel: refusing to scale a model that measures'
+      + ` ${size.x}x${size.y}x${size.z} — its geometry is missing or degenerate`);
+    const g0 = new THREE.Group();
+    g0.add(obj);
+    g0.userData.fitScale = 1;
+    g0.userData.fitRefused = true;
+    return g0;
+  }
 
   let cx = centre.x, cz = centre.z;
   if (recentreOn) {
