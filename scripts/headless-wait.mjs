@@ -11,23 +11,23 @@
  * wrongly under it. This is the honest replica for "it starts and then…"
  * reports. Same CDP shape as scripts/cine-capture.mjs.
  */
-import { spawn } from 'node:child_process';
 import { writeFileSync } from 'node:fs';
+import { launchChrome } from './chrome-proc.mjs';
 const args = Object.fromEntries(process.argv.slice(2).map((a, i, all) =>
   a.startsWith('--') ? [a.slice(2), all[i + 1] && !all[i + 1].startsWith('--') ? all[i + 1] : '1'] : []).filter((x) => x.length));
 const url = args.url, seconds = Number(args.seconds || 10);
 const [W, H] = (args.size || '844x390').split('x').map(Number);
 const grep = args.grep ? new RegExp(args.grep) : null;
 if (!url) { console.error('usage: --url <page> [--seconds N --size WxH --out shot.png --grep REGEX --swiftshader]'); process.exit(2); }
-const CHROME = process.env.CHROME || '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome';
 const flags = ['--headless=new', '--remote-debugging-port=0', `--window-size=${W},${H + 87}`, '--hide-scrollbars', '--mute-audio'];
 if (args.swiftshader) flags.push('--use-angle=swiftshader', '--enable-unsafe-swiftshader');
-const chrome = spawn(CHROME, [...flags, 'about:blank'], { stdio: ['ignore', 'ignore', 'pipe'] });
-const port = await new Promise((resolve, reject) => {
-  let buf = '';
-  chrome.stderr.on('data', (d) => { buf += d; const m = buf.match(/DevTools listening on ws:\/\/127\.0\.0\.1:(\d+)/); if (m) resolve(Number(m[1])); });
-  chrome.on('exit', () => reject(new Error('chrome exited')));
-});
+// launchChrome owns the LIFETIME: it spawns detached so the whole tree can be
+// signalled as a group, and registers cleanup against every way this process
+// can end. Cleanup used to be one line on the happy path, which is how a bad
+// --out path turned into a leaked browser reparented to launchd.
+const { chrome, port: portP, kill } = launchChrome(flags,
+  { watchdogMs: (seconds + 90) * 1000 });
+const port = await portP;
 const targets = await (await fetch(`http://127.0.0.1:${port}/json`)).json();
 const ws = new WebSocket(targets.find((t) => t.type === 'page').webSocketDebuggerUrl);
 await new Promise((r) => ws.addEventListener('open', r));
@@ -49,6 +49,19 @@ await send('Page.navigate', { url });
 await new Promise((r) => setTimeout(r, seconds * 1000));
 if (args.out) {
   const shot = await send('Page.captureScreenshot', { format: 'png' });
-  writeFileSync(args.out, Buffer.from(shot.data, 'base64'));
+  try {
+    writeFileSync(args.out, Buffer.from(shot.data, 'base64'));
+  } catch (e) {
+    // THIS is the line that leaked a browser: an unwritable --out threw EROFS
+    // and the process died before anything killed Chrome. It is caught now,
+    // and the run still reports whatever the page logged, because the console
+    // output is usually the reason the run existed.
+    console.error(`[headless-wait] could not write ${args.out}: ${e.message}`);
+    process.exitCode = 2;
+  }
 }
-ws.close(); chrome.kill();
+// belt and braces: the exit handler in chrome-proc would do this anyway, but
+// closing here means the browser is gone before the screenshot's caller
+// returns rather than a tick later
+ws.close();
+kill();

@@ -15,7 +15,8 @@
  * uses ANGLE Metal on the M4 (measured 2026-09-03, portal bench ?bench=:
  * 45 Gfolds/s vs SwiftShader's 1.4). Add --swiftshader to force software.
  */
-import { spawn, execFileSync } from 'node:child_process';
+import { execFileSync } from 'node:child_process';
+import { launchChrome } from './chrome-proc.mjs';
 import { mkdirSync, writeFileSync, existsSync } from 'node:fs';
 import { join } from 'node:path';
 
@@ -96,18 +97,19 @@ if (!args.minimal) flags.push('--hide-scrollbars', '--mute-audio', '--no-first-r
 if (args.chromelog) flags.push('--enable-logging=stderr', '--v=0');   // Chrome's own stderr → --chromelog <file>
 if (args.swiftshader) flags.push('--use-angle=swiftshader', '--enable-unsafe-swiftshader');
 else if (args.angle) flags.push(`--use-angle=${args.angle}`);   // metal (default) | gl
-const chrome = spawn(CHROME, [...flags, 'about:blank'], { stdio: ['ignore', 'ignore', 'pipe'] });
+// SAME LIFETIME OWNER as headless-wait. This script had a rejection handler
+// and a 60 s stall guard, which is more than its sibling had — and still leaked,
+// because both signalled only the TOP Chrome process. Its renderer and GPU
+// children were then reparented to launchd and sat on hundreds of MB.
+// A render can run for minutes, so the watchdog is generous but finite.
+const { chrome, port: portP, kill: killChrome } = launchChrome(flags,
+  { watchdogMs: Math.max(600, seconds * 60 + 600) * 1000 });
 const chromeLog = args.chromelog ? (await import('node:fs')).createWriteStream(args.chromelog) : null;
-const port = await new Promise((resolve, reject) => {
-  let buf = '';
-  chrome.stderr.on('data', (d) => {
-    if (chromeLog) chromeLog.write(d);
-    buf += d;
-    const m = buf.match(/DevTools listening on ws:\/\/127\.0\.0\.1:(\d+)/);
-    if (m) resolve(Number(m[1]));
-  });
-  chrome.on('exit', () => reject(new Error('chrome exited before DevTools was up')));
-});
+const port = await portP;
+// launchChrome watches stderr for the DevTools port; --chromelog wants the
+// same stream on disk. Two listeners on one stream is fine, and keeping them
+// separate means the log is not load-bearing for startup.
+if (chromeLog) chrome.stderr.on('data', (d) => chromeLog.write(d));
 const targets = await (await fetch(`http://127.0.0.1:${port}/json`)).json();
 const page = targets.find((t) => t.type === 'page');
 const ws = new WebSocket(page.webSocketDebuggerUrl);
@@ -151,7 +153,7 @@ await send('Page.navigate', { url });
 // wait for the scene to install its seam
 const t0 = Date.now();
 while (!(await evaluate('typeof window.__cine === "object"'))) {
-  if (Date.now() - t0 > 60000) { console.error('page never installed __cine'); chrome.kill(); process.exit(1); }
+  if (Date.now() - t0 > 60000) { console.error('page never installed __cine'); killChrome('page never installed __cine'); process.exit(1); }
   await new Promise((r) => setTimeout(r, 250));
 }
 // a scene that exposes __cineReady() is waited for (models landing); others get 1.5 s
@@ -166,7 +168,9 @@ const gl = await evaluate(`(() => { const c = document.querySelector('canvas'); 
 const frames = Math.round(seconds * fps);
 console.log(`cine-capture: ${url} → ${out}  ${W}x${H}${scale > 1 ? ` (rendered at ${scale}x)` : ''} ${fps} fps × ${seconds}s = ${frames} frames  gl="${gl}"`);
 const tStart = Date.now();
-process.on('unhandledRejection', (e) => { console.error('cine-capture: ' + e.message); try { chrome.kill(); } catch {} process.exit(1); });
+// (chrome-proc already registers an unhandledRejection handler that kills
+// the whole tree; this one only adds the script's own label)
+process.on('unhandledRejection', (e) => { console.error('cine-capture: ' + e.message); killChrome('rejected'); process.exit(1); });
 for (let i = 0; i < frames; i++) {
   const t = from + i / fps;
   if (debug) console.log(`  seek ${t.toFixed(3)}`);
@@ -187,7 +191,7 @@ for (let i = 0; i < frames; i++) {
   }
 }
 await evaluate('__cine.release()');
-ws.close(); chrome.kill();
+ws.close(); killChrome();
 const mp4 = `${out}.mp4`;
 const vf = scale > 1 ? ['-vf', `scale=${W}:${H}:flags=lanczos`] : [];
 execFileSync('ffmpeg', ['-y', '-loglevel', 'error', '-framerate', String(fps), '-i', join(out, 'f%05d.png'),

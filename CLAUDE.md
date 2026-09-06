@@ -37,6 +37,21 @@ token — the corner badge was retired from the game view).
   invisible in a diff and it is exactly how a dingbat silently becomes an
   emoji. `scripts/check-emoji.sh` enforces it, wired into `.githooks/pre-push`
   beside the token check.
+- EVERY capture script kills its browser through `scripts/chrome-proc.mjs`.
+  Do NOT `spawn` Chrome directly in a new script. On 2026-09-06 this machine
+  reached 84% memory with leaked Chrome trees reparented to launchd, traced to
+  these scripts: cleanup was one line on the happy path (`ws.close();
+  chrome.kill()`), so any throw before it leaked the browser — and one did, an
+  unwritable `--out` throwing EROFS. Three faults, all fixed in the helper:
+  cleanup now runs on exit / SIGINT / SIGTERM / SIGHUP / uncaught / rejected;
+  Chrome is spawned DETACHED so the whole process GROUP is signalled (killing
+  only the top process is what orphaned its renderer and GPU children); and
+  there is a hard watchdog, because a page that never loads used to hold a
+  browser forever. The escalation to SIGKILL is a SYNCHRONOUS wait, not a
+  timer — every caller exits immediately after killing, so a timer never
+  fires and the first version of the watchdog reported a clean kill while
+  leaving two live processes. Check for leaks with
+  `ps -eo pid,ppid,args | grep -- --headless`.
 - Headless verification: Chrome with `--use-angle=swiftshader
   --enable-unsafe-swiftshader` (NOT `--disable-gpu`, it kills WebGL).
   Headless WITHOUT those flags uses the real M4 through ANGLE Metal
