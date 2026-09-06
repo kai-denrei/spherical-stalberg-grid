@@ -21,8 +21,8 @@
 //
 // Keyed by tower KEY rather than by model id, because roster 1 has no models
 // at all and still has to draw its shots.
-import { makeParams, clampParams, formatKnobs, knobProblems } from './knobs.js?v=1779d0a6';
-import { IMPACT_TUNE } from './impactfx.js?v=1779d0a6';
+import { makeParams, clampParams, formatKnobs, knobProblems } from './knobs.js?v=a2ca9f4e';
+import { IMPACT_TUNE } from './impactfx.js?v=a2ca9f4e';
 
 // The fields that USED to live on a tower def. If you are looking for why a
 // tracer is the size it is, it is here.
@@ -106,10 +106,21 @@ export const SENTRY_FX = {
     muzzle: FX(['flash', 'ember'], 0.95, { flash: 0xffd9a0, ember: 0xff8a44 },
       { emberCount: 24 }),
     impact: FX('shell', 1.25, { spark: 0xffb066 }, { ringEnd: 0.95, debrisCount: 14 }) },
+  // TUNED IN THE LAB (operator, 2026-09-06) and pasted back, which is the
+  // whole point of the export existing. A tight, fast, near-gravityless
+  // spark that does not bounce; a small brief flash with one ring; and no
+  // scorch or debris — a lance burns a spot, it does not break the plate.
   lancer:   { shot: SHOT('lance', 7, 11, 42, { beamColor: 0x4dff86 }),
-    muzzle: FX(['flash'], 0.45, { flash: 0x4dff86 }, { flashLife: 0.10 }),
-    // a LANCE burns rather than breaks: splash and embers, almost no debris
-    impact: FX('laser', 0.7, { spark: 0x4dff86, splash: 0x4dff86, ember: 0xb8ffd0 }) },
+    muzzle: FX(['flash'], 0.45, { flash: 0x4dff86 },
+      { flashLife: 0.1 }),
+    impact: FX(['spark', 'flash', 'ember'], 0.7,
+      { spark: 0x4dff86, splash: 0x4dff86, ember: 0xb8ffd0 },
+      { sparkCount: 20, sparkSpeed: 3, sparkSpread: 0.45, sparkGravity: 20,
+        sparkBounce: 0, sparkSize: 1, flashLife: 0.1, flashSize: 0.05,
+        flashRings: 1, ringEnd: 0.2, ringWidth: 0.01, scorchSize: 0.05,
+        debrisSpeed: 3.9, splashCount: 90, splashLife: 4.9, splashCling: 1,
+        splashSag: 12, emberCount: 20, emberLife: 1, emberRise: 1,
+        emberDrag: 0.55 }) },
   howitzer: { shot: SHOT('lob', 15, 8, 3.0),
     // the loudest gun on the board should have the biggest muzzle on it
     muzzle: FX(['flash', 'spark', 'ember'], 1.25, { flash: 0xfff0d0, ember: 0xff8a44 },
@@ -199,12 +210,29 @@ function fmtFx(name, fx) {
   return `    ${name}: FX(${recipe}, ${Number(fx.size.toFixed(2))}, ${fmtColors(fx.colors)}${fmtTune(fx.tune)})`;
 }
 
+// A LITERAL, not a toString. `kind` is a string and was being written bare —
+// `kind: lance` — which is a ReferenceError the moment it is pasted, and the
+// export's entire promise is that pasting it works. Booleans and numbers pass
+// through; strings get quoted; colours become hex.
+const lit = (k, v) => {
+  if (isHexKey(k)) return hex(v);
+  if (typeof v === 'string') return `'${v}'`;
+  return String(v);
+};
+
 export function formatSentryFx(key, profile) {
   const s = profile.shot || {};
+  // KIND IS POSITIONAL and comes FIRST — SHOT(kind, projPx, trail, projSpeed,
+  // extra). It used to be an `extra`, and when it moved into the signature
+  // this writer was not moved with it: the emitted line kept the old shape,
+  // so a pasted profile set kind to a NUMBER and the weapon silently became a
+  // round. test/sentryfx.mjs round-trips every family now, which is the only
+  // check that could have caught a broken exporter — the values were all
+  // correct, it was the SHAPE that was wrong.
   const extra = Object.entries(s)
-    .filter(([k]) => !['projPx', 'trail', 'projSpeed'].includes(k))
-    .map(([k, v]) => `${k}: ${isHexKey(k) ? hex(v) : v}`);
-  const shot = `SHOT(${s.projPx ?? 0}, ${s.trail ?? 0}, ${s.projSpeed ?? 0}`
+    .filter(([k]) => !['kind', 'projPx', 'trail', 'projSpeed'].includes(k))
+    .map(([k, v]) => `${k}: ${lit(k, v)}`);
+  const shot = `SHOT('${s.kind || 'round'}', ${s.projPx ?? 0}, ${s.trail ?? 0}, ${s.projSpeed ?? 0}`
     + (extra.length ? `, { ${extra.join(', ')} }` : '') + ')';
   return `  ${key}: { shot: ${shot},\n`
     + `${fmtFx('muzzle', profile.muzzle)},\n`

@@ -78,6 +78,58 @@ console.log('tune folding:');
   check('no profile is required to have a tune', Object.keys(tuneFor(SENTRY_FX.relay.impact)).length > 0);
 }
 
+console.log('the export ACTUALLY round-trips:');
+{
+  // THE ONLY CHECK THAT COULD HAVE CAUGHT A BROKEN EXPORTER. Every value was
+  // correct and the SHAPE was wrong: `kind` moved into SHOT's signature as
+  // the first positional argument and the writer was not moved with it, so
+  // the emitted line kept the old form and wrote `kind: lance` unquoted
+  // inside the extras. Pasting it is a ReferenceError; surviving that, it
+  // sets kind to a NUMBER and the weapon silently becomes a round.
+  //
+  // So: emit the source, EVALUATE it with the same SHOT and FX helpers the
+  // file uses, and compare field for field against what went in.
+  const SHOT = (kind, projPx, trail, projSpeed, extra = {}) =>
+    ({ kind, projPx, trail, projSpeed, ...extra });
+  const FX = (recipe, size, colors = {}, tune = {}) => ({ recipe, size, colors, tune });
+  let bad = 0;
+  for (const [key, p] of Object.entries(SENTRY_FX)) {
+    const src = formatSentryFx(key, p);
+    let back;
+    try {
+      // the emitted text is `  key: { ... },` — wrap it into an object
+      // eslint-disable-next-line no-new-func
+      back = new Function('SHOT', 'FX', `return { ${src} };`)(SHOT, FX)[key];
+    } catch (e) {
+      check(`${key} emits source that PARSES`, false, e.message + ' :: ' + src);
+      bad++;
+      continue;
+    }
+    const same = (a, b) => JSON.stringify(a) === JSON.stringify(b);
+    const shotOk = back.shot.kind === p.shot.kind
+      && back.shot.projPx === p.shot.projPx
+      && back.shot.trail === p.shot.trail
+      && back.shot.projSpeed === p.shot.projSpeed
+      && back.shot.beamColor === p.shot.beamColor
+      && back.shot.plasma === p.shot.plasma;
+    if (!shotOk) {
+      check(`${key} shot survives the round trip`, false,
+        `${JSON.stringify(back.shot)} != ${JSON.stringify(p.shot)}`);
+      bad++;
+    }
+    for (const slot of ['muzzle', 'impact']) {
+      if (same(back[slot].recipe, p[slot].recipe)
+        && back[slot].size === p[slot].size
+        && same(back[slot].colors, p[slot].colors)
+        && same(back[slot].tune, p[slot].tune)) continue;
+      check(`${key}.${slot} survives the round trip`, false,
+        `${JSON.stringify(back[slot])} != ${JSON.stringify(p[slot])}`);
+      bad++;
+    }
+  }
+  check(`all ${Object.keys(SENTRY_FX).length} families round-trip exactly`, bad === 0, `${bad} broken`);
+}
+
 console.log('the export round-trips:');
 {
   // the whole promise of the lab is "tune it, paste it, it is the default".
@@ -86,7 +138,13 @@ console.log('the export round-trips:');
   const src = formatSentryFx('lancer', SENTRY_FX.lancer);
   check('emits a single object entry', src.trim().startsWith('lancer: {') && src.trim().endsWith('},'));
   check('keeps beamColor as hex', src.includes('beamColor: 0x4dff86'), src);
-  check('names the recipe', src.includes("'laser'"), src);
+  // NOT a specific recipe NAME. This pinned `'laser'`, and the moment the
+  // Lancer was tuned in the lab its impact became an explicit family list —
+  // which is a legitimate export and made a passing test fail on correct
+  // data. What matters is that the shot's KIND is quoted, since writing it
+  // bare is the bug that made the export unpasteable; the round-trip above
+  // covers the rest properly.
+  check('quotes the weapon kind', src.includes("SHOT('lance'"), src);
   const all = formatAllSentryFx();
   check('the whole table emits one line per family',
     all.split('\n').filter((l) => /^  \w+: \{ shot:/.test(l)).length === Object.keys(SENTRY_FX).length);
