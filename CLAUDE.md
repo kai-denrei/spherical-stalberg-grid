@@ -185,6 +185,25 @@ token — the corner badge was retired from the game view).
   `scaleMissile` into model units. Fire-and-forget: the lock drops the
   instant a cell is away, or one launcher empties itself into one walker
   while the wave goes past.
+  the IMPACT lab (`#impact`): WHAT A HIT LOOKS LIKE. `src/impactfx.js` holds
+  seven families (spark / flash / ring / scorch / debris / splash / ember) and
+  four recipes (`shell` / `laser` / `plasma` / `light`); the tab fires them at
+  a wall you can angle and re-material. `?recipe=`, `?source=tank|sentry`,
+  `?surface=armour|rock|hull`, `?wall=0`, `?wallAngle=`, `?size=` (ONE number
+  scales a whole hit — the same effect serves a 3-unit wall here and a cell on
+  the sphere), `?slow=` (an impact is 400 ms; without a time scale you cannot
+  see one), `?auto=0`, `?trail=0`, every `IMPACT_TUNE` knob by name, and
+  `?impactprobe=1` — which fires one of every recipe and then checks at 1 s
+  that they are still running and at 6 s that they all returned false and were
+  reaped. A particle effect cannot be checked from a still: a spark shower and
+  a dead emitter are the same photograph one frame after the flash.
+  EVERY EFFECT IS AUTHORED IN LOCAL SPACE with +Z along the surface normal, so
+  `orientImpact(obj, point, normal)` is the only place a basis is derived —
+  three call sites deriving their own is three chances to pick a different
+  sign convention. The lab uses the game's light rig AND the board's sky as an
+  environment: a metal plate with nothing to reflect is black under this rig,
+  and a black plate makes every effect look good, which is the wrong
+  instrument.
   every LAB's deep link: the ↗ button copies the tab's current panel as a
   URL and writes it into the address bar (astro / metal / beam / portal /
   cine; the units viewer has had its own since before this). Only what

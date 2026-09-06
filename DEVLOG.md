@@ -2,6 +2,50 @@
 
 Newest first. Each entry: what landed, then how it works, for programmers.
 
+## impact — what a hit looks like
+
+The board has had exactly ONE impact effect since it was built: `makeDotBurst`,
+a puff of tinted dots, reused for a run-over, a shell, a laser tick and a
+portal collapse. Four very different events reading as the same puff is why
+hits feel weightless, and it is not a tuning problem — a spark shower and a
+flash are different phenomena and no number turns one into the other.
+
+`src/impactfx.js` is seven families, each a factory returning an Object3D with
+`userData.tick(dt) -> alive`, which is the contract `makeDebris` and
+`makeDotBurst` already use — so td-tab's existing `debris` array can carry
+these without learning anything. SPARKS fall and BOUNCE off the plane they
+came from, because a spark that passes through its own wall tells the eye
+there is no wall. The FLASH is the shortest-lived thing in the set on purpose:
+a flash you can look at is a lamp, and the eye reads a lamp as a light source
+rather than an event. The RING lies flat and thins as it grows. The SCORCH
+does not shrink and outlives everything, because it is the only record of the
+player's own aim. DEBRIS are the only family with faces — a chip catching the
+light as it turns is the whole read. SPLASH is thrown like a spark but STICKS
+and then sags, so a plasma hit ends as drips running down a wall rather than
+as a cloud that went away. EMBERS outlast the bang, which is the cheapest way
+to make a big hit feel bigger than a small one: the eye reads duration as size.
+
+Everything is authored in LOCAL SPACE with +Z along the surface normal, and
+`orientImpact` is the only place a basis is derived. Three call sites deriving
+their own is three chances to pick a different sign convention, which is the
+bug this project keeps paying for.
+
+The lab (`#impact`) fires them at a wall that ANGLES, because incidence is the
+control that changes the picture most — sparks only read when they spray away
+from a surface. It uses the game's light rig and the board's sky as an
+environment: a metal plate with nothing to reflect is black under this rig,
+and a black plate makes every effect look good, which is the wrong instrument.
+
+Two things the first render settled: everything was authored an order of
+magnitude too large and swallowed the wall in one hit, and SIZE belongs on the
+group rather than in the tune — the same effect has to serve a 3-unit wall
+here and a cell on the sphere a fiftieth of that, and retuning twenty knobs
+for each would give two effects that drift apart.
+
+Not yet adopted by the game: td-tab still fires `makeDotBurst`. The recipes
+are named after what fires them (`shell`, `laser`, `plasma`, `light`) so the
+call sites can ask for one without knowing which families that turns out to be.
+
 ## shield — a hologram, four ways in, and a shove
 
 The energy shield was one lucky pickup with a dot-cloud bubble. It is a
