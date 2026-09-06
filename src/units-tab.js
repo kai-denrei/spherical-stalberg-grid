@@ -10,28 +10,29 @@
 // WebGL context each and browsers cap those in the teens; a carousel costs
 // one context no matter how long the roster grows.
 import * as THREE from '../vendor/three.module.js';
+import { shotOf } from './sentryfx.js?v=9963a9ac';
 import { OrbitControls } from '../vendor/OrbitControls.js';
 import { GLTFExporter } from '../vendor/GLTFExporter.js';
 import { buildUnit, preloadMkcx, makeDebris, makeDotBurst, makeBulletCloud,
   makeDotEnemy, makeRewardSolid, makeShellSolid, makePortalCloud,
   preloadServer, makeServerFixture, preloadContainer, makeContainerFixture,
-  preloadFabricator, makeFabricatorDrone, makeIsaoDrone } from './units.js?v=a155b4f0';
+  preloadFabricator, makeFabricatorDrone, makeIsaoDrone } from './units.js?v=9963a9ac';
 import { TANK_FEEL, TANK_FEEL_KNOBS, formatFeelCode, makeTankFeel, stepTankFeel,
-  landTankFeel, fireTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js?v=a155b4f0';
+  landTankFeel, fireTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js?v=9963a9ac';
 import { FEEL, loadFeel, saveFeel, resetFeel,
-  TOWER, HEADS, loadTower, saveTower, resetTower } from './feelstore.js?v=a155b4f0';
+  TOWER, HEADS, loadTower, saveTower, resetTower } from './feelstore.js?v=9963a9ac';
 import { TOWER_FEEL_KNOBS, formatTowerFeel, clampTowerParams,
-  formatTowerHeads, HEAD_CHOICES, HEAD_AS_SHIPPED } from './towerfeel.js?v=a155b4f0';
-import { CREATURE_TINTS, accentFor } from './enemyspec.js?v=a155b4f0';
+  formatTowerHeads, HEAD_CHOICES, HEAD_AS_SHIPPED } from './towerfeel.js?v=9963a9ac';
+import { CREATURE_TINTS, accentFor } from './enemyspec.js?v=9963a9ac';
 import { buildTowerLook, TOWER_LOOK_NAMES, DEFAULT_TOWER_LOOK, preloadLook } from './towerlooks.js';
-import { TOWER_BY_KEY, TOWERS } from './towers.js?v=a155b4f0';
+import { TOWER_BY_KEY, TOWERS } from './towers.js?v=9963a9ac';
 import { LOOKS } from './looks.js';
 import { makeBloom } from './postfx.js';
-import { makeAudio } from './audio.js?v=a155b4f0';
+import { makeAudio } from './audio.js?v=9963a9ac';
 import { GROUPS, GROUP_LABELS, GROUP_EMPTY, entriesIn } from './unitcatalog.js';
 import { FONT_NAMES, TYPE_KNOBS, TYPE_FEEL, makeTypeParams, loadTypeFeel, saveTypeFeel,
-  formatTypeCode, applyFontPack, currentFontPack, currentShoutPack } from './fonts.js?v=a155b4f0';
-import { LORE, LORE_WORLD, loreText, loreAll } from './lore.js?v=a155b4f0';
+  formatTypeCode, applyFontPack, currentFontPack, currentShoutPack } from './fonts.js?v=9963a9ac';
+import { LORE, LORE_WORLD, loreText, loreAll } from './lore.js?v=9963a9ac';
 
 let roundTex = null;
 function roundDotTex() {
@@ -796,7 +797,7 @@ export function initUnitsTab(root) {
   // a tuning problem you can only see by watching it happen.
   function towerShot(def, origin) {
     const reach = (def.range || 3) * CELL;
-    const speed = (def.projSpeed || 12) * CELL;
+    const speed = (shotOf(def).projSpeed || 12) * CELL;
     const col = new THREE.Color(def.color || 0xffffff);
     const dir = new THREE.Vector3(0, 0, 1);
     const life = Math.max(0.25, reach / Math.max(0.001, speed));

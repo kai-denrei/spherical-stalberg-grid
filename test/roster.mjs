@@ -9,6 +9,7 @@ import {
   useRoster, starterTower, unlockedTowerKeys, towerUnlockWave,
   effectiveStats, upgradeCost, MAX_TIER,
 } from '../src/towers.js';
+import { shotOf } from '../src/sentryfx.js';
 
 let failures = 0;
 const check = (what, ok) => {
@@ -104,15 +105,20 @@ console.log('the second board is what the operator asked for:');
     && TOWER_BY_KEY.lancer.burst < 1 / TOWER_BY_KEY.lancer.rate);
   check('...and it is the slowest thing on the board',
     TOWERS.every((d) => d.rate >= TOWER_BY_KEY.lancer.rate));
-  // A LASER IS GREEN AND A TOWER IS NOT (operator). Two keys, so the beam
-  // can have a colour without repainting the machine that throws it — the
-  // identity colour still drives the range ring, the shop icon and the tint.
+  // A LASER IS GREEN AND A TOWER IS NOT (operator). Two keys, so the beam can
+  // have a colour without repainting the machine that throws it — the identity
+  // colour still drives the range ring, the shop icon and the tint. The split
+  // is now across two FILES rather than two keys on one def: `color` is
+  // identity and stays in towers.js, `beamColor` is what it throws and lives
+  // in sentryfx.js. The rule the operator asked for is unchanged and so is
+  // this test's job — it just reads the beam's colour from its owner.
+  const lanceShot = shotOf(TOWER_BY_KEY.lancer);
   check('the lance has a beam colour of its own',
-    TOWER_BY_KEY.lancer.beamColor !== undefined
-    && TOWER_BY_KEY.lancer.beamColor !== TOWER_BY_KEY.lancer.color);
+    lanceShot.beamColor !== undefined
+    && lanceShot.beamColor !== TOWER_BY_KEY.lancer.color);
   check('...and it is green',
-    ((TOWER_BY_KEY.lancer.beamColor >> 8) & 0xff)
-      > Math.max(TOWER_BY_KEY.lancer.beamColor >> 16, TOWER_BY_KEY.lancer.beamColor & 0xff));
+    ((lanceShot.beamColor >> 8) & 0xff)
+      > Math.max(lanceShot.beamColor >> 16, lanceShot.beamColor & 0xff));
   // THE QUIVER IS THE LAB'S LAUNCHER. It must lock before it fires, which
   // is the one thing that makes it a launcher rather than a gun with a
   // curved bullet — and it is the only tower on either board that does.

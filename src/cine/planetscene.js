@@ -13,11 +13,11 @@
 //
 // Every time-dependent thing is SET from t. A capture seeks.
 import * as THREE from '../../vendor/three.module.js';
-import { bakeGalaxyCube } from '../galaxybake.js?v=a155b4f0';
-import { SKY_PRESET } from '../galaxyseed.js?v=a155b4f0';
-import { LOOKS } from '../looks.js?v=a155b4f0';
-import { compileRail } from './rail.js?v=a155b4f0';
-import { makeWirePlanet, widenWire } from './planet.js?v=a155b4f0';
+import { bakeGalaxyCube } from '../galaxybake.js?v=9963a9ac';
+import { SKY_PRESET } from '../galaxyseed.js?v=9963a9ac';
+import { LOOKS } from '../looks.js?v=9963a9ac';
+import { compileRail } from './rail.js?v=9963a9ac';
+import { makeWirePlanet, widenWire } from './planet.js?v=9963a9ac';
 
 export const PLANET_LEN = 12;
 export const PLANET_R = 7.8;          // THE GATE's measured radius: one scale, two cinematics

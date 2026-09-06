@@ -21,22 +21,22 @@ const ROSTER_V1 = [
     dmg: 14 / 90, range: 3.7, rate: 1.4, attack: 'single',
     // a six-axis arm: it points at ONE thing and swings to the next, which
     // is what a single-shot tower does. Ported from the Braille lab.
-    shape: 'sixaxis', projPx: 5, trail: 0, projSpeed: 20 }, // HK 0.9 — fast, near-hitscan
+    shape: 'sixaxis' }, // HK 0.9 — fast, near-hitscan
   { key: 'rapid',  label: 'Rapid',       color: 0x6fe6ff, cost: 70,
     dmg: 7 / 90,  range: 3.5, rate: 3.0, attack: 'single',
     // a delta robot: three arms working in parallel, the fastest mechanism
     // on any production line. Rapid fire, made visible.
-    shape: 'delta', spin: 1.5, projPx: 4, trail: 3, projSpeed: 26 }, // HK 1.2
+    shape: 'delta', spin: 1.5 }, // HK 1.2
   { key: 'spread', label: 'Spread',      color: 0x2fe6d0, cost: 80,
     dmg: 6 / 90,  range: 3.1, rate: 1.0, attack: 'spread', pellets: 5,
     // a struck-water ripple: concentric rings travelling outward. That IS
     // a spread — one event reaching several places at once.
-    shape: 'ripple', projPx: 3.5, trail: 0, projSpeed: 15 }, // HK 0.7
+    shape: 'ripple' }, // HK 0.7
   { key: 'homing', label: 'Homing',      color: 0x5a9bff, cost: 90,
     dmg: 9 / 90,  range: 3.5, rate: 1.2, attack: 'homing',
     // a gripper arm: it reaches out and takes hold of a specific thing,
     // which is what a homing shot does once it has picked its target.
-    shape: 'gripper', spin: 0.9, projPx: 5, trail: 6, projSpeed: 13 }, // HK 0.6 — guided, unhurried
+    shape: 'gripper', spin: 0.9 }, // HK 0.6 — guided, unhurried
   { key: 'slow',   label: 'Slow',        color: 0xc4e6ff, cost: 100,
     // ZERO damage (operator, 2026-09-02: "the slow towers do dmg instead of
     // purely slowing down"). It carried 4/90 a tick — small enough to look
@@ -54,14 +54,14 @@ const ROSTER_V1 = [
     // ordnance; this one is the attack, sculpted.
     // fat round, real smoke: the heaviest shell on the board should read
     // as one in flight, not only on impact
-    shape: 'mortar', spin: 0.7, projPx: 12, trail: 6, arc: true, projSpeed: 3.5 }, // a slow deliberate LOB
+    shape: 'mortar', spin: 0.7, arc: true }, // a slow deliberate LOB
   { key: 'sniper', label: 'Sniper',      color: 0xffffff, cost: 130,
     // hitscan: the shot IS the trace. A one-off this strong crossing the
     // board as a dot read like everyone else's bullet, only lonelier.
     dmg: 62 / 90, range: 7.0, rate: 0.7, attack: 'single', hitscan: true,
     // a guyed mast: the tallest, thinnest thing here, built to reach. The
     // longest range on the board should look like it out-reaches the rest.
-    shape: 'guyed', projPx: 7, trail: 11, projSpeed: 42 }, // HK 1.9 — a streak
+    shape: 'guyed' }, // HK 1.9 — a streak
   { key: 'laser',  label: 'Laser',       color: 0x9ff5ff, cost: 220,
     dmg: 18 / 90, range: 5.3, rate: 1.5, attack: 'beam',
     // an obelisk: a standing monolith, the one head with no moving parts.
@@ -98,7 +98,7 @@ const ROSTER_V2 = [
   { key: 'rotor', label: 'Rotor', color: 0xeaf2ff, cost: 45,
     dmg: 9 / 90, range: 3.6, rate: 2.2, attack: 'single',
     model: 'rotor', sound: 'minigun_fire',
-    shape: 'sixaxis', projPx: 4, trail: 2, projSpeed: 24 },
+    shape: 'sixaxis' },
   // PLASMA THROWER — a BEAM, not a spread: the tank's secondary with the
   // reach taken off it. Short range is the whole trade; it out-damages
   // everything at knife distance and covers almost nothing.
@@ -113,8 +113,7 @@ const ROSTER_V2 = [
   // the same DPS (0.267) drawn as one continuous throw, which is the whole
   // point of the weapon reading as a beam rather than as a gun.
   { key: 'plasma', label: 'Plasma Thrower', color: 0x2fe6d0, cost: 80,
-    dmg: 4 / 90, range: 2.6, rate: 6, attack: 'beam', plasma: true,
-    model: 'plasma', sound: 'tower_laser', shape: 'ripple', spin: 0.8 },
+    dmg: 4 / 90, range: 2.6, rate: 6, attack: 'beam', model: 'plasma', sound: 'tower_laser', shape: 'ripple', spin: 0.8 },
   // QUIVER — the sentry lab's launcher, on the board (operator). Not the
   // old `homing` tower shot: it must LOCK before it will fire, and what
   // leaves the cell then flies its own top-attack intercept out of
@@ -123,7 +122,7 @@ const ROSTER_V2 = [
   { key: 'quiver', label: 'Quiver', color: 0x5a9bff, cost: 90,
     dmg: 13 / 90, range: 3.5, rate: 1.2, attack: 'seeker', lock: true,
     model: 'quiver', sound: 'tower_homing',
-    shape: 'gripper', spin: 0.9, projPx: 5, trail: 6, projSpeed: 13 },
+    shape: 'gripper', spin: 0.9 },
   { key: 'relay', label: 'Relay', color: 0xc4e6ff, cost: 100,
     dmg: 0, range: 3.5, rate: 1.0, attack: 'slowfield',
     slowFactor: 0.45, slowDur: 1.6,
@@ -131,7 +130,7 @@ const ROSTER_V2 = [
   { key: 'mortar', label: 'Mortar', color: 0x9fc4ff, cost: 110,
     dmg: 12 / 90, range: 3.5, rate: 0.9, attack: 'mortar', splash: 1.5,
     model: 'mortar', sound: 'tower_aoe',
-    shape: 'mortar', spin: 0.7, projPx: 12, trail: 6, arc: true, projSpeed: 3.5 },
+    shape: 'mortar', spin: 0.7, arc: true },
   // LANCER — the laser, and the one weapon on the board that is aimed at a
   // LINE rather than at a target (operator). It shoots THROUGH things: one
   // long burst, dead straight, out to its full seven cells, and everything
@@ -146,9 +145,8 @@ const ROSTER_V2 = [
     // purpose: `color` is the tower's identity — the range ring, the shop
     // icon, the model's own tint — and the beam is what it throws. A laser
     // is allowed a colour of its own without repainting the machine.
-    beamColor: 0x4dff86,
     model: 'lancer', sound: 'tower_sniper',
-    shape: 'guyed', projPx: 7, trail: 11, projSpeed: 42 },
+    shape: 'guyed' },
   // HOWITZER — the slot Laser used to hold, and a howitzer is not a beam.
   // It is the Mortar's big sister: further, heavier, wider, and slow enough
   // that a wave can walk through the gap between shells. That gives the
@@ -159,7 +157,7 @@ const ROSTER_V2 = [
     // the loudest gun on the board, because it is a siege piece firing
     // every two seconds — it will not stack on itself
     model: 'howitzer', sound: 'tank_main',
-    shape: 'mortar', spin: 0.4, projPx: 15, trail: 8, arc: true, projSpeed: 3.0 },
+    shape: 'mortar', spin: 0.4, arc: true },
   // THE HEPTAPOD A6 — the only thing on either board that is not a
   // position. You place a PATROL: it walks a leash around its berth, empties
   // a cassette of six / eight / ten rockets by tier, walks home and reloads.
@@ -176,7 +174,7 @@ const ROSTER_V2 = [
     // either, which is the same asymmetry the tank lives under.
     hullHp: 9,
     model: 'heptapod_a6', sound: 'tower_homing',
-    shape: 'gripper', projPx: 6, trail: 7, projSpeed: 12 },
+    shape: 'gripper' },
 ];
 
 // --- the live roster ------------------------------------------------------

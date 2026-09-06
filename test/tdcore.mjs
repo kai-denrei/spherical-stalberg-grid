@@ -6,6 +6,7 @@ import { ENEMY_SPEC, INTROS, typesByWave, computeWavePlan, CREATURE_TINTS,
   SAFE_HUES, ALARM_HUES, isSafeHue, isAlarmHue, accentFor, hueLuma, DARK_LUMA, ACCENT_ALARM }
   from '../src/enemyspec.js';
 import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER, HACK_GATED } from '../src/towers.js';
+import { shotOf } from '../src/sentryfx.js';
 import { makeEconomy, sellRefund, waveClearBonus, earlyCallBonus, START_BIOMASS, RAM_PREMIUM, STREAK_CAP } from '../src/economy.js';
 
 let failures = 0;
@@ -37,10 +38,15 @@ check('8 towers', TOWERS.length === 8);
 check('keys unique + lookup', new Set(TOWERS.map((t) => t.key)).size === 8
   && TOWER_BY_KEY.sniper.cost === 130);
 check('laser is the capstone cost', Math.max(...TOWERS.map((t) => t.cost)) === TOWER_BY_KEY.laser.cost);
+// TEMPO MOVED, the assertion did not. projSpeed lives in sentryfx.js now —
+// towers.js keeps what a weapon does, sentryfx.js how it looks — so this reads
+// through shotOf. The relationships are the point and they are unchanged: a
+// sniper's round outruns a single's, and a mortar's is slower than a homing.
 check('every projectile tower has its own tempo',
-  TOWERS.filter((t) => !['beam', 'slowfield'].includes(t.attack)).every((t) => t.projSpeed > 0)
-  && TOWER_BY_KEY.sniper.projSpeed > TOWER_BY_KEY.single.projSpeed
-  && TOWER_BY_KEY.aoe.projSpeed < TOWER_BY_KEY.homing.projSpeed);
+  TOWERS.filter((t) => !['beam', 'slowfield'].includes(t.attack))
+    .every((t) => shotOf(t).projSpeed > 0)
+  && shotOf(TOWER_BY_KEY.sniper).projSpeed > shotOf(TOWER_BY_KEY.single).projSpeed
+  && shotOf(TOWER_BY_KEY.aoe).projSpeed < shotOf(TOWER_BY_KEY.homing).projSpeed);
 check('upgrade costs HK-exact (70%/120%, then maxed)',
   upgradeCost(TOWER_BY_KEY.single, 0) === 28
   && upgradeCost(TOWER_BY_KEY.single, 1) === 48
