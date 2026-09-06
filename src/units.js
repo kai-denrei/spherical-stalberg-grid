@@ -15,16 +15,16 @@
 // tick(t) (idle animation) }.
 
 import * as THREE from '../vendor/three.module.js';
-import { makeJelly } from './jelly.js?v=1400896f';
+import { makeJelly } from './jelly.js?v=75a4c4a6';
 import { EMOTION_IDS, emotion, phosphorFor } from './emotions.js';
-import { printPhase, printOffset, printOn } from './printpath.js?v=1400896f';
+import { printPhase, printOffset, printOn } from './printpath.js?v=75a4c4a6';
 import { loadGlb, loadGlbWithClips, mergeByMaterial, fitModel, tintModel, makeShellRack,
-  addEdgeOutlines, makeHeatSleeve } from './glbmodels.js?v=1400896f';
-import { CREATURES, waveJelly, swimWave, spherePts, bulletPts, missilePts, heartPts, torusPts, towerHeadPts, enemyDotPts, portalPts, personPts } from './creatures.js?v=1400896f';
-import { TOWER_FEEL, TOWER_HEADS, headKindFor } from './towerfeel.js?v=1400896f';
+  addEdgeOutlines, makeHeatSleeve } from './glbmodels.js?v=75a4c4a6';
+import { CREATURES, waveJelly, swimWave, spherePts, bulletPts, missilePts, heartPts, torusPts, towerHeadPts, enemyDotPts, portalPts, personPts } from './creatures.js?v=75a4c4a6';
+import { TOWER_FEEL, TOWER_HEADS, headKindFor } from './towerfeel.js?v=75a4c4a6';
 import { STARGATE_PTS, STARGATE_STROKE,
-  HORIZON_N, stargateHorizon } from './stargate.js?v=1400896f';
-import { ENEMY_SPEC } from './enemyspec.js?v=1400896f';
+  HORIZON_N, stargateHorizon } from './stargate.js?v=75a4c4a6';
+import { ENEMY_SPEC } from './enemyspec.js?v=75a4c4a6';
 
 function normalizeToUnit(group) {
   group.updateMatrixWorld(true);
@@ -456,6 +456,9 @@ export function makeOrbCloud(fx, cols, phase = 0) {
 // triangle gets a velocity away from the center (outward-normal bias +
 // jitter), drifts, spins around its centroid is skipped — translation and
 // fade sell the coming-apart at this scale. tick(dt) -> false when spent.
+// what a mesh with no colour of its own shatters into
+const DEBRIS_FALLBACK = new THREE.Color(0xbfd4dd);
+
 export function makeDebris(obj, outwardN) {
   obj.updateMatrixWorld(true);
   const center = new THREE.Vector3();
@@ -468,7 +471,16 @@ export function makeDebris(obj, outwardN) {
     const g = m.geometry;
     const pos = g.getAttribute('position');
     const idx = g.getIndex();
-    const col = m.material.color;
+    // A MESH MAY NOT HAVE A `material.color`. Every mesh that ever came
+    // through here was Lambert or Basic, so this read the property straight —
+    // and the first ShaderMaterial unit (the jelly) made makeDebris THROW,
+    // inside killCreature, BEFORE the scene.remove that follows it. The boss
+    // died, its debris never appeared, and its body stayed on the board
+    // forever. A missing colour should cost the debris its tint, not cost the
+    // corpse its removal.
+    const col = m.material.color
+      || (m.material.uniforms && m.material.uniforms.uColor && m.material.uniforms.uColor.value)
+      || DEBRIS_FALLBACK;
     const count = idx ? idx.count : pos.count;
     for (let i = 0; i < count; i++) {
       const vi = idx ? idx.getX(i) : i;

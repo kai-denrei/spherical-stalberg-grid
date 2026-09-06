@@ -72,7 +72,14 @@ token — the corner badge was retired from the game view).
 - `?enemy=<type>[:N][@D]` PUTS ONE ON THE BOARD NOW, beside the hull, alive, on the
   real path, camera in third person — for looking at a unit next to the tank at
   the game's own scale rather than on the viewer's turntable or after playing
-  to its wave. `@D` is how many cells AWAY it starts (default 6) — it used to
+  to its wave. IT SPAWNS AT THE PORTAL by default, where everything else on
+  this board comes from — a boss that materialises next to the hull has
+  skipped the entire journey the player defends against. `@D` is a ring D
+  cells from the hull instead, for a close look. `?enemykill=1` kills what it
+  spawned and reports whether the BODY left the scene: makeDebris read
+  `material.color` straight, a ShaderMaterial has none, so it THREW inside
+  killCreature before the scene.remove that follows — the boss died, no debris
+  appeared, and the corpse stood on the board forever — it used to
   land on a neighbouring cell, which is a boss nobody has seen walk.
   `?enemy=jelly:1` is the boss.
   A UNIT'S `tick` TAKES ABSOLUTE TIME, not dt: the board calls

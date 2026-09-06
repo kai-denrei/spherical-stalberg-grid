@@ -29,14 +29,20 @@ export const JELLY_TUNE = {
   // (detail+1)^2, NOT 4^detail — 4 gives 500 triangles, not 5,120. 12 is
   // 3,380: enough to keep a tapering appendage smooth, and a fortieth of the
   // mesh the imported version wanted.
-  detail: 12,
-  tentacles: 9,
-  tentLen: 0.66,        // how far a lobe pulls out, as a fraction of the radius
-  tentSharp: 11.0,      // lobe falloff — higher is a thinner, longer appendage
-  // SPLAYED, not hanging. At 0.55 they pointed almost straight down and the
-  // silhouette lost them entirely — a mass with appendages you cannot see is
-  // just a mass. Around the equator and a little under is where they read.
-  tentDroop: 0.22,      // how far below the equator they sit, 0..1
+  detail: 15,
+  tentacles: 7,
+  tentLen: 1.15,        // how far a lobe pulls out, as a fraction of the radius
+  // 6, not 16. A pow(cos, 16) lobe is NARROWER THAN THE TRIANGLE SPACING at
+  // this density, so it samples as a faceted wedge — the appendages came out
+  // as flat fins rather than limbs. Wide-and-heavy reads as more ominous than
+  // thin-and-spiky anyway: a thin spike is a weapon, a heavy hanging limb is
+  // a thing that does not need one.
+  tentSharp: 6.0,       // lobe falloff — higher is a thinner, longer appendage
+  // LONGER AND LOWER (operator: "more ominous"). Long enough to trail well
+  // clear of the body and angled below the equator so they drag rather than
+  // radiate — a thing with limbs held out is a starfish; a thing with limbs
+  // hanging off it is coming toward you.
+  tentDroop: 0.62,      // how far below the equator they sit, 0..1
   lumps: 0.14,          // low-frequency irregularity, so it is not a ball
   wobbleAmp: 0.075,     // vertex-shader displacement, fraction of the radius
   wobbleFreq: 1.9,
