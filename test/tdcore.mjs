@@ -18,13 +18,17 @@ const check = (name, cond, detail = '') => {
 // --- enemyspec -----------------------------------------------------------
 console.log('enemyspec:');
 check('every intro type has a spec', INTROS.every((iv) => ENEMY_SPEC[iv.type]));
-check('every spec type has an intro', Object.keys(ENEMY_SPEC).every((t) => INTROS.some((iv) => iv.type === t)));
+// a spec is either in the programme or explicitly SHELVED. The two checks
+// below are one rule read from both ends, so a shelved unit cannot quietly
+// become a forgotten one: shelving costs a flag, and the flag is asserted.
+check('every unshelved spec type has an intro',
+  Object.keys(ENEMY_SPEC).every((t) => ENEMY_SPEC[t].shelved || INTROS.some((iv) => iv.type === t)));
+check('a shelved spec is NOT in the programme',
+  Object.keys(ENEMY_SPEC).every((t) => !ENEMY_SPEC[t].shelved || !INTROS.some((iv) => iv.type === t)));
 check('intro waves are 1..12 in order',
   INTROS.every((iv, i) => iv.wave === i + 1));
 check('every intro type has spec and tint',
   INTROS.every((iv) => ENEMY_SPEC[iv.type] && CREATURE_TINTS[iv.type] !== undefined));
-check('every spec type appears in intros',
-  Object.keys(ENEMY_SPEC).every((k) => INTROS.some((iv) => iv.type === k)));
 check('boss is not rammable',
   Object.values(ENEMY_SPEC).every((s) => !(s.boss && s.rammable)));
 check('bounties positive everywhere',

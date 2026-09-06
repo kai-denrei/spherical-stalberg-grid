@@ -138,7 +138,12 @@ export const ENEMY_SPEC = {
   // accelerate when hit, it just keeps coming, which is a different problem to
   // solve than a thing that speeds up. `mesh: 'jelly'` is the flag the board
   // reads to build it out of UNITS instead of dotShapePts.
-  jelly:     { hp: 9, speed: 0.42, size: 1.15, rammable: false, heartDmg: 4, boss: true, bounty: 52, mesh: 'jelly' },
+  // `shelved` is the flag, not the missing INTROS line: a spec with no intro
+  // is otherwise indistinguishable from one somebody FORGOT to introduce,
+  // which is the bug the tdcore invariant exists to catch. Shelved means
+  // deliberately not in the wave programme — reachable from the viewer, the
+  // lore and `?enemy=`, absent from play.
+  jelly:     { hp: 9, speed: 0.42, size: 1.15, rammable: false, heartDmg: 4, boss: true, bounty: 52, mesh: 'jelly', shelved: true },
   // --- the invasion roster (waves 13+): three styles the ladder never had.
   // jink stacks a second, faster weave on top of erratic; tactician holds
   // at the edge of tower coverage until minions arrive as cover, then
@@ -169,13 +174,13 @@ export const INTROS = [
   { wave: 13, type: 'saucer',    label: 'SAUCER',        role: 'small · agile · weaves like a dogfight' },
   { wave: 14, type: 'shellback', label: 'SHELLBACK',     role: 'waits at tower range for cover · then bursts' },
   { wave: 15, type: 'phantom',   label: 'PHANTOM',       role: 'optical camo · a ghost on the radar' },
-  // THE SECTOR NOW ENDS ON A BOSS, which is why this is wave 16 rather than a
-  // replacement for one of the fifteen. Ending on the Phantom — a stealth
-  // unit — is an anticlimax; ending on a mass that does not accelerate, does
-  // not hide and simply arrives is a different closing problem. It costs the
-  // sector one extra wave: `wavesPerSector` moves 15 -> 16 with it, and that
-  // is a real pacing change rather than a free addition.
-  { wave: 16, type: 'jelly',     label: 'THE MASS · BOSS', role: 'slow · 9 hp · 4 heart damage · does not accelerate, does not stop' },
+  // THE MASS IS SHELVED (2026-09-06, operator). Its wave-16 line is commented
+  // out, NOT deleted, and `ENEMY_SPEC.jelly` stays: the unit is finished, it
+  // is in the viewer, the lore and `?enemy=jelly:1`, and it is the board's
+  // only mesh-bodied hostile — which is the thing worth keeping alive, since
+  // deleting it would take the one exercise of that path with it. Restoring
+  // the boss is this line plus `wavesPerSector` 15 -> 16 in td-tab.
+  // { wave: 16, type: 'jelly',     label: 'THE MASS · BOSS', role: 'slow · 9 hp · 4 heart damage · does not accelerate, does not stop' },
 ];
 
 // deterministic per-wave RNG (no Math.random — keeps the plan reproducible

@@ -437,7 +437,9 @@ export function initSniperTab(root) {
   // jink weave, the optical camo. Nothing new is invented here; the sniper
   // reads ENEMY_SPEC exactly as the board does, so a phage behaves like a
   // phage and a shellback soaks like a shellback.
-  const REAL_TYPES = Object.keys(ENEMY_SPEC);
+  // minus the SHELVED ones — the point of this list is that it is the board's
+  // roster, so it has to track the shelf as well as the additions.
+  const REAL_TYPES = Object.keys(ENEMY_SPEC).filter((k) => !ENEMY_SPEC[k].shelved);
   function spawnReal(type) {
     const id = type && ENEMY_SPEC[type] ? type
       : REAL_TYPES[Math.floor(rng() * REAL_TYPES.length) % REAL_TYPES.length];
