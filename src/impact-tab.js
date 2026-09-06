@@ -22,22 +22,22 @@
 import * as THREE from '../vendor/three.module.js';
 import { OrbitControls } from '../vendor/OrbitControls.js';
 import GUI from '../vendor/lil-gui.esm.js';
-import { makeBloom } from './postfx.js?v=47dab9d6';
-import { bakeGalaxyCube } from './galaxybake.js?v=47dab9d6';
-import { SKY_PRESET } from './galaxyseed.js?v=47dab9d6';
+import { makeBloom } from './postfx.js?v=cdc908c4';
+import { bakeGalaxyCube } from './galaxybake.js?v=cdc908c4';
+import { SKY_PRESET } from './galaxyseed.js?v=cdc908c4';
 import {
   IMPACT_TUNE, IMPACT_KNOBS, IMPACT_FAMILIES, IMPACT_RECIPES,
   makeImpactParams, clampImpactParams, formatImpactTune,
   makeImpactBurst, orientImpact,
-} from './impactfx.js?v=47dab9d6';
-import { buildCreature, preloadMkcx } from './units.js?v=47dab9d6';
-import { sentryUrl, SENTRY_FAMILIES } from './sentry.js?v=47dab9d6';
-import { loadGlb } from './glbmodels.js?v=47dab9d6';
-import { TOWERS, TOWER_BY_KEY } from './towers.js?v=47dab9d6';
+} from './impactfx.js?v=cdc908c4';
+import { buildCreature, preloadMkcx } from './units.js?v=cdc908c4';
+import { sentryUrl, SENTRY_FAMILIES } from './sentry.js?v=cdc908c4';
+import { loadGlb } from './glbmodels.js?v=cdc908c4';
+import { TOWERS, TOWER_BY_KEY } from './towers.js?v=cdc908c4';
 import {
   SENTRY_FX, fxFor, tuneFor, formatSentryFx, formatAllSentryFx,
-} from './sentryfx.js?v=47dab9d6';
-import { deepLink, wireDeepLink } from './deeplink.js?v=47dab9d6';
+} from './sentryfx.js?v=cdc908c4';
+import { deepLink, wireDeepLink } from './deeplink.js?v=cdc908c4';
 
 // The surfaces a hit can land on. Each is a real answer to "what did I just
 // shoot", and the SPARK COLOUR is the biggest part of that answer — a chip
@@ -65,7 +65,7 @@ export function initImpactTab(root) {
   const scene = new THREE.Scene();
   scene.background = new THREE.Color(0x05070a);
   const camera = new THREE.PerspectiveCamera(42, 1, 0.01, 200);
-  camera.position.set(2.9, 1.5, 3.6);
+  camera.position.set(7.6, 2.9, 4.6);
 
   // THE GAME'S RIG, not an inspection rig: an effect tuned under gentle
   // studio light is wrong the moment it fires on the board.
@@ -87,7 +87,7 @@ export function initImpactTab(root) {
   const controls = new OrbitControls(camera, renderer.domElement);
   controls.enableDamping = true;
   controls.dampingFactor = 0.08;
-  controls.target.set(0, 0.95, 0);
+  controls.target.set(0, 0.85, 2.0);
 
   // THE SUBJECT. The lab's job is now: pick a sentry, tune ITS muzzle and
   // ITS impact, export the result as the default. So the panel edits a
@@ -121,6 +121,7 @@ export function initImpactTab(root) {
     slow: 1.0,                  // time scale: an impact is 400ms and you will miss it
     trail: true,                // leave scorches standing
     showMuzzle: true,           // fire the muzzle alongside the impact
+    showShot: true,             // ...and the flight between them
     size: 1.0,                  // ONE number scales the whole hit
     ...makeImpactParams(),
   };
@@ -169,7 +170,7 @@ export function initImpactTab(root) {
 
   // the floor, so the sparks that skid off the wall have somewhere to land
   const floor = new THREE.Mesh(
-    new THREE.PlaneGeometry(14, 14),
+    new THREE.PlaneGeometry(16, 16),
     new THREE.MeshStandardMaterial({ color: 0x0d1116, roughness: 1, metalness: 0 }));
   floor.rotation.x = -Math.PI / 2;
   scene.add(floor);
@@ -185,14 +186,22 @@ export function initImpactTab(root) {
   const shooters = { tank: null, sentry: null };
   // the barrel tips, in world space. They track the shooters' own stand-off:
   // a muzzle flash that fires where the gun is not is worse than none.
-  const MUZZLE = { tank: [-1.75, 0.55, 1.9], sentry: [-1.75, 1.15, 1.9] };
+  // THE GUN IS BEHIND THE WALL'S CENTRE, not beside it. It used to stand at
+  // x = -1.75 while the wall sat at the origin, so every shot crossed the
+  // stage diagonally and clipped the plate's edge from 2.3 units away — the
+  // operator's "not aligned in front of the sentries, and too close". The
+  // shot now runs straight down -Z from the muzzle to the middle of the
+  // plate, and the CAMERA is what moves off-axis, so the whole flight is
+  // side-on and a beam is something you can see the length of.
+  const STANDOFF = 4.6;
+  const MUZZLE = { tank: [0, 0.55, STANDOFF - 0.5], sentry: [0, 1.15, STANDOFF - 0.5] };
   // whichever is actually standing owns the barrel height
   const muzzlePoint = () => (shooters.sentry ? MUZZLE.sentry : MUZZLE.tank);
   preloadMkcx('mkcx2').then(() => {
     const t = buildCreature('mkcx2', {});
     if (!t) return;
     t.scale.setScalar(0.9);
-    t.position.set(-1.75, 0, 2.3);
+    t.position.set(0, 0, STANDOFF);
     t.rotation.y = Math.PI;      // facing the wall
     shooters.tank = t;
     scene.add(t);
@@ -218,7 +227,7 @@ export function initImpactTab(root) {
       const b = new THREE.Box3().setFromObject(o);
       const sz = b.getSize(new THREE.Vector3());
       o.scale.setScalar(1.3 / Math.max(sz.y, 1e-6));
-      o.position.set(-1.75, 0, 2.3);
+      o.position.set(0, 0, STANDOFF);
       o.rotation.y = Math.PI;
       shooters.sentry = o;
       scene.add(o);
@@ -242,6 +251,116 @@ export function initImpactTab(root) {
     if (shooters.tank) shooters.tank.visible = !haveSentry;
   }
   const shooterLabel = () => (shooters.sentry ? subject : `tank (no model for ${subject})`);
+
+  // --- THE SHOT ------------------------------------------------------------
+  //
+  // Operator: "currently choosing plasma or laser does not display a long
+  // plasma or laser." It did not, because this lab only ever drew the two
+  // ENDS of a weapon — the muzzle and the impact — and nothing in between. A
+  // lab that covers a weapon's FX has to show the weapon: the flight is where
+  // a lance and a thrower differ most, and it was the missing third of the
+  // three the tab is named for.
+  //
+  // Drawn with the same idiom as the sentry range, deliberately: a line for
+  // light and a spray of dots for matter. Same weapon, same look, two tabs.
+  const flights = [];            // { obj, left, dur } — shots in the air
+  // WHAT COLOUR IS THE SHOT. Down the profile's own answers in the order they
+  // are authoritative: an explicit beamColor first, then whichever impact
+  // family carries this weapon's identity. The Plasma has no beamColor and no
+  // spark — it is splash and ember — so a naive `beamColor || spark ||
+  // default` threw a WARM ORANGE spray out of a cyan thrower.
+  function shotColor() {
+    const p = prof();
+    const c = (p.impact && p.impact.colors) || {};
+    return (p.shot && p.shot.beamColor)
+      || c.splash || c.spark || c.ember || c.flash || 0xffd08a;
+  }
+
+  function spawnShot(from, to, kind, colorHex) {
+    const grp = new THREE.Group();
+    const c = new THREE.Color(colorHex);
+    if (kind === 'lance') {
+      // thin, straight, HELD — a doubled line so it has a hot core inside a
+      // halo rather than reading as a debug ray
+      for (const [w, op] of [[4, 0.32], [1, 1]]) {
+        const g = new THREE.BufferGeometry().setFromPoints([from.clone(), to.clone()]);
+        grp.add(new THREE.Line(g, new THREE.LineBasicMaterial({
+          color: c, transparent: true, opacity: op,
+          blending: THREE.AdditiveBlending, depthWrite: false, linewidth: w })));
+      }
+    } else if (kind === 'throw') {
+      // MATTER: dots along the line, scattered off it, widening toward the
+      // far end the way a spray does and dimming as it goes
+      const N = 90;
+      const pos = new Float32Array(N * 3);
+      const col = new Float32Array(N * 3);
+      const dir = to.clone().sub(from);
+      const side = new THREE.Vector3(-dir.z, 0, dir.x).normalize();
+      const up = new THREE.Vector3().crossVectors(dir, side).normalize();
+      for (let i = 0; i < N; i++) {
+        const u = (i + 1) / N;
+        const spread = 0.03 + u * 0.30;
+        const h1 = Math.sin(i * 12.9898 + flights.length) * 43758.5453;
+        const h2 = Math.sin(i * 78.233 + flights.length) * 43758.5453;
+        const p1 = from.clone().addScaledVector(dir, u)
+          .addScaledVector(side, (h1 - Math.floor(h1) - 0.5) * spread)
+          .addScaledVector(up, (h2 - Math.floor(h2) - 0.5) * spread);
+        pos[i * 3] = p1.x; pos[i * 3 + 1] = p1.y; pos[i * 3 + 2] = p1.z;
+        const b = 1 - u * 0.5;
+        col[i * 3] = c.r * b; col[i * 3 + 1] = c.g * b; col[i * 3 + 2] = c.b * b;
+      }
+      const g = new THREE.BufferGeometry();
+      g.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+      g.setAttribute('color', new THREE.BufferAttribute(col, 3));
+      grp.add(new THREE.Points(g, new THREE.PointsMaterial({
+        size: 8, sizeAttenuation: false, vertexColors: true,
+        transparent: true, opacity: 1,
+        blending: THREE.AdditiveBlending, depthWrite: false })));
+    } else if (kind !== 'field') {
+      // a ROUND is a head with a trail — the profile's own projPx and trail,
+      // so the lab draws the tracer the board would actually fire
+      const sh = prof().shot || {};
+      const N = Math.max(2, Math.round(sh.trail ?? 4) + 1);
+      const pos = new Float32Array(N * 3);
+      const col = new Float32Array(N * 3);
+      const dir = to.clone().sub(from).normalize();
+      for (let i = 0; i < N; i++) {
+        const p1 = to.clone().addScaledVector(dir, -i * 0.12);
+        pos[i * 3] = p1.x; pos[i * 3 + 1] = p1.y; pos[i * 3 + 2] = p1.z;
+        const b = 1 - i / N;
+        col[i * 3] = c.r * b; col[i * 3 + 1] = c.g * b; col[i * 3 + 2] = c.b * b;
+      }
+      const g = new THREE.BufferGeometry();
+      g.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+      g.setAttribute('color', new THREE.BufferAttribute(col, 3));
+      grp.add(new THREE.Points(g, new THREE.PointsMaterial({
+        size: sh.projPx ?? 5, sizeAttenuation: false, vertexColors: true,
+        transparent: true, opacity: 1,
+        blending: THREE.AdditiveBlending, depthWrite: false })));
+    }
+    if (!grp.children.length) return;   // a field weapon throws nothing
+    scene.add(grp);
+    // a lance is one long burst; a throw is a fast repeated spit; a round is
+    // gone the instant it lands
+    const life = kind === 'lance' ? 0.6 : (kind === 'throw' ? 0.18 : 0.12);
+    flights.push({ obj: grp, left: life, dur: life });
+  }
+  function stepShots(dt) {
+    for (let i = flights.length - 1; i >= 0; i--) {
+      const e = flights[i];
+      e.left -= dt;
+      const u = Math.max(0, e.left / e.dur);
+      e.obj.traverse((o) => { if (o.material) o.material.opacity = u; });
+      if (e.left <= 0) {
+        scene.remove(e.obj);
+        e.obj.traverse((o) => {
+          if (o.geometry) o.geometry.dispose();
+          if (o.material) o.material.dispose();
+        });
+        flights.splice(i, 1);
+      }
+    }
+  }
 
   // --- firing ---------------------------------------------------------------
   const live = [];        // every burst currently ticking
@@ -348,6 +467,16 @@ export function initImpactTab(root) {
     // Firing them separately would let a muzzle and an impact be tuned to
     // look wrong together while each looks right alone, which is exactly the
     // mistake a per-effect lab invites.
+    // THE FLIGHT, between the two ends. `showShot` so it can be turned off
+    // while tuning an impact in isolation — a lance held across the frame is
+    // exactly what you do not want behind a spark you are looking at closely.
+    if (P.showShot) {
+      const m = muzzlePoint();
+      spawnShot(new THREE.Vector3(m[0], m[1], m[2]),
+        new THREE.Vector3(point[0], point[1], point[2]),
+        (prof().shot && prof().shot.kind) || 'round',
+        shotColor());
+    }
     if (P.showMuzzle) {
       const mz = prof().muzzle;
       const mNames = Array.isArray(mz.recipe) ? mz.recipe : (IMPACT_RECIPES[mz.recipe] || []);
@@ -385,7 +514,8 @@ export function initImpactTab(root) {
     pullFromProfile();
   });
   gui.add(P, 'recipe', ['profile', 'shell', 'laser', 'plasma', 'light', 'custom']).name('recipe');
-  gui.add(P, 'showMuzzle').name('show muzzle too');
+  gui.add(P, 'showMuzzle').name('show muzzle');
+  gui.add(P, 'showShot').name('show the shot');
   gui.add(P, 'surface', Object.keys(SURFACES)).name('surface').onChange(paintWall);
   gui.add({ shoot: () => fire() }, 'shoot').name('FIRE (F)');
   gui.add(P, 'auto').name('auto-fire');
@@ -491,6 +621,7 @@ export function initImpactTab(root) {
       sinceFire += raw;
       if (sinceFire >= P.every) { sinceFire = 0; fire(); }
     }
+    stepShots(dt);
     for (let i = live.length - 1; i >= 0; i--) {
       if (live[i].userData.tick(dt)) continue;
       // KEEP THE SCORCHES. Everything else is over in two seconds; a wall you
