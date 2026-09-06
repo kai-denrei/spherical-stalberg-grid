@@ -207,6 +207,15 @@ token — the corner badge was retired from the game view).
   `scaleMissile` into model units. Fire-and-forget: the lock drops the
   instant a cell is away, or one launcher empties itself into one walker
   while the wave goes past.
+  A LASER HUGS THE PLANET. The lance is drawn AND measured along a great
+  circle at the muzzle's own radius (`arcPoint` / `projectToArc`, arc.js), not
+  as a straight world chord. A great circle IS the straight line on a sphere,
+  so nothing bends that should not — but a chord across the lance's seven
+  cells dives 0.49 CELLS below the surface at its midpoint, which is what
+  "the beam pierces the curvature" looks like. It was not only cosmetic: the
+  sag is 0.0389 against a hit radius of `cellSide * 0.5` = 0.04, so a body
+  standing on the ground at mid-range sat 97% of the way out of a beam the
+  picture showed going straight through it. test/arc.mjs pins those numbers.
   `src/shotfx.js` OWNS WHAT A SHOT LOOKS LIKE IN FLIGHT — the tracer, the
   slow-field bolt, the seeker cone, the ballistic `arcLift`, and the board's
   LANCE_LOOK / THROW_LOOK. These were private to td-tab's closure, so the

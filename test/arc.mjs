@@ -176,5 +176,49 @@ console.log('the toe that makes them cross:');
   check('a zero toe never crosses', crossingForToe(0.2, 0) === Infinity);
 }
 
+// --- THE LANCE HUGS THE PLANET -------------------------------------------
+// Operator: lasers "too often pierce through the curvature and it looks
+// uncanny". They did — the lance was drawn and MEASURED as a straight world
+// chord, and a chord is not a small error at this reach.
+//
+// The numbers are the argument, so they are pinned here. cellSide is 0.08 and
+// the lance reaches seven cells; its hit radius is cellSide * 0.5 = 0.04 for
+// the smallest bodies. A chord across that arc sags 0.0389 at its midpoint —
+// 97% of the hit radius spent on geometry before the target has moved at all.
+{
+  const CELL = 0.08, REACH = 7 * CELL, HIT_R = CELL * 0.5;
+  const from = [0, 1, 0];              // a muzzle at the pole, on the surface
+  const dir = [1, 0, 0];               // unit tangent
+  const mid = arcPoint(from, dir, REACH / 2);   // a body standing ON the ground
+
+  // the straight chord the code used to measure against
+  const end = arcPoint(from, dir, REACH);
+  const d = [end[0] - from[0], end[1] - from[1], end[2] - from[2]];
+  const dl = Math.hypot(d[0], d[1], d[2]);
+  const u = [d[0] / dl, d[1] / dl, d[2] / dl];
+  const w = [mid[0] - from[0], mid[1] - from[1], mid[2] - from[2]];
+  const proj = w[0] * u[0] + w[1] * u[1] + w[2] * u[2];
+  const chordOff = Math.hypot(w[0] - u[0] * proj, w[1] - u[1] * proj, w[2] - u[2] * proj);
+
+  check('the chord sags almost exactly one hit radius at mid-range',
+    Math.abs(chordOff - chordSag(REACH)) < 1e-9 && chordOff > HIT_R * 0.9);
+  check('...which left 3% of the radius for the target being off-line',
+    chordOff / HIT_R > 0.95 && chordOff < HIT_R);
+
+  const arcOff = projectToArc(from, dir, mid).off;
+  check('on the ARC a body on the beam measures zero off it', arcOff < 1e-9);
+  check('the arc recovers the whole sag', chordOff - arcOff > 0.038);
+
+  // and the far end must still be found: an arc test that lost the endpoint
+  // would trade one miss for another
+  const far = projectToArc(from, dir, arcPoint(from, dir, REACH));
+  check('the far end of the reach is still on the beam',
+    far.off < 1e-9 && Math.abs(far.s - REACH) < 1e-9);
+  // ...while something genuinely beside it is still missed
+  const beside = arcPoint(from, [0, 0, 1], REACH / 2);
+  check('a body off to one side is still not hit',
+    projectToArc(from, dir, beside).off > HIT_R);
+}
+
 if (failures) { console.error(`arc: ${failures} FAILED`); process.exit(1); }
 console.log('arc: all good');
