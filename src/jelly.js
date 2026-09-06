@@ -215,6 +215,13 @@ export function makeJelly(cols = {}, tune = JELLY_TUNE, seed = 3) {
     if (h.value > 0) h.value = Math.max(0, h.value - dt * 1.4);
   };
   mesh.userData.hit = () => { mat.uniforms.uHit.value = tune.hitPulse; };
+  // HOW THIS UNIT IS TINTED. The board tints a slowed enemy by writing
+  // `material.color`, which a ShaderMaterial does not have — so it says here
+  // how to do it instead, rather than the board special-casing a type.
+  // Passing null restores the body's own colour.
+  mesh.userData.setTint = (hex) => {
+    mat.uniforms.uColor.value.set(hex === null || hex === undefined ? body : hex);
+  };
   mesh.userData.kind = 'mesh';
   // THE UNIT CONTRACT, which test/units.mjs enforces for every entry in UNITS.
   // baseScale is 1 because jellyGeometry already normalises its extent — the

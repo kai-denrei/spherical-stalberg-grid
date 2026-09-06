@@ -52,6 +52,19 @@ token — the corner badge was retired from the game view).
   fires and the first version of the watchdog reported a clean kill while
   leaving two live processes. Check for leaks with
   `ps -eo pid,ppid,args | grep -- --headless`.
+- `#tab?a=1` AND `?a=1#tab` BOTH WORK NOW. `src/url.js` runs before anything
+  else (before roster.js, which reads params during its own module evaluation)
+  and lifts a fragment query into the real search string, search winning on a
+  collision. Every tab reads `location.search`, so the hash form used to be
+  silently ignored — the tab opened on its default and looked broken. That cost
+  three debugging sessions (astro crew, shooting lab, units viewer) before it
+  was fixed rather than explained. `test/url.mjs` pins the merge.
+- `?enemy=<type>[:N]` PUTS ONE ON THE BOARD NOW, beside the hull, alive, on the
+  real path, camera in third person — for looking at a unit next to the tank at
+  the game's own scale rather than on the viewer's turntable or after playing
+  to its wave. `?enemy=jelly:3` is the boss. A unit that needs a special tint
+  path declares `userData.setTint(hex|null)`; the board prefers it over writing
+  `material.color`, which a ShaderMaterial does not have.
 - Headless verification: Chrome with `--use-angle=swiftshader
   --enable-unsafe-swiftshader` (NOT `--disable-gpu`, it kills WebGL).
   Headless WITHOUT those flags uses the real M4 through ANGLE Metal
