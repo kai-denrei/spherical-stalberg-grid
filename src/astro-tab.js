@@ -17,7 +17,8 @@ import { bakeGalaxyCube } from './galaxybake.js';
 import { SKY_PRESET } from './galaxyseed.js';
 import { LOOKS } from './looks.js';
 import { buildCreature, preloadMkcx, preloadAstronaut, preloadAstronauts, makeAstronaut,
-  ASTRONAUT_IDS, preloadContainer, makeContainerFixture } from './units.js';
+  ASTRONAUT_IDS, preloadContainer, makeContainerFixture,
+  preloadDish, makeDishFixture } from './units.js';
 import { mulberry32 } from './rng.js';
 import { applyWeatheredMaterial } from './cine/materials.js';
 import { deepLink, wireDeepLink } from './deeplink.js';
@@ -116,7 +117,8 @@ export function initAstroTab(root) {
     // NOT `seed`: that name is the whole app's board seed, and putting it in
     // this tab's query took the router to the grid tab instead of here.
     crewSeed: 7,            // the wander's stream — same seed, same shift
-    turret: true, cargo: true,   // the two things they walk BETWEEN
+    turret: true, cargo: true,   // the things they walk BETWEEN
+    dish: true, dishH: 22,       // NASA's 70 m DSN antenna, and its height in metres
     personH: PERSON_M,      // metres, tall
     tankLen: TANK_LEN_M,    // metres, longest dimension
     clear: 1.0,             // metres of daylight between the hull and the walk
@@ -176,7 +178,7 @@ export function initAstroTab(root) {
   preloadAstronauts().then((protos) => {
     if (!protos.length) return;
     crewProtos = protos;
-    if (P.path === 'crew') { buildProps(); buildCrew(); syncMode(); }
+    if (P.path === 'crew') { buildProps(); buildDish(); buildCrew(); syncMode(); }
   });
 
   // Re-sizing has to be re-doable, not a one-shot at load: the slider moves
@@ -275,7 +277,8 @@ export function initAstroTab(root) {
     tankR = 0.5 * Math.hypot(sz.x, sz.z);
     // the floor and the frame have to hold the whole SHIFT, not just the hull
     const reach = P.path === 'crew'
-      ? crewRing() + Math.max(2, P.personH * 2)
+      ? Math.max(crewRing() + Math.max(2, P.personH * 2),
+        P.dish ? crewRing() * 2.6 : 0)     // the dish stands well behind the ring
       : tankR + Math.max(0, P.clear) + Math.max(2, metres * 0.25);
     layFloor(reach);
     frame(P.path === 'crew' ? reach * 1.5 : metres);
@@ -303,8 +306,8 @@ export function initAstroTab(root) {
   // cannot skate: a gait whose cycle outruns its travel is the tell.
   const crew = [];                 // { obj, rng, at, to, p0, p1, u, legT, gait, phase, timer }
   let crewProtos = [];             // every variant, in ASTRONAUT_IDS order
-  let turret = null, cargo = null;
-  let turretLoading = false, cargoLoading = false;
+  let turret = null, cargo = null, dish = null;
+  let turretLoading = false, cargoLoading = false, dishLoading = false;
   const STATION = { tank: 'tank', turret: 'turret', cargo: 'cargo' };
 
   // ONE RING, THREE BEARINGS. The stations sit on a circle about the hull
@@ -369,6 +372,23 @@ export function initAstroTab(root) {
       });
     }
   }
+  function buildDish() {
+    if (!P.dish || dish || dishLoading) return;
+    dishLoading = true;
+    preloadDish().then((ok) => {
+      if (!ok) { dishLoading = false; return; }
+      dish = makeDishFixture();
+      if (!dish) return;
+      // THE DISH IS THE SCALE ARGUMENT. A 70 m antenna beside a 10 m hull and
+      // a 1.8 m person is the whole reason to put all three on one floor —
+      // it is the only object here big enough to make the tank look small.
+      dish.scale.setScalar(P.dishH);
+      scene.add(dish);
+      placeProps();
+      if (crewProbe) console.log(`CREWPROPS dish placed at ${P.dishH} m`);
+    });
+  }
+
   function placeProps() {
     if (turret) {
       const t = stationPos(STATION.turret);
@@ -380,6 +400,14 @@ export function initAstroTab(root) {
       cargo.position.set(c.x, 0, c.z);
       // the open doors face the tank, or they walk into a wall
       cargo.rotation.y = Math.atan2(-c.x, -c.z);
+    }
+    if (dish) {
+      // BEHIND everything and off the walk: it is scenery, not a station, and
+      // a 70 m dish standing on the ring would simply be the whole picture
+      const R = crewRing();
+      dish.scale.setScalar(P.dishH);
+      dish.position.set(-R * 1.1, 0, -R * 2.2);
+      dish.rotation.y = Math.atan2(R * 1.1, R * 2.2);
     }
   }
 
@@ -451,7 +479,8 @@ export function initAstroTab(root) {
     stage.visible = !on;
     if (turret) turret.visible = on && P.turret;
     if (cargo) cargo.visible = on && P.cargo;
-    if (on) { buildProps(); if (!crew.length) buildCrew(); }
+    if (dish) dish.visible = on && P.dish;
+    if (on) { buildProps(); buildDish(); if (!crew.length) buildCrew(); }
     for (const m of crew) m.obj.visible = on && m.phase !== 'inside';
     placeProps();
     sizeTank(P.tankLen);   // re-lays the floor and re-frames for the mode
@@ -524,6 +553,8 @@ export function initAstroTab(root) {
   gCrew.add(P, 'crewSeed', 0, 999, 1).name('seed').onChange(() => buildCrew());
   gCrew.add(P, 'turret').name('turret').onChange(() => { buildProps(); syncMode(); });
   gCrew.add(P, 'cargo').name('container').onChange(() => { buildProps(); syncMode(); });
+  gCrew.add(P, 'dish').name('70 m dish').onChange(() => { buildDish(); syncMode(); });
+  gCrew.add(P, 'dishH', 5, 80, 1).name('dish height (m)').onChange(() => placeProps());
   gui.add(P, 'stride', 0.2, 4, 0.05).name('metres / s');
   gui.add(P, 'personH', 0.4, 4, 0.05).name('person height (m)').onChange((v) => sizeAstro(v));
   gui.add(P, 'tankLen', 2, 20, 0.1).name('tank length (m)').onChange((v) => sizeTank(v));

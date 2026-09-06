@@ -16,14 +16,14 @@
 
 import * as THREE from '../vendor/three.module.js';
 import { EMOTION_IDS, emotion, phosphorFor } from './emotions.js';
-import { printPhase, printOffset, printOn } from './printpath.js?v=8cf6cbc3';
+import { printPhase, printOffset, printOn } from './printpath.js?v=9a05dfc2';
 import { loadGlb, loadGlbWithClips, mergeByMaterial, fitModel, tintModel, makeShellRack,
-  addEdgeOutlines, makeHeatSleeve } from './glbmodels.js?v=8cf6cbc3';
-import { CREATURES, waveJelly, swimWave, spherePts, bulletPts, missilePts, heartPts, torusPts, towerHeadPts, enemyDotPts, portalPts, personPts } from './creatures.js?v=8cf6cbc3';
-import { TOWER_FEEL, TOWER_HEADS, headKindFor } from './towerfeel.js?v=8cf6cbc3';
+  addEdgeOutlines, makeHeatSleeve } from './glbmodels.js?v=9a05dfc2';
+import { CREATURES, waveJelly, swimWave, spherePts, bulletPts, missilePts, heartPts, torusPts, towerHeadPts, enemyDotPts, portalPts, personPts } from './creatures.js?v=9a05dfc2';
+import { TOWER_FEEL, TOWER_HEADS, headKindFor } from './towerfeel.js?v=9a05dfc2';
 import { STARGATE_PTS, STARGATE_STROKE,
-  HORIZON_N, stargateHorizon } from './stargate.js?v=8cf6cbc3';
-import { ENEMY_SPEC } from './enemyspec.js?v=8cf6cbc3';
+  HORIZON_N, stargateHorizon } from './stargate.js?v=9a05dfc2';
+import { ENEMY_SPEC } from './enemyspec.js?v=9a05dfc2';
 
 function normalizeToUnit(group) {
   group.updateMatrixWorld(true);
@@ -1626,6 +1626,69 @@ let terraProto = null, terraLoad = null;
 const TERRA_PIVOTS = ['Travel_Carriage', 'Traverse_Carriage', 'Mast_Stage_1',
   'Mast_Stage_2', 'Arm_Swing', 'Arm_Shoulder', 'Arm_Elbow', 'Arm_Wrist',
   'Nozzle_Cone', 'Nozzle_Heater'];
+
+// --- THE 70-METRE DISH -----------------------------------------------------
+//
+// NASA's Deep Space Network antenna, from science.nasa.gov/3d-resources.
+// Terms, and the checks they required, are in ATTRIBUTIONS.md — the short
+// version is that the assets are free and without copyright, but the NASA
+// INSIGNIA is not, so the texture was inspected before this landed. It is one
+// greyscale baked-lighting atlas with no logo, wordmark or text.
+//
+// It arrives lit rather than coloured: a single "Antenna" material carrying a
+// baked AO atlas, which is the opposite problem to the containers and the
+// terraformer (near-black authored materials that needed repainting). Here
+// the bake IS the detail, so the treatment is a lift and nothing else — tint
+// it and the panel structure the bake is drawing goes flat.
+let dishLoad = null, dishProto = null;
+export function preloadDish() {
+  if (dishLoad) return dishLoad;
+  dishLoad = loadGlb('assets/models/dish70.glb').then((scene) => {
+    if (!scene) { dishLoad = null; return false; }
+    scene.updateMatrixWorld(true);
+    // ONE UNIT TALL, feet on y=0, centred in x/z — the same contract every
+    // other cast here honours, so a caller scales by one number in its own
+    // units and never learns what the file was authored in.
+    const box = new THREE.Box3().setFromObject(scene);
+    const size = box.getSize(new THREE.Vector3());
+    const c = box.getCenter(new THREE.Vector3());
+    const k = 1 / Math.max(size.y, 1e-6);
+    const wrap = new THREE.Group();
+    scene.scale.setScalar(k);
+    scene.position.set(-c.x * k, -box.min.y * k, -c.z * k);
+    wrap.add(scene);
+    let tris = 0;
+    wrap.traverse((o) => {
+      if (!o.isMesh) return;
+      o.castShadow = true; o.receiveShadow = true;
+      const g = o.geometry;
+      if (g) tris += (g.index ? g.index.count : g.attributes.position.count) / 3;
+      for (const m of Array.isArray(o.material) ? o.material : [o.material]) {
+        if (!m || m.userData.dishLit) continue;
+        m.userData.dishLit = true;
+        // a dish is white-painted steel: keep the bake, lift it off black,
+        // and give it a little emissive so it reads under the board's light
+        // without becoming a lamp
+        if (m.color) m.color.multiplyScalar(1.35);
+        if (m.emissive) { m.emissive.setHex(0x2a3138); m.emissiveIntensity = 1; }
+        if ('roughness' in m) m.roughness = Math.min(1, (m.roughness ?? 1) * 0.9);
+        m.needsUpdate = true;
+      }
+    });
+    dishProto = wrap;
+    console.log(`DISH70 ready: ${Math.round(tris)} tris (NASA/Ames, see ATTRIBUTIONS.md)`);
+    return true;
+  });
+  return dishLoad;
+}
+
+// One dish, one unit tall. Caller owns the scale and the placement.
+export function makeDishFixture() {
+  if (!dishProto) { preloadDish(); return null; }
+  const g = dishProto.clone(true);
+  g.userData.kind = 'fixture';
+  return g;
+}
 
 export function preloadTerraformer() {
   if (terraLoad) return terraLoad;
