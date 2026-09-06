@@ -25,8 +25,8 @@
 //   hull, and then both go with it. That is what makes carrying a pair a bet
 //   rather than an optimisation.
 
-import { makeParams, clampParams, formatKnobs, knobProblems } from './knobs.js?v=b0b57145';
-import { dot3 } from './vec3.js?v=b0b57145';
+import { makeParams, clampParams, formatKnobs, knobProblems } from './knobs.js?v=961d8d19';
+import { dot3 } from './vec3.js?v=961d8d19';
 
 export const RESCUE_TUNE = {
   survivors: 6,

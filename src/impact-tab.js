@@ -47,25 +47,26 @@
 import * as THREE from '../vendor/three.module.js';
 import { OrbitControls } from '../vendor/OrbitControls.js';
 import GUI from '../vendor/lil-gui.esm.js';
-import { makeBloom } from './postfx.js?v=b0b57145';
-import { bakeGalaxyCube } from './galaxybake.js?v=b0b57145';
-import { SKY_PRESET } from './galaxyseed.js?v=b0b57145';
+import { makeBloom } from './postfx.js?v=961d8d19';
+import { bakeGalaxyCube } from './galaxybake.js?v=961d8d19';
+import { SKY_PRESET } from './galaxyseed.js?v=961d8d19';
 import {
   IMPACT_TUNE, IMPACT_KNOBS, IMPACT_FAMILIES, IMPACT_RECIPES,
   makeImpactParams, clampImpactParams, formatImpactTune,
   makeImpactBurst, orientImpact,
-} from './impactfx.js?v=b0b57145';
-import { buildCreature, preloadMkcx } from './units.js?v=b0b57145';
-import { sentryUrl, SENTRY_FAMILIES } from './sentry.js?v=b0b57145';
-import { loadGlb } from './glbmodels.js?v=b0b57145';
-import { TOWERS, TOWER_BY_KEY } from './towers.js?v=b0b57145';
+} from './impactfx.js?v=961d8d19';
+import { buildCreature, preloadMkcx } from './units.js?v=961d8d19';
+import { sentryUrl, SENTRY_FAMILIES } from './sentry.js?v=961d8d19';
+import { loadGlb } from './glbmodels.js?v=961d8d19';
+import { TOWERS, TOWER_BY_KEY } from './towers.js?v=961d8d19';
 import {
   SENTRY_FX, fxFor, tuneFor, formatSentryFx, formatAllSentryFx,
-} from './sentryfx.js?v=b0b57145';
+  resolveImpactColors, weaponColor,
+} from './sentryfx.js?v=961d8d19';
 import { makeTracerMesh, makeLightningMesh, makeSeekerMesh, aimSeeker, arcLift,
-  LANCE_LOOK, THROW_LOOK } from './shotfx.js?v=b0b57145';
+  LANCE_LOOK, THROW_LOOK } from './shotfx.js?v=961d8d19';
 import { createBeam } from './beamfx.js';
-import { deepLink, wireDeepLink } from './deeplink.js?v=b0b57145';
+import { deepLink, wireDeepLink } from './deeplink.js?v=961d8d19';
 
 // The surfaces a hit can land on. Each is a real answer to "what did I just
 // shoot", and the SPARK COLOUR is the biggest part of that answer — a chip
@@ -365,11 +366,16 @@ export function initImpactTab(root) {
   // family carries this weapon's identity. The Plasma has no beamColor and no
   // spark — it is splash and ember — so a naive `beamColor || spark ||
   // default` threw a WARM ORANGE spray out of a cyan thrower.
+  // THE WEAPON'S OWN COLOUR: what it throws if that differs from its identity,
+  // else the identity colour towers.js keeps (range ring, shop icon, tint).
+  function weaponHex() {
+    const def = TOWER_BY_KEY[subject] || TOWERS.find((t) => t.key === subject);
+    return weaponColor(subject, (def && def.color) || 0xffd08a);
+  }
   function shotColor() {
     const p = prof();
     const c = (p.impact && p.impact.colors) || {};
-    return (p.shot && p.shot.beamColor)
-      || c.splash || c.spark || c.ember || c.flash || 0xffd08a;
+    return (p.shot && p.shot.beamColor) || c.splash || c.ember || c.flash || weaponHex();
   }
 
   function spawnShot(from, to, kind, colorHex) {
@@ -587,7 +593,14 @@ export function initImpactTab(root) {
     // the SURFACE decides what a chip and a scorch look like; the WEAPON
     // decides everything else. Both matter and neither owns the other, so the
     // surface fills in only what the profile did not name.
-    const colors = { spark: s.spark, debris: s.chunk, scorch: s.scorch, ...fx.colors };
+    // THE SURFACE OWNS MATTER, THE WEAPON OWNS ENERGY, and anything the
+    // profile states beats both. Before this, a splash with no named colour
+    // fell through to impactfx's own green fallback — so twelve of the sixteen
+    // weapons threw a LASER'S green splash whatever they were.
+    const colors = resolveImpactColors(fx, {
+      surface: { spark: s.spark, debris: s.chunk, scorch: s.scorch },
+      weapon: weaponHex(),
+    });
     lastFamilies = names;
     // ...and NOTHING is a legitimate answer. Every family off means no impact
     // at all, which is what the operator asked for by unticking them; adding

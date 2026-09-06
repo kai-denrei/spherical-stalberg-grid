@@ -21,8 +21,8 @@
 //
 // Keyed by tower KEY rather than by model id, because roster 1 has no models
 // at all and still has to draw its shots.
-import { makeParams, clampParams, formatKnobs, knobProblems } from './knobs.js?v=b0b57145';
-import { IMPACT_TUNE } from './impactfx.js?v=b0b57145';
+import { makeParams, clampParams, formatKnobs, knobProblems } from './knobs.js?v=961d8d19';
+import { IMPACT_TUNE } from './impactfx.js?v=961d8d19';
 
 // The fields that USED to live on a tower def. If you are looking for why a
 // tracer is the size it is, it is here.
@@ -178,6 +178,50 @@ export const impactOf = (def) => fxFor(def).impact || DEFAULT_FX.impact;
 // effect while the panel says otherwise.
 export function tuneFor(profile, base = IMPACT_TUNE) {
   return { ...base, ...(profile && profile.tune ? profile.tune : {}) };
+}
+
+// --- WHO OWNS WHICH COLOUR ------------------------------------------------
+//
+// Operator: "the splash is green regardless of weapon, should not be the
+// case. Only green for laser."
+//
+// It was green because impactfx's makeSplash carries a green FALLBACK, and
+// twelve of the sixteen profiles never name a splash colour — so the fallback
+// was the answer for almost every weapon on the board. A per-family constant
+// buried in the effect is the wrong place for that decision.
+//
+// The rule, which is the actual fix rather than twelve more colour entries:
+//
+//   MATTER comes off the SURFACE. Sparks are chips of what you hit, debris is
+//   the plate breaking, a scorch is the mark left on it. Shoot rock and you
+//   get rock; shoot hull metal and you get hull metal. The weapon does not
+//   decide what the wall is made of.
+//
+//   ENERGY comes from the WEAPON. A flash, a shockwave ring, molten splash
+//   and embers are the round's own; they are the same whatever they land on,
+//   and their colour is how you know which gun fired. A lance is green
+//   because the LANCE is green.
+//
+// A profile may still name any of them explicitly and that always wins — the
+// Plasma's cyan splash and the Lancer's green are exactly that.
+export const MATTER_FAMILIES = ['spark', 'debris', 'scorch'];
+export const ENERGY_FAMILIES = ['flash', 'ring', 'splash', 'ember'];
+
+export function resolveImpactColors(profile, { surface = {}, weapon = 0xffd08a } = {}) {
+  const out = {};
+  for (const f of MATTER_FAMILIES) if (surface[f] !== undefined) out[f] = surface[f];
+  for (const f of ENERGY_FAMILIES) out[f] = weapon;
+  // whatever the profile states beats both, because a tuned colour is a
+  // decision somebody made on purpose
+  return { ...out, ...((profile && profile.colors) || {}) };
+}
+
+// A weapon's own colour: what it THROWS if that differs from its identity,
+// otherwise its identity. Falls back rather than throwing, because roster 1
+// has towers this table does not model.
+export function weaponColor(key, identityHex = 0xffd08a) {
+  const p = SENTRY_FX[FAMILY_ALIAS[key] || key];
+  return (p && p.shot && p.shot.beamColor) || identityHex;
 }
 
 // THE FIELDS THAT MOVED. test/sentryfx.mjs asserts no tower def carries one of

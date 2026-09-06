@@ -8,6 +8,7 @@ import { ROSTERS } from '../src/towers.js';
 import {
   SENTRY_FX, DEFAULT_FX, MOVED_FIELDS, fxFor, shotOf, muzzleOf, impactOf,
   tuneFor, formatSentryFx, formatAllSentryFx,
+  resolveImpactColors, weaponColor, MATTER_FAMILIES, ENERGY_FAMILIES,
 } from '../src/sentryfx.js';
 import { IMPACT_FAMILIES, IMPACT_RECIPES, IMPACT_TUNE } from '../src/impactfx.js';
 
@@ -67,6 +68,54 @@ for (const key of ['slow', 'relay']) {
   const p = SENTRY_FX[key];
   const names = Array.isArray(p.impact.recipe) ? p.impact.recipe : IMPACT_RECIPES[p.impact.recipe];
   check(`${key} has no impact — a field weapon never lands anywhere`, names.length === 0);
+}
+
+console.log('who owns which colour:');
+{
+  // Operator: "the splash is green regardless of weapon, should not be the
+  // case. Only green for laser." It was green because impactfx's makeSplash
+  // carries a green FALLBACK and twelve of the sixteen profiles never name a
+  // splash colour — so a per-family constant buried in the effect was
+  // answering for almost every weapon on the board.
+  const SURF = { spark: 0xaaaaaa, debris: 0xbbbbbb, scorch: 0xcccccc };
+  const WEAPON = 0x123456;
+  for (const [key, p] of Object.entries(SENTRY_FX)) {
+    const c = resolveImpactColors(p.impact, { surface: SURF, weapon: WEAPON });
+    const named = p.impact.colors || {};
+    for (const f of ENERGY_FAMILIES) {
+      const want = named[f] !== undefined ? named[f] : WEAPON;
+      if (c[f] === want) continue;
+      check(`${key}: ${f} is the weapon's, or the profile's own`, false,
+        `got 0x${(c[f] || 0).toString(16)} want 0x${want.toString(16)}`);
+    }
+    for (const f of MATTER_FAMILIES) {
+      const want = named[f] !== undefined ? named[f] : SURF[f];
+      if (c[f] === want) continue;
+      check(`${key}: ${f} is the surface's, or the profile's own`, false,
+        `got 0x${(c[f] || 0).toString(16)} want 0x${want.toString(16)}`);
+    }
+  }
+  check('every family resolves for every weapon', true);
+  // the specific report: no weapon may inherit a colour it never asked for
+  const GREEN = 0x9dffcf;           // impactfx's makeSplash fallback
+  const leaked = Object.entries(SENTRY_FX).filter(([, p]) => {
+    const c = resolveImpactColors(p.impact, { surface: SURF, weapon: WEAPON });
+    return c.splash === GREEN && (p.impact.colors || {}).splash === undefined;
+  }).map(([k]) => k);
+  check('no weapon inherits the splash fallback green', leaked.length === 0, leaked.join(','));
+  // ...and a weapon that DOES declare green keeps it
+  check("the Lancer's splash is still its own green",
+    resolveImpactColors(SENTRY_FX.lancer.impact, { surface: SURF, weapon: WEAPON }).splash
+      === SENTRY_FX.lancer.impact.colors.splash);
+  check('the Plasma keeps its cyan',
+    resolveImpactColors(SENTRY_FX.plasma.impact, { surface: SURF, weapon: WEAPON }).splash
+      === SENTRY_FX.plasma.impact.colors.splash);
+  check('a weapon with no splash colour gets the WEAPON, not a constant',
+    resolveImpactColors(SENTRY_FX.howitzer.impact, { surface: SURF, weapon: WEAPON }).splash
+      === WEAPON);
+  check('sparks still come off the SURFACE where unnamed',
+    resolveImpactColors(SENTRY_FX.rotor.impact, { surface: SURF, weapon: WEAPON }).debris
+      === SURF.debris);
 }
 
 console.log('tune folding:');

@@ -10,16 +10,16 @@
 // Every time-dependent thing is SET from t: rotors, phases, the camera.
 // A capture seeks; the live loop just calls update(t) with a running t.
 import * as THREE from '../../vendor/three.module.js';
-import { preloadPortalRing, makePortalRing } from '../units.js?v=b0b57145';
-import { bakeGalaxyCube } from '../galaxybake.js?v=b0b57145';
-import { SKY_PRESET } from '../galaxyseed.js?v=b0b57145';
-import { createWormholeTarget, RING_SPIN, TRAVEL } from './wormholebg.js?v=b0b57145';
-import { compileRail } from './rail.js?v=b0b57145';
-import { applyWeatheredMaterial } from './materials.js?v=b0b57145';
-import { makeCinemaCloud } from './cloud.js?v=b0b57145';
-import { CREATURE_TINTS, accentFor } from '../enemyspec.js?v=b0b57145';
-import { makeWirePlanet, widenWire } from './planet.js?v=b0b57145';
-import { LOOKS } from '../looks.js?v=b0b57145';
+import { preloadPortalRing, makePortalRing } from '../units.js?v=961d8d19';
+import { bakeGalaxyCube } from '../galaxybake.js?v=961d8d19';
+import { SKY_PRESET } from '../galaxyseed.js?v=961d8d19';
+import { createWormholeTarget, RING_SPIN, TRAVEL } from './wormholebg.js?v=961d8d19';
+import { compileRail } from './rail.js?v=961d8d19';
+import { applyWeatheredMaterial } from './materials.js?v=961d8d19';
+import { makeCinemaCloud } from './cloud.js?v=961d8d19';
+import { CREATURE_TINTS, accentFor } from '../enemyspec.js?v=961d8d19';
+import { makeWirePlanet, widenWire } from './planet.js?v=961d8d19';
+import { LOOKS } from '../looks.js?v=961d8d19';
 
 export const GATE_LEN = 12;
 
