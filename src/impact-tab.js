@@ -47,22 +47,22 @@
 import * as THREE from '../vendor/three.module.js';
 import { OrbitControls } from '../vendor/OrbitControls.js';
 import GUI from '../vendor/lil-gui.esm.js';
-import { makeBloom } from './postfx.js?v=07a09f79';
-import { bakeGalaxyCube } from './galaxybake.js?v=07a09f79';
-import { SKY_PRESET } from './galaxyseed.js?v=07a09f79';
+import { makeBloom } from './postfx.js?v=eba72eff';
+import { bakeGalaxyCube } from './galaxybake.js?v=eba72eff';
+import { SKY_PRESET } from './galaxyseed.js?v=eba72eff';
 import {
   IMPACT_TUNE, IMPACT_KNOBS, IMPACT_FAMILIES, IMPACT_RECIPES,
   makeImpactParams, clampImpactParams, formatImpactTune,
   makeImpactBurst, orientImpact,
-} from './impactfx.js?v=07a09f79';
-import { buildCreature, preloadMkcx } from './units.js?v=07a09f79';
-import { sentryUrl, SENTRY_FAMILIES } from './sentry.js?v=07a09f79';
-import { loadGlb } from './glbmodels.js?v=07a09f79';
-import { TOWERS, TOWER_BY_KEY } from './towers.js?v=07a09f79';
+} from './impactfx.js?v=eba72eff';
+import { buildCreature, preloadMkcx } from './units.js?v=eba72eff';
+import { sentryUrl, SENTRY_FAMILIES } from './sentry.js?v=eba72eff';
+import { loadGlb } from './glbmodels.js?v=eba72eff';
+import { TOWERS, TOWER_BY_KEY } from './towers.js?v=eba72eff';
 import {
   SENTRY_FX, fxFor, tuneFor, formatSentryFx, formatAllSentryFx,
-} from './sentryfx.js?v=07a09f79';
-import { deepLink, wireDeepLink } from './deeplink.js?v=07a09f79';
+} from './sentryfx.js?v=eba72eff';
+import { deepLink, wireDeepLink } from './deeplink.js?v=eba72eff';
 
 // The surfaces a hit can land on. Each is a real answer to "what did I just
 // shoot", and the SPARK COLOUR is the biggest part of that answer — a chip
@@ -252,8 +252,24 @@ export function initImpactTab(root) {
   // side-on and a beam is something you can see the length of.
   const STANDOFF = 4.6;
   const MUZZLE = { tank: [0, 0.55, STANDOFF - 0.5], sentry: [0, 1.15, STANDOFF - 0.5] };
-  // whichever is actually standing owns the barrel height
-  const muzzlePoint = () => (shooters.sentry ? MUZZLE.sentry : MUZZLE.tank);
+  // THE REAL BARREL, when the model has one. The Workshop's contract puts a
+  // MUZZLE_nn empty at every aperture, and the board's rule is that a shot
+  // leaves one of those — this lab extracted them and then fired from a
+  // HARDCODED height anyway, so the Lancer's beam left a point above and
+  // behind its own cannon. The constants stay as the fallback for the tank
+  // and for any model without the empties.
+  const _mz = new THREE.Vector3();
+  function muzzlePoint() {
+    if (shooters.sentry && shooters.sentry.visible && rig && rig.muzzles.length) {
+      // world position, read off the transform rather than reconstructed —
+      // it moves with the yaw, the pitch and the recoil, which is the whole
+      // point of aiming the model at all
+      shooters.sentry.updateMatrixWorld(true);
+      rig.muzzles[0].getWorldPosition(_mz);
+      return [_mz.x, _mz.y, _mz.z];
+    }
+    return shooters.sentry ? MUZZLE.sentry : MUZZLE.tank;
+  }
   preloadMkcx('mkcx2').then(() => {
     const t = buildCreature('mkcx2', {});
     if (!t) return;
@@ -496,6 +512,13 @@ export function initImpactTab(root) {
   // flat list (lil-gui wants one object) while a profile keeps its deltas in
   // a nested `tune`, so these two functions are the seam — and they are the
   // reason the export can be a copy button instead of a transcription.
+  // WHAT THE URL ASKED FOR SURVIVES THE FIRST PULL. pullFromProfile runs at
+  // init, AFTER the query is parsed, and it rebuilds every use_* flag from
+  // the family's own recipe — so `?use_spark=0` was read, stored, and then
+  // silently overwritten before the first frame. A URL parameter that is
+  // accepted and ignored is worse than one that is rejected.
+  const urlFamilies = IMPACT_FAMILIES.filter((f) => q.has(`use_${f}`));
+  let firstPull = true;
   function pullFromProfile() {
     const fx = slotOf();
     // the panel shows the FOLDED tune: base + this family's deltas, so a knob
@@ -503,7 +526,11 @@ export function initImpactTab(root) {
     // with rather than a blank
     Object.assign(P, tuneFor(fx));
     P.size = fx.size;
-    for (const f of IMPACT_FAMILIES) P[`use_${f}`] = currentRecipeNames(fx).includes(f);
+    for (const f of IMPACT_FAMILIES) {
+      if (firstPull && urlFamilies.includes(f)) continue;   // the URL wins, once
+      P[`use_${f}`] = currentRecipeNames(fx).includes(f);
+    }
+    firstPull = false;
     gui.controllersRecursive().forEach((c) => c.updateDisplay());
   }
   function currentRecipeNames(fx) {
@@ -535,11 +562,18 @@ export function initImpactTab(root) {
     // decides everything else. Both matter and neither owns the other, so the
     // surface fills in only what the profile did not name.
     const colors = { spark: s.spark, debris: s.chunk, scorch: s.scorch, ...fx.colors };
-    const burst = makeImpactBurst(names, tuneFor(fx), colors, ++shots, fx.size);
-    orientImpact(burst, point, normal);
-    scene.add(burst);
-    live.push(burst);
     lastFamilies = names;
+    // ...and NOTHING is a legitimate answer. Every family off means no impact
+    // at all, which is what the operator asked for by unticking them; adding
+    // an empty group and letting it die on the next tick merely looked right.
+    if (!names.length) {
+      if (probeOn) console.log(`IMPACTPROBE shot=${shots + 1} sentry=${subject} EMPTY recipe — no impact drawn`);
+    } else {
+      const burst = makeImpactBurst(names, tuneFor(fx), colors, ++shots, fx.size);
+      orientImpact(burst, point, normal);
+      scene.add(burst);
+      live.push(burst);
+    }
     // ...and the MUZZLE, at the barrel, pointing back down the line of fire.
     // Firing them separately would let a muzzle and an impact be tuned to
     // look wrong together while each looks right alone, which is exactly the
@@ -624,8 +658,22 @@ export function initImpactTab(root) {
     gui.controllersRecursive().forEach((c2) => c2.updateDisplay()); } }, 'board')
     .name("the board's own curve (12.5)");
 
+  // TICKING A BOX MEANS IT. These edit the CUSTOM recipe, and the panel was
+  // happily letting the operator turn every family off while `recipe` sat on
+  // `profile` — so the checkboxes said "nothing" and the wall kept sparking.
+  // A control that is visible, enabled, and ignored is worse than one that is
+  // missing. Touching any of them now selects `custom`, which is the only
+  // thing the person doing it can have meant.
   const gCustom = gui.addFolder('custom recipe');
-  for (const f of IMPACT_FAMILIES) gCustom.add(P, `use_${f}`).name(f);
+  for (const f of IMPACT_FAMILIES) {
+    gCustom.add(P, `use_${f}`).name(f).onChange(() => {
+      if (P.recipe !== 'custom') {
+        P.recipe = 'custom';
+        gui.controllersRecursive().forEach((c2) => c2.updateDisplay());
+      }
+      pushToProfile();
+    });
+  }
 
   // one folder per family, so tuning a spark never means scrolling past a
   // scorch — the knob table's own `group` decides this, not a second list
@@ -724,11 +772,11 @@ export function initImpactTab(root) {
       const kind = (prof().shot && prof().shot.kind) || 'round';
       if (rig.yaw) rig.yaw.rotation.y = 0;      // the wall is dead ahead
       if (rig.pitch) {
-        // measured FROM THE TRUNNION, like the range: the muzzle sits above
-        // the base, so aiming from the model's origin points it high
-        const m = muzzlePoint();
-        const want = Math.atan2(m[1] - 0.9, STANDOFF);
-        rig.pitch.rotation.x = -(-want);        // the one negation, once
+        // LEVEL AT THE PLATE. The impact lands at the wall's centre at about
+        // the barrel's own height, so the gun sits level — driving a pitch
+        // from the muzzle's height would chase its own tail, because the
+        // muzzle's height is a function of the pitch.
+        rig.pitch.rotation.x = 0;
       }
       // a ROTARY gun spins while it has something to do; everything else
       // never spins, and a spinning Lancer would be a lie about the weapon
