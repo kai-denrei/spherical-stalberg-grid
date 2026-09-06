@@ -19,79 +19,79 @@
 
 import * as THREE from '../vendor/three.module.js';
 import GUI from '../vendor/lil-gui.esm.js';
-import { generateSphereMesh, relax } from './grid.js?v=9edeb91f';
-import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=9edeb91f';
-import { compileRail } from './cine/rail.js?v=9edeb91f';
-import { SCRIPTS } from './cine/scripts.js?v=9edeb91f';
-import { cuesBetween } from './cine/sound.js?v=9edeb91f';
-import { installCine } from './cine/kit.js?v=9edeb91f';
-import { mulberry32, randomSeed } from './rng.js?v=9edeb91f';
-import { computeBerths, berthIndexFor } from './berths.js?v=9edeb91f';
-import { wantsSecondary, shellsForAll } from './autofire.js?v=9edeb91f';
-import { printPhase, printOffset, printOn, patternSecsFor } from './printpath.js?v=9edeb91f';
+import { generateSphereMesh, relax } from './grid.js?v=a3ed37b9';
+import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=a3ed37b9';
+import { compileRail } from './cine/rail.js?v=a3ed37b9';
+import { SCRIPTS } from './cine/scripts.js?v=a3ed37b9';
+import { cuesBetween } from './cine/sound.js?v=a3ed37b9';
+import { installCine } from './cine/kit.js?v=a3ed37b9';
+import { mulberry32, randomSeed } from './rng.js?v=a3ed37b9';
+import { computeBerths, berthIndexFor } from './berths.js?v=a3ed37b9';
+import { wantsSecondary, shellsForAll } from './autofire.js?v=a3ed37b9';
+import { printPhase, printOffset, printOn, patternSecsFor } from './printpath.js?v=a3ed37b9';
 import { createBeam } from './beamfx.js';
-import { createBeamRig, PLASMA_DEFAULTS, BOARD_PRESET, BEAM_PEAK } from './beamdraw.js?v=9edeb91f';
-import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3, segKey, tangentDir, tangentBasis } from './vec3.js?v=9edeb91f';
-import { CREATURES, waveJelly } from './creatures.js?v=9edeb91f';
-import { brief, dwellFor } from './isaobriefs.js?v=9edeb91f';
-import { drawEmotion } from './emotions.js?v=9edeb91f';
+import { createBeamRig, PLASMA_DEFAULTS, BOARD_PRESET, BEAM_PEAK } from './beamdraw.js?v=a3ed37b9';
+import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3, segKey, tangentDir, tangentBasis } from './vec3.js?v=a3ed37b9';
+import { CREATURES, waveJelly } from './creatures.js?v=a3ed37b9';
+import { brief, dwellFor } from './isaobriefs.js?v=a3ed37b9';
+import { drawEmotion } from './emotions.js?v=a3ed37b9';
 import { ACHIEVEMENTS, ACHV_GROUPS, achievement, blankRun, earned, freshlyEarned,
   sanitiseRecord }
-  from './achievements.js?v=9edeb91f';
+  from './achievements.js?v=a3ed37b9';
 import { applyFontPack, currentFontPack, FONT_NAMES,
-  loadTypeFeel } from './fonts.js?v=9edeb91f';
-import { SECONDARY_TOE, applySecondaryToe } from './units.js?v=9edeb91f';
-import { UNITS, UNIT_NAMES, buildUnit, buildCreature, preloadMkcx, preloadServer, makeServerFixture, makeShieldShell, preloadContainer, makeContainerFixture, preloadFabricator, makeIsaoDrone, makeBulletCloud, makeRewardSolid, makeShellSolid, makeDebris, makeDotBurst, makePortalCloud, preloadPortalRing, makePortalRing, makeHeartCloud, makeDotEnemy, makeSurvivor, preloadAstronaut, preloadAstronauts, makeAstronaut, preloadTerraformer, makeTerraformerFixture } from './units.js?v=9edeb91f';
-import { LOOKS, LOOK_NAMES } from './looks.js?v=9edeb91f';
-import { makeCellIndex } from './cellindex.js?v=9edeb91f';
-import { CREATURE_TINTS, ENEMY_SPEC, INTROS, computeWavePlan, accentFor } from './enemyspec.js?v=9edeb91f';
-import { PICKUPS } from './pickups.js?v=9edeb91f';
-import { rankFor, rankLabel, badgeSVG, killReq, eliteReq } from './ranks.js?v=9edeb91f';
-import { beamStep, isBeamStep, PEN_SOFT_FRAC, PEN_HARD_FRAC } from './beamranks.js?v=9edeb91f';
-import { burn, sweepAdvance, wallBite as wallBiteFor } from './beamburn.js?v=9edeb91f';
-import { arcPoint, projectToArc, toeForCrossing, crossingForToe } from './arc.js?v=9edeb91f';
+  loadTypeFeel } from './fonts.js?v=a3ed37b9';
+import { SECONDARY_TOE, applySecondaryToe } from './units.js?v=a3ed37b9';
+import { UNITS, UNIT_NAMES, buildUnit, buildCreature, preloadMkcx, preloadServer, makeServerFixture, makeShieldShell, preloadContainer, makeContainerFixture, preloadFabricator, makeIsaoDrone, makeBulletCloud, makeRewardSolid, makeShellSolid, makeDebris, makeDotBurst, makePortalCloud, preloadPortalRing, makePortalRing, makeHeartCloud, makeDotEnemy, makeSurvivor, preloadAstronaut, preloadAstronauts, makeAstronaut, preloadTerraformer, makeTerraformerFixture } from './units.js?v=a3ed37b9';
+import { LOOKS, LOOK_NAMES } from './looks.js?v=a3ed37b9';
+import { makeCellIndex } from './cellindex.js?v=a3ed37b9';
+import { CREATURE_TINTS, ENEMY_SPEC, INTROS, computeWavePlan, accentFor } from './enemyspec.js?v=a3ed37b9';
+import { PICKUPS } from './pickups.js?v=a3ed37b9';
+import { rankFor, rankLabel, badgeSVG, killReq, eliteReq } from './ranks.js?v=a3ed37b9';
+import { beamStep, isBeamStep, PEN_SOFT_FRAC, PEN_HARD_FRAC } from './beamranks.js?v=a3ed37b9';
+import { burn, sweepAdvance, wallBite as wallBiteFor } from './beamburn.js?v=a3ed37b9';
+import { arcPoint, projectToArc, toeForCrossing, crossingForToe } from './arc.js?v=a3ed37b9';
 import { MINE_TUNE, makeField, layMine, armMines, restock, mineAt,
-  inFan, trip, chain, nextChained, minePolar } from './mines.js?v=9edeb91f';
-import { shotOf, muzzleOf, impactOf, tuneFor } from './sentryfx.js?v=9edeb91f';
+  inFan, trip, chain, nextChained, minePolar } from './mines.js?v=a3ed37b9';
+import { shotOf, muzzleOf, impactOf, tuneFor } from './sentryfx.js?v=a3ed37b9';
 import { SHIELD_TUNE, SHIELD_KNOBS, makeShield, charge as chargeShield,
   deploy as deployShield, tickShield, restockShield, tapTower, towerOffline,
-  stationDraw, waveReset as shieldWaveReset, shoveVec, shoveMag } from './shield.js?v=9edeb91f';
+  stationDraw, waveReset as shieldWaveReset, shoveVec, shoveMag } from './shield.js?v=a3ed37b9';
 import { deepLink, wireDeepLink } from './deeplink.js';
 import { RESCUE_TUNE, makeRescue, placeSurvivors, stepBoard, stepGrab,
   disembark, loseCarried, lockOn, waveMix, standing as standingSurv,
   aboard as aboardSurv, missionOver, verdict as rescueVerdict,
   grabProgress, remaining as remainingSurv, exposed as exposedSurv,
   RESCUE2_TUNE, makeCamps, stepCall, stepEmerge, walkStep, runOver,
-  awake as campAwake } from './rescue.js?v=9edeb91f';
+  awake as campAwake } from './rescue.js?v=a3ed37b9';
 import { WORMHOLE_PRESET, WORMHOLE_UNIFORM_DEFAULTS, RING_SPIN, TRAVEL,
-  travelRate, advancePhase } from './portalfx.js?v=9edeb91f';
-import { WORMHOLE_FRAG } from './fx/wormhole.frag.js?v=9edeb91f';
-import { CORONA_FRAG } from './fx/corona.frag.js?v=9edeb91f';
-import { labLine, parseLabQuery } from './lab.js?v=9edeb91f';
-import { bakeGalaxyCube } from './galaxybake.js?v=9edeb91f';
-import { SKY_PRESET } from './galaxyseed.js?v=9edeb91f';
-import { makeScore } from './score.js?v=9edeb91f';
-import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER, HACK_GATED, starterTower, towerSound, ROSTER } from './towers.js?v=9edeb91f';
-import { makeEconomy, sellRefund } from './economy.js?v=9edeb91f';
-import { pickTier } from './perftier.js?v=9edeb91f';
-import { applyWeatheredMaterial } from './cine/materials.js?v=9edeb91f';
-import { STICK, stickVector, knobOffset } from './stick.js?v=9edeb91f';
-import { registerServiceWorker } from './pwa.js?v=9edeb91f';
-import { makeBloom } from './postfx.js?v=9edeb91f';
-import { TANK_FEEL, TANK_FEEL_KNOBS, makeTankFeel, stepTankFeel, landTankFeel, fireTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js?v=9edeb91f';
-import { FEEL, loadFeel, saveFeel } from './feelstore.js?v=9edeb91f';
+  travelRate, advancePhase } from './portalfx.js?v=a3ed37b9';
+import { WORMHOLE_FRAG } from './fx/wormhole.frag.js?v=a3ed37b9';
+import { CORONA_FRAG } from './fx/corona.frag.js?v=a3ed37b9';
+import { labLine, parseLabQuery } from './lab.js?v=a3ed37b9';
+import { bakeGalaxyCube } from './galaxybake.js?v=a3ed37b9';
+import { SKY_PRESET } from './galaxyseed.js?v=a3ed37b9';
+import { makeScore } from './score.js?v=a3ed37b9';
+import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER, HACK_GATED, starterTower, towerSound, ROSTER } from './towers.js?v=a3ed37b9';
+import { makeEconomy, sellRefund } from './economy.js?v=a3ed37b9';
+import { pickTier } from './perftier.js?v=a3ed37b9';
+import { applyWeatheredMaterial } from './cine/materials.js?v=a3ed37b9';
+import { STICK, stickVector, knobOffset } from './stick.js?v=a3ed37b9';
+import { registerServiceWorker } from './pwa.js?v=a3ed37b9';
+import { makeBloom } from './postfx.js?v=a3ed37b9';
+import { TANK_FEEL, TANK_FEEL_KNOBS, makeTankFeel, stepTankFeel, landTankFeel, fireTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js?v=a3ed37b9';
+import { FEEL, loadFeel, saveFeel } from './feelstore.js?v=a3ed37b9';
 import { STRIKE_KNOBS, makeStrike, makeStrikeParams, grantStrikes, stepStrike,
   toggleArm, paintTarget, launchStrike, stepFall, skipFall, fallProgress,
-  strikeDamage, retargetStrike, orbitProgress } from './strike.js?v=9edeb91f';
+  strikeDamage, retargetStrike, orbitProgress } from './strike.js?v=a3ed37b9';
 import { radarBasis, radarProject, radarBearing, sweepAngle, radarPhosphor,
-  proximitySectors, SENSOR_LEVELS, sensorColor } from './radar.js?v=9edeb91f';
-import { BLOOM_GROUPS } from './bloomweights.js?v=9edeb91f';
+  proximitySectors, SENSOR_LEVELS, sensorColor } from './radar.js?v=a3ed37b9';
+import { BLOOM_GROUPS } from './bloomweights.js?v=a3ed37b9';
 import { A6_TUNE, magFor, makeA6, stepA6, arc as a6Arc, a6Line } from './heptapod.js';
 import { SENTRY_TUNE } from './sentry.js';
 import { MISSILE_TUNE, scaleMissile, makeLock, stepLock, launchMissile, stepMissile } from './lockon.js';
-import { TOWER_LOOK_NAMES, DEFAULT_TOWER_LOOK, buildTowerLook, preloadLook, lookReady, setSentryTier } from './towerlooks.js?v=9edeb91f';
-import { makeAudio } from './audio.js?v=9edeb91f';
-import { DEATH_KEYS } from './audiomanifest.js?v=9edeb91f';
+import { TOWER_LOOK_NAMES, DEFAULT_TOWER_LOOK, buildTowerLook, preloadLook, lookReady, setSentryTier } from './towerlooks.js?v=a3ed37b9';
+import { makeAudio } from './audio.js?v=a3ed37b9';
+import { DEATH_KEYS } from './audiomanifest.js?v=a3ed37b9';
 
 export function initTdTab(root) {
   let active = false;
@@ -5395,12 +5395,17 @@ export function initTdTab(root) {
     // down cannot plan the chain that the whole rack exists for.
     const shieldPips = `<i class="sh-pip">${'▮'.repeat(shield.rack)}`
       + `${'▯'.repeat(Math.max(0, shieldTune.rackCap - shield.rack))}</i>`;
+    // IT HAS TO SAY WHAT IT IS. The first cut was a bare ◈ and four pips at
+    // the end of the alerts line — the operator played a full board and asked
+    // whether the shield had been implemented at all. A readout nobody can
+    // identify is a readout that is not there, however correct the state
+    // behind it. So: the word, then the number, then what you can spend.
     const shieldBar = shieldUp()
-      ? `◈ <b class="sh-bar" style="--sh:${Math.max(0, Math.min(1, shield.t / shieldTune.cap))}">`
-        + `${Math.ceil(shield.t)}s</b> ${shieldPips}`
+      ? `<b class="sh-bar" style="--sh:${Math.max(0, Math.min(1, shield.t / shieldTune.cap))}">`
+        + `◈ SHIELD ${Math.ceil(shield.t)}s</b> ${shieldPips}`
       : (simTime < shield.coolUntil
-        ? `<span class="sh-cool">◈ ${(shield.coolUntil - simTime).toFixed(1)}s</span> ${shieldPips}`
-        : `<span class="sh-idle">◈</span> ${shieldPips}`);
+        ? `<span class="sh-cool">◈ SHIELD COOLING ${(shield.coolUntil - simTime).toFixed(1)}s</span> ${shieldPips}`
+        : `<span class="sh-idle">◈ SHIELD</span> <b class="sh-ready">S</b> ${shieldPips}`);
     const alerts = [shieldBar,
       carryingRegen ? '⬤ REGEN CARRIED' : '',
       cannonHeat > 0 ? 'CANNON HOT' : '',
@@ -7901,6 +7906,12 @@ export function initTdTab(root) {
   function breachWallCell(ci) {
     if (ci === serverCi) return false; // the server is INVINCIBLE — no missile opens it
     if (towerByCell.has(ci)) return false; // a mounted tower anchors its wall
+    // ...but an ORDER is not a tower. A queued build does not anchor anything,
+    // so the wall goes and Isao is left flying to a site that no longer
+    // exists. finishOrder would refuse it on arrival, but silently and late —
+    // the biomass should come back the moment the ground does, and he should
+    // not spend the trip.
+    if (orderByCell.has(ci)) cancelOrder(ci, 'the wall under your order was blown out');
     breachedCells.add(ci); // demolition is permanent across rounds
     dungeon.tags[ci] = PATH;
     const c = graph.centers[ci];
@@ -8603,7 +8614,17 @@ export function initTdTab(root) {
   function placeError(ci) {
     if (ci === -1) return 'nothing there';
     if (ci === serverCi) return 'the server holds this cell';
-    if (tdFullTags[ci] !== BLOCKED) return 'towers need HIGH GROUND';
+    // HIGH GROUND MEANS THERE IS STILL A WALL THERE. This asked tdFullTags —
+    // the ORIGINAL map — because dungeon.tags is sector-gated and would call
+    // every unrevealed cell blocked. But tdFullTags never learns about a
+    // breach: blastWall sets dungeon.tags[ci] = PATH and leaves the full map
+    // saying BLOCKED forever, so a breached cell still reported as buildable
+    // and a tower went up at wall height over open floor. That is the
+    // hovering tower. `breachedCells` is the missing half, and it is already
+    // permanent across rounds because demolition is.
+    if (tdFullTags[ci] !== BLOCKED || breachedCells.has(ci)) {
+      return 'towers need HIGH GROUND';
+    }
     if (towerByCell.has(ci)) return 'occupied';
     if (!graph.adj[ci].some((nb) => dungeon.tags[nb] !== BLOCKED)) {
       return 'beyond the frontier';
@@ -9018,7 +9039,7 @@ export function initTdTab(root) {
   // Cancelling costs nothing: nothing has been printed. The one exception is
   // the order Isao is already standing over — the biomass is in the nozzle
   // by then, and half of it does not come back.
-  function cancelOrder(ci) {
+  function cancelOrder(ci, why = null) {
     const order = orderByCell.get(ci);
     if (!order) return false;
     const live = !!(order.worker && order.worker.state === 'build');
@@ -9028,7 +9049,8 @@ export function initTdTab(root) {
     orders.splice(orders.indexOf(order), 1);
     orderByCell.delete(ci);
     if (isao && isao.order === order) { isao.order = null; isao.state = 'idle'; }
-    flashShopNote(live ? 'order aborted — half back' : 'order cancelled');
+    flashShopNote(why ? `${why} — ${live ? 'half back' : 'biomass returned'}`
+      : (live ? 'order aborted — half back' : 'order cancelled'));
     updateHud();
     return true;
   }
@@ -16253,6 +16275,62 @@ export function initTdTab(root) {
   // ?shieldrack=N, or an explicit rack size is overwritten by the default.
   shield.rack = Math.min(shieldTune.rackCap, shieldTune.rackStart);
   shield.stationLeft = shieldTune.stationBudget;
+
+  // ?hoverprobe=1 — THE HOVERING TOWER. Operator: "it is possible to have a
+  // tower hovering in the air, perhaps it was ordered to build, and then the
+  // wall was destroyed." Exactly that, and it had two doors:
+  //
+  //   placeError asked tdFullTags — the ORIGINAL map — which never learns
+  //   about a breach, so a blown-out cell still reported as HIGH GROUND.
+  //   A queued order did not anchor its wall, so the wall could go while
+  //   Isao was still in the air on his way to it.
+  //
+  // This walks the whole sequence rather than checking the flag, because the
+  // flag was right in isolation and the SEQUENCE was what failed.
+  if (urlParams.get('hoverprobe') === '1') {
+    setTimeout(() => {
+      for (const id of ['#td-msg', '#td-intro']) {
+        const el = root.querySelector(id);
+        if (el) el.classList.add('hidden');
+      }
+      paused = false;
+      if (!graph) { console.log('HOVERPROBE no board'); return; }
+      const site = dungeon.tags.findIndex((t, i) => !placeError(i));
+      if (site < 0) { console.log('HOVERPROBE no buildable cell'); return; }
+      console.log(`HOVERPROBE site=${site} buildable-before=${!placeError(site)}`);
+
+      // 1. a cell with a LIVE ORDER on it, then the wall taken out from under it
+      eco.addBiomass(4000);
+      const kg0 = eco.biomass;
+      // orderTower, NOT placeTower: placeTower commits immediately, so the
+      // first cut of this probe built a tower and then found the breach
+      // correctly refused by `towerByCell` — passing through the very
+      // sequence it was written to exercise without ever entering it.
+      const ordered = orderTower(starterTower().key, site);
+      const onBook = orderByCell.has(site);
+      blastWall(site);
+      const stillBooked = orderByCell.has(site);
+      const refunded = eco.biomass >= kg0 - 1;   // full: it had not started printing
+      console.log(`HOVERPROBE order ordered=${ordered} on-book=${onBook}`
+        + ` cancelled-by-breach=${!stillBooked} refunded=${refunded}`
+        + ` ${ordered && onBook && !stillBooked && refunded ? 'OK'
+          : 'WRONG — a breach left the order standing'}`);
+
+      // 2. and the cell must now REFUSE a tower, by every door
+      const err = placeError(site);
+      const direct = placeTower(starterTower().key, site) || orderTower(starterTower().key, site);
+      const built = towerByCell.has(site);
+      console.log(`HOVERPROBE breached-cell error="${err}" direct-place=${direct}`
+        + ` tower-there=${built}`
+        + ` ${err && !direct && !built ? 'OK' : 'WRONG — a tower can still stand on open floor'}`);
+
+      // 3. an UNBREACHED wall must still accept one, or the fix has simply
+      //    banned building, which would pass both checks above
+      const other = dungeon.tags.findIndex((t, i) => i !== site && !placeError(i));
+      console.log(`HOVERPROBE control cell=${other} still-buildable=${other >= 0}`
+        + ` ${other >= 0 ? 'OK' : 'WRONG — nothing can be built any more'}`);
+    }, 2500);
+  }
 
   // ?shieldrack=N — set the rack, for playtesting the chain without a shop
   const rackN = parseInt(urlParams.get('shieldrack') || '-1', 10);

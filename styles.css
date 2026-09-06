@@ -5,22 +5,22 @@
    back to a system face until the subset is rebuilt. */
 @font-face {
   font-family: 'VT323';
-  src: url('assets/fonts/VT323.woff2?v=9edeb91f') format('woff2');
+  src: url('assets/fonts/VT323.woff2?v=a3ed37b9') format('woff2');
   font-weight: 400; font-style: normal; font-display: swap;
 }
 @font-face {
   font-family: 'Press Start 2P';
-  src: url('assets/fonts/PressStart2P.woff2?v=9edeb91f') format('woff2');
+  src: url('assets/fonts/PressStart2P.woff2?v=a3ed37b9') format('woff2');
   font-weight: 400; font-style: normal; font-display: swap;
 }
 @font-face {
   font-family: 'Share Tech Mono';
-  src: url('assets/fonts/ShareTechMono.woff2?v=9edeb91f') format('woff2');
+  src: url('assets/fonts/ShareTechMono.woff2?v=a3ed37b9') format('woff2');
   font-weight: 400; font-style: normal; font-display: swap;
 }
 @font-face {
   font-family: 'DotGothic16';
-  src: url('assets/fonts/DotGothic16.woff2?v=9edeb91f') format('woff2');
+  src: url('assets/fonts/DotGothic16.woff2?v=a3ed37b9') format('woff2');
   font-weight: 400; font-style: normal; font-display: swap;
 }
 
@@ -3040,6 +3040,11 @@ body.playing:not(.chrome-open) #tabbar { display: none !important; }
 .sh-cool { color: #6d7f8c; }
 .sh-idle { color: #6d7f8c; }
 .sh-pip { font-style: normal; color: #59c8ff; letter-spacing: -1px; opacity: .8; }
+/* the KEY, when you have a charge to spend. The readout is otherwise grey
+   while idle, which is right — but a grey row gives no hint that pressing
+   something would change it. */
+.sh-ready { color: #0b1a24; background: #59c8ff; border-radius: 3px;
+  padding: 0 4px; font-weight: 700; }
 .hp-dim { color: rgba(255, 106, 136, 0.22); }
 .hp-you { color: #9fdcff; margin-left: 8px; text-shadow: 0 0 7px rgba(159, 220, 255, 0.4); }
 .hp-ammo { color: #eef4ff; margin-left: 8px; }
