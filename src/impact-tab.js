@@ -22,22 +22,22 @@
 import * as THREE from '../vendor/three.module.js';
 import { OrbitControls } from '../vendor/OrbitControls.js';
 import GUI from '../vendor/lil-gui.esm.js';
-import { makeBloom } from './postfx.js?v=a4a64393';
-import { bakeGalaxyCube } from './galaxybake.js?v=a4a64393';
-import { SKY_PRESET } from './galaxyseed.js?v=a4a64393';
+import { makeBloom } from './postfx.js?v=c6167543';
+import { bakeGalaxyCube } from './galaxybake.js?v=c6167543';
+import { SKY_PRESET } from './galaxyseed.js?v=c6167543';
 import {
   IMPACT_TUNE, IMPACT_KNOBS, IMPACT_FAMILIES, IMPACT_RECIPES,
   makeImpactParams, clampImpactParams, formatImpactTune,
   makeImpactBurst, orientImpact,
-} from './impactfx.js?v=a4a64393';
-import { buildCreature, preloadMkcx } from './units.js?v=a4a64393';
-import { sentryUrl, SENTRY_FAMILIES } from './sentry.js?v=a4a64393';
-import { loadGlb } from './glbmodels.js?v=a4a64393';
-import { TOWERS, TOWER_BY_KEY } from './towers.js?v=a4a64393';
+} from './impactfx.js?v=c6167543';
+import { buildCreature, preloadMkcx } from './units.js?v=c6167543';
+import { sentryUrl, SENTRY_FAMILIES } from './sentry.js?v=c6167543';
+import { loadGlb } from './glbmodels.js?v=c6167543';
+import { TOWERS, TOWER_BY_KEY } from './towers.js?v=c6167543';
 import {
   SENTRY_FX, fxFor, tuneFor, formatSentryFx, formatAllSentryFx,
-} from './sentryfx.js?v=a4a64393';
-import { deepLink, wireDeepLink } from './deeplink.js?v=a4a64393';
+} from './sentryfx.js?v=c6167543';
+import { deepLink, wireDeepLink } from './deeplink.js?v=c6167543';
 
 // The surfaces a hit can land on. Each is a real answer to "what did I just
 // shoot", and the SPARK COLOUR is the biggest part of that answer — a chip
@@ -113,7 +113,6 @@ export function initImpactTab(root) {
   const P = {
     slot: 'impact',             // which half of the profile the knobs edit
     recipe: 'shell',            // shell | laser | plasma | light | custom
-    source: 'tank',             // tank | sentry — WHO is shooting
     surface: 'armour',
     wall: true,
     wallAngle: 25,              // degrees off square-on. 0 = the camera's enemy
@@ -187,6 +186,8 @@ export function initImpactTab(root) {
   // the barrel tips, in world space. They track the shooters' own stand-off:
   // a muzzle flash that fires where the gun is not is worse than none.
   const MUZZLE = { tank: [-1.75, 0.55, 1.9], sentry: [-1.75, 1.15, 1.9] };
+  // whichever is actually standing owns the barrel height
+  const muzzlePoint = () => (shooters.sentry ? MUZZLE.sentry : MUZZLE.tank);
   preloadMkcx('mkcx2').then(() => {
     const t = buildCreature('mkcx2', {});
     if (!t) return;
@@ -226,10 +227,21 @@ export function initImpactTab(root) {
     }).catch(() => {});
   }
   loadSentryModel();
+  // THE SHOOTER IS THE SUBJECT. There used to be a second dropdown deciding
+  // which model stood on the stage, defaulting to the tank — so picking a
+  // Lancer to tune left a TANK firing its effects, and on ?roster=2#impact
+  // the operator saw only the tank however many sentries were selected.
+  // Two controls for one idea, and the wrong one won by default.
+  //
+  // Now the selected family's own model stands, and the tank is a FALLBACK
+  // for the roster-1 towers, which have no model at all — visible rather
+  // than an empty stage, and honest about which it is because the HUD says.
   function syncShooter() {
-    if (shooters.tank) shooters.tank.visible = P.source === 'tank';
-    if (shooters.sentry) shooters.sentry.visible = P.source === 'sentry';
+    const haveSentry = !!shooters.sentry;
+    if (shooters.sentry) shooters.sentry.visible = true;
+    if (shooters.tank) shooters.tank.visible = !haveSentry;
   }
+  const shooterLabel = () => (shooters.sentry ? subject : `tank (no model for ${subject})`);
 
   // --- firing ---------------------------------------------------------------
   const live = [];        // every burst currently ticking
@@ -241,7 +253,7 @@ export function initImpactTab(root) {
   // transform, never re-derived from the angle knob with a second sign
   // convention, which is the recurring bug this project keeps paying for.
   function contact() {
-    const m = MUZZLE[P.source] || MUZZLE.tank;
+    const m = muzzlePoint();
     const from = new THREE.Vector3(m[0], m[1], m[2]);
     if (!wall || !P.wall) {
       // no wall: fire into open air at the stand-off distance, normal facing
@@ -340,7 +352,7 @@ export function initImpactTab(root) {
       const mz = prof().muzzle;
       const mNames = Array.isArray(mz.recipe) ? mz.recipe : (IMPACT_RECIPES[mz.recipe] || []);
       if (mNames.length) {
-        const m = MUZZLE[P.source] || MUZZLE.tank;
+        const m = muzzlePoint();
         const mb = makeImpactBurst(mNames, tuneFor(mz), mz.colors, shots + 991, mz.size);
         // +Z out of the "surface" means, at a muzzle, back along the barrel
         // toward where the round came from — so the flash blooms outward
@@ -351,7 +363,7 @@ export function initImpactTab(root) {
     }
     if (probeOn) {
       console.log(`IMPACTPROBE shot=${shots} sentry=${subject} slot=${P.slot} recipe=${P.recipe} [${names.join(',')}]`
-        + ` surface=${P.surface} wall=${P.wall} angle=${P.wallAngle}`
+        + ` shooter=${shooters.sentry ? 'sentry' : 'tank'} surface=${P.surface} wall=${P.wall} angle=${P.wallAngle}`
         + ` at=(${point.map((v) => v.toFixed(2)).join(',')})`
         + ` n=(${normal.map((v) => v.toFixed(2)).join(',')}) live=${live.length}`);
     }
@@ -374,7 +386,6 @@ export function initImpactTab(root) {
   });
   gui.add(P, 'recipe', ['profile', 'shell', 'laser', 'plasma', 'light', 'custom']).name('recipe');
   gui.add(P, 'showMuzzle').name('show muzzle too');
-  gui.add(P, 'source', ['tank', 'sentry']).name('fired by').onChange(syncShooter);
   gui.add(P, 'surface', Object.keys(SURFACES)).name('surface').onChange(paintWall);
   gui.add({ shoot: () => fire() }, 'shoot').name('FIRE (F)');
   gui.add(P, 'auto').name('auto-fire');
@@ -498,7 +509,7 @@ export function initImpactTab(root) {
       else {
         hud.textContent = `${subject.toUpperCase()} · tuning ${P.slot}`
           + ` · ${P.recipe} [${lastFamilies.join(' + ') || '-'}]`
-          + ` · ${P.source} → ${surfaceDef().label}`
+          + ` · ${shooterLabel()} → ${surfaceDef().label}`
           + ` · wall ${P.wall ? `${P.wallAngle}°` : 'OFF'}`
           + ` · live ${live.length} · scorches ${standing.length}`
           + ` · x${P.slow.toFixed(2)} time · F fire, C clear`;

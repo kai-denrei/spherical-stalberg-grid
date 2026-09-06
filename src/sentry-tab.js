@@ -39,6 +39,7 @@ import {
   canFire, fire, hitTarget, landedOn, aimAt, inEnvelope, aimError,
   placeBattery, relTo, stepWaves, stepWalkers, deadZone, leadPoint,
 } from './sentry.js';
+import { weaponKind, fxForFamily } from './sentryfx.js';
 import { makeAudio } from './audio.js';
 import {
   MISSILE_TUNE, scaleMissile, makeLock, stepLock, launchMissile, stepMissile,
@@ -150,6 +151,116 @@ export function initSentryTab(root) {
   let rng = mulberry32(P.seed >>> 0);
   const targetObjs = new Map();   // target id -> mesh
   const tracers = [];             // { mesh, pos, dir, left, id }
+
+  // BEAM WEAPONS ON THE RANGE. The board already answers what a lance and a
+  // throw look like (td-tab's LANCE_LOOK / THROW_LOOK), and those numbers are
+  // repeated here rather than imported because they live inside td-tab's
+  // closure — noted as debt, not invented afresh: a lance that looks different
+  // on the range than on the board is a range that teaches the wrong weapon.
+  //
+  // A lance is THIN, straight and held. A throw is WIDE and jittery, and it
+  // is matter rather than light — which is why the two need different numbers
+  // and not one beam with a colour swapped.
+  // A lance is LIGHT and a throw is MATTER. That distinction is the whole
+  // reason the range branches at all: both used to fire bullet tracers.
+  const beams = [];               // { obj, left, dur }
+  function spawnRangeBeam(from, to, kind, colorHex, target, b) {
+    // WHY NOT beamfx's createBeam, which is what the BOARD uses: it was tried
+    // first and renders nothing in this scene. Verified rather than assumed —
+    // a plain THREE.Line on the identical endpoints draws fine, and the beam's
+    // own uniforms read back correct at the moment of creation (coreW 0.9,
+    // glowW 2.5, coreI 6, glowI 9, alpha 1, 386 verts, aU present, distinct
+    // start and end). Valid geometry, valid uniforms, nothing on screen, and
+    // no shader error. Unresolved, and noted in .deban rather than guessed at.
+    //
+    // So this draws with the idiom the range already renders: a line for the
+    // LANCE and a spray of dots for the THROW. That is not a downgrade in
+    // meaning, which is the part the operator actually reported — a lance is
+    // light and travels in a straight line, a throw is MATTER and arrives as
+    // a spray, and neither of them is a bullet, which is what both were
+    // firing before.
+    const grp = new THREE.Group();
+    const c = new THREE.Color(colorHex);
+    if (kind === 'lance') {
+      // thin, straight, held — and doubled, a hot core inside a wider halo,
+      // because one line at one width reads as a debug ray
+      for (const [w, op] of [[3, 0.35], [1, 1]]) {
+        const g = new THREE.BufferGeometry().setFromPoints([from.clone(), to.clone()]);
+        const m = new THREE.LineBasicMaterial({
+          color: c, transparent: true, opacity: op,
+          blending: THREE.AdditiveBlending, depthWrite: false, linewidth: w });
+        grp.add(new THREE.Line(g, m));
+      }
+    } else {
+      // a THROW is matter: dots along the line, scattered off it, dense at the
+      // muzzle and spreading toward the far end the way a spray widens
+      const N = 34;
+      const pos = new Float32Array(N * 3);
+      const col = new Float32Array(N * 3);
+      const dir = to.clone().sub(from);
+      const side = new THREE.Vector3(-dir.z, 0, dir.x).normalize();
+      const up = new THREE.Vector3().crossVectors(dir, side).normalize();
+      for (let i = 0; i < N; i++) {
+        const u = (i + 1) / N;
+        const spread = 0.05 + u * 0.22;
+        const h = Math.sin(i * 12.9898) * 43758.5453;
+        const h2 = Math.sin(i * 78.233) * 43758.5453;
+        const a1 = (h - Math.floor(h) - 0.5) * spread;
+        const a2 = (h2 - Math.floor(h2) - 0.5) * spread;
+        const pnt = from.clone().addScaledVector(dir, u)
+          .addScaledVector(side, a1).addScaledVector(up, a2);
+        pos[i * 3] = pnt.x; pos[i * 3 + 1] = pnt.y; pos[i * 3 + 2] = pnt.z;
+        const bness = 1 - u * 0.55;
+        col[i * 3] = c.r * bness; col[i * 3 + 1] = c.g * bness; col[i * 3 + 2] = c.b * bness;
+      }
+      const g = new THREE.BufferGeometry();
+      g.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+      g.setAttribute('color', new THREE.BufferAttribute(col, 3));
+      grp.add(new THREE.Points(g, new THREE.PointsMaterial({
+        size: 7, sizeAttenuation: false, vertexColors: true,
+        transparent: true, opacity: 1,
+        blending: THREE.AdditiveBlending, depthWrite: false })));
+    }
+    scene.add(grp);
+    const life = kind === 'lance' ? 0.55 : 0.16;
+    beams.push({ obj: grp, left: life, dur: life });
+
+    // THE HIT IS SCORED THE SAME WAY A ROUND'S IS — the drawing changed, not
+    // the accuracy. A beam that always hit would make the range lie about the
+    // tolerance knob, which is the one thing it exists to measure. Copied from
+    // the tracer path: landedOn takes an ARRAY end point, and hitTarget is
+    // credited to the sentry that FIRED, because crediting the headline state
+    // loses every hit to aimFrame's rebuild.
+    const aimed = target && target.id >= 0
+      ? range.targets.find((x) => x.id === target.id) : null;
+    const res = aimed && landedOn([to.x, to.y, to.z], aimed, P)
+      ? hitTarget(b ? b.st : st, range, target.id) : null;
+    const burst = makeDotBurst(res ? 0xffd27f : 0x6f8ea0, [0, 1, 0], res ? 26 : 12);
+    burst.scale.setScalar(res ? 0.4 : 0.2);
+    burst.position.copy(to);
+    scene.add(burst);
+    fx.push({ obj: burst, tick: burst.userData.tick });
+    if (res === 'kill') dropTarget(target.id, true);
+  }
+
+  function stepBeams(dt) {
+    for (let i = beams.length - 1; i >= 0; i--) {
+      const e = beams[i];
+      e.left -= dt;
+      const u = Math.max(0, e.left / e.dur);
+      e.obj.traverse((o) => {
+        if (o.material) o.material.opacity = (o.isPoints ? 1 : (o.userData.op ?? 1)) * u;
+      });
+      if (e.left <= 0) {
+        scene.remove(e.obj);
+        e.obj.traverse((o) => {
+          if (o.geometry) o.geometry.dispose();
+          if (o.material) o.material.dispose();
+        });
+        beams.splice(i, 1);
+      }
+    }
+  }
   const fx = [];                  // { obj, tick }
 
   const tmpV = new THREE.Vector3(), tmpQ = new THREE.Quaternion(), tmpM = new THREE.Vector3();
@@ -501,6 +612,20 @@ export function initSentryTab(root) {
     const dir = borePt.clone().sub(from);
     if (dir.lengthSq() < 1e-9) dir.set(0, 0, 1);
     dir.normalize();
+    // WHAT LEAVES THE BARREL depends on the weapon, and the range used to
+    // have no opinion: everything that was not a lob or a missile flew as a
+    // BULLET, so the Plasma thrower and the Lancer — a spray and a
+    // light-lance, the two things on the roster least like a bullet — both
+    // fired tracers. The kind comes from sentryfx.js, the same table the
+    // board and the FX lab read, so the three cannot disagree again.
+    const kind = weaponKind(P.family);
+    const fxp = fxForFamily(P.family);
+    const beamHex = (fxp.shot && fxp.shot.beamColor) || look.walkerHi;
+    if (kind === 'lance' || kind === 'throw') {
+      spawnRangeBeam(from, borePt, kind, beamHex, target, b);
+      voice(familyById(P.family).fire);
+      return;
+    }
     const mesh = makeBulletCloud({ body: look.walkerHi, hi: 0xffffff });
     mesh.scale.setScalar(0.09);
     mesh.position.copy(from);
@@ -872,6 +997,7 @@ export function initSentryTab(root) {
     if (P.live) stepRangeFrame(dt);
     aimFrame(dt);
     stepTracers(dt);
+    stepBeams(dt);
     stepSeekers(dt);
     for (let i = fx.length - 1; i >= 0; i--) {
       if (!fx[i].tick(dt)) { scene.remove(fx[i].obj); disposeObj(fx[i].obj); fx.splice(i, 1); }
@@ -903,6 +1029,7 @@ export function initSentryTab(root) {
         + ` err=${aimError(st).toFixed(2)} target=${st.target}`
         + ` up=${range.targets.length} fired=${st.rounds} hit=${st.hits} killed=${st.kills}`
         + ` locked=${battery.filter((b) => b.lock.locked).length} seekers=${seekers.length}`
+        + ` beams=${beams.length}`
         + ` tracers=${tracers.length}`);
     }, 1000);
   }

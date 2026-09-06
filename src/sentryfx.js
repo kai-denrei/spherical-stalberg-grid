@@ -21,8 +21,8 @@
 //
 // Keyed by tower KEY rather than by model id, because roster 1 has no models
 // at all and still has to draw its shots.
-import { makeParams, clampParams, formatKnobs, knobProblems } from './knobs.js?v=a4a64393';
-import { IMPACT_TUNE } from './impactfx.js?v=a4a64393';
+import { makeParams, clampParams, formatKnobs, knobProblems } from './knobs.js?v=c6167543';
+import { IMPACT_TUNE } from './impactfx.js?v=c6167543';
 
 // The fields that USED to live on a tower def. If you are looking for why a
 // tracer is the size it is, it is here.
@@ -31,7 +31,23 @@ import { IMPACT_TUNE } from './impactfx.js?v=a4a64393';
 //   projSpeed  cells per second
 //   beamColor  what a beam weapon THROWS, when that differs from its identity
 //   plasma     the beam is a thrown spray rather than a straight line
-const SHOT = (projPx, trail, projSpeed, extra = {}) => ({ projPx, trail, projSpeed, ...extra });
+const SHOT = (kind, projPx, trail, projSpeed, extra = {}) =>
+  ({ kind, projPx, trail, projSpeed, ...extra });
+
+// WHAT LEAVES THE BARREL — the weapon's shape, which had no single owner and
+// so was answered differently in three places. towers.js knew `attack` (the
+// board's behaviour), SENTRY_FAMILIES knew `lob` and `missile` (the range's),
+// and neither knew about beams — so the sentry range drew a BULLET for the
+// Plasma thrower and the Lancer, which are a spray and a light-lance and are
+// the two weapons on the roster least like a bullet.
+//
+//   round   a tracer with a head and a trail
+//   lob     a tracer on a parabola — it points UP, not at
+//   seeker  a missile that locks first and then homes
+//   throw   a wide jittery spray, thrown DOWN onto a body (Plasma)
+//   lance   a thin straight held beam that pierces (Lancer)
+//   field   nothing leaves it at all (Relay, Slow)
+export const WEAPON_KINDS = ['round', 'lob', 'seeker', 'throw', 'lance', 'field'];
 
 // MUZZLE and IMPACT are both `{ recipe, size, colors, tune }`:
 //   recipe  a name from IMPACT_RECIPES, or an explicit list of families
@@ -44,62 +60,62 @@ const FX = (recipe, size, colors = {}, tune = {}) => ({ recipe, size, colors, tu
 
 export const SENTRY_FX = {
   // --- roster 1, the campaign ---------------------------------------------
-  single:   { shot: SHOT(5, 0, 20),
+  single:   { shot: SHOT('round', 5, 0, 20),
     muzzle: FX('light', 0.5, { flash: 0xffe6b0 }),
     impact: FX('shell', 0.7, { spark: 0xffd08a }) },
-  rapid:    { shot: SHOT(4, 3, 26),
+  rapid:    { shot: SHOT('round', 4, 3, 26),
     // a fast gun's muzzle has to be SMALL: at four shots a second a big flash
     // is a strobe, and the eye stops reading individual shots
     muzzle: FX('light', 0.32, { flash: 0xfff0cc }, { flashLife: 0.07 }),
     impact: FX('light', 0.5, { spark: 0xffd08a }) },
-  spread:   { shot: SHOT(3.5, 0, 15),
+  spread:   { shot: SHOT('round', 3.5, 0, 15),
     muzzle: FX('light', 0.55, { flash: 0xffdca0 }, { sparkSpread: 1.2 }),
     impact: FX('light', 0.45, { spark: 0xffc888 }) },
-  homing:   { shot: SHOT(5, 6, 13),
+  homing:   { shot: SHOT('seeker', 5, 6, 13),
     muzzle: FX(['flash', 'ember'], 0.6, { flash: 0xcfe0ff, ember: 0xff9a5c }),
     impact: FX('shell', 0.85, { spark: 0xcfe8ff }) },
-  slow:     { shot: SHOT(0, 0, 0),
+  slow:     { shot: SHOT('field', 0, 0, 0),
     // a field weapon has no muzzle and no impact: nothing leaves it
     muzzle: FX([], 0), impact: FX([], 0) },
-  aoe:      { shot: SHOT(12, 6, 3.5),
+  aoe:      { shot: SHOT('lob', 12, 6, 3.5),
     muzzle: FX(['flash', 'ember'], 0.9, { flash: 0xffd9a0, ember: 0xff8a44 }),
     impact: FX('shell', 1.3, { spark: 0xffb066 }, { ringEnd: 0.95, debrisCount: 14 }) },
-  sniper:   { shot: SHOT(7, 11, 42),
+  sniper:   { shot: SHOT('round', 7, 11, 42),
     muzzle: FX('light', 0.7, { flash: 0xdff2ff }, { flashLife: 0.09 }),
     impact: FX('shell', 0.8, { spark: 0xdff2ff }, { sparkSpeed: 3.2 }) },
-  laser:    { shot: SHOT(0, 0, 0),
+  laser:    { shot: SHOT('lance', 0, 0, 0),
     muzzle: FX(['flash'], 0.4, { flash: 0x9dffcf }),
     impact: FX('laser', 0.6, { spark: 0x9dffcf, splash: 0x9dffcf }) },
 
   // --- roster 2, the sentry board -----------------------------------------
-  rotor:    { shot: SHOT(4, 2, 24),
+  rotor:    { shot: SHOT('round', 4, 2, 24),
     // the minigun. Same reasoning as `rapid`, harder: six barrels at speed
     muzzle: FX('light', 0.3, { flash: 0xffe4a8 }, { flashLife: 0.06, sparkCount: 10 }),
     impact: FX('light', 0.45, { spark: 0xffd08a }) },
-  plasma:   { shot: SHOT(0, 0, 0, { plasma: true }),
+  plasma:   { shot: SHOT('throw', 0, 0, 0, { plasma: true }),
     muzzle: FX(['flash', 'ember'], 0.5, { flash: 0x2fe6d0, ember: 0x2fe6d0 }),
     // a thrower SPLASHES: it is matter, not light, and it should cling
     impact: FX('plasma', 0.75, { splash: 0x2fe6d0, ember: 0x7ffff0 }) },
-  quiver:   { shot: SHOT(5, 6, 13),
+  quiver:   { shot: SHOT('seeker', 5, 6, 13),
     // a launch is smoke and fire, not a flash — the round is leaving slowly
     muzzle: FX(['flash', 'ember'], 0.75, { flash: 0xdfe8ff, ember: 0xff9a5c },
       { emberCount: 26, emberLife: 2.4 }),
     impact: FX('shell', 1.0, { spark: 0x9dc4ff }, { ringEnd: 0.8 }) },
-  relay:    { shot: SHOT(0, 0, 0), muzzle: FX([], 0), impact: FX([], 0) },
-  mortar:   { shot: SHOT(12, 6, 3.5),
+  relay:    { shot: SHOT('field', 0, 0, 0), muzzle: FX([], 0), impact: FX([], 0) },
+  mortar:   { shot: SHOT('lob', 12, 6, 3.5),
     muzzle: FX(['flash', 'ember'], 0.95, { flash: 0xffd9a0, ember: 0xff8a44 },
       { emberCount: 24 }),
     impact: FX('shell', 1.25, { spark: 0xffb066 }, { ringEnd: 0.95, debrisCount: 14 }) },
-  lancer:   { shot: SHOT(7, 11, 42, { beamColor: 0x4dff86 }),
+  lancer:   { shot: SHOT('lance', 7, 11, 42, { beamColor: 0x4dff86 }),
     muzzle: FX(['flash'], 0.45, { flash: 0x4dff86 }, { flashLife: 0.10 }),
     // a LANCE burns rather than breaks: splash and embers, almost no debris
     impact: FX('laser', 0.7, { spark: 0x4dff86, splash: 0x4dff86, ember: 0xb8ffd0 }) },
-  howitzer: { shot: SHOT(15, 8, 3.0),
+  howitzer: { shot: SHOT('lob', 15, 8, 3.0),
     // the loudest gun on the board should have the biggest muzzle on it
     muzzle: FX(['flash', 'spark', 'ember'], 1.25, { flash: 0xfff0d0, ember: 0xff8a44 },
       { flashLife: 0.18, emberCount: 30 }),
     impact: FX('shell', 1.7, { spark: 0xffc38a }, { ringEnd: 1.25, debrisCount: 18 }) },
-  heptapod: { shot: SHOT(6, 7, 12),
+  heptapod: { shot: SHOT('seeker', 6, 7, 12),
     muzzle: FX(['flash', 'ember'], 0.7, { flash: 0xffd0a0, ember: 0xff9a5c },
       { emberCount: 22 }),
     impact: FX('shell', 1.0, { spark: 0xffb45e }) },
@@ -108,7 +124,7 @@ export const SENTRY_FX = {
 // The fallback for a tower with no entry — visible rather than invisible, so a
 // missing profile shows up as "that looks generic" and not as "nothing fires".
 export const DEFAULT_FX = {
-  shot: SHOT(5, 0, 16),
+  shot: SHOT('round', 5, 0, 16),
   muzzle: FX('light', 0.5, {}),
   impact: FX('light', 0.6, {}),
 };
@@ -119,6 +135,25 @@ export function fxFor(def) {
   if (!def) return DEFAULT_FX;
   return SENTRY_FX[def.key] || DEFAULT_FX;
 }
+
+// THE SENTRY RANGE speaks family ids, the board speaks tower keys, and they
+// are the same word for every family that exists on both — except the A6,
+// whose model is `heptapod_a6` and whose tower key is `heptapod`. One alias
+// rather than a second table: a second table is how the range came to
+// disagree with the board about what a Plasma throws.
+const FAMILY_ALIAS = { heptapod_a6: 'heptapod' };
+// ...and the range carries four families the board has no tower for. They are
+// entries here rather than a special case at the call site, so `weaponKind`
+// answers for everything the range can select.
+const RANGE_ONLY = { needle: 'round', kiln: 'throw', railgun: 'round' };
+
+export function weaponKind(idOrKey) {
+  const key = FAMILY_ALIAS[idOrKey] || idOrKey;
+  const p = SENTRY_FX[key];
+  if (p && p.shot && p.shot.kind) return p.shot.kind;
+  return RANGE_ONLY[key] || 'round';
+}
+export const fxForFamily = (id) => SENTRY_FX[FAMILY_ALIAS[id] || id] || DEFAULT_FX;
 
 // Convenience readers, so call sites keep the `?? default` in ONE place
 // rather than each re-deciding what a missing tracer size means.
