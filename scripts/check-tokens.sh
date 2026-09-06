@@ -26,6 +26,20 @@ if [ -n "$vend" ]; then
   fail=1
 fi
 
+# 1b. no EMPTY token. `./x.js?v=` and `./x.js?v=abc` are two different URLs, so
+# an empty one loads a second copy exactly as an absent one does — but it LOOKS
+# tokened, so the mutable-state check below waves it through and the agreement
+# check never sees it (its pattern needs at least one hex digit). Found the
+# hard way: a hand-written import left `?v=` bare, every guard passed, and the
+# page would have loaded two copies of towers.js.
+empty=$(grep -rnE "\?v=(['\"]|$|&)" --include='*.js' --include='*.html' \
+  --exclude-dir=vendor --exclude-dir=minigames . 2>/dev/null || true)
+if [ -n "$empty" ]; then
+  echo "✗ an EMPTY ?v= token — that is still a distinct URL, so it loads a 2nd copy:"
+  echo "$empty"
+  exit 1
+fi
+
 # 2. every ?v= cache-bust token must agree
 # .claude/worktrees holds SEPARATE checkouts, each legitimately stamped with
 # its own token — scanning them reports a split that isn't one, and would

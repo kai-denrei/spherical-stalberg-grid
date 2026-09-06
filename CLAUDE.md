@@ -185,6 +185,18 @@ token — the corner badge was retired from the game view).
   `scaleMissile` into model units. Fire-and-forget: the lock drops the
   instant a cell is away, or one launcher empties itself into one walker
   while the wave goes past.
+  the IMPACT lab is the SENTRY FX WORKBENCH: pick a sentry, tune its muzzle
+  and its impact, export the result as the default. `?sentry=<key>` selects
+  one of the 16 (both rosters), `?slot=muzzle|impact` picks which half the
+  knobs edit, `?recipe=profile` (the default) fires that family's own recipe
+  rather than a generic one, and the EXPORT button emits the exact source of
+  its entry in `src/sentryfx.js` — paste over it and the tuning is the
+  default. Only DELTAS from `IMPACT_TUNE` are written, so a family that never
+  overrode a knob keeps tracking the base when the base moves. WHAT A WEAPON
+  LOOKS LIKE LIVES IN `src/sentryfx.js`, not in towers.js: `projPx`, `trail`,
+  `projSpeed`, `beamColor` and `plasma` moved there, and `test/sentryfx.mjs`
+  FAILS if a tower def grows one back — towers.js keeps what a weapon does
+  plus `color`, which is identity, and `shape`/`spin`, which are the body.
   the IMPACT lab (`#impact`): WHAT A HIT LOOKS LIKE. `src/impactfx.js` holds
   seven families (spark / flash / ring / scorch / debris / splash / ember) and
   four recipes (`shell` / `laser` / `plasma` / `light`); the tab fires them at

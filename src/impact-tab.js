@@ -22,18 +22,22 @@
 import * as THREE from '../vendor/three.module.js';
 import { OrbitControls } from '../vendor/OrbitControls.js';
 import GUI from '../vendor/lil-gui.esm.js';
-import { makeBloom } from './postfx.js';
-import { bakeGalaxyCube } from './galaxybake.js';
-import { SKY_PRESET } from './galaxyseed.js';
+import { makeBloom } from './postfx.js?v=c5963edb';
+import { bakeGalaxyCube } from './galaxybake.js?v=c5963edb';
+import { SKY_PRESET } from './galaxyseed.js?v=c5963edb';
 import {
   IMPACT_TUNE, IMPACT_KNOBS, IMPACT_FAMILIES, IMPACT_RECIPES,
   makeImpactParams, clampImpactParams, formatImpactTune,
   makeImpactBurst, orientImpact,
-} from './impactfx.js';
-import { buildCreature, preloadMkcx } from './units.js';
-import { sentryUrl } from './sentry.js';
-import { loadGlb } from './glbmodels.js';
-import { deepLink, wireDeepLink } from './deeplink.js';
+} from './impactfx.js?v=c5963edb';
+import { buildCreature, preloadMkcx } from './units.js?v=c5963edb';
+import { sentryUrl, SENTRY_FAMILIES } from './sentry.js?v=c5963edb';
+import { loadGlb } from './glbmodels.js?v=c5963edb';
+import { TOWERS, TOWER_BY_KEY } from './towers.js?v=c5963edb';
+import {
+  SENTRY_FX, fxFor, tuneFor, formatSentryFx, formatAllSentryFx,
+} from './sentryfx.js?v=c5963edb';
+import { deepLink, wireDeepLink } from './deeplink.js?v=c5963edb';
 
 // The surfaces a hit can land on. Each is a real answer to "what did I just
 // shoot", and the SPARK COLOUR is the biggest part of that answer — a chip
@@ -85,7 +89,29 @@ export function initImpactTab(root) {
   controls.dampingFactor = 0.08;
   controls.target.set(0, 0.95, 0);
 
+  // THE SUBJECT. The lab's job is now: pick a sentry, tune ITS muzzle and
+  // ITS impact, export the result as the default. So the panel edits a
+  // WORKING COPY of that family's profile rather than a free-floating tune —
+  // otherwise "export" has nothing to export and the operator is transcribing
+  // numbers by hand, which is the friction this is meant to remove.
+  const FX_KEYS = Object.keys(SENTRY_FX);
+  let subject = FX_KEYS.includes(q.get('sentry')) ? q.get('sentry') : 'lancer';
+  // deep copies: editing the live table would make "revert" impossible and
+  // would silently change the running game from a lab panel
+  const work = {};
+  for (const k of FX_KEYS) {
+    const p0 = SENTRY_FX[k];
+    work[k] = {
+      shot: { ...p0.shot },
+      muzzle: { ...p0.muzzle, colors: { ...p0.muzzle.colors }, tune: { ...p0.muzzle.tune } },
+      impact: { ...p0.impact, colors: { ...p0.impact.colors }, tune: { ...p0.impact.tune } },
+    };
+  }
+  const prof = () => work[subject];
+  const slotOf = () => (P.slot === 'muzzle' ? prof().muzzle : prof().impact);
+
   const P = {
+    slot: 'impact',             // which half of the profile the knobs edit
     recipe: 'shell',            // shell | laser | plasma | light | custom
     source: 'tank',             // tank | sentry — WHO is shooting
     surface: 'armour',
@@ -95,6 +121,7 @@ export function initImpactTab(root) {
     auto: true, every: 1.1,     // fire on a clock, so a tweak is seen at once
     slow: 1.0,                  // time scale: an impact is 400ms and you will miss it
     trail: true,                // leave scorches standing
+    showMuzzle: true,           // fire the muzzle alongside the impact
     size: 1.0,                  // ONE number scales the whole hit
     ...makeImpactParams(),
   };
@@ -157,32 +184,48 @@ export function initImpactTab(root) {
   // wall's own rotation does — a sentry shoots down at a wall the tank shoots
   // level at, and the sparks come off differently.
   const shooters = { tank: null, sentry: null };
-  const MUZZLE = { tank: [0, 0.62, 3.2], sentry: [0, 1.55, 3.0] };
+  // the barrel tips, in world space. They track the shooters' own stand-off:
+  // a muzzle flash that fires where the gun is not is worse than none.
+  const MUZZLE = { tank: [-1.75, 0.55, 1.9], sentry: [-1.75, 1.15, 1.9] };
   preloadMkcx('mkcx2').then(() => {
     const t = buildCreature('mkcx2', {});
     if (!t) return;
     t.scale.setScalar(0.9);
-    t.position.set(1.5, 0, 2.6);
+    t.position.set(-1.75, 0, 2.3);
     t.rotation.y = Math.PI;      // facing the wall
     shooters.tank = t;
     scene.add(t);
     syncShooter();
   }).catch(() => {});
-  // the Workshop's own Lancer, loaded through the shared cache — the same
-  // door the towers use, so the lab is looking at the model the game ships
-  loadGlb(sentryUrl('lancer', 2)).then((proto) => {
-    if (!proto) return;
-    const s = proto.clone(true);
-    // one unit tall is not this file's contract, so size it off its own box
-    const b = new THREE.Box3().setFromObject(s);
-    const sz = b.getSize(new THREE.Vector3());
-    s.scale.setScalar(1.7 / Math.max(sz.y, 1e-6));
-    s.position.set(1.5, 0, 2.6);
-    s.rotation.y = Math.PI;
-    shooters.sentry = s;
-    scene.add(s);
-    syncShooter();
-  }).catch(() => {});
+  // THE SELECTED SENTRY'S OWN MODEL, loaded through the shared cache — the
+  // same door the towers use, so the lab looks at what the game ships. Not
+  // every FX key has a model (roster 1 has none at all), so a missing one is
+  // a normal outcome and leaves the tank standing in.
+  const MODEL_FOR = Object.fromEntries(SENTRY_FAMILIES.map((f) => [f.id, f.id]));
+  function modelIdFor(key) {
+    const def = TOWER_BY_KEY[key] || TOWERS.find((t) => t.key === key);
+    if (def && def.model && MODEL_FOR[def.model]) return def.model;
+    return MODEL_FOR[key] || null;
+  }
+  function loadSentryModel() {
+    const id = modelIdFor(subject);
+    if (shooters.sentry) { scene.remove(shooters.sentry); shooters.sentry = null; }
+    if (!id) { syncShooter(); return; }
+    loadGlb(sentryUrl(id, 2)).then((proto) => {
+      if (!proto || modelIdFor(subject) !== id) return;   // the panel moved on
+      const o = proto.clone(true);
+      const b = new THREE.Box3().setFromObject(o);
+      const sz = b.getSize(new THREE.Vector3());
+      o.scale.setScalar(1.3 / Math.max(sz.y, 1e-6));
+      o.position.set(-1.75, 0, 2.3);
+      o.rotation.y = Math.PI;
+      shooters.sentry = o;
+      scene.add(o);
+      syncShooter();
+      if (probeOn) console.log(`IMPACTPROBE model ${subject} -> ${id}_t2.glb`);
+    }).catch(() => {});
+  }
+  loadSentryModel();
   function syncShooter() {
     if (shooters.tank) shooters.tank.visible = P.source === 'tank';
     if (shooters.sentry) shooters.sentry.visible = P.source === 'sentry';
@@ -209,7 +252,13 @@ export function initImpactTab(root) {
     wall.updateMatrixWorld(true);
     const n = new THREE.Vector3(0, 0, 1).applyQuaternion(wall.quaternion).normalize();
     const p0 = wall.position.clone();
-    const dir = new THREE.Vector3(0, 0, -1);          // the shooter looks down -Z
+    // A GUN AIMS. Firing straight down -Z from a shooter parked off to one
+    // side put every hit on the wall's edge and made the incidence knob a
+    // half-truth — the angle between the shot and the surface is what the
+    // sparks answer to, and that needs a real line of fire. So: from the
+    // muzzle to the aim point, which is the plate's middle at muzzle height.
+    const aim = new THREE.Vector3(0, Math.min(P.wallSize * 0.55, Math.max(0.35, from.y)), 0);
+    const dir = aim.sub(from).normalize();
     const denom = n.dot(dir);
     let hit;
     if (Math.abs(denom) < 1e-6) hit = p0.clone();
@@ -227,23 +276,81 @@ export function initImpactTab(root) {
   }
 
   function currentRecipe() {
+    const fx = slotOf();
+    if (P.recipe === 'profile') {
+      return Array.isArray(fx.recipe) ? fx.recipe : (IMPACT_RECIPES[fx.recipe] || []);
+    }
     if (P.recipe !== 'custom') return IMPACT_RECIPES[P.recipe] || IMPACT_RECIPES.light;
     return IMPACT_FAMILIES.filter((f) => P[`use_${f}`]);
+  }
+
+  // PULL and PUSH between the panel and the working profile. The knobs are a
+  // flat list (lil-gui wants one object) while a profile keeps its deltas in
+  // a nested `tune`, so these two functions are the seam — and they are the
+  // reason the export can be a copy button instead of a transcription.
+  function pullFromProfile() {
+    const fx = slotOf();
+    // the panel shows the FOLDED tune: base + this family's deltas, so a knob
+    // that the family never overrode still shows the value it actually fires
+    // with rather than a blank
+    Object.assign(P, tuneFor(fx));
+    P.size = fx.size;
+    for (const f of IMPACT_FAMILIES) P[`use_${f}`] = currentRecipeNames(fx).includes(f);
+    gui.controllersRecursive().forEach((c) => c.updateDisplay());
+  }
+  function currentRecipeNames(fx) {
+    return Array.isArray(fx.recipe) ? fx.recipe : (IMPACT_RECIPES[fx.recipe] || []);
+  }
+  // ONLY WHAT DIFFERS is written back. A profile that records all 27 knobs is
+  // a profile that stops tracking IMPACT_TUNE — change a base value later and
+  // every family silently keeps the old one, which is the same drift the
+  // towers.js split was done to avoid.
+  function pushToProfile() {
+    const fx = slotOf();
+    const tune = {};
+    for (const k of IMPACT_KNOBS) {
+      if (Math.abs(P[k.key] - IMPACT_TUNE[k.key]) > 1e-9) tune[k.key] = P[k.key];
+    }
+    fx.tune = tune;
+    fx.size = P.size;
+    if (P.recipe === 'custom') fx.recipe = IMPACT_FAMILIES.filter((f) => P[`use_${f}`]);
+    else if (P.recipe !== 'profile') fx.recipe = P.recipe;
   }
 
   function fire() {
     const s = surfaceDef();
     const { point, normal } = contact();
+    pushToProfile();                 // the panel IS the profile; keep them one thing
+    const fx = slotOf();
     const names = currentRecipe();
-    const burst = makeImpactBurst(names, P, {
-      spark: s.spark, debris: s.chunk, scorch: s.scorch,
-    }, ++shots, P.size);
+    // the SURFACE decides what a chip and a scorch look like; the WEAPON
+    // decides everything else. Both matter and neither owns the other, so the
+    // surface fills in only what the profile did not name.
+    const colors = { spark: s.spark, debris: s.chunk, scorch: s.scorch, ...fx.colors };
+    const burst = makeImpactBurst(names, tuneFor(fx), colors, ++shots, fx.size);
     orientImpact(burst, point, normal);
     scene.add(burst);
     live.push(burst);
     lastFamilies = names;
+    // ...and the MUZZLE, at the barrel, pointing back down the line of fire.
+    // Firing them separately would let a muzzle and an impact be tuned to
+    // look wrong together while each looks right alone, which is exactly the
+    // mistake a per-effect lab invites.
+    if (P.showMuzzle) {
+      const mz = prof().muzzle;
+      const mNames = Array.isArray(mz.recipe) ? mz.recipe : (IMPACT_RECIPES[mz.recipe] || []);
+      if (mNames.length) {
+        const m = MUZZLE[P.source] || MUZZLE.tank;
+        const mb = makeImpactBurst(mNames, tuneFor(mz), mz.colors, shots + 991, mz.size);
+        // +Z out of the "surface" means, at a muzzle, back along the barrel
+        // toward where the round came from — so the flash blooms outward
+        orientImpact(mb, m, [0, 0, 1]);
+        scene.add(mb);
+        live.push(mb);
+      }
+    }
     if (probeOn) {
-      console.log(`IMPACTPROBE shot=${shots} recipe=${P.recipe} [${names.join(',')}]`
+      console.log(`IMPACTPROBE shot=${shots} sentry=${subject} slot=${P.slot} recipe=${P.recipe} [${names.join(',')}]`
         + ` surface=${P.surface} wall=${P.wall} angle=${P.wallAngle}`
         + ` at=(${point.map((v) => v.toFixed(2)).join(',')})`
         + ` n=(${normal.map((v) => v.toFixed(2)).join(',')}) live=${live.length}`);
@@ -253,8 +360,20 @@ export function initImpactTab(root) {
   const probeOn = q.get('impactprobe') === '1';
 
   // --- GUI ------------------------------------------------------------------
-  const gui = new GUI({ title: 'IMPACT', container: root });
-  gui.add(P, 'recipe', ['shell', 'laser', 'plasma', 'light', 'custom']).name('weapon');
+  const gui = new GUI({ title: 'SENTRY FX', container: root });
+  // 1. PICK A SENTRY. Everything below edits that family's profile.
+  gui.add({ sentry: subject }, 'sentry', FX_KEYS).name('sentry').onChange((v) => {
+    subject = v;
+    P.recipe = 'profile';
+    pullFromProfile();
+    loadSentryModel();
+  });
+  gui.add(P, 'slot', ['impact', 'muzzle']).name('tuning').onChange(() => {
+    P.recipe = 'profile';
+    pullFromProfile();
+  });
+  gui.add(P, 'recipe', ['profile', 'shell', 'laser', 'plasma', 'light', 'custom']).name('recipe');
+  gui.add(P, 'showMuzzle').name('show muzzle too');
   gui.add(P, 'source', ['tank', 'sentry']).name('fired by').onChange(syncShooter);
   gui.add(P, 'surface', Object.keys(SURFACES)).name('surface').onChange(paintWall);
   gui.add({ shoot: () => fire() }, 'shoot').name('FIRE (F)');
@@ -282,21 +401,54 @@ export function initImpactTab(root) {
     f.close();
   }
 
-  const copyBtn = root.querySelector('#impact-copy');
-  if (copyBtn) {
-    copyBtn.addEventListener('click', () => {
-      const src = formatImpactTune(P);
-      navigator.clipboard.writeText(src).then(
-        () => { flash('tune copied to clipboard'); console.log('IMPACT tune:\n' + src); },
-        () => console.log('IMPACT tune:\n' + src));
-    });
+  // 3. EXPORT — the reason the panel edits a profile rather than a loose
+  // tune. What comes out is the exact source of the entry in sentryfx.js, so
+  // making a tuning the default is a paste and not a transcription. A tuning
+  // that lives in one browser is a tuning that never ships, which is what
+  // makes this the load-bearing button on the panel rather than a nicety.
+  function exportOne() {
+    pushToProfile();
+    return formatSentryFx(subject, prof());
   }
+  function exportAll() {
+    pushToProfile();
+    return formatAllSentryFx.call(null) && Object.entries(work)
+      .map(([k, p]) => formatSentryFx(k, p)).join('\n');
+  }
+  function copyOut(src, what) {
+    const say = () => { flash(`${what} copied — paste over its entry in src/sentryfx.js`); };
+    console.log(`SENTRYFX ${what}:\n${src}`);
+    if (navigator.clipboard) navigator.clipboard.writeText(src).then(say, () => {});
+    else say();
+  }
+  const copyBtn = root.querySelector('#impact-copy');
+  if (copyBtn) copyBtn.addEventListener('click', () => copyOut(exportOne(), subject));
+  gui.add({ exp: () => copyOut(exportOne(), subject) }, 'exp')
+    .name('EXPORT this sentry');
+  gui.add({ expAll: () => copyOut(exportAll(), 'the whole table') }, 'expAll')
+    .name('export ALL families');
+  gui.add({ revert: () => {
+    const p0 = SENTRY_FX[subject];
+    work[subject] = {
+      shot: { ...p0.shot },
+      muzzle: { ...p0.muzzle, colors: { ...p0.muzzle.colors }, tune: { ...p0.muzzle.tune } },
+      impact: { ...p0.impact, colors: { ...p0.impact.colors }, tune: { ...p0.impact.tune } },
+    };
+    P.recipe = 'profile';
+    pullFromProfile();
+    flash(`${subject} reverted to its shipped profile`);
+  } }, 'revert').name('revert this sentry');
   wireDeepLink(root.querySelector('#impact-link'),
     () => deepLink({ base: location.origin + location.pathname, hash: 'impact', params: P, defaults: P0 }),
     { flash: (m) => flash(m) });
 
   let flashMsg = '', flashT = 0;
   function flash(m) { flashMsg = m; flashT = 2.0; }
+
+  // open on the SUBJECT's own numbers, not on IMPACT_TUNE's — otherwise the
+  // first thing the lab shows is a weapon nobody ships
+  if (!q.get('recipe')) P.recipe = 'profile';
+  pullFromProfile();
 
   addEventListener('keydown', (e) => {
     if (!active) return;
@@ -344,7 +496,8 @@ export function initImpactTab(root) {
       hudT = 0;
       if (flashT > 0) { flashT -= 0.2; hud.textContent = flashMsg; }
       else {
-        hud.textContent = `${P.recipe} [${lastFamilies.join(' + ') || '-'}]`
+        hud.textContent = `${subject.toUpperCase()} · tuning ${P.slot}`
+          + ` · ${P.recipe} [${lastFamilies.join(' + ') || '-'}]`
           + ` · ${P.source} → ${surfaceDef().label}`
           + ` · wall ${P.wall ? `${P.wallAngle}°` : 'OFF'}`
           + ` · live ${live.length} · scorches ${standing.length}`
@@ -370,6 +523,29 @@ export function initImpactTab(root) {
         fire();
       }
       P.recipe = wasRecipe;   // a probe that leaves the panel changed is a probe that lies twice
+      // THE EXPORT IS THE POINT, so it is checked rather than assumed. A tune
+      // that emits source which does not carry the edit is worse than no
+      // export: the operator pastes, the values quietly revert, and the lab
+      // looks like it lied.
+      {
+        P.slot = 'impact';
+        P.recipe = 'profile';
+        pullFromProfile();
+        const before = tuneFor(prof().impact).ringEnd;
+        P.ringEnd = before + 0.37;           // an edit no shipped profile has
+        P.size = 2.345;
+        const src = exportOne();
+        const carriesTune = src.includes(`ringEnd: ${Number((before + 0.37).toFixed(3))}`);
+        const carriesSize = src.includes('2.35') || src.includes('2.34');
+        const onlyDeltas = !src.includes('sparkLife');   // untouched knobs stay out
+        console.log(`IMPACTPROBE export sentry=${subject} tune=${carriesTune}`
+          + ` size=${carriesSize} deltas-only=${onlyDeltas}`
+          + ` ${carriesTune && carriesSize && onlyDeltas ? 'OK'
+            : 'WRONG — the export does not carry the edit'}`);
+        const all = exportAll().split('\n').filter((l) => /^  \w+: \{ shot:/.test(l)).length;
+        console.log(`IMPACTPROBE export-all families=${all}/${FX_KEYS.length}`
+          + ` ${all === FX_KEYS.length ? 'OK' : 'WRONG — the table is incomplete'}`);
+      }
       setTimeout(() => {
         console.log(`IMPACTPROBE after 1s: live=${live.length} standing=${standing.length}`
           + ` ${live.length > 0 ? 'OK — effects are still running' : 'WRONG — everything died instantly'}`);
