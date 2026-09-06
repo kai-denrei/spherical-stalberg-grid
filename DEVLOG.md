@@ -2,6 +2,50 @@
 
 Newest first. Each entry: what landed, then how it works, for programmers.
 
+## shield — a hologram, four ways in, and a shove
+
+The energy shield was one lucky pickup with a dot-cloud bubble. It is a
+system now: `src/shield.js` (pure, 43 invariants in `npm test`) owns the
+meter, the rack, both field sources and the shove vector; td-tab keeps the
+mesh, the HUD and the keys.
+
+**The seam is the feature.** `deploy()` refuses while the shield is up from
+any source, which is what forces a naked window between charges — without
+that refusal S is a hold-to-win button. The cooldown is stamped at the DROP,
+not the deploy, so the window is a fixed 2s whatever fed the bubble, and 2 <
+`RAM_COMBO_GAP`'s 4 means a player who keeps finding soft bodies through the
+gap carries the multiplier across it. A test pins that relationship, because
+it is the design and not a coincidence of two numbers.
+
+**Four sources, one capped meter.** The dome pickup (12s); a Slow tower you
+park in, which stops slowing anything while you drain it and stays out of
+order 5s after you leave; a pad at the heart, 10s a wave, free in biomass
+because the cost is being at the heart instead of the front; and `S`, two
+charges of 10s — exactly one full meter, spent in two halves.
+
+**The shove** pushes the not-rammable tier aside instead of killing it: no
+damage either way, no shield time spent, and the ram combo untouched. A
+shielded tank that killed the hard tier would make `rammable` stop being the
+read the whole board is built on. It is an OFFSET applied after the path
+interpolation, not a position write — `e.pos` is rebuilt from the cell path
+every frame, the trap `?a6ram=1` already documents — and the stagger zeroes
+`pace` rather than `e.prog`, so the body resumes where it was thrown.
+
+**The bubble** stopped being 280 additive dots. It is a fresnel shell: bright
+at the rim, near-absent through the middle, which is what matters in play
+because you steer through it. The impact is a ripple from the contact point
+rather than a global opacity spike, taken back through the shell's own
+`worldToLocal` rather than re-derived.
+
+Four things only running it could find, all of them checks that reported
+success while measuring nothing: `?layout` could not see the new pad (its
+element map is a fixed list); `?coarse=1` flipped ZERO media blocks because
+it ran at init, before `cssRules` was populated — so the tool built to stop
+`?layout` lying about phone rules was itself doing nothing; the shove probe
+measured a frozen board because clearing `paused` leaves `driveFrozen` and
+`player.next === -1`; and its decay check called a working shove a failure
+because the still-driving tank kept re-shoving the body.
+
 ## The lance: from the muzzle tip, stopped by terrain, through the enemies
 
 Operator: "fix the green laser's height, where the model is — the laser

@@ -66,6 +66,19 @@ token — the corner badge was retired from the game view).
   `?charge=0..1` (TD: park the wave clock inside the warning window —
   `?tick` drives motion, NOT the wave scheduler, so winding it forward
   leaves the countdown where it was),
+  the SHIELD: `?shield=N` (ignite the bubble for N seconds), `?shieldrack=N`,
+  every `SHIELD_TUNE` knob by name (`?coolSecs=`, `?tapOutage=`, `?shoveCells=`
+  …), `?shieldprobe=1` (the ladder as log lines: the cap, one S chain with the
+  SEAM refusing in the middle, the tower tap going offline and coming back,
+  the heart pad's budget running dry and refilling — add `&stress=6:0` for
+  beat C, which needs a slow tower), and `?shoveprobe=1` (a hard core into a
+  shielded hull: thrown out of its lane, back in it, hull and ram combo
+  untouched). The seam is INVISIBLE to a screenshot — a shielded tank and a
+  cooling one differ by a greyed pip — which is why the probes are the
+  deliverable. Mind what freezes a probe: `advanceMotion` returns early on
+  `player.next === -1` and `driveFrozen` is `(shotActive() && !dirShot) ||
+  tutorial.frozen`, so clearing `paused` alone leaves `simTime` at 0.00 and
+  measures a frozen game — `?shoveprobe` clears all three itself.
   the MINES: `?mines=N` (rack size), `?minelay=N` (lay a row ahead and leave
   it standing — the only way to photograph a field, since the probe blows
   everything it lays), `?minearcs=0` (hide the red fan), `?mineprobe=1`

@@ -19,78 +19,78 @@
 
 import * as THREE from '../vendor/three.module.js';
 import GUI from '../vendor/lil-gui.esm.js';
-import { generateSphereMesh, relax } from './grid.js?v=1bdbbfd0';
-import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=1bdbbfd0';
-import { compileRail } from './cine/rail.js?v=1bdbbfd0';
-import { SCRIPTS } from './cine/scripts.js?v=1bdbbfd0';
-import { cuesBetween } from './cine/sound.js?v=1bdbbfd0';
-import { installCine } from './cine/kit.js?v=1bdbbfd0';
-import { mulberry32, randomSeed } from './rng.js?v=1bdbbfd0';
-import { computeBerths, berthIndexFor } from './berths.js?v=1bdbbfd0';
-import { wantsSecondary, shellsForAll } from './autofire.js?v=1bdbbfd0';
-import { printPhase, printOffset, printOn, patternSecsFor } from './printpath.js?v=1bdbbfd0';
+import { generateSphereMesh, relax } from './grid.js?v=d8973d39';
+import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=d8973d39';
+import { compileRail } from './cine/rail.js?v=d8973d39';
+import { SCRIPTS } from './cine/scripts.js?v=d8973d39';
+import { cuesBetween } from './cine/sound.js?v=d8973d39';
+import { installCine } from './cine/kit.js?v=d8973d39';
+import { mulberry32, randomSeed } from './rng.js?v=d8973d39';
+import { computeBerths, berthIndexFor } from './berths.js?v=d8973d39';
+import { wantsSecondary, shellsForAll } from './autofire.js?v=d8973d39';
+import { printPhase, printOffset, printOn, patternSecsFor } from './printpath.js?v=d8973d39';
 import { createBeam } from './beamfx.js';
-import { createBeamRig, PLASMA_DEFAULTS, BOARD_PRESET, BEAM_PEAK } from './beamdraw.js?v=1bdbbfd0';
-import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3, segKey, tangentDir, tangentBasis } from './vec3.js?v=1bdbbfd0';
-import { CREATURES, waveJelly } from './creatures.js?v=1bdbbfd0';
-import { brief, dwellFor } from './isaobriefs.js?v=1bdbbfd0';
-import { drawEmotion } from './emotions.js?v=1bdbbfd0';
+import { createBeamRig, PLASMA_DEFAULTS, BOARD_PRESET, BEAM_PEAK } from './beamdraw.js?v=d8973d39';
+import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3, segKey, tangentDir, tangentBasis } from './vec3.js?v=d8973d39';
+import { CREATURES, waveJelly } from './creatures.js?v=d8973d39';
+import { brief, dwellFor } from './isaobriefs.js?v=d8973d39';
+import { drawEmotion } from './emotions.js?v=d8973d39';
 import { ACHIEVEMENTS, ACHV_GROUPS, achievement, blankRun, earned, freshlyEarned,
   sanitiseRecord }
-  from './achievements.js?v=1bdbbfd0';
+  from './achievements.js?v=d8973d39';
 import { applyFontPack, currentFontPack, FONT_NAMES,
-  loadTypeFeel } from './fonts.js?v=1bdbbfd0';
-import { SECONDARY_TOE, applySecondaryToe } from './units.js?v=1bdbbfd0';
-import { UNITS, UNIT_NAMES, buildUnit, buildCreature, preloadMkcx, preloadServer, makeServerFixture, makeShieldShell, preloadContainer, makeContainerFixture, preloadFabricator, makeIsaoDrone, makeBulletCloud, makeRewardSolid, makeShellSolid, makeDebris, makeDotBurst, makePortalCloud, preloadPortalRing, makePortalRing, makeHeartCloud, makeDotEnemy, makeSurvivor, preloadAstronaut, preloadAstronauts, makeAstronaut, preloadTerraformer, makeTerraformerFixture } from './units.js?v=1bdbbfd0';
-import { LOOKS, LOOK_NAMES } from './looks.js?v=1bdbbfd0';
-import { makeCellIndex } from './cellindex.js?v=1bdbbfd0';
-import { CREATURE_TINTS, ENEMY_SPEC, INTROS, computeWavePlan, accentFor } from './enemyspec.js?v=1bdbbfd0';
-import { PICKUPS } from './pickups.js?v=1bdbbfd0';
-import { rankFor, rankLabel, badgeSVG, killReq, eliteReq } from './ranks.js?v=1bdbbfd0';
-import { beamStep, isBeamStep, PEN_SOFT_FRAC, PEN_HARD_FRAC } from './beamranks.js?v=1bdbbfd0';
-import { burn, sweepAdvance, wallBite as wallBiteFor } from './beamburn.js?v=1bdbbfd0';
-import { arcPoint, projectToArc, toeForCrossing, crossingForToe } from './arc.js?v=1bdbbfd0';
+  loadTypeFeel } from './fonts.js?v=d8973d39';
+import { SECONDARY_TOE, applySecondaryToe } from './units.js?v=d8973d39';
+import { UNITS, UNIT_NAMES, buildUnit, buildCreature, preloadMkcx, preloadServer, makeServerFixture, makeShieldShell, preloadContainer, makeContainerFixture, preloadFabricator, makeIsaoDrone, makeBulletCloud, makeRewardSolid, makeShellSolid, makeDebris, makeDotBurst, makePortalCloud, preloadPortalRing, makePortalRing, makeHeartCloud, makeDotEnemy, makeSurvivor, preloadAstronaut, preloadAstronauts, makeAstronaut, preloadTerraformer, makeTerraformerFixture } from './units.js?v=d8973d39';
+import { LOOKS, LOOK_NAMES } from './looks.js?v=d8973d39';
+import { makeCellIndex } from './cellindex.js?v=d8973d39';
+import { CREATURE_TINTS, ENEMY_SPEC, INTROS, computeWavePlan, accentFor } from './enemyspec.js?v=d8973d39';
+import { PICKUPS } from './pickups.js?v=d8973d39';
+import { rankFor, rankLabel, badgeSVG, killReq, eliteReq } from './ranks.js?v=d8973d39';
+import { beamStep, isBeamStep, PEN_SOFT_FRAC, PEN_HARD_FRAC } from './beamranks.js?v=d8973d39';
+import { burn, sweepAdvance, wallBite as wallBiteFor } from './beamburn.js?v=d8973d39';
+import { arcPoint, projectToArc, toeForCrossing, crossingForToe } from './arc.js?v=d8973d39';
 import { MINE_TUNE, makeField, layMine, armMines, restock, mineAt,
-  inFan, trip, chain, nextChained, minePolar } from './mines.js?v=1bdbbfd0';
+  inFan, trip, chain, nextChained, minePolar } from './mines.js?v=d8973d39';
 import { SHIELD_TUNE, SHIELD_KNOBS, makeShield, charge as chargeShield,
   deploy as deployShield, tickShield, restockShield, tapTower, towerOffline,
-  stationDraw, waveReset as shieldWaveReset, shoveVec, shoveMag } from './shield.js?v=1bdbbfd0';
+  stationDraw, waveReset as shieldWaveReset, shoveVec, shoveMag } from './shield.js?v=d8973d39';
 import { deepLink, wireDeepLink } from './deeplink.js';
 import { RESCUE_TUNE, makeRescue, placeSurvivors, stepBoard, stepGrab,
   disembark, loseCarried, lockOn, waveMix, standing as standingSurv,
   aboard as aboardSurv, missionOver, verdict as rescueVerdict,
   grabProgress, remaining as remainingSurv, exposed as exposedSurv,
   RESCUE2_TUNE, makeCamps, stepCall, stepEmerge, walkStep, runOver,
-  awake as campAwake } from './rescue.js?v=1bdbbfd0';
+  awake as campAwake } from './rescue.js?v=d8973d39';
 import { WORMHOLE_PRESET, WORMHOLE_UNIFORM_DEFAULTS, RING_SPIN, TRAVEL,
-  travelRate, advancePhase } from './portalfx.js?v=1bdbbfd0';
-import { WORMHOLE_FRAG } from './fx/wormhole.frag.js?v=1bdbbfd0';
-import { CORONA_FRAG } from './fx/corona.frag.js?v=1bdbbfd0';
-import { labLine, parseLabQuery } from './lab.js?v=1bdbbfd0';
-import { bakeGalaxyCube } from './galaxybake.js?v=1bdbbfd0';
-import { SKY_PRESET } from './galaxyseed.js?v=1bdbbfd0';
-import { makeScore } from './score.js?v=1bdbbfd0';
-import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER, HACK_GATED, starterTower, towerSound, ROSTER } from './towers.js?v=1bdbbfd0';
-import { makeEconomy, sellRefund } from './economy.js?v=1bdbbfd0';
-import { pickTier } from './perftier.js?v=1bdbbfd0';
-import { applyWeatheredMaterial } from './cine/materials.js?v=1bdbbfd0';
-import { STICK, stickVector, knobOffset } from './stick.js?v=1bdbbfd0';
-import { registerServiceWorker } from './pwa.js?v=1bdbbfd0';
-import { makeBloom } from './postfx.js?v=1bdbbfd0';
-import { TANK_FEEL, TANK_FEEL_KNOBS, makeTankFeel, stepTankFeel, landTankFeel, fireTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js?v=1bdbbfd0';
-import { FEEL, loadFeel, saveFeel } from './feelstore.js?v=1bdbbfd0';
+  travelRate, advancePhase } from './portalfx.js?v=d8973d39';
+import { WORMHOLE_FRAG } from './fx/wormhole.frag.js?v=d8973d39';
+import { CORONA_FRAG } from './fx/corona.frag.js?v=d8973d39';
+import { labLine, parseLabQuery } from './lab.js?v=d8973d39';
+import { bakeGalaxyCube } from './galaxybake.js?v=d8973d39';
+import { SKY_PRESET } from './galaxyseed.js?v=d8973d39';
+import { makeScore } from './score.js?v=d8973d39';
+import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER, HACK_GATED, starterTower, towerSound, ROSTER } from './towers.js?v=d8973d39';
+import { makeEconomy, sellRefund } from './economy.js?v=d8973d39';
+import { pickTier } from './perftier.js?v=d8973d39';
+import { applyWeatheredMaterial } from './cine/materials.js?v=d8973d39';
+import { STICK, stickVector, knobOffset } from './stick.js?v=d8973d39';
+import { registerServiceWorker } from './pwa.js?v=d8973d39';
+import { makeBloom } from './postfx.js?v=d8973d39';
+import { TANK_FEEL, TANK_FEEL_KNOBS, makeTankFeel, stepTankFeel, landTankFeel, fireTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js?v=d8973d39';
+import { FEEL, loadFeel, saveFeel } from './feelstore.js?v=d8973d39';
 import { STRIKE_KNOBS, makeStrike, makeStrikeParams, grantStrikes, stepStrike,
   toggleArm, paintTarget, launchStrike, stepFall, skipFall, fallProgress,
-  strikeDamage, retargetStrike, orbitProgress } from './strike.js?v=1bdbbfd0';
+  strikeDamage, retargetStrike, orbitProgress } from './strike.js?v=d8973d39';
 import { radarBasis, radarProject, radarBearing, sweepAngle, radarPhosphor,
-  proximitySectors, SENSOR_LEVELS, sensorColor } from './radar.js?v=1bdbbfd0';
-import { BLOOM_GROUPS } from './bloomweights.js?v=1bdbbfd0';
+  proximitySectors, SENSOR_LEVELS, sensorColor } from './radar.js?v=d8973d39';
+import { BLOOM_GROUPS } from './bloomweights.js?v=d8973d39';
 import { A6_TUNE, magFor, makeA6, stepA6, arc as a6Arc, a6Line } from './heptapod.js';
 import { SENTRY_TUNE } from './sentry.js';
 import { MISSILE_TUNE, scaleMissile, makeLock, stepLock, launchMissile, stepMissile } from './lockon.js';
-import { TOWER_LOOK_NAMES, DEFAULT_TOWER_LOOK, buildTowerLook, preloadLook, lookReady, setSentryTier } from './towerlooks.js?v=1bdbbfd0';
-import { makeAudio } from './audio.js?v=1bdbbfd0';
-import { DEATH_KEYS } from './audiomanifest.js?v=1bdbbfd0';
+import { TOWER_LOOK_NAMES, DEFAULT_TOWER_LOOK, buildTowerLook, preloadLook, lookReady, setSentryTier } from './towerlooks.js?v=d8973d39';
+import { makeAudio } from './audio.js?v=d8973d39';
+import { DEATH_KEYS } from './audiomanifest.js?v=d8973d39';
 
 export function initTdTab(root) {
   let active = false;
@@ -1050,6 +1050,9 @@ export function initTdTab(root) {
   let recklessIdx = 0, heartIdx = 0;
   let heartCalloutCd = 0;   // seconds; near-heart kills happen in bursts
   let streakMark = 0;       // last streak milestone already called out
+  // the tap ledger is keyed by tower, and an ARRAY INDEX is not stable across
+  // a sell — a sold tower would hand its outage to whatever slid into its slot
+  let nextTowerId = 1;
   let ramCombo = 0, ramComboT = 0;  // count-up + its expiry window
   const RAM_COMBO_GAP = 4;
   // SitRep bookkeeping: everything the end-of-wave recap reports. Bins are
@@ -2093,6 +2096,7 @@ export function initTdTab(root) {
     const built = hl.make();          // null while an async model is still loading
     heartSprite = built || makeHeartCloud(new THREE.Color(look().heart).getHex());
     scene.add(heartSprite);
+    buildStationRing();
     if (!built) {
       // bytes not in yet — build the cloud now, swap when they land
       const want = params.heartLook;
@@ -6339,6 +6343,10 @@ export function initTdTab(root) {
         }
         pace *= e.tacMult ?? 1;
       }
+      // STAGGERED: it stands where it was thrown. Zeroing `pace` and not
+      // `e.prog` is deliberate — the path is untouched, so when it recovers it
+      // carries on from exactly where it was rather than restarting a cell.
+      if (tNow < (e.stagUntil ?? -1)) pace = 0;
       // cloaked (phantom): optical camo. A haze most of the time — the
       // cloud sits near-invisible — with a brief shimmer of presence every
       // ~6s. The radar shares the same decloak window: no window, no blip.
@@ -6390,6 +6398,19 @@ export function initTdTab(root) {
       const b = graph.centers[e.next];
       const f = Math.min(e.prog, 1);
       e.pos = norm3([a[0] + (b[0] - a[0]) * f, a[1] + (b[1] - a[1]) * f, a[2] + (b[2] - a[2]) * f]);
+      // THE SHOVE IS AN OFFSET, NOT A MOVE. e.pos is rebuilt from the cell
+      // path every frame, so writing a displaced position lasts exactly one
+      // tick — the trap ?a6ram=1 already exists to document. Applied HERE,
+      // after the interpolation and re-normalised onto the sphere, it decays
+      // and the body slides back into its own lane.
+      if (e.shove) {
+        e.shove.t -= dt;
+        if (e.shove.t <= 0) e.shove = null;
+        else {
+          const off = shoveMag(e.shove, shieldTune) * cellSide;
+          e.pos = norm3(add3(e.pos, scale3(e.shove.dir, off)));
+        }
+      }
       const n = e.pos;
       const raw = sub3(b, e.pos);
       const flat = sub3(raw, scale3(n, dot3(raw, n)));
@@ -6466,7 +6487,24 @@ export function initTdTab(root) {
           checkVictory();
           continue;
         }
-        if (tNow > e.touchCd) { e.touchCd = tNow + 1.2; playerHit(e.type); }
+        if (shieldUp()) {
+          // PUSHED ASIDE, NOT DESTROYED. No damage either way and no shield
+          // time spent: the bubble is mobility, never a weapon. A shielded
+          // tank that killed the hard tier would make `rammable` stop being
+          // the read the whole board is built on, and that read is worth
+          // more than the damage would be.
+          if (tNow > e.touchCd) {
+            e.touchCd = tNow + 0.4;
+            e.shove = { dir: shoveVec(e.pos, player.pos, player.heading), t: shieldTune.shoveLife };
+            e.stagUntil = tNow + shieldTune.shoveStun;
+            playerHit(e.type, e.pos);   // the ripple and the hull bump, no HP
+            if (shieldProbeOn) {
+              console.log(`SHIELDPROBE shove ${e.type} stun=${shieldTune.shoveStun} combo=${ramCombo}`);
+            }
+          }
+          continue;   // NOT a ram: pays nothing, scores nothing, combo untouched
+        }
+        if (tNow > e.touchCd) { e.touchCd = tNow + 1.2; playerHit(e.type, e.pos); }
       }
     }
   }
@@ -8748,7 +8786,7 @@ export function initTdTab(root) {
   function commitTower(key, ci, spent) {
     const def = TOWER_BY_KEY[key];
     const obj = buildTowerLook(params.towerLook, def);
-    const tower = { key, def, tier: 0, ci, obj, cooldown: 0, spent };
+    const tower = { key, def, tier: 0, ci, obj, cooldown: 0, spent, id: nextTowerId++ };
     // A WALKER IS BORN AT ITS BERTH AND THEN STOPS BEING THERE. The cell it
     // was placed on is its home, not its position — everything else about a
     // tower (the purse, the queue, the upgrade, the sell) is unchanged, and
@@ -9343,6 +9381,39 @@ export function initTdTab(root) {
   // dotted range ring on the surface — one reusable mesh, house style
   let rangeRing = null;
   let rangeRingTtl = 0;
+  // THE CHARGING PAD. A ring on the heart's own cell, lit while the wave's
+  // budget is unspent and dark once it is gone — a trip home that will not pay
+  // is a trip the player has to be able to decline from across the board.
+  // Built from showRangeRing's basis so it sits on the ground the way every
+  // other ring here does.
+  let stationRing = null;
+  function buildStationRing() {
+    if (stationRing) { scene.remove(stationRing); disposeObj(stationRing); stationRing = null; }
+    if (!graph || dungeon.heart == null) return;
+    const c = graph.centers[dungeon.heart];
+    const n = graph.normals[dungeon.heart];
+    const theta = cellSide * 0.55;
+    const ref = Math.abs(n[1]) < 0.9 ? [0, 1, 0] : [1, 0, 0];
+    const t1 = norm3(cross3(n, ref));
+    const t2 = cross3(n, t1);
+    const pos = [];
+    const SEG = 64;
+    for (let i = 0; i < SEG; i++) {
+      const a = (i / SEG) * 2 * Math.PI;
+      const dir = add3(scale3(t1, Math.cos(a)), scale3(t2, Math.sin(a)));
+      const p = scale3(norm3(add3(scale3(norm3(c), Math.cos(theta)), scale3(dir, Math.sin(theta)))),
+        1 + params.wallHeight * 0.7);
+      pos.push(p[0], p[1], p[2]);
+    }
+    const geo = new THREE.BufferGeometry();
+    geo.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+    stationRing = new THREE.Points(geo, new THREE.PointsMaterial({
+      size: 3.0, sizeAttenuation: false, color: 0x59c8ff,
+      transparent: true, opacity: 0.8, depthWrite: false,
+    }));
+    scene.add(stationRing);
+  }
+
   function showRangeRing(ci, radiusCells, color, ttl = 0) {
     hideRangeRing();
     const c = graph.centers[ci];
@@ -10153,6 +10224,27 @@ export function initTdTab(root) {
         if (tw.def.plasma) throwPlasma(tw, muzzle, at, tNow);
         else spawnBeam(muzzle, at, tw.def.color);
       } else if (atk === 'slowfield') {
+        // THE TAP. Park the hull in the field and this tower stops working on
+        // the crowd — it is being drained into your shield instead. The cost
+        // is real and it is DEFERRED: the tower stays out of order for
+        // tapOutage seconds after you drive away, so you cannot sip.
+        //
+        // `continue`, never `break`: the chain sits at the end of a
+        // `for (const tw of towers)` body, so a break would silently stop
+        // every tower after this one from firing at all.
+        if (!playerDown && player.pos && chord(tp, player.pos) <= range) {
+          const got = tapTower(shield, tw.id, tNow, dt, shieldTune);
+          // the picture is the explanation: the bolts point at the TANK, so
+          // you can see which tower you are draining and that it has stopped
+          // working on the horde
+          spawnLightning(muzzle, player.pos, tw.def.color, tNow);
+          if (got > 0) updateHud();
+          if (shieldProbeOn) {
+            console.log(`SHIELDPROBE tap tower=${tw.id} got=${got.toFixed(3)} t=${shield.t.toFixed(2)}`);
+          }
+          continue;   // no slowing from this tower this tick
+        }
+        if (towerOffline(shield, tw.id, tNow)) continue;   // still out of order
         // THE FIELD IS UNIVERSAL, THE PICTURE IS THREE BOLTS. Every hostile
         // in range is still slowed — that is two numbers written on an
         // enemy and it costs nothing. What cost tower × enemy was the
@@ -12157,6 +12249,24 @@ export function initTdTab(root) {
     if (strikeGrace > 0) strikeGrace -= dt;
     if (shopMute > 0) shopMute -= dt;
     if (heartCalloutCd > 0) heartCalloutCd -= dt;
+    // THE HEART PAD. Stand on it and the shield fills, out of a budget that
+    // refills each wave. It costs no biomass — the cost is being at the heart
+    // instead of at the front, the same pull the regen charge already makes,
+    // and unlike the regen charge you get nothing for the trip but the bubble.
+    if (!playerDown && player.pos && shield.stationLeft > 0 && graph && dungeon.heart != null
+        && dist3(player.pos, graph.centers[dungeon.heart]) < cellSide * 0.55) {
+      const got = stationDraw(shield, dt, shieldTune);
+      if (got > 0) updateHud();
+      if (shieldProbeOn) {
+        console.log(`SHIELDPROBE station got=${got.toFixed(3)} left=${shield.stationLeft.toFixed(2)}`
+          + ` t=${shield.t.toFixed(2)}`);
+      }
+    }
+    if (stationRing) {
+      stationRing.material.opacity = shield.stationLeft > 0
+        ? 0.5 + 0.3 * Math.sin(simTime * 3)
+        : 0.12;
+    }
     if (shield.t > 0 && tickShield(shield, dt, simTime, shieldTune)) {
       // THE DROP IS AN EVENT. The bubble quietly ceasing to exist was the one
       // moment the player most needed to notice, and it had no sound and no
@@ -16141,6 +16251,157 @@ export function initTdTab(root) {
   // ?shieldrack=N, or an explicit rack size is overwritten by the default.
   shield.rack = Math.min(shieldTune.rackCap, shieldTune.rackStart);
   shield.stationLeft = shieldTune.stationBudget;
+
+  // ?shieldrack=N — set the rack, for playtesting the chain without a shop
+  const rackN = parseInt(urlParams.get('shieldrack') || '-1', 10);
+  if (rackN >= 0) { shield.rack = Math.min(shieldTune.rackCap, rackN); updateHud(); }
+
+  // ?shieldprobe=1 — THE LADDER, AS LOG LINES, because none of it is
+  // screenshot-checkable: a shielded tank and a cooling one differ by a
+  // greyed pip. Four beats, each ending OK or WRONG.
+  //   A the cap clamps, whatever it is fed
+  //   B one full S chain: deploy, the drop, the SEAM refusing, the re-deploy
+  //   C the tap: the tower goes offline and comes back
+  //   D the station: the budget runs out and the next wave refills it
+  // B is the one that matters — the seam IS the feature and it is invisible.
+  if (shieldProbeOn) {
+    setTimeout(() => {
+      // A
+      shield.t = 0; shield.coolUntil = -Infinity;
+      chargeShield(shield, 999, shieldTune);
+      console.log(`SHIELDPROBE A cap t=${shield.t} expect=${shieldTune.cap}`
+        + ` ${shield.t === shieldTune.cap ? 'OK' : 'WRONG'}`);
+      // B
+      shield.t = 0; shield.coolUntil = -Infinity; shield.rack = 2;
+      const now = simTime;
+      const r1 = deployShield(shield, now, shieldTune);
+      const upRefusal = deployShield(shield, now + 1, shieldTune);
+      shield.t = 0;
+      shield.coolUntil = now + shieldTune.coolSecs;   // as tickShield stamps it
+      const coolRefusal = deployShield(shield, now + shieldTune.coolSecs - 0.1, shieldTune);
+      const r2 = deployShield(shield, now + shieldTune.coolSecs, shieldTune);
+      console.log(`SHIELDPROBE B chain deploy=${r1} while-up=${upRefusal}`
+        + ` in-seam=${coolRefusal} after-seam=${r2} rack=${shield.rack}`
+        + ` seam=${shieldTune.coolSecs}s vs ramgap=${RAM_COMBO_GAP}s`
+        + ` ${r1 === 'ok' && upRefusal === 'up' && coolRefusal === 'cooling' && r2 === 'ok' ? 'OK' : 'WRONG'}`);
+      // C
+      const slowTw = towers.find((t) => t.def.attack === 'slowfield');
+      if (!slowTw) console.log('SHIELDPROBE C no slow tower on the board (add &stress=6:0)');
+      else {
+        shield.t = 0;
+        const got = tapTower(shield, slowTw.id, simTime, 1, shieldTune);
+        const offNow = towerOffline(shield, slowTw.id, simTime);
+        const offLater = towerOffline(shield, slowTw.id, simTime + shieldTune.tapOutage + 0.1);
+        console.log(`SHIELDPROBE C tap got=${got.toFixed(2)} offline-now=${offNow}`
+          + ` offline-after-outage=${offLater} ${got > 0 && offNow && !offLater ? 'OK' : 'WRONG'}`);
+      }
+      // D
+      shield.t = 0; shieldWaveReset(shield, shieldTune);
+      let spent = 0;
+      for (let i = 0; i < 50; i++) spent += stationDraw(shield, 1, shieldTune);
+      const dry = stationDraw(shield, 1, shieldTune);
+      shieldWaveReset(shield, shieldTune);
+      console.log(`SHIELDPROBE D station spent=${spent.toFixed(2)} budget=${shieldTune.stationBudget}`
+        + ` dry=${dry} refilled=${shield.stationLeft}`
+        + ` ${Math.abs(spent - shieldTune.stationBudget) < 0.01 && dry === 0
+          && shield.stationLeft === shieldTune.stationBudget ? 'OK' : 'WRONG'}`);
+      shield.t = 0; shield.coolUntil = -Infinity;
+    }, 2500);
+  }
+
+  // ?shoveprobe=1 — drive a hard core into a shielded hull and report the
+  // four things that must ALL be true at once: the hull did not lose HP, the
+  // ram combo did not move (a shove is not a ram), the body left its lane,
+  // and it came BACK to it. The last one is the whole reason the shove is an
+  // offset rather than a position write.
+  if (urlParams.get('shoveprobe') === '1') {
+    setTimeout(() => {
+      // the board starts PAUSED behind the landing brief and the field
+      // manual; a probe that does not clear both measures a frozen game
+      for (const id of ['#td-msg', '#td-intro']) {
+        const el = root.querySelector(id);
+        if (el) el.classList.add('hidden');
+      }
+      paused = false;
+      if (!graph || !player.pos) { console.log('SHOVEPROBE no board'); return; }
+      // THE CLOCK ONLY RUNS WHILE THE TANK IS DRIVING. advanceMotion returns
+      // early on `player.next === -1`, so a probe that merely unpauses the
+      // board measures a frozen one: simTime stays at 0.00, the creature step
+      // never runs, and the shove it just wrote never decays. Put the machine
+      // on the road and leave it there for the probe's whole duration —
+      // AUTO drives itself, which is what this needs and what a player who
+      // has let go of the wheel is doing anyway.
+      // AND THE DRIVE HAS TWO MORE GATES, both invisible from outside:
+      // driveFrozen is `(shotActive() && !dirShot) || tutorial.frozen`, so the
+      // COLD OPEN and the tutorial's opening hold each freeze the tank on
+      // their own. A probe that needs &cine=0&tutstep=9 in its URL to work is
+      // a probe that will be run without them and quietly report WRONG, so it
+      // clears them itself.
+      tutorial.frozen = false;
+      shot = null;
+      autoMode = true;
+      if (player.next === -1) {
+        const d = dungeon.distToHeart;
+        const nb = openNeighbors(player.cur);
+        player.next = nb.find((c) => d[c] === d[player.cur] - 1) ?? nb[0] ?? player.cur;
+      }
+      const hardType = Object.keys(ENEMY_SPEC).find((k) => !ENEMY_SPEC[k].rammable);
+      const spec = ENEMY_SPEC[hardType];
+      chargeShield(shield, 20, shieldTune);
+      const hp0 = playerHP, combo0 = ramCombo;
+      let ehp0 = 0;   // the BODY's health, read after it is planted
+      const near = player.cur;
+      const obj = makeDotEnemy(hardType, { walker: CREATURE_TINTS[hardType], walkerHi: accentFor(hardType) });
+      const s0 = cellSide * spec.size * 0.7;
+      obj.scale.setScalar(s0); obj.userData.s0 = s0;
+      scene.add(obj);
+      const e = {
+        type: hardType, spec, scale0: s0, size: spec.size,
+        cur: near, prev: -1, next: near, prog: 0,
+        pos: graph.centers[near].slice(), dir: [0, 1, 0],
+        obj, alive: true, phase: 0, paceJitter: 1,
+        hp: 40, behMult: 1, behUntil: -1, touchCd: -1,
+        slowFactor: 1, slowUntil: -1,
+      };
+      enemies.push(e);
+      const lane = [...e.pos];
+      e.shove = { dir: shoveVec(e.pos, player.pos, player.heading), t: shieldTune.shoveLife };
+      e.stagUntil = simTime + shieldTune.shoveStun;
+      const peak = shoveMag({ t: shieldTune.shoveLife }, shieldTune) * cellSide;
+      ehp0 = e.hp;
+      console.log(`SHOVEPROBE planted a hard ${hardType} at cell ${near}, shield=${shield.t.toFixed(1)}s`);
+      setTimeout(() => {
+        const away = dist3(e.pos, lane);
+        console.log(`SHOVEPROBE thrown ${away.toFixed(4)} of ${peak.toFixed(4)}`
+          + ` shoveT=${e.shove ? e.shove.t.toFixed(2) : 'gone'} prog=${e.prog.toFixed(3)}`
+          + ` simTime=${simTime.toFixed(2)} paused=${paused} alive=${e.alive}`
+          // ehp is REPORTED, not asserted. The probe drives the tank so the
+          // clock runs, and a driving tank shoots — so the body loses health
+          // to the guns, which says nothing about the shove. What the shove
+          // does to health is settled structurally instead: the shielded
+          // branch calls playerHit and `continue`, and never damageEnemy.
+          + ` ehp=${e.hp}/${ehp0} (the tank's own guns)`
+          + ` ${away > peak * 0.4 ? 'OK' : 'WRONG — it never left its lane'}`);
+        // ISOLATE THE DECAY FROM RE-CONTACT. The tank is still driving, so it
+        // keeps reaching the body and shoving it again — which is correct
+        // behaviour and made the first version of this check report a WRONG
+        // on a working shove, with the offset going UP between the two reads.
+        // Bar it from being shoved again and the decay is the only thing left
+        // moving, which is what this beat is actually asking about.
+        e.touchCd = simTime + 999;
+        setTimeout(() => {
+          console.log(`SHOVEPROBE back shove=${e.shove ? `still held ${e.shove.t.toFixed(2)}` : 'decayed'}`
+            + ` simTime=${simTime.toFixed(2)} next=${player.next}`
+            + ` hull=${playerHP}/${hp0} combo=${ramCombo}/${combo0}`
+            + ` alive=${e.alive}${e.alive ? '' : ' (a tower or the heart got it — not the shove)'}`
+            + ` ${!e.shove && playerHP === hp0 && ramCombo === combo0 ? 'OK' : 'WRONG'}`);
+          // MARGIN, not a tight fit: the creature step's dt is not the wall
+          // clock's, so a window sized exactly to shoveLife catches the offset
+          // at 0.05 and calls a working shove a failure.
+        }, (shieldTune.shoveLife * 2 + 0.6) * 1000);
+      }, 300);
+    }, 2500);
+  }
 
   // ?shield=N — ignite the bubble for N seconds (visual check / playtest)
   const shieldN = parseFloat(urlParams.get('shield') || '0');
