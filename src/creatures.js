@@ -1,4 +1,4 @@
-import { BRAILLE_SHAPES, BRAILLE_SHAPE_KINDS } from './braillelab.js?v=812772aa';
+import { BRAILLE_SHAPES, BRAILLE_SHAPE_KINDS } from './braillelab.js?v=1779d0a6';
 // creatures.js — organic dot-cloud units, ported from ~/Dev/Braille
 // fun-shapes (half-dotted > organic): amoeba, bacteriophage, jellyfish.
 // Each generator returns unit-radius points [x,y,z,(hi)] where hi===1 marks a

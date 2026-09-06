@@ -47,22 +47,22 @@
 import * as THREE from '../vendor/three.module.js';
 import { OrbitControls } from '../vendor/OrbitControls.js';
 import GUI from '../vendor/lil-gui.esm.js';
-import { makeBloom } from './postfx.js?v=812772aa';
-import { bakeGalaxyCube } from './galaxybake.js?v=812772aa';
-import { SKY_PRESET } from './galaxyseed.js?v=812772aa';
+import { makeBloom } from './postfx.js?v=1779d0a6';
+import { bakeGalaxyCube } from './galaxybake.js?v=1779d0a6';
+import { SKY_PRESET } from './galaxyseed.js?v=1779d0a6';
 import {
   IMPACT_TUNE, IMPACT_KNOBS, IMPACT_FAMILIES, IMPACT_RECIPES,
   makeImpactParams, clampImpactParams, formatImpactTune,
   makeImpactBurst, orientImpact,
-} from './impactfx.js?v=812772aa';
-import { buildCreature, preloadMkcx } from './units.js?v=812772aa';
-import { sentryUrl, SENTRY_FAMILIES } from './sentry.js?v=812772aa';
-import { loadGlb } from './glbmodels.js?v=812772aa';
-import { TOWERS, TOWER_BY_KEY } from './towers.js?v=812772aa';
+} from './impactfx.js?v=1779d0a6';
+import { buildCreature, preloadMkcx } from './units.js?v=1779d0a6';
+import { sentryUrl, SENTRY_FAMILIES } from './sentry.js?v=1779d0a6';
+import { loadGlb } from './glbmodels.js?v=1779d0a6';
+import { TOWERS, TOWER_BY_KEY } from './towers.js?v=1779d0a6';
 import {
   SENTRY_FX, fxFor, tuneFor, formatSentryFx, formatAllSentryFx,
-} from './sentryfx.js?v=812772aa';
-import { deepLink, wireDeepLink } from './deeplink.js?v=812772aa';
+} from './sentryfx.js?v=1779d0a6';
+import { deepLink, wireDeepLink } from './deeplink.js?v=1779d0a6';
 
 // The surfaces a hit can land on. Each is a real answer to "what did I just
 // shoot", and the SPARK COLOUR is the biggest part of that answer — a chip
@@ -719,6 +719,25 @@ export function initImpactTab(root) {
     for (const [g, f] of Object.entries(knobFolders)) {
       f.domElement.style.display = inUse.has(g) ? '' : 'none';
     }
+  }
+
+  // 3. EXPORT — the reason the panel edits a profile rather than a loose tune.
+  // What comes out is the exact source of the entry in sentryfx.js, so making
+  // a tuning the default is a paste and not a transcription. A tuning that
+  // lives in one browser is a tuning that never ships.
+  function exportOne() {
+    pushToProfile();
+    return formatSentryFx(subject, prof());
+  }
+  function exportAll() {
+    pushToProfile();
+    return Object.entries(work).map(([k, p2]) => formatSentryFx(k, p2)).join('\n');
+  }
+  function copyOut(src, what) {
+    const say = () => { flash(`${what} copied — paste over its entry in src/sentryfx.js`); };
+    console.log(`SENTRYFX ${what}:\n${src}`);
+    if (navigator.clipboard) navigator.clipboard.writeText(src).then(say, () => {});
+    else say();
   }
 
   const copyBtn = root.querySelector('#impact-copy');
