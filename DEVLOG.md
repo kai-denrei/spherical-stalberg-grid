@@ -2,6 +2,55 @@
 
 Newest first. Each entry: what landed, then how it works, for programmers.
 
+## 140ae57 — the sentry range's beam: 0.33 pixels, not a shader fault
+
+The range's lance and throw are on the board's beam now. They had been a
+doubled `THREE.Line` and a spray of `Points`, standing in for beamfx's
+`createBeam`, which "rendered nothing in this scene".
+
+**The diagnosis, and why two earlier ones missed it.** Both previous passes
+verified the inputs — the geometry has 386 vertices and an `aU` attribute, the
+uniforms read back correct, the program compiles, no GL error — and concluded
+the shader was at fault. But "it renders nothing" is three separate failures:
+
+1. never submitted (culled, hidden, not in the graph),
+2. submitted and covering no pixels,
+3. submitted, covering pixels, shaded to black.
+
+Checking the inputs distinguishes none of them. Two measurements do.
+`onBeforeRender` fires once per mesh per render pass, so counting it splits (1)
+from the rest — it reads 600/s, identical to a control `THREE.Line` on the same
+endpoints. And the ribbon's width projected onto the canvas splits (2) from
+(3): `glowWidth * 2 / (2 * dist * tan(fov/2)) * canvasHeight`. It came to
+**0.33 px**.
+
+The cause is scale. The board's lance glow is 0.0041 world units — about a
+twentieth of a cell — and the board watches it from roughly six cells away.
+The range is metre-scale with its camera ~29 units out from a yard whose cell
+equivalent is well under one unit, so the identical construction lands under a
+pixel. Everything about it was valid; it simply had no area.
+
+**The fix.** `shotfx.makeBeamShot(from, to, color, kind, { glowWidth })` — the
+board preset, the shared `LANCE_LOOK` / `THROW_LOOK`, the board's five links,
+its muzzle-to-target taper (normalised so the argument means the beam's widest
+point), and caps on the two real ends only, because an interior cap pinches the
+beam into a string of beads. The width is an explicit argument in world units.
+That rule is already in shotfx's header for every other builder in it; the
+range's beam predated the rule and was the last place deriving a size from
+another scene's cell.
+
+**A second bug fell out of it.** `stepBeams` faded a beam with
+`material.opacity`, which does nothing on a `ShaderMaterial` — and beamfx's own
+`update()` rewrites `uAlpha` from its burst envelope, so even a correct fade
+set before it is discarded. `makeBeamShot` holds the fade and re-applies it
+after `update`. `test/beamshot.mjs` pins that, the lance/throw ratio, the cap
+placement and the link chaining.
+
+**The instrument stays.** `?beamprobe=1` prints draws-per-second and the
+projected pixel width: `draws=600 px=5.0` now, `draws=600 px=0.33` before. Both
+numbers are needed — either alone reads as a healthy beam.
+
+
 ## df1364a — jelly: shelved, and the shelf is a flag
 
 The mass is out of the wave programme and still in the units roster. The
