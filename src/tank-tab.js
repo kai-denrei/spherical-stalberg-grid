@@ -3,8 +3,8 @@
 // every rule lives (Node-tested) in the core.
 import * as THREE from '../vendor/three.module.js';
 import GUI from '../vendor/lil-gui.esm.js';
-import { createTankGame, DYING_T } from './tanks.js?v=9a05dfc2';
-import { mulberry32 } from './rng.js?v=9a05dfc2';
+import { createTankGame, DYING_T } from './tanks.js?v=1bdbbfd0';
+import { mulberry32 } from './rng.js?v=1bdbbfd0';
 
 const DT = 1 / 60;
 const COLORS = {

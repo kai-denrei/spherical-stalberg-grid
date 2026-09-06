@@ -19,78 +19,78 @@
 
 import * as THREE from '../vendor/three.module.js';
 import GUI from '../vendor/lil-gui.esm.js';
-import { generateSphereMesh, relax } from './grid.js?v=9a05dfc2';
-import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=9a05dfc2';
-import { compileRail } from './cine/rail.js?v=9a05dfc2';
-import { SCRIPTS } from './cine/scripts.js?v=9a05dfc2';
-import { cuesBetween } from './cine/sound.js?v=9a05dfc2';
-import { installCine } from './cine/kit.js?v=9a05dfc2';
-import { mulberry32, randomSeed } from './rng.js?v=9a05dfc2';
-import { computeBerths, berthIndexFor } from './berths.js?v=9a05dfc2';
-import { wantsSecondary, shellsForAll } from './autofire.js?v=9a05dfc2';
-import { printPhase, printOffset, printOn, patternSecsFor } from './printpath.js?v=9a05dfc2';
+import { generateSphereMesh, relax } from './grid.js?v=1bdbbfd0';
+import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=1bdbbfd0';
+import { compileRail } from './cine/rail.js?v=1bdbbfd0';
+import { SCRIPTS } from './cine/scripts.js?v=1bdbbfd0';
+import { cuesBetween } from './cine/sound.js?v=1bdbbfd0';
+import { installCine } from './cine/kit.js?v=1bdbbfd0';
+import { mulberry32, randomSeed } from './rng.js?v=1bdbbfd0';
+import { computeBerths, berthIndexFor } from './berths.js?v=1bdbbfd0';
+import { wantsSecondary, shellsForAll } from './autofire.js?v=1bdbbfd0';
+import { printPhase, printOffset, printOn, patternSecsFor } from './printpath.js?v=1bdbbfd0';
 import { createBeam } from './beamfx.js';
-import { createBeamRig, PLASMA_DEFAULTS, BOARD_PRESET, BEAM_PEAK } from './beamdraw.js?v=9a05dfc2';
-import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3, segKey, tangentDir, tangentBasis } from './vec3.js?v=9a05dfc2';
-import { CREATURES, waveJelly } from './creatures.js?v=9a05dfc2';
-import { brief, dwellFor } from './isaobriefs.js?v=9a05dfc2';
-import { drawEmotion } from './emotions.js?v=9a05dfc2';
+import { createBeamRig, PLASMA_DEFAULTS, BOARD_PRESET, BEAM_PEAK } from './beamdraw.js?v=1bdbbfd0';
+import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3, segKey, tangentDir, tangentBasis } from './vec3.js?v=1bdbbfd0';
+import { CREATURES, waveJelly } from './creatures.js?v=1bdbbfd0';
+import { brief, dwellFor } from './isaobriefs.js?v=1bdbbfd0';
+import { drawEmotion } from './emotions.js?v=1bdbbfd0';
 import { ACHIEVEMENTS, ACHV_GROUPS, achievement, blankRun, earned, freshlyEarned,
   sanitiseRecord }
-  from './achievements.js?v=9a05dfc2';
+  from './achievements.js?v=1bdbbfd0';
 import { applyFontPack, currentFontPack, FONT_NAMES,
-  loadTypeFeel } from './fonts.js?v=9a05dfc2';
-import { SECONDARY_TOE, applySecondaryToe } from './units.js?v=9a05dfc2';
-import { UNITS, UNIT_NAMES, buildUnit, buildCreature, preloadMkcx, preloadServer, makeServerFixture, makeShieldShell, preloadContainer, makeContainerFixture, preloadFabricator, makeIsaoDrone, makeBulletCloud, makeRewardSolid, makeShellSolid, makeDebris, makeDotBurst, makePortalCloud, preloadPortalRing, makePortalRing, makeHeartCloud, makeDotEnemy, makeSurvivor, preloadAstronaut, preloadAstronauts, makeAstronaut, preloadTerraformer, makeTerraformerFixture } from './units.js?v=9a05dfc2';
-import { LOOKS, LOOK_NAMES } from './looks.js?v=9a05dfc2';
-import { makeCellIndex } from './cellindex.js?v=9a05dfc2';
-import { CREATURE_TINTS, ENEMY_SPEC, INTROS, computeWavePlan, accentFor } from './enemyspec.js?v=9a05dfc2';
-import { PICKUPS } from './pickups.js?v=9a05dfc2';
-import { rankFor, rankLabel, badgeSVG, killReq, eliteReq } from './ranks.js?v=9a05dfc2';
-import { beamStep, isBeamStep, PEN_SOFT_FRAC, PEN_HARD_FRAC } from './beamranks.js?v=9a05dfc2';
-import { burn, sweepAdvance, wallBite as wallBiteFor } from './beamburn.js?v=9a05dfc2';
-import { arcPoint, projectToArc, toeForCrossing, crossingForToe } from './arc.js?v=9a05dfc2';
+  loadTypeFeel } from './fonts.js?v=1bdbbfd0';
+import { SECONDARY_TOE, applySecondaryToe } from './units.js?v=1bdbbfd0';
+import { UNITS, UNIT_NAMES, buildUnit, buildCreature, preloadMkcx, preloadServer, makeServerFixture, makeShieldShell, preloadContainer, makeContainerFixture, preloadFabricator, makeIsaoDrone, makeBulletCloud, makeRewardSolid, makeShellSolid, makeDebris, makeDotBurst, makePortalCloud, preloadPortalRing, makePortalRing, makeHeartCloud, makeDotEnemy, makeSurvivor, preloadAstronaut, preloadAstronauts, makeAstronaut, preloadTerraformer, makeTerraformerFixture } from './units.js?v=1bdbbfd0';
+import { LOOKS, LOOK_NAMES } from './looks.js?v=1bdbbfd0';
+import { makeCellIndex } from './cellindex.js?v=1bdbbfd0';
+import { CREATURE_TINTS, ENEMY_SPEC, INTROS, computeWavePlan, accentFor } from './enemyspec.js?v=1bdbbfd0';
+import { PICKUPS } from './pickups.js?v=1bdbbfd0';
+import { rankFor, rankLabel, badgeSVG, killReq, eliteReq } from './ranks.js?v=1bdbbfd0';
+import { beamStep, isBeamStep, PEN_SOFT_FRAC, PEN_HARD_FRAC } from './beamranks.js?v=1bdbbfd0';
+import { burn, sweepAdvance, wallBite as wallBiteFor } from './beamburn.js?v=1bdbbfd0';
+import { arcPoint, projectToArc, toeForCrossing, crossingForToe } from './arc.js?v=1bdbbfd0';
 import { MINE_TUNE, makeField, layMine, armMines, restock, mineAt,
-  inFan, trip, chain, nextChained, minePolar } from './mines.js?v=9a05dfc2';
+  inFan, trip, chain, nextChained, minePolar } from './mines.js?v=1bdbbfd0';
 import { SHIELD_TUNE, SHIELD_KNOBS, makeShield, charge as chargeShield,
   deploy as deployShield, tickShield, restockShield, tapTower, towerOffline,
-  stationDraw, waveReset as shieldWaveReset, shoveVec, shoveMag } from './shield.js?v=9a05dfc2';
+  stationDraw, waveReset as shieldWaveReset, shoveVec, shoveMag } from './shield.js?v=1bdbbfd0';
 import { deepLink, wireDeepLink } from './deeplink.js';
 import { RESCUE_TUNE, makeRescue, placeSurvivors, stepBoard, stepGrab,
   disembark, loseCarried, lockOn, waveMix, standing as standingSurv,
   aboard as aboardSurv, missionOver, verdict as rescueVerdict,
   grabProgress, remaining as remainingSurv, exposed as exposedSurv,
   RESCUE2_TUNE, makeCamps, stepCall, stepEmerge, walkStep, runOver,
-  awake as campAwake } from './rescue.js?v=9a05dfc2';
+  awake as campAwake } from './rescue.js?v=1bdbbfd0';
 import { WORMHOLE_PRESET, WORMHOLE_UNIFORM_DEFAULTS, RING_SPIN, TRAVEL,
-  travelRate, advancePhase } from './portalfx.js?v=9a05dfc2';
-import { WORMHOLE_FRAG } from './fx/wormhole.frag.js?v=9a05dfc2';
-import { CORONA_FRAG } from './fx/corona.frag.js?v=9a05dfc2';
-import { labLine, parseLabQuery } from './lab.js?v=9a05dfc2';
-import { bakeGalaxyCube } from './galaxybake.js?v=9a05dfc2';
-import { SKY_PRESET } from './galaxyseed.js?v=9a05dfc2';
-import { makeScore } from './score.js?v=9a05dfc2';
-import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER, HACK_GATED, starterTower, towerSound, ROSTER } from './towers.js?v=9a05dfc2';
-import { makeEconomy, sellRefund } from './economy.js?v=9a05dfc2';
-import { pickTier } from './perftier.js?v=9a05dfc2';
-import { applyWeatheredMaterial } from './cine/materials.js?v=9a05dfc2';
-import { STICK, stickVector, knobOffset } from './stick.js?v=9a05dfc2';
-import { registerServiceWorker } from './pwa.js?v=9a05dfc2';
-import { makeBloom } from './postfx.js?v=9a05dfc2';
-import { TANK_FEEL, TANK_FEEL_KNOBS, makeTankFeel, stepTankFeel, landTankFeel, fireTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js?v=9a05dfc2';
-import { FEEL, loadFeel, saveFeel } from './feelstore.js?v=9a05dfc2';
+  travelRate, advancePhase } from './portalfx.js?v=1bdbbfd0';
+import { WORMHOLE_FRAG } from './fx/wormhole.frag.js?v=1bdbbfd0';
+import { CORONA_FRAG } from './fx/corona.frag.js?v=1bdbbfd0';
+import { labLine, parseLabQuery } from './lab.js?v=1bdbbfd0';
+import { bakeGalaxyCube } from './galaxybake.js?v=1bdbbfd0';
+import { SKY_PRESET } from './galaxyseed.js?v=1bdbbfd0';
+import { makeScore } from './score.js?v=1bdbbfd0';
+import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER, HACK_GATED, starterTower, towerSound, ROSTER } from './towers.js?v=1bdbbfd0';
+import { makeEconomy, sellRefund } from './economy.js?v=1bdbbfd0';
+import { pickTier } from './perftier.js?v=1bdbbfd0';
+import { applyWeatheredMaterial } from './cine/materials.js?v=1bdbbfd0';
+import { STICK, stickVector, knobOffset } from './stick.js?v=1bdbbfd0';
+import { registerServiceWorker } from './pwa.js?v=1bdbbfd0';
+import { makeBloom } from './postfx.js?v=1bdbbfd0';
+import { TANK_FEEL, TANK_FEEL_KNOBS, makeTankFeel, stepTankFeel, landTankFeel, fireTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js?v=1bdbbfd0';
+import { FEEL, loadFeel, saveFeel } from './feelstore.js?v=1bdbbfd0';
 import { STRIKE_KNOBS, makeStrike, makeStrikeParams, grantStrikes, stepStrike,
   toggleArm, paintTarget, launchStrike, stepFall, skipFall, fallProgress,
-  strikeDamage, retargetStrike, orbitProgress } from './strike.js?v=9a05dfc2';
+  strikeDamage, retargetStrike, orbitProgress } from './strike.js?v=1bdbbfd0';
 import { radarBasis, radarProject, radarBearing, sweepAngle, radarPhosphor,
-  proximitySectors, SENSOR_LEVELS, sensorColor } from './radar.js?v=9a05dfc2';
-import { BLOOM_GROUPS } from './bloomweights.js?v=9a05dfc2';
+  proximitySectors, SENSOR_LEVELS, sensorColor } from './radar.js?v=1bdbbfd0';
+import { BLOOM_GROUPS } from './bloomweights.js?v=1bdbbfd0';
 import { A6_TUNE, magFor, makeA6, stepA6, arc as a6Arc, a6Line } from './heptapod.js';
 import { SENTRY_TUNE } from './sentry.js';
 import { MISSILE_TUNE, scaleMissile, makeLock, stepLock, launchMissile, stepMissile } from './lockon.js';
-import { TOWER_LOOK_NAMES, DEFAULT_TOWER_LOOK, buildTowerLook, preloadLook, lookReady, setSentryTier } from './towerlooks.js?v=9a05dfc2';
-import { makeAudio } from './audio.js?v=9a05dfc2';
-import { DEATH_KEYS } from './audiomanifest.js?v=9a05dfc2';
+import { TOWER_LOOK_NAMES, DEFAULT_TOWER_LOOK, buildTowerLook, preloadLook, lookReady, setSentryTier } from './towerlooks.js?v=1bdbbfd0';
+import { makeAudio } from './audio.js?v=1bdbbfd0';
+import { DEATH_KEYS } from './audiomanifest.js?v=1bdbbfd0';
 
 export function initTdTab(root) {
   let active = false;
@@ -214,28 +214,50 @@ export function initTdTab(root) {
   // never shows — the operator's screenshot showed the radar swallowing the
   // launch console. Rewriting the media conditions in the loaded sheets
   // makes those blocks apply for real, at this width, in this run.
-  if (mobileParam === '1' && new URLSearchParams(location.search).get('coarse') === '1') {
+  // TIMING. This used to run once, here, at init — and flipped ZERO blocks,
+  // because document.styleSheets has the <link> but `cssRules` is not
+  // populated until the sheet has actually loaded. So the tool built to stop
+  // ?layout lying reported "0 media blocks now apply" and ?layout went on
+  // measuring the desktop rules, which is the exact failure it exists to
+  // prevent, one level up. It is a FUNCTION now, called again at measure
+  // time, and it says how many blocks it found so a zero is visible.
+  function simulateCoarse() {
+    if (mobileParam !== '1' || new URLSearchParams(location.search).get('coarse') !== '1') return 0;
     let flipped = 0;
     for (const sheet of document.styleSheets) {
       let rules;
       try { rules = sheet.cssRules; } catch { continue; }
-      for (const r of rules) {
-        if (!(r instanceof CSSMediaRule)) continue;
-        const t = r.media.mediaText;
-        // BOTH sides of the pointer: coarse/hover-none become true AND
-        // fine/hover-hover become false — headless is `pointer: fine`, and
-        // leaving that half alone hid the thumbs (a fine-pointer block) under
-        // a coarse layout, a combination no device has
-        if (!/pointer:\s*(coarse|fine)|hover:\s*(none|hover)/.test(t)) continue;
-        r.media.mediaText = t
-          .replace(/\(pointer:\s*coarse\)/g, '(min-width: 0px)')
-          .replace(/\(hover:\s*none\)/g, '(min-width: 0px)')
-          .replace(/\(pointer:\s*fine\)/g, '(min-width: 99999px)')
-          .replace(/\(hover:\s*hover\)/g, '(min-width: 99999px)');
-        flipped++;
-      }
+      if (!rules) continue;
+      const walk = (list) => {
+        for (const r of list) {
+          if (r.cssRules && !(r instanceof CSSMediaRule)) { walk(r.cssRules); continue; }
+          if (!(r instanceof CSSMediaRule)) continue;
+          const t = r.media.mediaText;
+          // BOTH sides of the pointer: coarse/hover-none become true AND
+          // fine/hover-hover become false — headless is `pointer: fine`, and
+          // leaving that half alone hid the thumbs (a fine-pointer block)
+          // under a coarse layout, a combination no device has
+          if (!/pointer:\s*(coarse|fine)|hover:\s*(none|hover)/.test(t)) { walk(r.cssRules || []); continue; }
+          r.media.mediaText = t
+            .replace(/\(pointer:\s*coarse\)/g, '(min-width: 0px)')
+            .replace(/\(hover:\s*none\)/g, '(min-width: 0px)')
+            .replace(/\(pointer:\s*fine\)/g, '(min-width: 99999px)')
+            .replace(/\(hover:\s*hover\)/g, '(min-width: 99999px)');
+          flipped++;
+        }
+      };
+      walk(rules);
     }
-    console.log(`COARSE simulated: ${flipped} media blocks now apply`);
+    return flipped;
+  }
+  // ?coarse=1 — SIMULATE A COARSE POINTER for the ruler. No headless flag
+  // makes `(pointer: coarse)` true (primaryPointerType blink-settings were
+  // tried: still false), so every rule in the phone's coarse blocks was
+  // invisible to ?layout, which reported 0 overlaps on a layout the phone
+  // never shows — the operator's screenshot showed the radar swallowing the
+  // launch console.
+  if (mobileParam === '1' && new URLSearchParams(location.search).get('coarse') === '1') {
+    console.log(`COARSE simulated at init: ${simulateCoarse()} media blocks now apply`);
   }
 
   // THE RENDER BUDGET (plan §2.9): one table, picked once, printed by
@@ -660,6 +682,7 @@ export function initTdTab(root) {
   let mineField = makeField(mineTune);
   const mineObjs = new Map();   // id -> { grp, disc, ring, fan }
   const mineProbeOn = new URLSearchParams(location.search).get('mineprobe') === '1';
+  const shieldProbeOn = new URLSearchParams(location.search).get('shieldprobe') === '1';
 
   // --- THE RESCUE MISSION --------------------------------------------------
   // `?mission=rescue`. A mission is a VARIANT of this board, not a second
@@ -3351,6 +3374,7 @@ export function initTdTab(root) {
     }
     if (down && (k === ' ' || k === 'spacebar')) { fire(); ev.preventDefault(); return; }
     if (down && k === 'n') { layMineNow(); ev.preventDefault(); return; }
+    if (down && k === 's') { deployShieldNow(); ev.preventDefault(); return; }
     if (down && k === 'h') pulseHint();
     if (down && k === 'v') toggleView();
     if (down && k === 'x' && serverFound && !hackedRound) openHack();
@@ -3772,6 +3796,11 @@ export function initTdTab(root) {
     // mine pad would empty the rack in a second.
     const mb = root.querySelector('#td-pad-mine');
     if (mb) mb.addEventListener('click', () => layMineNow());
+    // the fourth pad. Same tap-not-hold rule: a held shield pad would burn
+    // the rack into a bubble that was already up, which the module refuses
+    // anyway — but refusing four times a second is not feedback.
+    const sb = root.querySelector('#td-pad-shield');
+    if (sb) sb.addEventListener('click', () => deployShieldNow());
   }
 
   // --- LAUNCH CONTROL: DeepWatch's console, driving OUR state machine -------
@@ -4568,6 +4597,12 @@ export function initTdTab(root) {
         updateHud(); renderVerdict(false);
       }
     }
+    else if (cl.contains('msg-buyshields')) {
+      if (shield.rack < shieldTune.rackCap && eco.spend(SINK.shields)) {
+        restockShield(shield, shieldTune.caseSize, shieldTune);
+        updateHud(); renderVerdict(false);
+      }
+    }
     else if (cl.contains('msg-next')) {
       if (!eco.spend(sectorToll())) return;   // the toll is the gate
       round++; hackedRound = false; syncHackBtn();
@@ -4680,6 +4715,7 @@ export function initTdTab(root) {
         keys.innerHTML = '<span>W A S D / arrows</span><span>drive</span>'
           + `<span>SPACE</span><span>shell &mdash; you have ${rescue2Tune.shells}</span>`
           + '<span>N</span><span>lay a MINE one cell ahead</span>'
+          + '<span>S</span><span>deploy a SHIELD (10s) &mdash; hard cores bounce off</span>'
           + '<span>Q / E</span><span>cruise up / down</span>'
           + '<span>1 / 2 / 3</span><span>orbit &middot; 1st &middot; 3rd</span>'
           + '<span>M / V</span><span>map / cycle view</span>'
@@ -4697,6 +4733,7 @@ export function initTdTab(root) {
           + '<span>SPACE</span><span>shell &mdash; you have ' + rescueTune.shells + '</span>'
           + (rescueTune.lasers ? '<span>SHIFT</span><span>lasers</span>' : '')
           + '<span>N</span><span>lay a MINE one cell ahead</span>'
+          + '<span>S</span><span>deploy a SHIELD (10s) &mdash; hard cores bounce off</span>'
           + '<span>Q / E</span><span>cruise up / down</span>'
           + '<span>1 / 2 / 3</span><span>orbit &middot; 1st &middot; 3rd</span>'
           + '<span>M / V</span><span>map / cycle view</span>'
@@ -7676,6 +7713,30 @@ export function initTdTab(root) {
   // the tutorial's opening hold. Build mode is NOT on that list — the
   // operator's brief is "place them at chokepoints during downtime", and
   // downtime is build mode.
+  // S — spend a charge. A TAP, not a hold, and the same shape as layMineNow:
+  // the refusal comes from the module and is SHOWN, because three of the four
+  // things S can do are refuse, and a dead key that says nothing is
+  // indistinguishable from a broken one.
+  function deployShieldNow() {
+    if (player.won || playerDown || paused || deploy || !player.pos) return 'frozen';
+    const r = deployShield(shield, simTime, shieldTune);
+    if (r === 'ok') {
+      sfx.play('tank_pickup');
+      pulseButton('#td-pad-shield');
+      showToast(`<div class="wave-num">SHIELD UP</div>`
+        + `<div class="wave-role">${shieldTune.deploySecs}s &middot; ${shield.rack} charge${shield.rack === 1 ? '' : 's'} left</div>`, 1800);
+    } else if (r === 'up') {
+      showToast(`<div class="wave-role">the shield is already up &mdash; a charge cannot top it up</div>`, 1400);
+    } else if (r === 'cooling') {
+      showToast(`<div class="wave-role">emitter cooling &middot; ${(shield.coolUntil - simTime).toFixed(1)}s</div>`, 1200);
+    } else {
+      showToast(`<div class="wave-role">no shield charges &mdash; buy a case on the debrief</div>`, 1400);
+    }
+    if (shieldProbeOn) console.log(`SHIELDPROBE deploy=${r} t=${shield.t.toFixed(2)} rack=${shield.rack}`);
+    updateHud();
+    return r;
+  }
+
   function layMineNow() {
     if (player.won || playerDown || paused || deploy || !player.pos) return 'frozen';
     if ((shotActive() && !(director && shot && shot.id === 'director')) || tutorial.frozen) return 'frozen';
@@ -11404,7 +11465,8 @@ export function initTdTab(root) {
   // says whether these bite; they are numbers, not rulings, and live here in
   // one place so the next measurement can move them.
   const SINK = { tollBase: 250, tollStep: 150, hull: 400, strike: 350, drone: 500,
-    mines: 200 };   // a case of five, the cheapest thing on the table
+    mines: 200,          // a case of five, the cheapest thing on the table
+    shields: SHIELD_TUNE.price };
   const sectorToll = () => SINK.tollBase + SINK.tollStep * (round - 1);
   function ordersBlock() {
     const toll = sectorToll();
@@ -11419,6 +11481,9 @@ export function initTdTab(root) {
       + (mineField.count >= mineTune.cap
         ? `<button disabled>&#8982; mine rack full ${mineField.count}/${mineTune.cap}</button>`
         : btn('msg-buymines', `&#8982; a case of ${mineTune.caseSize} mines &mdash; rack ${mineField.count}/${mineTune.cap}`, SINK.mines))
+      + (shield.rack >= shieldTune.rackCap
+        ? `<button disabled>&#9672; shield rack full ${shield.rack}/${shieldTune.rackCap}</button>`
+        : btn('msg-buyshields', `&#9672; a case of ${shieldTune.caseSize} shield charges &mdash; rack ${shield.rack}/${shieldTune.rackCap}`, SINK.shields))
       + (assistant ? `<button disabled>&#9881; second drone on shift</button>`
         : btn('msg-buydrone', '&#9881; print a second drone — assists ISAO', SINK.drone))
       + btn('msg-next', `&rsaquo; breach sector ${round + 1} — bigger, farther, meaner`, toll);
@@ -14061,6 +14126,12 @@ export function initTdTab(root) {
     // ?pin=1 — a caption and Isao on screen when the ruler comes out, so the
     // slots they take are measured and not assumed.
     setTimeout(() => {
+      // the sheets are certainly loaded by now, which they were not at init —
+      // measure the PHONE's rules, not the desktop ones that were standing in
+      // for them
+      const flipped = simulateCoarse();
+      if (flipped) console.log(`COARSE simulated at measure: ${flipped} media blocks now apply`);
+
       if (urlParams.get('mobbuild') === '1' && mobModeEl && !buildMode) mobModeEl.click();
       if (urlParams.get('pin') === '1') {
         showToast('<div class="wave-num">CAPTION</div><div class="wave-role">pinned for the ruler</div>', 60000);
@@ -14080,6 +14151,7 @@ export function initTdTab(root) {
         map: '#tab-td .minimap', tut: '#td-tut', throttle: '#td-throttle',
         steerL: '#td-pad-left', steerR: '#td-pad-right',
         fire: '#td-pad-fire', laser: '#td-pad-laser', mine: '#td-pad-mine',
+        shield: '#td-pad-shield',   // a pad the ruler cannot see is a pad nobody checked
         launch: '#td-launch', next: '#td-next', card: '#td-sitrep', hack: '#td-hack',
         // the two number slots, which only leave the centre when the
         // encouragement is switched off — and are exactly the pair most
@@ -14116,7 +14188,9 @@ export function initTdTab(root) {
           }
         }
       }
-      console.log(`LAYOUT viewport ${innerWidth}x${innerHeight} coarse=${matchMedia('(pointer: coarse)').matches}`
+      console.log(`LAYOUT viewport ${innerWidth}x${innerHeight}`
+        + ` coarse=${matchMedia('(pointer: coarse)').matches}`
+        + `${urlParams.get('coarse') === '1' ? ' (SIMULATED)' : ''}`
         + ` dpr=${devicePixelRatio} — ${clashes} overlaps`);
     }, layoutAt * 1000);
   }

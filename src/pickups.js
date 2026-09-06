@@ -52,4 +52,23 @@ export const SHELL_PICKUP = {
   note: 'the main gun is scarce by design — this is where it comes from',
 };
 
+// The shield RACK is not in the table above for the same reason the shells are
+// not: it is not a reward you drive over, it is a thing you SPEND. The unit
+// viewer teaches from this file, so it has to be described here or the viewer
+// teaches the player something that is not true.
+export const SHIELD_RACK = {
+  type: 'shieldcharge',
+  label: 'shield charge',
+  effect: 'S: 10s shield',
+  note: 'two charges, then a 2s seam — a chained shield can carry a ram combo across it',
+};
+
+// ...and the two ways the field gives you one for free.
+export const SHIELD_SOURCES = [
+  { label: 'slow tower tap', effect: 'park in its radius: 1.5s of shield per second',
+    note: 'the tower stops slowing anything while you drain it, and for 5s after you leave' },
+  { label: 'heart charging pad', effect: 'stand on it: 3s of shield per second',
+    note: '10s a wave, refilled each wave — the cost is being at the heart, not at the front' },
+];
+
 export const PICKUP_BY_TYPE = Object.fromEntries(PICKUPS.map((p) => [p.type, p]));
