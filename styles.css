@@ -5,22 +5,22 @@
    back to a system face until the subset is rebuilt. */
 @font-face {
   font-family: 'VT323';
-  src: url('assets/fonts/VT323.woff2?v=a3ed37b9') format('woff2');
+  src: url('assets/fonts/VT323.woff2?v=a4a64393') format('woff2');
   font-weight: 400; font-style: normal; font-display: swap;
 }
 @font-face {
   font-family: 'Press Start 2P';
-  src: url('assets/fonts/PressStart2P.woff2?v=a3ed37b9') format('woff2');
+  src: url('assets/fonts/PressStart2P.woff2?v=a4a64393') format('woff2');
   font-weight: 400; font-style: normal; font-display: swap;
 }
 @font-face {
   font-family: 'Share Tech Mono';
-  src: url('assets/fonts/ShareTechMono.woff2?v=a3ed37b9') format('woff2');
+  src: url('assets/fonts/ShareTechMono.woff2?v=a4a64393') format('woff2');
   font-weight: 400; font-style: normal; font-display: swap;
 }
 @font-face {
   font-family: 'DotGothic16';
-  src: url('assets/fonts/DotGothic16.woff2?v=a3ed37b9') format('woff2');
+  src: url('assets/fonts/DotGothic16.woff2?v=a4a64393') format('woff2');
   font-weight: 400; font-style: normal; font-display: swap;
 }
 
@@ -2871,6 +2871,43 @@ body.playing:not(.chrome-open) #tabbar { display: none !important; }
    button needs to read as an ORDER rather than a purchase: no cost, no
    colour from the tower palette, just the machine's own amber */
 .radial-item.shop-move { border-color: #ffb45eaa; color: #ffd9a0; }
+/* THE ENDING CLEARS THE GLASS. Every instrument fades out for the pull-out —
+   a wide shot of a planet with a score and a throttle over it is a level with
+   the camera pulled back, not an ending. Faded rather than removed, so
+   nothing reflows and the layout cannot shift under a modal that is about to
+   open on top of it. */
+body.td-victory #td-stats,
+body.td-victory #td-throttle,
+body.td-victory #td-launch,
+body.td-victory .minimap,
+body.td-victory .tc-util,
+body.td-victory .tfire,
+body.td-victory #td-hint,
+body.td-victory #td-tut {
+  opacity: 0;
+  transition: opacity 700ms ease-out;
+  pointer-events: none;
+}
+
+/* THE LAST ENEMY. Everything else in this lane is praise for a good moment;
+   this is the end of the campaign, so it is the one callout that is RED and
+   the one that is bigger than a milestone. It holds longer too — the pop
+   animation is tuned for a shout you read in passing, and this is a line the
+   player should still be reading while the camera starts to pull away. */
+.co-victory {
+  color: #ff5a4d;
+  --r: 1.9;
+  text-shadow: 0 0 18px rgba(255, 90, 77, 0.85), 0 0 46px rgba(255, 60, 40, 0.55);
+  letter-spacing: 0.18em;
+  animation-duration: 3.4s;
+}
+.co-victory-sub {
+  color: #ffd0c4;
+  --r: 1.15;
+  letter-spacing: 0.3em;
+  text-shadow: 0 0 14px rgba(255, 120, 100, 0.6);
+  animation-duration: 3.4s;
+}
 .co-milestone {
   color: var(--p-white);
   --r: 1.28;

@@ -19,79 +19,79 @@
 
 import * as THREE from '../vendor/three.module.js';
 import GUI from '../vendor/lil-gui.esm.js';
-import { generateSphereMesh, relax } from './grid.js?v=a3ed37b9';
-import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=a3ed37b9';
-import { compileRail } from './cine/rail.js?v=a3ed37b9';
-import { SCRIPTS } from './cine/scripts.js?v=a3ed37b9';
-import { cuesBetween } from './cine/sound.js?v=a3ed37b9';
-import { installCine } from './cine/kit.js?v=a3ed37b9';
-import { mulberry32, randomSeed } from './rng.js?v=a3ed37b9';
-import { computeBerths, berthIndexFor } from './berths.js?v=a3ed37b9';
-import { wantsSecondary, shellsForAll } from './autofire.js?v=a3ed37b9';
-import { printPhase, printOffset, printOn, patternSecsFor } from './printpath.js?v=a3ed37b9';
+import { generateSphereMesh, relax } from './grid.js?v=a4a64393';
+import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=a4a64393';
+import { compileRail } from './cine/rail.js?v=a4a64393';
+import { SCRIPTS } from './cine/scripts.js?v=a4a64393';
+import { cuesBetween } from './cine/sound.js?v=a4a64393';
+import { installCine } from './cine/kit.js?v=a4a64393';
+import { mulberry32, randomSeed } from './rng.js?v=a4a64393';
+import { computeBerths, berthIndexFor } from './berths.js?v=a4a64393';
+import { wantsSecondary, shellsForAll } from './autofire.js?v=a4a64393';
+import { printPhase, printOffset, printOn, patternSecsFor } from './printpath.js?v=a4a64393';
 import { createBeam } from './beamfx.js';
-import { createBeamRig, PLASMA_DEFAULTS, BOARD_PRESET, BEAM_PEAK } from './beamdraw.js?v=a3ed37b9';
-import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3, segKey, tangentDir, tangentBasis } from './vec3.js?v=a3ed37b9';
-import { CREATURES, waveJelly } from './creatures.js?v=a3ed37b9';
-import { brief, dwellFor } from './isaobriefs.js?v=a3ed37b9';
-import { drawEmotion } from './emotions.js?v=a3ed37b9';
+import { createBeamRig, PLASMA_DEFAULTS, BOARD_PRESET, BEAM_PEAK } from './beamdraw.js?v=a4a64393';
+import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3, segKey, tangentDir, tangentBasis } from './vec3.js?v=a4a64393';
+import { CREATURES, waveJelly } from './creatures.js?v=a4a64393';
+import { brief, dwellFor } from './isaobriefs.js?v=a4a64393';
+import { drawEmotion } from './emotions.js?v=a4a64393';
 import { ACHIEVEMENTS, ACHV_GROUPS, achievement, blankRun, earned, freshlyEarned,
   sanitiseRecord }
-  from './achievements.js?v=a3ed37b9';
+  from './achievements.js?v=a4a64393';
 import { applyFontPack, currentFontPack, FONT_NAMES,
-  loadTypeFeel } from './fonts.js?v=a3ed37b9';
-import { SECONDARY_TOE, applySecondaryToe } from './units.js?v=a3ed37b9';
-import { UNITS, UNIT_NAMES, buildUnit, buildCreature, preloadMkcx, preloadServer, makeServerFixture, makeShieldShell, preloadContainer, makeContainerFixture, preloadFabricator, makeIsaoDrone, makeBulletCloud, makeRewardSolid, makeShellSolid, makeDebris, makeDotBurst, makePortalCloud, preloadPortalRing, makePortalRing, makeHeartCloud, makeDotEnemy, makeSurvivor, preloadAstronaut, preloadAstronauts, makeAstronaut, preloadTerraformer, makeTerraformerFixture } from './units.js?v=a3ed37b9';
-import { LOOKS, LOOK_NAMES } from './looks.js?v=a3ed37b9';
-import { makeCellIndex } from './cellindex.js?v=a3ed37b9';
-import { CREATURE_TINTS, ENEMY_SPEC, INTROS, computeWavePlan, accentFor } from './enemyspec.js?v=a3ed37b9';
-import { PICKUPS } from './pickups.js?v=a3ed37b9';
-import { rankFor, rankLabel, badgeSVG, killReq, eliteReq } from './ranks.js?v=a3ed37b9';
-import { beamStep, isBeamStep, PEN_SOFT_FRAC, PEN_HARD_FRAC } from './beamranks.js?v=a3ed37b9';
-import { burn, sweepAdvance, wallBite as wallBiteFor } from './beamburn.js?v=a3ed37b9';
-import { arcPoint, projectToArc, toeForCrossing, crossingForToe } from './arc.js?v=a3ed37b9';
+  loadTypeFeel } from './fonts.js?v=a4a64393';
+import { SECONDARY_TOE, applySecondaryToe } from './units.js?v=a4a64393';
+import { UNITS, UNIT_NAMES, buildUnit, buildCreature, preloadMkcx, preloadServer, makeServerFixture, makeShieldShell, preloadContainer, makeContainerFixture, preloadFabricator, makeIsaoDrone, makeBulletCloud, makeRewardSolid, makeShellSolid, makeDebris, makeDotBurst, makePortalCloud, preloadPortalRing, makePortalRing, makeHeartCloud, makeDotEnemy, makeSurvivor, preloadAstronaut, preloadAstronauts, makeAstronaut, preloadTerraformer, makeTerraformerFixture } from './units.js?v=a4a64393';
+import { LOOKS, LOOK_NAMES } from './looks.js?v=a4a64393';
+import { makeCellIndex } from './cellindex.js?v=a4a64393';
+import { CREATURE_TINTS, ENEMY_SPEC, INTROS, computeWavePlan, accentFor } from './enemyspec.js?v=a4a64393';
+import { PICKUPS } from './pickups.js?v=a4a64393';
+import { rankFor, rankLabel, badgeSVG, killReq, eliteReq } from './ranks.js?v=a4a64393';
+import { beamStep, isBeamStep, PEN_SOFT_FRAC, PEN_HARD_FRAC } from './beamranks.js?v=a4a64393';
+import { burn, sweepAdvance, wallBite as wallBiteFor } from './beamburn.js?v=a4a64393';
+import { arcPoint, projectToArc, toeForCrossing, crossingForToe } from './arc.js?v=a4a64393';
 import { MINE_TUNE, makeField, layMine, armMines, restock, mineAt,
-  inFan, trip, chain, nextChained, minePolar } from './mines.js?v=a3ed37b9';
-import { shotOf, muzzleOf, impactOf, tuneFor } from './sentryfx.js?v=a3ed37b9';
+  inFan, trip, chain, nextChained, minePolar } from './mines.js?v=a4a64393';
+import { shotOf, muzzleOf, impactOf, tuneFor } from './sentryfx.js?v=a4a64393';
 import { SHIELD_TUNE, SHIELD_KNOBS, makeShield, charge as chargeShield,
   deploy as deployShield, tickShield, restockShield, tapTower, towerOffline,
-  stationDraw, waveReset as shieldWaveReset, shoveVec, shoveMag } from './shield.js?v=a3ed37b9';
+  stationDraw, waveReset as shieldWaveReset, shoveVec, shoveMag } from './shield.js?v=a4a64393';
 import { deepLink, wireDeepLink } from './deeplink.js';
 import { RESCUE_TUNE, makeRescue, placeSurvivors, stepBoard, stepGrab,
   disembark, loseCarried, lockOn, waveMix, standing as standingSurv,
   aboard as aboardSurv, missionOver, verdict as rescueVerdict,
   grabProgress, remaining as remainingSurv, exposed as exposedSurv,
   RESCUE2_TUNE, makeCamps, stepCall, stepEmerge, walkStep, runOver,
-  awake as campAwake } from './rescue.js?v=a3ed37b9';
+  awake as campAwake } from './rescue.js?v=a4a64393';
 import { WORMHOLE_PRESET, WORMHOLE_UNIFORM_DEFAULTS, RING_SPIN, TRAVEL,
-  travelRate, advancePhase } from './portalfx.js?v=a3ed37b9';
-import { WORMHOLE_FRAG } from './fx/wormhole.frag.js?v=a3ed37b9';
-import { CORONA_FRAG } from './fx/corona.frag.js?v=a3ed37b9';
-import { labLine, parseLabQuery } from './lab.js?v=a3ed37b9';
-import { bakeGalaxyCube } from './galaxybake.js?v=a3ed37b9';
-import { SKY_PRESET } from './galaxyseed.js?v=a3ed37b9';
-import { makeScore } from './score.js?v=a3ed37b9';
-import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER, HACK_GATED, starterTower, towerSound, ROSTER } from './towers.js?v=a3ed37b9';
-import { makeEconomy, sellRefund } from './economy.js?v=a3ed37b9';
-import { pickTier } from './perftier.js?v=a3ed37b9';
-import { applyWeatheredMaterial } from './cine/materials.js?v=a3ed37b9';
-import { STICK, stickVector, knobOffset } from './stick.js?v=a3ed37b9';
-import { registerServiceWorker } from './pwa.js?v=a3ed37b9';
-import { makeBloom } from './postfx.js?v=a3ed37b9';
-import { TANK_FEEL, TANK_FEEL_KNOBS, makeTankFeel, stepTankFeel, landTankFeel, fireTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js?v=a3ed37b9';
-import { FEEL, loadFeel, saveFeel } from './feelstore.js?v=a3ed37b9';
+  travelRate, advancePhase } from './portalfx.js?v=a4a64393';
+import { WORMHOLE_FRAG } from './fx/wormhole.frag.js?v=a4a64393';
+import { CORONA_FRAG } from './fx/corona.frag.js?v=a4a64393';
+import { labLine, parseLabQuery } from './lab.js?v=a4a64393';
+import { bakeGalaxyCube } from './galaxybake.js?v=a4a64393';
+import { SKY_PRESET } from './galaxyseed.js?v=a4a64393';
+import { makeScore } from './score.js?v=a4a64393';
+import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER, HACK_GATED, starterTower, towerSound, ROSTER } from './towers.js?v=a4a64393';
+import { makeEconomy, sellRefund } from './economy.js?v=a4a64393';
+import { pickTier } from './perftier.js?v=a4a64393';
+import { applyWeatheredMaterial } from './cine/materials.js?v=a4a64393';
+import { STICK, stickVector, knobOffset } from './stick.js?v=a4a64393';
+import { registerServiceWorker } from './pwa.js?v=a4a64393';
+import { makeBloom } from './postfx.js?v=a4a64393';
+import { TANK_FEEL, TANK_FEEL_KNOBS, makeTankFeel, stepTankFeel, landTankFeel, fireTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js?v=a4a64393';
+import { FEEL, loadFeel, saveFeel } from './feelstore.js?v=a4a64393';
 import { STRIKE_KNOBS, makeStrike, makeStrikeParams, grantStrikes, stepStrike,
   toggleArm, paintTarget, launchStrike, stepFall, skipFall, fallProgress,
-  strikeDamage, retargetStrike, orbitProgress } from './strike.js?v=a3ed37b9';
+  strikeDamage, retargetStrike, orbitProgress } from './strike.js?v=a4a64393';
 import { radarBasis, radarProject, radarBearing, sweepAngle, radarPhosphor,
-  proximitySectors, SENSOR_LEVELS, sensorColor } from './radar.js?v=a3ed37b9';
-import { BLOOM_GROUPS } from './bloomweights.js?v=a3ed37b9';
+  proximitySectors, SENSOR_LEVELS, sensorColor } from './radar.js?v=a4a64393';
+import { BLOOM_GROUPS } from './bloomweights.js?v=a4a64393';
 import { A6_TUNE, magFor, makeA6, stepA6, arc as a6Arc, a6Line } from './heptapod.js';
 import { SENTRY_TUNE } from './sentry.js';
 import { MISSILE_TUNE, scaleMissile, makeLock, stepLock, launchMissile, stepMissile } from './lockon.js';
-import { TOWER_LOOK_NAMES, DEFAULT_TOWER_LOOK, buildTowerLook, preloadLook, lookReady, setSentryTier } from './towerlooks.js?v=a3ed37b9';
-import { makeAudio } from './audio.js?v=a3ed37b9';
-import { DEATH_KEYS } from './audiomanifest.js?v=a3ed37b9';
+import { TOWER_LOOK_NAMES, DEFAULT_TOWER_LOOK, buildTowerLook, preloadLook, lookReady, setSentryTier } from './towerlooks.js?v=a4a64393';
+import { makeAudio } from './audio.js?v=a4a64393';
+import { DEATH_KEYS } from './audiomanifest.js?v=a4a64393';
 
 export function initTdTab(root) {
   let active = false;
@@ -11348,6 +11348,18 @@ export function initTdTab(root) {
       run.sectorCleared = true;
       logSector();   // the campaign remembers every round, for the final debrief
       checkAchievements();
+      // THE ENDING IS NOT ANOTHER LEVEL (operator). The last enemy used to
+      // fall and the analysis board simply appeared — the single most
+      // consequential moment in the game had no moment. So: a red shout while
+      // the body is still coming apart, then the camera LEAVES, pulling back
+      // off the hull until the whole planet is a marble against the galaxy,
+      // and only then the debrief. The pull-out is the beat that says the
+      // scale of the thing you just finished; a cut to a modal cannot.
+      const finalPlanet = round >= SECTORS_TOTAL;
+      showCallout(finalPlanet ? 'PLANET CLEARED' : 'LAST ENEMY VANQUISHED', 'co-victory');
+      setTimeout(() => showCallout(finalPlanet
+        ? 'THE SHELL IS OURS' : 'SECTOR SECURE', 'co-victory-sub'), 700);
+      sfx.play('tank_pickup', { dist: 0 });
       if (round >= SECTORS_TOTAL) {
         run.planetCleared = true;
         checkAchievements();
@@ -11360,12 +11372,82 @@ export function initTdTab(root) {
           setCoins(coins() + 1);   // a planet is worth one coin
         } catch (e) { /* private mode */ }
         persistBest();
-        renderAnalysis(true);
+        victoryPullOut(true);
         return;
       }
-      renderAnalysis(false);
+      victoryPullOut(false);
       return;
     }
+  }
+
+  // --- THE PULL-OUT ---------------------------------------------------------
+  //
+  // The camera leaves. It starts wherever the player was watching from —
+  // third person, orbit, whatever — and climbs away from the hull until the
+  // planet is a marble against the galaxy the sky is already made of, holds
+  // there a beat, and hands over to the debrief.
+  //
+  // It rides camShot rather than owning a clock, for the reason written on
+  // that function: every timed camera takeover that owned its own teardown
+  // eventually got one wrong, and one of them ate every key in the game
+  // permanently. One shot at a time, one teardown, and the latch is the shot
+  // itself.
+  //
+  // SKIPPABLE, like every other shot here. A player who has seen it four
+  // times should not be held, and the skip path already exists and is tested.
+  const VICTORY_PULL = 4.2;        // seconds of camera
+  const VICTORY_HOLD = 0.9;        // ...of which the last of it is a held wide
+  function victoryPullOut(final) {
+    // where the camera IS, so the move starts from the player's own view
+    // rather than snapping to a canonical one first — a cut before a pull-out
+    // throws away the only thing that makes it read as leaving
+    const from = camera.position.clone();
+    const fromR = Math.max(1.05, from.length());
+    const dir0 = from.clone().normalize();
+    // ...and where it goes: further out than the reveal shot's 3.3, because
+    // this is the whole planet with room around it and not a band being shown
+    const OUT_R = 5.2;
+    const ref = Math.abs(dir0.y) < 0.9 ? new THREE.Vector3(0, 1, 0) : new THREE.Vector3(1, 0, 0);
+    const up = new THREE.Vector3().crossVectors(dir0, ref).normalize();
+    // THE INSTRUMENTS GO. A wide shot of a planet with a score, a throttle and
+    // a radar over it is a level with the camera pulled back; the same shot
+    // with the glass cleared is an ending. This is most of what "markedly
+    // different" costs.
+    document.body.classList.add('td-victory');
+    startShot({
+      id: 'victory',
+      dur: VICTORY_PULL,
+      poseAt: (u, out) => {
+        // FAST THEN SETTLING. A linear pull reads as a lift being operated;
+        // the ease-out is what makes it read as being pulled away from
+        // something. The last stretch is a hold, so the wide shot is a beat
+        // the eye can rest on rather than the instant before a modal.
+        const t = Math.min(1, u / (1 - VICTORY_HOLD / VICTORY_PULL));
+        const e = 1 - Math.pow(1 - t, 3);
+        const r = fromR + (OUT_R - fromR) * e;
+        // a slow drift around the pole as it goes, so the planet turns under
+        // the camera and reads as a body rather than a texture
+        const spin = e * 0.42;
+        const axis = new THREE.Vector3(0, 1, 0);
+        const d = dir0.clone().applyAxisAngle(axis, spin).multiplyScalar(r);
+        out.pos.copy(d);
+        tmpCam.position.copy(out.pos);
+        tmpCam.up.copy(up);
+        tmpCam.lookAt(0, 0, 0);
+        out.quat.copy(tmpCam.quaternion);
+      },
+      onEnd: () => {
+        // STAY WIDE. When the shot released the camera it snapped straight
+        // back to the hull — measured, 5.20 to 1.23 in one frame — and the
+        // debrief then opened over a close-up of a tank standing in an empty
+        // sector, which is the opposite of what the pull-out just said. Orbit
+        // is the view that keeps the planet in shot, and it is what the
+        // reveal shot hands back to for the same reason.
+        setView('orbit');
+        document.body.classList.remove('td-victory');
+        renderAnalysis(final);
+      },
+    });
   }
 
   // --- THE DEBRIEF, IN TWO STAGES (operator, 2026-09-02) -----------------
@@ -16275,6 +16357,59 @@ export function initTdTab(root) {
   // ?shieldrack=N, or an explicit rack size is overwritten by the default.
   shield.rack = Math.min(shieldTune.rackCap, shieldTune.rackStart);
   shield.stationLeft = shieldTune.stationBudget;
+
+  // ?winprobe=1 — THE ENDING. Kills every spawn and every enemy, then reports
+  // the sequence: the shout, the camera actually LEAVING, and the debrief
+  // arriving after it rather than instead of it.
+  //
+  // A four-second camera move is the definition of a thing a screenshot
+  // cannot check — a still of the wide shot and a still of a camera that
+  // snapped there instantly are the same picture. So this samples the
+  // camera's DISTANCE over the move and asserts it climbs.
+  if (urlParams.get('winprobe') === '1') {
+    setTimeout(() => {
+      for (const id of ['#td-msg', '#td-intro']) {
+        const el = root.querySelector(id);
+        if (el) el.classList.add('hidden');
+      }
+      paused = false;
+      tutorial.frozen = false;
+      if (!graph) { console.log('WINPROBE no board'); return; }
+      const r0 = camera.position.length();
+      for (const sp of spawnPoints) sp.alive = false;
+      for (const e of enemies) e.alive = false;
+      checkVictory();
+      const shouted = !!(calloutsEl && calloutsEl.textContent.match(/VANQUISHED|CLEARED/));
+      console.log(`WINPROBE fired shot=${shotId()} shouted=${shouted} r0=${r0.toFixed(2)}`
+        + ` ${shotId() === 'victory' && shouted ? 'OK' : 'WRONG — no shout or no camera move'}`);
+      const samples = [];
+      const iv = setInterval(() => samples.push(camera.position.length()), 250);
+      setTimeout(() => {
+        clearInterval(iv);
+        const climbed = samples.length > 3 && samples[samples.length - 1] > samples[0] + 0.4;
+        const monotonic = samples.every((v, i) => i === 0 || v >= samples[i - 1] - 0.05);
+        console.log(`WINPROBE camera ${samples.map((v) => v.toFixed(2)).join(' -> ')}`);
+        console.log(`WINPROBE pull-out climbed=${climbed} monotonic=${monotonic}`
+          + ` ${climbed && monotonic ? 'OK'
+            : 'WRONG — the camera did not leave, or it jumped'}`);
+        // ...and the camera must still be wide once the debrief is up, which
+        // is the half the first version missed by sampling past the shot
+        console.log(`WINPROBE after the debrief r=${camera.position.length().toFixed(2)}`
+          + ` ${camera.position.length() > 2.5 ? 'OK — still wide'
+            : 'WRONG — it snapped back to the hull behind the modal'}`);
+      }, VICTORY_PULL * 1000);
+      // the debrief is checked LATER than the camera on purpose: onEnd fires
+      // on the frame the shot expires, so a check at exactly VICTORY_PULL
+      // races the modal it is asking about and reports a failure that is
+      // really a stopwatch a frame fast.
+      setTimeout(() => {
+        const modal = msgEl && !msgEl.classList.contains('hidden');
+        console.log(`WINPROBE debrief up=${modal} r=${camera.position.length().toFixed(2)}`
+          + ` ${modal ? 'OK — after the move, not instead of it'
+            : 'WRONG — the debrief never arrived'}`);
+      }, (VICTORY_PULL + 1.6) * 1000);
+    }, 2500);
+  }
 
   // ?hoverprobe=1 — THE HOVERING TOWER. Operator: "it is possible to have a
   // tower hovering in the air, perhaps it was ordered to build, and then the
