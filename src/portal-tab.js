@@ -22,7 +22,7 @@
 // Ported per ~/Dev/procedural3dvisuals/docs/PORTING.md, which has a section
 // for exactly this case. Its two warnings are honoured below and marked.
 import * as THREE from '../vendor/three.module.js';
-import { installCine } from './cine/kit.js?v=05c17c7f';
+import { installCine } from './cine/kit.js?v=ae7df48d';
 import { OrbitControls } from '../vendor/OrbitControls.js';
 import GUI from '../vendor/lil-gui.esm.js';
 import { CORONA_FRAG } from './fx/corona.frag.js';

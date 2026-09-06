@@ -200,6 +200,22 @@ token — the corner badge was retired from the game view).
   `scaleMissile` into model units. Fire-and-forget: the lock drops the
   instant a cell is away, or one launcher empties itself into one walker
   while the wave goes past.
+  the SHOOTING LAB (`#impact` — the route keeps its old name so existing deep
+  links work; the tab reads "shooting"): ONE WEAPON, END TO END. Muzzle, then
+  FLIGHT (`?showShot=0` to hide it), then impact, for any of the sixteen
+  families. The flight is drawn from the same `weaponKind` the board and the
+  sentry range read — lance / throw / round / lob / seeker / field — so a
+  weapon cannot be light in one tab and a bullet in another. The MACHINE is
+  articulated off the Workshop's contract (YAW / PITCH / RECOIL / ROTOR /
+  MUZZLE_nn): only a rotary spins, recoil is a decaying spike, and a beam
+  barely kicks because nothing leaves it. `?curveR=12.5` puts the whole thing
+  on the BOARD'S OWN CURVATURE (12.5 = 1/cellSide) — a lance fired seven cells
+  across a sphere is fired over a horizon, and a flat stage quietly answers a
+  different question. `?impactprobe=1` also reports the rig and samples its
+  MOTION, because a still of a spinning barrel and a stopped one are the same
+  picture. The BEAM lab stays separate on purpose: it tunes the TANK's
+  secondary (ranks, burn-through, sweep, toe-in), which this stage cannot ask
+  about.
   the IMPACT lab is the SENTRY FX WORKBENCH: pick a sentry, tune its muzzle
   and its impact, export the result as the default. `?sentry=<key>` selects
   one of the 16 (both rosters), `?slot=muzzle|impact` picks which half the

@@ -1,4 +1,29 @@
-// impact-tab.js — THE IMPACT LAB. What a hit looks like when it lands.
+// impact-tab.js — THE SHOOTING LAB. One weapon, end to end.
+//
+// It began as an impact lab and grew into the whole shot, which is what the
+// operator asked for: "we agreed on ONE LAB to work on both the type/shapes/FX
+// of each sentry's weapons, and the impact." So it now covers all three parts
+// a weapon has, for any of the sixteen families:
+//
+//   MUZZLE   what leaves the barrel, and the machine kicking as it does
+//   FLIGHT   the shot itself — a lance is light, a throw is matter, a round
+//            is a tracer — read off the same `weaponKind` the board and the
+//            sentry range use, so a weapon cannot be one thing here and
+//            another there
+//   IMPACT   seven families of spark, flash, ring, scorch, debris, splash
+//            and ember, against a wall you can angle and re-material
+//
+// ...on flat ground or on the BOARD'S OWN CURVATURE (12.5 = 1/cellSide),
+// because a lance fired seven cells across a sphere is fired over a horizon
+// and a flat lab quietly answers a different question.
+//
+// The file is still called impact-tab and the route is still #impact: the
+// deep links people already have keep working, and a rename is not worth
+// breaking them over.
+//
+// (The BEAM lab is not folded in and should not be: it tunes the TANK's
+// secondary — ranks, burn-through, sweep and toe-in — which is a weapon this
+// lab does not model and a set of questions this stage cannot ask.)
 //
 // Operator: "augment our laser lab to research spark/flash particles at
 // impact — an impact tab with various effects, and a toggleable wall to see
@@ -22,22 +47,22 @@
 import * as THREE from '../vendor/three.module.js';
 import { OrbitControls } from '../vendor/OrbitControls.js';
 import GUI from '../vendor/lil-gui.esm.js';
-import { makeBloom } from './postfx.js?v=05c17c7f';
-import { bakeGalaxyCube } from './galaxybake.js?v=05c17c7f';
-import { SKY_PRESET } from './galaxyseed.js?v=05c17c7f';
+import { makeBloom } from './postfx.js?v=ae7df48d';
+import { bakeGalaxyCube } from './galaxybake.js?v=ae7df48d';
+import { SKY_PRESET } from './galaxyseed.js?v=ae7df48d';
 import {
   IMPACT_TUNE, IMPACT_KNOBS, IMPACT_FAMILIES, IMPACT_RECIPES,
   makeImpactParams, clampImpactParams, formatImpactTune,
   makeImpactBurst, orientImpact,
-} from './impactfx.js?v=05c17c7f';
-import { buildCreature, preloadMkcx } from './units.js?v=05c17c7f';
-import { sentryUrl, SENTRY_FAMILIES } from './sentry.js?v=05c17c7f';
-import { loadGlb } from './glbmodels.js?v=05c17c7f';
-import { TOWERS, TOWER_BY_KEY } from './towers.js?v=05c17c7f';
+} from './impactfx.js?v=ae7df48d';
+import { buildCreature, preloadMkcx } from './units.js?v=ae7df48d';
+import { sentryUrl, SENTRY_FAMILIES } from './sentry.js?v=ae7df48d';
+import { loadGlb } from './glbmodels.js?v=ae7df48d';
+import { TOWERS, TOWER_BY_KEY } from './towers.js?v=ae7df48d';
 import {
   SENTRY_FX, fxFor, tuneFor, formatSentryFx, formatAllSentryFx,
-} from './sentryfx.js?v=05c17c7f';
-import { deepLink, wireDeepLink } from './deeplink.js?v=05c17c7f';
+} from './sentryfx.js?v=ae7df48d';
+import { deepLink, wireDeepLink } from './deeplink.js?v=ae7df48d';
 
 // The surfaces a hit can land on. Each is a real answer to "what did I just
 // shoot", and the SPARK COLOUR is the biggest part of that answer — a chip
@@ -122,6 +147,12 @@ export function initImpactTab(root) {
     trail: true,                // leave scorches standing
     showMuzzle: true,           // fire the muzzle alongside the impact
     showShot: true,             // ...and the flight between them
+    // CURVATURE. The board is a SPHERE with cellSide 0.08, so its radius is
+    // 12.5 cells — and a lance fired seven cells across it is fired over a
+    // horizon, not along a floor. A flat lab quietly answers a different
+    // question from the one the board asks, which is exactly how the beam
+    // lab came to need its own curved stage. 0 is flat; 12.5 is the game.
+    curveR: 0,                  // ground radius in metres; 0 = flat
     size: 1.0,                  // ONE number scales the whole hit
     ...makeImpactParams(),
   };
@@ -169,14 +200,39 @@ export function initImpactTab(root) {
   buildWall(); paintWall();
 
   // the floor, so the sparks that skid off the wall have somewhere to land
-  const floor = new THREE.Mesh(
-    new THREE.PlaneGeometry(16, 16),
-    new THREE.MeshStandardMaterial({ color: 0x0d1116, roughness: 1, metalness: 0 }));
-  floor.rotation.x = -Math.PI / 2;
-  scene.add(floor);
-  const grid = new THREE.GridHelper(14, 28, 0x1d4a55, 0x12303a);
-  grid.position.y = 0.002;
-  scene.add(grid);
+  // THE GROUND, flat or curved. Curved is a sphere the stage sits on TOP of,
+  // so y=0 stays the ground under the gun and everything already placed there
+  // keeps its footing — the curvature bends the ground AWAY from the shot
+  // rather than moving the shot.
+  let floor = null, grid = null;
+  function layGround() {
+    for (const o of [floor, grid]) {
+      if (!o) continue;
+      scene.remove(o);
+      if (o.geometry) o.geometry.dispose();
+    }
+    floor = null; grid = null;
+    const mat = new THREE.MeshStandardMaterial({
+      color: 0x0d1116, roughness: 1, metalness: 0, side: THREE.DoubleSide });
+    if (P.curveR > 0.5) {
+      const R = P.curveR;
+      floor = new THREE.Mesh(new THREE.SphereGeometry(R, 64, 48), mat);
+      floor.position.set(0, -R, 0);        // its top is the origin
+      grid = new THREE.Mesh(
+        new THREE.SphereGeometry(R * 1.0008, 48, 32),
+        new THREE.MeshBasicMaterial({ color: 0x1d4a55, wireframe: true,
+          transparent: true, opacity: 0.35 }));
+      grid.position.copy(floor.position);
+    } else {
+      floor = new THREE.Mesh(new THREE.PlaneGeometry(16, 16), mat);
+      floor.rotation.x = -Math.PI / 2;
+      grid = new THREE.GridHelper(14, 28, 0x1d4a55, 0x12303a);
+      grid.position.y = 0.002;
+    }
+    scene.add(floor);
+    scene.add(grid);
+  }
+  layGround();
 
   // --- who is shooting ------------------------------------------------------
   // The lab carries the actual shooters rather than a marker, because the
@@ -529,7 +585,7 @@ export function initImpactTab(root) {
   const probeOn = q.get('impactprobe') === '1';
 
   // --- GUI ------------------------------------------------------------------
-  const gui = new GUI({ title: 'SENTRY FX', container: root });
+  const gui = new GUI({ title: 'SHOOTING LAB', container: root });
   // 1. PICK A SENTRY. Everything below edits that family's profile.
   gui.add({ sentry: subject }, 'sentry', FX_KEYS).name('sentry').onChange((v) => {
     subject = v;
@@ -556,6 +612,11 @@ export function initImpactTab(root) {
   gWall.add(P, 'wall').name('wall on').onChange(placeWall);
   gWall.add(P, 'wallAngle', -80, 80, 1).name('incidence (deg)').onChange(placeWall);
   gWall.add(P, 'wallSize', 1, 10, 0.5).name('size').onChange(() => { buildWall(); });
+  gWall.add(P, 'curveR', 0, 40, 0.5).name('ground curve (0=flat)')
+    .onChange(() => { layGround(); });
+  gWall.add({ board: () => { P.curveR = 12.5; layGround();
+    gui.controllersRecursive().forEach((c2) => c2.updateDisplay()); } }, 'board')
+    .name("the board's own curve (12.5)");
 
   const gCustom = gui.addFolder('custom recipe');
   for (const f of IMPACT_FAMILIES) gCustom.add(P, `use_${f}`).name(f);
