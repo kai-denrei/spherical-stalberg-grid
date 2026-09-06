@@ -17,7 +17,24 @@
 //    articulation, so anything that must still MOVE has to be preserved.
 import * as THREE from '../vendor/three.module.js';
 import { GLTFLoader } from '../vendor/GLTFLoader.js';
+import { MeshoptDecoder } from '../vendor/meshopt_decoder.module.js';
 import { mergeGeometries } from '../vendor/BufferGeometryUtils.js';
+
+// MESHOPT. A model exported with EXT_meshopt_compression does not fail with a
+// bad mesh or a warning — GLTFLoader THROWS on the first compressed buffer
+// view and the whole file resolves to null, so the piece is simply absent and
+// the fallback covers for it. astronaut-compact.glb is such a file ("compact"
+// is the compression, not the silhouette), and this is a one-line fix that
+// costs an hour to find.
+//
+// The decoder is vendored rather than pulled from a sibling's node_modules,
+// and unlike the Line2 trio (a recorded dead end in .deban) that is safe
+// here: it is standalone MIT code with embedded WASM, no three.js imports at
+// all, so it cannot disagree with our r160 the way a versioned addon does.
+//
+// ONE loader, configured once. Every load in this file goes through it, so a
+// compressed asset works wherever an uncompressed one would.
+const gltfLoader = new GLTFLoader().setMeshoptDecoder(MeshoptDecoder);
 
 // bust.sh's fingerprint-urls.py rewrites HTML attributes and CSS url() only
 // — never JS string literals — so a path built here would ship untokened.
@@ -45,7 +62,7 @@ export function loadGlb(url) {
     return none;
   }
   const p = new Promise((resolve) => {
-    new GLTFLoader().load(`${url}${bustToken()}`,
+    gltfLoader.load(`${url}${bustToken()}`,
       (gltf) => resolve(gltf.scene),
       undefined,
       (err) => { console.warn(`[glbmodels] ${url} failed to load`, err); resolve(null); });
@@ -68,7 +85,7 @@ export function loadGlbWithClips(url) {
     return none;
   }
   const p = new Promise((resolve) => {
-    new GLTFLoader().load(`${url}${bustToken()}`,
+    gltfLoader.load(`${url}${bustToken()}`,
       (gltf) => resolve({ scene: gltf.scene, clips: gltf.animations || [] }),
       undefined,
       (err) => { console.warn(`[glbmodels] ${url} failed to load`, err); resolve(null); });

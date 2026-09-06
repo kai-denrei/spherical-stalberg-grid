@@ -16,14 +16,14 @@
 
 import * as THREE from '../vendor/three.module.js';
 import { EMOTION_IDS, emotion, phosphorFor } from './emotions.js';
-import { printPhase, printOffset, printOn } from './printpath.js?v=91e6af15';
+import { printPhase, printOffset, printOn } from './printpath.js?v=8cf6cbc3';
 import { loadGlb, loadGlbWithClips, mergeByMaterial, fitModel, tintModel, makeShellRack,
-  addEdgeOutlines, makeHeatSleeve } from './glbmodels.js?v=91e6af15';
-import { CREATURES, waveJelly, swimWave, spherePts, bulletPts, missilePts, heartPts, torusPts, towerHeadPts, enemyDotPts, portalPts, personPts } from './creatures.js?v=91e6af15';
-import { TOWER_FEEL, TOWER_HEADS, headKindFor } from './towerfeel.js?v=91e6af15';
+  addEdgeOutlines, makeHeatSleeve } from './glbmodels.js?v=8cf6cbc3';
+import { CREATURES, waveJelly, swimWave, spherePts, bulletPts, missilePts, heartPts, torusPts, towerHeadPts, enemyDotPts, portalPts, personPts } from './creatures.js?v=8cf6cbc3';
+import { TOWER_FEEL, TOWER_HEADS, headKindFor } from './towerfeel.js?v=8cf6cbc3';
 import { STARGATE_PTS, STARGATE_STROKE,
-  HORIZON_N, stargateHorizon } from './stargate.js?v=91e6af15';
-import { ENEMY_SPEC } from './enemyspec.js?v=91e6af15';
+  HORIZON_N, stargateHorizon } from './stargate.js?v=8cf6cbc3';
+import { ENEMY_SPEC } from './enemyspec.js?v=8cf6cbc3';
 
 function normalizeToUnit(group) {
   group.updateMatrixWorld(true);
@@ -2354,14 +2354,57 @@ export function cloneSkinned(source) {
   return clone;
 }
 
-let astroLoad = null;
+// TWO ASTRONAUTS, so the people you rescue are not one person repeated.
+//
+// They are not equals and the difference is the whole reason both are kept:
+//   classic — 1 mesh, 25 joints, ONE walk clip. Cheap enough to put six on a
+//             board without thinking about it.
+//   compact — 51 meshes, 72 joints, ~96k triangles, and THREE clips: Walk,
+//             Idle and Running. A real run cycle, which is the thing the
+//             crew study was faking by driving a walk faster.
+// So the roster is not "pick one", it is a cost the caller can see. Anything
+// that spawns a crowd should say which it is asking for.
+export const ASTRONAUT_URLS = {
+  classic: 'assets/models/astronaut.glb',
+  compact: 'assets/models/astronaut-compact.glb',
+};
+// HOW HARD TO LIFT EACH ONE. The board is lit at hemi 0.55 / sun 0.25
+// (looks.js) and a standard material under that is near-black whatever its
+// albedo, so the suit's materials take a dim emissive of their OWN colour.
+// But how much lift depends on what the model already brings: `classic` is
+// one flat material and needs the full push, while `compact` carries 22
+// authored PBR materials including glass, and the same push drowns them into
+// one glowing orange mass — the identical mistake tintModel made on the
+// Workshop's turrets, which is why those keep their authored palette.
+const ASTRO_LIFT = { classic: 0.55, compact: 0.18 };
+export const ASTRONAUT_IDS = Object.keys(ASTRONAUT_URLS);
+
+// CLIPS BY ROLE, not by index. `classic` carries one clip called
+// "Armature|Armature|walking_man|baselayer" and `compact` carries "Mixamo
+// Walk" / "Mixamo Idle" / "Mixamo Running", so every caller that wants "the
+// run" has to either match names or guess an index — and guessing an index
+// is how a survivor ends up idling while it crosses a room. Resolved once,
+// here, with the walk as the fallback for everything: a model with no run
+// still has to answer a request for one.
+function clipRoles(clips) {
+  const find = (re) => clips.find((c) => re.test(c.name)) || null;
+  const walk = find(/walk/i) || clips[0] || null;
+  return {
+    walk,
+    run: find(/run|sprint|jog/i) || walk,
+    idle: find(/idle|stand/i) || walk,
+  };
+}
+
+const astroLoads = {};
 // The prototype: one unit tall, feet on y=0, centred in x/z, facing +Z —
 // so a caller scales by ONE number in its own units and never touches the
 // file's centimetres again. Same contract every other cast here honours.
-export function preloadAstronaut() {
-  if (astroLoad) return astroLoad;
-  astroLoad = loadGlbWithClips('assets/models/astronaut.glb').then((res) => {
-    if (!res || !res.scene) { astroLoad = null; return null; }
+export function preloadAstronaut(id = 'classic') {
+  const url = ASTRONAUT_URLS[id] || ASTRONAUT_URLS.classic;
+  if (astroLoads[id]) return astroLoads[id];
+  astroLoads[id] = loadGlbWithClips(url).then((res) => {
+    if (!res || !res.scene) { astroLoads[id] = null; return null; }
     const proto = res.scene;
     proto.updateMatrixWorld(true);
     const box = new THREE.Box3().setFromObject(proto);
@@ -2387,15 +2430,35 @@ export function preloadAstronaut() {
       for (const m of Array.isArray(o.material) ? o.material : [o.material]) {
         if (!m || !m.emissive || m.userData.astroLit) continue;
         m.userData.astroLit = true;
-        m.emissive.copy(m.color).multiplyScalar(0.55);
+        m.emissive.copy(m.color).multiplyScalar(ASTRO_LIFT[id] ?? 0.55);
         m.emissiveMap = m.map || null;
         m.emissiveIntensity = 1;
         m.needsUpdate = true;
       }
     });
-    return { wrap, clips: res.clips };
+    // measured once, so a caller putting six of these on a board can see the
+    // bill rather than discover it as a frame-rate report
+    let tris = 0, meshes = 0;
+    wrap.traverse((o) => {
+      if (!o.isMesh || !o.geometry) return;
+      meshes++;
+      const g = o.geometry;
+      tris += (g.index ? g.index.count : (g.attributes.position ? g.attributes.position.count : 0)) / 3;
+    });
+    const roles = clipRoles(res.clips || []);
+    console.log(`ASTRONAUT "${id}" ready: ${meshes} mesh(es), ${Math.round(tris)} tris,`
+      + ` clips ${(res.clips || []).map((c) => c.name).join(' / ') || 'none'}`
+      + ` -> walk=${roles.walk && roles.walk.name} run=${roles.run && roles.run.name} idle=${roles.idle && roles.idle.name}`);
+    return { id, wrap, clips: res.clips, roles, tris: Math.round(tris), meshes };
   });
-  return astroLoad;
+  return astroLoads[id];
+}
+
+// Load every variant. The rescue wants VARIETY, which means it needs them
+// all in hand before it starts placing people — a survivor that pops into a
+// different body two seconds after it appears is worse than one body twice.
+export function preloadAstronauts(ids = ASTRONAUT_IDS) {
+  return Promise.all(ids.map((i) => preloadAstronaut(i))).then((all) => all.filter(Boolean));
 }
 
 // One astronaut, ready to walk. `tick(dt)` drives its own mixer, so the
@@ -2404,24 +2467,57 @@ export function makeAstronaut(proto) {
   if (!proto || !proto.wrap) return null;
   const obj = cloneSkinned(proto.wrap);
   const mixer = new THREE.AnimationMixer(obj);
-  let action = null;
-  if (proto.clips && proto.clips.length) {
-    action = mixer.clipAction(proto.clips[0]);
-    action.setLoop(THREE.LoopRepeat, Infinity);
+  const roles = proto.roles || {};
+  // one action per ROLE, all playing, all but the current one at zero weight —
+  // the standard way to cross-fade without re-creating actions mid-blend
+  const acts = {};
+  for (const role of ['walk', 'run', 'idle']) {
+    const clip = roles[role];
+    if (!clip) continue;
+    const a = mixer.clipAction(clip);
+    a.setLoop(THREE.LoopRepeat, Infinity);
     // a deterministic-looking offset per instance so a group of three does
     // not march in lockstep — the one thing that reads as "clones"
-    action.time = (obj.id % 17) / 17 * proto.clips[0].duration;
-    action.play();
+    a.time = (obj.id % 17) / 17 * clip.duration;
+    a.setEffectiveWeight(0);
+    a.play();
+    acts[role] = a;
   }
+  let cur = null;
+  // THE FALLBACK IS THE POINT. `classic` has one clip, so its run IS its
+  // walk — and asking it to run must still look like running, which means
+  // driving that one cycle faster. `compact` has a real Running clip and
+  // needs no such trick. setGait hides which model it is holding, so a
+  // caller can spawn either and ask for the same thing.
+  const CADENCE = { walk: 1, run: 1.75, idle: 1 };
+  function setGait(role = 'walk') {
+    const want = acts[role] ? role : 'walk';
+    const a = acts[want];
+    if (!a) return;
+    if (cur !== a) {
+      if (cur) cur.crossFadeTo(a, 0.25, false);
+      a.setEffectiveWeight(1);
+      a.enabled = true;
+      cur = a;
+    }
+    // if the role resolved to a DIFFERENT clip we are genuinely running, so
+    // the cycle runs at its own pace; if it fell back to the walk we have to
+    // make the walk do the work
+    const real = roles[role] && acts[role] && roles[role] !== roles.walk;
+    a.timeScale = real ? 1 : (CADENCE[role] ?? 1);
+  }
+  setGait('walk');
+
   obj.userData.tick = (dt) => mixer.update(dt);
-  obj.userData.setWalking = (on) => { if (action) action.paused = !on; };
-  // ONE CLIP, TWO GAITS. The file carries a walk and nothing else, so a run
-  // is that cycle driven faster — which is a real answer and not a fudge: a
-  // biped's run differs from its walk in cadence and stride before it differs
-  // in pose, and the study exists to say whether that reads. The caller owns
-  // the STRIDE (metres per second); this owns the CADENCE, and the two have
-  // to move together or the feet skate.
-  obj.userData.setCadence = (mul) => { if (action) action.timeScale = mul; };
+  obj.userData.setWalking = (on) => { if (cur) cur.paused = !on; };
+  obj.userData.setGait = setGait;
+  // ONE CLIP, TWO GAITS — for a model that has only one. The caller owns the
+  // STRIDE (metres per second); this owns the CADENCE, and the two have to
+  // move together or the feet skate. A model with a real run clip ignores
+  // this in favour of the clip's own pace.
+  obj.userData.setCadence = (mul) => { if (cur) cur.timeScale = mul; };
+  obj.userData.hasRun = !!(roles.run && roles.walk && roles.run !== roles.walk);
+  obj.userData.variant = proto.id || 'classic';
   obj.userData.dispose = () => { mixer.stopAllAction(); mixer.uncacheRoot(obj); };
   return obj;
 }

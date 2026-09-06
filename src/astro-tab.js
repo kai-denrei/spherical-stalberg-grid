@@ -16,8 +16,8 @@ import { makeBloom } from './postfx.js';
 import { bakeGalaxyCube } from './galaxybake.js';
 import { SKY_PRESET } from './galaxyseed.js';
 import { LOOKS } from './looks.js';
-import { buildCreature, preloadMkcx, preloadAstronaut, makeAstronaut,
-  preloadContainer, makeContainerFixture } from './units.js';
+import { buildCreature, preloadMkcx, preloadAstronaut, preloadAstronauts, makeAstronaut,
+  ASTRONAUT_IDS, preloadContainer, makeContainerFixture } from './units.js';
 import { mulberry32 } from './rng.js';
 import { applyWeatheredMaterial } from './cine/materials.js';
 import { deepLink, wireDeepLink } from './deeplink.js';
@@ -110,6 +110,7 @@ export function initAstroTab(root) {
     clip: '', play: true, speed: 1.0, loop: true, stride: 1.3,   // stride: metres per second of travel
     path: 'perimeter',      // perimeter | straight | spot | crew
     crew: 2,                // astronauts in the crew wander
+    cast: 'mixed',          // mixed | classic | compact — which bodies walk
     runMul: 2.3,            // a run is this many times the walk's stride
     dwell: 2.0,             // seconds stood at a station before moving on
     // NOT `seed`: that name is the whole app's board seed, and putting it in
@@ -172,9 +173,9 @@ export function initAstroTab(root) {
   // — Object3D.clone() shares a SkinnedMesh's skeleton by reference, so two
   // naive clones deform identically AND stand in the same place, which looks
   // exactly like the second model failing to load.
-  preloadAstronaut().then((proto) => {
-    if (!proto) return;
-    crewProto = proto;
+  preloadAstronauts().then((protos) => {
+    if (!protos.length) return;
+    crewProtos = protos;
     if (P.path === 'crew') { buildProps(); buildCrew(); syncMode(); }
   });
 
@@ -301,7 +302,8 @@ export function initAstroTab(root) {
   // that is enough. Cadence and stride are moved by ONE number so the feet
   // cannot skate: a gait whose cycle outruns its travel is the tell.
   const crew = [];                 // { obj, rng, at, to, p0, p1, u, legT, gait, phase, timer }
-  let crewProto = null, turret = null, cargo = null;
+  let crewProtos = [];             // every variant, in ASTRONAUT_IDS order
+  let turret = null, cargo = null;
   let turretLoading = false, cargoLoading = false;
   const STATION = { tank: 'tank', turret: 'turret', cargo: 'cargo' };
 
@@ -384,9 +386,14 @@ export function initAstroTab(root) {
   function buildCrew() {
     for (const m of crew) { if (m.obj.userData.dispose) m.obj.userData.dispose(); scene.remove(m.obj); }
     crew.length = 0;
-    if (P.path !== 'crew' || !crewProto) return;
+    if (P.path !== 'crew' || !crewProtos.length) return;
     for (let i = 0; i < Math.max(0, Math.round(P.crew)); i++) {
-      const obj = makeAstronaut(crewProto);
+      // MIXED alternates, so two people are two people. Naming a variant
+      // pins everybody to it, which is how you compare them side by side.
+      const pick = P.cast === 'mixed'
+        ? crewProtos[i % crewProtos.length]
+        : (crewProtos.find((pr) => pr.id === P.cast) || crewProtos[0]);
+      const obj = makeAstronaut(pick);
       if (!obj) continue;
       obj.scale.setScalar(P.personH);      // the proto is one unit tall by contract
       obj.traverse((o) => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; } });
@@ -425,7 +432,11 @@ export function initAstroTab(root) {
     // cadence rides WITH the stride, or the feet skate. The exponent is the
     // one liberty taken: a real run lengthens the stride more than it quickens
     // the legs, so the cycle is driven a little under the speed multiplier.
-    if (m.obj.userData.setCadence) {
+    // ask for the GAIT, not for a cadence: a model with a real Running clip
+    // plays it, and one with only a walk drives that walk faster. The caller
+    // does not need to know which body it is holding.
+    if (m.obj.userData.setGait) m.obj.userData.setGait(m.gait);
+    if (m.obj.userData.setCadence && !m.obj.userData.hasRun) {
       m.obj.userData.setCadence(m.gait === 'run' ? Math.pow(P.runMul, 0.8) * P.speed : P.speed);
     }
   }
@@ -471,7 +482,9 @@ export function initAstroTab(root) {
             m.timer = P.dwell * (0.5 + m.rng());
             if (crewProbe) console.log(`CREWPROBE ${m.id} arrived ${m.at}, stands ${m.timer.toFixed(1)}s`);
           }
-          if (m.obj.userData.setWalking) m.obj.userData.setWalking(false);
+          // a body with an Idle clip STANDS rather than freezing mid-stride
+          if (m.obj.userData.hasRun && m.obj.userData.setGait) m.obj.userData.setGait('idle');
+          else if (m.obj.userData.setWalking) m.obj.userData.setWalking(false);
         }
       } else {
         m.timer -= dt;
@@ -489,7 +502,8 @@ export function initAstroTab(root) {
         + ` · RATIO ${(P.personH / Math.max(0.01, P.tankLen)).toFixed(3)}`
         + ` · ${P.path}${P.path === 'perimeter' ? ` r=${(tankR + P.clear).toFixed(2)} m (hull ${tankR.toFixed(2)} + ${P.clear.toFixed(2)})` : ''}`
         + (P.path === 'crew'
-          ? ` · crew ${crew.length} · ${crew.map((m) => (m.phase === 'travel' ? m.gait : m.phase)).join(' / ') || '-'}`
+          ? ` · crew ${crew.map((m) => `${m.obj.userData.variant}${m.obj.userData.hasRun ? '' : '(walk-only)'}`).join(' + ') || '-'}`
+            + ` · ${crew.map((m) => (m.phase === 'travel' ? m.gait : m.phase)).join(' / ') || '-'}`
             + ` · walk ${(P.stride * P.speed).toFixed(1)} m/s · run ${(P.stride * P.speed * P.runMul).toFixed(1)} m/s`
           : '')
       : 'loading astronaut.glb…';
@@ -504,6 +518,7 @@ export function initAstroTab(root) {
     .name('walk path').onChange(() => { syncMode(); });
   const gCrew = gui.addFolder('crew wander');
   gCrew.add(P, 'crew', 0, 4, 1).name('astronauts').onChange(() => buildCrew());
+  gCrew.add(P, 'cast', ['mixed', ...ASTRONAUT_IDS]).name('cast').onChange(() => buildCrew());
   gCrew.add(P, 'runMul', 1, 4, 0.1).name('run x walk');
   gCrew.add(P, 'dwell', 0.2, 6, 0.1).name('dwell (s)');
   gCrew.add(P, 'crewSeed', 0, 999, 1).name('seed').onChange(() => buildCrew());

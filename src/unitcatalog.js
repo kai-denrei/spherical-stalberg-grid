@@ -16,7 +16,7 @@
 // built on buildUnit was showing a drifter the player will never meet — and
 // none of the rammable/not tells, which live only on the cloud.
 import { ENEMY_SPEC } from './enemyspec.js';
-import { TOWERS } from './towers.js?v=91e6af15';
+import { TOWERS } from './towers.js?v=8cf6cbc3';
 import { PICKUPS, SHELL_PICKUP } from './pickups.js';
 
 export const GROUPS = ['friendly', 'neutral', 'hostile'];
