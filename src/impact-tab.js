@@ -47,22 +47,22 @@
 import * as THREE from '../vendor/three.module.js';
 import { OrbitControls } from '../vendor/OrbitControls.js';
 import GUI from '../vendor/lil-gui.esm.js';
-import { makeBloom } from './postfx.js?v=ae7df48d';
-import { bakeGalaxyCube } from './galaxybake.js?v=ae7df48d';
-import { SKY_PRESET } from './galaxyseed.js?v=ae7df48d';
+import { makeBloom } from './postfx.js?v=07a09f79';
+import { bakeGalaxyCube } from './galaxybake.js?v=07a09f79';
+import { SKY_PRESET } from './galaxyseed.js?v=07a09f79';
 import {
   IMPACT_TUNE, IMPACT_KNOBS, IMPACT_FAMILIES, IMPACT_RECIPES,
   makeImpactParams, clampImpactParams, formatImpactTune,
   makeImpactBurst, orientImpact,
-} from './impactfx.js?v=ae7df48d';
-import { buildCreature, preloadMkcx } from './units.js?v=ae7df48d';
-import { sentryUrl, SENTRY_FAMILIES } from './sentry.js?v=ae7df48d';
-import { loadGlb } from './glbmodels.js?v=ae7df48d';
-import { TOWERS, TOWER_BY_KEY } from './towers.js?v=ae7df48d';
+} from './impactfx.js?v=07a09f79';
+import { buildCreature, preloadMkcx } from './units.js?v=07a09f79';
+import { sentryUrl, SENTRY_FAMILIES } from './sentry.js?v=07a09f79';
+import { loadGlb } from './glbmodels.js?v=07a09f79';
+import { TOWERS, TOWER_BY_KEY } from './towers.js?v=07a09f79';
 import {
   SENTRY_FX, fxFor, tuneFor, formatSentryFx, formatAllSentryFx,
-} from './sentryfx.js?v=ae7df48d';
-import { deepLink, wireDeepLink } from './deeplink.js?v=ae7df48d';
+} from './sentryfx.js?v=07a09f79';
+import { deepLink, wireDeepLink } from './deeplink.js?v=07a09f79';
 
 // The surfaces a hit can land on. Each is a real answer to "what did I just
 // shoot", and the SPARK COLOUR is the biggest part of that answer — a chip
@@ -553,6 +553,12 @@ export function initImpactTab(root) {
     if (rig) {
       const kind0 = (prof().shot && prof().shot.kind) || 'round';
       rig.kick = kind0 === 'lance' || kind0 === 'throw' ? 0.02 : 0.14;
+      // RECORDED, not sampled. The probe used to watch for the peak on a
+      // 60 ms interval while a 0.14 kick decays in 90 ms — so whether it saw
+      // 0.04 or 0.008 was a coin toss, and it reported a working Rotor as
+      // broken. A check that depends on catching a spike is a check that
+      // will lie eventually.
+      rig.kickPeak = Math.max(rig.kickPeak || 0, rig.kick);
     }
     if (P.showShot) {
       const m = muzzlePoint();
@@ -810,10 +816,10 @@ export function initImpactTab(root) {
       // shot and come back — a kick that never returns is a gun stuck open.
       if (rig) {
         const spin0 = rig.spin;
-        let kickMax = 0;
-        const iv2 = setInterval(() => { kickMax = Math.max(kickMax, rig.kick); }, 60);
+        rig.kickPeak = 0;
+        for (let k = 0; k < 3; k++) fire();     // guarantee a shot to measure
         setTimeout(() => {
-          clearInterval(iv2);
+          const kickMax = rig.kickPeak || 0;
           const spun = rig.spin - spin0;
           const wantsSpin = subject === 'rotor';
           // A BEAM IS EXPECTED NOT TO KICK. Nothing leaves a lance, so its

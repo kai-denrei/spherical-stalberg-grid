@@ -21,8 +21,8 @@
 //
 // Keyed by tower KEY rather than by model id, because roster 1 has no models
 // at all and still has to draw its shots.
-import { makeParams, clampParams, formatKnobs, knobProblems } from './knobs.js?v=ae7df48d';
-import { IMPACT_TUNE } from './impactfx.js?v=ae7df48d';
+import { makeParams, clampParams, formatKnobs, knobProblems } from './knobs.js?v=07a09f79';
+import { IMPACT_TUNE } from './impactfx.js?v=07a09f79';
 
 // The fields that USED to live on a tower def. If you are looking for why a
 // tracer is the size it is, it is here.
