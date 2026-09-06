@@ -10,29 +10,30 @@
 // WebGL context each and browsers cap those in the teens; a carousel costs
 // one context no matter how long the roster grows.
 import * as THREE from '../vendor/three.module.js';
-import { shotOf } from './sentryfx.js?v=15100be8';
+import { shotOf } from './sentryfx.js?v=e360f925';
 import { OrbitControls } from '../vendor/OrbitControls.js';
 import { GLTFExporter } from '../vendor/GLTFExporter.js';
+import { ENEMY_SPEC } from './enemyspec.js';
 import { buildUnit, preloadMkcx, makeDebris, makeDotBurst, makeBulletCloud,
   makeDotEnemy, makeRewardSolid, makeShellSolid, makePortalCloud,
   preloadServer, makeServerFixture, preloadContainer, makeContainerFixture,
-  preloadFabricator, makeFabricatorDrone, makeIsaoDrone } from './units.js?v=15100be8';
+  preloadFabricator, makeFabricatorDrone, makeIsaoDrone } from './units.js?v=e360f925';
 import { TANK_FEEL, TANK_FEEL_KNOBS, formatFeelCode, makeTankFeel, stepTankFeel,
-  landTankFeel, fireTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js?v=15100be8';
+  landTankFeel, fireTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js?v=e360f925';
 import { FEEL, loadFeel, saveFeel, resetFeel,
-  TOWER, HEADS, loadTower, saveTower, resetTower } from './feelstore.js?v=15100be8';
+  TOWER, HEADS, loadTower, saveTower, resetTower } from './feelstore.js?v=e360f925';
 import { TOWER_FEEL_KNOBS, formatTowerFeel, clampTowerParams,
-  formatTowerHeads, HEAD_CHOICES, HEAD_AS_SHIPPED } from './towerfeel.js?v=15100be8';
-import { CREATURE_TINTS, accentFor } from './enemyspec.js?v=15100be8';
+  formatTowerHeads, HEAD_CHOICES, HEAD_AS_SHIPPED } from './towerfeel.js?v=e360f925';
+import { CREATURE_TINTS, accentFor } from './enemyspec.js?v=e360f925';
 import { buildTowerLook, TOWER_LOOK_NAMES, DEFAULT_TOWER_LOOK, preloadLook } from './towerlooks.js';
-import { TOWER_BY_KEY, TOWERS } from './towers.js?v=15100be8';
+import { TOWER_BY_KEY, TOWERS } from './towers.js?v=e360f925';
 import { LOOKS } from './looks.js';
 import { makeBloom } from './postfx.js';
-import { makeAudio } from './audio.js?v=15100be8';
+import { makeAudio } from './audio.js?v=e360f925';
 import { GROUPS, GROUP_LABELS, GROUP_EMPTY, entriesIn } from './unitcatalog.js';
 import { FONT_NAMES, TYPE_KNOBS, TYPE_FEEL, makeTypeParams, loadTypeFeel, saveTypeFeel,
-  formatTypeCode, applyFontPack, currentFontPack, currentShoutPack } from './fonts.js?v=15100be8';
-import { LORE, LORE_WORLD, loreText, loreAll } from './lore.js?v=15100be8';
+  formatTypeCode, applyFontPack, currentFontPack, currentShoutPack } from './fonts.js?v=e360f925';
+import { LORE, LORE_WORLD, loreText, loreAll } from './lore.js?v=e360f925';
 
 let roundTex = null;
 function roundDotTex() {
@@ -328,6 +329,16 @@ export function initUnitsTab(root) {
     }
     if (e.kind === 'enemy') {
       const hex = CREATURE_TINTS[e.id];
+      // A MESH-BODIED HOSTILE. Every enemy was a dot cloud when this was
+      // written, so it called makeDotEnemy unconditionally — and a type whose
+      // spec names `mesh` came out as the cloud FALLBACK, a red ball with an
+      // octahedron in it. buildCreature knows the difference; this is the
+      // codex, and a codex entry that does not match the board is worse than
+      // no entry at all.
+      const meshId = ENEMY_SPEC[e.id] && ENEMY_SPEC[e.id].mesh;
+      if (meshId) {
+        return buildUnit(meshId, { walker: hex ?? cols.walker, walkerHi: accentFor(e.id) });
+      }
       // ONE unit on screen: build it at 6x the game's dot density —
       // the catalogue can afford the generosity the battlefield cannot
       // the viewer shows the accent too: a codex entry that does not match

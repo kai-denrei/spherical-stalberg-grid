@@ -548,6 +548,24 @@ export const LORE = {
       + 'across asteroid tiles, cosmic dread atmosphere, hyperreal '
       + 'render, 8k',
   },
+  jelly: {
+    name: 'THE MASS',
+    tag: 'wave 16 · the boss',
+    body: 'It has no front. The lattice spent four passes looking for one '
+      + 'and filed the absence as a property rather than a gap: no eyes, no '
+      + 'mouth, no instrument turned toward anything. It arrives at a walking '
+      + 'pace and does not vary it. Shells go in and the surface closes. '
+      + 'What hangs beneath is not limbs — they carry nothing, grip nothing '
+      + 'and are shed on contact — but the mass keeps growing them, so the '
+      + 'catalogue lists them under WASTE and the crews call them fingers '
+      + 'anyway. Four beats from the Cardion per touch. It does not '
+      + 'accelerate when hurt. That is the part nobody likes.',
+    visual: 'enormous translucent gelatinous mass, faceless, no eyes no '
+      + 'mouth, pale green interior light with bright rim, tapering boneless '
+      + 'appendages trailing beneath it, slow deliberate advance across '
+      + 'asteroid tiles, body wobbling under its own weight, biological '
+      + 'dread, hyperreal render, 8k',
+  },
   saucer: {
     name: 'SAUCER',
     tag: 'wave 13 · dogfighter',

@@ -15,15 +15,16 @@
 // tick(t) (idle animation) }.
 
 import * as THREE from '../vendor/three.module.js';
+import { makeJelly } from './jelly.js?v=e360f925';
 import { EMOTION_IDS, emotion, phosphorFor } from './emotions.js';
-import { printPhase, printOffset, printOn } from './printpath.js?v=15100be8';
+import { printPhase, printOffset, printOn } from './printpath.js?v=e360f925';
 import { loadGlb, loadGlbWithClips, mergeByMaterial, fitModel, tintModel, makeShellRack,
-  addEdgeOutlines, makeHeatSleeve } from './glbmodels.js?v=15100be8';
-import { CREATURES, waveJelly, swimWave, spherePts, bulletPts, missilePts, heartPts, torusPts, towerHeadPts, enemyDotPts, portalPts, personPts } from './creatures.js?v=15100be8';
-import { TOWER_FEEL, TOWER_HEADS, headKindFor } from './towerfeel.js?v=15100be8';
+  addEdgeOutlines, makeHeatSleeve } from './glbmodels.js?v=e360f925';
+import { CREATURES, waveJelly, swimWave, spherePts, bulletPts, missilePts, heartPts, torusPts, towerHeadPts, enemyDotPts, portalPts, personPts } from './creatures.js?v=e360f925';
+import { TOWER_FEEL, TOWER_HEADS, headKindFor } from './towerfeel.js?v=e360f925';
 import { STARGATE_PTS, STARGATE_STROKE,
-  HORIZON_N, stargateHorizon } from './stargate.js?v=15100be8';
-import { ENEMY_SPEC } from './enemyspec.js?v=15100be8';
+  HORIZON_N, stargateHorizon } from './stargate.js?v=e360f925';
+import { ENEMY_SPEC } from './enemyspec.js?v=e360f925';
 
 function normalizeToUnit(group) {
   group.updateMatrixWorld(true);
@@ -3032,6 +3033,10 @@ export const UNITS = {
   gslime: { kind: 'mesh', make: makeSlime },
   drifter: { kind: 'mesh', make: makeSaturn },
   corona: { kind: 'mesh', make: makeCorona },
+  // THE JELLY MASS — a boss-sized translucent body that wobbles in the
+  // vertex shader. 3,380 triangles and one draw call, against the 144,464
+  // and the 240 Hz soft body of the version that was measured and refused.
+  jelly: { kind: 'mesh', make: makeJelly },
   barbed: { kind: 'mesh', make: makeMine },
   rolling: { kind: 'mesh', make: makeMine }, // HK reuses the seamine shape
   prime: { kind: 'mesh', make: makeMine },   // ditto — tint carries the tier
@@ -3053,7 +3058,16 @@ export const UNIT_NAMES = Object.keys(UNITS);
 // game has a creature spec for gets its cloud, anything else (the tank, the
 // mkcx, the drone) falls through to buildUnit unchanged.
 export function buildCreature(name, cols) {
-  return ENEMY_SPEC[name] ? makeDotEnemy(name, cols) : buildUnit(name, cols);
+  // A HOSTILE MAY BE A MESH. Every enemy up to now has been a dot cloud, so
+  // this asked one question — spec or not — and answered it with
+  // makeDotEnemy. A type whose spec names `mesh` gets that unit instead, and
+  // because this is the ONE door, the viewer, the radar sprites, the debrief
+  // roster and the board all learn it at once. Without the dispatch here the
+  // jelly renders as the cloud FALLBACK — a red ball with an octahedron in
+  // it — everywhere, which is exactly what it did.
+  const spec = ENEMY_SPEC[name];
+  if (spec && spec.mesh && UNITS[spec.mesh]) return buildUnit(spec.mesh, cols);
+  return spec ? makeDotEnemy(name, cols) : buildUnit(name, cols);
 }
 
 export function buildUnit(name, cols) {

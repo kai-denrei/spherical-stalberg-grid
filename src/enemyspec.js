@@ -60,6 +60,10 @@ export const CREATURE_TINTS = {
   rolling: ALARM_HUES.brown,       // epic, heavy
   phantom: ALARM_HUES.black,       // optical camo — dark by trade and by rank
   knot: ALARM_HUES.red,            // the boss wears the red belt
+  // the jelly wears the red belt too — it is a boss and the belt is the rule —
+  // but its BODY colour is the shader's, not a dot tint. This entry exists so
+  // the radar, the sitrep roster and the debrief have something to draw with.
+  jelly: ALARM_HUES.red,
 };
 
 // --- ACCENTS -------------------------------------------------------------
@@ -99,6 +103,7 @@ export const CREATURE_ACCENTS = {
   phantom: ACCENT_RED,     // black belt, optical camo — the one that vanished
   prime: ACCENT_RED,       // deep purple, 6 hp, regenerates
   knot: ALARM_HUES.orange, // the boss is already red; red on red is no accent
+  jelly: ALARM_HUES.orange,
 };
 
 // What a type's dot cloud should highlight with. Default white; the dark
@@ -128,6 +133,12 @@ export const ENEMY_SPEC = {
   rolling:   { hp: 4, speed: 0.65, size: 0.6,  rammable: false, heartDmg: 2, slowOnHit: 0.55, heavy: true, bounty: 28 },
   prime:     { hp: 6, speed: 0.55, size: 0.65, rammable: false, heartDmg: 2, regen: 0.35, heavy: true, bounty: 45 },
   knot:      { hp: 5, speed: 0.6,  size: 0.8,  rammable: false, heartDmg: 3, accelOnHit: 1.7, boss: true, bounty: 34 },
+  // THE JELLY MASS — the second boss, and the first hostile that is a MESH
+  // rather than a dot cloud. Slower and fatter than the knot: it does not
+  // accelerate when hit, it just keeps coming, which is a different problem to
+  // solve than a thing that speeds up. `mesh: 'jelly'` is the flag the board
+  // reads to build it out of UNITS instead of dotShapePts.
+  jelly:     { hp: 9, speed: 0.42, size: 1.15, rammable: false, heartDmg: 4, boss: true, bounty: 52, mesh: 'jelly' },
   // --- the invasion roster (waves 13+): three styles the ladder never had.
   // jink stacks a second, faster weave on top of erratic; tactician holds
   // at the edge of tower coverage until minions arrive as cover, then
@@ -158,6 +169,13 @@ export const INTROS = [
   { wave: 13, type: 'saucer',    label: 'SAUCER',        role: 'small · agile · weaves like a dogfight' },
   { wave: 14, type: 'shellback', label: 'SHELLBACK',     role: 'waits at tower range for cover · then bursts' },
   { wave: 15, type: 'phantom',   label: 'PHANTOM',       role: 'optical camo · a ghost on the radar' },
+  // THE SECTOR NOW ENDS ON A BOSS, which is why this is wave 16 rather than a
+  // replacement for one of the fifteen. Ending on the Phantom — a stealth
+  // unit — is an anticlimax; ending on a mass that does not accelerate, does
+  // not hide and simply arrives is a different closing problem. It costs the
+  // sector one extra wave: `wavesPerSector` moves 15 -> 16 with it, and that
+  // is a real pacing change rather than a free addition.
+  { wave: 16, type: 'jelly',     label: 'THE MASS · BOSS', role: 'slow · 9 hp · 4 heart damage · does not accelerate, does not stop' },
 ];
 
 // deterministic per-wave RNG (no Math.random — keeps the plan reproducible
