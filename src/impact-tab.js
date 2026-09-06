@@ -22,22 +22,22 @@
 import * as THREE from '../vendor/three.module.js';
 import { OrbitControls } from '../vendor/OrbitControls.js';
 import GUI from '../vendor/lil-gui.esm.js';
-import { makeBloom } from './postfx.js?v=cdc908c4';
-import { bakeGalaxyCube } from './galaxybake.js?v=cdc908c4';
-import { SKY_PRESET } from './galaxyseed.js?v=cdc908c4';
+import { makeBloom } from './postfx.js?v=05c17c7f';
+import { bakeGalaxyCube } from './galaxybake.js?v=05c17c7f';
+import { SKY_PRESET } from './galaxyseed.js?v=05c17c7f';
 import {
   IMPACT_TUNE, IMPACT_KNOBS, IMPACT_FAMILIES, IMPACT_RECIPES,
   makeImpactParams, clampImpactParams, formatImpactTune,
   makeImpactBurst, orientImpact,
-} from './impactfx.js?v=cdc908c4';
-import { buildCreature, preloadMkcx } from './units.js?v=cdc908c4';
-import { sentryUrl, SENTRY_FAMILIES } from './sentry.js?v=cdc908c4';
-import { loadGlb } from './glbmodels.js?v=cdc908c4';
-import { TOWERS, TOWER_BY_KEY } from './towers.js?v=cdc908c4';
+} from './impactfx.js?v=05c17c7f';
+import { buildCreature, preloadMkcx } from './units.js?v=05c17c7f';
+import { sentryUrl, SENTRY_FAMILIES } from './sentry.js?v=05c17c7f';
+import { loadGlb } from './glbmodels.js?v=05c17c7f';
+import { TOWERS, TOWER_BY_KEY } from './towers.js?v=05c17c7f';
 import {
   SENTRY_FX, fxFor, tuneFor, formatSentryFx, formatAllSentryFx,
-} from './sentryfx.js?v=cdc908c4';
-import { deepLink, wireDeepLink } from './deeplink.js?v=cdc908c4';
+} from './sentryfx.js?v=05c17c7f';
+import { deepLink, wireDeepLink } from './deeplink.js?v=05c17c7f';
 
 // The surfaces a hit can land on. Each is a real answer to "what did I just
 // shoot", and the SPARK COLOUR is the biggest part of that answer — a chip
@@ -184,6 +184,7 @@ export function initImpactTab(root) {
   // wall's own rotation does — a sentry shoots down at a wall the tank shoots
   // level at, and the sparks come off differently.
   const shooters = { tank: null, sentry: null };
+  let rig = null;                 // the selected sentry's articulation
   // the barrel tips, in world space. They track the shooters' own stand-off:
   // a muzzle flash that fires where the gun is not is worse than none.
   // THE GUN IS BEHIND THE WALL'S CENTRE, not beside it. It used to stand at
@@ -229,9 +230,29 @@ export function initImpactTab(root) {
       o.scale.setScalar(1.3 / Math.max(sz.y, 1e-6));
       o.position.set(0, 0, STANDOFF);
       o.rotation.y = Math.PI;
+      // THE MACHINE MUST MOVE. The lab stood a dead model beside its own
+      // effects, which is half a weapon: the Rotor's barrels spinning up and
+      // the RECOIL kicking are as much "the FX of this weapon" as the muzzle
+      // flash is, and they are the part that says which gun fired. Same
+      // articulation contract the Workshop authors and the sentry range
+      // drives — ROOT → BASE → YAW → PITCH → RECOIL, plus ROTOR and MUZZLE_nn.
+      rig = {
+        yaw: o.getObjectByName('YAW'),
+        pitch: o.getObjectByName('PITCH'),
+        recoil: o.getObjectByName('RECOIL'),
+        rotor: o.getObjectByName('ROTOR'),
+        muzzles: [],
+        spin: 0, spinRate: 0, kick: 0,
+      };
+      o.traverse((n2) => { if (/^MUZZLE_\d+$/.test(n2.name || '')) rig.muzzles.push(n2); });
+      rig.muzzles.sort((a2, b2) => a2.name.localeCompare(b2.name));
       shooters.sentry = o;
       scene.add(o);
       syncShooter();
+      if (probeOn) {
+        console.log(`IMPACTPROBE rig ${subject} yaw=${!!rig.yaw} pitch=${!!rig.pitch}`
+          + ` recoil=${!!rig.recoil} rotor=${!!rig.rotor} muzzles=${rig.muzzles.length}`);
+      }
       if (probeOn) console.log(`IMPACTPROBE model ${subject} -> ${id}_t2.glb`);
     }).catch(() => {});
   }
@@ -470,6 +491,13 @@ export function initImpactTab(root) {
     // THE FLIGHT, between the two ends. `showShot` so it can be turned off
     // while tuning an impact in isolation — a lance held across the frame is
     // exactly what you do not want behind a spark you are looking at closely.
+    // the kick goes in here and decays in the frame loop. A beam weapon
+    // barely moves — there is no round leaving it — which is itself a thing
+    // the lab should show rather than smooth over.
+    if (rig) {
+      const kind0 = (prof().shot && prof().shot.kind) || 'round';
+      rig.kick = kind0 === 'lance' || kind0 === 'throw' ? 0.02 : 0.14;
+    }
     if (P.showShot) {
       const m = muzzlePoint();
       spawnShot(new THREE.Vector3(m[0], m[1], m[2]),
@@ -622,6 +650,33 @@ export function initImpactTab(root) {
       if (sinceFire >= P.every) { sinceFire = 0; fire(); }
     }
     stepShots(dt);
+    // AIM, SPIN, RECOVER. The gun holds the wall (this stage has one target
+    // and it does not move), the barrels spool while auto-fire is running,
+    // and the recoil eases back out of the kick that fire() puts in.
+    if (rig && shooters.sentry && shooters.sentry.visible) {
+      const kind = (prof().shot && prof().shot.kind) || 'round';
+      if (rig.yaw) rig.yaw.rotation.y = 0;      // the wall is dead ahead
+      if (rig.pitch) {
+        // measured FROM THE TRUNNION, like the range: the muzzle sits above
+        // the base, so aiming from the model's origin points it high
+        const m = muzzlePoint();
+        const want = Math.atan2(m[1] - 0.9, STANDOFF);
+        rig.pitch.rotation.x = -(-want);        // the one negation, once
+      }
+      // a ROTARY gun spins while it has something to do; everything else
+      // never spins, and a spinning Lancer would be a lie about the weapon
+      if (rig.rotor) {
+        const want = (P.auto && kind === 'round' && subject === 'rotor') ? 16 : 0;
+        rig.spinRate += (want - rig.spinRate) * Math.min(1, raw * 2.2);
+        rig.spin += rig.spinRate * raw;
+        rig.rotor.rotation.z = rig.spin;
+      }
+      // RECOIL is a spike that decays — a linear return reads as a piston
+      if (rig.recoil) {
+        rig.kick = Math.max(0, rig.kick - raw * 1.6);
+        rig.recoil.position.z = -rig.kick;
+      }
+    }
     for (let i = live.length - 1; i >= 0; i--) {
       if (live[i].userData.tick(dt)) continue;
       // KEEP THE SCORCHES. Everything else is over in two seconds; a wall you
@@ -687,6 +742,33 @@ export function initImpactTab(root) {
         const all = exportAll().split('\n').filter((l) => /^  \w+: \{ shot:/.test(l)).length;
         console.log(`IMPACTPROBE export-all families=${all}/${FX_KEYS.length}`
           + ` ${all === FX_KEYS.length ? 'OK' : 'WRONG — the table is incomplete'}`);
+      }
+      // THE MACHINE MOVING is motion, and a screenshot of a spinning barrel and
+      // a stopped one are the same picture. Sampled instead: the rotor's angle
+      // must CLIMB while auto-fire runs, and the recoil must both spike on a
+      // shot and come back — a kick that never returns is a gun stuck open.
+      if (rig) {
+        const spin0 = rig.spin;
+        let kickMax = 0;
+        const iv2 = setInterval(() => { kickMax = Math.max(kickMax, rig.kick); }, 60);
+        setTimeout(() => {
+          clearInterval(iv2);
+          const spun = rig.spin - spin0;
+          const wantsSpin = subject === 'rotor';
+          // A BEAM IS EXPECTED NOT TO KICK. Nothing leaves a lance, so its
+          // recoil is a token 0.02 that decays inside one sampling interval —
+          // the first version of this check called that a failure and would
+          // have had someone "fixing" a gun that was behaving correctly.
+          const kind2 = (prof().shot && prof().shot.kind) || 'round';
+          const wantsKick = kind2 !== 'lance' && kind2 !== 'throw' && kind2 !== 'field';
+          const spinOk = wantsSpin ? spun > 1 : spun < 0.01;
+          const kickOk = wantsKick ? (kickMax > 0.01 && rig.kick < kickMax) : rig.kick < 0.05;
+          console.log(`IMPACTPROBE rig-motion kind=${kind2} spun=${spun.toFixed(2)}rad`
+            + ` kickMax=${kickMax.toFixed(3)} kickNow=${rig.kick.toFixed(3)}`
+            + ` expect-spin=${wantsSpin} expect-kick=${wantsKick}`
+            + ` ${spinOk && kickOk ? 'OK'
+              : 'WRONG — the machine is not moving as its weapon should'}`);
+        }, 2200);
       }
       setTimeout(() => {
         console.log(`IMPACTPROBE after 1s: live=${live.length} standing=${standing.length}`
