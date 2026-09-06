@@ -16,14 +16,14 @@
 
 import * as THREE from '../vendor/three.module.js';
 import { EMOTION_IDS, emotion, phosphorFor } from './emotions.js';
-import { printPhase, printOffset, printOn } from './printpath.js?v=2b9095d2';
+import { printPhase, printOffset, printOn } from './printpath.js?v=91e6af15';
 import { loadGlb, loadGlbWithClips, mergeByMaterial, fitModel, tintModel, makeShellRack,
-  addEdgeOutlines, makeHeatSleeve } from './glbmodels.js?v=2b9095d2';
-import { CREATURES, waveJelly, swimWave, spherePts, bulletPts, missilePts, heartPts, torusPts, towerHeadPts, enemyDotPts, portalPts, personPts } from './creatures.js?v=2b9095d2';
-import { TOWER_FEEL, TOWER_HEADS, headKindFor } from './towerfeel.js?v=2b9095d2';
+  addEdgeOutlines, makeHeatSleeve } from './glbmodels.js?v=91e6af15';
+import { CREATURES, waveJelly, swimWave, spherePts, bulletPts, missilePts, heartPts, torusPts, towerHeadPts, enemyDotPts, portalPts, personPts } from './creatures.js?v=91e6af15';
+import { TOWER_FEEL, TOWER_HEADS, headKindFor } from './towerfeel.js?v=91e6af15';
 import { STARGATE_PTS, STARGATE_STROKE,
-  HORIZON_N, stargateHorizon } from './stargate.js?v=2b9095d2';
-import { ENEMY_SPEC } from './enemyspec.js?v=2b9095d2';
+  HORIZON_N, stargateHorizon } from './stargate.js?v=91e6af15';
+import { ENEMY_SPEC } from './enemyspec.js?v=91e6af15';
 
 function normalizeToUnit(group) {
   group.updateMatrixWorld(true);
@@ -2415,6 +2415,13 @@ export function makeAstronaut(proto) {
   }
   obj.userData.tick = (dt) => mixer.update(dt);
   obj.userData.setWalking = (on) => { if (action) action.paused = !on; };
+  // ONE CLIP, TWO GAITS. The file carries a walk and nothing else, so a run
+  // is that cycle driven faster — which is a real answer and not a fudge: a
+  // biped's run differs from its walk in cadence and stride before it differs
+  // in pose, and the study exists to say whether that reads. The caller owns
+  // the STRIDE (metres per second); this owns the CADENCE, and the two have
+  // to move together or the feet skate.
+  obj.userData.setCadence = (mul) => { if (action) action.timeScale = mul; };
   obj.userData.dispose = () => { mixer.stopAllAction(); mixer.uncacheRoot(obj); };
   return obj;
 }

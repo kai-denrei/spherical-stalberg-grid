@@ -16,7 +16,7 @@
 // A roster, like a mission, is therefore read ONCE and can only change by
 // loading the page again. That is why the tab bar's board buttons are
 // navigations rather than tab switches.
-import { useRoster, ROSTERS } from './towers.js?v=2b9095d2';
+import { useRoster, ROSTERS } from './towers.js?v=91e6af15';
 
 export const ROSTER_NOW = (() => {
   const q = new URLSearchParams(location.search).get('roster') || '';

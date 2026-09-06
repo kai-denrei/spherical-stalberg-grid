@@ -16,7 +16,9 @@ import { makeBloom } from './postfx.js';
 import { bakeGalaxyCube } from './galaxybake.js';
 import { SKY_PRESET } from './galaxyseed.js';
 import { LOOKS } from './looks.js';
-import { buildCreature, preloadMkcx } from './units.js';
+import { buildCreature, preloadMkcx, preloadAstronaut, makeAstronaut,
+  preloadContainer, makeContainerFixture } from './units.js';
+import { mulberry32 } from './rng.js';
 import { applyWeatheredMaterial } from './cine/materials.js';
 import { deepLink, wireDeepLink } from './deeplink.js';
 
@@ -102,9 +104,18 @@ export function initAstroTab(root) {
   }
   const postfx = makeBloom(renderer, scene, camera, { scale: 1, strength: 0.25, radius: 0.5, threshold: 0.4 });
 
+  const crewProbe = q.get('crewprobe') === '1';
+
   const P = {
     clip: '', play: true, speed: 1.0, loop: true, stride: 1.3,   // stride: metres per second of travel
-    path: 'perimeter',      // perimeter | straight | spot
+    path: 'perimeter',      // perimeter | straight | spot | crew
+    crew: 2,                // astronauts in the crew wander
+    runMul: 2.3,            // a run is this many times the walk's stride
+    dwell: 2.0,             // seconds stood at a station before moving on
+    // NOT `seed`: that name is the whole app's board seed, and putting it in
+    // this tab's query took the router to the grid tab instead of here.
+    crewSeed: 7,            // the wander's stream — same seed, same shift
+    turret: true, cargo: true,   // the two things they walk BETWEEN
     personH: PERSON_M,      // metres, tall
     tankLen: TANK_LEN_M,    // metres, longest dimension
     clear: 1.0,             // metres of daylight between the hull and the walk
@@ -154,6 +165,18 @@ export function initAstroTab(root) {
     console.log(`ASTRO loaded: ${clips.length} clip(s) ${clips.map((c) => `"${c.name}" ${c.duration.toFixed(2)}s`).join(', ')}; height ${height.toFixed(1)} units -> ${P.personH} m; ${bones} bones`
       + ` | tank ${P.tankLen} m, ratio ${(P.personH / P.tankLen).toFixed(3)}`);
   }, undefined, (e) => { hud.textContent = `astronaut: failed to load (${e && e.message})`; });
+
+  // THE CREW USES THE GAME'S OWN CAST, not this tab's hand-loaded copy: the
+  // point of a study is to judge what actually ships. preloadAstronaut hands
+  // back a one-unit-tall prototype and makeAstronaut clones the rig properly
+  // — Object3D.clone() shares a SkinnedMesh's skeleton by reference, so two
+  // naive clones deform identically AND stand in the same place, which looks
+  // exactly like the second model failing to load.
+  preloadAstronaut().then((proto) => {
+    if (!proto) return;
+    crewProto = proto;
+    if (P.path === 'crew') { buildProps(); buildCrew(); syncMode(); }
+  });
 
   // Re-sizing has to be re-doable, not a one-shot at load: the slider moves
   // it. Both the scale and the recentre are derived from the ORIGINAL box
@@ -249,8 +272,213 @@ export function initAstroTab(root) {
     // not the length, or a walker rounding the corners would clip the hull
     const sz = b.getSize(new THREE.Vector3());
     tankR = 0.5 * Math.hypot(sz.x, sz.z);
-    layFloor(tankR + Math.max(0, P.clear) + Math.max(2, metres * 0.25));
-    frame(metres);
+    // the floor and the frame have to hold the whole SHIFT, not just the hull
+    const reach = P.path === 'crew'
+      ? crewRing() + Math.max(2, P.personH * 2)
+      : tankR + Math.max(0, P.clear) + Math.max(2, metres * 0.25);
+    layFloor(reach);
+    frame(P.path === 'crew' ? reach * 1.5 : metres);
+    placeProps();   // the stations are derived from tankR, so they move with it
+  }
+
+  // --- THE CREW WANDER ------------------------------------------------------
+  //
+  // Operator: "I want to see both Astronauts run around between the Tank and
+  // a Turret and entering a container, somewhat randomly, alternating walking
+  // and running."
+  //
+  // Three STATIONS and a state machine per person: travel to a station,
+  // stand there a moment (or go INSIDE, if it is the container), pick
+  // another, go. What makes it read as people rather than as a demo loop is
+  // that the two of them are on independent streams — different seeds off
+  // one `seed`, so the whole shift is reproducible but the two are never in
+  // step.
+  //
+  // ONE CLIP, TWO GAITS. The file carries a 1.03 s walk and nothing else, so
+  // the run is that cycle at higher cadence over a longer stride. That is the
+  // study's actual question — a biped's run differs from its walk in cadence
+  // and stride before it differs in pose, and this says on screen whether
+  // that is enough. Cadence and stride are moved by ONE number so the feet
+  // cannot skate: a gait whose cycle outruns its travel is the tell.
+  const crew = [];                 // { obj, rng, at, to, p0, p1, u, legT, gait, phase, timer }
+  let crewProto = null, turret = null, cargo = null;
+  let turretLoading = false, cargoLoading = false;
+  const STATION = { tank: 'tank', turret: 'turret', cargo: 'cargo' };
+
+  // ONE RING, THREE BEARINGS. The stations sit on a circle about the hull
+  // whose radius is derived from the tank's own footprint AND the person's
+  // height, so the layout survives both size sliders — the same rule the
+  // perimeter path already lives under. Deriving it also keeps the floor and
+  // the camera honest: the first cut put the turret at 1.9x the hull radius,
+  // which was off the edge of the floor and outside the frame, so the props
+  // loaded correctly and were nowhere to be seen.
+  function crewRing() { return tankR + Math.max(0.6, P.clear) + P.personH * 1.6; }
+  const BEARING = { tank: Math.PI * 0.5, turret: -Math.PI * 0.18, cargo: Math.PI * 1.12 };
+  function stationPos(which) {
+    const R = crewRing();
+    // the tank's station is its FLANK, at the clearance the perimeter walk
+    // already uses — you stand beside a tank, not on it
+    if (which === STATION.tank) {
+      const r = tankR + Math.max(0.6, P.clear);
+      return new THREE.Vector3(Math.cos(BEARING.tank) * r, 0, Math.sin(BEARING.tank) * r);
+    }
+    const a = BEARING[which] ?? 0;
+    return new THREE.Vector3(Math.cos(a) * R, 0, Math.sin(a) * R);
+  }
+
+  function buildProps() {
+    // the LOADING flags, not just the loaded ones: both calls into here happen
+    // before either async load resolves, so `!turret` is true twice and the
+    // scene ends up with two turrets standing in one another
+    if (P.turret && !turret && !turretLoading) {
+      turretLoading = true;
+      new GLTFLoader().load('assets/models/sentries/lancer_t2.glb', (g) => {
+        turret = g.scene;
+        const b = new THREE.Box3().setFromObject(turret);
+        const sz = b.getSize(new THREE.Vector3());
+        // a turret reads at about half again a person — tall enough to walk
+        // under the barrel, short enough that the hull still dominates
+        turret.scale.setScalar((P.personH * 1.6) / Math.max(sz.y, 1e-6));
+        turret.traverse((o) => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; } });
+        scene.add(turret);
+        if (crewProbe) console.log(`CREWPROPS turret loaded h=${sz.y.toFixed(2)} -> ${(P.personH * 1.6).toFixed(2)} m`);
+        placeProps();
+      }, undefined, (e) => {
+        // a missing prop is worth saying out loud even without the probe:
+        // the study is unreadable without the thing they walk to
+        turret = null; turretLoading = false;
+        console.log('CREWPROPS turret FAILED ' + (e && e.message));
+      });
+    }
+    if (P.cargo && !cargo && !cargoLoading) {
+      cargoLoading = true;
+      preloadContainer().then(() => {
+        cargo = makeContainerFixture(0);
+        if (!cargo) return;
+        const b = new THREE.Box3().setFromObject(cargo);
+        const sz = b.getSize(new THREE.Vector3());
+        // scaled off the PERSON, not the tank: the whole point of walking into
+        // one is that a door is a door, and a door is sized by who fits it
+        cargo.scale.setScalar((P.personH * 1.55) / Math.max(sz.y, 1e-6));
+        cargo.traverse((o) => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; } });
+        scene.add(cargo);
+        if (crewProbe) console.log(`CREWPROPS container loaded h=${sz.y.toFixed(2)}`);
+        placeProps();
+      });
+    }
+  }
+  function placeProps() {
+    if (turret) {
+      const t = stationPos(STATION.turret);
+      turret.position.set(t.x, 0, t.z);
+      turret.lookAt(0, turret.position.y, 0);
+    }
+    if (cargo) {
+      const c = stationPos(STATION.cargo);
+      cargo.position.set(c.x, 0, c.z);
+      // the open doors face the tank, or they walk into a wall
+      cargo.rotation.y = Math.atan2(-c.x, -c.z);
+    }
+  }
+
+  function buildCrew() {
+    for (const m of crew) { if (m.obj.userData.dispose) m.obj.userData.dispose(); scene.remove(m.obj); }
+    crew.length = 0;
+    if (P.path !== 'crew' || !crewProto) return;
+    for (let i = 0; i < Math.max(0, Math.round(P.crew)); i++) {
+      const obj = makeAstronaut(crewProto);
+      if (!obj) continue;
+      obj.scale.setScalar(P.personH);      // the proto is one unit tall by contract
+      obj.traverse((o) => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; } });
+      scene.add(obj);
+      // a stream PER PERSON, off the one seed. Same seed, same shift; two
+      // people who are never in step, which is the thing that reads.
+      const rng = mulberry32((P.crewSeed | 0) * 7919 + i * 104729);
+      const at = i === 0 ? STATION.turret : STATION.cargo;
+      const m = { id: `crew${i}`, obj, rng, at, to: at, p0: stationPos(at), p1: stationPos(at),
+        u: 1, legT: 1, gait: 'walk', phase: 'dwell', timer: P.dwell * (0.4 + rng()) };
+      obj.position.copy(m.p0);
+      crew.push(m);
+    }
+    pickNext(crew[0]); if (crew[1]) pickNext(crew[1]);
+  }
+
+  function pickNext(m) {
+    if (!m) return;
+    const others = Object.values(STATION).filter((k) => k !== m.at);
+    m.to = others[Math.floor(m.rng() * others.length) % others.length];
+    m.p0 = m.obj.position.clone(); m.p0.y = 0;
+    m.p1 = stationPos(m.to);
+    // ALTERNATING, not random: a coin flip gives runs of four and reads as
+    // indecision. Biased against whatever the last leg was, so the two gaits
+    // trade off while still being unpredictable leg to leg.
+    m.gait = m.rng() < (m.gait === 'run' ? 0.25 : 0.65) ? 'run' : 'walk';
+    const speed = P.stride * P.speed * (m.gait === 'run' ? P.runMul : 1);
+    m.legT = Math.max(0.35, m.p0.distanceTo(m.p1) / Math.max(0.1, speed));
+    m.u = 0;
+    m.phase = 'travel';
+    if (crewProbe) {
+      console.log(`CREWPROBE ${m.id} ${m.at} -> ${m.to} ${m.gait}`
+        + ` ${m.p0.distanceTo(m.p1).toFixed(1)}m in ${m.legT.toFixed(1)}s`);
+    }
+    if (m.obj.userData.setWalking) m.obj.userData.setWalking(true);
+    // cadence rides WITH the stride, or the feet skate. The exponent is the
+    // one liberty taken: a real run lengthens the stride more than it quickens
+    // the legs, so the cycle is driven a little under the speed multiplier.
+    if (m.obj.userData.setCadence) {
+      m.obj.userData.setCadence(m.gait === 'run' ? Math.pow(P.runMul, 0.8) * P.speed : P.speed);
+    }
+  }
+
+  // THE TWO STUDIES DO NOT SHARE A STAGE. The solo astronaut answers the
+  // RATIO question and is parented to `stage`; the crew answers a behaviour
+  // question and stands on its own. Showing both at once puts a duplicate
+  // person in the middle of the shot and makes neither readable, so the mode
+  // switch hides whichever is not being asked.
+  function syncMode() {
+    const on = P.path === 'crew';
+    stage.visible = !on;
+    if (turret) turret.visible = on && P.turret;
+    if (cargo) cargo.visible = on && P.cargo;
+    if (on) { buildProps(); if (!crew.length) buildCrew(); }
+    for (const m of crew) m.obj.visible = on && m.phase !== 'inside';
+    placeProps();
+    sizeTank(P.tankLen);   // re-lays the floor and re-frames for the mode
+  }
+
+  function stepCrew(dt) {
+    for (const m of crew) {
+      if (m.phase === 'travel') {
+        m.u += dt / m.legT;
+        const u = Math.min(1, m.u);
+        m.obj.position.lerpVectors(m.p0, m.p1, u);
+        const d = m.p1.clone().sub(m.p0);
+        // the cast walks down +Z, so the heading is the leg's own bearing —
+        // read off the path, never a second sign convention
+        if (d.lengthSq() > 1e-8) m.obj.rotation.y = Math.atan2(d.x, d.z);
+        if (u >= 1) {
+          m.at = m.to;
+          if (m.at === STATION.cargo && cargo) {
+            // INSIDE. It walks through the open doors and is gone — the study
+            // is asking whether a person disappearing into a berth reads, and
+            // a person standing politely in the doorway does not answer that.
+            m.phase = 'inside';
+            m.timer = P.dwell * (0.8 + m.rng() * 1.4);
+            m.obj.visible = false;
+            if (crewProbe) console.log(`CREWPROBE ${m.id} INSIDE the container for ${m.timer.toFixed(1)}s`);
+          } else {
+            m.phase = 'dwell';
+            m.timer = P.dwell * (0.5 + m.rng());
+            if (crewProbe) console.log(`CREWPROBE ${m.id} arrived ${m.at}, stands ${m.timer.toFixed(1)}s`);
+          }
+          if (m.obj.userData.setWalking) m.obj.userData.setWalking(false);
+        }
+      } else {
+        m.timer -= dt;
+        if (m.timer <= 0) { m.obj.visible = true; pickNext(m); }
+      }
+      if (m.obj.userData.tick && P.play) m.obj.userData.tick(dt);
+    }
   }
 
   function hudLine() {
@@ -260,6 +488,10 @@ export function initAstroTab(root) {
         + ` · person ${P.personH.toFixed(2)} m · tank ${P.tankLen.toFixed(1)} m`
         + ` · RATIO ${(P.personH / Math.max(0.01, P.tankLen)).toFixed(3)}`
         + ` · ${P.path}${P.path === 'perimeter' ? ` r=${(tankR + P.clear).toFixed(2)} m (hull ${tankR.toFixed(2)} + ${P.clear.toFixed(2)})` : ''}`
+        + (P.path === 'crew'
+          ? ` · crew ${crew.length} · ${crew.map((m) => (m.phase === 'travel' ? m.gait : m.phase)).join(' / ') || '-'}`
+            + ` · walk ${(P.stride * P.speed).toFixed(1)} m/s · run ${(P.stride * P.speed * P.runMul).toFixed(1)} m/s`
+          : '')
       : 'loading astronaut.glb…';
   }
 
@@ -268,7 +500,15 @@ export function initAstroTab(root) {
   gui.add(P, 'play').onChange((v) => { if (action) action.paused = !v; });
   gui.add(P, 'speed', 0, 3, 0.05).onChange((v) => { if (mixer) mixer.timeScale = v; });
   gui.add(P, 'loop').onChange(() => playClip(P.clip));
-  gui.add(P, 'path', ['perimeter', 'straight', 'spot']).name('walk path');
+  gui.add(P, 'path', ['perimeter', 'straight', 'spot', 'crew'])
+    .name('walk path').onChange(() => { syncMode(); });
+  const gCrew = gui.addFolder('crew wander');
+  gCrew.add(P, 'crew', 0, 4, 1).name('astronauts').onChange(() => buildCrew());
+  gCrew.add(P, 'runMul', 1, 4, 0.1).name('run x walk');
+  gCrew.add(P, 'dwell', 0.2, 6, 0.1).name('dwell (s)');
+  gCrew.add(P, 'crewSeed', 0, 999, 1).name('seed').onChange(() => buildCrew());
+  gCrew.add(P, 'turret').name('turret').onChange(() => { buildProps(); syncMode(); });
+  gCrew.add(P, 'cargo').name('container').onChange(() => { buildProps(); syncMode(); });
   gui.add(P, 'stride', 0.2, 4, 0.05).name('metres / s');
   gui.add(P, 'personH', 0.4, 4, 0.05).name('person height (m)').onChange((v) => sizeAstro(v));
   gui.add(P, 'tankLen', 2, 20, 0.1).name('tank length (m)').onChange((v) => sizeTank(v));
@@ -339,6 +579,7 @@ export function initAstroTab(root) {
     } else if (P.path === 'spot') {
       stage.position.set(0, 0, 0);
     }
+    if (P.path === 'crew') stepCrew(dt);
     if (P.spin) stage.rotation.y += dt * 0.4;
     controls.update();
     postfx.render();

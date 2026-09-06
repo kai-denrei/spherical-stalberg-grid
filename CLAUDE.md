@@ -180,6 +180,17 @@ token — the corner badge was retired from the game view).
   stripped — `src/deeplink.js`, `DROP_KEYS`. `?dlprobe=1` presses the button
   on whichever lab is open and logs the URL, which is the only way the
   round-trip gets checked.
+  the ASTRONAUT study's CREW WANDER: `?path=crew` puts two astronauts on a
+  ring of three stations — the tank's flank, a turret, an open container —
+  walking and running between them and DISAPPEARING inside the container.
+  `?crew=N`, `?runMul=`, `?dwell=`, `?crewSeed=` (NOT `seed`, which is the board’s), `?turret=0`, `?cargo=0`, and
+  `?crewprobe=1`, which logs every leg with its gait. The sequence is the
+  feature and a screenshot cannot show it: measured over 100 s the mix is
+  ~10 walks to 9 runs, alternating with streaks of two to four. ONE CLIP,
+  TWO GAITS — the file carries a 1.03 s walk and nothing else, so a run is
+  that cycle at higher cadence over a longer stride, and cadence rides WITH
+  the stride (`setCadence`, units.js) or the feet skate. Params go in the
+  SEARCH, not after the hash: `/?path=crew#astro`.
   the ASTRONAUT study (`#astro`): `?tankLen=` and `?personH=` in metres (the
   ratio is the study's whole output and the HUD prints it), `?path=perimeter|
   straight|spot`, `?clear=` (metres of daylight on the lap), `?outline=`
