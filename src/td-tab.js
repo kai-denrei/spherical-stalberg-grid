@@ -19,79 +19,81 @@
 
 import * as THREE from '../vendor/three.module.js';
 import GUI from '../vendor/lil-gui.esm.js';
-import { generateSphereMesh, relax } from './grid.js?v=a2ca9f4e';
-import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=a2ca9f4e';
-import { compileRail } from './cine/rail.js?v=a2ca9f4e';
-import { SCRIPTS } from './cine/scripts.js?v=a2ca9f4e';
-import { cuesBetween } from './cine/sound.js?v=a2ca9f4e';
-import { installCine } from './cine/kit.js?v=a2ca9f4e';
-import { mulberry32, randomSeed } from './rng.js?v=a2ca9f4e';
-import { computeBerths, berthIndexFor } from './berths.js?v=a2ca9f4e';
-import { wantsSecondary, shellsForAll } from './autofire.js?v=a2ca9f4e';
-import { printPhase, printOffset, printOn, patternSecsFor } from './printpath.js?v=a2ca9f4e';
+import { generateSphereMesh, relax } from './grid.js?v=b0b57145';
+import { generateDungeon, bfsDist, BLOCKED, PATH, ROOM } from './dungeon.js?v=b0b57145';
+import { compileRail } from './cine/rail.js?v=b0b57145';
+import { SCRIPTS } from './cine/scripts.js?v=b0b57145';
+import { cuesBetween } from './cine/sound.js?v=b0b57145';
+import { installCine } from './cine/kit.js?v=b0b57145';
+import { mulberry32, randomSeed } from './rng.js?v=b0b57145';
+import { computeBerths, berthIndexFor } from './berths.js?v=b0b57145';
+import { wantsSecondary, shellsForAll } from './autofire.js?v=b0b57145';
+import { printPhase, printOffset, printOn, patternSecsFor } from './printpath.js?v=b0b57145';
 import { createBeam } from './beamfx.js';
-import { createBeamRig, PLASMA_DEFAULTS, BOARD_PRESET, BEAM_PEAK } from './beamdraw.js?v=a2ca9f4e';
-import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3, segKey, tangentDir, tangentBasis } from './vec3.js?v=a2ca9f4e';
-import { CREATURES, waveJelly } from './creatures.js?v=a2ca9f4e';
-import { brief, dwellFor } from './isaobriefs.js?v=a2ca9f4e';
-import { drawEmotion } from './emotions.js?v=a2ca9f4e';
+import { createBeamRig, PLASMA_DEFAULTS, BOARD_PRESET, BEAM_PEAK } from './beamdraw.js?v=b0b57145';
+import { sub3, add3, scale3, dot3, cross3, norm3, len3, dist3, segKey, tangentDir, tangentBasis } from './vec3.js?v=b0b57145';
+import { CREATURES, waveJelly } from './creatures.js?v=b0b57145';
+import { brief, dwellFor } from './isaobriefs.js?v=b0b57145';
+import { drawEmotion } from './emotions.js?v=b0b57145';
 import { ACHIEVEMENTS, ACHV_GROUPS, achievement, blankRun, earned, freshlyEarned,
   sanitiseRecord }
-  from './achievements.js?v=a2ca9f4e';
+  from './achievements.js?v=b0b57145';
 import { applyFontPack, currentFontPack, FONT_NAMES,
-  loadTypeFeel } from './fonts.js?v=a2ca9f4e';
-import { SECONDARY_TOE, applySecondaryToe } from './units.js?v=a2ca9f4e';
-import { UNITS, UNIT_NAMES, buildUnit, buildCreature, preloadMkcx, preloadServer, makeServerFixture, makeShieldShell, preloadContainer, makeContainerFixture, preloadFabricator, makeIsaoDrone, makeBulletCloud, makeRewardSolid, makeShellSolid, makeDebris, makeDotBurst, makePortalCloud, preloadPortalRing, makePortalRing, makeHeartCloud, makeDotEnemy, makeSurvivor, preloadAstronaut, preloadAstronauts, makeAstronaut, preloadTerraformer, makeTerraformerFixture } from './units.js?v=a2ca9f4e';
-import { LOOKS, LOOK_NAMES } from './looks.js?v=a2ca9f4e';
-import { makeCellIndex } from './cellindex.js?v=a2ca9f4e';
-import { CREATURE_TINTS, ENEMY_SPEC, INTROS, computeWavePlan, accentFor } from './enemyspec.js?v=a2ca9f4e';
-import { PICKUPS } from './pickups.js?v=a2ca9f4e';
-import { rankFor, rankLabel, badgeSVG, killReq, eliteReq } from './ranks.js?v=a2ca9f4e';
-import { beamStep, isBeamStep, PEN_SOFT_FRAC, PEN_HARD_FRAC } from './beamranks.js?v=a2ca9f4e';
-import { burn, sweepAdvance, wallBite as wallBiteFor } from './beamburn.js?v=a2ca9f4e';
-import { arcPoint, projectToArc, toeForCrossing, crossingForToe } from './arc.js?v=a2ca9f4e';
+  loadTypeFeel } from './fonts.js?v=b0b57145';
+import { SECONDARY_TOE, applySecondaryToe } from './units.js?v=b0b57145';
+import { UNITS, UNIT_NAMES, buildUnit, buildCreature, preloadMkcx, preloadServer, makeServerFixture, makeShieldShell, preloadContainer, makeContainerFixture, preloadFabricator, makeIsaoDrone, makeBulletCloud, makeRewardSolid, makeShellSolid, makeDebris, makeDotBurst, makePortalCloud, preloadPortalRing, makePortalRing, makeHeartCloud, makeDotEnemy, makeSurvivor, preloadAstronaut, preloadAstronauts, makeAstronaut, preloadTerraformer, makeTerraformerFixture } from './units.js?v=b0b57145';
+import { LOOKS, LOOK_NAMES } from './looks.js?v=b0b57145';
+import { makeCellIndex } from './cellindex.js?v=b0b57145';
+import { CREATURE_TINTS, ENEMY_SPEC, INTROS, computeWavePlan, accentFor } from './enemyspec.js?v=b0b57145';
+import { PICKUPS } from './pickups.js?v=b0b57145';
+import { rankFor, rankLabel, badgeSVG, killReq, eliteReq } from './ranks.js?v=b0b57145';
+import { beamStep, isBeamStep, PEN_SOFT_FRAC, PEN_HARD_FRAC } from './beamranks.js?v=b0b57145';
+import { burn, sweepAdvance, wallBite as wallBiteFor } from './beamburn.js?v=b0b57145';
+import { arcPoint, projectToArc, toeForCrossing, crossingForToe } from './arc.js?v=b0b57145';
 import { MINE_TUNE, makeField, layMine, armMines, restock, mineAt,
-  inFan, trip, chain, nextChained, minePolar } from './mines.js?v=a2ca9f4e';
-import { shotOf, muzzleOf, impactOf, tuneFor } from './sentryfx.js?v=a2ca9f4e';
+  inFan, trip, chain, nextChained, minePolar } from './mines.js?v=b0b57145';
+import { shotOf, muzzleOf, impactOf, tuneFor } from './sentryfx.js?v=b0b57145';
+import { makeTracerMesh, makeLightningMesh, makeSeekerMesh, aimSeeker,
+  LANCE_LOOK as SHOT_LANCE_LOOK, THROW_LOOK as SHOT_THROW_LOOK } from './shotfx.js?v=b0b57145';
 import { SHIELD_TUNE, SHIELD_KNOBS, makeShield, charge as chargeShield,
   deploy as deployShield, tickShield, restockShield, tapTower, towerOffline,
-  stationDraw, waveReset as shieldWaveReset, shoveVec, shoveMag } from './shield.js?v=a2ca9f4e';
+  stationDraw, waveReset as shieldWaveReset, shoveVec, shoveMag } from './shield.js?v=b0b57145';
 import { deepLink, wireDeepLink } from './deeplink.js';
 import { RESCUE_TUNE, makeRescue, placeSurvivors, stepBoard, stepGrab,
   disembark, loseCarried, lockOn, waveMix, standing as standingSurv,
   aboard as aboardSurv, missionOver, verdict as rescueVerdict,
   grabProgress, remaining as remainingSurv, exposed as exposedSurv,
   RESCUE2_TUNE, makeCamps, stepCall, stepEmerge, walkStep, runOver,
-  awake as campAwake } from './rescue.js?v=a2ca9f4e';
+  awake as campAwake } from './rescue.js?v=b0b57145';
 import { WORMHOLE_PRESET, WORMHOLE_UNIFORM_DEFAULTS, RING_SPIN, TRAVEL,
-  travelRate, advancePhase } from './portalfx.js?v=a2ca9f4e';
-import { WORMHOLE_FRAG } from './fx/wormhole.frag.js?v=a2ca9f4e';
-import { CORONA_FRAG } from './fx/corona.frag.js?v=a2ca9f4e';
-import { labLine, parseLabQuery } from './lab.js?v=a2ca9f4e';
-import { bakeGalaxyCube } from './galaxybake.js?v=a2ca9f4e';
-import { SKY_PRESET } from './galaxyseed.js?v=a2ca9f4e';
-import { makeScore } from './score.js?v=a2ca9f4e';
-import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER, HACK_GATED, starterTower, towerSound, ROSTER } from './towers.js?v=a2ca9f4e';
-import { makeEconomy, sellRefund } from './economy.js?v=a2ca9f4e';
-import { pickTier } from './perftier.js?v=a2ca9f4e';
-import { applyWeatheredMaterial } from './cine/materials.js?v=a2ca9f4e';
-import { STICK, stickVector, knobOffset } from './stick.js?v=a2ca9f4e';
-import { registerServiceWorker } from './pwa.js?v=a2ca9f4e';
-import { makeBloom } from './postfx.js?v=a2ca9f4e';
-import { TANK_FEEL, TANK_FEEL_KNOBS, makeTankFeel, stepTankFeel, landTankFeel, fireTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js?v=a2ca9f4e';
-import { FEEL, loadFeel, saveFeel } from './feelstore.js?v=a2ca9f4e';
+  travelRate, advancePhase } from './portalfx.js?v=b0b57145';
+import { WORMHOLE_FRAG } from './fx/wormhole.frag.js?v=b0b57145';
+import { CORONA_FRAG } from './fx/corona.frag.js?v=b0b57145';
+import { labLine, parseLabQuery } from './lab.js?v=b0b57145';
+import { bakeGalaxyCube } from './galaxybake.js?v=b0b57145';
+import { SKY_PRESET } from './galaxyseed.js?v=b0b57145';
+import { makeScore } from './score.js?v=b0b57145';
+import { TOWERS, TOWER_BY_KEY, MAX_TIER, upgradeCost, effectiveStats, pickTarget, shotInterval, unlockedTowerKeys, towerUnlockWave, TOWER_ORDER, HACK_GATED, starterTower, towerSound, ROSTER } from './towers.js?v=b0b57145';
+import { makeEconomy, sellRefund } from './economy.js?v=b0b57145';
+import { pickTier } from './perftier.js?v=b0b57145';
+import { applyWeatheredMaterial } from './cine/materials.js?v=b0b57145';
+import { STICK, stickVector, knobOffset } from './stick.js?v=b0b57145';
+import { registerServiceWorker } from './pwa.js?v=b0b57145';
+import { makeBloom } from './postfx.js?v=b0b57145';
+import { TANK_FEEL, TANK_FEEL_KNOBS, makeTankFeel, stepTankFeel, landTankFeel, fireTankFeel, applyTankFeel, applyTankHealth } from './tankfeel.js?v=b0b57145';
+import { FEEL, loadFeel, saveFeel } from './feelstore.js?v=b0b57145';
 import { STRIKE_KNOBS, makeStrike, makeStrikeParams, grantStrikes, stepStrike,
   toggleArm, paintTarget, launchStrike, stepFall, skipFall, fallProgress,
-  strikeDamage, retargetStrike, orbitProgress } from './strike.js?v=a2ca9f4e';
+  strikeDamage, retargetStrike, orbitProgress } from './strike.js?v=b0b57145';
 import { radarBasis, radarProject, radarBearing, sweepAngle, radarPhosphor,
-  proximitySectors, SENSOR_LEVELS, sensorColor } from './radar.js?v=a2ca9f4e';
-import { BLOOM_GROUPS } from './bloomweights.js?v=a2ca9f4e';
+  proximitySectors, SENSOR_LEVELS, sensorColor } from './radar.js?v=b0b57145';
+import { BLOOM_GROUPS } from './bloomweights.js?v=b0b57145';
 import { A6_TUNE, magFor, makeA6, stepA6, arc as a6Arc, a6Line } from './heptapod.js';
 import { SENTRY_TUNE } from './sentry.js';
 import { MISSILE_TUNE, scaleMissile, makeLock, stepLock, launchMissile, stepMissile } from './lockon.js';
-import { TOWER_LOOK_NAMES, DEFAULT_TOWER_LOOK, buildTowerLook, preloadLook, lookReady, setSentryTier } from './towerlooks.js?v=a2ca9f4e';
-import { makeAudio } from './audio.js?v=a2ca9f4e';
-import { DEATH_KEYS } from './audiomanifest.js?v=a2ca9f4e';
+import { TOWER_LOOK_NAMES, DEFAULT_TOWER_LOOK, buildTowerLook, preloadLook, lookReady, setSentryTier } from './towerlooks.js?v=b0b57145';
+import { makeAudio } from './audio.js?v=b0b57145';
+import { DEATH_KEYS } from './audiomanifest.js?v=b0b57145';
 
 export function initTdTab(root) {
   let active = false;
@@ -9850,11 +9852,11 @@ export function initTdTab(root) {
   // flicker come most of the way down, and the width is a fifth of the
   // thrower's — which is what makes the two read as different weapons
   // rather than as the same beam at two colours.
-  const LANCE_LOOK = {
-    width: 0.2, jitter: 0,
-    noiseAmount: 0.08, flicker: 0.06, scrollSpeed: -1.2,
-  };
-  const THROW_LOOK = { width: 1, jitter: 1 };
+  // THE LOOKS LIVE IN shotfx.js NOW, so the shooting lab draws the same lance
+  // and the same throw the board does. They were private constants here,
+  // which is precisely why the lab could only approximate them.
+  const LANCE_LOOK = SHOT_LANCE_LOOK;
+  const THROW_LOOK = SHOT_THROW_LOOK;
 
   function makePlasmaLinks(tw, look = THROW_LOOK) {
     const links = [];
@@ -10339,24 +10341,11 @@ export function initTdTab(root) {
   // HK's projectile identity: every shot is a TRACER — a bright additive
   // head dragging the profile's `trail` ghost points, dimming to the tail. Each
   // tracer is one small Points object (≤12 verts), rebuilt per shot.
+  // DELEGATED. This built the tracer inline, which meant the shooting lab
+  // could only guess at it — and a guess is what made the lab's Mortar look
+  // like a different weapon from the board's. One builder, two callers.
   function makeTracer(color, px, trailN) {
-    const n = trailN + 1;
-    const pos = new Float32Array(n * 3);
-    const col = new Float32Array(n * 3);
-    const c = new THREE.Color(color);
-    for (let i = 0; i < n; i++) {
-      const f = 1 - i / n; // head bright, tail fading to black (additive)
-      col[i * 3] = c.r * f; col[i * 3 + 1] = c.g * f; col[i * 3 + 2] = c.b * f;
-    }
-    const geo = new THREE.BufferGeometry();
-    geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
-    geo.setAttribute('color', new THREE.BufferAttribute(col, 3));
-    return new THREE.Points(geo, new THREE.PointsMaterial({
-      size: px, sizeAttenuation: false, vertexColors: true,
-      map: roundDot(), alphaTest: 0.3,
-      transparent: true, opacity: 0.95,
-      blending: THREE.AdditiveBlending, depthWrite: false,
-    }));
+    return makeTracerMesh(color, px, trailN);
   }
 
   // A Points vertex is a SQUARE unless you tell it otherwise, and at 12px
@@ -10531,30 +10520,13 @@ export function initTdTab(root) {
   // tower head to the victim — HK's slow-tower identity. Jitter is a
   // pure function of segment index + time: deterministic, and it never
   // touches the gameplay rng stream.
+  // The BOLT is shotfx's; the lifetime stays here, which is the one thing the
+  // board and the lab genuinely differ about. radialLift is the board's own:
+  // it pushes the bolt out from the sphere's centre so it rides above the
+  // wall tops, and a flat lab passes 0.
   function spawnLightning(a, b, color, tNow) {
-    const SEG = 7;
-    const pos = new Float32Array((SEG + 1) * 3);
-    const d = sub3(b, a);
-    const nMid = norm3(scale3(add3(a, b), 0.5));
-    let side = cross3(nMid, d);
-    const sl = len3(side);
-    side = sl > 1e-9 ? scale3(side, 1 / sl) : [0, 1, 0];
-    const amp = len3(d) * 0.18;
-    for (let i = 0; i <= SEG; i++) {
-      const f = i / SEG;
-      const jag = (i === 0 || i === SEG) ? 0
-        : Math.sin(i * 12.9898 + tNow * 57.7) * amp * Math.sin(Math.PI * f);
-      const base = add3(a, scale3(d, f));
-      const lifted = scale3(base, 1 + params.wallHeight * 0.5);
-      const pnt = add3(lifted, scale3(side, jag));
-      pos[i * 3] = pnt[0]; pos[i * 3 + 1] = pnt[1]; pos[i * 3 + 2] = pnt[2];
-    }
-    const geo = new THREE.BufferGeometry();
-    geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
-    const line = new THREE.Line(geo, new THREE.LineBasicMaterial({
-      color, transparent: true, opacity: 0.9,
-      blending: THREE.AdditiveBlending, depthWrite: false,
-    }));
+    const line = makeLightningMesh(a, b, color,
+      { t: tNow, radialLift: params.wallHeight * 0.5 });
     scene.add(line);
     beams.push({ mesh: line, ttl: 0.32, ttl0: 0.32, dg: true });
   }

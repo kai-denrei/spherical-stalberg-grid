@@ -14,7 +14,7 @@
 // Coordinates: the shooter is at the origin looking down +Z, +Y is up, +X is
 // right. Metres and seconds throughout.
 
-import { makeParams, clampParams, formatKnobs, knobProblems } from './knobs.js?v=a2ca9f4e';
+import { makeParams, clampParams, formatKnobs, knobProblems } from './knobs.js?v=b0b57145';
 
 export const BALLISTICS_TUNE = {
   muzzleVel: 700,     // m/s

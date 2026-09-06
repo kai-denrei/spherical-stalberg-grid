@@ -200,6 +200,17 @@ token — the corner badge was retired from the game view).
   `scaleMissile` into model units. Fire-and-forget: the lock drops the
   instant a cell is away, or one launcher empties itself into one walker
   while the wave goes past.
+  `src/shotfx.js` OWNS WHAT A SHOT LOOKS LIKE IN FLIGHT — the tracer, the
+  slow-field bolt, the seeker cone, the ballistic `arcLift`, and the board's
+  LANCE_LOOK / THROW_LOOK. These were private to td-tab's closure, so the
+  shooting lab could only REIMPLEMENT them, and a reimplementation drifts: the
+  Mortar flew straight in the lab while the game arced it, the Relay drew
+  nothing, the Plasma looked like a different weapon. Both the board and the
+  lab call these builders now, so the lab's baseline IS the game — which is
+  the only thing that makes a tuning lab worth having. They BUILD and return;
+  the caller owns the lifetime, which is the one thing the two really differ
+  about. Sizes are explicit arguments because the board is a unit sphere with
+  cellSide 0.08 and the lab is in metres: the same object at two scales.
   the SHOOTING LAB (`#impact` — the route keeps its old name so existing deep
   links work; the tab reads "shooting"): ONE WEAPON, END TO END. Muzzle, then
   FLIGHT (`?showShot=0` to hide it), then impact, for any of the sixteen

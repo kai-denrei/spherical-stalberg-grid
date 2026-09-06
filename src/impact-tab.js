@@ -47,22 +47,25 @@
 import * as THREE from '../vendor/three.module.js';
 import { OrbitControls } from '../vendor/OrbitControls.js';
 import GUI from '../vendor/lil-gui.esm.js';
-import { makeBloom } from './postfx.js?v=a2ca9f4e';
-import { bakeGalaxyCube } from './galaxybake.js?v=a2ca9f4e';
-import { SKY_PRESET } from './galaxyseed.js?v=a2ca9f4e';
+import { makeBloom } from './postfx.js?v=b0b57145';
+import { bakeGalaxyCube } from './galaxybake.js?v=b0b57145';
+import { SKY_PRESET } from './galaxyseed.js?v=b0b57145';
 import {
   IMPACT_TUNE, IMPACT_KNOBS, IMPACT_FAMILIES, IMPACT_RECIPES,
   makeImpactParams, clampImpactParams, formatImpactTune,
   makeImpactBurst, orientImpact,
-} from './impactfx.js?v=a2ca9f4e';
-import { buildCreature, preloadMkcx } from './units.js?v=a2ca9f4e';
-import { sentryUrl, SENTRY_FAMILIES } from './sentry.js?v=a2ca9f4e';
-import { loadGlb } from './glbmodels.js?v=a2ca9f4e';
-import { TOWERS, TOWER_BY_KEY } from './towers.js?v=a2ca9f4e';
+} from './impactfx.js?v=b0b57145';
+import { buildCreature, preloadMkcx } from './units.js?v=b0b57145';
+import { sentryUrl, SENTRY_FAMILIES } from './sentry.js?v=b0b57145';
+import { loadGlb } from './glbmodels.js?v=b0b57145';
+import { TOWERS, TOWER_BY_KEY } from './towers.js?v=b0b57145';
 import {
   SENTRY_FX, fxFor, tuneFor, formatSentryFx, formatAllSentryFx,
-} from './sentryfx.js?v=a2ca9f4e';
-import { deepLink, wireDeepLink } from './deeplink.js?v=a2ca9f4e';
+} from './sentryfx.js?v=b0b57145';
+import { makeTracerMesh, makeLightningMesh, makeSeekerMesh, aimSeeker, arcLift,
+  LANCE_LOOK, THROW_LOOK } from './shotfx.js?v=b0b57145';
+import { createBeam } from './beamfx.js';
+import { deepLink, wireDeepLink } from './deeplink.js?v=b0b57145';
 
 // The surfaces a hit can land on. Each is a real answer to "what did I just
 // shoot", and the SPARK COLOUR is the biggest part of that answer — a chip
@@ -370,80 +373,103 @@ export function initImpactTab(root) {
   }
 
   function spawnShot(from, to, kind, colorHex) {
+    // EVERY SHAPE HERE IS THE BOARD'S OWN, out of shotfx.js. The lab used to
+    // reimplement each one, which is why the Mortar flew STRAIGHT while the
+    // game arcs it, the Relay drew nothing at all, and the Plasma looked like
+    // a different weapon. Those were never tuning problems — a lab whose
+    // baseline is not the game is, in the operator's words, useless.
     const grp = new THREE.Group();
-    const c = new THREE.Color(colorHex);
-    if (kind === 'lance') {
-      // thin, straight, HELD — a doubled line so it has a hot core inside a
-      // halo rather than reading as a debug ray
-      for (const [w, op] of [[4, 0.32], [1, 1]]) {
-        const g = new THREE.BufferGeometry().setFromPoints([from.clone(), to.clone()]);
-        grp.add(new THREE.Line(g, new THREE.LineBasicMaterial({
-          color: c, transparent: true, opacity: op,
-          blending: THREE.AdditiveBlending, depthWrite: false, linewidth: w })));
+    const sh = prof().shot || {};
+    const dist = from.distanceTo(to);
+    if (kind === 'field') {
+      // THE RELAY DOES NOT FIRE — nothing leaves it — but it is not idle
+      // either, and a sentry that draws nothing reads as broken rather than
+      // as a field weapon. This is the board's own slow-field bolt: three of
+      // them, as the board throws three at its nearest targets.
+      for (let i = 0; i < 3; i++) {
+        const off = (i - 1) * 0.22;
+        const b2 = to.clone().add(new THREE.Vector3(off, 0, 0));
+        grp.add(makeLightningMesh([from.x, from.y, from.z], [b2.x, b2.y, b2.z],
+          colorHex, { t: performance.now() * 0.001 + i, up: [0, 1, 0] }));
       }
-    } else if (kind === 'throw') {
-      // MATTER: dots along the line, scattered off it, widening toward the
-      // far end the way a spray does and dimming as it goes
-      const N = 90;
-      const pos = new Float32Array(N * 3);
-      const col = new Float32Array(N * 3);
-      const dir = to.clone().sub(from);
-      const side = new THREE.Vector3(-dir.z, 0, dir.x).normalize();
-      const up = new THREE.Vector3().crossVectors(dir, side).normalize();
-      for (let i = 0; i < N; i++) {
-        const u = (i + 1) / N;
-        const spread = 0.03 + u * 0.30;
-        const h1 = Math.sin(i * 12.9898 + flights.length) * 43758.5453;
-        const h2 = Math.sin(i * 78.233 + flights.length) * 43758.5453;
-        const p1 = from.clone().addScaledVector(dir, u)
-          .addScaledVector(side, (h1 - Math.floor(h1) - 0.5) * spread)
-          .addScaledVector(up, (h2 - Math.floor(h2) - 0.5) * spread);
-        pos[i * 3] = p1.x; pos[i * 3 + 1] = p1.y; pos[i * 3 + 2] = p1.z;
-        const b = 1 - u * 0.5;
-        col[i * 3] = c.r * b; col[i * 3 + 1] = c.g * b; col[i * 3 + 2] = c.b * b;
-      }
-      const g = new THREE.BufferGeometry();
-      g.setAttribute('position', new THREE.BufferAttribute(pos, 3));
-      g.setAttribute('color', new THREE.BufferAttribute(col, 3));
-      grp.add(new THREE.Points(g, new THREE.PointsMaterial({
-        size: 8, sizeAttenuation: false, vertexColors: true,
-        transparent: true, opacity: 1,
-        blending: THREE.AdditiveBlending, depthWrite: false })));
-    } else if (kind !== 'field') {
-      // a ROUND is a head with a trail — the profile's own projPx and trail,
-      // so the lab draws the tracer the board would actually fire
-      const sh = prof().shot || {};
-      const N = Math.max(2, Math.round(sh.trail ?? 4) + 1);
-      const pos = new Float32Array(N * 3);
-      const col = new Float32Array(N * 3);
-      const dir = to.clone().sub(from).normalize();
-      for (let i = 0; i < N; i++) {
-        const p1 = to.clone().addScaledVector(dir, -i * 0.12);
-        pos[i * 3] = p1.x; pos[i * 3 + 1] = p1.y; pos[i * 3 + 2] = p1.z;
-        const b = 1 - i / N;
-        col[i * 3] = c.r * b; col[i * 3 + 1] = c.g * b; col[i * 3 + 2] = c.b * b;
-      }
-      const g = new THREE.BufferGeometry();
-      g.setAttribute('position', new THREE.BufferAttribute(pos, 3));
-      g.setAttribute('color', new THREE.BufferAttribute(col, 3));
-      grp.add(new THREE.Points(g, new THREE.PointsMaterial({
-        size: sh.projPx ?? 5, sizeAttenuation: false, vertexColors: true,
-        transparent: true, opacity: 1,
-        blending: THREE.AdditiveBlending, depthWrite: false })));
+    } else if (kind === 'lance' || kind === 'throw') {
+      // the board's LANCE_LOOK / THROW_LOOK, through the board's own beam
+      const look = kind === 'lance' ? LANCE_LOOK : THROW_LOOK;
+      const c = new THREE.Color(colorHex);
+      const bm = createBeam(from.clone(), to.clone(),
+        { ...look, coreColor: c, glowColor: c });
+      if (bm && bm.mesh) { grp.add(bm.mesh); grp.userData.beam = bm; }
+    } else if (kind === 'seeker') {
+      // A CONE POINTED ALONG ITS VELOCITY, which is what the board flies and
+      // what the Quiver and the A6 both throw — a little javelin, not a dot.
+      const m = makeSeekerMesh(colorHex, Math.max(0.12, dist * 0.06));
+      m.position.copy(from);
+      aimSeeker(m, [to.x - from.x, to.y - from.y, to.z - from.z]);
+      grp.add(m);
+      grp.userData.fly = { m, from: from.clone(), to: to.clone(), arc: dist * 0.10 };
+    } else {
+      // ROUND and LOB are the same tracer; only the PATH differs, and a lob's
+      // path is the reason it exists. The board takes the ground bearing and
+      // adds the parabola to the DRAWING only, so the picture cannot change
+      // the accuracy — the lab does the same.
+      const m = makeTracerMesh(colorHex, sh.projPx ?? 5, sh.trail ?? 0);
+      grp.add(m);
+      grp.userData.fly = {
+        m, from: from.clone(), to: to.clone(),
+        arc: kind === 'lob' ? dist * 0.34 : 0,
+        trail: (sh.trail ?? 0) + 1,
+      };
     }
-    if (!grp.children.length) return;   // a field weapon throws nothing
+    if (!grp.children.length) return;
     scene.add(grp);
-    // a lance is one long burst; a throw is a fast repeated spit; a round is
-    // gone the instant it lands
-    const life = kind === 'lance' ? 0.6 : (kind === 'throw' ? 0.18 : 0.12);
-    flights.push({ obj: grp, left: life, dur: life });
+    // a lance is ONE long burst; a throw is a fast spit; a flying round lives
+    // as long as its flight; a field bolt is a flicker
+    const life = kind === 'lance' ? 0.6
+      : kind === 'throw' ? 0.18
+        : kind === 'field' ? 0.32
+          : Math.max(0.25, dist / Math.max(1, (sh.projSpeed ?? 16) * 0.35));
+    flights.push({ obj: grp, left: life, dur: life, age: 0 });
   }
+
   function stepShots(dt) {
     for (let i = flights.length - 1; i >= 0; i--) {
       const e = flights[i];
       e.left -= dt;
-      const u = Math.max(0, e.left / e.dur);
-      e.obj.traverse((o) => { if (o.material) o.material.opacity = u; });
+      e.age += dt;
+      const u = Math.max(0, Math.min(1, 1 - e.left / e.dur));   // 0..1 along the flight
+      const f = e.obj.userData.fly;
+      if (f) {
+        // ...and the ARC is added to the drawn path, never to the aim
+        const p = f.from.clone().lerp(f.to, u);
+        p.y += arcLift(u, f.arc);
+        // the trail drags BEHIND the head along the same curve, so a lobbed
+        // shell's trail follows its arc instead of cutting the chord
+        const g = f.m.geometry;
+        if (g && g.attributes.position && f.trail) {
+          const pos = g.attributes.position.array;
+          for (let k = 0; k < f.trail; k++) {
+            const uk = Math.max(0, u - k * 0.035);
+            const pk = f.from.clone().lerp(f.to, uk);
+            pk.y += arcLift(uk, f.arc);
+            pos[k * 3] = pk.x; pos[k * 3 + 1] = pk.y; pos[k * 3 + 2] = pk.z;
+          }
+          g.attributes.position.needsUpdate = true;
+        } else {
+          f.m.position.copy(p);
+        }
+        if (f.m.isMesh) {
+          const ahead = f.from.clone().lerp(f.to, Math.min(1, u + 0.05));
+          ahead.y += arcLift(Math.min(1, u + 0.05), f.arc);
+          aimSeeker(f.m, [ahead.x - p.x, ahead.y - p.y, ahead.z - p.z]);
+          f.m.position.copy(p);
+        }
+      }
+      const bm = e.obj.userData.beam;
+      if (bm) { if (bm.update) bm.update(e.age); if (bm.setAlpha) bm.setAlpha(Math.max(0, e.left / e.dur)); }
+      const fade = Math.max(0, e.left / e.dur);
+      e.obj.traverse((o) => {
+        if (o.material && !bm) o.material.opacity = fade;
+      });
       if (e.left <= 0) {
         scene.remove(e.obj);
         e.obj.traverse((o) => {
@@ -848,7 +874,7 @@ export function initImpactTab(root) {
           + ` · ${P.recipe} [${lastFamilies.join(' + ') || '-'}]`
           + ` · ${shooterLabel()} → ${surfaceDef().label}`
           + ` · wall ${P.wall ? `${P.wallAngle}°` : 'OFF'}`
-          + ` · live ${live.length} · scorches ${standing.length}`
+          + ` · live ${live.length} · inflight ${flights.length} · scorches ${standing.length}`
           + ` · x${P.slow.toFixed(2)} time · F fire, C clear`;
       }
     }
